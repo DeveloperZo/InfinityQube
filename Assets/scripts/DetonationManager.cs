@@ -24,53 +24,90 @@ public class DetonationManager : MonoBehaviour
             {
                 Debug.LogError("DetonationManager requires a GridManager reference!");
                 enabled = false;
-                return;
             }
         }
     }
 
-    // Register a tile as a detonation point (from capturing a green cube)
+    // Register a detonation point (called when a green cube is captured)
     public void RegisterDetonationPoint(Vector2Int position)
     {
-        if (gridManager == null) return;
-        
-        // Validate position
-        if (position.x < 0 || position.x >= gridManager.Width || 
-            position.y < 0 || position.y >= gridManager.Height)
-        {
-            Debug.LogWarning($"Invalid detonation point position: {position}");
-            return;
-        }
+        if (!IsValidPosition(position)) return;
         
         if (!detonationPoints.Contains(position))
         {
             detonationPoints.Add(position);
-
-            // Change tile appearance to indicate detonation point
-            Tile tile = gridManager.tiles[position.x, position.y];
-            if (tile != null)
-            {
-                MarkTileAsDetonationPoint(tile);
-                Debug.Log($"Detonation point registered at {position}");
-            }
+            MarkTileAsDetonationPoint(position);
+            Debug.Log($"Detonation point registered at {position}");
         }
     }
 
-    private void MarkTileAsDetonationPoint(Tile tile)
+    // Trigger the next available detonation (called from PlayerController)
+    public void TriggerNextDetonation()
     {
-        Renderer renderer = tile.GetComponent<Renderer>();
-        if (renderer != null && detonationPointMaterial != null)
+        if (detonationPoints.Count <= 0) return;
+        
+        Vector2Int position = detonationPoints[0];
+        PerformDetonation(position);
+    }
+
+    // Check if there are any available detonation points
+    public bool HasDetonationPoints() => detonationPoints.Count > 0;
+    
+    // Get the number of available detonation points
+    public int DetonationPointCount => detonationPoints.Count;
+
+    // Get the position of the next detonation point
+    public Vector2Int GetNextDetonationPoint()
+    {
+        return detonationPoints.Count > 0 ? detonationPoints[0] : new Vector2Int(-1, -1);
+    }
+
+    // Clear all detonation points (e.g., at the end of a wave)
+    public void ClearDetonationPoints()
+    {
+        foreach (Vector2Int position in detonationPoints)
         {
-            // Store original material if not already stored
-            if (!originalTileMaterials.ContainsKey(tile))
+            if (IsValidPosition(position))
             {
-                originalTileMaterials[tile] = renderer.material;
+                ResetTileMaterial(gridManager.tiles[position.x, position.y]);
             }
-            
-            renderer.material = detonationPointMaterial;
+        }
+        
+        detonationPoints.Clear();
+        originalTileMaterials.Clear();
+    }
+
+    // Helper method to check if a position is valid on the grid
+    private bool IsValidPosition(Vector2Int position)
+    {
+        return gridManager != null && 
+               position.x >= 0 && position.x < gridManager.Width &&
+               position.y >= 0 && position.y < gridManager.Height;
+    }
+
+    // Mark a tile as a detonation point
+    private void MarkTileAsDetonationPoint(Vector2Int position)
+    {
+        if (!IsValidPosition(position)) return;
+        
+        Tile tile = gridManager.tiles[position.x, position.y];
+        if (tile != null)
+        {
+            Renderer renderer = tile.GetComponent<Renderer>();
+            if (renderer != null && detonationPointMaterial != null)
+            {
+                // Store original material
+                if (!originalTileMaterials.ContainsKey(tile))
+                {
+                    originalTileMaterials[tile] = renderer.material;
+                }
+                
+                renderer.material = detonationPointMaterial;
+            }
         }
     }
 
+    // Reset a tile's material to its original
     private void ResetTileMaterial(Tile tile)
     {
         if (tile == null) return;
@@ -83,123 +120,107 @@ public class DetonationManager : MonoBehaviour
         }
     }
 
-    // Trigger detonation at a specific position
-    public bool TriggerDetonation(Vector2Int position)
-    {
-        if (detonationPoints.Contains(position))
-        {
-            PerformDetonation(position);
-            return true;
-        }
-        return false;
-    }
-
-    // Perform the actual detonation effect
+    // Perform the actual 3x3 detonation effect
     private void PerformDetonation(Vector2Int center)
     {
-        Debug.Log($"Detonating at {center}");
-
+        if (!IsValidPosition(center)) return;
+        
         // Remove this detonation point
         detonationPoints.Remove(center);
+        ResetTileMaterial(gridManager.tiles[center.x, center.y]);
+        
+        Debug.Log($"Detonating 3x3 area at {center}");
 
-        // Reset tile appearance
-        if (center.x >= 0 && center.x < gridManager.Width && 
-            center.y >= 0 && center.y < gridManager.Height)
-        {
-            Tile centerTile = gridManager.tiles[center.x, center.y];
-            if (centerTile != null)
-            {
-                ResetTileMaterial(centerTile);
-            }
-        }
-
-        // Affect a 3x3 area
+        // Process the 3x3 area
         for (int x = center.x - 1; x <= center.x + 1; x++)
         {
             for (int y = center.y - 1; y <= center.y + 1; y++)
             {
-                if (x >= 0 && x < gridManager.Width && y >= 0 && y < gridManager.Height)
+                Vector2Int position = new Vector2Int(x, y);
+                if (IsValidPosition(position))
                 {
-                    // Highlight the affected tile
-                    Tile tile = gridManager.tiles[x, y];
-                    if (tile != null)
-                    {
-                        StartCoroutine(FlashTile(tile));
-                    }
-
-                    // Find and process cubes at this position
-                    DetonateCubesAt(new Vector2Int(x, y));
+                    // Visual effect
+                    StartCoroutine(FlashTile(gridManager.tiles[x, y]));
+                    
+                    // Process cubes at this position
+                    DetonateCubesAt(position);
                 }
             }
         }
     }
 
-    // Visual flash effect for tiles
+    // Flash a tile temporarily
     private IEnumerator FlashTile(Tile tile)
     {
+        if (tile == null) yield break;
+        
         Renderer renderer = tile.GetComponent<Renderer>();
-        if (renderer != null)
+        if (renderer == null) yield break;
+        
+        Material originalMaterial = renderer.material;
+        Color originalColor = renderer.material.color;
+        
+        renderer.material.color = flashColor;
+        yield return new WaitForSeconds(flashDuration);
+        
+        // Only restore if the tile still exists
+        if (tile != null && renderer != null)
         {
-            Color originalColor = renderer.material.color;
-            Material originalMaterial = renderer.material;
-
-            renderer.material.color = flashColor;
-            yield return new WaitForSeconds(flashDuration);
-            
-            // Only restore if the tile still exists
-            if (tile != null && renderer != null)
+            if (originalTileMaterials.ContainsKey(tile))
             {
-                // Check if we have the original material stored
-                if (originalTileMaterials.ContainsKey(tile))
-                {
-                    renderer.material = originalTileMaterials[tile];
-                }
-                else
-                {
-                    renderer.material = originalMaterial;
-                    renderer.material.color = originalColor;
-                }
+                renderer.material = originalTileMaterials[tile];
+            }
+            else
+            {
+                renderer.material = originalMaterial;
+                renderer.material.color = originalColor;
             }
         }
     }
 
-    // Detonate cubes at a specific position
+    // Detonate all cubes at a specific position
     private void DetonateCubesAt(Vector2Int position)
     {
-        CubeBehavior[] allCubes = FindObjectsOfType<CubeBehavior>();
-
-        foreach (var cube in allCubes)
+        // Find all cubes at this position
+        foreach (CubeBehavior cube in FindObjectsOfType<CubeBehavior>())
         {
             if (cube == null) continue;
             
             if (cube.position.x == position.x && cube.position.y == position.y)
             {
-                if (cube.CubeType == Enumerations.CubeType.Black)
-                {
-                    // Penalty for black cubes
-                    DamageTile(position.x, position.y);
-                    Debug.Log("Black cube hit by detonation - penalty!");
-                }
-                else
-                {
-                    // Destroy other cube types
-                    Destroy(cube.gameObject);
-                }
+                ProcessCubeDetonation(cube, position);
             }
         }
     }
 
-    // Apply damage effect to a tile
-    private void DamageTile(int x, int y)
+    // Process a specific cube's detonation
+    private void ProcessCubeDetonation(CubeBehavior cube, Vector2Int position)
     {
-        if (x < 0 || x >= gridManager.Width || y < 0 || y >= gridManager.Height)
-            return;
-            
-        Tile tile = gridManager.tiles[x, y];
+        if (cube.CubeType == Enumerations.CubeType.Black)
+        {
+            // Apply penalty for black cubes
+            DamageTile(position);
+        }
+        else
+        {
+            // Destroy other cube types
+            Destroy(cube.gameObject);
+        }
+    }
+
+    // Apply damage effect to a tile
+    private void DamageTile(Vector2Int position)
+    {
+        if (!IsValidPosition(position)) return;
+        
+        Tile tile = gridManager.tiles[position.x, position.y];
         if (tile != null)
         {
-            // Visual indication of damage
-            tile.transform.position = new Vector3(tile.transform.position.x, -0.2f, tile.transform.position.z);
+            // Visual damage indication
+            tile.transform.position = new Vector3(
+                tile.transform.position.x, 
+                -0.2f, 
+                tile.transform.position.z);
 
             Renderer renderer = tile.GetComponent<Renderer>();
             if (renderer != null)
@@ -207,40 +228,5 @@ public class DetonationManager : MonoBehaviour
                 renderer.material.color = Color.gray;
             }
         }
-    }
-
-    // Clear all detonation points
-    public void ClearDetonationPoints()
-    {
-        // Reset tile appearances for all detonation points
-        foreach (Vector2Int pos in detonationPoints)
-        {
-            if (pos.x >= 0 && pos.x < gridManager.Width && 
-                pos.y >= 0 && pos.y < gridManager.Height)
-            {
-                Tile tile = gridManager.tiles[pos.x, pos.y];
-                if (tile != null)
-                {
-                    ResetTileMaterial(tile);
-                }
-            }
-        }
-
-        detonationPoints.Clear();
-        originalTileMaterials.Clear();
-    }
-
-    public bool HasDetonationPoints()
-    {
-        return detonationPoints.Count > 0;
-    }
-
-    public Vector2Int GetNextDetonationPoint()
-    {
-        if (detonationPoints.Count > 0)
-        {
-            return detonationPoints[0]; // Return the first detonation point
-        }
-        return new Vector2Int(-1, -1); // Indicate no points available
     }
 }

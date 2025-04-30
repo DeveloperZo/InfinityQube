@@ -73,6 +73,7 @@ public class PlayerController : MonoBehaviour
         
         HandleMovement();
         HandleMarkerPlacement();
+        HandleMarkerTrigger();
         HandleDetonation();
     }
 
@@ -142,9 +143,9 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-    private void HandleDetonation()
+    private void HandleMarkerTrigger()
     {
-        if (Input.GetKeyDown(KeyCode.D))
+        if (Input.GetKeyDown(KeyCode.F))
         {
             if (markerQueue.Count > 0)
             {
@@ -166,6 +167,16 @@ public class PlayerController : MonoBehaviour
                     Debug.Log($"Detonated marker at {markerPos}");
                 }
             }
+        }
+    }
+    private void HandleDetonation()
+    {
+        if (Input.GetKeyDown(KeyCode.D))
+        {
+        if (detonationManager.HasDetonationPoints())
+        {
+            detonationManager.TriggerNextDetonation();
+        }
         }
     }
 
