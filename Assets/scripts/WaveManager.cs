@@ -4,43 +4,102 @@ using UnityEngine;
 
 public class WaveManager : MonoBehaviour
 {
-    public GridManager grid;
-    public GameObject[] cubePrefabs;
-   
-    public PlayerController player;
+    [Header("References")]
+    [SerializeField] private GridManager grid;
+    [SerializeField] private GameObject[] cubePrefabs;
+    [SerializeField] private PlayerController player;
+    
+    [Header("Wave Settings")]
+    [SerializeField] private int waveSize = 3;
+    [SerializeField] private float cubeMoveInterval = 0.25f;
+    [SerializeField] private float waveStartDelay = 0.75f;
+    
+    [Header("Cube Type Chances")]
+    [SerializeField] [Range(0f, 1f)] private float normalCubeChance = 0.7f;
+    [SerializeField] [Range(0f, 1f)] private float greenCubeChance = 0.2f;
+    // Black cubes make up the remainder
 
-    public int waveSize = 3;
-    public float cubeMoveInterval = 0.25f;
-
-    private List<CubeBehavior> activeCubes = new();
+    private List<CubeBehavior> activeCubes = new List<CubeBehavior>();
     private bool waveActive = false;
+    private Coroutine waveCoroutine;
 
-    void Update()
+    private void Awake()
     {
-        if (!waveActive && Input.GetKeyDown(KeyCode.Return))
-        {
-            StartCoroutine(RunWave());
-        }
+        ValidateReferences();
     }
 
-    IEnumerator RunWave()
+    private void ValidateReferences()
     {
-        waveActive = true;
-        player.enabled = waveActive;
-
-        // Reset all tile colors to their original state
-        foreach (var tile in grid.tiles)
+        if (grid == null)
         {
-            if (tile != null)
+            grid = FindObjectOfType<GridManager>();
+            if (grid == null)
             {
-                tile.ClearMarker(); // Ensures markers are cleared
+                Debug.LogError("WaveManager requires a GridManager reference!");
+                enabled = false;
+                return;
             }
         }
 
+        if (player == null)
+        {
+            player = FindObjectOfType<PlayerController>();
+            if (player == null)
+            {
+                Debug.LogWarning("PlayerController reference not set in WaveManager!");
+            }
+        }
+
+        if (cubePrefabs == null || cubePrefabs.Length < 3)
+        {
+            Debug.LogError("WaveManager requires at least 3 cube prefabs (Normal, Green, Black)!");
+            enabled = false;
+            return;
+        }
+    }
+
+    private void Update()
+    {
+        if (!waveActive && Input.GetKeyDown(KeyCode.Return))
+        {
+            StartWave();
+        }
+    }
+
+    private void StartWave()
+    {
+        if (waveActive) return;
+        
+        if (waveCoroutine != null)
+        {
+            StopCoroutine(waveCoroutine);
+        }
+        
+        waveCoroutine = StartCoroutine(RunWave());
+    }
+
+    private IEnumerator RunWave()
+    {
+        waveActive = true;
+        
+        // Toggle player input
+        if (player != null)
+        {
+            player.enabled = true;
+        }
+
+        // Reset all tile markers
+        if (grid != null)
+        {
+            grid.ClearAllMarkers();
+        }
+
+        // Spawn the cubes
         SpawnCubes();
 
-        yield return new WaitForSeconds(0.75f);
+        yield return new WaitForSeconds(waveStartDelay);
 
+        // Run the wave until all cubes are resolved
         bool cubesRemaining = true;
         while (cubesRemaining)
         {
@@ -48,44 +107,86 @@ public class WaveManager : MonoBehaviour
 
             for (int i = activeCubes.Count - 1; i >= 0; i--)
             {
-                if (activeCubes[i] != null)
+                if (i >= activeCubes.Count) continue; // Safety check for if list size changes during iteration
+                
+                CubeBehavior cube = activeCubes[i];
+                if (cube != null)
                 {
-                    bool stillAlive = activeCubes[i].MoveForward();
+                    bool stillAlive = cube.MoveForward();
                     if (!stillAlive)
+                    {
                         activeCubes.RemoveAt(i);
+                    }
                     else
+                    {
                         cubesRemaining = true;
+                    }
+                }
+                else
+                {
+                    // Remove null references
+                    activeCubes.RemoveAt(i);
                 }
             }
 
             yield return new WaitForSeconds(cubeMoveInterval);
         }
 
-        grid.ClearAllMarkers();
-        player.ResetMarkers();
-      
+        // Wave is complete, reset state
+        if (grid != null) 
+        {
+            grid.ClearAllMarkers();
+        }
+        
+        if (player != null)
+        {
+            player.ResetMarkers();
+            player.enabled = false;
+        }
+        
         waveActive = false;
-        player.enabled = waveActive;
+        waveCoroutine = null;
     }
 
-    void SpawnCubes()
+    private void SpawnCubes()
     {
         activeCubes.Clear();
 
-        int[] spawnZs = { grid.height - 1, grid.height - 2, grid.height - 3 }; // Three full rows from back
+        // Guard against missing grid
+        if (grid == null) return;
+
+        int[] spawnZs = { grid.Height - 1, grid.Height - 2, grid.Height - 3 }; // Three rows from back
 
         foreach (int z in spawnZs)
         {
-            for (int x = 0; x < grid.width; x++)
+            for (int x = 0; x < grid.Width; x++)
             {
-                Vector2Int pos = new(x, z);
+                Vector2Int pos = new Vector2Int(x, z);
                 Vector3 spawnPos = new Vector3(x, 1f, z);
 
                 Enumerations.CubeType cubeType = GetRandomCubeType();
-                GameObject cube = Instantiate(cubePrefabs[(int)cubeType], spawnPos, Quaternion.identity);
-                var cb = cube.GetComponent<CubeBehavior>();
-                cb.Init(grid, pos, 1); // level 1 for all
-                activeCubes.Add(cb);
+                
+                // Guard against index out of bounds
+                int prefabIndex = (int)cubeType;
+                if (prefabIndex < 0 || prefabIndex >= cubePrefabs.Length || cubePrefabs[prefabIndex] == null)
+                {
+                    Debug.LogWarning($"Missing cube prefab for type {cubeType}");
+                    continue;
+                }
+                
+                GameObject cube = Instantiate(cubePrefabs[prefabIndex], spawnPos, Quaternion.identity);
+                if (cube != null)
+                {
+                    CubeBehavior cb = cube.GetComponent<CubeBehavior>();
+                    if (cb == null)
+                    {
+                        cb = cube.AddComponent<CubeBehavior>();
+                        cb.CubeType = cubeType; // Set type since it wasn't in prefab
+                    }
+                    
+                    cb.Init(grid, pos, 1); // level 1 for all cubes in this version
+                    activeCubes.Add(cb);
+                }
             }
         }
     }
@@ -93,10 +194,33 @@ public class WaveManager : MonoBehaviour
     private Enumerations.CubeType GetRandomCubeType()
     {
         float random = Random.value;
-        if (random < 0.7f) return Enumerations.CubeType.Normal;     // 70% chance
-        else if (random < 0.9f) return Enumerations.CubeType.Green; // 20% chance
-        else return Enumerations.CubeType.Black;                    // 10% chance
+        if (random < normalCubeChance) 
+            return Enumerations.CubeType.Normal;
+        else if (random < normalCubeChance + greenCubeChance) 
+            return Enumerations.CubeType.Green;
+        else 
+            return Enumerations.CubeType.Black;
     }
 
+    // Called when the game is being shut down or scene is changing
+    private void OnDestroy()
+    {
+        // Clean up any active coroutines
+        if (waveCoroutine != null)
+        {
+            StopCoroutine(waveCoroutine);
+            waveCoroutine = null;
+        }
+        
+        // Clean up any remaining cubes
+        foreach (var cube in activeCubes)
+        {
+            if (cube != null && cube.gameObject != null)
+            {
+                Destroy(cube.gameObject);
+            }
+        }
+        
+        activeCubes.Clear();
+    }
 }
-

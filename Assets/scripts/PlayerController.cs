@@ -4,41 +4,123 @@ using System.Linq;
 
 public class PlayerController : MonoBehaviour
 {
-    public GridManager grid;
-    public int maxMarkers = 2;
+    [Header("References")]
+    [SerializeField] private GridManager grid;
+    
+    [Header("Settings")]
+    [SerializeField] private int maxMarkers = 2;
+    [SerializeField] private Color selectorColor = Color.yellow;
+    [SerializeField] private float selectorHeight = 0.2f;
+
     private int currentMarkers = 0;
     private int selX = 0, selZ = 0;
     private DetonationManager detonationManager;
-
     private Renderer selectorRenderer;
-    private Queue<Vector2Int> markerQueue = new Queue<Vector2Int>(); // Queue to track marker order
+    private Queue<Vector2Int> markerQueue = new Queue<Vector2Int>(); // Track marker order
+    private bool isInitialized = false;
 
-    void Start()
+    private void Awake()
     {
         selectorRenderer = GetComponent<Renderer>();
-        if (selectorRenderer != null)
+        if (selectorRenderer == null)
         {
-            selectorRenderer.material.color = Color.yellow;
+            Debug.LogError("Selector requires a Renderer component!");
+            enabled = false;
+            return;
+        }
+    }
+
+    private void Start()
+    {
+        if (grid == null)
+        {
+            grid = FindObjectOfType<GridManager>();
+            if (grid == null)
+            {
+                Debug.LogError("PlayerController requires a GridManager reference!");
+                enabled = false;
+                return;
+            }
         }
         
         detonationManager = FindObjectOfType<DetonationManager>();
+        if (detonationManager == null)
+        {
+            Debug.LogWarning("DetonationManager not found in scene. Detonation functionality will be limited.");
+        }
+        
+        // Set selector color
+        if (selectorRenderer != null && selectorRenderer.material != null)
+        {
+            selectorRenderer.material.color = selectorColor;
+        }
+        
+        isInitialized = true;
     }
 
-    void Update()
+    private void OnEnable()
     {
-        // Movement
-        if (Input.GetKeyDown(KeyCode.LeftArrow)) selX = Mathf.Max(0, selX - 1);
-        if (Input.GetKeyDown(KeyCode.RightArrow)) selX = Mathf.Min(grid.width - 1, selX + 1);
-        if (Input.GetKeyDown(KeyCode.UpArrow)) selZ = Mathf.Min(grid.height - 1, selZ + 1);
-        if (Input.GetKeyDown(KeyCode.DownArrow)) selZ = Mathf.Max(0, selZ - 1);
+        if (isInitialized)
+        {
+            // Reset the selector position when enabled
+            UpdateSelectorPosition();
+        }
+    }
 
-        // Visually move the selector cube
-        transform.position = new Vector3(selX, 0.2f, selZ);
+    private void Update()
+    {
+        if (!isInitialized) return;
+        
+        HandleMovement();
+        HandleMarkerPlacement();
+        HandleDetonation();
+    }
 
-        // Place marker (blue)
+    private void HandleMovement()
+    {
+        bool moved = false;
+        
+        if (Input.GetKeyDown(KeyCode.LeftArrow))
+        {
+            selX = Mathf.Max(0, selX - 1);
+            moved = true;
+        }
+        if (Input.GetKeyDown(KeyCode.RightArrow))
+        {
+            selX = Mathf.Min(grid.Width - 1, selX + 1);
+            moved = true;
+        }
+        if (Input.GetKeyDown(KeyCode.UpArrow))
+        {
+            selZ = Mathf.Min(grid.Height - 1, selZ + 1);
+            moved = true;
+        }
+        if (Input.GetKeyDown(KeyCode.DownArrow))
+        {
+            selZ = Mathf.Max(0, selZ - 1);
+            moved = true;
+        }
+
+        if (moved)
+        {
+            UpdateSelectorPosition();
+        }
+    }
+
+    private void UpdateSelectorPosition()
+    {
+        transform.position = new Vector3(selX, selectorHeight, selZ);
+    }
+
+    private void HandleMarkerPlacement()
+    {
         if (Input.GetKeyDown(KeyCode.Space))
         {
+            if (selX < 0 || selX >= grid.Width || selZ < 0 || selZ >= grid.Height)
+                return;
+                
             Tile currentTile = grid.tiles[selX, selZ];
+            if (currentTile == null) return;
 
             if (!currentTile.HasMarker)
             {
@@ -52,28 +134,32 @@ public class PlayerController : MonoBehaviour
             else
             {
                 currentTile.ClearMarker();
-                markerQueue = new Queue<Vector2Int>(markerQueue.Where(pos => pos != new Vector2Int(selX, selZ))); // Remove from queue
+                // Use a new queue excluding this position
+                markerQueue = new Queue<Vector2Int>(
+                    markerQueue.Where(pos => pos.x != selX || pos.y != selZ));
                 currentMarkers--;
             }
         }
+    }
 
-        // Trigger detonation in order (D key)
+    private void HandleDetonation()
+    {
         if (Input.GetKeyDown(KeyCode.D))
         {
             if (markerQueue.Count > 0)
             {
                 Vector2Int markerPos = markerQueue.Dequeue();
 
-                // Ensure detonation position is within bounds
-                if (markerPos.x < 0 || markerPos.x >= grid.width || markerPos.y < 0 || markerPos.y >= grid.height)
+                // Ensure position is within bounds
+                if (markerPos.x < 0 || markerPos.x >= grid.Width || 
+                    markerPos.y < 0 || markerPos.y >= grid.Height)
                 {
                     Debug.LogWarning("Detonation position is out of bounds and will be ignored.");
                     return;
                 }
 
                 Tile tile = grid.tiles[markerPos.x, markerPos.y];
-
-                if (tile.HasMarker)
+                if (tile != null && tile.HasMarker)
                 {
                     tile.TriggerMarker();
                     currentMarkers--;
@@ -86,5 +172,6 @@ public class PlayerController : MonoBehaviour
     public void ResetMarkers()
     {
         currentMarkers = 0;
+        markerQueue.Clear();
     }
 }

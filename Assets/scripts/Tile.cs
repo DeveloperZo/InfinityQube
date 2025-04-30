@@ -1,43 +1,89 @@
-using System;
 using UnityEngine;
 
 public class Tile : MonoBehaviour
 {
-    public int x, y;
-    public bool HasMarker = false;
-    GameObject markerObj;
-    private Color originalColor; // store original tile color
+    [Header("Tile Properties")]
+    [SerializeField] private int x, y;
+    [SerializeField] private bool hasMarker = false;
+    [SerializeField] private float markerHeight = 0.3f;
+    [SerializeField] private float markerScale = 0.5f;
+    [SerializeField] private Color markerColor = Color.blue;
+    [SerializeField] private Color markedTileColor = new Color(1f, 0.4f, 0.4f);
+    
+    private GameObject markerObj;
+    private Color originalColor;
     private Renderer tileRenderer;
-    private CubeBehavior cube;
+    private CubeBehavior currentCube;
+    private bool isInitialized = false;
 
-    public void Init(int x, int y)
+    private void Awake()
     {
-        this.x = x;
-        this.y = y;
         tileRenderer = GetComponent<Renderer>();
-        originalColor = tileRenderer.material.color; // capture initial color
+        if (tileRenderer == null)
+        {
+            Debug.LogError("Tile requires a Renderer component!");
+            enabled = false;
+            return;
+        }
     }
+
+    public void Init(int xPos, int yPos)
+    {
+        x = xPos;
+        y = yPos;
+        
+        if (tileRenderer != null)
+        {
+            originalColor = tileRenderer.material.color;
+        }
+        
+        isInitialized = true;
+    }
+
+    private void OnDestroy()
+    {
+        if (markerObj != null)
+        {
+            Destroy(markerObj);
+            markerObj = null;
+        }
+    }
+
+    public bool HasMarker => hasMarker;
 
     public void PlaceMarker()
     {
-        if (HasMarker) return;
+        if (!isInitialized || hasMarker) return;
 
-        HasMarker = true;
+        hasMarker = true;
 
-        markerObj = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-        markerObj.transform.position = transform.position + Vector3.up * 0.3f;
-        markerObj.transform.localScale = new Vector3(0.5f, 0.1f, 0.5f);
-        markerObj.name = $"Marker_{x}_{y}";
+        // Create marker object
+        if (markerObj == null)
+        {
+            markerObj = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            markerObj.transform.SetParent(transform);
+            markerObj.transform.localPosition = Vector3.up * markerHeight;
+            markerObj.transform.localScale = new Vector3(markerScale, 0.1f, markerScale);
+            markerObj.name = $"Marker_{x}_{y}";
+            
+            // Set marker color
+            Renderer markerRenderer = markerObj.GetComponent<Renderer>();
+            if (markerRenderer != null)
+            {
+                markerRenderer.material.color = markerColor;
+            }
+        }
 
-        var markerRenderer = markerObj.GetComponent<Renderer>();
-        markerRenderer.material.color = Color.blue;
-
-        tileRenderer.material.color = new Color(1f, 0.4f, 0.4f); // subtle red tint
+        // Tint the tile
+        if (tileRenderer != null)
+        {
+            tileRenderer.material.color = markedTileColor;
+        }
     }
 
     public void ToggleMarker()
     {
-        if (HasMarker)
+        if (hasMarker)
         {
             ClearMarker();
         }
@@ -49,72 +95,103 @@ public class Tile : MonoBehaviour
 
     public void ClearMarker()
     {
-        HasMarker = false;
+        hasMarker = false;
 
         if (markerObj != null)
+        {
             Destroy(markerObj);
+            markerObj = null;
+        }
 
-        tileRenderer.material.color = originalColor; // reset properly
+        if (tileRenderer != null)
+        {
+            tileRenderer.material.color = originalColor;
+        }
     }
 
     public void ActivateMarker()
     {
-        HasMarker = false;
+        hasMarker = false;
 
         if (markerObj != null)
+        {
             Destroy(markerObj);
+            markerObj = null;
+        }
 
-        tileRenderer.material.color = Color.grey; // reset properly
+        if (tileRenderer != null)
+        {
+            tileRenderer.material.color = Color.grey;
+        }
     }
 
     public void ProcessCubeInteraction(CubeBehavior cube)
     {
-        this.cube = cube;
+        if (cube != null)
+        {
+            currentCube = cube;
+        }
     }
+
     public void TriggerMarker()
     {
-        if (HasMarker)
+        if (!hasMarker) return;
+        
+        // Store reference to cube before changing marker state
+        CubeBehavior cubeToProcess = currentCube;
+        ActivateMarker();
+
+        if (cubeToProcess == null)
         {
-            if(cube.gameObject == null)
-                cube = null;
+            Debug.LogWarning("No cube to process on marker trigger.");
+            return;
+        }
 
-            CubeBehavior cubeToProcess = cube; // Store reference to avoid accessing after destruction
-            ActivateMarker();
+        // Check if the cube has been destroyed
+        if (cubeToProcess == null || cubeToProcess.gameObject == null)
+        {
+            return;
+        }
 
-            if (cubeToProcess != null &&cubeToProcess.CubeType == Enumerations.CubeType.Green)
+        DetonationManager detonationManager = null;
+        
+        // Handle green cube before potential destruction
+        if (cubeToProcess.CubeType == Enumerations.CubeType.Green)
+        {
+            detonationManager = FindObjectOfType<DetonationManager>();
+            if (detonationManager != null)
             {
-                DetonationManager detonationManager = FindObjectOfType<DetonationManager>();
-                if (detonationManager != null)
-                {
-                    detonationManager.RegisterDetonationPoint(new Vector2Int(x, y));
-                }
-            }
-
-            switch (cubeToProcess.CubeType)
-            {
-                case Enumerations.CubeType.Normal:
-                    // Normal cubes just get destroyed
-                    cubeToProcess.level--;
-                    if (cubeToProcess.level <= 0)
-                    {
-                        Destroy(cubeToProcess.gameObject);
-                    }
-                    break;
-
-                case Enumerations.CubeType.Green:
-                    // Green cubes register a detonation point
-                    cubeToProcess.level--;
-                    if (cubeToProcess.level <= 0)
-                    {
-                        Destroy(cubeToProcess.gameObject);
-                    }
-                    break;
-
-                case Enumerations.CubeType.Black:
-                    // Black cubes cause a penalty
-                    transform.position = new Vector3(transform.position.x, -0.2f, transform.position.z);
-                    break;
+                detonationManager.RegisterDetonationPoint(new Vector2Int(x, y));
             }
         }
+
+        switch (cubeToProcess.CubeType)
+        {
+            case Enumerations.CubeType.Normal:
+                // Normal cubes just get destroyed
+                cubeToProcess.level--;
+                if (cubeToProcess.level <= 0)
+                {
+                    Destroy(cubeToProcess.gameObject);
+                }
+                break;
+
+            case Enumerations.CubeType.Green:
+                // Green cubes register a detonation point
+                cubeToProcess.level--;
+                if (cubeToProcess.level <= 0)
+                {
+                    Destroy(cubeToProcess.gameObject);
+                }
+                break;
+
+            case Enumerations.CubeType.Black:
+                // Black cubes cause a penalty
+                transform.position = new Vector3(transform.position.x, -0.2f, transform.position.z);
+                break;
+        }
+        
+        // Clear cube reference after processing
+        currentCube = null;
     }
 }

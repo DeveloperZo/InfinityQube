@@ -1,17 +1,47 @@
 using UnityEngine;
+using System.Collections;
 using System.Collections.Generic;
-using System;
 
 public class DetonationManager : MonoBehaviour
 {
-    public GridManager gridManager;
-    public Material detonationPointMaterial; // Green material for detonation points
-
+    [Header("References")]
+    [SerializeField] private GridManager gridManager;
+    [SerializeField] private Material detonationPointMaterial;
+    
+    [Header("Effects")]
+    [SerializeField] private float flashDuration = 0.3f;
+    [SerializeField] private Color flashColor = Color.green;
+    
     private List<Vector2Int> detonationPoints = new List<Vector2Int>();
+    private Dictionary<Tile, Material> originalTileMaterials = new Dictionary<Tile, Material>();
+
+    private void Awake()
+    {
+        if (gridManager == null)
+        {
+            gridManager = FindObjectOfType<GridManager>();
+            if (gridManager == null)
+            {
+                Debug.LogError("DetonationManager requires a GridManager reference!");
+                enabled = false;
+                return;
+            }
+        }
+    }
 
     // Register a tile as a detonation point (from capturing a green cube)
     public void RegisterDetonationPoint(Vector2Int position)
     {
+        if (gridManager == null) return;
+        
+        // Validate position
+        if (position.x < 0 || position.x >= gridManager.Width || 
+            position.y < 0 || position.y >= gridManager.Height)
+        {
+            Debug.LogWarning($"Invalid detonation point position: {position}");
+            return;
+        }
+        
         if (!detonationPoints.Contains(position))
         {
             detonationPoints.Add(position);
@@ -20,14 +50,36 @@ public class DetonationManager : MonoBehaviour
             Tile tile = gridManager.tiles[position.x, position.y];
             if (tile != null)
             {
-                Renderer renderer = tile.GetComponent<Renderer>();
-                if (renderer != null && detonationPointMaterial != null)
-                {
-                    renderer.material = detonationPointMaterial;
-                }
+                MarkTileAsDetonationPoint(tile);
+                Debug.Log($"Detonation point registered at {position}");
             }
+        }
+    }
 
-            Debug.Log($"Detonation point registered at {position}");
+    private void MarkTileAsDetonationPoint(Tile tile)
+    {
+        Renderer renderer = tile.GetComponent<Renderer>();
+        if (renderer != null && detonationPointMaterial != null)
+        {
+            // Store original material if not already stored
+            if (!originalTileMaterials.ContainsKey(tile))
+            {
+                originalTileMaterials[tile] = renderer.material;
+            }
+            
+            renderer.material = detonationPointMaterial;
+        }
+    }
+
+    private void ResetTileMaterial(Tile tile)
+    {
+        if (tile == null) return;
+        
+        Renderer renderer = tile.GetComponent<Renderer>();
+        if (renderer != null && originalTileMaterials.ContainsKey(tile))
+        {
+            renderer.material = originalTileMaterials[tile];
+            originalTileMaterials.Remove(tile);
         }
     }
 
@@ -47,17 +99,17 @@ public class DetonationManager : MonoBehaviour
     {
         Debug.Log($"Detonating at {center}");
 
-        // Remove this detonation point first
+        // Remove this detonation point
         detonationPoints.Remove(center);
 
         // Reset tile appearance
-        Tile centerTile = gridManager.tiles[center.x, center.y];
-        if (centerTile != null)
+        if (center.x >= 0 && center.x < gridManager.Width && 
+            center.y >= 0 && center.y < gridManager.Height)
         {
-            Renderer renderer = centerTile.GetComponent<Renderer>();
-            if (renderer != null)
+            Tile centerTile = gridManager.tiles[center.x, center.y];
+            if (centerTile != null)
             {
-                renderer.material.color = Color.white; // Reset to default color
+                ResetTileMaterial(centerTile);
             }
         }
 
@@ -66,7 +118,7 @@ public class DetonationManager : MonoBehaviour
         {
             for (int y = center.y - 1; y <= center.y + 1; y++)
             {
-                if (x >= 0 && x < gridManager.width && y >= 0 && y < gridManager.height)
+                if (x >= 0 && x < gridManager.Width && y >= 0 && y < gridManager.Height)
                 {
                     // Highlight the affected tile
                     Tile tile = gridManager.tiles[x, y];
@@ -83,16 +135,31 @@ public class DetonationManager : MonoBehaviour
     }
 
     // Visual flash effect for tiles
-    private System.Collections.IEnumerator FlashTile(Tile tile)
+    private IEnumerator FlashTile(Tile tile)
     {
         Renderer renderer = tile.GetComponent<Renderer>();
         if (renderer != null)
         {
             Color originalColor = renderer.material.color;
+            Material originalMaterial = renderer.material;
 
-            renderer.material.color = Color.green;
-            yield return new WaitForSeconds(0.3f);
-            renderer.material.color = originalColor;
+            renderer.material.color = flashColor;
+            yield return new WaitForSeconds(flashDuration);
+            
+            // Only restore if the tile still exists
+            if (tile != null && renderer != null)
+            {
+                // Check if we have the original material stored
+                if (originalTileMaterials.ContainsKey(tile))
+                {
+                    renderer.material = originalTileMaterials[tile];
+                }
+                else
+                {
+                    renderer.material = originalMaterial;
+                    renderer.material.color = originalColor;
+                }
+            }
         }
     }
 
@@ -103,6 +170,8 @@ public class DetonationManager : MonoBehaviour
 
         foreach (var cube in allCubes)
         {
+            if (cube == null) continue;
+            
             if (cube.position.x == position.x && cube.position.y == position.y)
             {
                 if (cube.CubeType == Enumerations.CubeType.Black)
@@ -123,6 +192,9 @@ public class DetonationManager : MonoBehaviour
     // Apply damage effect to a tile
     private void DamageTile(int x, int y)
     {
+        if (x < 0 || x >= gridManager.Width || y < 0 || y >= gridManager.Height)
+            return;
+            
         Tile tile = gridManager.tiles[x, y];
         if (tile != null)
         {
@@ -143,18 +215,19 @@ public class DetonationManager : MonoBehaviour
         // Reset tile appearances for all detonation points
         foreach (Vector2Int pos in detonationPoints)
         {
-            Tile tile = gridManager.tiles[pos.x, pos.y];
-            if (tile != null)
+            if (pos.x >= 0 && pos.x < gridManager.Width && 
+                pos.y >= 0 && pos.y < gridManager.Height)
             {
-                Renderer renderer = tile.GetComponent<Renderer>();
-                if (renderer != null)
+                Tile tile = gridManager.tiles[pos.x, pos.y];
+                if (tile != null)
                 {
-                    renderer.material.color = Color.white; // Reset to default color
+                    ResetTileMaterial(tile);
                 }
             }
         }
 
         detonationPoints.Clear();
+        originalTileMaterials.Clear();
     }
 
     public bool HasDetonationPoints()
