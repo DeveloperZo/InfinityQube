@@ -20,6 +20,7 @@ public class WaveManager : MonoBehaviour
     // Black cubes make up the remainder
 
     private List<CubeBehavior> activeCubes = new List<CubeBehavior>();
+    private List<int> escapedBlackCubePositions = new List<int>();
     private bool waveActive = false;
     private Coroutine waveCoroutine;
 
@@ -147,7 +148,12 @@ public class WaveManager : MonoBehaviour
         waveActive = false;
         waveCoroutine = null;
     }
-
+    
+    public void RegisterEscapedBlackCube(int xPosition)
+    {
+        escapedBlackCubePositions.Add(xPosition);
+    }
+    
     private void SpawnCubes()
     {
         activeCubes.Clear();
@@ -189,8 +195,50 @@ public class WaveManager : MonoBehaviour
                 }
             }
         }
+        
+        // Now spawn any escaped black cubes that need to "rain down"
+        SpawnRainingBlackCubes();
     }
-
+    private void SpawnRainingBlackCubes()
+    {
+        if (escapedBlackCubePositions.Count == 0) return;
+        
+        // Get black cube prefab index
+        int blackCubeIndex = (int)Enumerations.CubeType.Black;
+        if (blackCubeIndex < 0 || blackCubeIndex >= cubePrefabs.Length || cubePrefabs[blackCubeIndex] == null)
+        {
+            Debug.LogWarning("Missing black cube prefab for raining mechanism");
+            escapedBlackCubePositions.Clear();
+            return;
+        }
+        
+        // Spawn a black cube above each position in our list
+        foreach (int x in escapedBlackCubePositions)
+        {
+            // Position is one row above the back row
+            Vector2Int pos = new Vector2Int(x, grid.Height);
+            Vector3 spawnPos = new Vector3(x, 2f, grid.Height);
+            
+            GameObject cube = Instantiate(cubePrefabs[blackCubeIndex], spawnPos, Quaternion.identity);
+            if (cube != null)
+            {
+                CubeBehavior cb = cube.GetComponent<CubeBehavior>();
+                if (cb == null)
+                {
+                    cb = cube.AddComponent<CubeBehavior>();
+                    cb.CubeType = Enumerations.CubeType.Black;
+                }
+                
+                cb.Init(grid, pos, 1);
+                activeCubes.Add(cb);
+                
+                // Optional: you could add a visual effect here to make the cube's entrance more dramatic
+            }
+        }
+        
+        // Clear the list after spawning
+        escapedBlackCubePositions.Clear();
+    }
     private Enumerations.CubeType GetRandomCubeType()
     {
         float random = Random.value;

@@ -10,7 +10,7 @@ public class CubeBehavior : MonoBehaviour
     
     [Header("Animation Settings")]
     [SerializeField] private float moveDuration = 0.25f;
-    [SerializeField] private float squashDuration = 0.05f;
+    [SerializeField] private float squashDuration = 0.25f;
     
     private GridManager grid;
     private bool isMoving = false;
@@ -38,23 +38,35 @@ public class CubeBehavior : MonoBehaviour
         StopAllCoroutines();
     }
 
-    public bool MoveForward()
+// In CubeBehavior.cs
+public bool MoveForward()
+{
+    if (isMoving || isDestroyed) return true;
+
+    position.y -= 1;
+
+    // Off the grid = escape
+    if (position.y < 0 || position.x < 0 || position.x >= grid.Width)
     {
-        if (isMoving || isDestroyed) return true;
-
-        position.y -= 1;
-
-        // Off the grid = escape
-        if (position.y < 0 || position.x < 0 || position.x >= grid.Width)
+        // Special handling for black cubes that escape
+        if (CubeType == Enumerations.CubeType.Black)
         {
-            Debug.Log($"Cube escaped at level {level}");
-            Destroy(gameObject);
-            return false;
+            WaveManager waveManager = FindObjectOfType<WaveManager>();
+            if (waveManager != null)
+            {
+                waveManager.RegisterEscapedBlackCube(position.x);
+                Debug.Log($"Black cube escaped at x={position.x}");
+            }
         }
-
-        StartCoroutine(AnimateMove(position));
-        return true;
+        
+        Debug.Log($"Cube escaped at level {level}");
+        Destroy(gameObject);
+        return false;
     }
+
+    StartCoroutine(AnimateMove(position));
+    return true;
+}
 
     private IEnumerator AnimateMove(Vector2Int newPos)
     {

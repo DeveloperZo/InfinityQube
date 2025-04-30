@@ -185,4 +185,18 @@ public class PlayerController : MonoBehaviour
         currentMarkers = 0;
         markerQueue.Clear();
     }
+
+    // In PlayerController.cs - Update() method
+private void CheckForGameOver()
+{
+    // Check all active cubes for collision with player
+    foreach (CubeBehavior cube in FindObjectsOfType<CubeBehavior>())
+    {
+        if (cube.position.x == selX && cube.position.y == selZ)
+        {
+            
+            return;
+        }
+    }
+}
 }
