@@ -23,7 +23,8 @@ public class CubeBehavior : MonoBehaviour
 
         position.y -= 1;
 
-        if (position.y < 0)
+        // Off the grid = escape
+        if (position.y < 0 || position.x < 0 || position.x >= grid.width)
         {
             Debug.Log($"Cube escaped at level {level}");
             Destroy(gameObject);
@@ -66,14 +67,8 @@ public class CubeBehavior : MonoBehaviour
         var tile = grid.tiles[newPos.x, newPos.y];
         if (tile.HasMarker)
         {
-            level--;
-            tile.ActivateMarker();
-
-            if (level <= 0)
-            {
-                Destroy(gameObject);
-                yield break;
-            }
+            tile.ProcessCubeInteraction(this);
+            // Reset the cube's position to the tile's position
         }
 
         isMoving = false;

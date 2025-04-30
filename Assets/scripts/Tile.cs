@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 public class Tile : MonoBehaviour
@@ -7,6 +8,7 @@ public class Tile : MonoBehaviour
     GameObject markerObj;
     private Color originalColor; // store original tile color
     private Renderer tileRenderer;
+    private CubeBehavior cube;
 
     public void Init(int x, int y)
     {
@@ -28,16 +30,11 @@ public class Tile : MonoBehaviour
         markerObj.name = $"Marker_{x}_{y}";
 
         var markerRenderer = markerObj.GetComponent<Renderer>();
-        markerRenderer.material.color = Color.red;
+        markerRenderer.material.color = Color.blue;
 
         tileRenderer.material.color = new Color(1f, 0.4f, 0.4f); // subtle red tint
     }
 
-    public void ResetTileVisual()
-    {
-        if (!HasMarker)
-            GetComponent<Renderer>().material.color = Color.gray;
-    }
     public void ToggleMarker()
     {
         if (HasMarker)
@@ -70,4 +67,54 @@ public class Tile : MonoBehaviour
         tileRenderer.material.color = Color.grey; // reset properly
     }
 
+    public void ProcessCubeInteraction(CubeBehavior cube)
+    {
+        this.cube = cube;
+    }
+    public void TriggerMarker()
+    {
+        if (HasMarker)
+        {
+            if(cube.gameObject == null)
+                cube = null;
+
+            CubeBehavior cubeToProcess = cube; // Store reference to avoid accessing after destruction
+            ActivateMarker();
+
+            if (cubeToProcess != null &&cubeToProcess.CubeType == Enumerations.CubeType.Green)
+            {
+                DetonationManager detonationManager = FindObjectOfType<DetonationManager>();
+                if (detonationManager != null)
+                {
+                    detonationManager.RegisterDetonationPoint(new Vector2Int(x, y));
+                }
+            }
+
+            switch (cubeToProcess.CubeType)
+            {
+                case Enumerations.CubeType.Normal:
+                    // Normal cubes just get destroyed
+                    cubeToProcess.level--;
+                    if (cubeToProcess.level <= 0)
+                    {
+                        Destroy(cubeToProcess.gameObject);
+                    }
+                    break;
+
+                case Enumerations.CubeType.Green:
+                    // Green cubes register a detonation point
+                    cubeToProcess.level--;
+                    if (cubeToProcess.level <= 0)
+                    {
+                        Destroy(cubeToProcess.gameObject);
+                    }
+                    break;
+
+                case Enumerations.CubeType.Black:
+                    // Black cubes cause a penalty
+                    transform.position = new Vector3(transform.position.x, -0.2f, transform.position.z);
+                    break;
+            }
+        }
+    }
 }
