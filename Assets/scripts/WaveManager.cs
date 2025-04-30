@@ -11,7 +11,6 @@ public class WaveManager : MonoBehaviour
     
     [Header("Wave Settings")]
     [SerializeField] private int waveSize = 3;
-    [SerializeField] private float cubeMoveInterval = 0.25f;
     [SerializeField] private float waveStartDelay = 0.75f;
     
     [Header("Cube Type Chances")]
@@ -19,16 +18,25 @@ public class WaveManager : MonoBehaviour
     [SerializeField] [Range(0f, 1f)] private float greenCubeChance = 0.2f;
     // Black cubes make up the remainder
 
+    [Header("Speed Controls")]
+    [SerializeField] private float normalMoveInterval = 0.75f; // Default speed
+    [SerializeField] private float fastMoveInterval = 0.1f;
+    public bool isSpeedingUp = false;
     private List<CubeBehavior> activeCubes = new List<CubeBehavior>();
     private List<int> escapedBlackCubePositions = new List<int>();
     private bool waveActive = false;
     private Coroutine waveCoroutine;
 
+
+
+    public void SetSpeedState(bool isSpeeding)
+    {
+        isSpeedingUp = isSpeeding;
+    }
     private void Awake()
     {
         ValidateReferences();
     }
-
     private void ValidateReferences()
     {
         if (grid == null)
@@ -130,7 +138,9 @@ public class WaveManager : MonoBehaviour
                 }
             }
 
-            yield return new WaitForSeconds(cubeMoveInterval);
+            // Use the appropriate move interval based on speed up state
+            float currentMoveInterval = isSpeedingUp ? fastMoveInterval : normalMoveInterval;
+            yield return new WaitForSeconds(currentMoveInterval);
         }
 
         // Wave is complete, reset state
@@ -160,8 +170,11 @@ public class WaveManager : MonoBehaviour
 
         // Guard against missing grid
         if (grid == null) return;
-
-        int[] spawnZs = { grid.Height - 1, grid.Height - 2, grid.Height - 3 }; // Three rows from back
+        List<int> spawnZs = new List<int>();
+        for (var i = 1; i <=waveSize; i++)
+        {
+            spawnZs.Add(grid.height - i);
+        }
 
         foreach (int z in spawnZs)
         {
@@ -199,6 +212,9 @@ public class WaveManager : MonoBehaviour
         // Now spawn any escaped black cubes that need to "rain down"
         SpawnRainingBlackCubes();
     }
+// In WaveManager.cs, modify the SpawnRainingBlackCubes method
+// In WaveManager.cs
+// In WaveManager.cs
     private void SpawnRainingBlackCubes()
     {
         if (escapedBlackCubePositions.Count == 0) return;
@@ -212,12 +228,12 @@ public class WaveManager : MonoBehaviour
             return;
         }
         
-        // Spawn a black cube above each position in our list
+        // For each escaped black cube
         foreach (int x in escapedBlackCubePositions)
         {
-            // Position is one row above the back row
-            Vector2Int pos = new Vector2Int(x, grid.Height);
-            Vector3 spawnPos = new Vector3(x, 2f, grid.Height);
+            // Position is directly above the grid at the same X position
+            // The Y is higher to create a raining effect
+            Vector3 spawnPos = new Vector3(x, 5f, grid.Height - 1);
             
             GameObject cube = Instantiate(cubePrefabs[blackCubeIndex], spawnPos, Quaternion.identity);
             if (cube != null)
@@ -229,16 +245,72 @@ public class WaveManager : MonoBehaviour
                     cb.CubeType = Enumerations.CubeType.Black;
                 }
                 
-                cb.Init(grid, pos, 1);
-                activeCubes.Add(cb);
+                // Add a rain controller component to handle the specialized behavior
+                RainCubeController rainController = cube.AddComponent<RainCubeController>();
+                rainController.Initialize(x, grid);
                 
-                // Optional: you could add a visual effect here to make the cube's entrance more dramatic
+                // Don't add to active cubes - the rain controller will handle movement
             }
         }
         
         // Clear the list after spawning
         escapedBlackCubePositions.Clear();
     }
+
+    private IEnumerator AnimateRainingCube(CubeBehavior cube)
+    {
+        if (cube == null) yield break;
+        
+        // Dramatic fall animation
+        float startHeight = 4f;
+        float fallDuration = 0.8f;
+        float elapsed = 0f;
+        Vector3 targetPos = new Vector3(cube.position.x, 1f, cube.position.y);
+        Vector3 startPos = new Vector3(cube.position.x, startHeight, cube.position.y);
+        
+        // Scale effect (starts slightly larger)
+        cube.transform.localScale = new Vector3(1.2f, 1.2f, 1.2f);
+        
+        // Create a random rotation axis so each cube spins differently
+        Vector3 rotationAxis = new Vector3(
+            Random.Range(-1f, 1f),
+            Random.Range(-1f, 1f),
+            Random.Range(-1f, 1f)
+        ).normalized;
+        
+        float rotationSpeed = Random.Range(180f, 360f); // degrees per second
+        
+        while (elapsed < fallDuration)
+        {
+            elapsed += Time.deltaTime;
+            float t = elapsed / fallDuration;
+            
+            // Easing function for dramatic fall (accelerating)
+            float eased = t * t;
+            
+            // Calculate position with easing
+            Vector3 newPos = Vector3.Lerp(startPos, targetPos, eased);
+            cube.transform.position = newPos;
+            
+            // Gradually scale back to normal
+            cube.transform.localScale = Vector3.Lerp(
+                new Vector3(1.2f, 1.2f, 1.2f),
+                Vector3.one,
+                eased
+            );
+            
+            // Random rotation during fall
+            cube.transform.Rotate(rotationAxis, rotationSpeed * Time.deltaTime);
+            
+            yield return null;
+        }
+        
+        // Ensure final position/scale are exact
+        cube.transform.position = targetPos;
+        cube.transform.localScale = Vector3.one;
+        cube.transform.rotation = Quaternion.identity; // Reset rotation at end
+    }
+
     private Enumerations.CubeType GetRandomCubeType()
     {
         float random = Random.value;

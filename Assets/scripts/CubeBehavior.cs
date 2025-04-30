@@ -11,10 +11,11 @@ public class CubeBehavior : MonoBehaviour
     [Header("Animation Settings")]
     [SerializeField] private float moveDuration = 0.25f;
     [SerializeField] private float squashDuration = 0.25f;
-    
+    public bool isRainingCube = false;
     private GridManager grid;
     private bool isMoving = false;
     private bool isDestroyed = false;
+    
 
     public void Init(GridManager gridManager, Vector2Int startPos, int startLevel)
     {
@@ -38,36 +39,100 @@ public class CubeBehavior : MonoBehaviour
         StopAllCoroutines();
     }
 
-// In CubeBehavior.cs
-public bool MoveForward()
-{
-    if (isMoving || isDestroyed) return true;
-
-    position.y -= 1;
-
-    // Off the grid = escape
-    if (position.y < 0 || position.x < 0 || position.x >= grid.Width)
+    // In CubeBehavior.cs
+    public bool MoveForward()
     {
-        // Special handling for black cubes that escape
-        if (CubeType == Enumerations.CubeType.Black)
+        if (isMoving || isDestroyed) return true;
+
+        position.y -= 1;
+
+        // Check if this is a raining cube reaching the grid
+        if (isRainingCube && position.y == grid.Height - 1)
         {
-            WaveManager waveManager = FindObjectOfType<WaveManager>();
-            if (waveManager != null)
-            {
-                waveManager.RegisterEscapedBlackCube(position.x);
-                Debug.Log($"Black cube escaped at x={position.x}");
-            }
+            // Now the cube has reached the grid, it follows normal rules
+            isRainingCube = false;
+            
+            // Check if we're landing on another cube
+            CheckForCubeBelow();
         }
         
-        Debug.Log($"Cube escaped at level {level}");
-        Destroy(gameObject);
-        return false;
+        // Off the grid = escape (but raining cubes don't escape until they reach the grid)
+        if ((!isRainingCube && position.y < 0) || position.x < 0 || position.x >= grid.Width)
+        {
+            // Special handling for black cubes that escape
+            if (CubeType == Enumerations.CubeType.Black)
+            {
+                WaveManager waveManager = FindObjectOfType<WaveManager>();
+                if (waveManager != null)
+                {
+                    waveManager.RegisterEscapedBlackCube(position.x);
+                    Debug.Log($"Black cube escaped at x={position.x}");
+                }
+            }
+            
+            Debug.Log($"Cube escaped at level {level}");
+            Destroy(gameObject);
+            return false;
+        }
+
+        StartCoroutine(AnimateMove(position));
+        return true;
     }
 
-    StartCoroutine(AnimateMove(position));
-    return true;
-}
-
+    private void CheckForCubeBelow()
+    {
+        if (CubeType != Enumerations.CubeType.Black) return;
+        
+        // Find if there's a cube at our position
+        foreach (CubeBehavior cube in FindObjectsOfType<CubeBehavior>())
+        {
+            if (cube != this && // Not checking against ourselves
+                cube.position.x == position.x && 
+                cube.position.y == position.y)
+            {
+                // We found a cube below us, replace it
+                StartCoroutine(ReplaceExistingCube(cube));
+                break;
+            }
+        }
+    }
+    
+    private IEnumerator ReplaceExistingCube(CubeBehavior targetCube)
+    {
+        if (targetCube == null) yield break;
+        
+        // Flash effect on the target cube
+        Renderer renderer = targetCube.GetComponent<Renderer>();
+        if (renderer != null)
+        {
+            Color originalColor = renderer.material.color;
+            renderer.material.color = Color.white;
+            yield return new WaitForSeconds(0.1f);
+            renderer.material.color = originalColor;
+        }
+        
+        // Squash effect
+        Vector3 originalScale = targetCube.transform.localScale;
+        float duration = 0.2f;
+        float elapsed = 0f;
+        
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            float t = elapsed / duration;
+            
+            targetCube.transform.localScale = Vector3.Lerp(
+                originalScale,
+                new Vector3(originalScale.x * 1.4f, originalScale.y * 0.1f, originalScale.z * 1.4f),
+                t
+            );
+            
+            yield return null;
+        }
+        
+        // Remove the target cube
+        Destroy(targetCube.gameObject);
+    }
     private IEnumerator AnimateMove(Vector2Int newPos)
     {
         isMoving = true;

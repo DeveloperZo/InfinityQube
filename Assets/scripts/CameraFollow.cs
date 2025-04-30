@@ -2,12 +2,17 @@ using UnityEngine;
 
 public class CameraFollow : MonoBehaviour
 {
-    [SerializeField] private Transform target; // This will be your selector
+    [SerializeField] private Transform target; // The selector to follow
     [SerializeField] private float height = 7f;
     [SerializeField] private float distance = 5f;
-    [SerializeField] private float smoothTime = 0.3f;
+    [SerializeField] private float positionSmoothTime = 0.25f; // Smaller value for smoother transitions
+    [SerializeField] private float rotationSmoothTime = 0.2f;
+    [SerializeField] private Vector3 offset = new Vector3(0, 0, 0); // Fine-tune position if needed
     
-    private Vector3 velocity = Vector3.zero;
+    // Using separate velocities for more stable movement
+    private Vector3 positionVelocity = Vector3.zero;
+    private Vector3 lookAtVelocity = Vector3.zero;
+    private Vector3 currentLookAt;
     
     private void Start()
     {
@@ -23,22 +28,46 @@ public class CameraFollow : MonoBehaviour
             {
                 Debug.LogWarning("CameraFollow: No target assigned and no PlayerController found!");
                 enabled = false;
+                return;
             }
         }
+        
+        // Initialize look target
+        currentLookAt = target.position;
     }
     
     private void LateUpdate()
     {
         if (target == null) return;
         
-        // Calculate the desired position
-        Vector3 targetPosition = target.position;
+        // Calculate the desired camera position
+        Vector3 targetPosition = target.position + offset;
         Vector3 desiredPosition = targetPosition - Vector3.forward * distance + Vector3.up * height;
         
         // Smoothly move the camera to that position
-        transform.position = Vector3.SmoothDamp(transform.position, desiredPosition, ref velocity, smoothTime);
+        transform.position = Vector3.SmoothDamp(transform.position, desiredPosition, ref positionVelocity, positionSmoothTime);
         
-        // Look at the target
-        transform.LookAt(targetPosition);
+        // Smoothly update the look target (prevents jitter when the selector jumps positions)
+        currentLookAt = Vector3.SmoothDamp(currentLookAt, targetPosition, ref lookAtVelocity, rotationSmoothTime);
+        
+        // Look at the smoothed target position
+        transform.LookAt(currentLookAt);
+    }
+    
+    // Public method to instantly update camera on scene changes or warps
+    public void ForceUpdatePosition()
+    {
+        if (target == null) return;
+        
+        Vector3 targetPosition = target.position + offset;
+        Vector3 desiredPosition = targetPosition - Vector3.forward * distance + Vector3.up * height;
+        
+        transform.position = desiredPosition;
+        currentLookAt = targetPosition;
+        transform.LookAt(currentLookAt);
+        
+        // Reset velocities
+        positionVelocity = Vector3.zero;
+        lookAtVelocity = Vector3.zero;
     }
 }

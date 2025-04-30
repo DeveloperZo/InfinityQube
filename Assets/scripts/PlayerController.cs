@@ -11,6 +11,8 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private int maxMarkers = 2;
     [SerializeField] private Color selectorColor = Color.yellow;
     [SerializeField] private float selectorHeight = 0.2f;
+    [Header("Speed Control")]
+    [SerializeField] private KeyCode speedUpKey = KeyCode.LeftShift;
 
     private int currentMarkers = 0;
     private int selX = 0, selZ = 0;
@@ -18,6 +20,7 @@ public class PlayerController : MonoBehaviour
     private Renderer selectorRenderer;
     private Queue<Vector2Int> markerQueue = new Queue<Vector2Int>(); // Track marker order
     private bool isInitialized = false;
+    private bool isSpeedingUp = false;
 
     private void Awake()
     {
@@ -75,6 +78,7 @@ public class PlayerController : MonoBehaviour
         HandleMarkerPlacement();
         HandleMarkerTrigger();
         HandleDetonation();
+        HandleSpeedControl();
     }
 
     private void HandleMovement()
@@ -179,7 +183,22 @@ public class PlayerController : MonoBehaviour
         }
         }
     }
-
+    private void HandleSpeedControl()
+    {
+        bool wasSpeedingUp = isSpeedingUp;
+        isSpeedingUp = Input.GetKey(speedUpKey);
+        
+        // Only notify on state changes to avoid constant calls
+        if (isSpeedingUp != wasSpeedingUp)
+        {
+            // Find and notify WaveManager
+            WaveManager waveManager = FindObjectOfType<WaveManager>();
+            if (waveManager != null)
+            {
+                waveManager.SetSpeedState(isSpeedingUp);
+            }
+        }
+    }
     public void ResetMarkers()
     {
         currentMarkers = 0;
@@ -187,16 +206,16 @@ public class PlayerController : MonoBehaviour
     }
 
     // In PlayerController.cs - Update() method
-private void CheckForGameOver()
-{
-    // Check all active cubes for collision with player
-    foreach (CubeBehavior cube in FindObjectsOfType<CubeBehavior>())
+    private void CheckForGameOver()
     {
-        if (cube.position.x == selX && cube.position.y == selZ)
+        // Check all active cubes for collision with player
+        foreach (CubeBehavior cube in FindObjectsOfType<CubeBehavior>())
         {
-            
-            return;
+            if (cube.position.x == selX && cube.position.y == selZ)
+            {
+                
+                return;
+            }
         }
     }
-}
 }
