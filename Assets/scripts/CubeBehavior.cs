@@ -44,7 +44,13 @@ public class CubeBehavior : MonoBehaviour
     {
         if (isMoving || isDestroyed) return true;
 
+        // Store previous position for logging
+        Vector2Int oldPos = position;
+
         position.y -= 1;
+
+        // Debug logging to track cube movement
+        Debug.Log($"Cube moving from ({oldPos.x}, {oldPos.y}) to ({position.x}, {position.y})");
 
         // Check if this is a raining cube reaching the grid
         if (isRainingCube && position.y == grid.Height - 1)
@@ -146,7 +152,7 @@ public class CubeBehavior : MonoBehaviour
         while (elapsed < moveDuration)
         {
             if (isDestroyed) yield break;
-            
+
             elapsed += Time.deltaTime;
             float t = Mathf.Clamp01(elapsed / moveDuration);
 
@@ -156,15 +162,12 @@ public class CubeBehavior : MonoBehaviour
             yield return null;
         }
 
-        if (isDestroyed) yield break;
+        // Ensure position is exactly at destination
+        if (!isDestroyed)
+        {
+            transform.position = end;
+        }
 
-        // Weighty visual squash
-        transform.position = end;
-        transform.localScale = new Vector3(1.05f, 0.9f, 1.05f);
-        yield return new WaitForSeconds(squashDuration);
-        
-        if (isDestroyed) yield break;
-        
         transform.localScale = Vector3.one;
 
         // Check for marker interaction (guard against destroyed tiles)
