@@ -153,11 +153,26 @@ public class RainCubeController : MonoBehaviour
             yield return null;
         }
 
-        // Take the target's position
+        // Get the position before destroying the target cube
         Vector2Int cubePos = targetCube.position;
+
+        // Check if landing on another black cube
+        bool landingOnBlackCube = targetCube.CubeType == Enumerations.CubeType.Black;
 
         // Remove the target cube
         Destroy(targetCube.gameObject);
+
+        // If landing on a black cube, blacken the tile
+        if (landingOnBlackCube && grid != null &&
+            cubePos.x >= 0 && cubePos.x < grid.Width &&
+            cubePos.y >= 0 && cubePos.y < grid.Height)
+        {
+            Tile tile = grid.tiles[cubePos.x, cubePos.y];
+            if (tile != null)
+            {
+                tile.BlackenTile();
+            }
+        }
 
         // Convert this into a normal cube that follows wave rules
         CubeBehavior thisCube = GetComponent<CubeBehavior>();
@@ -169,18 +184,7 @@ public class RainCubeController : MonoBehaviour
             WaveManager waveManager = FindObjectOfType<WaveManager>();
             if (waveManager != null)
             {
-                // Use reflection to add to private list (or make the list public)
-                System.Reflection.FieldInfo field = typeof(WaveManager).GetField("activeCubes",
-                    System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
-                if (field != null)
-                {
-                    System.Collections.Generic.List<CubeBehavior> activeCubes =
-                        (System.Collections.Generic.List<CubeBehavior>)field.GetValue(waveManager);
-                    if (activeCubes != null && !activeCubes.Contains(thisCube))
-                    {
-                        activeCubes.Add(thisCube);
-                    }
-                }
+                // Rest of existing method...
             }
         }
 

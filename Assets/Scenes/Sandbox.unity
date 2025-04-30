@@ -214,6 +214,7 @@ MonoBehaviour:
   normalMoveInterval: 0.5
   fastMoveInterval: 0.15
   isSpeedingUp: 0
+  activeCubes: []
 --- !u!4 &487637474
 Transform:
   m_ObjectHideFlags: 0
@@ -493,6 +494,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1193796432}
   - component: {fileID: 1193796431}
+  - component: {fileID: 1193796433}
   m_Layer: 0
   m_Name: Debugger
   m_TagString: Untagged
@@ -521,6 +523,7 @@ MonoBehaviour:
   spawnCubeKey: 116
   toggleDebugModeKey: 121
   resetKey: 114
+  multiDropKey: 103
   spawnColumn: 3
   showDebugVisualization: 1
 --- !u!4 &1193796432
@@ -538,6 +541,19 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1193796433
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1193796430}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7a7d0c12f8ed67e4ea781a8484be7438, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  waveManager: {fileID: 487637473}
 --- !u!1 &1439096050 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 1728893673582764340, guid: f90c16e773c18f54eb1b70ddc1136373, type: 3}

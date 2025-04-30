@@ -117,32 +117,31 @@ public class PlayerController : MonoBehaviour
         transform.position = new Vector3(selX, selectorHeight, selZ);
     }
 
+    // In PlayerController.cs, update HandleMarkerPlacement
     private void HandleMarkerPlacement()
     {
         if (Input.GetKeyDown(KeyCode.Space))
         {
             if (selX < 0 || selX >= grid.Width || selZ < 0 || selZ >= grid.Height)
                 return;
-                
+
             Tile currentTile = grid.tiles[selX, selZ];
             if (currentTile == null) return;
 
+            // Skip blackened tiles
+            if (currentTile.IsBlackened)
+            {
+                // Optional: add feedback that this tile can't be marked
+                return;
+            }
+
             if (!currentTile.HasMarker)
             {
-                if (currentMarkers < maxMarkers)
-                {
-                    currentTile.PlaceMarker();
-                    markerQueue.Enqueue(new Vector2Int(selX, selZ)); // Track marker order
-                    currentMarkers++;
-                }
+                // Rest of existing method...
             }
             else
             {
-                currentTile.ClearMarker();
-                // Use a new queue excluding this position
-                markerQueue = new Queue<Vector2Int>(
-                    markerQueue.Where(pos => pos.x != selX || pos.y != selZ));
-                currentMarkers--;
+                // Rest of existing method...
             }
         }
     }

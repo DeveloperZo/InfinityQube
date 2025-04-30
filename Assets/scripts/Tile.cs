@@ -9,12 +9,15 @@ public class Tile : MonoBehaviour
     [SerializeField] private float markerScale = 0.5f;
     [SerializeField] private Color markerColor = Color.blue;
     [SerializeField] private Color markedTileColor = new Color(1f, 0.4f, 0.4f);
-    
+
+    public bool IsBlackened => isBlackened;
+
     private GameObject markerObj;
     private Color originalColor;
     private Renderer tileRenderer;
     private CubeBehavior currentCube;
     private bool isInitialized = false;
+    private bool isBlackened = false;
 
     private void Awake()
     {
@@ -53,7 +56,7 @@ public class Tile : MonoBehaviour
 
     public void PlaceMarker()
     {
-        if (!isInitialized || hasMarker) return;
+        if (!isInitialized || hasMarker || isBlackened) return;
 
         hasMarker = true;
 
@@ -78,6 +81,18 @@ public class Tile : MonoBehaviour
         if (tileRenderer != null)
         {
             tileRenderer.material.color = markedTileColor;
+        }
+    }
+
+    public void BlackenTile()
+    {
+        isBlackened = true;
+        ClearMarker(); // Remove any existing marker
+
+        // Visual indication
+        if (tileRenderer != null)
+        {
+            tileRenderer.material.color = Color.black;
         }
     }
 

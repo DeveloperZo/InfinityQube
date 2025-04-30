@@ -28,11 +28,14 @@ public class DetonationManager : MonoBehaviour
         }
     }
 
-    // Register a detonation point (called when a green cube is captured)
+    // In DetonationManager.cs, update RegisterDetonationPoint
     public void RegisterDetonationPoint(Vector2Int position)
     {
         if (!IsValidPosition(position)) return;
-        
+
+        Tile tile = gridManager.tiles[position.x, position.y];
+        if (tile == null || tile.IsBlackened) return; // Skip blackened tiles
+
         if (!detonationPoints.Contains(position))
         {
             detonationPoints.Add(position);
