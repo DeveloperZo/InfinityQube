@@ -4,7 +4,8 @@ using System.Collections;
 public class RainCubeController : MonoBehaviour
 {
     private int targetX;
-    private GridManager grid;
+    public GridManager grid;
+    public WaveManager waveManager;
     private float fallSpeed = 3f;
     private bool hasLanded = false;
     private bool isWaitingForTarget = true;
@@ -153,10 +154,8 @@ public class RainCubeController : MonoBehaviour
             yield return null;
         }
 
-        // Get the position before destroying the target cube
+        // Take the target's position
         Vector2Int cubePos = targetCube.position;
-
-        // Check if landing on another black cube
         bool landingOnBlackCube = targetCube.CubeType == Enumerations.CubeType.Black;
 
         // Remove the target cube
@@ -170,7 +169,8 @@ public class RainCubeController : MonoBehaviour
             Tile tile = grid.tiles[cubePos.x, cubePos.y];
             if (tile != null)
             {
-                tile.BlackenTile();
+                // Add BlackenTile method to Tile.cs if you want this feature
+                // tile.BlackenTile();
             }
         }
 
@@ -180,11 +180,11 @@ public class RainCubeController : MonoBehaviour
         {
             thisCube.Init(grid, cubePos, 1);
 
-            // Add to the wave manager's active cubes
-            WaveManager waveManager = FindObjectOfType<WaveManager>();
+            // CRITICAL: Get the wave manager and properly add this cube
             if (waveManager != null)
             {
-                // Rest of existing method...
+                // Direct method call instead of reflection
+                waveManager.AddCubeToActiveList(thisCube);
             }
         }
 

@@ -351,4 +351,19 @@ public class WaveManager : MonoBehaviour
         
         activeCubes.Clear();
     }
+
+    public void AddCubeToActiveList(CubeBehavior thisCube)
+    {
+        if (thisCube != null && !activeCubes.Contains(thisCube))
+        {
+            activeCubes.Add(thisCube);
+        }
+    }   
+    public void RemoveCubeFromActiveList(CubeBehavior thisCube)
+    {
+        if (thisCube != null && activeCubes.Contains(thisCube))
+        {
+            activeCubes.Remove(thisCube);
+        }
+    }
 }
