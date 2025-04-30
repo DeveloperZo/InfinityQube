@@ -149,11 +149,6 @@ public class WaveManager : MonoBehaviour
             grid.ClearAllMarkers();
         }
         
-        if (player != null)
-        {
-            player.ResetMarkers();
-            player.enabled = false;
-        }
         
         waveActive = false;
         waveCoroutine = null;

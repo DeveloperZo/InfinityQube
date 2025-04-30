@@ -181,6 +181,7 @@ GameObject:
   m_Component:
   - component: {fileID: 487637474}
   - component: {fileID: 487637473}
+  - component: {fileID: 487637475}
   m_Layer: 0
   m_Name: GameManager
   m_TagString: Untagged
@@ -207,10 +208,12 @@ MonoBehaviour:
   - {fileID: 1728893673582764340, guid: 28923bfb13f3dde44b857f03a0188e95, type: 3}
   player: {fileID: 885266531}
   waveSize: 3
-  cubeMoveInterval: 2
   waveStartDelay: 0.75
   normalCubeChance: 0.7
   greenCubeChance: 0.2
+  normalMoveInterval: 0.5
+  fastMoveInterval: 0.15
+  isSpeedingUp: 0
 --- !u!4 &487637474
 Transform:
   m_ObjectHideFlags: 0
@@ -226,6 +229,18 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &487637475
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 487637472}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1a32b1f57cf1c6c44a612e156af35f45, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &885266525
 GameObject:
   m_ObjectHideFlags: 0
@@ -348,6 +363,7 @@ MonoBehaviour:
   maxMarkers: 2
   selectorColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   selectorHeight: 0.2
+  speedUpKey: 304
 --- !u!4 &961395644 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 8153240350979894021, guid: 026a402b860389d4aaea0e4f0b5c1ff6, type: 3}
@@ -467,6 +483,61 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 28923bfb13f3dde44b857f03a0188e95, type: 3}
+--- !u!1 &1193796430
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1193796432}
+  - component: {fileID: 1193796431}
+  m_Layer: 0
+  m_Name: Debugger
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1193796431
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1193796430}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d4b6471f30b49b347add0b0896530938, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  blackCubePrefab: {fileID: 1728893673582764340, guid: 28923bfb13f3dde44b857f03a0188e95, type: 3}
+  grid: {fileID: 1786583425}
+  platform: {fileID: 1786583426}
+  hoverHeight: 6
+  autoSpawnTestCubes: 0
+  autoSpawnInterval: 3
+  spawnCubeKey: 116
+  toggleDebugModeKey: 121
+  resetKey: 114
+  spawnColumn: 3
+  showDebugVisualization: 1
+--- !u!4 &1193796432
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1193796430}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1439096050 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 1728893673582764340, guid: f90c16e773c18f54eb1b70ddc1136373, type: 3}
@@ -728,7 +799,9 @@ MonoBehaviour:
   target: {fileID: 885266529}
   height: 7
   distance: 5
-  smoothTime: 0.3
+  positionSmoothTime: 0.25
+  rotationSmoothTime: 0.2
+  offset: {x: 0, y: 0, z: 0}
 --- !u!1 &2046394294
 GameObject:
   m_ObjectHideFlags: 0
@@ -834,3 +907,4 @@ SceneRoots:
   - {fileID: 1637672741}
   - {fileID: 885266529}
   - {fileID: 89692589}
+  - {fileID: 1193796432}
