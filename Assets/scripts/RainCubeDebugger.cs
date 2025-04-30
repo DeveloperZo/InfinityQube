@@ -16,6 +16,7 @@ public class RainCubeDebugger : MonoBehaviour
     [SerializeField] private KeyCode spawnCubeKey = KeyCode.T;
     [SerializeField] private KeyCode toggleDebugModeKey = KeyCode.Y;
     [SerializeField] private KeyCode resetKey = KeyCode.R; // Reset key
+    [SerializeField] private KeyCode multiDropKey = KeyCode.G;
 
     [Header("Test Parameters")]
     [SerializeField] private int spawnColumn = 3;
@@ -28,7 +29,7 @@ public class RainCubeDebugger : MonoBehaviour
     private void Start()
     {
         // Initialize the list
-        spawnedTestCubes = new List<GameObject>();
+        this.spawnedTestCubes = new List<GameObject>();
 
         if (grid == null)
             grid = FindObjectOfType<GridManager>();
@@ -130,8 +131,30 @@ public class RainCubeDebugger : MonoBehaviour
         {
             ResetDebugTest();
         }
+        if (debugMode && Input.GetKeyDown(multiDropKey))
+        {
+            DropCubesInAllColumns();
+        }
     }
+    private void DropCubesInAllColumns()
+    {
+        for (int x = 0; x < grid.Width; x++)
+        {
+            Vector3 spawnPos = new Vector3(x, hoverHeight, grid.Height - 1);
 
+            GameObject cube = Instantiate(blackCubePrefab, spawnPos, Quaternion.identity);
+            if (cube != null)
+            {
+                cube.name = $"TestRainCube_{x}_{System.DateTime.Now.Ticks}";
+                spawnedTestCubes.Add(cube);
+
+                TestRainCubeDebugger controller = cube.AddComponent<TestRainCubeDebugger>();
+                controller.Initialize(x, grid, hoverHeight);
+            }
+        }
+
+        Debug.Log($"Dropped test cubes in all columns");
+    }
     private void OnDestroy()
     {
         // Clean up any remaining test objects and ensure the list is properly handled
@@ -156,19 +179,12 @@ public class RainCubeDebugger : MonoBehaviour
             yield return new WaitForSeconds(autoSpawnInterval);
         }
     }
-
-    // In RainCubeDebugger.cs, update the SpawnTestRainCube method
+    // Update the SpawnTestRainCube method in RainCubeDebugger.cs
     private void SpawnTestRainCube()
     {
-        // Add a small random offset to prevent perfect stacking of debugging cubes
-        float randomOffsetX = Random.Range(-0.05f, 0.05f);
-        float randomOffsetZ = Random.Range(-0.05f, 0.05f);
-        Vector3 spawnPos = new Vector3(
-            spawnColumn + randomOffsetX,
-            hoverHeight,
-            grid.Height - 1 + randomOffsetZ
-        );
-
+        // Spawn at exactly the specified column and height
+        Vector3 spawnPos = new Vector3(spawnColumn, hoverHeight, grid.Height - 1);
+        
         // Instantiate the black cube
         GameObject cube = Instantiate(blackCubePrefab, spawnPos, Quaternion.identity);
         if (cube != null)
@@ -176,14 +192,14 @@ public class RainCubeDebugger : MonoBehaviour
             // Add a unique name for easier debugging
             string uniqueId = System.DateTime.Now.Ticks.ToString();
             cube.name = $"TestRainCube_{spawnColumn}_{uniqueId}";
-
-            Debug.Log($"Test Rain Cube {uniqueId} spawned at column {spawnColumn}, height {hoverHeight}");
-
+            
+            Debug.Log($"Test Rain Cube spawned at column {spawnColumn}, height {hoverHeight}");
+            
             // Add to our tracking list
             spawnedTestCubes.Add(cube);
-
-            // Attach the real rain controller
-            TestRainCubeController controller = cube.AddComponent<TestRainCubeController>();
+            
+            // Attach the controller that immediately falls
+            TestRainCubeDebugger controller = cube.AddComponent<TestRainCubeDebugger>();
             controller.Initialize(spawnColumn, grid, hoverHeight);
         }
     }
@@ -233,183 +249,4 @@ public class RainCubeDebugger : MonoBehaviour
 
         GUILayout.EndArea();
     }
-}
-
-// Simplified test controller specifically for debugging
-public class TestRainCubeController : MonoBehaviour
-{
-    private int targetX;
-    private GridManager grid;
-    private float hoverHeight;
-    private float fallSpeed = 4f;
-    private bool hasLanded = false;
-    private bool isTracking = true;
-    private string uniqueId; // Add unique ID for each controller
-
-    public void Initialize(int x, GridManager gridManager, float height)
-    {
-        targetX = x;
-        grid = gridManager;
-        hoverHeight = height;
-        uniqueId = System.Guid.NewGuid().ToString(); // Generate unique ID
-
-        // Start hovering
-        StartCoroutine(HoverAndTrack());
-    }
-
-    private IEnumerator HoverAndTrack()
-    {
-        // Set initial position
-        transform.position = new Vector3(targetX, hoverHeight, grid.Height - 1);
-
-        // Visual indicator
-        GameObject indicator = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-        indicator.transform.localScale = Vector3.one * 0.3f;
-        indicator.transform.position = transform.position;
-        indicator.GetComponent<Renderer>().material.color = Color.red;
-        Destroy(indicator.GetComponent<Collider>());
-        indicator.transform.SetParent(transform);
-
-        // Add slight random offset to position to avoid perfect overlap with other rain cubes
-        float randomOffset = Random.Range(-0.1f, 0.1f);
-        Vector3 basePosition = transform.position + new Vector3(randomOffset, 0, randomOffset);
-
-        while (isTracking)
-        {
-            // Simple hover animation
-            float hoverOffset = Mathf.Sin(Time.time * 2 + Random.Range(0f, 6.28f)) * 0.1f;
-            transform.position = basePosition + Vector3.up * hoverOffset;
-
-            // Check for target cubes
-            CubeBehavior targetCube = FindTargetBelow();
-            if (targetCube != null)
-            {
-                Debug.Log($"Rain cube {uniqueId}: Target cube found at ({targetCube.position.x}, {targetCube.position.y})");
-                Destroy(indicator);
-                yield return StartCoroutine(FallOnto(targetCube));
-                break;
-            }
-
-            yield return null;
-        }
-    }
-
-    private CubeBehavior FindTargetBelow()
-    {
-        // Cast a ray down to find cubes
-        RaycastHit[] hits = Physics.RaycastAll(transform.position, Vector3.down, 10f);
-
-        // Sort hits by distance
-        System.Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
-
-        foreach (RaycastHit hit in hits)
-        {
-            CubeBehavior cube = hit.collider.GetComponent<CubeBehavior>();
-            if (cube != null && cube.gameObject != gameObject)
-            {
-                // Only target cubes, not grid tiles
-                if (hit.collider.gameObject.CompareTag("Tile"))
-                {
-                    continue;
-                }
-                return cube;
-            }
-        }
-
-        return null;
-    }
-
-    private IEnumerator FallOnto(CubeBehavior targetCube)
-    {
-        if (targetCube == null) yield break;
-
-        isTracking = false;
-
-        Debug.Log($"Rain cube {uniqueId}: Starting fall animation");
-
-        Vector3 startPos = transform.position;
-        Vector3 targetPos = targetCube.transform.position + Vector3.up * 0.1f;
-
-        float distance = Vector3.Distance(startPos, targetPos);
-        float duration = distance / fallSpeed;
-        float elapsed = 0f;
-
-        while (elapsed < duration)
-        {
-            if (targetCube == null)
-            {
-                Debug.Log($"Rain cube {uniqueId}: Target cube destroyed during fall");
-                Destroy(gameObject);
-                yield break;
-            }
-
-            elapsed += Time.deltaTime;
-            float t = elapsed / duration;
-
-            // Quadratic easing for acceleration
-            float eased = t * t;
-            transform.position = Vector3.Lerp(startPos, targetPos, eased);
-
-            yield return null;
-        }
-
-        if (targetCube != null)
-        {
-            Debug.Log($"Rain cube {uniqueId}: Landing on target cube");
-            yield return StartCoroutine(LandOnCube(targetCube));
-        }
-    }
-
-    private IEnumerator LandOnCube(CubeBehavior targetCube)
-    {
-        // Flash effect
-        Renderer renderer = targetCube.GetComponent<Renderer>();
-        if (renderer != null)
-        {
-            Color original = renderer.material.color;
-            renderer.material.color = Color.white;
-            yield return new WaitForSeconds(0.1f);
-            renderer.material.color = original;
-        }
-
-        // Squash effect
-        Vector3 originalScale = targetCube.transform.localScale;
-        float duration = 0.3f;
-        float elapsed = 0f;
-
-        while (elapsed < duration)
-        {
-            elapsed += Time.deltaTime;
-            float t = elapsed / duration;
-
-            targetCube.transform.localScale = Vector3.Lerp(
-                originalScale,
-                new Vector3(originalScale.x * 1.5f, originalScale.y * 0.1f, originalScale.z * 1.5f),
-                t
-            );
-
-            yield return null;
-        }
-
-        // Replace target cube
-        Vector2Int position = targetCube.position;
-        Destroy(targetCube.gameObject);
-
-        // Take its place in the grid
-        transform.position = new Vector3(position.x, 1f, position.y);
-
-        CubeBehavior thisCube = GetComponent<CubeBehavior>();
-        if (thisCube != null)
-        {
-            thisCube.Init(grid, position, 1);
-
-            // Add to wave manager's active cubes - you'll need a proper way to do this
-            // in your actual implementation
-            Debug.Log($"Rain cube {uniqueId}: Now in grid at position ({position.x}, {position.y})");
-        }
-
-        // Remove this controller
-        Destroy(this);
-    }
-
 }

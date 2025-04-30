@@ -22,7 +22,7 @@ public class WaveManager : MonoBehaviour
     [SerializeField] private float normalMoveInterval = 0.75f; // Default speed
     [SerializeField] private float fastMoveInterval = 0.1f;
     public bool isSpeedingUp = false;
-    private List<CubeBehavior> activeCubes = new List<CubeBehavior>();
+    public List<CubeBehavior> activeCubes = new List<CubeBehavior>();
     private List<int> escapedBlackCubePositions = new List<int>();
     private bool waveActive = false;
     private Coroutine waveCoroutine;
@@ -138,6 +138,22 @@ public class WaveManager : MonoBehaviour
                 }
             }
 
+            // Ensure TargetRain prefabs are converted to Prefab_black when falling again
+            for (int i = activeCubes.Count - 1; i >= 0; i--)
+            {
+                if (activeCubes[i] != null && activeCubes[i].gameObject.name.Contains("TargetRain"))
+                {
+                    activeCubes[i].gameObject.name = "Prefab_black";
+
+                    // Optionally update the material or appearance to match Prefab_black
+                    Renderer renderer = activeCubes[i].GetComponent<Renderer>();
+                    if (renderer != null)
+                    {
+                        renderer.material.color = Color.black; // Example: set to black color
+                    }
+                }
+            }
+
             // Use the appropriate move interval based on speed up state
             float currentMoveInterval = isSpeedingUp ? fastMoveInterval : normalMoveInterval;
             yield return new WaitForSeconds(currentMoveInterval);
@@ -162,7 +178,6 @@ public class WaveManager : MonoBehaviour
     private void SpawnCubes()
     {
         activeCubes.Clear();
-
         // Guard against missing grid
         if (grid == null) return;
         List<int> spawnZs = new List<int>();
@@ -207,9 +222,7 @@ public class WaveManager : MonoBehaviour
         // Now spawn any escaped black cubes that need to "rain down"
         SpawnRainingBlackCubes();
     }
-// In WaveManager.cs, modify the SpawnRainingBlackCubes method
-// In WaveManager.cs
-// In WaveManager.cs
+
     private void SpawnRainingBlackCubes()
     {
         if (escapedBlackCubePositions.Count == 0) return;
