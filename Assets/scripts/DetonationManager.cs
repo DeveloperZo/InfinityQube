@@ -130,23 +130,53 @@ public class DetonationManager : MonoBehaviour
         
         // Remove this detonation point
         detonationPoints.Remove(center);
-        ResetTileMaterial(gridManager.tiles[center.x, center.y]);
-        
-        Debug.Log($"Detonating 3x3 area at {center}");
+        var tile = gridManager.tiles[center.x, center.y];
 
-        // Process the 3x3 area
-        for (int x = center.x - 1; x <= center.x + 1; x++)
+        if (tile.IsPrimed)
         {
-            for (int y = center.y - 1; y <= center.y + 1; y++)
+            tile.Charges--;
+            if (tile.Charges == 0)
             {
-                Vector2Int position = new Vector2Int(x, y);
-                if (IsValidPosition(position))
+                tile.SetPrime(false);
+                ResetTileMaterial(gridManager.tiles[center.x, center.y]);
+            }
+            // Process the 2x2 area
+            for (int x = center.x - 1; x <= center.x; x++)
+            {
+                for (int y = center.y - 1; y <= center.y; y++)
                 {
-                    // Visual effect
-                    StartCoroutine(FlashTile(gridManager.tiles[x, y]));
-                    
-                    // Process cubes at this position
-                    DetonateCubesAt(position);
+                    Vector2Int position = new Vector2Int(x, y);
+                    if (IsValidPosition(position))
+                    {
+                        // Visual effect
+                        StartCoroutine(FlashTile(gridManager.tiles[x, y]));
+
+                        // Process cubes at this position
+                        DetonateCubesAt(position);
+                    }
+                }
+            }
+        }
+        else
+        {
+            ResetTileMaterial(gridManager.tiles[center.x, center.y]);
+
+            Debug.Log($"Detonating 3x3 area at {center}");
+
+            // Process the 3x3 area
+            for (int x = center.x - 1; x <= center.x + 1; x++)
+            {
+                for (int y = center.y - 1; y <= center.y + 1; y++)
+                {
+                    Vector2Int position = new Vector2Int(x, y);
+                    if (IsValidPosition(position))
+                    {
+                        // Visual effect
+                        StartCoroutine(FlashTile(gridManager.tiles[x, y]));
+
+                        // Process cubes at this position
+                        DetonateCubesAt(position);
+                    }
                 }
             }
         }

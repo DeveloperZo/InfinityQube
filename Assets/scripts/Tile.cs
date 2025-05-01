@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using static Enumerations;
 
@@ -13,6 +14,7 @@ public class Tile : MonoBehaviour
 
 
     public bool IsBlackened => isBlackened;
+    public bool IsPrimed => isPrimed;
     public TileState currentState = TileState.Normal;
     private Color normalColor;
     private Color transformedColor = new Color(0.3f, 0.3f, 0.3f); // Dark gray
@@ -24,7 +26,7 @@ public class Tile : MonoBehaviour
     public CubeBehavior currentCube;
     private bool isInitialized = false;
     private bool isBlackened = false;
-
+    private bool isPrimed = false;
     private void Awake()
     {
         tileRenderer = GetComponent<Renderer>();
@@ -45,8 +47,8 @@ public class Tile : MonoBehaviour
                 BlackenTile();
             }
             else if(cubeType == CubeType.Green) 
-            { 
-            
+            {
+                PrimeTile();
             }
             else if(cubeType == CubeType.Normal)
             {
@@ -81,6 +83,8 @@ public class Tile : MonoBehaviour
 
     public bool HasMarker => hasMarker;
 
+    public int Charges { get; set; }
+
     public void PlaceMarker()
     {
         if (!isInitialized || hasMarker || isBlackened) return;
@@ -110,12 +114,27 @@ public class Tile : MonoBehaviour
     public void BlackenTile()
     {
         isBlackened = true;
+        isPrimed = false;
         ClearMarker(); // Remove any existing marker
 
         // Visual indication
         if (tileRenderer != null)
         {
             tileRenderer.material.color = Color.black;
+        }
+    }
+
+    public void PrimeTile()
+    {
+        isBlackened = false;
+        isPrimed = true;
+        Charges = 3;
+        ClearMarker(); // Remove any existing marker
+
+        // Visual indication
+        if (tileRenderer != null)
+        {
+            tileRenderer.material.color = Color.green;
         }
     }
 
@@ -231,5 +250,10 @@ public class Tile : MonoBehaviour
         
         // Clear cube reference after processing
         currentCube = null;
+    }
+
+    internal void SetPrime(bool isPrimed)
+    {
+        this.isPrimed = isPrimed;
     }
 }
