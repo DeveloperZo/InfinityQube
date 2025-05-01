@@ -214,6 +214,7 @@ MonoBehaviour:
   normalMoveInterval: 2
   fastMoveInterval: 0.15
   showDebugInfo: 0
+  returnIndicatorPrefab: {fileID: 0}
   isSpeedingUp: 0
   activeCubes: []
 --- !u!4 &487637474
@@ -494,7 +495,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1193796432}
-  - component: {fileID: 1193796431}
   - component: {fileID: 1193796433}
   m_Layer: 0
   m_Name: Debugger
@@ -503,30 +503,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1193796431
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1193796430}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d4b6471f30b49b347add0b0896530938, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  blackCubePrefab: {fileID: 1728893673582764340, guid: 28923bfb13f3dde44b857f03a0188e95, type: 3}
-  grid: {fileID: 1786583425}
-  platform: {fileID: 1786583426}
-  hoverHeight: 6
-  autoSpawnTestCubes: 0
-  autoSpawnInterval: 3
-  spawnCubeKey: 116
-  toggleDebugModeKey: 121
-  resetKey: 114
-  multiDropKey: 103
-  spawnColumn: 3
-  showDebugVisualization: 1
 --- !u!4 &1193796432
 Transform:
   m_ObjectHideFlags: 0
@@ -551,10 +527,20 @@ MonoBehaviour:
   m_GameObject: {fileID: 1193796430}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7a7d0c12f8ed67e4ea781a8484be7438, type: 3}
+  m_Script: {fileID: 11500000, guid: 193b0c08732199a4aa4413e94ce97d9a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  grid: {fileID: 1786583425}
   waveManager: {fileID: 487637473}
+  cubePrefabs:
+  - {fileID: 1728893673582764340, guid: f90c16e773c18f54eb1b70ddc1136373, type: 3}
+  - {fileID: 1728893673582764340, guid: 026a402b860389d4aaea0e4f0b5c1ff6, type: 3}
+  - {fileID: 1728893673582764340, guid: 28923bfb13f3dde44b857f03a0188e95, type: 3}
+  toggleDebugKey: 282
+  resetDebugKey: 283
+  placeTargetKey: 284
+  dropFallingKey: 285
+  spawnHeight: 5
 --- !u!1 &1439096050 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 1728893673582764340, guid: f90c16e773c18f54eb1b70ddc1136373, type: 3}

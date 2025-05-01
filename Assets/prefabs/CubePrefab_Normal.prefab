@@ -15,7 +15,7 @@ GameObject:
   - component: {fileID: 3541544329317113770}
   m_Layer: 0
   m_Name: CubePrefab_Normal
-  m_TagString: Tile
+  m_TagString: Cube
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -120,3 +120,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   level: 1
   position: {x: 0, y: 0}
+  CubeType: 0
+  moveDuration: 0.25
+  squashDuration: 0.25
+  isRainingCube: 0

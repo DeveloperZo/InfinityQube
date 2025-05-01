@@ -26,14 +26,14 @@ public class WaveManager : MonoBehaviour
 
     public bool isSpeedingUp = false;
     public List<CubeBehavior> activeCubes = new List<CubeBehavior>();
-    private List<int> escapedBlackCubePositions = new List<int>();
+    private List<Vector2> escapedBlackCubePositions = new List<Vector2>();
     private bool waveActive = false;
     private Coroutine waveCoroutine;
     private List<ReturnQueueItem> returnQueue = new List<ReturnQueueItem>();
     private class ReturnQueueItem
     {
         public Enumerations.CubeType cubeType;
-        public int xPosition;
+        public Vector2 position;
     }
 
     public void SetSpeedState(bool isSpeeding)
@@ -185,9 +185,9 @@ public class WaveManager : MonoBehaviour
         waveCoroutine = null;
     }
 
-    public void RegisterEscapedBlackCube(int xPosition)
+    public void RegisterEscapedBlackCube(Vector2 position)
     {
-        escapedBlackCubePositions.Add(xPosition);
+        escapedBlackCubePositions.Add(position);
     }
 
     // Add this new method for rain cubes to register with the wave system
@@ -210,7 +210,7 @@ public class WaveManager : MonoBehaviour
             returnQueue.Add(new ReturnQueueItem
             {
                 cubeType = cube.CubeType,
-                xPosition = cube.position.x
+                position = cube.position
             });
 
             // Log for debugging
@@ -223,24 +223,24 @@ public class WaveManager : MonoBehaviour
         // Process all queued cubes before starting a new wave
         foreach (ReturnQueueItem item in returnQueue)
         {
-            SpawnReturningCube(item.cubeType, item.xPosition);
+            SpawnReturningCube(item.cubeType, item.position);
         }
 
         returnQueue.Clear();
     }
 
-    private void SpawnReturningCube(Enumerations.CubeType cubeType, int xPosition)
+    private void SpawnReturningCube(Enumerations.CubeType cubeType, Vector2 position)
     {
         int prefabIndex = (int)cubeType;
         if (prefabIndex < 0 || prefabIndex >= cubePrefabs.Length) return;
 
         GameObject cube = Instantiate(cubePrefabs[prefabIndex],
-                                      new Vector3(xPosition, 5f, grid.Height),
+                                      new Vector3(position.x, 5f, position.y),
                                       Quaternion.identity);
 
         // Use your existing RainCubeController
         RainCubeController controller = cube.AddComponent<RainCubeController>();
-        controller.Initialize(xPosition, grid);
+        controller.Initialize(position, grid);
     }
 
     private void SpawnCubes()
@@ -307,11 +307,11 @@ public class WaveManager : MonoBehaviour
         }
 
         // For each escaped black cube
-        foreach (int x in escapedBlackCubePositions)
+        foreach (Vector2 position in escapedBlackCubePositions)
         {
             // Position is directly above the grid at the same X position
             // The Y is higher to create a raining effect
-            Vector3 spawnPos = new Vector3(x, 5f, grid.Height - 1);
+            Vector3 spawnPos = new Vector3(position.x, 5f, position.y);
 
             GameObject cube = Instantiate(cubePrefabs[blackCubeIndex], spawnPos, Quaternion.identity);
             if (cube != null)
@@ -325,7 +325,7 @@ public class WaveManager : MonoBehaviour
 
                 // Add a rain controller component to handle the specialized behavior
                 RainCubeController rainController = cube.AddComponent<RainCubeController>();
-                rainController.Initialize(x, grid);
+                rainController.Initialize(position, grid);
 
                 // Don't add to active cubes - the rain controller will handle movement
             }
@@ -375,7 +375,7 @@ public class WaveManager : MonoBehaviour
         // Create new indicators
         foreach (ReturnQueueItem item in returnQueue)
         {
-            Vector3 indicatorPos = new Vector3(item.xPosition, 6f, grid.Height);
+            Vector3 indicatorPos = new Vector3(item.position.x, 6f, item.position.y);
             GameObject indicator = Instantiate(returnIndicatorPrefab, indicatorPos, Quaternion.identity);
             indicator.tag = "ReturnIndicator";
 

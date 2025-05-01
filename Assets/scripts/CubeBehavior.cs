@@ -84,7 +84,7 @@ public class CubeBehavior : MonoBehaviour
                 WaveManager waveManager = FindObjectOfType<WaveManager>();
                 if (waveManager != null)
                 {
-                    waveManager.RegisterEscapedBlackCube(position.x);
+                    waveManager.RegisterEscapedBlackCube(position);
                     //Debug.Log($"Black cube escaped at x={position.x}");
                 }
             }
@@ -100,24 +100,19 @@ public class CubeBehavior : MonoBehaviour
 
     public void HandleVerticalImpact(Vector2Int position, GridManager grid)
     {
+        Tile tile = grid.tiles[position.x, position.y];
         // Find cube at landing position (if any)
-        CubeBehavior targetCube = null;
-        foreach (CubeBehavior cube in FindObjectsOfType<CubeBehavior>())
-        {
-            if (cube != this && cube.position.x == position.x && cube.position.y == position.y)
-            {
-                targetCube = cube;
-                break;
-            }
-        }
+        CubeBehavior targetCube = tile.currentCube;
 
+        if(targetCube == null )
+        {
+            tile.currentCube = this;
+        }
         // Black cube landing on black cube transforms the tile
-        if (CubeType == Enumerations.CubeType.Black &&
+        else if (CubeType == Enumerations.CubeType.Black &&
             targetCube != null &&
             targetCube.CubeType == Enumerations.CubeType.Black)
         {
-
-            Tile tile = grid.tiles[position.x, position.y];
             if (tile != null)
             {
                 tile.TransformTile(Enumerations.CubeType.Black);

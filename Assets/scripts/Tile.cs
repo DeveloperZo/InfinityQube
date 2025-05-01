@@ -21,7 +21,7 @@ public class Tile : MonoBehaviour
     private GameObject markerObj;
     private Color originalColor;
     private Renderer tileRenderer;
-    private CubeBehavior currentCube;
+    public CubeBehavior currentCube;
     private bool isInitialized = false;
     private bool isBlackened = false;
 
@@ -31,7 +31,7 @@ public class Tile : MonoBehaviour
         normalColor = tileRenderer.material.color;
     }
 
-    public void TransformTile(Enumerations.CubeType cubeType)
+    public void TransformTile(CubeType cubeType)
     {
         if (currentState != TileState.Transformed)
         {
@@ -39,8 +39,18 @@ public class Tile : MonoBehaviour
             transform.position = new Vector3(transform.position.x, -0.2f, transform.position.z);
             // Visual change
 
-            if(cubeType == Enumerations.CubeType.Black) {
+            if(cubeType == CubeType.Black) 
+            {
+                Debug.Log("Tile has been blackened");
                 BlackenTile();
+            }
+            else if(cubeType == CubeType.Green) 
+            { 
+            
+            }
+            else if(cubeType == CubeType.Normal)
+            {
+
             }
             
 
