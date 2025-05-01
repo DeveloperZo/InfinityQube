@@ -8,11 +8,21 @@ public class TimeFrozenTag : MonoBehaviour
 {
     // Just a tag component to identify frozen cubes
     public float frozenDuration = 1f; // Number of movement cycles to skip
+    public Color originalColor;
 
     void Start()
     {
         // Auto-destroy after a set time to prevent permanent freeze
         Destroy(this, 5f);
+    }
+
+    private void OnDestroy()
+    {
+        Renderer renderer = GetComponent<Renderer>();
+        if (renderer != null && originalColor != null)
+        {
+            renderer.material.color = originalColor;
+        }
     }
 }
 
