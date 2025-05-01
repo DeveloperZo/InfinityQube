@@ -66,6 +66,8 @@ public class Tile : MonoBehaviour
     private bool isInitialized = false;
     private bool isBlackened = false;
     private bool isPrimed = false;
+    public bool isPhasedZone { get; private set; }
+    private TextMesh countdownText;
     private void Awake()
     {
         tileRenderer = GetComponent<Renderer>();
@@ -183,6 +185,41 @@ public class Tile : MonoBehaviour
         }
     }
 
+    public void SetPhased(bool phased)
+    {
+        isPhasedZone = phased;
+
+        // Create countdown text if entering phased state
+        if (phased && countdownText == null)
+        {
+            GameObject textObj = new GameObject("CountdownText");
+            textObj.transform.SetParent(transform);
+            textObj.transform.localPosition = new Vector3(0, 1.5f, 0);
+            textObj.transform.rotation = Quaternion.Euler(90, 0, 0);
+
+            countdownText = textObj.AddComponent<TextMesh>();
+            countdownText.fontSize = 14;
+            countdownText.alignment = TextAlignment.Center;
+            countdownText.color = Color.red;
+        }
+
+        // Remove countdown text if exiting phased state
+        if (!phased && countdownText != null)
+        {
+            Destroy(countdownText.gameObject);
+            countdownText = null;
+        }
+    }
+
+    public void UpdatePhaseCountdown(int remaining)
+    {
+        if (countdownText != null)
+        {
+            countdownText.text = remaining.ToString();
+        }
+    }
+
+
     private void UpdateChargeVisuals()
     {
         if (tileRenderer != null && detonationCharges > 0 && detonationCharges <= chargeColors.Length)
@@ -286,6 +323,15 @@ public class Tile : MonoBehaviour
         {
             currentCube = cube;
         }
+        if (hasMarker && cube.CubeType == Enumerations.CubeType.Red)
+        {
+            // Trigger transience zone
+            TransienceManager transManager = FindObjectOfType<TransienceManager>();
+            if (transManager != null)
+            {
+                transManager.ActivateTransienceZone(new Vector2Int(x, y));
+            }
+        }
     }
 
     public void TriggerMarker()
@@ -351,5 +397,90 @@ public class Tile : MonoBehaviour
     internal void SetPrime(bool isPrimed)
     {
         this.isPrimed = isPrimed;
+    }
+
+    public void HandleBlackCubeLanding(CubeBehavior blackCube)
+    {
+        if (blackCube == null || blackCube.CubeType != Enumerations.CubeType.Black)
+            return;
+
+        if (IsBlackened)
+        {
+            // Black cube lands on blackened tile - nothing happens
+            Debug.Log("Black cube landed on blackened tile - no effect");
+            return;
+        }
+
+        if (HasCharges)
+        {
+            // Black cube lands on a charged tile (primed)
+            Debug.Log($"Black cube landed on charged tile with {DetonationCharges} charges");
+
+            // Consume charges and trigger a 2x2 mark based on charge level
+            DetonationManager detonationManager = FindObjectOfType<DetonationManager>();
+            if (detonationManager != null)
+            {
+                // Register a 2x2 pattern around this position
+                for (int dx = 0; dx <= 1; dx++)
+                {
+                    for (int dy = 0; dy <= 1; dy++)
+                    {
+                        int targetX = x + dx;
+                        int targetY = y + dy;
+
+                        GridManager grid = FindObjectOfType<GridManager>();
+                        if (grid != null && targetX < grid.Width && targetY < grid.Height)
+                        {
+                            detonationManager.RegisterDetonationPoint(new Vector2Int(targetX, targetY));
+                        }
+                    }
+                }
+
+                // Trigger the detonation
+                detonationManager.TriggerNextDetonation();
+            }
+
+            // Consume all charges
+            detonationCharges = 0;
+
+            // Reset to normal tile state
+            currentState = Enumerations.TileState.Normal;
+            if (tileRenderer != null)
+            {
+                tileRenderer.material.color = originalColor;
+            }
+            transform.position = new Vector3(transform.position.x, 0f, transform.position.z);
+            return;
+        }
+
+        // Check for time frozen state - we need to examine cubes on this tile
+        foreach (CubeBehavior cube in FindObjectsOfType<CubeBehavior>())
+        {
+            if (cube != blackCube && cube.position.x == x && cube.position.y == y)
+            {
+                TimeFrozenTag frozenTag = cube.GetComponent<TimeFrozenTag>();
+                if (frozenTag != null)
+                {
+                    // Black cube landed on time distorted tile - double the freeze
+                    frozenTag.frozenDuration *= 2;
+
+                    // Apply the same freeze to the black cube
+                    TimeFrozenTag blackFrozenTag = blackCube.gameObject.AddComponent<TimeFrozenTag>();
+                    if (blackFrozenTag != null)
+                    {
+                        blackFrozenTag.frozenDuration = frozenTag.frozenDuration;
+
+                        // Visual effect for frozen black cube
+                        Renderer blackRenderer = blackCube.GetComponent<Renderer>();
+                        if (blackRenderer != null)
+                        {
+                            blackFrozenTag.originalColor = blackRenderer.material.color;
+                            blackRenderer.material.color = new Color(0.3f, 0.3f, 0.5f); // Dark blue-gray
+                        }
+                    }
+                    return;
+                }
+            }
+        }
     }
 }

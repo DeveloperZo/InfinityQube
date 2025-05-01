@@ -53,18 +53,18 @@ public class CubeCollisionController : MonoBehaviour
                 break;
 
             case Enumerations.CubeType.Green:
-                // Black + Green = Diagonal detonation
+                // Black + Green = Diagonal detonation (slash pattern)
                 RegisterDiagonalPattern(position, Enumerations.CubeType.Green);
-                if (detonationManager != null)
-                {
-                    detonationManager.TriggerNextDetonation();
-                }
+                // Immediate trigger of the created detonation points
+                TriggerDiagonalDetonation(position);
                 Destroy(targetCube.gameObject);
                 break;
 
             case Enumerations.CubeType.Blue:
-                // Black + Blue = Diagonal time freeze
+                // Black + Blue = Diagonal time freeze (slash pattern)
                 RegisterDiagonalPattern(position, Enumerations.CubeType.Blue);
+                // Immediate trigger of the created time distortion points
+                TriggerDiagonalTimeDistortion(position);
                 Destroy(targetCube.gameObject);
                 break;
 
@@ -72,6 +72,87 @@ public class CubeCollisionController : MonoBehaviour
                 // Black + Normal = Consume normal
                 Destroy(targetCube.gameObject);
                 break;
+        }
+    }
+
+    // Creates a diagonal slash pattern
+    private void RegisterDiagonalPattern(Vector2Int center, Enumerations.CubeType cubeType)
+    {
+        if (grid == null) return;
+
+        // Determine if we use \ or / pattern (alternate based on position)
+        bool useForwardSlash = (center.x + center.y) % 2 == 0;
+
+        List<Vector2Int> slashPositions = new List<Vector2Int>();
+
+        // Register points in the diagonal pattern
+        if (useForwardSlash) // / pattern
+        {
+            // Top-left to bottom-right diagonal
+            for (int offset = -1; offset <= 1; offset++)
+            {
+                Vector2Int pos = new Vector2Int(center.x + offset, center.y + offset);
+                if (IsValidPosition(pos))
+                {
+                    slashPositions.Add(pos);
+                }
+            }
+        }
+        else // \ pattern
+        {
+            // Top-right to bottom-left diagonal
+            for (int offset = -1; offset <= 1; offset++)
+            {
+                Vector2Int pos = new Vector2Int(center.x - offset, center.y + offset);
+                if (IsValidPosition(pos))
+                {
+                    slashPositions.Add(pos);
+                }
+            }
+        }
+
+        // Register the points with the appropriate manager
+        if (cubeType == Enumerations.CubeType.Green)
+        {
+            DetonationManager detonationManager = FindObjectOfType<DetonationManager>();
+            if (detonationManager != null)
+            {
+                foreach (Vector2Int pos in slashPositions)
+                {
+                    detonationManager.RegisterSlashDetonationPoint(pos);
+                }
+            }
+        }
+        else if (cubeType == Enumerations.CubeType.Blue)
+        {
+            TimeDistortionManager timeManager = FindObjectOfType<TimeDistortionManager>();
+            if (timeManager != null)
+            {
+                foreach (Vector2Int pos in slashPositions)
+                {
+                    timeManager.RegisterSlashDistortionPoint(pos);
+                }
+            }
+        }
+    }
+
+    // Immediately trigger the created detonation points
+    private void TriggerDiagonalDetonation(Vector2Int center)
+    {
+        DetonationManager detonationManager = FindObjectOfType<DetonationManager>();
+        if (detonationManager != null)
+        {
+            detonationManager.TriggerSlashDetonation(center);
+        }
+    }
+
+    // Immediately trigger the created time distortion points
+    private void TriggerDiagonalTimeDistortion(Vector2Int center)
+    {
+        TimeDistortionManager timeManager = FindObjectOfType<TimeDistortionManager>();
+        if (timeManager != null)
+        {
+            timeManager.TriggerSlashDistortion(center);
         }
     }
 
@@ -242,66 +323,6 @@ public class CubeCollisionController : MonoBehaviour
             grid.tiles[pushPosition.x, pushPosition.y].currentCube = cube;
         }
     }
-
-    private void RegisterDiagonalPattern(Vector2Int center, Enumerations.CubeType cubeType)
-    {
-        if (grid == null) return;
-
-        // Determine if we use \ or / pattern (alternate based on position)
-        bool useForwardSlash = (center.x + center.y) % 2 == 0;
-
-        // Register points in the diagonal pattern
-        if (useForwardSlash) // / pattern
-        {
-            // Top-left to bottom-right diagonal
-            for (int offset = -1; offset <= 1; offset++)
-            {
-                Vector2Int pos = new Vector2Int(center.x + offset, center.y + offset);
-
-                // Check if position is valid
-                if (IsValidPosition(pos))
-                {
-                    if (cubeType == Enumerations.CubeType.Green && detonationManager != null)
-                    {
-                        detonationManager.RegisterDetonationPoint(pos);
-                        detonationManager.TriggerNextDetonation();
-                    }
-                    else if (cubeType == Enumerations.CubeType.Blue)
-                    {
-                        // Apply time freeze effect
-                        ApplyTimeFreeze(pos);
-                    }
-                }
-            }
-        }
-        else // \ pattern
-        {
-            // Top-right to bottom-left diagonal
-            for (int offset = -1; offset <= 1; offset++)
-            {
-                Vector2Int pos = new Vector2Int(center.x - offset, center.y + offset);
-
-                // Check if position is valid
-                if (IsValidPosition(pos))
-                {
-                    if (cubeType == Enumerations.CubeType.Green && detonationManager != null)
-                    {
-                        detonationManager.RegisterDetonationPoint(pos);
-                        detonationManager.TriggerNextDetonation();
-                    }
-                    else if (cubeType == Enumerations.CubeType.Blue)
-                    {
-                        // Apply time freeze effect
-                        ApplyTimeFreeze(pos);
-                    }
-                }
-            }
-        }
-
-        // Visual debug helper
-        //StartCoroutine(VisualizePattern(center, useForwardSlash, cubeType));
-    }
-
     private void RegisterLinePattern(Vector2Int center, Enumerations.CubeType cubeType)
     {
         if (grid == null || detonationManager == null) return;

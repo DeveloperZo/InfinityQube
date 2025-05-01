@@ -541,6 +541,10 @@ public class GeneralDebugger : MonoBehaviour
             {
                 UpdateColumnCube(col, Enumerations.CubeType.Blue);
             }
+            if (GUILayout.Button("Red", GUILayout.Width(75)))
+            {
+                UpdateColumnCube(col, Enumerations.CubeType.Red);
+            }
 
             GUILayout.EndHorizontal();
         }

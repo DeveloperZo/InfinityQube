@@ -16,6 +16,8 @@ public class TimeDistortionManager : MonoBehaviour
 
     private List<Vector2Int> distortionPoints = new List<Vector2Int>();
     private Dictionary<Tile, Material> originalTileMaterials = new Dictionary<Tile, Material>();
+    private Dictionary<Vector2Int, bool> slashDistortionPoints = new Dictionary<Vector2Int, bool>();
+
 
     private void Awake()
     {
@@ -116,6 +118,86 @@ public class TimeDistortionManager : MonoBehaviour
         distortionPoints.Clear();
         originalTileMaterials.Clear();
     }
+    public void RegisterSlashDistortionPoint(Vector2Int position)
+    {
+        if (!IsValidPosition(position)) return;
+
+        Tile tile = gridManager.tiles[position.x, position.y];
+        if (tile == null || tile.IsBlackened) return;
+
+        if (!slashDistortionPoints.ContainsKey(position))
+        {
+            // Still add to regular distortion points for UI tracking
+            if (!distortionPoints.Contains(position))
+            {
+                distortionPoints.Add(position);
+            }
+
+            slashDistortionPoints[position] = true;
+            MarkTileAsDistortionPoint(position);
+            Debug.Log($"Slash time distortion point registered at {position}");
+        }
+    }
+
+    // Trigger all points in a slash pattern immediately
+    public void TriggerSlashDistortion(Vector2Int center)
+    {
+        List<Vector2Int> slashPoints = new List<Vector2Int>();
+        bool useForwardSlash = (center.x + center.y) % 2 == 0;
+
+        // Identify the 3 points in the slash
+        if (useForwardSlash) // / pattern
+        {
+            for (int offset = -1; offset <= 1; offset++)
+            {
+                Vector2Int pos = new Vector2Int(center.x + offset, center.y + offset);
+                if (IsValidPosition(pos) && slashDistortionPoints.ContainsKey(pos))
+                {
+                    slashPoints.Add(pos);
+                }
+            }
+        }
+        else // \ pattern
+        {
+            for (int offset = -1; offset <= 1; offset++)
+            {
+                Vector2Int pos = new Vector2Int(center.x - offset, center.y + offset);
+                if (IsValidPosition(pos) && slashDistortionPoints.ContainsKey(pos))
+                {
+                    slashPoints.Add(pos);
+                }
+            }
+        }
+
+        // Trigger distortion for each point in a special way (single tile, not 2x2)
+        foreach (Vector2Int point in slashPoints)
+        {
+            PerformSingleTileDistortion(point);
+
+            // Remove from tracking
+            slashDistortionPoints.Remove(point);
+            distortionPoints.Remove(point);
+        }
+    }
+
+    // Special distortion that only affects the exact tile (not 2x2 area)
+    private void PerformSingleTileDistortion(Vector2Int position)
+    {
+        if (!IsValidPosition(position)) return;
+
+        // Get the tile
+        Tile tile = gridManager.tiles[position.x, position.y];
+        if (tile == null) return;
+
+        // Reset the tile appearance
+        ResetTileMaterial(tile);
+
+        // Visual effect
+        StartCoroutine(FlashTile(tile));
+
+        // Process just this position
+        FreezeOrConsumeCubesAt(position);
+    }
 
     // Perform the actual 2x2 time distortion effect
     private void PerformTimeDistortion(Vector2Int center)
@@ -128,7 +210,13 @@ public class TimeDistortionManager : MonoBehaviour
         // Get the tile
         Tile centerTile = gridManager.tiles[center.x, center.y];
         if (centerTile == null) return;
-
+        if (slashDistortionPoints.ContainsKey(center))
+        {
+            PerformSingleTileDistortion(center);
+            slashDistortionPoints.Remove(center);
+            distortionPoints.Remove(center);
+            return;
+        }
         ResetTileMaterial(centerTile);
 
         Debug.Log($"Performing 2x2 time distortion at {center}");

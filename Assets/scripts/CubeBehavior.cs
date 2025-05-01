@@ -16,7 +16,7 @@ public class CubeBehavior : MonoBehaviour
     private CubeCollisionController collisionController;
     private bool isMoving = false;
     private bool isDestroyed = false;
-
+    public bool isPhased { get; private set; }
 
     public void Init(GridManager gridManager, Vector2Int startPos, int startLevel)
     {
@@ -77,12 +77,19 @@ public class CubeBehavior : MonoBehaviour
     {
         if (isMoving || isDestroyed) return true;
 
+
         // Store previous position for logging
         Vector2Int oldPos = position;
         position.y -= 1;
-        // Debug logging to track cube movement
-        //Debug.Log($"Cube moving from ({oldPos.x}, {oldPos.y}) to ({position.x}, {position.y})");
 
+        if (isPhased)
+        {
+            // Skip collision/escape checks but update position
+            transform.position = new Vector3(position.x, 1f, position.y);
+            return true;
+        }
+
+       
         // Check if this is a raining cube reaching the grid
         if (isRainingCube && position.y == grid.Height - 1)
         {
@@ -103,13 +110,23 @@ public class CubeBehavior : MonoBehaviour
                 if (waveManager != null)
                 {
                     waveManager.RegisterEscapedBlackCube(position);
-                    //Debug.Log($"Black cube escaped at x={position.x}");
                 }
             }
 
-            //Debug.Log($"Cube escaped at level {level}");
             Destroy(gameObject);
             return false;
+        }
+
+        // Check for special black cube interactions with tiles
+        if (CubeType == Enumerations.CubeType.Black && !isRainingCube &&
+            position.y >= 0 && position.y < grid.Height &&
+            position.x >= 0 && position.x < grid.Width)
+        {
+            Tile landingTile = grid.tiles[position.x, position.y];
+            if (landingTile != null)
+            {
+                landingTile.HandleBlackCubeLanding(this);
+            }
         }
 
         StartCoroutine(AnimateMove(position));
@@ -241,5 +258,17 @@ public class CubeBehavior : MonoBehaviour
         }
 
         isMoving = false;
+    }
+
+    public void SetPhased(bool phased)
+    {
+        isPhased = phased;
+
+        // Update collider based on phased state
+        Collider collider = GetComponent<Collider>();
+        if (collider != null)
+        {
+            collider.enabled = !phased;
+        }
     }
 }

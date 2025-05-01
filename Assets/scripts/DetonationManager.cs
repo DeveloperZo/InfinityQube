@@ -15,6 +15,7 @@ public class DetonationManager : MonoBehaviour
     
     private List<Vector2Int> detonationPoints = new List<Vector2Int>();
     private Dictionary<Tile, Material> originalTileMaterials = new Dictionary<Tile, Material>();
+    private Dictionary<Vector2Int, bool> slashDetonationPoints = new Dictionary<Vector2Int, bool>();
 
     private void Awake()
     {
@@ -124,6 +125,89 @@ public class DetonationManager : MonoBehaviour
         }
     }
 
+    public void RegisterSlashDetonationPoint(Vector2Int position)
+    {
+        if (!IsValidPosition(position)) return;
+
+        Tile tile = gridManager.tiles[position.x, position.y];
+        if (tile == null || tile.IsBlackened) return;
+
+        // Use Dictionary to track which points are from slash patterns
+        if (!slashDetonationPoints.ContainsKey(position))
+        {
+            // Still add to regular detonation points for UI tracking
+            if (!detonationPoints.Contains(position))
+            {
+                detonationPoints.Add(position);
+            }
+
+            slashDetonationPoints[position] = true;
+            MarkTileAsDetonationPoint(position);
+            Debug.Log($"Slash detonation point registered at {position}");
+        }
+    }
+
+    // Trigger detonation for all points created in a slash pattern
+    public void TriggerSlashDetonation(Vector2Int center)
+    {
+        // Get all detonation points that are part of this slash
+        List<Vector2Int> slashPoints = new List<Vector2Int>();
+        bool useForwardSlash = (center.x + center.y) % 2 == 0;
+
+        // Identify the 3 points in the slash
+        if (useForwardSlash) // / pattern
+        {
+            for (int offset = -1; offset <= 1; offset++)
+            {
+                Vector2Int pos = new Vector2Int(center.x + offset, center.y + offset);
+                if (IsValidPosition(pos) && slashDetonationPoints.ContainsKey(pos))
+                {
+                    slashPoints.Add(pos);
+                }
+            }
+        }
+        else // \ pattern
+        {
+            for (int offset = -1; offset <= 1; offset++)
+            {
+                Vector2Int pos = new Vector2Int(center.x - offset, center.y + offset);
+                if (IsValidPosition(pos) && slashDetonationPoints.ContainsKey(pos))
+                {
+                    slashPoints.Add(pos);
+                }
+            }
+        }
+
+        // Trigger detonation for each point in a special way (single tile, not 3x3)
+        foreach (Vector2Int point in slashPoints)
+        {
+            PerformSingleTileDetonation(point);
+
+            // Remove from tracking
+            slashDetonationPoints.Remove(point);
+            detonationPoints.Remove(point);
+        }
+    }
+
+    // Special detonation that only affects the exact tile (not 3x3 area)
+    private void PerformSingleTileDetonation(Vector2Int position)
+    {
+        if (!IsValidPosition(position)) return;
+
+        // Get the tile
+        Tile tile = gridManager.tiles[position.x, position.y];
+        if (tile == null) return;
+
+        // Reset the tile appearance
+        ResetTileMaterial(tile);
+
+        // Visual effect - flash the tile
+        StartCoroutine(FlashTile(tile));
+
+        // Process cubes at this position only
+        DetonateCubesAt(position);
+    }
+
     // Perform the actual 3x3 detonation effect
     // In DetonationManager.cs
     private void PerformDetonation(Vector2Int center)
@@ -133,6 +217,14 @@ public class DetonationManager : MonoBehaviour
         // Get the tile and its charge level
         Tile centerTile = gridManager.tiles[center.x, center.y];
         if (centerTile == null) return;
+
+        if (slashDetonationPoints.ContainsKey(center))
+        {
+            PerformSingleTileDetonation(center);
+            slashDetonationPoints.Remove(center);
+            detonationPoints.Remove(center);
+            return;
+        }
 
         // Remove this detonation point from the list
         detonationPoints.Remove(center);

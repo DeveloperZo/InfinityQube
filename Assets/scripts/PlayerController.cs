@@ -136,20 +136,22 @@ public class PlayerController : MonoBehaviour
                 // Optional: add feedback that this tile can't be marked
                 return;
             }
+            TransienceManager transManager = FindObjectOfType<TransienceManager>();
+            bool inTransienceZone = transManager != null &&
+                                   transManager.IsTileInTransienceZone(new Vector2Int(selX, selZ));
 
             if (!currentTile.HasMarker)
             {
-                if (currentMarkers < maxMarkers)
+                if (currentMarkers < maxMarkers || inTransienceZone)
                 {
                     currentTile.PlaceMarker();
-                    markerQueue.Enqueue(new Vector2Int(selX, selZ)); // Track marker order
+                    markerQueue.Enqueue(new Vector2Int(selX, selZ));
                     currentMarkers++;
                 }
             }
             else
             {
                 currentTile.ClearMarker();
-                // Use a new queue excluding this position
                 markerQueue = new Queue<Vector2Int>(
                     markerQueue.Where(pos => pos.x != selX || pos.y != selZ));
                 currentMarkers--;

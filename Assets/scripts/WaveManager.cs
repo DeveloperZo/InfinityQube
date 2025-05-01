@@ -8,6 +8,7 @@ public class WaveManager : MonoBehaviour
     [SerializeField] private GridManager grid;
     [SerializeField] private GameObject[] cubePrefabs;
     [SerializeField] private PlayerController player;
+    [SerializeField] private TransienceManager transienceManager;
 
     [Header("Wave Settings")]
     [SerializeField] private int waveSize = 3;
@@ -118,6 +119,10 @@ public class WaveManager : MonoBehaviour
             grid.ClearAllMarkers();
         }
 
+        if (transienceManager != null && transienceManager.IsZoneActive)
+        {
+            transienceManager.TickZone();
+        }
         // Spawn the cubes
         ProcessReturnQueue();
         SpawnCubes();
