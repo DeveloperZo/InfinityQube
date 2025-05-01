@@ -196,7 +196,10 @@ public class Tile : MonoBehaviour
     {
         if (detonationCharges > 0)
         {
-            detonationCharges--;
+            if(isPrimed)
+                detonationCharges--;
+            else
+                detonationCharges = 0; // Reset to 0 if not primed
 
             if (detonationCharges > 0)
             {
