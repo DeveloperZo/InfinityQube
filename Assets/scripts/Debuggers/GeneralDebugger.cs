@@ -28,6 +28,8 @@ public class GeneralDebugger : MonoBehaviour
 
     // Testing options
     private bool dropOnEmptyColumns = false;
+    private bool dropOnCubes = false;
+    private bool dropOnTiles = false;
     private bool autoTileEffects = true;
     private Vector2 scrollPosition;
 
@@ -137,6 +139,9 @@ public class GeneralDebugger : MonoBehaviour
 
     private void ClearColumn(int column)
     {
+        Tile cubeTile = grid.tiles[column, defaultRowZ];
+        ResetTile(cubeTile);
+
         if (columnCubes.ContainsKey(column) && columnCubes[column] != null)
         {
             Destroy(columnCubes[column]);
@@ -193,6 +198,7 @@ public class GeneralDebugger : MonoBehaviour
         }
     }
 
+    // In GeneralDebugger.cs - DropCubeOnColumn method
     private void DropCubeOnColumn(int column)
     {
         if (column < 0 || column >= grid.Width)
@@ -211,28 +217,199 @@ public class GeneralDebugger : MonoBehaviour
             return;
         }
 
-        // Spawn falling cube above the column
-        Vector3 spawnPos = new Vector3(column, spawnHeight, defaultRowZ);
-        GameObject cube = Instantiate(cubePrefabs[prefabIndex], spawnPos, Quaternion.identity);
-
-        // Set up the falling cube
-        CubeBehavior behavior = cube.GetComponent<CubeBehavior>();
-        if (behavior != null)
+       if(dropOnCubes)
         {
-            behavior.Init(grid, targetPos, 1);
-            behavior.CubeType = fallingCubeType;
-            behavior.isRainingCube = true;
+
+            // Spawn falling cube above the column
+            Vector3 spawnPos = new Vector3(column, spawnHeight, defaultRowZ);
+            GameObject cube = Instantiate(cubePrefabs[prefabIndex], spawnPos, Quaternion.identity);
+
+            // Set up the falling cube
+            CubeBehavior behavior = cube.GetComponent<CubeBehavior>();
+            if (behavior != null)
+            {
+                behavior.Init(grid, targetPos, 1);
+                behavior.CubeType = fallingCubeType;
+                behavior.isRainingCube = true;
+
+                // Start falling animation coroutine
+                StartCoroutine(AnimateCubeFalling(behavior, spawnPos, column, defaultRowZ));
+            }
+
+            // Add collision controller if needed
+            CubeCollisionController collisionController = cube.GetComponent<CubeCollisionController>();
+            if (collisionController == null)
+            {
+                collisionController = cube.AddComponent<CubeCollisionController>();
+                collisionController.Initialize(targetPos, grid);
+            }
+
+            debugObjects.Add(cube);
         }
 
-        // Add collision controller if needed
-        CubeCollisionController collisionController = cube.GetComponent<CubeCollisionController>();
-        if (collisionController == null)
+        if (dropOnTiles)
         {
-            collisionController = cube.AddComponent<CubeCollisionController>();
-            collisionController.Initialize(targetPos, grid);
+            // Also add a cube to the effect row for triggering tile effects
+            if (grid != null && effectRowZ >= 0 && effectRowZ < grid.Height)
+            {
+                Tile effectTile = grid.tiles[column, effectRowZ];
+                if (effectTile != null && effectTile.currentState == Enumerations.TileState.Transformed)
+                {
+                    // Don't drop a cube on blackened tiles (can't be triggered)
+                    if (!effectTile.IsBlackened)
+                    {
+                        // Spawn a test cube to trigger the tile effect
+                        Vector3 effectSpawnPos = new Vector3(column, spawnHeight, effectRowZ);
+                        GameObject effectCube = Instantiate(cubePrefabs[prefabIndex], effectSpawnPos, Quaternion.identity);
+
+                        // Set up the effect cube
+                        CubeBehavior effectBehavior = effectCube.GetComponent<CubeBehavior>();
+                        if (effectBehavior != null)
+                        {
+                            effectBehavior.Init(grid, new Vector2Int(column, effectRowZ), 1);
+                            effectBehavior.CubeType = fallingCubeType;
+                            effectBehavior.isRainingCube = true;
+
+                            // Start falling animation coroutine
+                            StartCoroutine(AnimateCubeFalling(effectBehavior, effectSpawnPos, column, effectRowZ));
+                        }
+
+                        // Add collision controller if needed
+                        CubeCollisionController effectController = effectCube.GetComponent<CubeCollisionController>();
+                        if (effectController == null)
+                        {
+                            effectController = effectCube.AddComponent<CubeCollisionController>();
+                            effectController.Initialize(new Vector2Int(column, effectRowZ), grid);
+                        }
+
+                        debugObjects.Add(effectCube);
+                    }
+                }
+            }
+        }
+    }
+
+    private IEnumerator AnimateCubeFalling(CubeBehavior cube, Vector3 startPos, int x, int z)
+    {
+        if (cube == null) yield break;
+
+        // Target position (1 unit above the ground)
+        Vector3 targetPos = new Vector3(x, 1f, z);
+
+        // Fall duration
+        float duration = 1.0f;
+        float elapsed = 0f;
+
+        while (elapsed < duration)
+        {
+            if (cube == null || cube.gameObject == null) yield break;
+
+            elapsed += Time.deltaTime;
+            float t = Mathf.Clamp01(elapsed / duration);
+
+            // Ease-in falling animation
+            float easedT = 1 - Mathf.Pow(1 - t, 2); // Quadratic ease-out
+
+            // Update position
+            cube.transform.position = Vector3.Lerp(startPos, targetPos, easedT);
+
+            yield return null;
         }
 
-        debugObjects.Add(cube);
+        // Ensure final position
+        if (cube != null && cube.gameObject != null)
+        {
+            cube.transform.position = targetPos;
+
+            // Small bounce effect
+            StartCoroutine(BounceCube(cube));
+        }
+    }
+
+    private IEnumerator BounceCube(CubeBehavior cube)
+    {
+        if (cube == null || cube.gameObject == null) yield break;
+
+        Vector3 originalPos = cube.transform.position;
+        Vector3 squashScale = new Vector3(1.2f, 0.8f, 1.2f);
+        Vector3 originalScale = cube.transform.localScale;
+
+        // Squash
+        float squashDuration = 0.1f;
+        float elapsed = 0f;
+
+        while (elapsed < squashDuration)
+        {
+            if (cube == null || cube.gameObject == null) yield break;
+
+            elapsed += Time.deltaTime;
+            float t = Mathf.Clamp01(elapsed / squashDuration);
+
+            cube.transform.localScale = Vector3.Lerp(originalScale, squashScale, t);
+
+            yield return null;
+        }
+
+        // Return to original scale
+        elapsed = 0f;
+        while (elapsed < squashDuration)
+        {
+            if (cube == null || cube.gameObject == null) yield break;
+
+            elapsed += Time.deltaTime;
+            float t = Mathf.Clamp01(elapsed / squashDuration);
+
+            cube.transform.localScale = Vector3.Lerp(squashScale, originalScale, t);
+
+            yield return null;
+        }
+
+        // Ensure final scale
+        if (cube != null && cube.gameObject != null)
+        {
+            cube.transform.localScale = originalScale;
+
+            // Check for cubes below
+            CheckForCubeBelow(cube);
+        }
+    }
+
+    private void CheckForCubeBelow(CubeBehavior cube)
+    {
+        if (cube == null || grid == null) return;
+
+        Vector2Int position = cube.position;
+
+        // Check if there's a cube at this position already
+        Tile tile = grid.tiles[position.x, position.y];
+        if (tile != null && tile.currentCube != null && tile.currentCube != cube)
+        {
+            CubeBehavior targetCube = tile.currentCube;
+
+            // Get collision controller
+            CubeCollisionController controller = cube.GetComponent<CubeCollisionController>();
+            if (controller == null)
+            {
+                controller = cube.AddComponent<CubeCollisionController>();
+                controller.Initialize(position, grid);
+            }
+
+            // Trigger collision
+            Debug.Log($"Triggering collision between falling {cube.CubeType} and {targetCube.CubeType} at ({position.x}, {position.y})");
+            controller.HandleCubeCollision(cube, targetCube, position);
+        }
+        else if (tile != null)
+        {
+            // Update tile reference
+            tile.currentCube = cube;
+
+            // If tile has a marker, trigger it
+            if (tile.HasMarker)
+            {
+                tile.ProcessCubeInteraction(cube);
+                tile.TriggerMarker();
+            }
+        }
     }
 
     private void UpdateColumnCube(int column, Enumerations.CubeType cubeType)
@@ -244,7 +421,6 @@ public class GeneralDebugger : MonoBehaviour
             debugObjects.Remove(columnCubes[column]);
             columnCubes.Remove(column);
         }
-
 
         // Set the new type
         columnCubeTypes[column] = cubeType;
@@ -280,10 +456,21 @@ public class GeneralDebugger : MonoBehaviour
         columnCubes[column] = cube;
         debugObjects.Add(cube);
 
-        // Auto-create tile effect in the row below
-        if (autoTileEffects && cubeType != Enumerations.CubeType.Normal)
+        // Always reset and reapply tile effect in the row below when changing cube type
+        if (autoTileEffects && grid != null && effectRowZ >= 0 && effectRowZ < grid.Height)
         {
-            ApplyTileEffect(column, cubeType);
+            Tile effectTile = grid.tiles[column, effectRowZ];
+            if (effectTile != null)
+            {
+                // First reset the tile
+                ResetTile(effectTile);
+
+                // Then apply the new effect if needed
+                if (cubeType != Enumerations.CubeType.Normal)
+                {
+                    ApplyTileEffect(column, cubeType);
+                }
+            }
         }
     }
 
@@ -312,44 +499,45 @@ public class GeneralDebugger : MonoBehaviour
     {
         if (!debugModeActive) return;
 
-        scrollPosition = GUI.BeginScrollView(new Rect(10, 10, 300, 500), scrollPosition, new Rect(0, 0, 280, 700));
+        scrollPosition = GUI.BeginScrollView(new Rect(10, 10, 700, 700), scrollPosition, new Rect(0, 0, 700, 700));
 
         GUILayout.Label("=== CUBE DEBUGGER ===", GUI.skin.box);
 
         GUILayout.Space(5);
         GUILayout.Label($"Test Row: {defaultRowZ}, Effect Row: {effectRowZ}");
-
+        dropOnCubes = GUILayout.Toggle(dropOnCubes, "Drop On Cubes");
+        dropOnTiles = GUILayout.Toggle(dropOnTiles, "Drop On Tiles");
         // Column cube setup
         GUILayout.Label("Column Setup:", GUI.skin.box);
 
         for (int col = 0; col < Mathf.Min(grid.Width, 6); col++)
         {
             GUILayout.BeginHorizontal();
-            GUILayout.Label($"Col {col}", GUILayout.Width(40));
+            GUILayout.Label($"Col {col}", GUILayout.Width(50));
 
             // Clear this column button
-            if (GUILayout.Button("Clear", GUILayout.Width(50)))
+            if (GUILayout.Button("Clear", GUILayout.Width(75)))
             {
                 ClearColumn(col);
             }
 
             // Cube type buttons
-            if (GUILayout.Button("Gray", GUILayout.Width(40)))
+            if (GUILayout.Button("Gray", GUILayout.Width(75)))
             {
                 UpdateColumnCube(col, Enumerations.CubeType.Normal);
             }
 
-            if (GUILayout.Button("Green", GUILayout.Width(40)))
+            if (GUILayout.Button("Green", GUILayout.Width(75)))
             {
                 UpdateColumnCube(col, Enumerations.CubeType.Green);
             }
 
-            if (GUILayout.Button("Black", GUILayout.Width(40)))
+            if (GUILayout.Button("Black", GUILayout.Width(75)))
             {
                 UpdateColumnCube(col, Enumerations.CubeType.Black);
             }
 
-            if (GUILayout.Button("Blue", GUILayout.Width(40)))
+            if (GUILayout.Button("Blue", GUILayout.Width(75)))
             {
                 UpdateColumnCube(col, Enumerations.CubeType.Blue);
             }
