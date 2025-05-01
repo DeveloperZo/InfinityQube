@@ -1,4 +1,5 @@
 using UnityEngine;
+using static Enumerations;
 
 public class Tile : MonoBehaviour
 {
@@ -10,8 +11,13 @@ public class Tile : MonoBehaviour
     [SerializeField] private Color markerColor = Color.blue;
     [SerializeField] private Color markedTileColor = new Color(1f, 0.4f, 0.4f);
 
-    public bool IsBlackened => isBlackened;
 
+    public bool IsBlackened => isBlackened;
+    public TileState currentState = TileState.Normal;
+    private Color normalColor;
+    private Color transformedColor = new Color(0.3f, 0.3f, 0.3f); // Dark gray
+
+    public bool CanBeMarked => currentState == TileState.Normal;
     private GameObject markerObj;
     private Color originalColor;
     private Renderer tileRenderer;
@@ -22,11 +28,22 @@ public class Tile : MonoBehaviour
     private void Awake()
     {
         tileRenderer = GetComponent<Renderer>();
-        if (tileRenderer == null)
+        normalColor = tileRenderer.material.color;
+    }
+
+    public void TransformTile(Enumerations.CubeType cubeType)
+    {
+        if (currentState != TileState.Transformed)
         {
-            Debug.LogError("Tile requires a Renderer component!");
-            enabled = false;
-            return;
+            currentState = TileState.Transformed;
+            transform.position = new Vector3(transform.position.x, -0.2f, transform.position.z);
+            // Visual change
+
+            if(cubeType == Enumerations.CubeType.Black) {
+                BlackenTile();
+            }
+            
+
         }
     }
 
@@ -68,17 +85,6 @@ public class Tile : MonoBehaviour
             markerObj.transform.localPosition = Vector3.up * markerHeight;
             markerObj.transform.localScale = new Vector3(markerScale, 0.1f, markerScale);
             markerObj.name = $"Marker_{x}_{y}";
-
-            // Set marker color
-            Renderer markerRenderer = markerObj.GetComponent<Renderer>();
-            if (markerRenderer != null)
-            {
-                // Use bright, high-contrast color
-                markerRenderer.material.color = Color.magenta;
-                // Optional: Add emission to make it glow
-                markerRenderer.material.EnableKeyword("_EMISSION");
-                markerRenderer.material.SetColor("_EmissionColor", Color.magenta * 0.8f);
-            }
         }
 
         // Make tile tint more obvious

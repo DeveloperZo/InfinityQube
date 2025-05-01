@@ -211,8 +211,9 @@ MonoBehaviour:
   waveStartDelay: 0.75
   normalCubeChance: 0.7
   greenCubeChance: 0.2
-  normalMoveInterval: 0.5
+  normalMoveInterval: 2
   fastMoveInterval: 0.15
+  showDebugInfo: 0
   isSpeedingUp: 0
   activeCubes: []
 --- !u!4 &487637474
@@ -579,7 +580,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1637672741
 Transform:
   m_ObjectHideFlags: 0

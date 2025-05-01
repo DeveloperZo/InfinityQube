@@ -5,4 +5,10 @@ using UnityEngine;
 public static class Enumerations 
 {
     public enum CubeType {Normal, Green, Black }
+
+    public enum TileState
+    {
+        Normal,
+        Transformed 
+    }
 }

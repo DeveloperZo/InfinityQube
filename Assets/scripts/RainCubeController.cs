@@ -187,7 +187,7 @@ public class RainCubeController : MonoBehaviour
         CubeBehavior thisCube = GetComponent<CubeBehavior>();
         if (thisCube != null)
         {
-            thisCube.StopAllCoroutines();
+            thisCube.HandleVerticalImpact(gridPos, grid);
             thisCube.Init(grid, gridPos, 1);
 
             // Register with wave manager

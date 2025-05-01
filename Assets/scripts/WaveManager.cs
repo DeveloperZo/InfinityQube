@@ -22,12 +22,19 @@ public class WaveManager : MonoBehaviour
     [SerializeField] private float normalMoveInterval = 0.75f; // Default speed
     [SerializeField] private float fastMoveInterval = 0.1f;
     [SerializeField] private bool showDebugInfo = false;
+    [SerializeField] private GameObject returnIndicatorPrefab;
 
     public bool isSpeedingUp = false;
     public List<CubeBehavior> activeCubes = new List<CubeBehavior>();
     private List<int> escapedBlackCubePositions = new List<int>();
     private bool waveActive = false;
     private Coroutine waveCoroutine;
+    private List<ReturnQueueItem> returnQueue = new List<ReturnQueueItem>();
+    private class ReturnQueueItem
+    {
+        public Enumerations.CubeType cubeType;
+        public int xPosition;
+    }
 
     public void SetSpeedState(bool isSpeeding)
     {
@@ -90,8 +97,9 @@ public class WaveManager : MonoBehaviour
         {
             StopCoroutine(waveCoroutine);
         }
-
+        
         waveCoroutine = StartCoroutine(RunWave());
+        UpdateReturnVisuals();
     }
 
     private IEnumerator RunWave()
@@ -111,6 +119,7 @@ public class WaveManager : MonoBehaviour
         }
 
         // Spawn the cubes
+        ProcessReturnQueue();
         SpawnCubes();
 
         yield return new WaitForSeconds(waveStartDelay);
@@ -194,9 +203,50 @@ public class WaveManager : MonoBehaviour
         }
     }
 
+    public void RegisterEscapedCube(CubeBehavior cube)
+    {
+        if (cube.CubeType != Enumerations.CubeType.Normal)
+        {
+            returnQueue.Add(new ReturnQueueItem
+            {
+                cubeType = cube.CubeType,
+                xPosition = cube.position.x
+            });
+
+            // Log for debugging
+            Debug.Log($"{cube.CubeType} cube escaped at X={cube.position.x}, queued for return");
+        }
+    }
+
+    private void ProcessReturnQueue()
+    {
+        // Process all queued cubes before starting a new wave
+        foreach (ReturnQueueItem item in returnQueue)
+        {
+            SpawnReturningCube(item.cubeType, item.xPosition);
+        }
+
+        returnQueue.Clear();
+    }
+
+    private void SpawnReturningCube(Enumerations.CubeType cubeType, int xPosition)
+    {
+        int prefabIndex = (int)cubeType;
+        if (prefabIndex < 0 || prefabIndex >= cubePrefabs.Length) return;
+
+        GameObject cube = Instantiate(cubePrefabs[prefabIndex],
+                                      new Vector3(xPosition, 5f, grid.Height),
+                                      Quaternion.identity);
+
+        // Use your existing RainCubeController
+        RainCubeController controller = cube.AddComponent<RainCubeController>();
+        controller.Initialize(xPosition, grid);
+    }
+
     private void SpawnCubes()
     {
         activeCubes.Clear();
+        player.ResetMarkers();
 
         // Guard against missing grid
         if (grid == null) return;
@@ -309,6 +359,39 @@ public class WaveManager : MonoBehaviour
             else
             {
                 Debug.Log($"[{i}] NULL CUBE REFERENCE");
+            }
+        }
+    }
+
+    private void UpdateReturnVisuals()
+    {
+        // Clear old indicators
+        GameObject[] oldIndicators = GameObject.FindGameObjectsWithTag("ReturnIndicator");
+        foreach (GameObject indicator in oldIndicators)
+        {
+            Destroy(indicator);
+        }
+
+        // Create new indicators
+        foreach (ReturnQueueItem item in returnQueue)
+        {
+            Vector3 indicatorPos = new Vector3(item.xPosition, 6f, grid.Height);
+            GameObject indicator = Instantiate(returnIndicatorPrefab, indicatorPos, Quaternion.identity);
+            indicator.tag = "ReturnIndicator";
+
+            // Set color based on type
+            Renderer renderer = indicator.GetComponent<Renderer>();
+            if (renderer != null)
+            {
+                switch (item.cubeType)
+                {
+                    case Enumerations.CubeType.Black:
+                        renderer.material.color = Color.black;
+                        break;
+                    case Enumerations.CubeType.Green:
+                        renderer.material.color = Color.green;
+                        break;
+                }
             }
         }
     }

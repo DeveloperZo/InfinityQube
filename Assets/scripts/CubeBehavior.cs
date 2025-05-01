@@ -63,7 +63,7 @@ public class CubeBehavior : MonoBehaviour
         position.y -= 1;
 
         // Debug logging to track cube movement
-        Debug.Log($"Cube moving from ({oldPos.x}, {oldPos.y}) to ({position.x}, {position.y})");
+        //Debug.Log($"Cube moving from ({oldPos.x}, {oldPos.y}) to ({position.x}, {position.y})");
 
         // Check if this is a raining cube reaching the grid
         if (isRainingCube && position.y == grid.Height - 1)
@@ -85,17 +85,50 @@ public class CubeBehavior : MonoBehaviour
                 if (waveManager != null)
                 {
                     waveManager.RegisterEscapedBlackCube(position.x);
-                    Debug.Log($"Black cube escaped at x={position.x}");
+                    //Debug.Log($"Black cube escaped at x={position.x}");
                 }
             }
 
-            Debug.Log($"Cube escaped at level {level}");
+            //Debug.Log($"Cube escaped at level {level}");
             Destroy(gameObject);
             return false;
         }
 
         StartCoroutine(AnimateMove(position));
         return true;
+    }
+
+    public void HandleVerticalImpact(Vector2Int position, GridManager grid)
+    {
+        // Find cube at landing position (if any)
+        CubeBehavior targetCube = null;
+        foreach (CubeBehavior cube in FindObjectsOfType<CubeBehavior>())
+        {
+            if (cube != this && cube.position.x == position.x && cube.position.y == position.y)
+            {
+                targetCube = cube;
+                break;
+            }
+        }
+
+        // Black cube landing on black cube transforms the tile
+        if (CubeType == Enumerations.CubeType.Black &&
+            targetCube != null &&
+            targetCube.CubeType == Enumerations.CubeType.Black)
+        {
+
+            Tile tile = grid.tiles[position.x, position.y];
+            if (tile != null)
+            {
+                tile.TransformTile(Enumerations.CubeType.Black);
+            }
+
+            // Destroy the target cube
+            Destroy(targetCube.gameObject);
+        }
+
+        // Future: Handle other cube type interactions here
+        // This structure lets you easily add more conditions for different cube types
     }
 
     private void CheckForCubeBelow()
