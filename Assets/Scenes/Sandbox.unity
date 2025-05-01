@@ -268,6 +268,7 @@ MonoBehaviour:
   - {fileID: 1728893673582764340, guid: f90c16e773c18f54eb1b70ddc1136373, type: 3}
   - {fileID: 1728893673582764340, guid: 026a402b860389d4aaea0e4f0b5c1ff6, type: 3}
   - {fileID: 1728893673582764340, guid: 28923bfb13f3dde44b857f03a0188e95, type: 3}
+  - {fileID: 1099237993}
   player: {fileID: 885266531}
   waveSize: 3
   waveStartDelay: 0.75
@@ -434,6 +435,11 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 8153240350979894021, guid: 026a402b860389d4aaea0e4f0b5c1ff6, type: 3}
   m_PrefabInstance: {fileID: 1113774509}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &1099237993 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 1728893673582764340, guid: 8c357a94dee798a45abbc3e55e82b353, type: 3}
+  m_PrefabInstance: {fileID: 338409964}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1113774509
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -597,11 +603,13 @@ MonoBehaviour:
   - {fileID: 1728893673582764340, guid: f90c16e773c18f54eb1b70ddc1136373, type: 3}
   - {fileID: 1728893673582764340, guid: 026a402b860389d4aaea0e4f0b5c1ff6, type: 3}
   - {fileID: 1728893673582764340, guid: 28923bfb13f3dde44b857f03a0188e95, type: 3}
+  - {fileID: 1099237993}
   toggleDebugKey: 282
   resetDebugKey: 283
-  placeTargetKey: 284
-  dropFallingKey: 285
+  executeTestKey: 284
   spawnHeight: 5
+  defaultRowZ: 3
+  effectRowZ: 2
 --- !u!4 &1439096055 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 8153240350979894021, guid: f90c16e773c18f54eb1b70ddc1136373, type: 3}

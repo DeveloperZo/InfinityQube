@@ -7,94 +7,29 @@ public class GeneralDebugger : MonoBehaviour
 {
     [Header("References")]
     [SerializeField] private GridManager grid;
-    [SerializeField] private GameObject[] cubePrefabs; // Normal, Green, Black
+    [SerializeField] private GameObject[] cubePrefabs; // Normal, Green, Black, Blue
 
     [Header("Debug Controls")]
     [SerializeField] private KeyCode toggleDebugKey = KeyCode.F1;
     [SerializeField] private KeyCode resetDebugKey = KeyCode.F2;
-    [SerializeField] private KeyCode placeTargetKey = KeyCode.F3;
-    [SerializeField] private KeyCode dropFallingKey = KeyCode.F4;
+    [SerializeField] private KeyCode executeTestKey = KeyCode.F3;
     [SerializeField] private float spawnHeight = 5f;
-
-    [Header("Multi-Target Debug")]
-    [SerializeField] private bool enableMultiTarget = false;
-    [SerializeField] private Vector2Int multiGridSize = new Vector2Int(3, 3);
-    [SerializeField] private float multiSpacing = 1.5f;
-    [SerializeField] private KeyCode spawnAllKey = KeyCode.F6;
-    [SerializeField] private KeyCode markRowKey = KeyCode.F7;
-
+    [SerializeField] private int defaultRowZ = 3; // Default test row
+    [SerializeField] private int effectRowZ = 2;  // Row for tile effects (one below the test row)
 
     // Cube testing state 
     private Enumerations.CubeType fallingCubeType = Enumerations.CubeType.Black;
-    private Enumerations.CubeType targetCubeType = Enumerations.CubeType.Black;
     private bool debugModeActive = false;
     private List<GameObject> debugObjects = new List<GameObject>();
-    private void SpawnMultipleTargets()
-    {
-        if (grid == null)
-        {
-            Debug.LogWarning("Grid reference missing!");
-            return;
-        }
 
-        // Calculate center of the multi-grid
-        Vector2Int centerPos = FindMarkedTile();
-        if (centerPos.x < 0)
-        {
-            Debug.Log("No marked tile found. Place a marker first (Space).");
-            return;
-        }
+    // Column state tracking
+    private Dictionary<int, Enumerations.CubeType> columnCubeTypes = new Dictionary<int, Enumerations.CubeType>();
+    private Dictionary<int, GameObject> columnCubes = new Dictionary<int, GameObject>();
 
-        // Get correct prefab for target cubes
-        int prefabIndex = (int)targetCubeType;
-        if (prefabIndex < 0 || prefabIndex >= cubePrefabs.Length || cubePrefabs[prefabIndex] == null)
-        {
-            Debug.LogWarning($"Invalid cube prefab at index {prefabIndex}");
-            return;
-        }
-
-        // Calculate grid bounds
-        int startX = Mathf.Max(0, centerPos.x - multiGridSize.x / 2);
-        int endX = Mathf.Min(grid.Width - 1, centerPos.x + multiGridSize.x / 2);
-        int startY = Mathf.Max(0, centerPos.y - multiGridSize.y / 2);
-        int endY = Mathf.Min(grid.Height - 1, centerPos.y + multiGridSize.y / 2);
-
-        // Spawn target cubes in grid pattern
-        for (int x = startX; x <= endX; x++)
-        {
-            for (int y = startY; y <= endY; y++)
-            {
-                // Don't spawn on the center (marked tile)
-                if (x == centerPos.x && y == centerPos.y)
-                    continue;
-
-                // Check if there's already a cube at this position
-                if (grid.tiles[x, y] != null && grid.tiles[x, y].currentCube != null)
-                    continue;
-
-                // Spawn the cube
-                Vector3 spawnPos = new Vector3(x, 1f, y);
-                GameObject cube = Instantiate(cubePrefabs[prefabIndex], spawnPos, Quaternion.identity);
-
-                // Initialize it
-                CubeBehavior behavior = cube.GetComponent<CubeBehavior>();
-                if (behavior != null)
-                {
-                    behavior.Init(grid, new Vector2Int(x, y), 1);
-                    behavior.CubeType = targetCubeType;
-                }
-
-                // Store the cube reference in the tile
-                Tile tile = grid.tiles[x, y];
-                if (tile != null)
-                {
-                    tile.currentCube = behavior;
-                }
-
-                debugObjects.Add(cube);
-            }
-        }
-    }
+    // Testing options
+    private bool dropOnEmptyColumns = false;
+    private bool autoTileEffects = true;
+    private Vector2 scrollPosition;
 
     private void Start()
     {
@@ -102,9 +37,9 @@ public class GeneralDebugger : MonoBehaviour
         if (grid == null) grid = FindObjectOfType<GridManager>();
 
         // Find cube prefabs if not set
-        if (cubePrefabs == null || cubePrefabs.Length < 3)
+        if (cubePrefabs == null || cubePrefabs.Length < 4)
         {
-            cubePrefabs = new GameObject[3];
+            cubePrefabs = new GameObject[4]; // Normal, Green, Black, Blue
 
             Transform cubeParent = GameObject.Find("CubeParent")?.transform;
             if (cubeParent != null)
@@ -117,33 +52,13 @@ public class GeneralDebugger : MonoBehaviour
                         cubePrefabs[1] = child.gameObject;
                     else if (child.name.Contains("Black"))
                         cubePrefabs[2] = child.gameObject;
+                    else if (child.name.Contains("Blue"))
+                        cubePrefabs[3] = child.gameObject;
                 }
             }
         }
     }
 
-    private void MarkRowOfTiles()
-    {
-        if (grid == null) return;
-
-        // Find current marker position
-        Vector2Int markerPos = FindMarkedTile();
-        if (markerPos.x < 0)
-        {
-            Debug.Log("No marked tile found. Place a marker first (Space) to define the row.");
-            return;
-        }
-
-        // Mark the entire row
-        for (int x = 0; x < grid.Width; x++)
-        {
-            // Skip tiles that already have markers
-            if (grid.tiles[x, markerPos.y] != null && !grid.tiles[x, markerPos.y].HasMarker)
-            {
-                grid.PlaceMarker(x, markerPos.y);
-            }
-        }
-    }
     private void Update()
     {
         // Toggle debug mode
@@ -161,26 +76,10 @@ public class GeneralDebugger : MonoBehaviour
             ClearDebugObjects();
         }
 
-        // Place target cube on marked tile
-        if (Input.GetKeyDown(placeTargetKey))
+        // Execute the configured test
+        if (Input.GetKeyDown(executeTestKey))
         {
-            PlaceTargetCubeOnMarker();
-        }
-
-        // Drop falling cube on marked tile
-        if (Input.GetKeyDown(dropFallingKey))
-        {
-            DropFallingCubeOnMarker();
-        }
-
-        if (Input.GetKeyDown(spawnAllKey))
-        {
-            SpawnMultipleTargets();
-        }
-
-        if (Input.GetKeyDown(markRowKey))
-        {
-            MarkRowOfTiles();
+            ExecuteTest();
         }
     }
 
@@ -191,74 +90,120 @@ public class GeneralDebugger : MonoBehaviour
             if (obj != null) Destroy(obj);
         }
         debugObjects.Clear();
-    }
+        columnCubes.Clear();
 
-    private Vector2Int FindMarkedTile()
-    {
-        // Look for a marked tile
-        for (int x = 0; x < grid.Width; x++)
+        // Reset all tiles in the test area
+        if (grid != null)
         {
-            for (int y = 0; y < grid.Height; y++)
+            for (int x = 0; x < grid.Width; x++)
             {
-                if (grid.tiles[x, y] != null && grid.tiles[x, y].HasMarker)
+                // Reset effect row tiles
+                if (effectRowZ >= 0 && effectRowZ < grid.Height)
                 {
-                    return new Vector2Int(x, y);
+                    Tile tile = grid.tiles[x, effectRowZ];
+                    if (tile != null)
+                    {
+                        ResetTile(tile);
+                    }
                 }
             }
         }
-        return new Vector2Int(-1, -1); // No marker found
     }
 
-    private void PlaceTargetCubeOnMarker()
+    private void ResetTile(Tile tile)
     {
-        Vector2Int markerPos = FindMarkedTile();
-        if (markerPos.x < 0)
+        // Call the ResetTile method on the tile if it exists
+        // This assumes you've added this method to the Tile class
+        System.Reflection.MethodInfo resetMethod = typeof(Tile).GetMethod("ResetTile",
+            System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+
+        if (resetMethod != null)
         {
-            Debug.Log("No marked tile found. Place a marker first (Space).");
-            return;
+            resetMethod.Invoke(tile, null);
         }
-
-        // Get correct prefab
-        int prefabIndex = (int)targetCubeType;
-        if (prefabIndex < 0 || prefabIndex >= cubePrefabs.Length || cubePrefabs[prefabIndex] == null)
+        else
         {
-            Debug.LogWarning($"Invalid cube prefab at index {prefabIndex}");
-            return;
+            // Fallback reset
+            Renderer renderer = tile.GetComponent<Renderer>();
+            if (renderer != null)
+            {
+                renderer.material.color = Color.white;
+            }
+
+            // Reset position
+            tile.transform.position = new Vector3(tile.transform.position.x, 0f, tile.transform.position.z);
         }
-
-        // Spawn the cube
-        Vector3 spawnPos = new Vector3(markerPos.x, 1f, markerPos.y);
-        GameObject cube = Instantiate(cubePrefabs[prefabIndex], spawnPos, Quaternion.identity);
-
-        // Initialize it
-        CubeBehavior behavior = cube.GetComponent<CubeBehavior>();
-        if (behavior != null)
-        {
-            behavior.Init(grid, markerPos, 1);
-            behavior.CubeType = targetCubeType;
-        }
-
-        // Store the cube reference in the tile
-        Tile tile = grid.tiles[markerPos.x, markerPos.y];
-        if (tile != null)
-        {
-            tile.currentCube = behavior;
-        }
-
-        debugObjects.Add(cube);
     }
 
-    // In GeneralDebugger.cs
-    private void DropFallingCubeOnMarker()
+    private void ClearColumn(int column)
     {
-        Vector2Int markerPos = FindMarkedTile();
-        if (markerPos.x < 0)
+        if (columnCubes.ContainsKey(column) && columnCubes[column] != null)
         {
-            Debug.Log("No marked tile found. Place a marker first (Space).");
+            Destroy(columnCubes[column]);
+            debugObjects.Remove(columnCubes[column]);
+            columnCubes.Remove(column);
+        }
+
+        if (columnCubeTypes.ContainsKey(column))
+        {
+            columnCubeTypes.Remove(column);
+        }
+
+        // Reset effect tile
+        if (autoTileEffects && grid != null && effectRowZ >= 0 && effectRowZ < grid.Height)
+        {
+            Tile tile = grid.tiles[column, effectRowZ];
+            if (tile != null)
+            {
+                ResetTile(tile);
+            }
+        }
+    }
+
+    private void ExecuteTest()
+    {
+        // Get occupied columns
+        List<int> columnsToProcess = new List<int>();
+
+        // Add all populated columns first
+        foreach (int column in columnCubeTypes.Keys)
+        {
+            if (!columnsToProcess.Contains(column))
+            {
+                columnsToProcess.Add(column);
+            }
+        }
+
+        // If dropping on empty columns is enabled, add all columns
+        if (dropOnEmptyColumns)
+        {
+            for (int x = 0; x < grid.Width; x++)
+            {
+                if (!columnsToProcess.Contains(x))
+                {
+                    columnsToProcess.Add(x);
+                }
+            }
+        }
+
+        // Drop cubes on all columns
+        foreach (int column in columnsToProcess)
+        {
+            DropCubeOnColumn(column);
+        }
+    }
+
+    private void DropCubeOnColumn(int column)
+    {
+        if (column < 0 || column >= grid.Width)
+        {
+            Debug.LogWarning($"Column {column} is out of bounds");
             return;
         }
 
-        // Get correct prefab
+        Vector2Int targetPos = new Vector2Int(column, defaultRowZ);
+
+        // Get the correct prefab for falling cube
         int prefabIndex = (int)fallingCubeType;
         if (prefabIndex < 0 || prefabIndex >= cubePrefabs.Length || cubePrefabs[prefabIndex] == null)
         {
@@ -266,64 +211,234 @@ public class GeneralDebugger : MonoBehaviour
             return;
         }
 
-        // Check if there's already a cube at this tile
-        CubeBehavior existingCube = null;
-        if (grid.tiles[markerPos.x, markerPos.y] != null)
-        {
-            existingCube = grid.tiles[markerPos.x, markerPos.y].currentCube;
-        }
-
-        // Spawn falling cube directly above the marker
-        Vector3 spawnPos = new Vector3(markerPos.x, spawnHeight, markerPos.y);
+        // Spawn falling cube above the column
+        Vector3 spawnPos = new Vector3(column, spawnHeight, defaultRowZ);
         GameObject cube = Instantiate(cubePrefabs[prefabIndex], spawnPos, Quaternion.identity);
 
-        // Set the cube type
+        // Set up the falling cube
         CubeBehavior behavior = cube.GetComponent<CubeBehavior>();
         if (behavior != null)
         {
-            behavior.Init(grid, markerPos, 1);
-            cube.transform.position = spawnPos;
+            behavior.Init(grid, targetPos, 1);
             behavior.CubeType = fallingCubeType;
             behavior.isRainingCube = true;
         }
 
-        // Add collision controller if it doesn't exist
+        // Add collision controller if needed
         CubeCollisionController collisionController = cube.GetComponent<CubeCollisionController>();
         if (collisionController == null)
         {
             collisionController = cube.AddComponent<CubeCollisionController>();
-            collisionController.Initialize(markerPos, grid);
-        }
-
-        // If there's already a cube at this position, trigger collision check immediately
-        if (existingCube != null)
-        {
-            Debug.Log($"Cube dropped onto existing cube of type {existingCube.CubeType}. Checking collision...");
-
-            // Add a delay to allow the cube to initialize fully
-            StartCoroutine(CheckCollisionAfterDelay(behavior, existingCube, markerPos));
+            collisionController.Initialize(targetPos, grid);
         }
 
         debugObjects.Add(cube);
     }
 
-    private IEnumerator CheckCollisionAfterDelay(CubeBehavior droppedCube, CubeBehavior existingCube, Vector2Int position)
+    private void UpdateColumnCube(int column, Enumerations.CubeType cubeType)
     {
-        // Wait a frame to ensure everything is initialized
-        yield return null;
+        // Remove existing cube if any
+        if (columnCubes.ContainsKey(column) && columnCubes[column] != null)
+        {
+            Destroy(columnCubes[column]);
+            debugObjects.Remove(columnCubes[column]);
+            columnCubes.Remove(column);
+        }
 
-        // Get the collision controller
-        CubeCollisionController controller = droppedCube.GetComponent<CubeCollisionController>();
-        if (controller != null)
+
+        // Set the new type
+        columnCubeTypes[column] = cubeType;
+
+        // Get the correct prefab
+        int prefabIndex = (int)cubeType;
+        if (prefabIndex < 0 || prefabIndex >= cubePrefabs.Length || cubePrefabs[prefabIndex] == null)
         {
-            // Manually trigger collision
-            Debug.Log($"Manually triggering collision between {droppedCube.CubeType} cube and {existingCube.CubeType} cube at {position}");
-            controller.HandleCubeCollision(droppedCube, existingCube, position);
+            Debug.LogWarning($"Invalid cube prefab at index {prefabIndex}");
+            return;
         }
-        else
+
+        // Create the new cube
+        Vector3 spawnPos = new Vector3(column, 1f, defaultRowZ);
+        GameObject cube = Instantiate(cubePrefabs[prefabIndex], spawnPos, Quaternion.identity);
+
+        // Initialize cube
+        CubeBehavior behavior = cube.GetComponent<CubeBehavior>();
+        if (behavior != null)
         {
-            Debug.LogError("No CubeCollisionController found on dropped cube!");
+            behavior.Init(grid, new Vector2Int(column, defaultRowZ), 1);
+            behavior.CubeType = cubeType;
         }
+
+        // Update tile reference
+        Tile tile = grid.tiles[column, defaultRowZ];
+        if (tile != null)
+        {
+            tile.currentCube = behavior;
+        }
+
+        // Update tracking
+        columnCubes[column] = cube;
+        debugObjects.Add(cube);
+
+        // Auto-create tile effect in the row below
+        if (autoTileEffects && cubeType != Enumerations.CubeType.Normal)
+        {
+            ApplyTileEffect(column, cubeType);
+        }
+    }
+
+    private void ApplyTileEffect(int column, Enumerations.CubeType cubeType)
+    {
+        if (grid == null || column < 0 || column >= grid.Width ||
+            effectRowZ < 0 || effectRowZ >= grid.Height)
+            return;
+
+        Tile tile = grid.tiles[column, effectRowZ];
+        if (tile != null)
+        {
+            // Apply actual transformation
+            tile.TransformTile(cubeType);
+
+            // If it's a green cube and we want to test multiple charges
+            if (cubeType == Enumerations.CubeType.Green)
+            {
+                // Add a second charge for testing (Optional)
+                // tile.EnhanceGreenTile();
+            }
+        }
+    }
+
+    private void OnGUI()
+    {
+        if (!debugModeActive) return;
+
+        scrollPosition = GUI.BeginScrollView(new Rect(10, 10, 300, 500), scrollPosition, new Rect(0, 0, 280, 700));
+
+        GUILayout.Label("=== CUBE DEBUGGER ===", GUI.skin.box);
+
+        GUILayout.Space(5);
+        GUILayout.Label($"Test Row: {defaultRowZ}, Effect Row: {effectRowZ}");
+
+        // Column cube setup
+        GUILayout.Label("Column Setup:", GUI.skin.box);
+
+        for (int col = 0; col < Mathf.Min(grid.Width, 6); col++)
+        {
+            GUILayout.BeginHorizontal();
+            GUILayout.Label($"Col {col}", GUILayout.Width(40));
+
+            // Clear this column button
+            if (GUILayout.Button("Clear", GUILayout.Width(50)))
+            {
+                ClearColumn(col);
+            }
+
+            // Cube type buttons
+            if (GUILayout.Button("Gray", GUILayout.Width(40)))
+            {
+                UpdateColumnCube(col, Enumerations.CubeType.Normal);
+            }
+
+            if (GUILayout.Button("Green", GUILayout.Width(40)))
+            {
+                UpdateColumnCube(col, Enumerations.CubeType.Green);
+            }
+
+            if (GUILayout.Button("Black", GUILayout.Width(40)))
+            {
+                UpdateColumnCube(col, Enumerations.CubeType.Black);
+            }
+
+            if (GUILayout.Button("Blue", GUILayout.Width(40)))
+            {
+                UpdateColumnCube(col, Enumerations.CubeType.Blue);
+            }
+
+            GUILayout.EndHorizontal();
+        }
+
+        GUILayout.Space(10);
+
+        // Falling cube selection
+        GUILayout.Label("Falling Cube Type:", GUI.skin.box);
+        string[] typeNames = System.Enum.GetNames(typeof(Enumerations.CubeType));
+        if (typeNames.Length > 0)
+        {
+            // Skip "None" type if it exists
+            int startIndex = System.Array.IndexOf(typeNames, "None") >= 0 ? 1 : 0;
+            string[] validTypes = new string[typeNames.Length - startIndex];
+            for (int i = startIndex; i < typeNames.Length; i++)
+            {
+                validTypes[i - startIndex] = typeNames[i];
+            }
+
+            // Button grid for types
+            int selectedIndex = System.Array.IndexOf(validTypes, fallingCubeType.ToString());
+            if (selectedIndex < 0) selectedIndex = 0;
+
+            fallingCubeType = (Enumerations.CubeType)System.Enum.Parse(
+                typeof(Enumerations.CubeType),
+                validTypes[GUILayout.SelectionGrid(selectedIndex, validTypes, 2)]);
+        }
+
+        GUILayout.Space(10);
+
+        // Options
+        GUILayout.Label("Test Options:", GUI.skin.box);
+        dropOnEmptyColumns = GUILayout.Toggle(dropOnEmptyColumns, "Drop On Empty Columns Too");
+
+        // Toggle for automatic tile effects
+        bool oldAutoTileEffects = autoTileEffects;
+        autoTileEffects = GUILayout.Toggle(autoTileEffects, "Auto-Create Tile Effects Below Cubes");
+
+        // If toggled off, reset tile effects
+        if (oldAutoTileEffects && !autoTileEffects && grid != null)
+        {
+            // Reset all effect tiles
+            for (int x = 0; x < grid.Width; x++)
+            {
+                if (effectRowZ >= 0 && effectRowZ < grid.Height)
+                {
+                    Tile tile = grid.tiles[x, effectRowZ];
+                    if (tile != null)
+                    {
+                        ResetTile(tile);
+                    }
+                }
+            }
+        }
+        // If toggled on, apply effects
+        else if (!oldAutoTileEffects && autoTileEffects)
+        {
+            // Apply effects for all existing cubes
+            foreach (var kvp in columnCubeTypes)
+            {
+                if (kvp.Value != Enumerations.CubeType.Normal)
+                {
+                    ApplyTileEffect(kvp.Key, kvp.Value);
+                }
+            }
+        }
+
+        GUILayout.Space(10);
+
+        // Action buttons
+        if (GUILayout.Button($"Execute Test (F3)"))
+        {
+            ExecuteTest();
+        }
+
+        if (GUILayout.Button($"Clear All Debug Objects (F2)"))
+        {
+            ClearDebugObjects();
+        }
+
+        if (GUILayout.Button("Force Check All Collisions"))
+        {
+            CheckAllOverlappingCubes();
+        }
+
+        GUI.EndScrollView();
     }
 
     private void CheckAllOverlappingCubes()
@@ -365,89 +480,5 @@ public class GeneralDebugger : MonoBehaviour
                 controller.HandleCubeCollision(cube1, cube2, kvp.Key);
             }
         }
-    }
-
-    private void OnGUI()
-    {
-        if (!debugModeActive) return;
-
-        GUILayout.BeginArea(new Rect(10, 10, 250, 600));
-        GUILayout.Label("=== CUBE DEBUGGER ===", GUI.skin.box);
-
-        Vector2Int markerPos = FindMarkedTile();
-        if (markerPos.x >= 0)
-        {
-            GUILayout.Label($"Marker at: X={markerPos.x}, Z={markerPos.y}");
-        }
-        else
-        {
-            GUILayout.Label("No marker placed. Use Space to place marker.");
-        }
-
-        GUILayout.Space(10);
-
-        // Cube type selectors
-        GUILayout.Label("Falling Cube Type:");
-        string[] typeNames = System.Enum.GetNames(typeof(Enumerations.CubeType));
-        fallingCubeType = (Enumerations.CubeType)GUILayout.SelectionGrid(
-            (int)fallingCubeType, typeNames, typeNames.Length);
-
-        GUILayout.Space(5);
-
-        GUILayout.Label("Target Cube Type:");
-        targetCubeType = (Enumerations.CubeType)GUILayout.SelectionGrid(
-            (int)targetCubeType, typeNames, typeNames.Length);
-
-        GUILayout.Space(10);
-
-        // Action buttons
-        if (GUILayout.Button($"Place Target Cube (F3)"))
-            PlaceTargetCubeOnMarker();
-
-        if (GUILayout.Button($"Drop Falling Cube (F4)"))
-            DropFallingCubeOnMarker();
-
-        GUILayout.Space(5);
-
-        if (GUILayout.Button($"Clear Debug Objects (F2)"))
-            ClearDebugObjects();
-
-        if (debugModeActive)
-        {
-            // Add at the end
-            if (GUILayout.Button("Force Check All Collisions"))
-            {
-                CheckAllOverlappingCubes();
-            }
-        }
-        GUILayout.Label("Multi-Target Debug:", GUI.skin.box);
-        enableMultiTarget = GUILayout.Toggle(enableMultiTarget, "Enable Multi-Target");
-
-        if (enableMultiTarget)
-        {
-            GUILayout.BeginHorizontal();
-            GUILayout.Label("Grid Size: ");
-            if (GUILayout.Button("-"))
-            {
-                multiGridSize = new Vector2Int(Mathf.Max(1, multiGridSize.x - 1),
-                                              Mathf.Max(1, multiGridSize.y - 1));
-            }
-            GUILayout.Label($"{multiGridSize.x}x{multiGridSize.y}");
-            if (GUILayout.Button("+"))
-            {
-                multiGridSize = new Vector2Int(Mathf.Min(5, multiGridSize.x + 1),
-                                              Mathf.Min(5, multiGridSize.y + 1));
-            }
-            GUILayout.EndHorizontal();
-
-            if (GUILayout.Button($"Spawn Multiple Targets (F6)"))
-                SpawnMultipleTargets();
-
-            if (GUILayout.Button($"Mark Entire Row (F7)"))
-                MarkRowOfTiles();
-        }
-
-        GUILayout.Space(10);
-        GUILayout.EndArea();
     }
 }

@@ -124,61 +124,81 @@ public class DetonationManager : MonoBehaviour
     }
 
     // Perform the actual 3x3 detonation effect
+    // In DetonationManager.cs
     private void PerformDetonation(Vector2Int center)
     {
         if (!IsValidPosition(center)) return;
-        
-        // Remove this detonation point
+
+        // Get the tile and its charge level
+        Tile centerTile = gridManager.tiles[center.x, center.y];
+        if (centerTile == null) return;
+
+        // Remove this detonation point from the list
         detonationPoints.Remove(center);
-        var tile = gridManager.tiles[center.x, center.y];
+        ResetTileMaterial(centerTile);
 
-        if (tile.IsPrimed)
+        // Get the charge level
+        int chargeLevel = centerTile.DetonationCharges;
+
+        // Determine detonation area based on charge level
+        switch (chargeLevel)
         {
-            tile.Charges--;
-            if (tile.Charges == 0)
-            {
-                tile.SetPrime(false);
-                ResetTileMaterial(gridManager.tiles[center.x, center.y]);
-            }
-            // Process the 2x2 area
-            for (int x = center.x - 1; x <= center.x; x++)
-            {
-                for (int y = center.y - 1; y <= center.y; y++)
+            case 3: // Third charge (highest) - 3x3 area
+                Debug.Log($"Detonating 3x3 area at {center} (charge level 3)");
+                // Process a 3x3 grid centered on the detonation point
+                for (int x = center.x - 1; x <= center.x + 1; x++)
                 {
-                    Vector2Int position = new Vector2Int(x, y);
-                    if (IsValidPosition(position))
+                    for (int y = center.y - 1; y <= center.y + 1; y++)
                     {
-                        // Visual effect
-                        StartCoroutine(FlashTile(gridManager.tiles[x, y]));
+                        Vector2Int position = new Vector2Int(x, y);
+                        if (IsValidPosition(position))
+                        {
+                            // Visual effect
+                            StartCoroutine(FlashTile(gridManager.tiles[x, y]));
 
-                        // Process cubes at this position
-                        DetonateCubesAt(position);
+                            // Process cubes at this position
+                            DetonateCubesAt(position);
+                        }
                     }
                 }
-            }
+                break;
+
+            case 2: // Second charge - 2x2 area
+                Debug.Log($"Detonating 2x2 area at {center} (charge level 2)");
+                // Process 2x2 grid
+                for (int x = center.x; x <= center.x + 1; x++)
+                {
+                    for (int y = center.y; y <= center.y + 1; y++)
+                    {
+                        Vector2Int position = new Vector2Int(x, y);
+                        if (IsValidPosition(position))
+                        {
+                            // Visual effect
+                            StartCoroutine(FlashTile(gridManager.tiles[x, y]));
+
+                            // Process cubes at this position
+                            DetonateCubesAt(position);
+                        }
+                    }
+                }
+                break;
+
+            case 1: // First charge - single tile
+            default:
+                Debug.Log($"Detonating single tile at {center} (charge level 1)");
+                // Just detonate the center tile
+                StartCoroutine(FlashTile(centerTile));
+                DetonateCubesAt(center);
+                break;
         }
-        else
+
+        // Reduce the charge level after detonation
+        centerTile.ReduceCharge();
+
+        // If the tile still has charges, re-register it as a detonation point
+        if (centerTile.HasCharges)
         {
-            ResetTileMaterial(gridManager.tiles[center.x, center.y]);
-
-            Debug.Log($"Detonating 3x3 area at {center}");
-
-            // Process the 3x3 area
-            for (int x = center.x - 1; x <= center.x + 1; x++)
-            {
-                for (int y = center.y - 1; y <= center.y + 1; y++)
-                {
-                    Vector2Int position = new Vector2Int(x, y);
-                    if (IsValidPosition(position))
-                    {
-                        // Visual effect
-                        StartCoroutine(FlashTile(gridManager.tiles[x, y]));
-
-                        // Process cubes at this position
-                        DetonateCubesAt(position);
-                    }
-                }
-            }
+            RegisterDetonationPoint(center);
         }
     }
 

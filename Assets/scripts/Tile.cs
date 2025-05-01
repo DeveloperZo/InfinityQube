@@ -26,6 +26,21 @@ public class Tile : MonoBehaviour
     [SerializeField] private Color markerColor = Color.blue;
     [SerializeField] private Color markedTileColor = new Color(1f, 0.4f, 0.4f);
 
+    [Header("Enhanced Green Tile")]
+    [SerializeField] private int detonationCharges = 0;
+    [SerializeField] private int maxCharges = 3;
+
+
+    [SerializeField]
+    private Color[] chargeColors = new Color[3] {
+    new Color(0f, 0.8f, 0.3f),  // First charge - green (1 tile)
+    new Color(0f, 0.9f, 0.4f),  // Second charge - brighter green (2x2)
+    new Color(0f, 1f, 0.5f)     // Third charge - brightest green (3x3)
+};
+
+    // Properties to access charge information
+    public int DetonationCharges => detonationCharges;
+    public bool HasCharges => detonationCharges > 0;
 
     public bool IsBlackened => isBlackened;
     public bool IsPrimed => isPrimed;
@@ -64,17 +79,13 @@ public class Tile : MonoBehaviour
             }
             else if (cubeType == CubeType.Green)
             {
-                // Green tile enhancement - possibly increase detonation area
-                // For MVP, just change tile color for visualization
-                if (tileRenderer != null)
-                {
-                    tileRenderer.material.color = new Color(0f, 0.8f, 0.3f); // Brighter green
-                }
+                // First green charge
+                detonationCharges = 1;
+                UpdateChargeVisuals();
             }
             else if (cubeType == CubeType.Blue)
             {
-                // Blue tile effect - create time distortion field
-                // For MVP, just change tile color to light blue
+                // Blue tile effect
                 if (tileRenderer != null)
                 {
                     tileRenderer.material.color = new Color(0.5f, 0.8f, 1f); // Light blue
@@ -148,18 +159,68 @@ public class Tile : MonoBehaviour
         }
     }
 
-    public void PrimeTile()
+    public void EnhanceGreenTile()
     {
-        isBlackened = false;
-        isPrimed = true;
-        Charges = 3;
-        ClearMarker(); // Remove any existing marker
+        // Increase charges up to the max
+        if (detonationCharges < maxCharges)
+        {
+            detonationCharges++;
 
-        // Visual indication
+            // Visual indication of charge level
+            UpdateChargeVisuals();
+
+            Debug.Log($"Green tile at ({x}, {y}) enhanced to charge level {detonationCharges}");
+        }
+    }
+
+    private void UpdateChargeVisuals()
+    {
+        if (tileRenderer != null && detonationCharges > 0 && detonationCharges <= chargeColors.Length)
+        {
+            // Apply color based on charge level
+            tileRenderer.material.color = chargeColors[detonationCharges - 1];
+        }
+    }
+
+    public void ReduceCharge()
+    {
+        if (detonationCharges > 0)
+        {
+            detonationCharges--;
+
+            if (detonationCharges > 0)
+            {
+                // Still has charges, update visuals
+                UpdateChargeVisuals();
+            }
+            else
+            {
+                // Reset to normal state if no charges left
+                currentState = TileState.Normal;
+                if (tileRenderer != null)
+                {
+                    tileRenderer.material.color = originalColor;
+                }
+                transform.position = new Vector3(transform.position.x, 0f, transform.position.z);
+            }
+        }
+    }
+
+    public void ResetTile()
+    {
+        currentState = TileState.Normal;
+        isBlackened = false;
+        detonationCharges = 0;
+
+        // Reset visual appearance
         if (tileRenderer != null)
         {
-            tileRenderer.material.color = Color.green;
+            tileRenderer.material.color = originalColor;
         }
+
+        // Reset position
+        transform.position = new Vector3(transform.position.x, 0f, transform.position.z);
+        ClearMarker();
     }
 
     public void ToggleMarker()
