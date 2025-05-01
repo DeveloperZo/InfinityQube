@@ -124,6 +124,12 @@ MonoBehaviour:
   markerHeight: 0.3
   markerScale: 0.5
   markerColor: {r: 0, g: 0, b: 1, a: 1}
-  markedTileColor: {r: 1, g: 0.4, b: 0.4, a: 1}
+  markedTileColor: {r: 1, g: 1, b: 1, a: 1}
+  detonationCharges: 0
+  maxCharges: 3
+  chargeColors:
+  - {r: 0, g: 0.8, b: 0.3, a: 1}
+  - {r: 0, g: 0.9, b: 0.4, a: 1}
+  - {r: 0, g: 1, b: 0.5, a: 1}
   currentState: 0
   currentCube: {fileID: 0}

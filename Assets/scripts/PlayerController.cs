@@ -7,6 +7,7 @@ public class PlayerController : MonoBehaviour
     [Header("References")]
     [SerializeField] private GridManager grid;
     [SerializeField] private TimeDistortionManager timeDistortionManager;
+    [SerializeField] private TransienceManager transienceManager; // Add this reference
 
     [Header("Settings")]
     [SerializeField] private int maxMarkers = 2;

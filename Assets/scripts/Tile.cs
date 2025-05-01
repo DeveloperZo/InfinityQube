@@ -36,6 +36,10 @@ public class Tile : MonoBehaviour
     [SerializeField] private Color markerColor = Color.blue;
     [SerializeField] private Color markedTileColor = new Color(1f, 0.4f, 0.4f);
 
+    private const float TRANSFORMED_HEIGHT = -0.25f;  // Lower by 0.25 for transformed tiles
+    private const float MARKED_HEIGHT = 0.25f;        // Raise by 0.25 for marked tiles
+    private const float NORMAL_HEIGHT = 0f;           // Normal baseline height
+
     [Header("Enhanced Green Tile")]
     [SerializeField] private int detonationCharges = 0;
     [SerializeField] private int maxCharges = 3;
@@ -82,7 +86,7 @@ public class Tile : MonoBehaviour
             currentState = TileState.Transformed;
 
             // Visual change - sink the tile
-            transform.position = new Vector3(transform.position.x, -0.2f, transform.position.z);
+            transform.position = new Vector3(transform.position.x, TRANSFORMED_HEIGHT, transform.position.z);
 
             if (cubeType == CubeType.Black)
             {
@@ -148,10 +152,13 @@ public class Tile : MonoBehaviour
             markerObj.name = $"Marker_{x}_{y}";
         }
 
+        // Raise the tile for marked state
+        transform.position = new Vector3(transform.position.x, MARKED_HEIGHT, transform.position.z);
+
         // Make tile tint more obvious
         if (tileRenderer != null)
         {
-            tileRenderer.material.color = new Color(1f, 0.2f, 0.2f); // Brighter red
+            tileRenderer.material.color = markedTileColor; // Brighter red
 
             // Debug log for verification
             Debug.Log($"Marked tile at {x},{y} - hasMarker={hasMarker}");
@@ -269,7 +276,7 @@ public class Tile : MonoBehaviour
         }
 
         // Reset position
-        transform.position = new Vector3(transform.position.x, 0f, transform.position.z);
+        transform.position = new Vector3(transform.position.x, NORMAL_HEIGHT, transform.position.z);
         ClearMarker();
     }
 
@@ -293,6 +300,17 @@ public class Tile : MonoBehaviour
         {
             Destroy(markerObj);
             markerObj = null;
+        }
+
+        // Reset the tile height if not transformed
+        if (currentState != TileState.Transformed)
+        {
+            transform.position = new Vector3(transform.position.x, NORMAL_HEIGHT, transform.position.z);
+        }
+        else
+        {
+            // Keep transformed height
+            transform.position = new Vector3(transform.position.x, TRANSFORMED_HEIGHT, transform.position.z);
         }
 
         if (tileRenderer != null)
@@ -368,6 +386,14 @@ public class Tile : MonoBehaviour
                     timeManager.RegisterDistortionPoint(new Vector2Int(x, y));
                 }
                 break;
+            case Enumerations.CubeType.Red:
+                TransienceManager transienceManager = FindObjectOfType<TransienceManager>();
+                if (transienceManager != null)
+                {
+                    transienceManager.ActivateTransienceZone(new Vector2Int(x, y));
+                }
+                break;
+
         }
 
         // Process the actual cube that was captured
