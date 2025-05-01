@@ -68,19 +68,26 @@ public class Tile : MonoBehaviour
             markerObj.transform.localPosition = Vector3.up * markerHeight;
             markerObj.transform.localScale = new Vector3(markerScale, 0.1f, markerScale);
             markerObj.name = $"Marker_{x}_{y}";
-            
+
             // Set marker color
             Renderer markerRenderer = markerObj.GetComponent<Renderer>();
             if (markerRenderer != null)
             {
-                markerRenderer.material.color = markerColor;
+                // Use bright, high-contrast color
+                markerRenderer.material.color = Color.magenta;
+                // Optional: Add emission to make it glow
+                markerRenderer.material.EnableKeyword("_EMISSION");
+                markerRenderer.material.SetColor("_EmissionColor", Color.magenta * 0.8f);
             }
         }
 
-        // Tint the tile
+        // Make tile tint more obvious
         if (tileRenderer != null)
         {
-            tileRenderer.material.color = markedTileColor;
+            tileRenderer.material.color = new Color(1f, 0.2f, 0.2f); // Brighter red
+
+            // Debug log for verification
+            Debug.Log($"Marked tile at {x},{y} - hasMarker={hasMarker}");
         }
     }
 

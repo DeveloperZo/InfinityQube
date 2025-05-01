@@ -137,11 +137,20 @@ public class PlayerController : MonoBehaviour
 
             if (!currentTile.HasMarker)
             {
-                // Rest of existing method...
+                if (currentMarkers < maxMarkers)
+                {
+                    currentTile.PlaceMarker();
+                    markerQueue.Enqueue(new Vector2Int(selX, selZ)); // Track marker order
+                    currentMarkers++;
+                }
             }
             else
             {
-                // Rest of existing method...
+                currentTile.ClearMarker();
+                // Use a new queue excluding this position
+                markerQueue = new Queue<Vector2Int>(
+                    markerQueue.Where(pos => pos.x != selX || pos.y != selZ));
+                currentMarkers--;
             }
         }
     }
