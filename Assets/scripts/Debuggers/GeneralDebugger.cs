@@ -16,11 +16,85 @@ public class GeneralDebugger : MonoBehaviour
     [SerializeField] private KeyCode dropFallingKey = KeyCode.F4;
     [SerializeField] private float spawnHeight = 5f;
 
+    [Header("Multi-Target Debug")]
+    [SerializeField] private bool enableMultiTarget = false;
+    [SerializeField] private Vector2Int multiGridSize = new Vector2Int(3, 3);
+    [SerializeField] private float multiSpacing = 1.5f;
+    [SerializeField] private KeyCode spawnAllKey = KeyCode.F6;
+    [SerializeField] private KeyCode markRowKey = KeyCode.F7;
+
+
     // Cube testing state 
     private Enumerations.CubeType fallingCubeType = Enumerations.CubeType.Black;
     private Enumerations.CubeType targetCubeType = Enumerations.CubeType.Black;
     private bool debugModeActive = false;
     private List<GameObject> debugObjects = new List<GameObject>();
+    private void SpawnMultipleTargets()
+    {
+        if (grid == null)
+        {
+            Debug.LogWarning("Grid reference missing!");
+            return;
+        }
+
+        // Calculate center of the multi-grid
+        Vector2Int centerPos = FindMarkedTile();
+        if (centerPos.x < 0)
+        {
+            Debug.Log("No marked tile found. Place a marker first (Space).");
+            return;
+        }
+
+        // Get correct prefab for target cubes
+        int prefabIndex = (int)targetCubeType;
+        if (prefabIndex < 0 || prefabIndex >= cubePrefabs.Length || cubePrefabs[prefabIndex] == null)
+        {
+            Debug.LogWarning($"Invalid cube prefab at index {prefabIndex}");
+            return;
+        }
+
+        // Calculate grid bounds
+        int startX = Mathf.Max(0, centerPos.x - multiGridSize.x / 2);
+        int endX = Mathf.Min(grid.Width - 1, centerPos.x + multiGridSize.x / 2);
+        int startY = Mathf.Max(0, centerPos.y - multiGridSize.y / 2);
+        int endY = Mathf.Min(grid.Height - 1, centerPos.y + multiGridSize.y / 2);
+
+        // Spawn target cubes in grid pattern
+        for (int x = startX; x <= endX; x++)
+        {
+            for (int y = startY; y <= endY; y++)
+            {
+                // Don't spawn on the center (marked tile)
+                if (x == centerPos.x && y == centerPos.y)
+                    continue;
+
+                // Check if there's already a cube at this position
+                if (grid.tiles[x, y] != null && grid.tiles[x, y].currentCube != null)
+                    continue;
+
+                // Spawn the cube
+                Vector3 spawnPos = new Vector3(x, 1f, y);
+                GameObject cube = Instantiate(cubePrefabs[prefabIndex], spawnPos, Quaternion.identity);
+
+                // Initialize it
+                CubeBehavior behavior = cube.GetComponent<CubeBehavior>();
+                if (behavior != null)
+                {
+                    behavior.Init(grid, new Vector2Int(x, y), 1);
+                    behavior.CubeType = targetCubeType;
+                }
+
+                // Store the cube reference in the tile
+                Tile tile = grid.tiles[x, y];
+                if (tile != null)
+                {
+                    tile.currentCube = behavior;
+                }
+
+                debugObjects.Add(cube);
+            }
+        }
+    }
 
     private void Start()
     {
@@ -48,6 +122,28 @@ public class GeneralDebugger : MonoBehaviour
         }
     }
 
+    private void MarkRowOfTiles()
+    {
+        if (grid == null) return;
+
+        // Find current marker position
+        Vector2Int markerPos = FindMarkedTile();
+        if (markerPos.x < 0)
+        {
+            Debug.Log("No marked tile found. Place a marker first (Space) to define the row.");
+            return;
+        }
+
+        // Mark the entire row
+        for (int x = 0; x < grid.Width; x++)
+        {
+            // Skip tiles that already have markers
+            if (grid.tiles[x, markerPos.y] != null && !grid.tiles[x, markerPos.y].HasMarker)
+            {
+                grid.PlaceMarker(x, markerPos.y);
+            }
+        }
+    }
     private void Update()
     {
         // Toggle debug mode
@@ -75,6 +171,16 @@ public class GeneralDebugger : MonoBehaviour
         if (Input.GetKeyDown(dropFallingKey))
         {
             DropFallingCubeOnMarker();
+        }
+
+        if (Input.GetKeyDown(spawnAllKey))
+        {
+            SpawnMultipleTargets();
+        }
+
+        if (Input.GetKeyDown(markRowKey))
+        {
+            MarkRowOfTiles();
         }
     }
 
@@ -265,7 +371,7 @@ public class GeneralDebugger : MonoBehaviour
     {
         if (!debugModeActive) return;
 
-        GUILayout.BeginArea(new Rect(10, 10, 250, 300));
+        GUILayout.BeginArea(new Rect(10, 10, 250, 600));
         GUILayout.Label("=== CUBE DEBUGGER ===", GUI.skin.box);
 
         Vector2Int markerPos = FindMarkedTile();
@@ -314,6 +420,34 @@ public class GeneralDebugger : MonoBehaviour
                 CheckAllOverlappingCubes();
             }
         }
+        GUILayout.Label("Multi-Target Debug:", GUI.skin.box);
+        enableMultiTarget = GUILayout.Toggle(enableMultiTarget, "Enable Multi-Target");
+
+        if (enableMultiTarget)
+        {
+            GUILayout.BeginHorizontal();
+            GUILayout.Label("Grid Size: ");
+            if (GUILayout.Button("-"))
+            {
+                multiGridSize = new Vector2Int(Mathf.Max(1, multiGridSize.x - 1),
+                                              Mathf.Max(1, multiGridSize.y - 1));
+            }
+            GUILayout.Label($"{multiGridSize.x}x{multiGridSize.y}");
+            if (GUILayout.Button("+"))
+            {
+                multiGridSize = new Vector2Int(Mathf.Min(5, multiGridSize.x + 1),
+                                              Mathf.Min(5, multiGridSize.y + 1));
+            }
+            GUILayout.EndHorizontal();
+
+            if (GUILayout.Button($"Spawn Multiple Targets (F6)"))
+                SpawnMultipleTargets();
+
+            if (GUILayout.Button($"Mark Entire Row (F7)"))
+                MarkRowOfTiles();
+        }
+
+        GUILayout.Space(10);
         GUILayout.EndArea();
     }
 }

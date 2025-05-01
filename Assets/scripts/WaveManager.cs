@@ -142,9 +142,28 @@ public class WaveManager : MonoBehaviour
                 CubeBehavior cube = activeCubes[i];
                 if (cube != null)
                 {
+                    // Check if the cube is frozen by a time distortion field
+                    TimeFrozenTag frozenTag = cube.GetComponent<TimeFrozenTag>();
+                    if (frozenTag != null)
+                    {
+                        // Skip movement for this cube
+                        frozenTag.frozenDuration -= 1f;
+
+                        // Remove the tag if duration is expired
+                        if (frozenTag.frozenDuration <= 0)
+                        {
+                            Destroy(frozenTag);
+                        }
+
+                        // Mark as still active for next cycle
+                        cubesRemaining = true;
+                        continue;
+                    }
+
+                    // Normal movement behavior
                     if (cube.isRainingCube)
                     {
-                        var newPosition = new Vector3(cube.transform.position.x, cube.transform.position.z, cube.transform.position.y-1);
+                        var newPosition = new Vector3(cube.transform.position.x, cube.transform.position.z, cube.transform.position.y - 1);
                         cube.transform.position = newPosition;
                     }
                     // Explicitly reset movement state to ensure cubes can move

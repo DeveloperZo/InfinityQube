@@ -13,6 +13,7 @@ public class CubeCollisionController : MonoBehaviour
     }
 
     // Method to handle all cube collisions
+    // Complete collision handler in CubeCollisionController.cs
     public void HandleCubeCollision(CubeBehavior sourceCube, CubeBehavior targetCube, Vector2Int position)
     {
         if (sourceCube == null || targetCube == null) return;
@@ -72,13 +73,11 @@ public class CubeCollisionController : MonoBehaviour
         else if (sourceType == Enumerations.CubeType.Green && targetType == Enumerations.CubeType.Green)
         {
             // Create an enhanced tile with special properties
-            Tile tile = grid.tiles[position.x, position.y];
-            if (tile != null)
+            if (detonationManager != null)
             {
-                tile.TransformTile(Enumerations.CubeType.Green);
-                // Enhanced tile logic to be implemented
-                // Store some state in the tile about detonation power
+                detonationManager.RegisterDetonationPoint(position);
             }
+
             // Merge cubes (destroy one)
             Destroy(targetCube.gameObject);
         }
@@ -89,6 +88,7 @@ public class CubeCollisionController : MonoBehaviour
             Destroy(targetCube.gameObject);
             Destroy(sourceCube.gameObject);
         }
+        // Blue cube colliding with Normal cube
         else if (sourceType == Enumerations.CubeType.Blue && targetType == Enumerations.CubeType.Normal)
         {
             // Push normal cube one space forward
@@ -117,6 +117,62 @@ public class CubeCollisionController : MonoBehaviour
             }
             // Blue cube stops
             // Implement a "stopped" state for the blue cube
+        }
+        // Blue cube colliding with Black cube
+        else if (sourceType == Enumerations.CubeType.Blue && targetType == Enumerations.CubeType.Black)
+        {
+            // Blue is consumed but pushes black cube back
+            Vector2Int pushPosition = new Vector2Int(targetCube.position.x, targetCube.position.y + 1);
+
+            // Validate push position
+            if (pushPosition.y < grid.Height && pushPosition.x >= 0 &&
+                pushPosition.x < grid.Width && pushPosition.y >= 0)
+            {
+                // Move the black cube
+                targetCube.position = pushPosition;
+                targetCube.transform.position = new Vector3(pushPosition.x, 1f, pushPosition.y);
+
+                // Update tile references
+                grid.tiles[pushPosition.x, pushPosition.y].currentCube = targetCube;
+            }
+
+            // Blue cube is consumed
+            Destroy(sourceCube.gameObject);
+        }
+        // Blue cube colliding with Green cube
+        else if (sourceType == Enumerations.CubeType.Blue && targetType == Enumerations.CubeType.Green)
+        {
+            // Push green cube one space
+            Vector2Int pushPosition = new Vector2Int(targetCube.position.x, targetCube.position.y - 1);
+
+            // Check if push position is valid
+            if (pushPosition.y >= 0 && pushPosition.x >= 0 &&
+                pushPosition.x < grid.Width && pushPosition.y < grid.Height)
+            {
+                // Move the green cube
+                targetCube.position = pushPosition;
+                targetCube.transform.position = new Vector3(pushPosition.x, 1f, pushPosition.y);
+
+                // Update tile references
+                grid.tiles[position.x, position.y].currentCube = sourceCube;
+                grid.tiles[pushPosition.x, pushPosition.y].currentCube = targetCube;
+            }
+            else
+            {
+                // Push off grid = trigger detonation and destroy green cube
+                if (detonationManager != null)
+                {
+                    detonationManager.RegisterDetonationPoint(position);
+                    detonationManager.TriggerNextDetonation();
+                }
+                Destroy(targetCube.gameObject);
+            }
+        }
+        // Blue cube colliding with Blue cube
+        else if (sourceType == Enumerations.CubeType.Blue && targetType == Enumerations.CubeType.Blue)
+        {
+            // Simple collision - destroy one
+            Destroy(targetCube.gameObject);
         }
     }
 

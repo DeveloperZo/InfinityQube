@@ -1,6 +1,20 @@
 using System;
+using System.Collections;
 using UnityEngine;
 using static Enumerations;
+
+
+public class TimeFrozenTag : MonoBehaviour
+{
+    // Just a tag component to identify frozen cubes
+    public float frozenDuration = 1f; // Number of movement cycles to skip
+
+    void Start()
+    {
+        // Auto-destroy after a set time to prevent permanent freeze
+        Destroy(this, 5f);
+    }
+}
 
 public class Tile : MonoBehaviour
 {
@@ -33,29 +47,39 @@ public class Tile : MonoBehaviour
         normalColor = tileRenderer.material.color;
     }
 
+    // In Tile.cs
     public void TransformTile(CubeType cubeType)
     {
         if (currentState != TileState.Transformed)
         {
             currentState = TileState.Transformed;
-            transform.position = new Vector3(transform.position.x, -0.2f, transform.position.z);
-            // Visual change
 
-            if(cubeType == CubeType.Black) 
+            // Visual change - sink the tile
+            transform.position = new Vector3(transform.position.x, -0.2f, transform.position.z);
+
+            if (cubeType == CubeType.Black)
             {
                 Debug.Log("Tile has been blackened");
                 BlackenTile();
             }
-            else if(cubeType == CubeType.Green) 
+            else if (cubeType == CubeType.Green)
             {
-                PrimeTile();
+                // Green tile enhancement - possibly increase detonation area
+                // For MVP, just change tile color for visualization
+                if (tileRenderer != null)
+                {
+                    tileRenderer.material.color = new Color(0f, 0.8f, 0.3f); // Brighter green
+                }
             }
-            else if(cubeType == CubeType.Normal)
+            else if (cubeType == CubeType.Blue)
             {
-
+                // Blue tile effect - create time distortion field
+                // For MVP, just change tile color to light blue
+                if (tileRenderer != null)
+                {
+                    tileRenderer.material.color = new Color(0.5f, 0.8f, 1f); // Light blue
+                }
             }
-            
-
         }
     }
 
@@ -193,7 +217,7 @@ public class Tile : MonoBehaviour
     public void TriggerMarker()
     {
         if (!hasMarker) return;
-        
+
         // Store reference to cube before changing marker state
         CubeBehavior cubeToProcess = currentCube;
         ActivateMarker();
@@ -211,7 +235,7 @@ public class Tile : MonoBehaviour
         }
 
         DetonationManager detonationManager = null;
-        
+
         // Handle green cube before potential destruction
         if (cubeToProcess.CubeType == Enumerations.CubeType.Green)
         {
@@ -220,6 +244,12 @@ public class Tile : MonoBehaviour
             {
                 detonationManager.RegisterDetonationPoint(new Vector2Int(x, y));
             }
+        }
+        // Handle blue cube special ability
+        else if (cubeToProcess.CubeType == Enumerations.CubeType.Blue)
+        {
+            // Create time distortion field (2x2)
+            CreateTimeDistortionField();
         }
 
         switch (cubeToProcess.CubeType)
@@ -242,14 +272,87 @@ public class Tile : MonoBehaviour
                 }
                 break;
 
+            case Enumerations.CubeType.Blue:
+                // Blue cubes are consumed when triggered
+                cubeToProcess.level--;
+                if (cubeToProcess.level <= 0)
+                {
+                    Destroy(cubeToProcess.gameObject);
+                }
+                break;
+
             case Enumerations.CubeType.Black:
                 // Black cubes cause a penalty
                 transform.position = new Vector3(transform.position.x, -0.2f, transform.position.z);
                 break;
         }
-        
+
         // Clear cube reference after processing
         currentCube = null;
+    }
+
+    private void CreateTimeDistortionField()
+    {
+        // Get grid manager reference
+        GridManager gridManager = FindObjectOfType<GridManager>();
+        if (gridManager == null) return;
+
+        // Create a 2x2 time distortion field
+        for (int dx = 0; dx <= 1; dx++)
+        {
+            for (int dy = 0; dy <= 1; dy++)
+            {
+                int targetX = x + dx;
+                int targetY = y + dy;
+
+                // Skip if out of bounds
+                if (targetX >= gridManager.Width || targetY >= gridManager.Height)
+                    continue;
+
+                Tile tile = gridManager.tiles[targetX, targetY];
+                if (tile != null)
+                {
+                    // Visual effect - blue glow
+                    Renderer tileRenderer = tile.GetComponent<Renderer>();
+                    if (tileRenderer != null)
+                    {
+                        // Store original color and temporarily change to blue tint
+                        StartCoroutine(ApplyTimeDistortion(tile, tileRenderer));
+                    }
+
+                    // Mark the cubes in this area for time freeze
+                    CubeBehavior cube = tile.currentCube;
+                    if (cube != null)
+                    {
+                        // For MVP: Simple visual feedback
+                        Renderer cubeRenderer = cube.GetComponent<Renderer>();
+                        if (cubeRenderer != null)
+                        {
+                            cubeRenderer.material.color = new Color(0.7f, 0.7f, 1f); // Light blue tint
+                        }
+
+                        // Make cube skip one movement cycle
+                        // For MVP, we'll just mark it as "frozen" for the Wave manager to check
+                        cube.gameObject.AddComponent<TimeFrozenTag>();
+                    }
+                }
+            }
+        }
+    }
+
+    private IEnumerator ApplyTimeDistortion(Tile tile, Renderer renderer)
+    {
+        Color originalColor = renderer.material.color;
+        renderer.material.color = new Color(0.6f, 0.8f, 1f); // Blue tint
+
+        // Visual effect duration (one wave)
+        yield return new WaitForSeconds(3f);
+
+        // Restore original appearance if tile still exists
+        if (tile != null && renderer != null)
+        {
+            renderer.material.color = originalColor;
+        }
     }
 
     internal void SetPrime(bool isPrimed)
