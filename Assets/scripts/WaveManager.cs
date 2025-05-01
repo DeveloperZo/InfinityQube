@@ -366,7 +366,7 @@ public class WaveManager : MonoBehaviour
             return Enumerations.CubeType.Normal;
         else if (random < normalCubeChance + greenCubeChance)
             return Enumerations.CubeType.Green;
-        else if (random < normalCubeChance + greenCubeChance + 0.05f) // 5% chance for blue cubes
+        else if (random < normalCubeChance + greenCubeChance + 0.5f) // 5% chance for blue cubes
             return Enumerations.CubeType.Blue;
         else
             return Enumerations.CubeType.Black;

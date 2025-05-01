@@ -9,10 +9,12 @@ public class GameUI : MonoBehaviour
     [SerializeField] private Color panelBackgroundColor = new Color(0.1f, 0.1f, 0.1f, 0.8f);
     [SerializeField] private Color headerColor = new Color(0.2f, 0.6f, 1f, 1f);
     [SerializeField] private Color textColor = Color.white;
+    [SerializeField] private bool showTimeDistortionTracker = true;
 
     // References
     private GridManager grid;
     private DetonationManager detonationManager;
+    private TimeDistortionManager timeDistortionManager;
 
     // UI style caching
     private GUIStyle panelStyle;
@@ -26,6 +28,7 @@ public class GameUI : MonoBehaviour
         // Find references
         grid = FindObjectOfType<GridManager>();
         detonationManager = FindObjectOfType<DetonationManager>();
+        timeDistortionManager = FindObjectOfType<TimeDistortionManager>();
 
         // Initialize styles on first use
         InitializeStyles();
@@ -92,6 +95,10 @@ public class GameUI : MonoBehaviour
         {
             DrawDetonationTracker();
         }
+        if (showTimeDistortionTracker)
+        {
+            DrawTimeDistortionTracker();
+        }
     }
 
     private void DrawControlsPanel()
@@ -124,6 +131,7 @@ public class GameUI : MonoBehaviour
         // Toggle for showing panels
         GUILayout.Space(10);
         showDetonationTracker = GUILayout.Toggle(showDetonationTracker, "Show Detonation Tracker");
+        showTimeDistortionTracker = GUILayout.Toggle(showTimeDistortionTracker, "Show Time Distortion Tracker");
 
         GUILayout.EndVertical();
         GUILayout.EndArea();
@@ -224,6 +232,64 @@ public class GameUI : MonoBehaviour
         else
         {
             GUILayout.Label("Detonation Manager not found!", textStyle);
+        }
+
+        GUILayout.EndVertical();
+        GUILayout.EndArea();
+    }
+
+    private void DrawTimeDistortionTracker()
+    {
+        // Refresh references if needed
+        if (timeDistortionManager == null)
+        {
+            timeDistortionManager = FindObjectOfType<TimeDistortionManager>();
+        }
+
+        // Time distortion tracker panel
+        GUILayout.BeginArea(new Rect(Screen.width - 300, 630, 290, 300));
+
+        // Panel background
+        GUILayout.BeginVertical(panelStyle);
+
+        // Header
+        GUILayout.Label("TIME DISTORTION TRACKER", headerStyle);
+
+        GUILayout.Space(5);
+
+        if (timeDistortionManager != null)
+        {
+            GUILayout.BeginVertical(boxStyle);
+
+            // Count of active distortion points
+            int count = timeDistortionManager.DistortionPointCount;
+            GUILayout.Label($"Active Distortion Points: {count}", textStyle);
+
+            // Show next distortion position
+            Vector2Int nextPoint = timeDistortionManager.GetNextDistortionPoint();
+            if (nextPoint.x >= 0)
+            {
+                GUILayout.Label($"Next Distortion: ({nextPoint.x}, {nextPoint.y})", textStyle);
+            }
+            else
+            {
+                GUILayout.Label("No pending distortions", textStyle);
+            }
+
+            // Button to trigger next distortion
+            if (count > 0)
+            {
+                if (GUILayout.Button("Activate Distortion (T)", buttonStyle))
+                {
+                    timeDistortionManager.TriggerNextDistortion();
+                }
+            }
+
+            GUILayout.EndVertical();
+        }
+        else
+        {
+            GUILayout.Label("Time Distortion Manager not found!", textStyle);
         }
 
         GUILayout.EndVertical();

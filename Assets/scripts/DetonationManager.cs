@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 
 public class DetonationManager : MonoBehaviour
 {
@@ -184,11 +185,29 @@ public class DetonationManager : MonoBehaviour
                 break;
 
             case 1: // First charge - single tile
-            default:
                 Debug.Log($"Detonating single tile at {center} (charge level 1)");
                 // Just detonate the center tile
                 StartCoroutine(FlashTile(centerTile));
                 DetonateCubesAt(center);
+                break;
+            default:
+                Debug.Log($"Detonating 3x3 area at {center} (default)");
+                // Process a 3x3 grid centered on the detonation point
+                for (int x = center.x - 1; x <= center.x + 1; x++)
+                {
+                    for (int y = center.y - 1; y <= center.y + 1; y++)
+                    {
+                        Vector2Int position = new Vector2Int(x, y);
+                        if (IsValidPosition(position))
+                        {
+                            // Visual effect
+                            StartCoroutine(FlashTile(gridManager.tiles[x, y]));
+
+                            // Process cubes at this position
+                            DetonateCubesAt(position);
+                        }
+                    }
+                }
                 break;
         }
 
@@ -206,16 +225,25 @@ public class DetonationManager : MonoBehaviour
     private IEnumerator FlashTile(Tile tile)
     {
         if (tile == null) yield break;
-        
+
         Renderer renderer = tile.GetComponent<Renderer>();
         if (renderer == null) yield break;
-        
+
         Material originalMaterial = renderer.material;
         Color originalColor = renderer.material.color;
-        
+
+        // More visible flash effect
         renderer.material.color = flashColor;
+
+        // Optional: Add a temporary visual marker for debugging
+        GameObject marker = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+        marker.transform.position = new Vector3(tile.transform.position.x, tile.transform.position.y + 0.5f, tile.transform.position.z);
+        marker.transform.localScale = Vector3.one * 0.3f;
+        marker.GetComponent<Renderer>().material.color = flashColor;
+        Destroy(marker.GetComponent<Collider>()); // Remove collider to avoid physics issues
+
         yield return new WaitForSeconds(flashDuration);
-        
+
         // Only restore if the tile still exists
         if (tile != null && renderer != null)
         {
@@ -229,20 +257,33 @@ public class DetonationManager : MonoBehaviour
                 renderer.material.color = originalColor;
             }
         }
+
+        if (marker != null)
+        {
+            Destroy(marker);
+        }
     }
 
     // Detonate all cubes at a specific position
     private void DetonateCubesAt(Vector2Int position)
     {
-        // Find all cubes at this position
+        // Find all cubes at this position by checking their actual grid positions
         foreach (CubeBehavior cube in FindObjectsOfType<CubeBehavior>())
         {
             if (cube == null) continue;
-            
+
+            // Debug the comparison to help identify positioning issues
             if (cube.position.x == position.x && cube.position.y == position.y)
             {
+                Debug.Log($"Found cube to detonate at ({position.x}, {position.y}) of type {cube.CubeType}");
                 ProcessCubeDetonation(cube, position);
             }
+        }
+
+        // Additional debugging - log if no cubes were found
+        if (FindObjectsOfType<CubeBehavior>().All(c => c.position.x != position.x || c.position.y != position.y))
+        {
+            Debug.Log($"No cubes found at position ({position.x}, {position.y}) to detonate");
         }
     }
 
@@ -252,7 +293,7 @@ public class DetonationManager : MonoBehaviour
         if (cube.CubeType == Enumerations.CubeType.Black)
         {
             // Apply penalty for black cubes
-            DamageTile(position);
+            //DamageTile(position);
         }
         else
         {

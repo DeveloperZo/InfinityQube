@@ -6,7 +6,8 @@ public class PlayerController : MonoBehaviour
 {
     [Header("References")]
     [SerializeField] private GridManager grid;
-    
+    [SerializeField] private TimeDistortionManager timeDistortionManager;
+
     [Header("Settings")]
     [SerializeField] private int maxMarkers = 2;
     [SerializeField] private Color selectorColor = Color.yellow;
@@ -78,6 +79,7 @@ public class PlayerController : MonoBehaviour
         HandleMarkerPlacement();
         HandleMarkerTrigger();
         HandleDetonation();
+        HandleTimeDistortion();
         HandleSpeedControl();
     }
 
@@ -185,10 +187,32 @@ public class PlayerController : MonoBehaviour
     {
         if (Input.GetKeyDown(KeyCode.D))
         {
-        if (detonationManager.HasDetonationPoints())
-        {
-            detonationManager.TriggerNextDetonation();
+            Debug.Log("D key pressed, checking for detonation points...");
+            if (detonationManager != null && detonationManager.HasDetonationPoints())
+            {
+                Debug.Log($"Triggering next detonation (Points available: {detonationManager.DetonationPointCount})");
+                detonationManager.TriggerNextDetonation();
+            }
+            else
+            {
+                Debug.Log("No detonation points available or DetonationManager is null");
+                if (detonationManager == null)
+                {
+                    detonationManager = FindObjectOfType<DetonationManager>();
+                    Debug.Log($"Attempted to find DetonationManager: {(detonationManager != null ? "Found" : "Not found")}");
+                }
+            }
         }
+    }
+
+    private void HandleTimeDistortion()
+    {
+        if (Input.GetKeyDown(KeyCode.T)) // Using 'T' for Time distortion
+        {
+            if (timeDistortionManager != null && timeDistortionManager.HasDistortionPoints())
+            {
+                timeDistortionManager.TriggerNextDistortion();
+            }
         }
     }
     private void HandleSpeedControl()

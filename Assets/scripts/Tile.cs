@@ -302,52 +302,35 @@ public class Tile : MonoBehaviour
             return;
         }
 
-        // Check if the cube has been destroyed
-        if (cubeToProcess == null || cubeToProcess.gameObject == null)
-        {
-            return;
-        }
-
-        DetonationManager detonationManager = null;
-
-        // Handle green cube before potential destruction
-        if (cubeToProcess.CubeType == Enumerations.CubeType.Green)
-        {
-            detonationManager = FindObjectOfType<DetonationManager>();
-            if (detonationManager != null)
-            {
-                detonationManager.RegisterDetonationPoint(new Vector2Int(x, y));
-            }
-        }
-        // Handle blue cube special ability
-        else if (cubeToProcess.CubeType == Enumerations.CubeType.Blue)
-        {
-            // Create time distortion field (2x2)
-            CreateTimeDistortionField();
-        }
-
+        // Handle special cube abilities
         switch (cubeToProcess.CubeType)
         {
-            case Enumerations.CubeType.Normal:
-                // Normal cubes just get destroyed
-                cubeToProcess.level--;
-                if (cubeToProcess.level <= 0)
-                {
-                    Destroy(cubeToProcess.gameObject);
-                }
-                break;
-
             case Enumerations.CubeType.Green:
-                // Green cubes register a detonation point
-                cubeToProcess.level--;
-                if (cubeToProcess.level <= 0)
+                // Register with DetonationManager
+                DetonationManager detonationManager = FindObjectOfType<DetonationManager>();
+                if (detonationManager != null)
                 {
-                    Destroy(cubeToProcess.gameObject);
+                    detonationManager.RegisterDetonationPoint(new Vector2Int(x, y));
                 }
                 break;
 
             case Enumerations.CubeType.Blue:
-                // Blue cubes are consumed when triggered
+                // Register with TimeDistortionManager
+                TimeDistortionManager timeManager = FindObjectOfType<TimeDistortionManager>();
+                if (timeManager != null)
+                {
+                    timeManager.RegisterDistortionPoint(new Vector2Int(x, y));
+                }
+                break;
+        }
+
+        // Process the actual cube that was captured
+        switch (cubeToProcess.CubeType)
+        {
+            case Enumerations.CubeType.Normal:
+            case Enumerations.CubeType.Green:
+            case Enumerations.CubeType.Blue:
+                // These cubes are consumed when triggered
                 cubeToProcess.level--;
                 if (cubeToProcess.level <= 0)
                 {
@@ -363,70 +346,6 @@ public class Tile : MonoBehaviour
 
         // Clear cube reference after processing
         currentCube = null;
-    }
-
-    private void CreateTimeDistortionField()
-    {
-        // Get grid manager reference
-        GridManager gridManager = FindObjectOfType<GridManager>();
-        if (gridManager == null) return;
-
-        // Create a 2x2 time distortion field
-        for (int dx = 0; dx <= 1; dx++)
-        {
-            for (int dy = 0; dy <= 1; dy++)
-            {
-                int targetX = x + dx;
-                int targetY = y + dy;
-
-                // Skip if out of bounds
-                if (targetX >= gridManager.Width || targetY >= gridManager.Height)
-                    continue;
-
-                Tile tile = gridManager.tiles[targetX, targetY];
-                if (tile != null)
-                {
-                    // Visual effect - blue glow
-                    Renderer tileRenderer = tile.GetComponent<Renderer>();
-                    if (tileRenderer != null)
-                    {
-                        // Store original color and temporarily change to blue tint
-                        StartCoroutine(ApplyTimeDistortion(tile, tileRenderer));
-                    }
-
-                    // Mark the cubes in this area for time freeze
-                    CubeBehavior cube = tile.currentCube;
-                    if (cube != null)
-                    {
-                        // For MVP: Simple visual feedback
-                        Renderer cubeRenderer = cube.GetComponent<Renderer>();
-                        if (cubeRenderer != null)
-                        {
-                            cubeRenderer.material.color = new Color(0.7f, 0.7f, 1f); // Light blue tint
-                        }
-
-                        // Make cube skip one movement cycle
-                        // For MVP, we'll just mark it as "frozen" for the Wave manager to check
-                        cube.gameObject.AddComponent<TimeFrozenTag>();
-                    }
-                }
-            }
-        }
-    }
-
-    private IEnumerator ApplyTimeDistortion(Tile tile, Renderer renderer)
-    {
-        Color originalColor = renderer.material.color;
-        renderer.material.color = new Color(0.6f, 0.8f, 1f); // Blue tint
-
-        // Visual effect duration (one wave)
-        yield return new WaitForSeconds(3f);
-
-        // Restore original appearance if tile still exists
-        if (tile != null && renderer != null)
-        {
-            renderer.material.color = originalColor;
-        }
     }
 
     internal void SetPrime(bool isPrimed)
