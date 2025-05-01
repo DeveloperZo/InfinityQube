@@ -221,6 +221,11 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &308821980 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 1728893673582764340, guid: 5ffbbb0c397c0684a8ec79b7a33bf8a0, type: 3}
+  m_PrefabInstance: {fileID: 8839062908047669835}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &338409964
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -283,6 +288,55 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 8153240350979894021, guid: 8c357a94dee798a45abbc3e55e82b353, type: 3}
   m_PrefabInstance: {fileID: 338409964}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &395275202
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 395275204}
+  - component: {fileID: 395275203}
+  m_Layer: 0
+  m_Name: TransienceManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &395275203
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 395275202}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9480eba6962296a499f9c8d79a171e77, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  gridManager: {fileID: 1786583425}
+  phasedTileMaterial: {fileID: 2100000, guid: 1649820e4ae6e1047ae9cf8c9dd796f5, type: 2}
+  phasedCubeColor: {r: 0.5686275, g: 0.27058825, b: 0.27450982, a: 0.6}
+  zoneDuration: 3
+  visualPulseRate: 0.5
+--- !u!4 &395275204
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 395275202}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 2.7001927, y: 0.38938272, z: 2.232885}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &487637472
 GameObject:
   m_ObjectHideFlags: 0
@@ -319,7 +373,9 @@ MonoBehaviour:
   - {fileID: 1728893673582764340, guid: 026a402b860389d4aaea0e4f0b5c1ff6, type: 3}
   - {fileID: 1728893673582764340, guid: 28923bfb13f3dde44b857f03a0188e95, type: 3}
   - {fileID: 1099237993}
+  - {fileID: 308821980}
   player: {fileID: 885266531}
+  transienceManager: {fileID: 395275203}
   waveSize: 3
   waveStartDelay: 0.75
   normalCubeChance: 0.7
@@ -477,6 +533,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   grid: {fileID: 1786583425}
   timeDistortionManager: {fileID: 1211460832}
+  transienceManager: {fileID: 395275203}
   maxMarkers: 2
   selectorColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   selectorHeight: 0.2
@@ -655,6 +712,7 @@ MonoBehaviour:
   - {fileID: 1728893673582764340, guid: 026a402b860389d4aaea0e4f0b5c1ff6, type: 3}
   - {fileID: 1728893673582764340, guid: 28923bfb13f3dde44b857f03a0188e95, type: 3}
   - {fileID: 1099237993}
+  - {fileID: 308821980}
   toggleDebugKey: 282
   resetDebugKey: 283
   executeTestKey: 284
@@ -693,7 +751,7 @@ MonoBehaviour:
   gridManager: {fileID: 1786583425}
   distortionPointMaterial: {fileID: 2100000, guid: e2ac5a6cae92b554e87d710d109627cc, type: 2}
   flashDuration: 0.3
-  flashColor: {r: 0.5, g: 0.7, b: 1, a: 1}
+  flashColor: {r: 0.3647059, g: 0.39607847, b: 0.74509805, a: 1}
   freezeDuration: 2
 --- !u!4 &1211460833
 Transform:
@@ -1209,3 +1267,4 @@ SceneRoots:
   - {fileID: 1193796432}
   - {fileID: 150564768}
   - {fileID: 1211460833}
+  - {fileID: 395275204}

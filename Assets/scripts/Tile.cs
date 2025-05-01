@@ -107,6 +107,10 @@ public class Tile : MonoBehaviour
                     tileRenderer.material.color = new Color(0.5f, 0.8f, 1f); // Light blue
                 }
             }
+            else if(cubeType == CubeType.Red)
+            {
+                tileRenderer.material.color = Color.red;
+            }
         }
     }
 
