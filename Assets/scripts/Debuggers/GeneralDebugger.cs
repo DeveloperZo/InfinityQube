@@ -1,5 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
+using System.Collections;
+using Unity.VisualScripting;
 
 public class GeneralDebugger : MonoBehaviour
 {
@@ -140,6 +142,7 @@ public class GeneralDebugger : MonoBehaviour
         debugObjects.Add(cube);
     }
 
+    // In GeneralDebugger.cs
     private void DropFallingCubeOnMarker()
     {
         Vector2Int markerPos = FindMarkedTile();
@@ -157,6 +160,13 @@ public class GeneralDebugger : MonoBehaviour
             return;
         }
 
+        // Check if there's already a cube at this tile
+        CubeBehavior existingCube = null;
+        if (grid.tiles[markerPos.x, markerPos.y] != null)
+        {
+            existingCube = grid.tiles[markerPos.x, markerPos.y].currentCube;
+        }
+
         // Spawn falling cube directly above the marker
         Vector3 spawnPos = new Vector3(markerPos.x, spawnHeight, markerPos.y);
         GameObject cube = Instantiate(cubePrefabs[prefabIndex], spawnPos, Quaternion.identity);
@@ -171,11 +181,84 @@ public class GeneralDebugger : MonoBehaviour
             behavior.isRainingCube = true;
         }
 
-        // Use the existing RainCubeController
-        CubeCollisionController controller = cube.AddComponent<CubeCollisionController>();
-        controller.Initialize(markerPos, grid);
+        // Add collision controller if it doesn't exist
+        CubeCollisionController collisionController = cube.GetComponent<CubeCollisionController>();
+        if (collisionController == null)
+        {
+            collisionController = cube.AddComponent<CubeCollisionController>();
+            collisionController.Initialize(markerPos, grid);
+        }
+
+        // If there's already a cube at this position, trigger collision check immediately
+        if (existingCube != null)
+        {
+            Debug.Log($"Cube dropped onto existing cube of type {existingCube.CubeType}. Checking collision...");
+
+            // Add a delay to allow the cube to initialize fully
+            StartCoroutine(CheckCollisionAfterDelay(behavior, existingCube, markerPos));
+        }
 
         debugObjects.Add(cube);
+    }
+
+    private IEnumerator CheckCollisionAfterDelay(CubeBehavior droppedCube, CubeBehavior existingCube, Vector2Int position)
+    {
+        // Wait a frame to ensure everything is initialized
+        yield return null;
+
+        // Get the collision controller
+        CubeCollisionController controller = droppedCube.GetComponent<CubeCollisionController>();
+        if (controller != null)
+        {
+            // Manually trigger collision
+            Debug.Log($"Manually triggering collision between {droppedCube.CubeType} cube and {existingCube.CubeType} cube at {position}");
+            controller.HandleCubeCollision(droppedCube, existingCube, position);
+        }
+        else
+        {
+            Debug.LogError("No CubeCollisionController found on dropped cube!");
+        }
+    }
+
+    private void CheckAllOverlappingCubes()
+    {
+        // Group all cubes by position
+        Dictionary<Vector2Int, List<CubeBehavior>> cubesByPosition = new Dictionary<Vector2Int, List<CubeBehavior>>();
+
+        foreach (CubeBehavior cube in FindObjectsOfType<CubeBehavior>())
+        {
+            Vector2Int pos = cube.position;
+            if (!cubesByPosition.ContainsKey(pos))
+            {
+                cubesByPosition[pos] = new List<CubeBehavior>();
+            }
+            cubesByPosition[pos].Add(cube);
+        }
+
+        // Process all positions with multiple cubes
+        foreach (var kvp in cubesByPosition)
+        {
+            if (kvp.Value.Count > 1)
+            {
+                Debug.Log($"Found {kvp.Value.Count} cubes at position ({kvp.Key.x}, {kvp.Key.y})");
+
+                // Get the first two cubes for collision
+                CubeBehavior cube1 = kvp.Value[0];
+                CubeBehavior cube2 = kvp.Value[1];
+
+                // Get or add collision controller to the first cube
+                CubeCollisionController controller = cube1.GetComponent<CubeCollisionController>();
+                if (controller == null)
+                {
+                    controller = cube1.AddComponent<CubeCollisionController>();
+                    controller.Initialize(kvp.Key, grid);
+                }
+
+                // Trigger collision
+                Debug.Log($"Forcing collision between {cube1.CubeType} and {cube2.CubeType}");
+                controller.HandleCubeCollision(cube1, cube2, kvp.Key);
+            }
+        }
     }
 
     private void OnGUI()
@@ -223,6 +306,14 @@ public class GeneralDebugger : MonoBehaviour
         if (GUILayout.Button($"Clear Debug Objects (F2)"))
             ClearDebugObjects();
 
+        if (debugModeActive)
+        {
+            // Add at the end
+            if (GUILayout.Button("Force Check All Collisions"))
+            {
+                CheckAllOverlappingCubes();
+            }
+        }
         GUILayout.EndArea();
     }
 }
