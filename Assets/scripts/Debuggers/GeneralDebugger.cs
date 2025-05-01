@@ -168,10 +168,11 @@ public class GeneralDebugger : MonoBehaviour
             behavior.Init(grid, markerPos, 1);
             cube.transform.position = spawnPos;
             behavior.CubeType = fallingCubeType;
+            behavior.isRainingCube = true;
         }
 
         // Use the existing RainCubeController
-        RainCubeController controller = cube.AddComponent<RainCubeController>();
+        CubeCollisionController controller = cube.AddComponent<CubeCollisionController>();
         controller.Initialize(markerPos, grid);
 
         debugObjects.Add(cube);

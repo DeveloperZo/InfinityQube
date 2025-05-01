@@ -142,6 +142,11 @@ public class WaveManager : MonoBehaviour
                 CubeBehavior cube = activeCubes[i];
                 if (cube != null)
                 {
+                    if (cube.isRainingCube)
+                    {
+                        var newPosition = new Vector3(cube.transform.position.x, cube.transform.position.z, cube.transform.position.y-1);
+                        cube.transform.position = newPosition;
+                    }
                     // Explicitly reset movement state to ensure cubes can move
                     cube.ResetMovementState();
 
@@ -239,7 +244,7 @@ public class WaveManager : MonoBehaviour
                                       Quaternion.identity);
 
         // Use your existing RainCubeController
-        RainCubeController controller = cube.AddComponent<RainCubeController>();
+        CubeCollisionController controller = cube.AddComponent<CubeCollisionController>();
         controller.Initialize(position, grid);
     }
 
@@ -324,7 +329,7 @@ public class WaveManager : MonoBehaviour
                 }
 
                 // Add a rain controller component to handle the specialized behavior
-                RainCubeController rainController = cube.AddComponent<RainCubeController>();
+                CubeCollisionController rainController = cube.AddComponent<CubeCollisionController>();
                 rainController.Initialize(position, grid);
 
                 // Don't add to active cubes - the rain controller will handle movement
@@ -342,6 +347,8 @@ public class WaveManager : MonoBehaviour
             return Enumerations.CubeType.Normal;
         else if (random < normalCubeChance + greenCubeChance)
             return Enumerations.CubeType.Green;
+        else if (random < normalCubeChance + greenCubeChance + 0.05f) // 5% chance for blue cubes
+            return Enumerations.CubeType.Blue;
         else
             return Enumerations.CubeType.Black;
     }

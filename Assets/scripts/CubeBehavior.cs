@@ -13,6 +13,7 @@ public class CubeBehavior : MonoBehaviour
     [SerializeField] private float squashDuration = 0.25f;
     public bool isRainingCube = false;
     private GridManager grid;
+    private CubeCollisionController collisionController;
     private bool isMoving = false;
     private bool isDestroyed = false;
 
@@ -37,8 +38,27 @@ public class CubeBehavior : MonoBehaviour
 
         // Reset rotation
         transform.rotation = Quaternion.identity;
+        // Find or create collision controller
+        collisionController = GetComponent<CubeCollisionController>();
+        if (collisionController == null)
+        {
+            collisionController = gameObject.AddComponent<CubeCollisionController>();
+            collisionController.Initialize(startPos, gridManager);
+        }
     }
 
+    private void FixedUpdate()
+    {
+        if (isRainingCube && transform.position.y >= 1f)
+        {
+           transform.position = new Vector3(transform.position.x, transform.position.y-0.5f, transform.position.z);
+            if(transform.position.y <= 1f)
+            {
+                transform.position = new Vector3(transform.position.x, 1f, transform.position.z);
+            }
+
+        }
+    }
     // Add this method to reset movement state
     public void ResetMovementState()
     {
@@ -59,9 +79,7 @@ public class CubeBehavior : MonoBehaviour
 
         // Store previous position for logging
         Vector2Int oldPos = position;
-
         position.y -= 1;
-
         // Debug logging to track cube movement
         //Debug.Log($"Cube moving from ({oldPos.x}, {oldPos.y}) to ({position.x}, {position.y})");
 
@@ -101,29 +119,19 @@ public class CubeBehavior : MonoBehaviour
     public void HandleVerticalImpact(Vector2Int position, GridManager grid)
     {
         Tile tile = grid.tiles[position.x, position.y];
+
         // Find cube at landing position (if any)
         CubeBehavior targetCube = tile.currentCube;
 
-        if(targetCube == null )
+        if (targetCube == null)
         {
             tile.currentCube = this;
         }
-        // Black cube landing on black cube transforms the tile
-        else if (CubeType == Enumerations.CubeType.Black &&
-            targetCube != null &&
-            targetCube.CubeType == Enumerations.CubeType.Black)
+        else
         {
-            if (tile != null)
-            {
-                tile.TransformTile(Enumerations.CubeType.Black);
-            }
-
-            // Destroy the target cube
-            Destroy(targetCube.gameObject);
+            // Use collision controller to handle the interaction
+            collisionController.HandleCubeCollision(this, targetCube, position);
         }
-
-        // Future: Handle other cube type interactions here
-        // This structure lets you easily add more conditions for different cube types
     }
 
     private void CheckForCubeBelow()
