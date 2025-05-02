@@ -2,6 +2,36 @@ using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 
+public class PhasedTag : MonoBehaviour
+{
+    // Duration in movement cycles
+    public float phaseDuration = 2f;
+    public Color originalColor;
+    
+    private void Start()
+    {
+        // Auto-destroy after a set time to prevent permanent phasing
+        Destroy(this, 5f);
+    }
+    
+    private void OnDestroy()
+    {
+        // Restore the cube's original state
+        CubeBehavior cube = GetComponent<CubeBehavior>();
+        if (cube != null)
+        {
+            cube.SetPhased(false);
+        }
+        
+        // Restore original color
+        Renderer renderer = GetComponent<Renderer>();
+        if (renderer != null && originalColor != null)
+        {
+            renderer.material.color = originalColor;
+        }
+    }
+}
+
 public class TransienceManager : MonoBehaviour
 {
     [Header("References")]
