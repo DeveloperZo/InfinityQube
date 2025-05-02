@@ -117,16 +117,10 @@ public class CubeBehavior : MonoBehaviour
             return false;
         }
 
-        // Check for special black cube interactions with tiles
-        if (CubeType == Enumerations.CubeType.Black && !isRainingCube &&
-            position.y >= 0 && position.y < grid.Height &&
-            position.x >= 0 && position.x < grid.Width)
+        Tile landingTile = grid.tiles[position.x, position.y];
+        if (landingTile != null && !isDestroyed && position.y >= 0)
         {
-            Tile landingTile = grid.tiles[position.x, position.y];
-            if (landingTile != null)
-            {
-                landingTile.HandleBlackCubeLanding(this);
-            }
+            landingTile.HandleCubeLanding(this);
         }
 
         StartCoroutine(AnimateMove(position));

@@ -79,37 +79,44 @@ public class Tile : MonoBehaviour
     }
 
     // In Tile.cs
-    public void TransformTile(CubeType cubeType)
+    public void TransformTile(Enumerations.CubeType cubeType)
     {
-        if (currentState != TileState.Transformed)
+        if (currentState != Enumerations.TileState.Transformed)
         {
-            currentState = TileState.Transformed;
+            currentState = Enumerations.TileState.Transformed;
 
             // Visual change - sink the tile
             transform.position = new Vector3(transform.position.x, TRANSFORMED_HEIGHT, transform.position.z);
 
-            if (cubeType == CubeType.Black)
+            switch (cubeType)
             {
-                Debug.Log("Tile has been blackened");
-                BlackenTile();
-            }
-            else if (cubeType == CubeType.Green)
-            {
-                // First green charge
-                detonationCharges = 1;
-                UpdateChargeVisuals();
-            }
-            else if (cubeType == CubeType.Blue)
-            {
-                // Blue tile effect
-                if (tileRenderer != null)
-                {
-                    tileRenderer.material.color = new Color(0.5f, 0.8f, 1f); // Light blue
-                }
-            }
-            else if(cubeType == CubeType.Red)
-            {
-                tileRenderer.material.color = Color.red;
+                case Enumerations.CubeType.Black:
+                    BlackenTile();
+                    break;
+
+                case Enumerations.CubeType.Green:
+                    // First green charge
+                    detonationCharges = 1;
+                    UpdateChargeVisuals();
+                    break;
+
+                case Enumerations.CubeType.Blue:
+                    // Blue tile effect - will halt next cube
+                    isPrimed = true;  // Mark tile as primed for the next cube
+                    if (tileRenderer != null)
+                    {
+                        tileRenderer.material.color = new Color(0.5f, 0.8f, 1f); // Light blue
+                    }
+                    break;
+
+                case Enumerations.CubeType.Red:
+                    // Red tile effect - will consume next cube and transform
+                    isPrimed = true;  // Mark tile as primed for the next cube
+                    if (tileRenderer != null)
+                    {
+                        tileRenderer.material.color = new Color(1f, 0.5f, 0.5f); // Light red
+                    }
+                    break;
             }
         }
     }
@@ -345,15 +352,7 @@ public class Tile : MonoBehaviour
         {
             currentCube = cube;
         }
-        if (hasMarker && cube.CubeType == Enumerations.CubeType.Red)
-        {
-            // Trigger transience zone
-            TransienceManager transManager = FindObjectOfType<TransienceManager>();
-            if (transManager != null)
-            {
-                transManager.ActivateTransienceZone(new Vector2Int(x, y));
-            }
-        }
+        // No special logic needed here - we'll handle specific cube types in TriggerMarker
     }
 
     public void TriggerMarker()
@@ -370,7 +369,7 @@ public class Tile : MonoBehaviour
             return;
         }
 
-        // Handle special cube abilities
+        // Handle special cube abilities based on type
         switch (cubeToProcess.CubeType)
         {
             case Enumerations.CubeType.Green:
@@ -390,23 +389,29 @@ public class Tile : MonoBehaviour
                     timeManager.RegisterDistortionPoint(new Vector2Int(x, y));
                 }
                 break;
+
             case Enumerations.CubeType.Red:
+                // Register with TransienceManager
                 TransienceManager transienceManager = FindObjectOfType<TransienceManager>();
                 if (transienceManager != null)
                 {
                     transienceManager.ActivateTransienceZone(new Vector2Int(x, y));
                 }
                 break;
-
         }
 
         // Process the actual cube that was captured
         switch (cubeToProcess.CubeType)
         {
             case Enumerations.CubeType.Normal:
+                // Normal cubes are simply consumed
+                Destroy(cubeToProcess.gameObject);
+                break;
+
             case Enumerations.CubeType.Green:
             case Enumerations.CubeType.Blue:
-                // These cubes are consumed when triggered
+            case Enumerations.CubeType.Red:
+                // Colored cubes (except black) are consumed
                 cubeToProcess.level--;
                 if (cubeToProcess.level <= 0)
                 {
@@ -429,87 +434,68 @@ public class Tile : MonoBehaviour
         this.isPrimed = isPrimed;
     }
 
-    public void HandleBlackCubeLanding(CubeBehavior blackCube)
+    public void HandleCubeLanding(CubeBehavior cube)
     {
-        if (blackCube == null || blackCube.CubeType != Enumerations.CubeType.Black)
+        if (cube == null || currentState != Enumerations.TileState.Transformed)
             return;
 
         if (IsBlackened)
         {
-            // Black cube lands on blackened tile - nothing happens
-            Debug.Log("Black cube landed on blackened tile - no effect");
+            // Black tiles have no effect
             return;
         }
 
-        if (HasCharges)
+        if (isPrimed)
         {
-            // Black cube lands on a charged tile (primed)
-            Debug.Log($"Black cube landed on charged tile with {DetonationCharges} charges");
-
-            // Consume charges and trigger a 2x2 mark based on charge level
-            DetonationManager detonationManager = FindObjectOfType<DetonationManager>();
-            if (detonationManager != null)
+            // Handle based on the transformed tile type
+            if (detonationCharges > 0)
             {
-                // Register a 2x2 pattern around this position
-                for (int dx = 0; dx <= 1; dx++)
+                // Green transformed tile - has charges
+                DetonationManager detonationManager = FindObjectOfType<DetonationManager>();
+                if (detonationManager != null)
                 {
-                    for (int dy = 0; dy <= 1; dy++)
-                    {
-                        int targetX = x + dx;
-                        int targetY = y + dy;
-
-                        GridManager grid = FindObjectOfType<GridManager>();
-                        if (grid != null && targetX < grid.Width && targetY < grid.Height)
-                        {
-                            detonationManager.RegisterDetonationPoint(new Vector2Int(targetX, targetY));
-                        }
-                    }
+                    // Mark for detonation and trigger
+                    detonationManager.RegisterDetonationPoint(new Vector2Int(x, y));
+                    detonationManager.TriggerNextDetonation();
                 }
-
-                // Trigger the detonation
-                detonationManager.TriggerNextDetonation();
             }
-
-            // Consume all charges
-            detonationCharges = 0;
-
-            // Reset to normal tile state
-            currentState = Enumerations.TileState.Normal;
-            if (tileRenderer != null)
+            else if (tileRenderer.material.color.b > 0.7f)
             {
-                tileRenderer.material.color = originalColor;
-            }
-            transform.position = new Vector3(transform.position.x, 0f, transform.position.z);
-            return;
-        }
-
-        // Check for time frozen state - we need to examine cubes on this tile
-        foreach (CubeBehavior cube in FindObjectsOfType<CubeBehavior>())
-        {
-            if (cube != blackCube && cube.position.x == x && cube.position.y == y)
-            {
-                TimeFrozenTag frozenTag = cube.GetComponent<TimeFrozenTag>();
+                // Blue transformed tile - halt the cube
+                TimeFrozenTag frozenTag = cube.gameObject.AddComponent<TimeFrozenTag>();
                 if (frozenTag != null)
                 {
-                    // Black cube landed on time distorted tile - double the freeze
-                    frozenTag.frozenDuration *= 2;
+                    frozenTag.frozenDuration = 1f; // Freeze for 1 movement cycle
 
-                    // Apply the same freeze to the black cube
-                    TimeFrozenTag blackFrozenTag = blackCube.gameObject.AddComponent<TimeFrozenTag>();
-                    if (blackFrozenTag != null)
+                    // Visual effect
+                    Renderer cubeRenderer = cube.GetComponent<Renderer>();
+                    if (cubeRenderer != null)
                     {
-                        blackFrozenTag.frozenDuration = frozenTag.frozenDuration;
-
-                        // Visual effect for frozen black cube
-                        Renderer blackRenderer = blackCube.GetComponent<Renderer>();
-                        if (blackRenderer != null)
-                        {
-                            blackFrozenTag.originalColor = blackRenderer.material.color;
-                            blackRenderer.material.color = new Color(0.3f, 0.3f, 0.5f); // Dark blue-gray
-                        }
+                        frozenTag.originalColor = cubeRenderer.material.color;
+                        cubeRenderer.material.color = new Color(0.7f, 0.8f, 1f);
                     }
-                    return;
                 }
+
+                // Reset the prime state
+                isPrimed = false;
+            }
+            else if (tileRenderer.material.color.r > 0.7f)
+            {
+                // Red transformed tile - consume and transform to that color
+                Enumerations.CubeType cubeType = cube.CubeType;
+
+                // Don't transform if it's a normal cube
+                if (cubeType != Enumerations.CubeType.Normal)
+                {
+                    // Transform to the new cube's color
+                    TransformTile(cubeType);
+                }
+
+                // Consume the cube
+                Destroy(cube.gameObject);
+
+                // Reset the prime state
+                isPrimed = false;
             }
         }
     }

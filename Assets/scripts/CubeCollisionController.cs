@@ -23,7 +23,23 @@ public class CubeCollisionController : MonoBehaviour
 
         Debug.Log($"Processing collision: {sourceType} cube colliding with {targetType} cube at ({position.x}, {position.y})");
 
-        // Route to specific collision handlers based on cube types
+        // If cubes are the same color, transform the tile
+        if (sourceType == targetType && sourceType != Enumerations.CubeType.Normal)
+        {
+            // Transform the tile to this cube's color type
+            Tile tile = grid.tiles[position.x, position.y];
+            if (tile != null)
+            {
+                tile.TransformTile(sourceType);
+
+                // Consume both cubes after transformation
+                Destroy(sourceCube.gameObject);
+                Destroy(targetCube.gameObject);
+                return;
+            }
+        }
+
+        // Otherwise, route to specific collision handlers based on cube types
         if (sourceType == Enumerations.CubeType.Black)
         {
             HandleBlackCubeCollision(sourceCube, targetCube, position);
@@ -35,6 +51,10 @@ public class CubeCollisionController : MonoBehaviour
         else if (sourceType == Enumerations.CubeType.Blue)
         {
             HandleBlueCubeCollision(sourceCube, targetCube, position);
+        }
+        else if (sourceType == Enumerations.CubeType.Red)
+        {
+            HandleRedCubeCollision(sourceCube, targetCube, position);
         }
         else if (sourceType == Enumerations.CubeType.Normal)
         {
@@ -220,7 +240,27 @@ public class CubeCollisionController : MonoBehaviour
                 break;
         }
     }
+    private void HandleRedCubeCollision(CubeBehavior sourceCube, CubeBehavior targetCube, Vector2Int position)
+    {
+        switch (targetCube.CubeType)
+        {
+            case Enumerations.CubeType.Black:
+                Destroy(sourceCube.gameObject);
+                break;
 
+            case Enumerations.CubeType.Green:
+                Destroy(targetCube.gameObject);
+                break;
+
+            case Enumerations.CubeType.Blue:
+                Destroy(targetCube.gameObject);
+                break;
+
+            case Enumerations.CubeType.Normal:
+                Destroy(targetCube.gameObject);
+                break;
+        }
+    }
     private void HandleNormalCubeCollision(CubeBehavior sourceCube, CubeBehavior targetCube, Vector2Int position)
     {
         switch (targetCube.CubeType)

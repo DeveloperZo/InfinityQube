@@ -85,6 +85,43 @@ public class GeneralDebugger : MonoBehaviour
         }
     }
 
+    public void TestTransformTile(int column, Enumerations.CubeType cubeType)
+    {
+        if (grid == null || column < 0 || column >= grid.Width) return;
+
+        // Transform the tile in the test row
+        Tile tile = grid.tiles[column, defaultRowZ];
+        if (tile != null)
+        {
+            tile.TransformTile(cubeType);
+            Debug.Log($"Transformed tile at column {column} to {cubeType} type");
+        }
+    }
+
+    public void TestLandCubeOnTransformedTile(int column, Enumerations.CubeType cubeType)
+    {
+        if (grid == null || column < 0 || column >= grid.Width) return;
+
+        // Get the tile
+        Tile tile = grid.tiles[column, defaultRowZ];
+        if (tile == null) return;
+
+        // Create test cube
+        Vector3 spawnPos = new Vector3(column, 1f, defaultRowZ);
+        GameObject cube = Instantiate(cubePrefabs[(int)cubeType], spawnPos, Quaternion.identity);
+
+        // Set up cube behavior
+        CubeBehavior behavior = cube.GetComponent<CubeBehavior>();
+        if (behavior != null)
+        {
+            behavior.Init(grid, new Vector2Int(column, defaultRowZ), 1);
+            behavior.CubeType = cubeType;
+
+            // Trigger landing on transformed tile
+            tile.HandleCubeLanding(behavior);
+        }
+    }
+
     private void ClearDebugObjects()
     {
         foreach (GameObject obj in debugObjects)
