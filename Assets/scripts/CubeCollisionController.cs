@@ -87,7 +87,13 @@ public class CubeCollisionController : MonoBehaviour
                 TriggerDiagonalTimeDistortion(position);
                 Destroy(targetCube.gameObject);
                 break;
-
+            case Enumerations.CubeType.Red:
+                // Black + Red = Similar to Black + Blue but with transience effect
+                RegisterDiagonalPattern(position, Enumerations.CubeType.Red);
+                // Immediate trigger of transience effect in a diagonal pattern
+                TriggerDiagonalTransience(position);
+                Destroy(targetCube.gameObject);
+                break;
             case Enumerations.CubeType.Normal:
                 // Black + Normal = Consume normal
                 Destroy(targetCube.gameObject);
@@ -173,6 +179,16 @@ public class CubeCollisionController : MonoBehaviour
         if (timeManager != null)
         {
             timeManager.TriggerSlashDistortion(center);
+        }
+    }
+
+    private void TriggerDiagonalTransience(Vector2Int center)
+    {
+        TransienceManager transManager = FindObjectOfType<TransienceManager>();
+        if (transManager != null)
+        {
+            // Similar structure to the diagonal time distortion but for transience
+            transManager.TriggerSlashDistortion(center);
         }
     }
 

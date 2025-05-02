@@ -19,8 +19,11 @@ public class TransienceManager : MonoBehaviour
     private int remainingTicks;
     private List<Vector2Int> affectedTiles = new List<Vector2Int>();
     private List<CubeBehavior> phasedCubes = new List<CubeBehavior>();
-    private Dictionary<Vector2Int, Material> originalTileMaterials = new Dictionary<Vector2Int, Material>();
+    private Dictionary<Tile, Material> originalTileMaterials = new Dictionary<Tile, Material>();
     private Coroutine pulseCoroutine;
+
+    private Dictionary<Vector2Int, bool> slashDistortionPoints = new Dictionary<Vector2Int, bool>();
+    private List<Vector2Int> distortionPoints = new List<Vector2Int>();
 
     public bool IsZoneActive => zoneActive;
 
@@ -91,12 +94,126 @@ public class TransienceManager : MonoBehaviour
                 Renderer tileRenderer = tile.GetComponent<Renderer>();
                 if (tileRenderer != null && phasedTileMaterial != null)
                 {
-                    originalTileMaterials[tilePos] = tileRenderer.material;
+                    originalTileMaterials[tile] = tileRenderer.material;
                     tileRenderer.material = phasedTileMaterial;
                 }
 
                 // Handle cubes at this position
                 FindAndProcessCubesAtPosition(tilePos);
+            }
+        }
+    }
+
+    public void RegisterSlashDistortionPoint(Vector2Int position)
+    {
+        if (!IsValidPosition(position)) return;
+
+        Tile tile = gridManager.tiles[position.x, position.y];
+        if (tile == null || tile.IsBlackened) return;
+
+        // Use Dictionary to track which points are from slash patterns
+        if (!slashDistortionPoints.ContainsKey(position))
+        {
+            // Still add to regular detonation points for UI tracking
+            if (!distortionPoints.Contains(position))
+            {
+                distortionPoints.Add(position);
+            }
+
+            slashDistortionPoints[position] = true;
+            MarkTileAsDistortionPoint(position);
+            Debug.Log($"Slash detonation point registered at {position}");
+        }
+    }
+
+    // Trigger all points in a slash pattern immediately
+    public void TriggerSlashDistortion(Vector2Int center)
+    {
+        List<Vector2Int> slashPoints = new List<Vector2Int>();
+        bool useForwardSlash = (center.x + center.y) % 2 == 0;
+
+        // Identify the 3 points in the slash
+        if (useForwardSlash) // / pattern
+        {
+            for (int offset = -1; offset <= 1; offset++)
+            {
+                Vector2Int pos = new Vector2Int(center.x + offset, center.y + offset);
+                if (IsValidPosition(pos) && slashDistortionPoints.ContainsKey(pos))
+                {
+                    slashPoints.Add(pos);
+                }
+            }
+        }
+        else // \ pattern
+        {
+            for (int offset = -1; offset <= 1; offset++)
+            {
+                Vector2Int pos = new Vector2Int(center.x - offset, center.y + offset);
+                if (IsValidPosition(pos) && slashDistortionPoints.ContainsKey(pos))
+                {
+                    slashPoints.Add(pos);
+                }
+            }
+        }
+
+        // Trigger transience for each point in the slash
+        foreach (Vector2Int point in slashPoints)
+        {
+            PerformSingleTileTransience(point);
+
+            // Remove from tracking
+            slashDistortionPoints.Remove(point);
+            distortionPoints.Remove(point);
+        }
+    }
+
+    // Special transience that only affects the exact tile
+    private void PerformSingleTileTransience(Vector2Int position)
+    {
+        if (!IsValidPosition(position)) return;
+
+        // Get the tile
+        Tile tile = gridManager.tiles[position.x, position.y];
+        if (tile == null) return;
+
+        // Reset the tile appearance
+        ResetTileMaterial(tile);
+
+        // Visual effect
+        StartCoroutine(FlashTile(tile));
+
+        // Process just this position
+        // Similar to DetonateCubesAt but for transience effect
+        ProcessTransienceAt(position);
+    }
+
+    private void ProcessTransienceAt(Vector2Int position)
+    {
+        // Find all cubes at this position
+        foreach (CubeBehavior cube in FindObjectsOfType<CubeBehavior>())
+        {
+            if (cube == null) continue;
+
+            if (cube.position.x == position.x && cube.position.y == position.y)
+            {
+                // Handle normal cubes - they get consumed
+                if (cube.CubeType == Enumerations.CubeType.Normal)
+                {
+                    Destroy(cube.gameObject);
+                }
+                // Handle non-normal cubes - they become phased
+                else
+                {
+                    cube.SetPhased(true);
+                    phasedCubes.Add(cube);
+
+                    // Visual effect
+                    Renderer cubeRenderer = cube.GetComponent<Renderer>();
+                    if (cubeRenderer != null)
+                    {
+                        cubeRenderer.material.color = phasedCubeColor;
+                    }
+                }
             }
         }
     }
@@ -158,9 +275,9 @@ public class TransienceManager : MonoBehaviour
 
                 // Restore original material
                 Renderer tileRenderer = tile.GetComponent<Renderer>();
-                if (tileRenderer != null && originalTileMaterials.ContainsKey(tilePos))
+                if (tileRenderer != null && originalTileMaterials.ContainsKey(tile))
                 {
-                    tileRenderer.material = originalTileMaterials[tilePos];
+                    tileRenderer.material = originalTileMaterials[tile];
                 }
             }
         }
@@ -272,5 +389,52 @@ public class TransienceManager : MonoBehaviour
     public bool IsTileInTransienceZone(Vector2Int position)
     {
         return zoneActive && affectedTiles.Contains(position);
+    }
+
+    private void MarkTileAsDistortionPoint(Vector2Int position)
+    {
+        if (!IsValidPosition(position)) return;
+
+        Tile tile = gridManager.tiles[position.x, position.y];
+        if (tile != null)
+        {
+            Renderer renderer = tile.GetComponent<Renderer>();
+            if (renderer != null && phasedTileMaterial != null)
+            {
+                originalTileMaterials[tile] = renderer.material;
+                renderer.material = phasedTileMaterial;
+            }
+        }
+    }
+
+    private void ResetTileMaterial(Tile tile)
+    {
+        if (tile == null) return;
+        var tilePosition = new Vector2Int((int)tile.transform.position.x, (int)tile.transform.position.z);
+
+        Renderer renderer = tile.GetComponent<Renderer>();
+        if (renderer != null && originalTileMaterials.ContainsKey(tile))
+        {
+            renderer.material = originalTileMaterials[tile];
+            originalTileMaterials.Remove(tile);
+        }
+    }
+
+    private IEnumerator FlashTile(Tile tile)
+    {
+        if (tile == null) yield break;
+
+        Renderer renderer = tile.GetComponent<Renderer>();
+        if (renderer == null) yield break;
+
+        Material originalMaterial = renderer.material;
+        renderer.material.color = Color.yellow; // Example flash color
+
+        yield return new WaitForSeconds(0.3f);
+
+        if (renderer != null)
+        {
+            renderer.material = originalMaterial;
+        }
     }
 }
