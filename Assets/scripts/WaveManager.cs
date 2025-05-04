@@ -18,7 +18,7 @@ public class WaveManager : MonoBehaviour
 
     [Header("References")]
     [SerializeField] private GridManager grid;
-    [SerializeField] private GameObject[] cubePrefabs;
+    [SerializeField] public GameObject[] cubePrefabs;
     [SerializeField] private PlayerController player;
     [SerializeField] private TransienceManager transienceManager;
 
@@ -273,23 +273,6 @@ public class WaveManager : MonoBehaviour
         UpdateReturnVisuals();
     }
 
-    // Add this new method for rain cubes to register with the wave system
-    public void RegisterRainCube(CubeBehavior cube)
-    {
-        if (cube == null) return;
-
-        // Ensure it's not already in the list
-        if (!activeCubes.Contains(cube))
-        {
-            activeCubes.Add(cube);
-
-            Debug.Log($"Rain cube registered: Type={cube.CubeType}, " +
-                      $"Grid Position=({cube.position.x}, {cube.position.y}), " +
-                      $"World Position=({cube.transform.position.x}, {cube.transform.position.y}, {cube.transform.position.z}), " +
-                      $"Moves Remaining={cube.moveCountRemaining}");
-        }
-    }
-
     public void RegisterEscapedCube(CubeBehavior cube)
     {
         if (cube.CubeType != Enumerations.CubeType.Normal)
@@ -524,6 +507,23 @@ public class WaveManager : MonoBehaviour
             {
                 Debug.Log($"[{i}] NULL CUBE REFERENCE");
             }
+        }
+    }
+
+    // Add this new method for rain cubes to register with the wave system
+    public void RegisterRainCube(CubeBehavior cube)
+    {
+        if (cube == null) return;
+
+        // Ensure it's not already in the list
+        if (!activeCubes.Contains(cube))
+        {
+            activeCubes.Add(cube);
+
+            Debug.Log($"Rain cube registered: Type={cube.CubeType}, " +
+                      $"Grid Position=({cube.position.x}, {cube.position.y}), " +
+                      $"World Position=({cube.transform.position.x}, {cube.transform.position.y}, {cube.transform.position.z}), " +
+                      $"Moves Remaining={cube.moveCountRemaining}");
         }
     }
 

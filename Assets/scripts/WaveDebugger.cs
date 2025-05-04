@@ -399,6 +399,7 @@ public class WaveDebugger : MonoBehaviour
             // Mark as a raining cube with move count
             behavior.isRainingCube = true;
             behavior.moveCountRemaining = moveCount;
+            behavior.transform.position = new Vector3(behavior.transform.position.x, 10f, behavior.transform.position.y);
 
             debugObjects.Add(cube);
 

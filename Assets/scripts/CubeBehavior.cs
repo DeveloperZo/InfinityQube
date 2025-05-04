@@ -101,7 +101,6 @@ public class CubeBehavior : MonoBehaviour
         Vector2Int oldPos = position;
         position.y -= 1;  // Remember: in grid coordinates, y is the row (Z in 3D space)
 
-
         // Check for off-grid conditions
         if (position.y < 0 || position.x < 0 || position.x >= grid.Width)
         {

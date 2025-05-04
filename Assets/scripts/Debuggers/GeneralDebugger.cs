@@ -10,6 +10,10 @@ public class GeneralDebugger : MonoBehaviour
     [SerializeField] private GameObject[] cubePrefabs; // Normal, Green, Black, Blue
     [SerializeField] private WaveDebugger waveDebugger; // Normal, Green, Black, Blue
 
+    [Header("Rain Controls")]
+    [SerializeField] private bool keepRainCubesInPlace = true;
+    [SerializeField] private int rainMoveCount = 3;
+
     [Header("Debug Controls")]
     [SerializeField] private KeyCode toggleDebugKey = KeyCode.F1;
     [SerializeField] private KeyCode resetDebugKey = KeyCode.F2;
@@ -234,8 +238,10 @@ public class GeneralDebugger : MonoBehaviour
             return;
         }
 
-       if(dropOnCubes)
+        if (dropOnCubes)
         {
+            // Calculate spawn height based on move count
+            float spawnHeight = rainMoveCount * 2f + 1f;
 
             // Spawn falling cube above the column
             Vector3 spawnPos = new Vector3(column, spawnHeight, defaultRowZ);
@@ -248,6 +254,7 @@ public class GeneralDebugger : MonoBehaviour
                 behavior.Init(grid, targetPos, 1);
                 behavior.CubeType = fallingCubeType;
                 behavior.isRainingCube = true;
+                behavior.moveCountRemaining = keepRainCubesInPlace ? int.MaxValue : rainMoveCount;
 
                 // Start falling animation coroutine
                 StartCoroutine(AnimateCubeFalling(behavior, spawnPos, column, defaultRowZ));
