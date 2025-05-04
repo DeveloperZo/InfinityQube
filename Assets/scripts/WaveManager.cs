@@ -45,6 +45,8 @@ public class WaveManager : MonoBehaviour
     private List<ReturnQueueItem> returnQueue = new List<ReturnQueueItem>();
     private List<BlackCubeRainData> rainingBlackCubes = new List<BlackCubeRainData>();
     private bool isDebugWaveActive = false;
+    private bool debugMode = false;
+    private bool manualControl = false;
 
     public void SetSpeedState(bool isSpeeding)
     {
@@ -132,77 +134,77 @@ public class WaveManager : MonoBehaviour
         {
             transienceManager.TickZone();
         }
-        // Spawn the cubes
-        ProcessReturnQueue();
-        SpawnCubes();
+
+        // Skip spawning cubes if in debug mode
+        if (!debugMode)
+        {
+            ProcessReturnQueue();
+            SpawnCubes();
+        }
 
         yield return new WaitForSeconds(waveStartDelay);
 
-        // Run the wave until all cubes are resolved
+        // Skip automatic wave progression if we're in manual control mode
+        if (debugMode && manualControl)
+        {
+            // Just wait indefinitely until manual control is disabled
+            while (debugMode && manualControl)
+            {
+                yield return null;
+            }
+
+            waveActive = false;
+            waveCoroutine = null;
+            yield break;
+        }
+
+        // Normal automatic wave progression
         bool cubesRemaining = true;
         while (cubesRemaining)
         {
             cubesRemaining = false;
 
-            if (showDebugInfo)
-            {
-                Debug.Log($"--- Wave movement cycle: {activeCubes.Count} active cubes ---");
-            }
-
             for (int i = activeCubes.Count - 1; i >= 0; i--)
             {
-                if (i >= activeCubes.Count) continue; // Safety check for if list size changes during iteration
+                if (i >= activeCubes.Count) continue; // Safety check for if list size changes
 
                 CubeBehavior cube = activeCubes[i];
                 if (cube != null)
                 {
-                    // Check if the cube is frozen by a time distortion field
+                    // Check for time-frozen cubes
                     TimeFrozenTag frozenTag = cube.GetComponent<TimeFrozenTag>();
                     if (frozenTag != null)
                     {
-                        // Skip movement for this cube
+                        // Skip movement but reduce freeze duration
                         frozenTag.frozenDuration -= 1f;
-
-                        // Remove the tag if duration is expired
                         if (frozenTag.frozenDuration <= 0)
                         {
                             Destroy(frozenTag);
                         }
-
-                        // Mark as still active for next cycle
                         cubesRemaining = true;
                         continue;
                     }
 
-                    // Explicitly reset movement state to ensure cubes can move
                     cube.ResetMovementState();
-
-                    if (showDebugInfo)
-                    {
-                        Debug.Log($"Moving cube at ({cube.position.x}, {cube.position.y}) of type {cube.CubeType}");
-                    }
-
                     bool stillAlive = cube.MoveForward();
+
                     if (!stillAlive)
                     {
                         activeCubes.RemoveAt(i);
-                        if (showDebugInfo) Debug.Log("Cube was removed from active list");
                     }
                     else
                     {
                         cubesRemaining = true;
-                        if (showDebugInfo) Debug.Log($"Cube now at ({cube.position.x}, {cube.position.y})");
                     }
                 }
                 else
                 {
                     // Remove null references
                     activeCubes.RemoveAt(i);
-                    if (showDebugInfo) Debug.Log("Removed null cube reference from active list");
                 }
             }
 
-            // Use the appropriate move interval based on speed up state
+            // Use appropriate move interval based on speed up state
             float currentMoveInterval = isSpeedingUp ? fastMoveInterval : normalMoveInterval;
             yield return new WaitForSeconds(currentMoveInterval);
         }
@@ -311,6 +313,79 @@ public class WaveManager : MonoBehaviour
         }
 
         returnQueue.Clear();
+    }
+
+    public void EnterDebugMode(bool manual)
+    {
+        debugMode = true;
+        manualControl = manual;
+        // Reset any ongoing waves
+        if (waveCoroutine != null)
+        {
+            StopCoroutine(waveCoroutine);
+            waveCoroutine = null;
+        }
+        waveActive = false;
+    }
+
+    public void ExitDebugMode()
+    {
+        debugMode = false;
+        manualControl = false;
+    }
+
+    public void RegisterCube(CubeBehavior cube)
+    {
+        if (!activeCubes.Contains(cube))
+        {
+            activeCubes.Add(cube);
+        }
+    }
+
+    public void ManualMoveWaveForward()
+    {
+        if (!debugMode || !manualControl) return;
+
+        // Process one movement step for all active cubes
+        for (int i = activeCubes.Count - 1; i >= 0; i--)
+        {
+            if (i >= activeCubes.Count) continue; // Safety check
+
+            CubeBehavior cube = activeCubes[i];
+            if (cube != null)
+            {
+                // Skip frozen cubes
+                TimeFrozenTag frozenTag = cube.GetComponent<TimeFrozenTag>();
+                if (frozenTag != null)
+                {
+                    frozenTag.frozenDuration -= 1f;
+                    if (frozenTag.frozenDuration <= 0)
+                    {
+                        Destroy(frozenTag);
+                    }
+                    continue;
+                }
+
+                cube.ResetMovementState();
+                bool stillAlive = cube.MoveForward();
+
+                if (!stillAlive)
+                {
+                    activeCubes.RemoveAt(i);
+                }
+            }
+            else
+            {
+                // Remove null references
+                activeCubes.RemoveAt(i);
+            }
+        }
+
+        // Tick any active zones
+        if (transienceManager != null && transienceManager.IsZoneActive)
+        {
+            transienceManager.TickZone();
+        }
     }
 
     private void SpawnReturningBlackCube(Vector2 column)

@@ -16,6 +16,9 @@ public class CubeBehavior : MonoBehaviour
     private CubeCollisionController collisionController;
     private bool isMoving = false;
     private bool isDestroyed = false;
+    public float rainSpeed = 3f;
+    private bool isRaining = false;
+    private float rainTargetY = 1f;
     public bool isPhased { get; private set; }
 
     public void Init(GridManager gridManager, Vector2Int startPos, int startLevel)
@@ -256,6 +259,88 @@ public class CubeBehavior : MonoBehaviour
         }
 
         isMoving = false;
+    }
+
+    private IEnumerator RainAnimation()
+    {
+        // Store initial position
+        Vector3 startPos = transform.position;
+        Vector3 targetPos = new Vector3(startPos.x, rainTargetY, startPos.z);
+
+        // Calculate distance and time
+        float distance = startPos.y - rainTargetY;
+        float duration = distance / rainSpeed;
+
+        // Rain down smoothly
+        float elapsed = 0f;
+        while (elapsed < duration && !isDestroyed)
+        {
+            elapsed += Time.deltaTime;
+            float t = Mathf.Clamp01(elapsed / duration);
+
+            // Use a slight ease-in for natural falling
+            float easedT = 1f - Mathf.Pow(1f - t, 2f);
+
+            // Update position
+            transform.position = Vector3.Lerp(startPos, targetPos, easedT);
+
+            yield return null;
+        }
+
+        // Ensure we're exactly at the target position
+        if (!isDestroyed)
+        {
+            transform.position = targetPos;
+
+            // Add a small bounce effect
+            StartCoroutine(BounceEffect());
+        }
+
+        // No longer raining
+        isRaining = false;
+
+        // Check for collision with tiles or cubes
+        CheckForCubeBelow();
+    }
+
+    private IEnumerator BounceEffect()
+    {
+        if (isDestroyed) yield break;
+
+        Vector3 originalScale = transform.localScale;
+        Vector3 squashedScale = new Vector3(1.2f, 0.8f, 1.2f);
+
+        // Squash
+        float squashDuration = 0.1f;
+        float elapsed = 0f;
+
+        while (elapsed < squashDuration && !isDestroyed)
+        {
+            elapsed += Time.deltaTime;
+            float t = Mathf.Clamp01(elapsed / squashDuration);
+
+            transform.localScale = Vector3.Lerp(originalScale, squashedScale, t);
+
+            yield return null;
+        }
+
+        // Return to normal
+        elapsed = 0f;
+        while (elapsed < squashDuration && !isDestroyed)
+        {
+            elapsed += Time.deltaTime;
+            float t = Mathf.Clamp01(elapsed / squashDuration);
+
+            transform.localScale = Vector3.Lerp(squashedScale, originalScale, t);
+
+            yield return null;
+        }
+
+        // Ensure final scale
+        if (!isDestroyed)
+        {
+            transform.localScale = originalScale;
+        }
     }
 
     public void SetPhased(bool phased)

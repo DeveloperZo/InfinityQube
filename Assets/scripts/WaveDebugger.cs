@@ -19,11 +19,17 @@ public class WaveDebugger : MonoBehaviour
     [Header("Rain Controls")]
     [SerializeField] private Enumerations.CubeType rainCubeType;
     [SerializeField] private int rainColumn = 0;
-    [SerializeField] private float spawnHeight = 5f;
+    [SerializeField] private float rainHeight = 5f;
+    [SerializeField] private float rainSpeed = 3f; // Units per second
+
+    [Header("Manual Wave Control")]
+    [SerializeField] private bool manualWaveControl = true;
+    [SerializeField] private float stepDelay = 0.25f;
 
     private bool debuggerActive = false;
     private Vector2 scrollPosition;
     private List<GameObject> debugObjects = new List<GameObject>();
+    private bool isProcessing = false;
 
     private void Awake()
     {
@@ -41,7 +47,7 @@ public class WaveDebugger : MonoBehaviour
 
     private void Update()
     {
-        // Toggle debugger with key (can change as needed)
+        // Toggle debugger with key
         if (Input.GetKeyDown(KeyCode.F5))
         {
             debuggerActive = !debuggerActive;
@@ -96,6 +102,10 @@ public class WaveDebugger : MonoBehaviour
 
         GUILayout.Space(10);
 
+        manualWaveControl = GUILayout.Toggle(manualWaveControl, "Enable Manual Wave Control");
+
+        GUI.enabled = !isProcessing;
+
         // Wave controls 
         if (GUILayout.Button("Spawn Wave"))
         {
@@ -106,6 +116,15 @@ public class WaveDebugger : MonoBehaviour
         {
             ClearAllCubes();
             ResetGrid();
+        }
+
+        // Manual wave movement
+        if (manualWaveControl)
+        {
+            if (GUILayout.Button("Move Wave Forward"))
+            {
+                MoveWaveForward();
+            }
         }
 
         GUILayout.Space(10);
@@ -145,10 +164,15 @@ public class WaveDebugger : MonoBehaviour
         GUI.backgroundColor = Color.white;
         GUILayout.EndHorizontal();
 
+        rainHeight = EditorSlider("Rain Height:", rainHeight, 2f, 10f);
+        rainSpeed = EditorSlider("Rain Speed:", rainSpeed, 1f, 10f);
+
         if (GUILayout.Button("Rain Cube"))
         {
             RainCube(rainColumn, rainCubeType);
         }
+
+        GUI.enabled = true;
 
         GUILayout.Space(10);
 
@@ -208,7 +232,7 @@ public class WaveDebugger : MonoBehaviour
 
     private void SpawnDebugWave()
     {
-        if (grid == null || waveManager == null) return;
+        if (grid == null) return;
 
         // First clear any existing cubes
         ClearAllCubes();
@@ -246,7 +270,23 @@ public class WaveDebugger : MonoBehaviour
         }
 
         // Register with wave manager
-        waveManager.RegisterDebugWave(debugObjects);
+        if (waveManager != null)
+        {
+            waveManager.EnterDebugMode(manualWaveControl);
+
+            // Add cubes to wave manager
+            foreach (GameObject obj in debugObjects)
+            {
+                if (obj != null)
+                {
+                    CubeBehavior cube = obj.GetComponent<CubeBehavior>();
+                    if (cube != null)
+                    {
+                        waveManager.RegisterCube(cube);
+                    }
+                }
+            }
+        }
     }
 
     private void SpawnCube(Vector2Int position, Enumerations.CubeType type)
@@ -299,7 +339,7 @@ public class WaveDebugger : MonoBehaviour
         }
 
         // Spawn the cube high above the column
-        Vector3 spawnPos = new Vector3(column, spawnHeight, grid.Height - 1);
+        Vector3 spawnPos = new Vector3(column, rainHeight, grid.Height - 1);
         GameObject cube = Instantiate(cubePrefabs[prefabIndex], spawnPos, Quaternion.identity);
 
         if (cube != null)
@@ -313,16 +353,38 @@ public class WaveDebugger : MonoBehaviour
 
             Vector2Int targetPos = new Vector2Int(column, grid.Height - 1);
             behavior.Init(grid, targetPos, 1);
+
+            // Set as raining cube to enable smooth fall animation
             behavior.isRainingCube = true;
+            behavior.rainSpeed = rainSpeed; // Set custom rain speed
 
             debugObjects.Add(cube);
 
-            // Optional: Notify the wave manager
+            // Register with wave manager for movement with the wave
             if (waveManager != null)
             {
                 waveManager.RegisterRainCube(behavior);
             }
         }
+    }
+
+    private void MoveWaveForward()
+    {
+        if (waveManager == null || !manualWaveControl) return;
+
+        isProcessing = true;
+        StartCoroutine(ProcessWaveStep());
+    }
+
+    private IEnumerator ProcessWaveStep()
+    {
+        if (waveManager != null)
+        {
+            waveManager.ManualMoveWaveForward();
+        }
+
+        yield return new WaitForSeconds(stepDelay);
+        isProcessing = false;
     }
 
     private void ClearAllCubes()
@@ -338,6 +400,7 @@ public class WaveDebugger : MonoBehaviour
         if (waveManager != null)
         {
             waveManager.ClearAllCubes();
+            waveManager.ExitDebugMode();
         }
         else
         {
