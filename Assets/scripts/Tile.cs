@@ -100,23 +100,6 @@ public class Tile : MonoBehaviour
                     UpdateChargeVisuals();
                     break;
 
-                case Enumerations.CubeType.Blue:
-                    // Blue tile effect - will halt next cube
-                    isPrimed = true;  // Mark tile as primed for the next cube
-                    if (tileRenderer != null)
-                    {
-                        tileRenderer.material.color = new Color(0.5f, 0.8f, 1f); // Light blue
-                    }
-                    break;
-
-                case Enumerations.CubeType.Red:
-                    // Red tile effect - will consume next cube and transform
-                    isPrimed = true;  // Mark tile as primed for the next cube
-                    if (tileRenderer != null)
-                    {
-                        tileRenderer.material.color = new Color(1f, 0.5f, 0.5f); // Light red
-                    }
-                    break;
             }
         }
     }
@@ -125,12 +108,12 @@ public class Tile : MonoBehaviour
     {
         x = xPos;
         y = yPos;
-        
+
         if (tileRenderer != null)
         {
             originalColor = tileRenderer.material.color;
         }
-        
+
         isInitialized = true;
     }
 
@@ -187,6 +170,15 @@ public class Tile : MonoBehaviour
         {
             tileRenderer.material.color = Color.black;
         }
+
+        // Optional: Add cracked texture or particle effect
+        // PlayCorruptionEffect();
+
+        // Lower the tile slightly to indicate it's damaged
+        transform.position = new Vector3(
+            transform.position.x,
+            -0.2f, // Lowered position
+            transform.position.z);
     }
 
     public void EnhanceGreenTile()
@@ -251,7 +243,7 @@ public class Tile : MonoBehaviour
     {
         if (detonationCharges > 0)
         {
-            if(isPrimed)
+            if (isPrimed)
                 detonationCharges--;
             else
                 detonationCharges = 0; // Reset to 0 if not primed
@@ -369,59 +361,32 @@ public class Tile : MonoBehaviour
             return;
         }
 
-        // Handle special cube abilities based on type
+        // Handle cube type-specific behavior
         switch (cubeToProcess.CubeType)
         {
+            case Enumerations.CubeType.Black:
+                // Black cube captured = immediate corruption
+                BlackenTile();
+
+                // The black cube remains (not destroyed)
+                // Could add visual feedback or sound effect here
+                break;
+
             case Enumerations.CubeType.Green:
-                // Register with DetonationManager
+                // Register with DetonationManager as before
                 DetonationManager detonationManager = FindObjectOfType<DetonationManager>();
                 if (detonationManager != null)
                 {
                     detonationManager.RegisterDetonationPoint(new Vector2Int(x, y));
                 }
-                break;
 
-            case Enumerations.CubeType.Blue:
-                // Register with TimeDistortionManager
-                TimeDistortionManager timeManager = FindObjectOfType<TimeDistortionManager>();
-                if (timeManager != null)
-                {
-                    timeManager.RegisterDistortionPoint(new Vector2Int(x, y));
-                }
-                break;
-
-            case Enumerations.CubeType.Red:
-                // Register with TransienceManager
-                TransienceManager transienceManager = FindObjectOfType<TransienceManager>();
-                if (transienceManager != null)
-                {
-                    transienceManager.ActivateTransienceZone(new Vector2Int(x, y));
-                }
-                break;
-        }
-
-        // Process the actual cube that was captured
-        switch (cubeToProcess.CubeType)
-        {
-            case Enumerations.CubeType.Normal:
-                // Normal cubes are simply consumed
+                // Consume the green cube
                 Destroy(cubeToProcess.gameObject);
                 break;
 
-            case Enumerations.CubeType.Green:
-            case Enumerations.CubeType.Blue:
-            case Enumerations.CubeType.Red:
-                // Colored cubes (except black) are consumed
-                cubeToProcess.level--;
-                if (cubeToProcess.level <= 0)
-                {
-                    Destroy(cubeToProcess.gameObject);
-                }
-                break;
-
-            case Enumerations.CubeType.Black:
-                // Black cubes cause a penalty
-                transform.position = new Vector3(transform.position.x, -0.2f, transform.position.z);
+            case Enumerations.CubeType.Normal:
+                // Normal cubes are simply consumed
+                Destroy(cubeToProcess.gameObject);
                 break;
         }
 
@@ -443,60 +408,6 @@ public class Tile : MonoBehaviour
         {
             // Black tiles have no effect
             return;
-        }
-
-        if (isPrimed)
-        {
-            // Handle based on the transformed tile type
-            if (detonationCharges > 0)
-            {
-                // Green transformed tile - has charges
-                DetonationManager detonationManager = FindObjectOfType<DetonationManager>();
-                if (detonationManager != null)
-                {
-                    // Mark for detonation and trigger
-                    detonationManager.RegisterDetonationPoint(new Vector2Int(x, y));
-                    detonationManager.TriggerNextDetonation();
-                }
-            }
-            else if (tileRenderer.material.color.b > 0.7f)
-            {
-                // Blue transformed tile - halt the cube
-                TimeFrozenTag frozenTag = cube.gameObject.AddComponent<TimeFrozenTag>();
-                if (frozenTag != null)
-                {
-                    frozenTag.frozenDuration = 1f; // Freeze for 1 movement cycle
-
-                    // Visual effect
-                    Renderer cubeRenderer = cube.GetComponent<Renderer>();
-                    if (cubeRenderer != null)
-                    {
-                        frozenTag.originalColor = cubeRenderer.material.color;
-                        cubeRenderer.material.color = new Color(0.7f, 0.8f, 1f);
-                    }
-                }
-
-                // Reset the prime state
-                isPrimed = false;
-            }
-            else if (tileRenderer.material.color.r > 0.7f)
-            {
-                // Red transformed tile - consume and transform to that color
-                Enumerations.CubeType cubeType = cube.CubeType;
-
-                // Don't transform if it's a normal cube
-                if (cubeType != Enumerations.CubeType.Normal)
-                {
-                    // Transform to the new cube's color
-                    TransformTile(cubeType);
-                }
-
-                // Consume the cube
-                Destroy(cube.gameObject);
-
-                // Reset the prime state
-                isPrimed = false;
-            }
         }
     }
 }

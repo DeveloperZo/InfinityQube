@@ -51,8 +51,8 @@ public class CubeBehavior : MonoBehaviour
     {
         if (isRainingCube && transform.position.y >= 1f)
         {
-           transform.position = new Vector3(transform.position.x, transform.position.y-0.5f, transform.position.z);
-            if(transform.position.y <= 1f)
+            transform.position = new Vector3(transform.position.x, transform.position.y - 0.5f, transform.position.z);
+            if (transform.position.y <= 1f)
             {
                 transform.position = new Vector3(transform.position.x, 1f, transform.position.z);
             }
@@ -89,7 +89,7 @@ public class CubeBehavior : MonoBehaviour
             return true;
         }
 
-       
+
         // Check if this is a raining cube reaching the grid
         if (isRainingCube && position.y == grid.Height - 1)
         {
@@ -100,26 +100,30 @@ public class CubeBehavior : MonoBehaviour
             CheckForCubeBelow();
         }
 
-        // Off the grid = escape (but raining cubes don't escape until they reach the grid)
-        if ((!isRainingCube && position.y < 0) || position.x < 0 || position.x >= grid.Width)
+        if (position.y < 0 || position.x < 0 || position.x >= grid.Width)
         {
-            // Special handling for black cubes that escape
-            if (CubeType == Enumerations.CubeType.Black)
+            // Off the grid = escape (but raining cubes don't escape until they reach the grid)
+            if ((!isRainingCube && position.y < 0) || position.x < 0 || position.x >= grid.Width)
             {
-                WaveManager waveManager = FindObjectOfType<WaveManager>();
-                if (waveManager != null)
+                // Special handling for black cubes that escape
+                if (CubeType == Enumerations.CubeType.Black)
                 {
-                    waveManager.RegisterEscapedBlackCube(position);
+                    WaveManager waveManager = FindObjectOfType<WaveManager>();
+                    if (waveManager != null)
+                    {
+                        waveManager.RegisterEscapedBlackCube(position);
+                    }
                 }
-            }
 
-            Destroy(gameObject);
-            return false;
+                Destroy(gameObject);
+                return false;
+            }
         }
 
         Tile landingTile = grid.tiles[position.x, position.y];
         if (landingTile != null && !isDestroyed && position.y >= 0)
         {
+            // Then continue with normal landing behavior
             landingTile.HandleCubeLanding(this);
         }
 

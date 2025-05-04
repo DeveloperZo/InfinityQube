@@ -30,8 +30,6 @@ public class GameUI : MonoBehaviour
         detonationManager = FindObjectOfType<DetonationManager>();
         timeDistortionManager = FindObjectOfType<TimeDistortionManager>();
 
-        // Initialize styles on first use
-        InitializeStyles();
     }
 
     private void InitializeStyles()
@@ -94,10 +92,6 @@ public class GameUI : MonoBehaviour
         if (showDetonationTracker)
         {
             DrawDetonationTracker();
-        }
-        if (showTimeDistortionTracker)
-        {
-            DrawTimeDistortionTracker();
         }
     }
 

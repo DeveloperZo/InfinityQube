@@ -4,6 +4,18 @@ using UnityEngine;
 
 public class WaveManager : MonoBehaviour
 {
+    private class BlackCubeRainData
+    {
+        public Vector2Int targetPosition;
+        public int countdown = 3; // Number of moves before landing
+        public GameObject indicator;
+    }
+    private class ReturnQueueItem
+    {
+        public Enumerations.CubeType cubeType;
+        public Vector2 position;
+    }
+
     [Header("References")]
     [SerializeField] private GridManager grid;
     [SerializeField] private GameObject[] cubePrefabs;
@@ -31,11 +43,7 @@ public class WaveManager : MonoBehaviour
     private bool waveActive = false;
     private Coroutine waveCoroutine;
     private List<ReturnQueueItem> returnQueue = new List<ReturnQueueItem>();
-    private class ReturnQueueItem
-    {
-        public Enumerations.CubeType cubeType;
-        public Vector2 position;
-    }
+    private List<BlackCubeRainData> rainingBlackCubes = new List<BlackCubeRainData>();
 
     public void SetSpeedState(bool isSpeeding)
     {
@@ -165,12 +173,6 @@ public class WaveManager : MonoBehaviour
                         continue;
                     }
 
-                    // Normal movement behavior
-                    if (cube.isRainingCube)
-                    {
-                        var newPosition = new Vector3(cube.transform.position.x, cube.transform.position.z, cube.transform.position.y - 1);
-                        cube.transform.position = newPosition;
-                    }
                     // Explicitly reset movement state to ensure cubes can move
                     cube.ResetMovementState();
 
@@ -216,7 +218,18 @@ public class WaveManager : MonoBehaviour
 
     public void RegisterEscapedBlackCube(Vector2 position)
     {
-        escapedBlackCubePositions.Add(position);
+        // Keep using your existing returnQueue but ensure it's a black cube
+        returnQueue.Add(new ReturnQueueItem
+        {
+            cubeType = Enumerations.CubeType.Black,
+            position = position
+        });
+
+        // Log for debugging
+        Debug.Log($"Black cube escaped at X={position.x}, queued for return");
+
+        // Update any visual indicators
+        UpdateReturnVisuals();
     }
 
     // Add this new method for rain cubes to register with the wave system
@@ -249,29 +262,44 @@ public class WaveManager : MonoBehaviour
 
     private void ProcessReturnQueue()
     {
-        // Process all queued cubes before starting a new wave
         foreach (ReturnQueueItem item in returnQueue)
         {
-            SpawnReturningCube(item.cubeType, item.position);
+            // Only process black cubes with the raining logic
+            if (item.cubeType == Enumerations.CubeType.Black)
+            {
+                SpawnReturningBlackCube(item.position);
+            }
         }
 
         returnQueue.Clear();
     }
 
-    private void SpawnReturningCube(Enumerations.CubeType cubeType, Vector2 position)
+    private void SpawnReturningBlackCube(Vector2 column)
     {
-        int prefabIndex = (int)cubeType;
-        if (prefabIndex < 0 || prefabIndex >= cubePrefabs.Length) return;
+        // Create visual indicator first
+        GameObject indicator = Instantiate(returnIndicatorPrefab,
+                                          new Vector3(column.x, 6f, column.y),
+                                          Quaternion.identity);
+        indicator.tag = "ReturnIndicator";
 
+        // Set the correct visualization
+        Renderer renderer = indicator.GetComponent<Renderer>();
+        if (renderer != null)
+        {
+            renderer.material.color = Color.black;
+        }
+
+        // Use your existing CubeCollisionController to handle the actual spawning logic
+        int prefabIndex = (int)Enumerations.CubeType.Black;
         GameObject cube = Instantiate(cubePrefabs[prefabIndex],
-                                      new Vector3(position.x, 5f, position.y),
+                                      new Vector3(column.x, 5f, column.y),
                                       Quaternion.identity);
 
-        // Use your existing RainCubeController
+        // Use your existing CubeCollisionController for the landing behavior
         CubeCollisionController controller = cube.AddComponent<CubeCollisionController>();
-        controller.Initialize(position, grid);
+        controller.Initialize(column, grid);
+        StartCoroutine(controller.DelayedLanding(column));
     }
-
     private void SpawnCubes()
     {
         activeCubes.Clear();
@@ -371,8 +399,6 @@ public class WaveManager : MonoBehaviour
             return Enumerations.CubeType.Normal;
         else if (random < normalCubeChance + greenCubeChance)
             return Enumerations.CubeType.Green;
-        else if (random < normalCubeChance + greenCubeChance + 0.5f) // 5% chance for blue cubes
-            return Enumerations.CubeType.Blue;
         else
             return Enumerations.CubeType.Black;
     }

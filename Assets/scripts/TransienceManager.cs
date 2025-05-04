@@ -7,13 +7,13 @@ public class PhasedTag : MonoBehaviour
     // Duration in movement cycles
     public float phaseDuration = 2f;
     public Color originalColor;
-    
+
     private void Start()
     {
         // Auto-destroy after a set time to prevent permanent phasing
         Destroy(this, 5f);
     }
-    
+
     private void OnDestroy()
     {
         // Restore the cube's original state
@@ -22,7 +22,7 @@ public class PhasedTag : MonoBehaviour
         {
             cube.SetPhased(false);
         }
-        
+
         // Restore original color
         Renderer renderer = GetComponent<Renderer>();
         if (renderer != null && originalColor != null)
@@ -38,7 +38,7 @@ public class TransienceManager : MonoBehaviour
     [SerializeField] private GridManager gridManager;
     [SerializeField] private Material phasedTileMaterial;
 
-    [SerializeField] private Color phasedCubeColor = new Color(1f, 0.3f, 0.3f, 0.6f);
+    [SerializeField] private Color phasedCubeColor = new Color(0.5686275f, 0.27058825f, 0.27450982f, 0.6f);
 
     [Header("Settings")]
     [SerializeField] private int zoneDuration = 3;
@@ -349,12 +349,6 @@ public class TransienceManager : MonoBehaviour
                     case Enumerations.CubeType.Black:
                         cubeRenderer.material.color = Color.black;
                         break;
-                    case Enumerations.CubeType.Red:
-                        cubeRenderer.material.color = Color.red;
-                        break;
-                    case Enumerations.CubeType.Blue:
-                        cubeRenderer.material.color = Color.blue;
-                        break;
                     default:
                         cubeRenderer.material.color = Color.gray;
                         break;
@@ -458,7 +452,7 @@ public class TransienceManager : MonoBehaviour
         if (renderer == null) yield break;
 
         Material originalMaterial = renderer.material;
-        renderer.material.color = Color.yellow; // Example flash color
+        renderer.material.color = phasedCubeColor; // Example flash color
 
         yield return new WaitForSeconds(0.3f);
 

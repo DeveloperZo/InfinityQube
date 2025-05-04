@@ -37,28 +37,6 @@ public class GeneralDebugger : MonoBehaviour
     {
         // Auto-find references if not set
         if (grid == null) grid = FindObjectOfType<GridManager>();
-
-        // Find cube prefabs if not set
-        if (cubePrefabs == null || cubePrefabs.Length < 4)
-        {
-            cubePrefabs = new GameObject[4]; // Normal, Green, Black, Blue
-
-            Transform cubeParent = GameObject.Find("CubeParent")?.transform;
-            if (cubeParent != null)
-            {
-                foreach (Transform child in cubeParent)
-                {
-                    if (child.name.Contains("Normal"))
-                        cubePrefabs[0] = child.gameObject;
-                    else if (child.name.Contains("Green"))
-                        cubePrefabs[1] = child.gameObject;
-                    else if (child.name.Contains("Black"))
-                        cubePrefabs[2] = child.gameObject;
-                    else if (child.name.Contains("Blue"))
-                        cubePrefabs[3] = child.gameObject;
-                }
-            }
-        }
     }
 
     private void Update()
@@ -572,15 +550,6 @@ public class GeneralDebugger : MonoBehaviour
             if (GUILayout.Button("Black", GUILayout.Width(75)))
             {
                 UpdateColumnCube(col, Enumerations.CubeType.Black);
-            }
-
-            if (GUILayout.Button("Blue", GUILayout.Width(75)))
-            {
-                UpdateColumnCube(col, Enumerations.CubeType.Blue);
-            }
-            if (GUILayout.Button("Red", GUILayout.Width(75)))
-            {
-                UpdateColumnCube(col, Enumerations.CubeType.Red);
             }
 
             GUILayout.EndHorizontal();

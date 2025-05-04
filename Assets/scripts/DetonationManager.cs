@@ -211,107 +211,44 @@ public class DetonationManager : MonoBehaviour
     // Perform the actual 3x3 detonation effect
     // In DetonationManager.cs
     private void PerformDetonation(Vector2Int center)
+{
+    if (!IsValidPosition(center)) return;
+
+    // Get the tile
+    Tile centerTile = gridManager.tiles[center.x, center.y];
+    if (centerTile == null) return;
+
+    // Remove this detonation point from the list
+    detonationPoints.Remove(center);
+    ResetTileMaterial(centerTile);
+
+    // Get the charge level (determines detonation size)
+    int detonationSize = centerTile.DetonationCharges;
+    if (detonationSize <= 0) detonationSize = 3; // Default to 3x3
+    
+    Debug.Log($"Detonating {detonationSize}x{detonationSize} area at {center}");
+
+    // Process the area based on size
+    int radius = (detonationSize - 1) / 2;
+    for (int x = center.x - radius; x <= center.x + radius; x++)
     {
-        if (!IsValidPosition(center)) return;
-
-        // Get the tile and its charge level
-        Tile centerTile = gridManager.tiles[center.x, center.y];
-        if (centerTile == null) return;
-
-        if (slashDetonationPoints.ContainsKey(center))
+        for (int y = center.y - radius; y <= center.y + radius; y++)
         {
-            PerformSingleTileDetonation(center);
-            slashDetonationPoints.Remove(center);
-            detonationPoints.Remove(center);
-            return;
-        }
+            Vector2Int position = new Vector2Int(x, y);
+            if (IsValidPosition(position))
+            {
+                // Visual effect
+                StartCoroutine(FlashTile(gridManager.tiles[x, y]));
 
-        // Remove this detonation point from the list
-        detonationPoints.Remove(center);
-        ResetTileMaterial(centerTile);
-
-        // Get the charge level
-        int chargeLevel = centerTile.DetonationCharges;
-
-        // Determine detonation area based on charge level
-        switch (chargeLevel)
-        {
-            case 3: // Third charge (highest) - 3x3 area
-                Debug.Log($"Detonating 3x3 area at {center} (charge level 3)");
-                // Process a 3x3 grid centered on the detonation point
-                for (int x = center.x - 1; x <= center.x + 1; x++)
-                {
-                    for (int y = center.y - 1; y <= center.y + 1; y++)
-                    {
-                        Vector2Int position = new Vector2Int(x, y);
-                        if (IsValidPosition(position))
-                        {
-                            // Visual effect
-                            StartCoroutine(FlashTile(gridManager.tiles[x, y]));
-
-                            // Process cubes at this position
-                            DetonateCubesAt(position);
-                        }
-                    }
-                }
-                break;
-
-            case 2: // Second charge - 2x2 area
-                Debug.Log($"Detonating 2x2 area at {center} (charge level 2)");
-                // Process 2x2 grid
-                for (int x = center.x; x <= center.x + 1; x++)
-                {
-                    for (int y = center.y; y <= center.y + 1; y++)
-                    {
-                        Vector2Int position = new Vector2Int(x, y);
-                        if (IsValidPosition(position))
-                        {
-                            // Visual effect
-                            StartCoroutine(FlashTile(gridManager.tiles[x, y]));
-
-                            // Process cubes at this position
-                            DetonateCubesAt(position);
-                        }
-                    }
-                }
-                break;
-
-            case 1: // First charge - single tile
-                Debug.Log($"Detonating single tile at {center} (charge level 1)");
-                // Just detonate the center tile
-                StartCoroutine(FlashTile(centerTile));
-                DetonateCubesAt(center);
-                break;
-            default:
-                Debug.Log($"Detonating 3x3 area at {center} (default)");
-                // Process a 3x3 grid centered on the detonation point
-                for (int x = center.x - 1; x <= center.x + 1; x++)
-                {
-                    for (int y = center.y - 1; y <= center.y + 1; y++)
-                    {
-                        Vector2Int position = new Vector2Int(x, y);
-                        if (IsValidPosition(position))
-                        {
-                            // Visual effect
-                            StartCoroutine(FlashTile(gridManager.tiles[x, y]));
-
-                            // Process cubes at this position
-                            DetonateCubesAt(position);
-                        }
-                    }
-                }
-                break;
-        }
-
-        // Reduce the charge level after detonation
-        centerTile.ReduceCharge();
-
-        // If the tile still has charges, re-register it as a detonation point
-        if (centerTile.HasCharges)
-        {
-            RegisterDetonationPoint(center);
+                // Process cubes at this position
+                DetonateCubesAt(position);
+            }
         }
     }
+    
+    // Reduce the charge level after detonation
+    centerTile.ReduceCharge();
+}
 
     // Flash a tile temporarily
     private IEnumerator FlashTile(Tile tile)
@@ -394,25 +331,4 @@ public class DetonationManager : MonoBehaviour
         }
     }
 
-    // Apply damage effect to a tile
-    private void DamageTile(Vector2Int position)
-    {
-        if (!IsValidPosition(position)) return;
-        
-        Tile tile = gridManager.tiles[position.x, position.y];
-        if (tile != null)
-        {
-            // Visual damage indication
-            tile.transform.position = new Vector3(
-                tile.transform.position.x, 
-                -0.2f, 
-                tile.transform.position.z);
-
-            Renderer renderer = tile.GetComponent<Renderer>();
-            if (renderer != null)
-            {
-                renderer.material.color = Color.gray;
-            }
-        }
-    }
 }

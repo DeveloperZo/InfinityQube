@@ -87,7 +87,7 @@ public class PlayerController : MonoBehaviour
     private void HandleMovement()
     {
         bool moved = false;
-        
+
         if (Input.GetKeyDown(KeyCode.LeftArrow))
         {
             selX = Mathf.Max(0, selX - 1);
@@ -108,11 +108,35 @@ public class PlayerController : MonoBehaviour
             selZ = Mathf.Max(0, selZ - 1);
             moved = true;
         }
+        
+        int newX = selX;
+        int newZ = selZ;
 
         if (moved)
         {
-            UpdateSelectorPosition();
+            // Check if the target tile is valid to move to
+            if (IsValidMoveTarget(newX, newZ))
+            {
+                selX = newX;
+                selZ = newZ;
+                UpdateSelectorPosition();
+            }
+            else
+            {
+                // Blocked movement - could add visual/audio feedback here
+                Debug.Log("Movement blocked: tile is corrupted");
+            }
         }
+    }
+    private bool IsValidMoveTarget(int x, int z)
+    {
+        // Check grid bounds
+        if (x < 0 || x >= grid.Width || z < 0 || z >= grid.Height)
+            return false;
+
+        // Check if tile is corrupted
+        Tile tile = grid.tiles[x, z];
+        return tile != null && !tile.IsBlackened;
     }
 
     private void UpdateSelectorPosition()

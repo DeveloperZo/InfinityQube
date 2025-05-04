@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
+using System;
 
 public class CubeCollisionController : MonoBehaviour
 {
@@ -12,7 +13,74 @@ public class CubeCollisionController : MonoBehaviour
         grid = gridManager;
         detonationManager = FindObjectOfType<DetonationManager>();
     }
+    public IEnumerator DelayedLanding(Vector2 targetPosition)
+    {
+        // Wait for 3 movement cycles
+        yield return new WaitForSeconds(3 * 0.5f); // Assuming 0.5s per movement
 
+        // Check target position for existing cubes
+        Vector2Int landingPos = new Vector2Int((int)targetPosition.x, (int)targetPosition.y);
+        CubeBehavior targetCube = FindCubeAtPosition(landingPos);
+
+        if (targetCube != null)
+        {
+            // Handle special case for green cubes
+            if (targetCube.CubeType == Enumerations.CubeType.Green)
+            {
+                // Trigger a smaller 2x2 detonation
+                if (detonationManager != null)
+                {
+                    // Register the detonation point with a special "size 2" flag
+                    Tile tile = grid.tiles[landingPos.x, landingPos.y];
+                    if (tile != null)
+                    {
+                        // This assumes you've added a method to trigger a specific sized detonation
+                        detonationManager.RegisterDetonationPoint(landingPos);
+                        detonationManager.TriggerNextDetonation();
+                    }
+                }
+            }
+
+            // Consume the target cube
+            Destroy(targetCube.gameObject);
+        }
+        else
+        {
+            // If no cube is present, corrupt the tile
+            if (grid != null && IsValidPosition(landingPos))
+            {
+                Tile tile = grid.tiles[landingPos.x, landingPos.y];
+                if (tile != null)
+                {
+                    tile.BlackenTile();
+                }
+            }
+        }
+
+        // Register the black cube with the wave manager to start moving
+        WaveManager waveManager = FindObjectOfType<WaveManager>();
+        if (waveManager != null)
+        {
+            CubeBehavior cubeBehavior = GetComponent<CubeBehavior>();
+            if (cubeBehavior != null)
+            {
+                waveManager.RegisterRainCube(cubeBehavior);
+            }
+        }
+    }
+
+    private CubeBehavior FindCubeAtPosition(Vector2Int position)
+    {
+        // Find any cube at the given position
+        foreach (CubeBehavior cube in FindObjectsOfType<CubeBehavior>())
+        {
+            if (cube.position.x == position.x && cube.position.y == position.y)
+            {
+                return cube;
+            }
+        }
+        return null;
+    }
     public void HandleCubeCollision(CubeBehavior sourceCube, CubeBehavior targetCube, Vector2Int position)
     {
         if (sourceCube == null || targetCube == null) return;
@@ -48,14 +116,6 @@ public class CubeCollisionController : MonoBehaviour
         {
             HandleGreenCubeCollision(sourceCube, targetCube, position);
         }
-        else if (sourceType == Enumerations.CubeType.Blue)
-        {
-            HandleBlueCubeCollision(sourceCube, targetCube, position);
-        }
-        else if (sourceType == Enumerations.CubeType.Red)
-        {
-            HandleRedCubeCollision(sourceCube, targetCube, position);
-        }
         else if (sourceType == Enumerations.CubeType.Normal)
         {
             HandleNormalCubeCollision(sourceCube, targetCube, position);
@@ -73,122 +133,13 @@ public class CubeCollisionController : MonoBehaviour
                 break;
 
             case Enumerations.CubeType.Green:
-                // Black + Green = Diagonal detonation (slash pattern)
-                RegisterDiagonalPattern(position, Enumerations.CubeType.Green);
-                // Immediate trigger of the created detonation points
-                TriggerDiagonalDetonation(position);
                 Destroy(targetCube.gameObject);
                 break;
 
-            case Enumerations.CubeType.Blue:
-                // Black + Blue = Diagonal time freeze (slash pattern)
-                RegisterDiagonalPattern(position, Enumerations.CubeType.Blue);
-                // Immediate trigger of the created time distortion points
-                TriggerDiagonalTimeDistortion(position);
-                Destroy(targetCube.gameObject);
-                break;
-            case Enumerations.CubeType.Red:
-                // Black + Red = Similar to Black + Blue but with transience effect
-                RegisterDiagonalPattern(position, Enumerations.CubeType.Red);
-                // Immediate trigger of transience effect in a diagonal pattern
-                TriggerDiagonalTransience(position);
-                Destroy(targetCube.gameObject);
-                break;
             case Enumerations.CubeType.Normal:
                 // Black + Normal = Consume normal
                 Destroy(targetCube.gameObject);
                 break;
-        }
-    }
-
-    // Creates a diagonal slash pattern
-    private void RegisterDiagonalPattern(Vector2Int center, Enumerations.CubeType cubeType)
-    {
-        if (grid == null) return;
-
-        // Determine if we use \ or / pattern (alternate based on position)
-        bool useForwardSlash = (center.x + center.y) % 2 == 0;
-
-        List<Vector2Int> slashPositions = new List<Vector2Int>();
-
-        // Register points in the diagonal pattern
-        if (useForwardSlash) // / pattern
-        {
-            // Top-left to bottom-right diagonal
-            for (int offset = -1; offset <= 1; offset++)
-            {
-                Vector2Int pos = new Vector2Int(center.x + offset, center.y + offset);
-                if (IsValidPosition(pos))
-                {
-                    slashPositions.Add(pos);
-                }
-            }
-        }
-        else // \ pattern
-        {
-            // Top-right to bottom-left diagonal
-            for (int offset = -1; offset <= 1; offset++)
-            {
-                Vector2Int pos = new Vector2Int(center.x - offset, center.y + offset);
-                if (IsValidPosition(pos))
-                {
-                    slashPositions.Add(pos);
-                }
-            }
-        }
-
-        // Register the points with the appropriate manager
-        if (cubeType == Enumerations.CubeType.Green)
-        {
-            DetonationManager detonationManager = FindObjectOfType<DetonationManager>();
-            if (detonationManager != null)
-            {
-                foreach (Vector2Int pos in slashPositions)
-                {
-                    detonationManager.RegisterSlashDetonationPoint(pos);
-                }
-            }
-        }
-        else if (cubeType == Enumerations.CubeType.Blue)
-        {
-            TimeDistortionManager timeManager = FindObjectOfType<TimeDistortionManager>();
-            if (timeManager != null)
-            {
-                foreach (Vector2Int pos in slashPositions)
-                {
-                    timeManager.RegisterSlashDistortionPoint(pos);
-                }
-            }
-        }
-    }
-
-    // Immediately trigger the created detonation points
-    private void TriggerDiagonalDetonation(Vector2Int center)
-    {
-        DetonationManager detonationManager = FindObjectOfType<DetonationManager>();
-        if (detonationManager != null)
-        {
-            detonationManager.TriggerSlashDetonation(center);
-        }
-    }
-
-    // Immediately trigger the created time distortion points
-    private void TriggerDiagonalTimeDistortion(Vector2Int center)
-    {
-        TimeDistortionManager timeManager = FindObjectOfType<TimeDistortionManager>();
-        if (timeManager != null)
-        {
-            timeManager.TriggerSlashDistortion(center);
-        }
-    }
-
-    private void TriggerDiagonalTransience(Vector2Int center)
-    {
-        TransienceManager transManager = FindObjectOfType<TransienceManager>();
-        if (transManager != null)
-        {
-            // Similar structure to the diagonal time distortion but for transience
-            transManager.TriggerSlashDistortion(center);
         }
     }
 
@@ -212,16 +163,6 @@ public class CubeCollisionController : MonoBehaviour
                 Destroy(targetCube.gameObject);
                 break;
 
-            case Enumerations.CubeType.Blue:
-                // Green + Blue = Line detonation (placeholder)
-                if (detonationManager != null)
-                {
-                    RegisterLinePattern(position, Enumerations.CubeType.Green);
-                    detonationManager.TriggerNextDetonation();
-                }
-                Destroy(targetCube.gameObject);
-                break;
-
             case Enumerations.CubeType.Normal:
                 // Green + Normal = Consume normal
                 Destroy(targetCube.gameObject);
@@ -229,54 +170,6 @@ public class CubeCollisionController : MonoBehaviour
         }
     }
 
-    private void HandleBlueCubeCollision(CubeBehavior sourceCube, CubeBehavior targetCube, Vector2Int position)
-    {
-        switch (targetCube.CubeType)
-        {
-            case Enumerations.CubeType.Black:
-                // Blue + Black = Blue consumed, pushes black back
-                PushCubeBack(targetCube, position);
-                Destroy(sourceCube.gameObject);
-                break;
-
-            case Enumerations.CubeType.Green:
-                // Blue + Green = Push green forward
-                PushCubeForward(targetCube, position);
-                break;
-
-            case Enumerations.CubeType.Blue:
-                // Blue + Blue = Create larger time field (placeholder)
-                CreateTimeField(position, 2);
-                Destroy(targetCube.gameObject);
-                break;
-
-            case Enumerations.CubeType.Normal:
-                // Blue + Normal = Push normal forward
-                PushCubeForward(targetCube, position);
-                break;
-        }
-    }
-    private void HandleRedCubeCollision(CubeBehavior sourceCube, CubeBehavior targetCube, Vector2Int position)
-    {
-        switch (targetCube.CubeType)
-        {
-            case Enumerations.CubeType.Black:
-                Destroy(sourceCube.gameObject);
-                break;
-
-            case Enumerations.CubeType.Green:
-                Destroy(targetCube.gameObject);
-                break;
-
-            case Enumerations.CubeType.Blue:
-                Destroy(targetCube.gameObject);
-                break;
-
-            case Enumerations.CubeType.Normal:
-                Destroy(targetCube.gameObject);
-                break;
-        }
-    }
     private void HandleNormalCubeCollision(CubeBehavior sourceCube, CubeBehavior targetCube, Vector2Int position)
     {
         switch (targetCube.CubeType)
@@ -288,11 +181,6 @@ public class CubeCollisionController : MonoBehaviour
 
             case Enumerations.CubeType.Green:
                 // Normal + Green = Normal consumed
-                Destroy(sourceCube.gameObject);
-                break;
-
-            case Enumerations.CubeType.Blue:
-                // Normal + Blue = Normal consumed
                 Destroy(sourceCube.gameObject);
                 break;
 
@@ -335,217 +223,6 @@ public class CubeCollisionController : MonoBehaviour
         }
     }
 
-    private void PushCubeForward(CubeBehavior cube, Vector2Int position)
-    {
-        if (cube == null || grid == null) return;
-
-        // Calculate push direction (same as cube moving direction)
-        Vector2Int pushPosition = new Vector2Int(cube.position.x, cube.position.y - 1);
-
-        // Check if push position is valid
-        if (IsValidPosition(pushPosition))
-        {
-            // Move the cube
-            cube.position = pushPosition;
-            cube.transform.position = new Vector3(pushPosition.x, 1f, pushPosition.y);
-
-            // Update tile references
-            grid.tiles[position.x, position.y].currentCube = null;
-            grid.tiles[pushPosition.x, pushPosition.y].currentCube = cube;
-        }
-        else
-        {
-            // Push off grid = destroy cube
-            Destroy(cube.gameObject);
-        }
-    }
-
-    private void PushCubeBack(CubeBehavior cube, Vector2Int position)
-    {
-        if (cube == null || grid == null) return;
-
-        // Calculate push direction (opposite of cube moving direction)
-        Vector2Int pushPosition = new Vector2Int(cube.position.x, cube.position.y + 1);
-
-        // Check if push position is valid
-        if (IsValidPosition(pushPosition))
-        {
-            // Move the cube
-            cube.position = pushPosition;
-            cube.transform.position = new Vector3(pushPosition.x, 1f, pushPosition.y);
-
-            // Update tile references
-            grid.tiles[position.x, position.y].currentCube = null;
-            grid.tiles[pushPosition.x, pushPosition.y].currentCube = cube;
-        }
-    }
-    private void RegisterLinePattern(Vector2Int center, Enumerations.CubeType cubeType)
-    {
-        if (grid == null || detonationManager == null) return;
-
-        // Register points in a horizontal line
-        for (int x = 0; x < grid.Width; x++)
-        {
-            Vector2Int pos = new Vector2Int(x, center.y);
-            detonationManager.RegisterDetonationPoint(pos);
-        }
-
-        // Visual debug helper
-        StartCoroutine(VisualizeLinePattern(center, true, cubeType));
-    }
-
-    private void CreateTimeField(Vector2Int center, int radius)
-    {
-        if (grid == null) return;
-
-        // Create time field in a square area
-        for (int x = center.x - radius; x <= center.x + radius; x++)
-        {
-            for (int y = center.y - radius; y <= center.y + radius; y++)
-            {
-                Vector2Int pos = new Vector2Int(x, y);
-                if (IsValidPosition(pos))
-                {
-                    ApplyTimeFreeze(pos);
-                }
-            }
-        }
-
-        // Visual debug helper
-        StartCoroutine(VisualizeSquarePattern(center, radius, Enumerations.CubeType.Blue));
-    }
-
-    private void ApplyTimeFreeze(Vector2Int position)
-    {
-        // Find any cubes at this position
-        foreach (CubeBehavior cube in FindObjectsOfType<CubeBehavior>())
-        {
-            if (cube.position.x == position.x && cube.position.y == position.y)
-            {
-                // Add time freeze component
-                TimeFrozenTag frozenTag = cube.gameObject.AddComponent<TimeFrozenTag>();
-                if (frozenTag != null)
-                {
-                    frozenTag.frozenDuration = 2f; // Freeze for 2 movement cycles
-
-                    // Visual effect for frozen cube
-                    Renderer cubeRenderer = cube.GetComponent<Renderer>();
-                    if (cubeRenderer != null)
-                    {
-                        // Store original color
-                        frozenTag.originalColor = cubeRenderer.material.color;
-
-                        // Set to blue tint
-                        cubeRenderer.material.color = new Color(0.7f, 0.8f, 1f);
-                    }
-                }
-            }
-        }
-
-        // Also mark the tile
-        if (IsValidPosition(position) && grid.tiles[position.x, position.y] != null)
-        {
-            // Visual indication on tile
-            Tile tile = grid.tiles[position.x, position.y];
-            Renderer tileRenderer = tile.GetComponent<Renderer>();
-            if (tileRenderer != null)
-            {
-                // Light blue tint
-                StartCoroutine(PulseTileColor(tileRenderer,
-                    tileRenderer.material.color,
-                    new Color(0.7f, 0.8f, 1f),
-                    1.5f));
-            }
-        }
-    }
-
-    private IEnumerator VisualizePattern(Vector2Int center, bool forwardSlash, Enumerations.CubeType type)
-    {
-        // Create visualization objects for the pattern
-        List<GameObject> markers = new List<GameObject>();
-        Color markerColor = (type == Enumerations.CubeType.Green) ?
-            new Color(0, 1, 0, 0.5f) : new Color(0, 0.7f, 1f, 0.5f);
-
-        // Create markers for each position in the pattern
-        if (forwardSlash) // / pattern
-        {
-            for (int offset = -1; offset <= 1; offset++)
-            {
-                Vector2Int pos = new Vector2Int(center.x + offset, center.y + offset);
-                if (IsValidPosition(pos))
-                {
-                    GameObject marker = CreateMarker(pos, markerColor);
-                    markers.Add(marker);
-                }
-            }
-        }
-        else // \ pattern
-        {
-            for (int offset = -1; offset <= 1; offset++)
-            {
-                Vector2Int pos = new Vector2Int(center.x - offset, center.y + offset);
-                if (IsValidPosition(pos))
-                {
-                    GameObject marker = CreateMarker(pos, markerColor);
-                    markers.Add(marker);
-                }
-            }
-        }
-
-        // Let markers stay visible for a second
-        yield return new WaitForSeconds(1f);
-
-        // Destroy markers
-        foreach (GameObject marker in markers)
-        {
-            if (marker != null)
-            {
-                Destroy(marker);
-            }
-        }
-    }
-
-    private IEnumerator VisualizeLinePattern(Vector2Int center, bool horizontal, Enumerations.CubeType type)
-    {
-        // Create visualization objects for the pattern
-        List<GameObject> markers = new List<GameObject>();
-        Color markerColor = (type == Enumerations.CubeType.Green) ?
-            new Color(0, 1, 0, 0.5f) : new Color(0, 0.7f, 1f, 0.5f);
-
-        if (horizontal)
-        {
-            // Create markers for each position in the horizontal line
-            for (int x = 0; x < grid.Width; x++)
-            {
-                Vector2Int pos = new Vector2Int(x, center.y);
-                GameObject marker = CreateMarker(pos, markerColor);
-                markers.Add(marker);
-            }
-        }
-        else
-        {
-            // Create markers for each position in the vertical line
-            for (int y = 0; y < grid.Height; y++)
-            {
-                Vector2Int pos = new Vector2Int(center.x, y);
-                GameObject marker = CreateMarker(pos, markerColor);
-                markers.Add(marker);
-            }
-        }
-
-        // Let markers stay visible for a second
-        yield return new WaitForSeconds(1f);
-
-        // Destroy markers
-        foreach (GameObject marker in markers)
-        {
-            if (marker != null)
-            {
-                Destroy(marker);
-            }
-        }
-    }
-
     private IEnumerator VisualizeSquarePattern(Vector2Int center, int radius, Enumerations.CubeType type)
     {
         // Create visualization objects for the pattern
@@ -580,7 +257,7 @@ public class CubeCollisionController : MonoBehaviour
         }
     }
 
-    private GameObject CreateMarker(Vector2Int position, Color color)
+private GameObject CreateMarker(Vector2Int position, Color color)
     {
         GameObject marker = GameObject.CreatePrimitive(PrimitiveType.Sphere);
         marker.transform.position = new Vector3(position.x, 1.5f, position.y);
@@ -656,6 +333,5 @@ public class CubeCollisionController : MonoBehaviour
         Destroy(marker, 5f);
     }
 
-
-
 }
+
