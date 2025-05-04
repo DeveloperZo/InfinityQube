@@ -31,14 +31,6 @@ public class CubeBehavior : MonoBehaviour
         transform.position = new Vector3(position.x, spawnHeight, position.y); // Use spawnHeight parameter
     }
 
-    private void FixedUpdate()
-    {
-        if (isRainingCube && !isRainAnimating && transform.position.y > 1f)
-        {
-            // Start the vertical rain animation
-            StartCoroutine(RainAnimation());
-        }
-    }
     // Add this method to reset movement state
     public void ResetMovementState()
     {
@@ -60,20 +52,12 @@ public class CubeBehavior : MonoBehaviour
         // Handle raining cubes and moveCount
         if (isRainingCube)
         {
-            if (moveCountRemaining > 0)
-            {
-                moveCountRemaining--;
+            StartCoroutine(RainAnimation());
+        }
 
-                // Don't actually move forward until moveCount is depleted
-                if (moveCountRemaining > 0)
-                {
-                    return true;
-                }
-
-                // Ready to join normal cube flow
-                isRainingCube = false;
-                Debug.Log($"Rain cube now part of normal cube flow at position {position.x}, {position.y}");
-            }
+        if (isRainingCube && isRainAnimating)
+        {
+            return true;
         }
 
         // Normal movement logic
@@ -247,17 +231,25 @@ public class CubeBehavior : MonoBehaviour
     {
         isRainAnimating = true;
 
-        // Calculate the target position (directly below, maintaining X and Z)
+        // Get the current position and calculate target position for this tick
         Vector3 startPos = transform.position;
-        Vector3 targetPos = new Vector3(startPos.x, 1f, startPos.z);
 
-        float fallDuration = Mathf.Max(0.5f, (startPos.y - 1f) / 5f);
+        // Calculate the total height and divide into segments based on remaining moves
+        float totalHeight = startPos.y - 1f; // Distance to ground level
+        float segmentHeight = totalHeight / (moveCountRemaining > 0 ? moveCountRemaining : 1);
+
+        // Calculate target position for this tick
+        float targetY = startPos.y - segmentHeight;
+        Vector3 targetPos = new Vector3(position.x, targetY, position.y);
+
+        // Animate this segment of the fall
+        float segmentDuration = 0.4f; // Adjust as needed to match movement interval
         float elapsed = 0f;
 
-        while (elapsed < fallDuration && !isDestroyed)
+        while (elapsed < segmentDuration && !isDestroyed)
         {
             elapsed += Time.deltaTime;
-            float t = Mathf.Clamp01(elapsed / fallDuration);
+            float t = Mathf.Clamp01(elapsed / segmentDuration);
 
             // Simulate gravity with quadratic easing
             float easedT = t * t;
@@ -267,19 +259,32 @@ public class CubeBehavior : MonoBehaviour
             yield return null;
         }
 
-        // Ensure final position
+        // Ensure we're at the target position
         if (!isDestroyed)
         {
             transform.position = targetPos;
 
+            // Decrement the move count
+            moveCountRemaining--;
+
             // Add bounce effect
             StartCoroutine(BounceEffect());
 
-            // Notify the wave manager that this cube has landed vertically
-            WaveManager waveManager = FindObjectOfType<WaveManager>();
-            if (waveManager != null)
+            // If we've reached zero remaining moves, notify that the cube has landed
+            if (moveCountRemaining <= 0)
             {
-                waveManager.CubeRainLanded(this);
+                // Make sure we're at final ground position
+                transform.position = new Vector3(position.x, 1f, position.y);
+
+                // Notify the wave manager that this cube has landed vertically
+                WaveManager waveManager = FindObjectOfType<WaveManager>();
+                if (waveManager != null)
+                {
+                    waveManager.CubeRainLanded(this);
+                }
+
+                // No longer a raining cube
+                isRainingCube = false;
             }
         }
 

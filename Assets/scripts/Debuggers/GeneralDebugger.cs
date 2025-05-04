@@ -465,7 +465,7 @@ public class GeneralDebugger : MonoBehaviour
         CubeBehavior behavior = cube.GetComponent<CubeBehavior>();
         if (behavior != null)
         {
-            behavior.Init(grid, new Vector2Int(column, defaultRowZ), 1);
+            behavior.Init(grid, new Vector2Int(column, defaultRowZ), 1, 1);
             behavior.CubeType = cubeType;
         }
 

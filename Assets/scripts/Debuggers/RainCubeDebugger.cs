@@ -6,7 +6,8 @@ public class RainCubeDebugger : MonoBehaviour
 {
     [Header("References")]
     [SerializeField] private GridManager grid;
-    [SerializeField]private WaveManager waveManager;
+    [SerializeField] private WaveManager waveManager;
+    [SerializeField] private WaveDebugger waveDebugger;
     [SerializeField] private GameObject[] cubePrefabs; // Normal, Green, Black, Blue
     [SerializeField] private Material highlightMaterial;
 
@@ -39,33 +40,26 @@ public class RainCubeDebugger : MonoBehaviour
         ClearTileHighlight();
     }
 
-    private void MoveWaveForward()
+    private void RainCube(int column, int row, Enumerations.CubeType type, int moveCount)
     {
-        if (waveManager == null) return;
+        if (grid == null || column < 0 || column >= grid.Width ||
+            row < 0 || row >= grid.Height) return;
 
-        // Move the wave forward manually
-        waveManager.ManualMoveWaveForward();
-    }
-
-    public void RainCube()
-    {
-        if (isRaining || grid == null) return;
-
-        if (rainX < 0 || rainX >= grid.Width || rainY < 0 || rainY >= grid.Height)
-        {
-            Debug.LogWarning($"Invalid rain position: {rainX}, {rainY}");
-            return;
-        }
-
-        int prefabIndex = (int)rainCubeType;
+        // Find prefab for this type
+        int prefabIndex = (int)type;
         if (prefabIndex < 0 || prefabIndex >= cubePrefabs.Length || cubePrefabs[prefabIndex] == null)
         {
-            Debug.LogWarning($"Invalid cube prefab for type {rainCubeType}");
+            Debug.LogWarning($"Invalid cube prefab for type {type}");
             return;
         }
 
-        Vector3 spawnPos = new Vector3(rainX, 5f, rainY); // Adjusted spawn height to 5f above the grid
-        GameObject cube = Instantiate(cubePrefabs[prefabIndex], spawnPos, Quaternion.identity);
+        // Calculate spawn position - above the grid
+        float spawnHeight = 5f;  // Fixed height above grid
+        Vector3 spawnPosition = grid.tiles[column, row].transform.position;
+        spawnPosition.y += spawnHeight;
+
+
+        GameObject cube = Instantiate(cubePrefabs[prefabIndex], spawnPosition, Quaternion.identity);
 
         if (cube != null)
         {
@@ -73,71 +67,28 @@ public class RainCubeDebugger : MonoBehaviour
             if (behavior == null)
             {
                 behavior = cube.AddComponent<CubeBehavior>();
-                behavior.CubeType = rainCubeType;
+                behavior.CubeType = type;
             }
 
-            behavior.Init(grid, new Vector2Int(rainX, rainY), 1);
-            StartCoroutine(FallUniformly(behavior));
-        }
-    }
+            // IMPORTANT: Set the grid position in Vector2Int where x = column, y = row
+            Vector2Int gridPos = new Vector2Int(column, row);
+            behavior.Init(grid, gridPos, 1);
 
-    private IEnumerator FallUniformly(CubeBehavior cube)
-    {
-        isRaining = true;
+            // Mark as a raining cube with move count
+            behavior.isRainingCube = true;
+            behavior.moveCountRemaining = moveCount;
+            behavior.transform.position = new Vector3(behavior.transform.position.x, 5f, behavior.transform.position.z);
 
-        // Store original starting position
-        Vector3 startPos = cube.transform.position;
+            waveDebugger.debugObjects.Add(cube);
 
-        // Total distance to fall
-        float startHeight = startPos.y;
-        float targetHeight = 1f;
-        float totalDistance = startHeight - targetHeight;
-
-        // Fall in stages based on rainMoveCount
-        float distancePerStep = totalDistance / rainMoveCount;
-
-        for (int i = 0; i < rainMoveCount; i++)
-        {
-            if (cube == null) break;
-
-            // Calculate target position for this step
-            float targetY = startHeight - (distancePerStep * (i + 1));
-            Vector3 targetPos = new Vector3(startPos.x, targetY, startPos.z);
-
-            // Animate the movement
-            float elapsed = 0f;
-            float stepDuration = moveInterval * 0.8f; // Leave time for bounce
-            Vector3 stepStartPos = cube.transform.position;
-
-            while (elapsed < stepDuration)
+            // Register with wave manager but don't add to active cubes yet
+            if (waveManager != null)
             {
-                if (cube == null) break;
-
-                elapsed += Time.deltaTime;
-                float t = Mathf.Clamp01(elapsed / stepDuration);
-
-                // Use quadratic easing for gravity effect
-                float easedT = t * t;
-
-                cube.transform.position = Vector3.Lerp(stepStartPos, targetPos, easedT);
-
-                yield return null;
+                waveManager.RegisterRainCube(behavior);
             }
 
-            // Ensure position after each step
-            if (cube != null)
-            {
-                cube.transform.position = targetPos;
-
-                // Add small bounce after each step
-                StartCoroutine(BounceEffect(cube, moveInterval * 0.2f));
-            }
-
-            // Wait for next step
-            yield return new WaitForSeconds(moveInterval * 0.2f);
+            Debug.Log($"Created rain cube of type {type} at column {column}, row {row} with {moveCount} moves remaining");
         }
-
-        isRaining = false;
     }
 
     private IEnumerator BounceEffect(CubeBehavior cube, float duration)
@@ -294,7 +245,7 @@ public class RainCubeDebugger : MonoBehaviour
 
         if (GUILayout.Button("Rain Cube"))
         {
-            RainCube();
+            RainCube(rainX, rainY, rainCubeType, rainMoveCount);
         }
 
         GUILayout.EndArea();

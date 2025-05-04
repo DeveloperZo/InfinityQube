@@ -32,7 +32,7 @@ public class WaveDebugger : MonoBehaviour
 
     private bool debuggerActive = false;
     private Vector2 scrollPosition;
-    private List<GameObject> debugObjects = new List<GameObject>();
+    public List<GameObject> debugObjects = new List<GameObject>();
     private bool isProcessing = false;
 
     private void Awake()
@@ -195,15 +195,6 @@ public class WaveDebugger : MonoBehaviour
         }
         GUI.backgroundColor = Color.white;
         GUILayout.EndHorizontal();
-
-        // Move count before landing
-        rainMoveCount = Mathf.Clamp(EditorIntField("Moves before landing:", rainMoveCount), 1, 10);
-
-        if (GUILayout.Button("Rain Cube"))
-        {
-            RainCube(selectedColumn, selectedRow, rainCubeType, rainMoveCount);
-        }
-
         GUI.enabled = true;
 
         GUILayout.Space(10);
@@ -350,61 +341,14 @@ public class WaveDebugger : MonoBehaviour
         }
     }
 
-    private void RainCube(int column, int row, Enumerations.CubeType type, int moveCount)
-    {
-        if (grid == null || column < 0 || column >= grid.Width ||
-            row < 0 || row >= grid.Height) return;
-
-        // Find prefab for this type
-        int prefabIndex = (int)type;
-        if (prefabIndex < 0 || prefabIndex >= cubePrefabs.Length || cubePrefabs[prefabIndex] == null)
-        {
-            Debug.LogWarning($"Invalid cube prefab for type {type}");
-            return;
-        }
-
-        // Calculate spawn position - above the grid
-        float spawnHeight = 5f;  // Fixed height above grid
-        Vector3 spawnPos = new Vector3(column, spawnHeight, row);
-
-        GameObject cube = Instantiate(cubePrefabs[prefabIndex], spawnPos, Quaternion.identity);
-
-        if (cube != null)
-        {
-            CubeBehavior behavior = cube.GetComponent<CubeBehavior>();
-            if (behavior == null)
-            {
-                behavior = cube.AddComponent<CubeBehavior>();
-                behavior.CubeType = type;
-            }
-
-            // IMPORTANT: Set the grid position in Vector2Int where x = column, y = row
-            Vector2Int gridPos = new Vector2Int(column, row);
-            behavior.Init(grid, gridPos, 1);
-
-            // Mark as a raining cube with move count
-            behavior.isRainingCube = true;
-            behavior.moveCountRemaining = moveCount;
-            behavior.transform.position = new Vector3(behavior.transform.position.x, 10f, behavior.transform.position.y);
-
-            debugObjects.Add(cube);
-
-            // Register with wave manager but don't add to active cubes yet
-            if (waveManager != null)
-            {
-                waveManager.RegisterRainCube(behavior);
-            }
-
-            Debug.Log($"Created rain cube of type {type} at column {column}, row {row} with {moveCount} moves remaining");
-        }
-    }
-
     private void MoveWaveForward()
     {
         if (waveManager == null) return;
-
+        waveManager.debugMode = true;
+        waveManager.manualControl = true;
         // Move the wave forward manually
         waveManager.ManualMoveWaveForward();
+        waveManager.manualControl = false;
     }
 
 

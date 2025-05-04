@@ -39,14 +39,14 @@ public class WaveManager : MonoBehaviour
 
     public bool isSpeedingUp = false;
     public List<CubeBehavior> activeCubes = new List<CubeBehavior>();
-    private List<Vector2> escapedBlackCubePositions = new List<Vector2>();
+    public List<Vector2> escapedBlackCubePositions = new List<Vector2>();
     private bool waveActive = false;
     private Coroutine waveCoroutine;
     private List<ReturnQueueItem> returnQueue = new List<ReturnQueueItem>();
     private List<BlackCubeRainData> rainingBlackCubes = new List<BlackCubeRainData>();
     private bool isDebugWaveActive = false;
-    private bool debugMode = false;
-    private bool manualControl = false;
+    public bool debugMode = false;
+    public bool manualControl = false;
 
     public void SetSpeedState(bool isSpeeding)
     {
@@ -138,7 +138,6 @@ public class WaveManager : MonoBehaviour
         // Skip spawning cubes if in debug mode
         if (!debugMode)
         {
-            ProcessReturnQueue();
             SpawnCubes();
         }
 
@@ -270,9 +269,6 @@ public class WaveManager : MonoBehaviour
 
         // Log for debugging
         Debug.Log($"Black cube escaped at X={position.x}, queued for return");
-
-        // Update any visual indicators
-        UpdateReturnVisuals();
     }
 
     public void RegisterEscapedCube(CubeBehavior cube)
@@ -290,19 +286,6 @@ public class WaveManager : MonoBehaviour
         }
     }
 
-    private void ProcessReturnQueue()
-    {
-        foreach (ReturnQueueItem item in returnQueue)
-        {
-            // Only process black cubes with the raining logic
-            if (item.cubeType == Enumerations.CubeType.Black)
-            {
-                SpawnReturningBlackCube(item.position);
-            }
-        }
-
-        returnQueue.Clear();
-    }
 
     public void EnterDebugMode(bool manual)
     {
@@ -336,34 +319,7 @@ public class WaveManager : MonoBehaviour
         if (!debugMode || !manualControl) return;
 
         // Process one movement step for all active cubes
-        RunWave();
-    }
-
-    private void SpawnReturningBlackCube(Vector2 column)
-    {
-        // Create visual indicator first
-        GameObject indicator = Instantiate(returnIndicatorPrefab,
-                                          new Vector3(column.x, 6f, column.y),
-                                          Quaternion.identity);
-        indicator.tag = "ReturnIndicator";
-
-        // Set the correct visualization
-        Renderer renderer = indicator.GetComponent<Renderer>();
-        if (renderer != null)
-        {
-            renderer.material.color = Color.black;
-        }
-
-        // Use your existing CubeCollisionController to handle the actual spawning logic
-        int prefabIndex = (int)Enumerations.CubeType.Black;
-        GameObject cube = Instantiate(cubePrefabs[prefabIndex],
-                                      new Vector3(column.x, 5f, column.y),
-                                      Quaternion.identity);
-
-        // Use your existing CubeCollisionController for the landing behavior
-        CubeCollisionController controller = cube.AddComponent<CubeCollisionController>();
-        controller.Initialize(grid);
-        StartCoroutine(controller.DelayedLanding(column));
+        StartCoroutine(RunWave());
     }
     private void SpawnCubes()
     {
@@ -415,7 +371,7 @@ public class WaveManager : MonoBehaviour
         SpawnRainingBlackCubes();
     }
 
-    private void SpawnRainingBlackCubes()
+    public void SpawnRainingBlackCubes()
     {
         if (escapedBlackCubePositions.Count == 0) return;
 
@@ -443,7 +399,10 @@ public class WaveManager : MonoBehaviour
                 {
                     cb = cube.AddComponent<CubeBehavior>();
                     cb.CubeType = Enumerations.CubeType.Black;
+                    cb.isRainingCube = true;
                 }
+
+                activeCubes.Add(cb);
 
                 // Add a rain controller component to handle the specialized behavior
                 CubeCollisionController rainController = cube.AddComponent<CubeCollisionController>();
