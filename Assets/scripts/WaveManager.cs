@@ -21,6 +21,7 @@ public class WaveManager : MonoBehaviour
     [SerializeField] public GameObject[] cubePrefabs;
     [SerializeField] private PlayerController player;
     [SerializeField] private TransienceManager transienceManager;
+    [SerializeField] private DetonationManager detonationManager;
 
     [Header("Wave Settings")]
     [SerializeField] private int waveSize = 3;
@@ -40,7 +41,7 @@ public class WaveManager : MonoBehaviour
     public bool isSpeedingUp = false;
     public List<CubeBehavior> activeCubes = new List<CubeBehavior>();
     public List<Vector2> escapedBlackCubePositions = new List<Vector2>();
-    private bool waveActive = false;
+    public bool waveActive = false;
     private Coroutine waveCoroutine;
     private List<ReturnQueueItem> returnQueue = new List<ReturnQueueItem>();
     private List<BlackCubeRainData> rainingBlackCubes = new List<BlackCubeRainData>();
@@ -470,22 +471,30 @@ public class WaveManager : MonoBehaviour
 
         // Update tile reference if needed
         Vector2Int pos = cube.position;
+        Tile tile = null;
         if (grid != null && pos.x >= 0 && pos.x < grid.Width && pos.y >= 0 && pos.y < grid.Height)
         {
-            Tile tile = grid.tiles[pos.x, pos.y];
+            tile = grid.tiles[pos.x, pos.y];
             if (tile != null)
             {
                 // Only update the tile reference if this is the final landing
                 // or if the tile doesn't have a cube yet
                 if (cube.moveCountRemaining <= 0 || tile.currentCube == null)
                 {
-                    tile.currentCube = cube;
+                    tile.ProcessCubeInteraction(cube);
                 }
             }
         }
 
         // Check for collisions now that the cube has landed
         cube.CheckForCollisionOnLanding();
+        if(tile != null)
+        {
+            if (tile.IsAdvantaged)
+            {
+                detonationManager.TriggerNextDetonation(tile.x, tile.y);
+            }
+        }
 
         Debug.Log($"Cube rain landed at ({pos.x}, {pos.y}), " +
                   $"world pos ({cube.transform.position.x}, {cube.transform.position.y}, {cube.transform.position.z}), " +

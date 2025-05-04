@@ -525,9 +525,15 @@ public class WaveDebugger : MonoBehaviour
         // Register with wave manager
         if (waveManager != null)
         {
-            waveManager.EnterDebugMode(manualWaveControl);
+            // Make sure we exit any previous debug mode correctly first
+            waveManager.ExitDebugMode();
 
-            // Add cubes to wave manager
+            // Then re-enter with correct control settings
+            waveManager.debugMode = true;
+            waveManager.manualControl = manualWaveControl;
+            waveManager.waveActive = false; // Reset wave state
+
+            // Register cubes with wave manager
             foreach (GameObject obj in debugObjects)
             {
                 if (obj != null)
@@ -539,6 +545,8 @@ public class WaveDebugger : MonoBehaviour
                     }
                 }
             }
+
+            Debug.Log($"Registered {debugObjects.Count} cubes with WaveManager. Manual control: {manualWaveControl}");
         }
     }
 
@@ -574,8 +582,11 @@ public class WaveDebugger : MonoBehaviour
     private void MoveWaveForward()
     {
         if (waveManager == null) return;
+
+        // Ensure debug mode is set properly
         waveManager.debugMode = true;
-        waveManager.manualControl = true;
+        waveManager.manualControl = manualWaveControl;
+
         // Move the wave forward manually
         waveManager.ManualMoveWaveForward();
     }
@@ -586,47 +597,67 @@ public class WaveDebugger : MonoBehaviour
         {
             StopCoroutine(autoMoveCoroutine);
             autoMoveCoroutine = null;
+            Debug.Log("Auto movement stopped");
         }
         else
         {
             autoMoveCoroutine = StartCoroutine(AutoMoveCoroutine());
+            Debug.Log("Auto movement started");
         }
     }
 
     private IEnumerator AutoMoveCoroutine()
     {
-        waveManager.debugMode = true;
-        waveManager.manualControl = true;
+        // Set wave manager to debug mode but not manual control
+        if (waveManager != null)
+        {
+            waveManager.debugMode = true;
+            waveManager.manualControl = false;
+        }
 
-        while (true)
+        while (waveManager != null && waveManager.activeCubes.Count > 0)
         {
             MoveWaveForward();
             yield return new WaitForSeconds(autoMoveInterval);
-
-            // Check if we still have active cubes
-            if (waveManager.activeCubes.Count == 0)
-            {
-                break;
-            }
         }
 
+        Debug.Log("Auto movement completed - no more active cubes");
         autoMoveCoroutine = null;
     }
 
+
+
     private void ClearAllCubes()
     {
-        // Clear debug objects first
+        // Stop any running auto movement coroutine
+        if (autoMoveCoroutine != null)
+        {
+            StopCoroutine(autoMoveCoroutine);
+            autoMoveCoroutine = null;
+        }
+
+        // Clear debug objects 
         foreach (GameObject obj in debugObjects)
         {
             if (obj != null) Destroy(obj);
         }
         debugObjects.Clear();
 
-        // Clear any remaining cubes from WaveManager
+        // Reset WaveManager state
         if (waveManager != null)
         {
+            // Reset wave state
+            waveManager.waveActive = false;
+
+            // Clear cubes
             waveManager.ClearAllCubes();
+
+            // Either exit debug mode completely or re-enter with current settings
             waveManager.ExitDebugMode();
+            waveManager.debugMode = true;
+            waveManager.manualControl = manualWaveControl;
+
+            Debug.Log("Cleared all cubes and reset WaveManager state");
         }
         else
         {

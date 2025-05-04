@@ -55,6 +55,7 @@ public class CubeBehavior : MonoBehaviour
         if (isRainingCube)
         {
             StartCoroutine(RainAnimation());
+            return true;
         }
 
         if (isRainingCube && isRainAnimating)
@@ -83,6 +84,10 @@ public class CubeBehavior : MonoBehaviour
             }
         }
 
+        // Animate the forward movement
+        position.y -= 1;
+        StartCoroutine(AnimateMove(position));
+
         // Process landing on tiles
         if (position.y >= 0 && position.x >= 0 && position.x < grid.Width)
         {
@@ -97,30 +102,8 @@ public class CubeBehavior : MonoBehaviour
             }
         }
 
-        // Animate the forward movement
-        position.y -= 1;
-        StartCoroutine(AnimateMove(position));
 
-        
         return true;
-    }
-
-    public void HandleVerticalImpact(Vector2Int position, GridManager grid)
-    {
-        Tile tile = grid.tiles[position.x, position.y];
-
-        // Find cube at landing position (if any)
-        CubeBehavior targetCube = tile.currentCube;
-
-        if (targetCube == null)
-        {
-            tile.currentCube = this;
-        }
-        else
-        {
-            // Use collision controller to handle the interaction
-            collisionController.HandleCubeCollision(this, targetCube, position);
-        }
     }
 
     public void CheckForCollisionOnLanding()
@@ -132,8 +115,7 @@ public class CubeBehavior : MonoBehaviour
         {
             if (otherCube != this &&
                 otherCube.position.x == position.x &&
-                otherCube.position.y == position.y &&
-                !otherCube.isPhased)
+                otherCube.position.y == position.y)
             {
                 // Found another cube at our position, trigger collision
                 CubeCollisionController collisionController = GetComponent<CubeCollisionController>();

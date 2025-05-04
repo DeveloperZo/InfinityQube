@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using static Enumerations;
 
+
 public class DetonationManager : MonoBehaviour
 {
     [Header("References")]
@@ -47,7 +48,8 @@ public class DetonationManager : MonoBehaviour
         {
             detonationPoints.Add(position);
             detonationTypes[position] = type;
-            MarkTileAsDetonationPoint(position);
+            if(!tile.IsAdvantaged)
+                MarkTileAsDetonationPoint(position);
 
             // If this should auto-detonate on next wave movement, add to that list
             if (autoDetonate && !autoDetonationPoints.Contains(position))
@@ -295,9 +297,11 @@ public class DetonationManager : MonoBehaviour
                     detonationSize = 1; // Just this tile
                     break;
             }
-
-            // Remove from tracking
-            detonationTypes.Remove(center);
+            if (!centerTile.HasCharges || !centerTile.IsAdvantaged)
+            {
+                // Remove from tracking
+                detonationTypes.Remove(center);
+            }
         }
         // Otherwise use the tile's charge level (if any)
         else if (centerTile.HasCharges)
