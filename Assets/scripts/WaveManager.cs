@@ -114,6 +114,17 @@ public class WaveManager : MonoBehaviour
         UpdateReturnVisuals();
     }
 
+    private void NotifyMovementComplete()
+    {
+        // Find and notify all AutoDetonationTag components
+        AutoDetonationTag[] tags = FindObjectsOfType<AutoDetonationTag>();
+        foreach (AutoDetonationTag tag in tags)
+        {
+            tag.OnWaveMovement();
+        }
+    }
+
+
     private IEnumerator RunWave()
     {
         waveActive = true;
@@ -202,6 +213,9 @@ public class WaveManager : MonoBehaviour
                     activeCubes.RemoveAt(i);
                 }
             }
+
+            // Notify that a movement cycle is complete
+            NotifyMovementComplete();
 
             cubesRemaining = !debugMode;
 

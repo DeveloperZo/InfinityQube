@@ -3,6 +3,75 @@ using System.Collections;
 using System.Collections.Generic;
 using System;
 
+public class AutoDetonationTag : MonoBehaviour
+{
+    public Vector2Int position;
+    public int size = 2; // Default to 2×2 area
+    private bool hasDetonated = false;
+
+    private void OnEnable()
+    {
+        // Register with the WaveManager to receive movement notifications
+        WaveManager waveManager = FindObjectOfType<WaveManager>();
+        if (waveManager != null)
+        {
+            // Subscribe to the movement event
+            // Assuming WaveManager has a way to notify when cubes move
+            // If not, we'll need to implement that
+        }
+    }
+
+    // This should be called after all cubes have moved forward once
+    public void OnWaveMovement()
+    {
+        if (hasDetonated) return;
+
+        // Auto-detonate on the next movement
+        Detonate();
+        hasDetonated = true;
+
+        // Self-destruct after detonation
+        Destroy(this);
+    }
+
+    private void Detonate()
+    {
+        Debug.Log($"Auto-detonating {size}×{size} area at ({position.x}, {position.y})");
+
+        // Calculate the area to detonate (centered on this position)
+        int startX = position.x - (size / 2);
+        int startY = position.y - (size / 2);
+
+        // Find all cubes in the detonation area and destroy them
+        foreach (CubeBehavior cube in FindObjectsOfType<CubeBehavior>())
+        {
+            if (cube == null) continue;
+
+            int cubeX = cube.position.x;
+            int cubeY = cube.position.y;
+
+            // Check if the cube is within the detonation area
+            if (cubeX >= startX && cubeX < startX + size &&
+                cubeY >= startY && cubeY < startY + size)
+            {
+                if (cube.CubeType != Enumerations.CubeType.Black)
+                {
+                    // Destroy cubes in the area (except black cubes)
+                    Destroy(cube.gameObject);
+                }
+                // Optional: Add visual effects for detonation here
+            }
+        }
+
+        // Clear the marker from the tile
+        Tile tile = GetComponent<Tile>();
+        if (tile != null)
+        {
+            tile.ClearMarker();
+        }
+    }
+}
+
 public class CubeCollisionController : MonoBehaviour
 {
     private GridManager grid;
@@ -148,8 +217,8 @@ public class CubeCollisionController : MonoBehaviour
                 break;
 
             case Enumerations.CubeType.Green:
-                // Black + Green = Green automatically detonates in 2x2 area
-                TriggerSmallerDetonation(position);
+                // Black + Green = Mark the tile for automatic detonation
+                MarkTileForAutoDetonation(position);
                 Destroy(targetCube.gameObject);
                 break;
 
@@ -157,6 +226,17 @@ public class CubeCollisionController : MonoBehaviour
                 // Black + Normal = Consume normal
                 Destroy(targetCube.gameObject);
                 break;
+        }
+
+        // If landing on an enhanced tile, reduce its charge by one
+        if (grid != null && IsValidPosition(position))
+        {
+            Tile tile = grid.tiles[position.x, position.y];
+            if (tile != null && tile.HasCharges)
+            {
+                tile.ReduceCharge();
+                Debug.Log($"Black cube landing reduced charge level on tile at ({position.x}, {position.y})");
+            }
         }
     }
 
@@ -220,6 +300,25 @@ public class CubeCollisionController : MonoBehaviour
         {
             Debug.Log($"Black cube collision at ({position.x}, {position.y}). Blackening tile.");
             tile.BlackenTile();
+        }
+    }
+
+    private void MarkTileForAutoDetonation(Vector2Int position)
+    {
+        if (grid == null || !IsValidPosition(position)) return;
+
+        Tile tile = grid.tiles[position.x, position.y];
+        if (tile != null)
+        {
+            // Mark the tile (this will create a marker similar to player placing a marker)
+            tile.PlaceMarker();
+
+            // Add a special component that will handle auto-detonation on the next move
+            AutoDetonationTag autoDetonation = tile.gameObject.AddComponent<AutoDetonationTag>();
+            autoDetonation.position = position;
+            autoDetonation.size = 2; // 2×2 area
+
+            Debug.Log($"Marked tile at ({position.x}, {position.y}) for 2×2 auto-detonation on next move");
         }
     }
 
