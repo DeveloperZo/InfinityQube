@@ -8,6 +8,7 @@ public class GeneralDebugger : MonoBehaviour
     [Header("References")]
     [SerializeField] private GridManager grid;
     [SerializeField] private GameObject[] cubePrefabs; // Normal, Green, Black, Blue
+    [SerializeField] private WaveDebugger waveDebugger; // Normal, Green, Black, Blue
 
     [Header("Debug Controls")]
     [SerializeField] private KeyCode toggleDebugKey = KeyCode.F1;
@@ -31,6 +32,7 @@ public class GeneralDebugger : MonoBehaviour
     private bool dropOnCubes = false;
     private bool dropOnTiles = false;
     private bool autoTileEffects = true;
+    private bool showWaveOptions = true;
     private Vector2 scrollPosition;
 
     private void Start()
@@ -514,14 +516,21 @@ public class GeneralDebugger : MonoBehaviour
     {
         if (!debugModeActive) return;
 
-        scrollPosition = GUI.BeginScrollView(new Rect(10, 10, 700, 700), scrollPosition, new Rect(0, 0, 700, 700));
+        scrollPosition = GUI.BeginScrollView(new Rect(10, 10, 700, 700), scrollPosition, new Rect(0, 0, 700, 1500));
 
-        GUILayout.Label("=== CUBE DEBUGGER ===", GUI.skin.box);
+        GUILayout.Label("=== STATIC CUBE DEBUGGER ===", GUI.skin.box);
 
         GUILayout.Space(5);
         GUILayout.Label($"Test Row: {defaultRowZ}, Effect Row: {effectRowZ}");
         dropOnCubes = GUILayout.Toggle(dropOnCubes, "Drop On Cubes");
         dropOnTiles = GUILayout.Toggle(dropOnTiles, "Drop On Tiles");
+
+        // Coordinate with wave debugger
+        if (waveDebugger != null)
+        {
+            showWaveOptions = GUILayout.Toggle(showWaveOptions, "Show Wave Options");
+        }
+
         // Column cube setup
         GUILayout.Label("Column Setup:", GUI.skin.box);
 
@@ -635,8 +644,26 @@ public class GeneralDebugger : MonoBehaviour
         {
             CheckAllOverlappingCubes();
         }
+        GUILayout.Space(20);
+        GUILayout.Label("Debugger Coordination:", GUI.skin.box);
+
+        if (waveDebugger != null)
+        {
+            if (GUILayout.Button("Switch to Wave Debugger (F5)"))
+            {
+                // This will toggle WaveDebugger on and this debugger off
+                SendMessage("SetDebuggerState", false);
+                waveDebugger.SendMessage("SetDebuggerState", true);
+            }
+        }
+
 
         GUI.EndScrollView();
+    }
+
+    public void SetDebuggerState(bool active)
+    {
+        debugModeActive = active;
     }
 
     private void CheckAllOverlappingCubes()

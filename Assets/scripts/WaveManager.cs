@@ -44,6 +44,7 @@ public class WaveManager : MonoBehaviour
     private Coroutine waveCoroutine;
     private List<ReturnQueueItem> returnQueue = new List<ReturnQueueItem>();
     private List<BlackCubeRainData> rainingBlackCubes = new List<BlackCubeRainData>();
+    private bool isDebugWaveActive = false;
 
     public void SetSpeedState(bool isSpeeding)
     {
@@ -214,6 +215,44 @@ public class WaveManager : MonoBehaviour
 
         waveActive = false;
         waveCoroutine = null;
+    }
+
+    public void RegisterDebugWave(List<GameObject> debugCubes)
+    {
+        // Clear existing active cubes first
+        activeCubes.Clear();
+
+        // Convert GameObject references to CubeBehavior references
+        foreach (GameObject obj in debugCubes)
+        {
+            if (obj != null)
+            {
+                CubeBehavior cube = obj.GetComponent<CubeBehavior>();
+                if (cube != null)
+                {
+                    activeCubes.Add(cube);
+                }
+            }
+        }
+
+        // Disable automatic wave spawning (if applicable)
+        isDebugWaveActive = true;
+    }
+
+    public void ClearAllCubes()
+    {
+        // Clear active cubes
+        foreach (CubeBehavior cube in activeCubes)
+        {
+            if (cube != null && cube.gameObject != null)
+            {
+                Destroy(cube.gameObject);
+            }
+        }
+        activeCubes.Clear();
+
+        // Reset other wave-related states
+        isDebugWaveActive = false;
     }
 
     public void RegisterEscapedBlackCube(Vector2 position)
