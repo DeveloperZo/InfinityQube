@@ -80,7 +80,7 @@ public class RainCubeDebugger : MonoBehaviour
         {
             if (cube == null) break;
 
-            Vector3 targetPos = new Vector3(cube.position.x, 1f, cube.position.y - 1);
+            Vector3 targetPos = new Vector3(cube.position.x, 10f, cube.position.y - 1);
             cube.transform.position = targetPos;
 
             yield return new WaitForSeconds(moveInterval);
