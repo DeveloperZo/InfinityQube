@@ -14,7 +14,7 @@ public class RainCubeDebugger : MonoBehaviour
     [Header("Rain Settings")]
     [SerializeField] private Enumerations.CubeType rainCubeType = Enumerations.CubeType.Normal;
     [SerializeField] private int rainX = 2;
-    [SerializeField] private int rainY = 2;
+    [SerializeField] private int rainY = 3;
     [SerializeField] private int rainMoveCount = 3;
     [SerializeField] private float moveInterval = 0.5f;
 

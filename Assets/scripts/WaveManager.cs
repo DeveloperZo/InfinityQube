@@ -181,20 +181,6 @@ public class WaveManager : MonoBehaviour
                 CubeBehavior cube = activeCubes[i];
                 if (cube != null)
                 {
-                    // Check for time-frozen cubes
-                    TimeFrozenTag frozenTag = cube.GetComponent<TimeFrozenTag>();
-                    if (frozenTag != null)
-                    {
-                        // Skip movement but reduce freeze duration
-                        frozenTag.frozenDuration -= 1f;
-                        if (frozenTag.frozenDuration <= 0)
-                        {
-                            Destroy(frozenTag);
-                        }
-                        cubesRemaining = true;
-                        continue;
-                    }
-
                     cube.ResetMovementState();
                     bool stillAlive = cube.MoveForward();
 

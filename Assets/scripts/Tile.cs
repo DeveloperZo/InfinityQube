@@ -29,7 +29,7 @@ public class TimeFrozenTag : MonoBehaviour
 public class Tile : MonoBehaviour
 {
     [Header("Tile Properties")]
-    [SerializeField] private int x, y;
+    [SerializeField] public int x, y;
     [SerializeField] private bool hasMarker = false;
     [SerializeField] private float markerHeight = 0.3f;
     [SerializeField] private float markerScale = 0.5f;
@@ -177,12 +177,12 @@ public class Tile : MonoBehaviour
             transform.position.z);
     }
 
-    public void AdvantageTile()
+    public void AdvantageTile(int charges = 3)
     {
         if (isBlackened) { return; }
 
         isAdvantaged = true;
-        detonationCharges = maxCharges;
+        detonationCharges = charges > maxCharges ? maxCharges : charges;
         ClearMarker();
         if (tileRenderer != null)
         {
@@ -275,6 +275,7 @@ public class Tile : MonoBehaviour
     {
         currentState = TileState.Normal;
         isBlackened = false;
+        isAdvantaged = false;
         detonationCharges = 0;
 
         // Reset visual appearance
@@ -416,8 +417,9 @@ public class Tile : MonoBehaviour
             if(cube.CubeType == Enumerations.CubeType.Black)
             {
                Debug.Log("Black cube landed on an advantaged tile. Charge Reduced.");
-                ReduceCharge();
             }
+
+            ReduceCharge();
         }
     }
 }

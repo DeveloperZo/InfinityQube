@@ -78,11 +78,21 @@ public class DetonationManager : MonoBehaviour
     }
 
     // Trigger the next available detonation (called from PlayerController)
-    public void TriggerNextDetonation()
+    public void TriggerNextDetonation(int x=-1, int y=-1)
     {
         if (detonationPoints.Count <= 0) return;
         
         Vector2Int position = detonationPoints[0];
+
+        if(x>0 && y > 0)
+        {
+            var targetedPosition = detonationPoints.First(point => point.x == x  && point.y == y);
+            if(targetedPosition != null)
+            {
+                position = targetedPosition;
+            }
+        }
+
         PerformDetonation(position);
     }
 
@@ -241,21 +251,34 @@ public class DetonationManager : MonoBehaviour
 
     // Perform the actual 3x3 detonation effect
     // In DetonationManager.cs
+    // In DetonationManager.cs
     private void PerformDetonation(Vector2Int center)
     {
         if (!IsValidPosition(center)) return;
 
         // Get the tile
         Tile centerTile = gridManager.tiles[center.x, center.y];
+        
         if (centerTile == null) return;
+        // Reduce the charge level after detonation if the tile has charges
+        if (centerTile.HasCharges)
+        {
+            centerTile.ReduceCharge();
+        }
+
 
         // Remove this detonation point from the list
-        detonationPoints.Remove(center);
-        autoDetonationPoints.Remove(center); // Ensure it's removed from auto list too
+        
+        if(!centerTile.HasCharges || !centerTile.IsAdvantaged)
+        {
+            detonationPoints.Remove(center);
+            autoDetonationPoints.Remove(center); // Ensure it's removed from auto list too
+        }
+
         ResetTileMaterial(centerTile);
 
         // Determine detonation size based on type or charge level
-        int detonationSize = 3; // Default for standard
+        int detonationSize = 2; // Default is now 2 (2x2 area)
 
         // If we have a specific type registered, use it
         if (detonationTypes.ContainsKey(center))
@@ -279,29 +302,15 @@ public class DetonationManager : MonoBehaviour
         // Otherwise use the tile's charge level (if any)
         else if (centerTile.HasCharges)
         {
-            // Use charge level to determine size (3 = 3x3, 2 = 2x2, 1 = single)
+            // Use charge level to determine size (detonation charges will be max 2 by default)
             detonationSize = centerTile.DetonationCharges;
         }
 
         Debug.Log($"Detonating {detonationSize}x{detonationSize} area at {center}");
 
-        // For 2x2 detonation, we need to adjust the center to ensure complete coverage
+        // For 2x2 detonation, the center tile is the bottom-left corner
         int startX = center.x;
         int startY = center.y;
-
-        // Special handling for 2x2 (needs offset to work properly)
-        if (detonationSize == 2)
-        {
-            // Start position is the center tile
-            // We'll process a 2x2 square from this position
-        }
-        else
-        {
-            // For other sizes, center the detonation
-            int radius = (detonationSize - 1) / 2;
-            startX = center.x - radius;
-            startY = center.y - radius;
-        }
 
         // Process the detonation area
         for (int x = startX; x < startX + detonationSize; x++)
@@ -318,12 +327,6 @@ public class DetonationManager : MonoBehaviour
                     DetonateCubesAt(position);
                 }
             }
-        }
-
-        // Reduce the charge level after detonation if the tile has charges
-        if (centerTile.HasCharges)
-        {
-            centerTile.ReduceCharge();
         }
     }
 

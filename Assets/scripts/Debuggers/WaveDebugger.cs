@@ -1,7 +1,6 @@
 using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
-using UnityEngine.TextCore.Text;
 
 public class WaveDebugger : MonoBehaviour
 {
@@ -9,6 +8,7 @@ public class WaveDebugger : MonoBehaviour
     [SerializeField] private GridManager grid;
     [SerializeField] private WaveManager waveManager;
     [SerializeField] private GameObject[] cubePrefabs; // Normal, Green, Black, Blue
+    [SerializeField] private DetonationManager detonationManager;
 
     [Header("Wave Settings")]
     [SerializeField] private int waveSize = 3;
@@ -16,30 +16,47 @@ public class WaveDebugger : MonoBehaviour
     [SerializeField][Range(0f, 1f)] private float greenCubeChance = 0.2f;
     [SerializeField][Range(0f, 1f)] private float blackCubeChance = 0.1f;
     [SerializeField] private bool autoCalculateBlackChance = true;
+    [SerializeField] private int escapedBlackCubesCount = 0;
 
-    [Header("Rain Controls")]
-    // Rain cube controls
-    [SerializeField] private Enumerations.CubeType rainCubeType = Enumerations.CubeType.Normal;
-    [SerializeField] private int rainX = 2; // Default to middle of grid
-    [SerializeField] private int rainY = 2;
-    [SerializeField] private int rainMoveCount = 3;
-    private int selectedColumn = 0;
-    private int selectedRow = 0;
+    [Header("Tile Selection")]
+    [SerializeField] private int selectedTileX = 0;
+    [SerializeField] private int selectedTileY = 0;
+    [SerializeField] private Material selectedTileMaterial;
+    [SerializeField] private Material normalTileMaterial;
+    [SerializeField] private int advantagedTileCharges = 3;
 
-    [Header("Manual Wave Control")]
+    [Header("Wave Control")]
     [SerializeField] private bool manualWaveControl = true;
     [SerializeField] private float stepDelay = 0.25f;
+    [SerializeField] private float autoMoveInterval = 0.5f;
 
     private bool debuggerActive = false;
     private Vector2 scrollPosition;
     public List<GameObject> debugObjects = new List<GameObject>();
     private bool isProcessing = false;
+    private GameObject selectedTileHighlight;
+    private Coroutine autoMoveCoroutine;
+    private Tile lastHighlightedTile;
 
     private void Awake()
     {
         // Auto-find references if not set
         if (grid == null) grid = FindObjectOfType<GridManager>();
         if (waveManager == null) waveManager = FindObjectOfType<WaveManager>();
+        if (detonationManager == null) detonationManager = FindObjectOfType<DetonationManager>();
+
+        // Create materials if not assigned
+        if (selectedTileMaterial == null)
+        {
+            selectedTileMaterial = new Material(Shader.Find("Standard"));
+            selectedTileMaterial.color = new Color(1f, 0.92f, 0.016f, 0.5f);
+        }
+
+        if (normalTileMaterial == null)
+        {
+            normalTileMaterial = new Material(Shader.Find("Standard"));
+            normalTileMaterial.color = new Color(0.7f, 0.7f, 0.7f, 1f);
+        }
 
         // Validate prefabs
         if (cubePrefabs == null || cubePrefabs.Length < 3)
@@ -49,35 +66,176 @@ public class WaveDebugger : MonoBehaviour
         }
     }
 
+    private void Start()
+    {
+        CreateTileHighlight();
+    }
+
+    private void OnDestroy()
+    {
+        DestroyTileHighlight();
+        StopAllCoroutines();
+    }
+
     private void Update()
     {
         // Toggle debugger with key
         if (Input.GetKeyDown(KeyCode.F2))
         {
             debuggerActive = !debuggerActive;
+            if (debuggerActive)
+            {
+                selectedTileHighlight.SetActive(true);
+                UpdateTileHighlightPosition();
+            }
+            else
+            {
+                selectedTileHighlight.SetActive(false);
+            }
             Debug.Log($"Wave Debugger: {(debuggerActive ? "Active" : "Inactive")}");
         }
 
+        if (!debuggerActive) return;
+
+        // Move wave forward with key
         if (Input.GetKeyDown(KeyCode.M))
         {
             MoveWaveForward();
         }
+
+        // Transform selected tile
+        if (Input.GetKeyDown(KeyCode.B))
+        {
+            BlackenSelectedTile();
+        }
+        if (Input.GetKeyDown(KeyCode.G))
+        {
+            AdvantageSelectedTile();
+        }
+        if (Input.GetKeyDown(KeyCode.T))
+        {
+            TriggerSelectedTile();
+        }
     }
 
-    private void OnDestroy()
+    private void CreateTileHighlight()
     {
-        // Ensure we clean up when destroyed
+        DestroyTileHighlight();
+
+        selectedTileHighlight = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        selectedTileHighlight.name = "TileHighlight";
+        selectedTileHighlight.transform.localScale = new Vector3(0.95f, 0.1f, 0.95f);
+
+        Renderer renderer = selectedTileHighlight.GetComponent<Renderer>();
+        if (renderer != null)
+        {
+            renderer.material = selectedTileMaterial;
+            renderer.material.color = new Color(1f, 0.92f, 0.016f, 0.5f);
+        }
+
+        Collider collider = selectedTileHighlight.GetComponent<Collider>();
+        if (collider != null)
+        {
+            Destroy(collider);
+        }
+
+        selectedTileHighlight.SetActive(debuggerActive);
+        UpdateTileHighlightPosition();
+    }
+
+    private void DestroyTileHighlight()
+    {
+        if (selectedTileHighlight != null)
+        {
+            Destroy(selectedTileHighlight);
+            selectedTileHighlight = null;
+        }
+    }
+
+    private void UpdateTileHighlightPosition()
+    {
+        if (selectedTileHighlight == null || grid == null) return;
+
+        // Restore material on previously highlighted tile if it exists
+        if (lastHighlightedTile != null)
+        {
+            // Don't change the material if the tile was modified
+            if (!lastHighlightedTile.IsBlackened && !lastHighlightedTile.HasCharges)
+            {
+                Renderer tileRenderer = lastHighlightedTile.GetComponent<Renderer>();
+                if (tileRenderer != null)
+                {
+                    tileRenderer.material = normalTileMaterial;
+                }
+            }
+        }
+
+        // Validate selected coordinates
+        selectedTileX = Mathf.Clamp(selectedTileX, 0, grid.Width - 1);
+        selectedTileY = Mathf.Clamp(selectedTileY, 0, grid.Height - 1);
+
+        // Position the highlight above the selected tile
+        selectedTileHighlight.transform.position = new Vector3(selectedTileX, 0.1f, selectedTileY);
+
+        // Store reference to current highlighted tile
+        if (grid.tiles != null && selectedTileX >= 0 && selectedTileX < grid.Width &&
+            selectedTileY >= 0 && selectedTileY < grid.Height)
+        {
+            lastHighlightedTile = grid.tiles[selectedTileX, selectedTileY];
+        }
+    }
+
+    private void BlackenSelectedTile()
+    {
+        if (grid == null || !IsValidPosition(selectedTileX, selectedTileY)) return;
+
+        Tile tile = grid.tiles[selectedTileX, selectedTileY];
+        if (tile != null)
+        {
+            tile.ResetTile();
+            tile.BlackenTile();
+            Debug.Log($"Blackened tile at ({selectedTileX}, {selectedTileY})");
+        }
+    }
+
+    private void AdvantageSelectedTile()
+    {
+        if (grid == null || !IsValidPosition(selectedTileX, selectedTileY)) return;
+
+        Tile tile = grid.tiles[selectedTileX, selectedTileY];
+        if (tile != null)
+        {
+            tile.ResetTile();
+            tile.AdvantageTile(advantagedTileCharges);
+            detonationManager.RegisterDetonationPoint(new Vector2Int(selectedTileX, selectedTileY), Enumerations.DetonationType.Small);
+            Debug.Log($"Advantaged tile at ({selectedTileX}, {selectedTileY}) with {advantagedTileCharges} charges");
+        }
+    }
+
+    private void TriggerSelectedTile()
+    {
+        if (grid == null || !IsValidPosition(selectedTileX, selectedTileY)) return;
+
+        Tile tile = grid.tiles[selectedTileX, selectedTileY];
+        if (tile != null && tile.HasCharges && detonationManager != null)
+        {
+            detonationManager.TriggerNextDetonation(selectedTileX, selectedTileY);
+            Debug.Log($"Triggered advantaged tile at ({selectedTileX}, {selectedTileY})");
+        }
+        else
+        {
+            Debug.Log("Cannot trigger selected tile (not advantaged or no charges)");
+        }
     }
 
     private void OnGUI()
     {
         if (!debuggerActive) return;
 
-        // Main debugger panel
-        GUILayout.BeginArea(new Rect(10, 10, 300, Screen.height - 20));
+        GUILayout.BeginArea(new Rect(10, 10, 320, Screen.height - 20));
         scrollPosition = GUILayout.BeginScrollView(scrollPosition);
 
-        GUILayout.Label("=== WAVE DEBUGGER ===", GUI.skin.box);
+        GUILayout.Label("WAVE DEBUGGER", GUI.skin.box);
 
         // Wave configuration section
         GUILayout.Label("Wave Configuration:", GUI.skin.box);
@@ -101,6 +259,30 @@ public class WaveDebugger : MonoBehaviour
         autoCalculateBlackChance = GUILayout.Toggle(autoCalculateBlackChance,
             "Auto-calculate Black cube chance");
 
+        // Escaped Black Cubes Counter
+        GUILayout.Space(10);
+        GUILayout.Label("Escaped Black Cubes:", GUI.skin.box);
+        GUILayout.BeginHorizontal();
+        if (GUILayout.Button("-", GUILayout.Width(30)))
+        {
+            escapedBlackCubesCount = Mathf.Max(0, escapedBlackCubesCount - 1);
+            UpdateEscapedBlackCubes();
+        }
+
+        escapedBlackCubesCount = EditorIntField("Count:", escapedBlackCubesCount);
+
+        if (GUILayout.Button("+", GUILayout.Width(30)))
+        {
+            escapedBlackCubesCount++;
+            UpdateEscapedBlackCubes();
+        }
+        GUILayout.EndHorizontal();
+
+        if (GUILayout.Button("Update Escaped Cubes"))
+        {
+            UpdateEscapedBlackCubes();
+        }
+
         // Validate probabilities sum to 1.0
         float totalChance = normalCubeChance + greenCubeChance + blackCubeChance;
         if (!Mathf.Approximately(totalChance, 1.0f))
@@ -112,6 +294,86 @@ public class WaveDebugger : MonoBehaviour
             {
                 NormalizeProbabilities();
             }
+        }
+
+        GUILayout.Space(10);
+
+        // Selected Tile Information
+        GUILayout.Label("Selected Tile:", GUI.skin.box);
+
+        GUILayout.BeginHorizontal();
+        GUILayout.Label("Position:", GUILayout.Width(60));
+
+        // X coordinate with +/- buttons
+        GUILayout.Label("X:", GUILayout.Width(15));
+        if (GUILayout.Button("-", GUILayout.Width(25)))
+        {
+            selectedTileX = Mathf.Max(0, selectedTileX - 1);
+            UpdateTileHighlightPosition();
+        }
+        GUILayout.Label(selectedTileX.ToString(), GUILayout.Width(30));
+        if (GUILayout.Button("+", GUILayout.Width(25)))
+        {
+            selectedTileX = Mathf.Min(grid.Width - 1, selectedTileX + 1);
+            UpdateTileHighlightPosition();
+        }
+
+        // Y coordinate with +/- buttons
+        GUILayout.Label("Y:", GUILayout.Width(15));
+        if (GUILayout.Button("-", GUILayout.Width(25)))
+        {
+            selectedTileY = Mathf.Max(0, selectedTileY - 1);
+            UpdateTileHighlightPosition();
+        }
+        GUILayout.Label(selectedTileY.ToString(), GUILayout.Width(30));
+        if (GUILayout.Button("+", GUILayout.Width(25)))
+        {
+            selectedTileY = Mathf.Min(grid.Height - 1, selectedTileY + 1);
+            UpdateTileHighlightPosition();
+        }
+
+        GUILayout.EndHorizontal();
+
+        // Tile state info
+        if (IsValidPosition(selectedTileX, selectedTileY) && grid.tiles != null)
+        {
+            Tile tile = grid.tiles[selectedTileX, selectedTileY];
+            if (tile != null)
+            {
+                GUILayout.Label($"State: {(tile.IsBlackened ? "Blackened" : tile.HasCharges ? "Advantaged" : "Normal")}");
+                if (tile.HasCharges)
+                {
+                    GUILayout.Label($"Charges: {tile.DetonationCharges}");
+                }
+            }
+        }
+
+        // Advantaged tile charges setter
+        GUILayout.BeginHorizontal();
+        GUILayout.Label("Advantage Charges:", GUILayout.Width(120));
+        if (GUILayout.Button("-", GUILayout.Width(25)))
+        {
+            advantagedTileCharges = Mathf.Max(1, advantagedTileCharges - 1);
+        }
+        GUILayout.Label(advantagedTileCharges.ToString(), GUILayout.Width(30));
+        if (GUILayout.Button("+", GUILayout.Width(25)))
+        {
+            advantagedTileCharges = Mathf.Min(3, advantagedTileCharges + 1);
+        }
+        GUILayout.EndHorizontal();
+
+        // Tile transformation buttons
+        if (GUILayout.Button("Blacken Tile (B)"))
+        {
+            BlackenSelectedTile();
+        }
+        if (GUILayout.Button("Advantage Tile (G)"))
+        {
+            AdvantageSelectedTile();
+        }
+        if (GUILayout.Button("Trigger Tile (T)"))
+        {
+            TriggerSelectedTile();
         }
 
         GUILayout.Space(10);
@@ -133,68 +395,17 @@ public class WaveDebugger : MonoBehaviour
         }
 
         // Manual wave movement
-        if (manualWaveControl)
-        {
-            if (GUILayout.Button("Move Wave Forward"))
-            {
-                MoveWaveForward();
-            }
-        }
-
-        GUILayout.Space(10);
-
-        // Rain cube controls
-        GUILayout.Label("Rain Single Cube:", GUI.skin.box);
-
-        // Rain cube type selection
-        string[] typeNames = System.Enum.GetNames(typeof(Enumerations.CubeType));
-        int selectedIndex = System.Array.IndexOf(typeNames, rainCubeType.ToString());
-        if (selectedIndex < 0) selectedIndex = 0;
-
-        rainCubeType = (Enumerations.CubeType)System.Enum.Parse(
-            typeof(Enumerations.CubeType),
-            typeNames[GUILayout.SelectionGrid(selectedIndex, typeNames, 2)]);
-
-        // Rain target selection
-        GUILayout.Label("Rain Target Position:");
-
         GUILayout.BeginHorizontal();
-        GUILayout.Label("Column: ");
-
-        // Create buttons for each column
-        if (grid != null)
+        if (GUILayout.Button("Move Wave Forward (M)"))
         {
-            for (int i = 0; i < grid.Width; i++)
-            {
-                GUI.backgroundColor = (selectedColumn == i) ? Color.green : Color.white;
-                if (GUILayout.Button(i.ToString(), GUILayout.Width(25)))
-                {
-                    selectedColumn = i;
-                }
-            }
+            MoveWaveForward();
         }
-        GUI.backgroundColor = Color.white;
+        if (GUILayout.Button(autoMoveCoroutine == null ? "Auto Move" : "Stop Auto Move"))
+        {
+            ToggleAutoMove();
+        }
         GUILayout.EndHorizontal();
 
-        // Row selection (Z-coordinate)
-        GUILayout.BeginHorizontal();
-        GUILayout.Label("Row: ");
-
-        // Create buttons for accessible rows
-        if (grid != null)
-        {
-            int maxDisplayRows = Mathf.Min(grid.Height, 10); // Limit to avoid UI clutter
-            for (int i = 0; i < maxDisplayRows; i++)
-            {
-                GUI.backgroundColor = (selectedRow == i) ? Color.green : Color.white;
-                if (GUILayout.Button(i.ToString(), GUILayout.Width(25)))
-                {
-                    selectedRow = i;
-                }
-            }
-        }
-        GUI.backgroundColor = Color.white;
-        GUILayout.EndHorizontal();
         GUI.enabled = true;
 
         GUILayout.Space(10);
@@ -208,6 +419,7 @@ public class WaveDebugger : MonoBehaviour
         }
         GUILayout.Label($"Active Cubes: {activeCubesCount}");
         GUILayout.Label($"Debug Objects: {debugObjects.Count}");
+        GUILayout.Label($"Escaped Black Cubes: {escapedBlackCubesCount}");
 
         GUILayout.EndScrollView();
         GUILayout.EndArea();
@@ -251,6 +463,24 @@ public class WaveDebugger : MonoBehaviour
         normalCubeChance /= sum;
         greenCubeChance /= sum;
         blackCubeChance /= sum;
+    }
+
+    private void UpdateEscapedBlackCubes()
+    {
+        if (waveManager == null) return;
+
+        // Clear existing escaped black cubes
+        waveManager.escapedBlackCubePositions.Clear();
+
+        // Add the specified number of escaped black cubes
+        for (int i = 0; i < escapedBlackCubesCount; i++)
+        {
+            // Distribute evenly across columns
+            int x = i % grid.Width;
+            waveManager.escapedBlackCubePositions.Add(new Vector2(x, grid.Height - 1));
+        }
+
+        Debug.Log($"Updated escaped black cubes count to {escapedBlackCubesCount}");
     }
 
     private void SpawnDebugWave()
@@ -348,9 +578,40 @@ public class WaveDebugger : MonoBehaviour
         waveManager.manualControl = true;
         // Move the wave forward manually
         waveManager.ManualMoveWaveForward();
-        waveManager.manualControl = false;
     }
 
+    private void ToggleAutoMove()
+    {
+        if (autoMoveCoroutine != null)
+        {
+            StopCoroutine(autoMoveCoroutine);
+            autoMoveCoroutine = null;
+        }
+        else
+        {
+            autoMoveCoroutine = StartCoroutine(AutoMoveCoroutine());
+        }
+    }
+
+    private IEnumerator AutoMoveCoroutine()
+    {
+        waveManager.debugMode = true;
+        waveManager.manualControl = true;
+
+        while (true)
+        {
+            MoveWaveForward();
+            yield return new WaitForSeconds(autoMoveInterval);
+
+            // Check if we still have active cubes
+            if (waveManager.activeCubes.Count == 0)
+            {
+                break;
+            }
+        }
+
+        autoMoveCoroutine = null;
+    }
 
     private void ClearAllCubes()
     {
@@ -407,6 +668,12 @@ public class WaveDebugger : MonoBehaviour
         {
             tile.currentCube = cube;
         }
+    }
+
+    // Helper to check if a position is valid on the grid
+    private bool IsValidPosition(int x, int y)
+    {
+        return grid != null && x >= 0 && x < grid.Width && y >= 0 && y < grid.Height;
     }
 
     // Helper to shuffle a list (Fisher-Yates)

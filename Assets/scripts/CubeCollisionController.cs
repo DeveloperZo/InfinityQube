@@ -14,79 +14,6 @@ public class CubeCollisionController : MonoBehaviour
         grid = gridManager;
         detonationManager = FindObjectOfType<DetonationManager>();
     }
-    public IEnumerator DelayedLanding(Vector2 targetPosition)
-    {
-        // Wait for 3 movement cycles
-        yield return new WaitForSeconds(3 * 0.5f); // Assuming 0.5s per movement
-
-        // Check target position for existing cubes
-        Vector2Int landingPos = new Vector2Int((int)targetPosition.x, (int)targetPosition.y);
-        CubeBehavior targetCube = FindCubeAtPosition(landingPos);
-
-        if (targetCube != null)
-        {
-            // Handle special case for green cubes
-            if (targetCube.CubeType == Enumerations.CubeType.Green)
-            {
-                // Trigger a smaller 2x2 detonation
-                if (detonationManager != null)
-                {
-                    // Register the detonation point with a special "size 2" flag
-                    Tile tile = grid.tiles[landingPos.x, landingPos.y];
-                    if (tile != null)
-                    {
-                        // This assumes you've added a method to trigger a specific sized detonation
-                        detonationManager.RegisterDetonationPoint(landingPos);
-                        detonationManager.TriggerNextDetonation();
-                    }
-                }
-            }
-
-            // Consume the target cube
-            Destroy(targetCube.gameObject);
-        }
-        else
-        {
-            // If no cube is present, corrupt the tile
-            if (grid != null && IsValidPosition(landingPos))
-            {
-                Tile tile = grid.tiles[landingPos.x, landingPos.y];
-                if (tile != null)
-                {
-                    tile.BlackenTile();
-                }
-            }
-        }
-
-        // Register the black cube with the wave manager to start moving
-        WaveManager waveManager = FindObjectOfType<WaveManager>();
-        if (waveManager != null)
-        {
-            CubeBehavior cubeBehavior = GetComponent<CubeBehavior>();
-            if (cubeBehavior != null)
-            {
-                // IMPORTANT: Preserve the cube's grid position here
-                waveManager.RegisterRainCube(cubeBehavior);
-
-                // Debug the cube's position for verification
-                Debug.Log($"DelayedLanding registered cube at grid pos ({cubeBehavior.position.x}, {cubeBehavior.position.y}), " +
-                         $"world pos ({cubeBehavior.transform.position.x}, {cubeBehavior.transform.position.y}, {cubeBehavior.transform.position.z})");
-            }
-        }
-    }
-
-    private CubeBehavior FindCubeAtPosition(Vector2Int position)
-    {
-        // Find any cube at the given position
-        foreach (CubeBehavior cube in FindObjectsOfType<CubeBehavior>())
-        {
-            if (cube.position.x == position.x && cube.position.y == position.y)
-            {
-                return cube;
-            }
-        }
-        return null;
-    }
     public void HandleCubeCollision(CubeBehavior sourceCube, CubeBehavior targetCube, Vector2Int position)
     {
         if (sourceCube == null || targetCube == null) return;
@@ -111,9 +38,10 @@ public class CubeCollisionController : MonoBehaviour
                     Destroy(targetCube.gameObject);
                     return;
                 }
-                else
+                else if (sourceType == Enumerations.CubeType.Green)
                 {
                     tile.TransformTile(sourceType);
+                    detonationManager.RegisterDetonationPoint(new Vector2Int(tile.x, tile.y), DetonationType.Small);
 
                     // Consume both cubes after transformation
                     Destroy(sourceCube.gameObject);
@@ -221,7 +149,6 @@ public class CubeCollisionController : MonoBehaviour
                 break;
         }
     }
-
 
     private void BlackenTile(Vector2Int position)
     {

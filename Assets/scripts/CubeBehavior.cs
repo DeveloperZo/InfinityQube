@@ -14,6 +14,7 @@ public class CubeBehavior : MonoBehaviour
     public bool isRainingCube = false;
     private GridManager grid;
     private CubeCollisionController collisionController;
+    private DetonationManager detonationManager;
     private bool isMoving = false;
     private bool isDestroyed = false;
     public float rainSpeed = 3f;
@@ -29,6 +30,7 @@ public class CubeBehavior : MonoBehaviour
         position = startPos;
         level = startLevel;
         transform.position = new Vector3(position.x, spawnHeight, position.y); // Use spawnHeight parameter
+        detonationManager = FindAnyObjectByType<DetonationManager>();
     }
 
     // Add this method to reset movement state
@@ -60,10 +62,6 @@ public class CubeBehavior : MonoBehaviour
             return true;
         }
 
-        // Normal movement logic
-        Vector2Int oldPos = position;
-        position.y -= 1;  // Remember: in grid coordinates, y is the row (Z in 3D space)
-
         // Check for off-grid conditions
         if (position.y < 0 || position.x < 0 || position.x >= grid.Width)
         {
@@ -92,10 +90,15 @@ public class CubeBehavior : MonoBehaviour
             if (landingTile != null && !isDestroyed)
             {
                 landingTile.HandleCubeLanding(this);
+                if (landingTile.IsAdvantaged)
+                {
+                    detonationManager.TriggerNextDetonation(position.x, position.y);
+                }
             }
         }
 
         // Animate the forward movement
+        position.y -= 1;
         StartCoroutine(AnimateMove(position));
 
         
