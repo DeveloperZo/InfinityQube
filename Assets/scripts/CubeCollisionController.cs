@@ -64,7 +64,12 @@ public class CubeCollisionController : MonoBehaviour
             CubeBehavior cubeBehavior = GetComponent<CubeBehavior>();
             if (cubeBehavior != null)
             {
+                // IMPORTANT: Preserve the cube's grid position here
                 waveManager.RegisterRainCube(cubeBehavior);
+
+                // Debug the cube's position for verification
+                Debug.Log($"DelayedLanding registered cube at grid pos ({cubeBehavior.position.x}, {cubeBehavior.position.y}), " +
+                         $"world pos ({cubeBehavior.transform.position.x}, {cubeBehavior.transform.position.y}, {cubeBehavior.transform.position.z})");
             }
         }
     }

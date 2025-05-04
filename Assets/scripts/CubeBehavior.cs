@@ -93,7 +93,7 @@ public class CubeBehavior : MonoBehaviour
 
                 // Ready to join normal cube flow
                 isRainingCube = false;
-                Debug.Log("Rain cube now part of normal cube flow");
+                Debug.Log($"Rain cube now part of normal cube flow at position {position.x}, {position.y}");
             }
         }
 
@@ -101,11 +101,6 @@ public class CubeBehavior : MonoBehaviour
         Vector2Int oldPos = position;
         position.y -= 1;  // Remember: in grid coordinates, y is the row (Z in 3D space)
 
-        if (isPhased)
-        {
-            transform.position = new Vector3(position.x, 1f, position.y);
-            return true;
-        }
 
         // Check for off-grid conditions
         if (position.y < 0 || position.x < 0 || position.x >= grid.Width)
@@ -303,7 +298,6 @@ public class CubeBehavior : MonoBehaviour
             StartCoroutine(BounceEffect());
 
             // Notify the wave manager that this cube has landed vertically
-            // It will still be part of the wave and move forward with moveCount
             WaveManager waveManager = FindObjectOfType<WaveManager>();
             if (waveManager != null)
             {

@@ -60,7 +60,6 @@ public class Tile : MonoBehaviour
     public bool IsPrimed => isPrimed;
     public TileState currentState = TileState.Normal;
     private Color normalColor;
-    private Color transformedColor = new Color(0.3f, 0.3f, 0.3f); // Dark gray
 
     public bool CanBeMarked => currentState == TileState.Normal;
     private GameObject markerObj;
@@ -127,8 +126,6 @@ public class Tile : MonoBehaviour
     }
 
     public bool HasMarker => hasMarker;
-
-    public int Charges { get; set; }
 
     public void PlaceMarker()
     {
@@ -392,11 +389,6 @@ public class Tile : MonoBehaviour
 
         // Clear cube reference after processing
         currentCube = null;
-    }
-
-    internal void SetPrime(bool isPrimed)
-    {
-        this.isPrimed = isPrimed;
     }
 
     public void HandleCubeLanding(CubeBehavior cube)

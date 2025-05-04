@@ -282,8 +282,11 @@ public class WaveManager : MonoBehaviour
         if (!activeCubes.Contains(cube))
         {
             activeCubes.Add(cube);
-            Debug.Log($"Rain cube registered at ({cube.position.x}, {cube.position.y}) " +
-                      $"of type {cube.CubeType}, moves remaining: {cube.moveCountRemaining}");
+
+            Debug.Log($"Rain cube registered: Type={cube.CubeType}, " +
+                      $"Grid Position=({cube.position.x}, {cube.position.y}), " +
+                      $"World Position=({cube.transform.position.x}, {cube.transform.position.y}, {cube.transform.position.z}), " +
+                      $"Moves Remaining={cube.moveCountRemaining}");
         }
     }
 
@@ -355,17 +358,6 @@ public class WaveManager : MonoBehaviour
             CubeBehavior cube = activeCubes[i];
             if (cube != null)
             {
-                // Skip frozen cubes
-                TimeFrozenTag frozenTag = cube.GetComponent<TimeFrozenTag>();
-                if (frozenTag != null)
-                {
-                    frozenTag.frozenDuration -= 1f;
-                    if (frozenTag.frozenDuration <= 0)
-                    {
-                        Destroy(frozenTag);
-                    }
-                    continue;
-                }
 
                 cube.ResetMovementState();
                 bool stillAlive = cube.MoveForward();
@@ -542,21 +534,24 @@ public class WaveManager : MonoBehaviour
         // The cube has completed its vertical falling animation
         // but it's still part of the wave system with moveCountRemaining
 
-        // Update tile reference if this is supposed to be the final position
-        if (cube.moveCountRemaining <= 0 && grid != null)
+        // Update tile reference if needed
+        Vector2Int pos = cube.position;
+        if (grid != null && pos.x >= 0 && pos.x < grid.Width && pos.y >= 0 && pos.y < grid.Height)
         {
-            Vector2Int pos = cube.position;
-            if (pos.x >= 0 && pos.x < grid.Width && pos.y >= 0 && pos.y < grid.Height)
+            Tile tile = grid.tiles[pos.x, pos.y];
+            if (tile != null)
             {
-                Tile tile = grid.tiles[pos.x, pos.y];
-                if (tile != null)
+                // Only update the tile reference if this is the final landing
+                // or if the tile doesn't have a cube yet
+                if (cube.moveCountRemaining <= 0 || tile.currentCube == null)
                 {
                     tile.currentCube = cube;
                 }
             }
         }
 
-        Debug.Log($"Cube rain landed at ({cube.position.x}, {cube.position.y}), " +
+        Debug.Log($"Cube rain landed at ({pos.x}, {pos.y}), " +
+                  $"world pos ({cube.transform.position.x}, {cube.transform.position.y}, {cube.transform.position.z}), " +
                   $"moves remaining: {cube.moveCountRemaining}");
     }
 

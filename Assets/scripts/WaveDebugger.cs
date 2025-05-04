@@ -377,13 +377,10 @@ public class WaveDebugger : MonoBehaviour
             return;
         }
 
-        // Calculate spawn height (Y) based on moveCount
-        float spawnHeight = 1f + moveCount * 2f;
-
-        // Calculate target position
-        // X = column (horizontal position)
-        // Z = row (depth position on grid)
+        // Calculate spawn position - above the grid
+        float spawnHeight = 5f;  // Fixed height above grid
         Vector3 spawnPos = new Vector3(column, spawnHeight, row);
+
         GameObject cube = Instantiate(cubePrefabs[prefabIndex], spawnPos, Quaternion.identity);
 
         if (cube != null)
@@ -396,22 +393,22 @@ public class WaveDebugger : MonoBehaviour
             }
 
             // IMPORTANT: Set the grid position in Vector2Int where x = column, y = row
-            // This maintains the proper relationship between Unity 3D coordinates and grid 2D indices
             Vector2Int gridPos = new Vector2Int(column, row);
             behavior.Init(grid, gridPos, 1);
 
-            // Set raining properties - keep track of both grid position and world position
+            // Mark as a raining cube with move count
             behavior.isRainingCube = true;
-            behavior.rainHeight = spawnHeight;
-            behavior.moveCountRemaining = moveCount; // Store remaining moves
+            behavior.moveCountRemaining = moveCount;
 
             debugObjects.Add(cube);
 
-            // Register with wave manager
+            // Register with wave manager but don't add to active cubes yet
             if (waveManager != null)
             {
                 waveManager.RegisterRainCube(behavior);
             }
+
+            Debug.Log($"Created rain cube of type {type} at column {column}, row {row} with {moveCount} moves remaining");
         }
     }
 
