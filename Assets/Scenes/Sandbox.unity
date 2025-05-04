@@ -201,11 +201,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   showControlsPanel: 1
-  showDetonationTracker: 1
   panelBackgroundColor: {r: 0.1, g: 0.1, b: 0.1, a: 0.8}
   headerColor: {r: 0.2, g: 0.6, b: 1, a: 1}
   textColor: {r: 1, g: 1, b: 1, a: 1}
-  showTimeDistortionTracker: 1
+  rainCubeType: 0
+  rainX: 2
+  rainY: 2
+  rainMoveCount: 3
 --- !u!4 &150564768
 Transform:
   m_ObjectHideFlags: 0
@@ -359,6 +361,67 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 8153240350979894021, guid: f90c16e773c18f54eb1b70ddc1136373, type: 3}
   m_PrefabInstance: {fileID: 1251898244}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &606199696
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 606199698}
+  - component: {fileID: 606199697}
+  m_Layer: 0
+  m_Name: WaveDebugger
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &606199697
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 606199696}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 71d16b3e0e02caf48b00e7fb037f7776, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  grid: {fileID: 1786583425}
+  waveManager: {fileID: 487637473}
+  cubePrefabs:
+  - {fileID: 1728893673582764340, guid: f90c16e773c18f54eb1b70ddc1136373, type: 3}
+  - {fileID: 1728893673582764340, guid: 026a402b860389d4aaea0e4f0b5c1ff6, type: 3}
+  - {fileID: 1728893673582764340, guid: 28923bfb13f3dde44b857f03a0188e95, type: 3}
+  waveSize: 3
+  normalCubeChance: 0.7
+  greenCubeChance: 0.2
+  blackCubeChance: 0.1
+  autoCalculateBlackChance: 1
+  rainCubeType: 0
+  rainX: 2
+  rainY: 2
+  rainMoveCount: 3
+  manualWaveControl: 1
+  stepDelay: 0.25
+--- !u!4 &606199698
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 606199696}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 2.7001927, y: -0.6106173, z: -1.7671151}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1514262230}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &885266525
 GameObject:
   m_ObjectHideFlags: 0
@@ -552,7 +615,7 @@ GameObject:
   - component: {fileID: 1193796432}
   - component: {fileID: 1193796433}
   m_Layer: 0
-  m_Name: Debugger
+  m_Name: GeneralDebugger
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -566,12 +629,12 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1193796430}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: -1, z: -4}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 1514262230}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1193796433
 MonoBehaviour:
@@ -590,6 +653,9 @@ MonoBehaviour:
   - {fileID: 562176818}
   - {fileID: 1728893673582764340, guid: 026a402b860389d4aaea0e4f0b5c1ff6, type: 3}
   - {fileID: 1728893673582764340, guid: 28923bfb13f3dde44b857f03a0188e95, type: 3}
+  waveDebugger: {fileID: 606199697}
+  keepRainCubesInPlace: 1
+  rainMoveCount: 3
   toggleDebugKey: 282
   resetDebugKey: 283
   executeTestKey: 284
@@ -759,6 +825,40 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 28923bfb13f3dde44b857f03a0188e95, type: 3}
+--- !u!1 &1514262229
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1514262230}
+  m_Layer: 0
+  m_Name: Debuggers
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1514262230
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1514262229}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 1, z: 4}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 1193796432}
+  - {fileID: 606199698}
+  - {fileID: 2025322117}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1534527409
 GameObject:
   m_ObjectHideFlags: 0
@@ -840,6 +940,80 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &2025322116
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2025322117}
+  - component: {fileID: 2025322119}
+  - component: {fileID: 2025322118}
+  m_Layer: 0
+  m_Name: RainCubeDebugger
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2025322117
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2025322116}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1514262230}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2025322118
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2025322116}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d4b6471f30b49b347add0b0896530938, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  grid: {fileID: 1786583425}
+  cubePrefabs:
+  - {fileID: 1728893673582764340, guid: f90c16e773c18f54eb1b70ddc1136373, type: 3}
+  - {fileID: 1728893673582764340, guid: 026a402b860389d4aaea0e4f0b5c1ff6, type: 3}
+  - {fileID: 1728893673582764340, guid: 28923bfb13f3dde44b857f03a0188e95, type: 3}
+  highlightMaterial: {fileID: 2100000, guid: e2ac5a6cae92b554e87d710d109627cc, type: 2}
+  rainCubeType: 2
+  rainX: 2
+  rainY: 2
+  rainMoveCount: 3
+  moveInterval: 0.5
+--- !u!114 &2025322119
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2025322116}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1762e91c6d585ec4ab4e1a02c584d9c2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  rainCubeType: 2
+  rainX: 2
+  rainY: 2
+  rainMoveCount: 3
+  grid: {fileID: 0}
+  waveManager: {fileID: 0}
 --- !u!1 &2035449879
 GameObject:
   m_ObjectHideFlags: 0
@@ -1060,8 +1234,8 @@ SceneRoots:
   - {fileID: 487637474}
   - {fileID: 885266529}
   - {fileID: 89692589}
-  - {fileID: 1193796432}
   - {fileID: 150564768}
   - {fileID: 1211460833}
   - {fileID: 395275204}
   - {fileID: 1534527410}
+  - {fileID: 1514262230}

@@ -23,33 +23,12 @@ public class CubeBehavior : MonoBehaviour
     public int moveCountRemaining = 0;
     public bool isPhased { get; private set; }
 
-    public void Init(GridManager gridManager, Vector2Int startPos, int startLevel)
+    public void Init(GridManager gridManager, Vector2Int startPos, int startLevel, float spawnHeight = 5f)
     {
-        if (gridManager == null)
-        {
-            Debug.LogError("CubeBehavior initialized with null GridManager!");
-            Destroy(gameObject);
-            return;
-        }
-
         grid = gridManager;
         position = startPos;
         level = startLevel;
-        transform.position = new Vector3(position.x, 1f, position.y);
-
-        // Reset any movement flags when initializing
-        isMoving = false;
-        isDestroyed = false;
-
-        // Reset rotation
-        transform.rotation = Quaternion.identity;
-        // Find or create collision controller
-        collisionController = GetComponent<CubeCollisionController>();
-        if (collisionController == null)
-        {
-            collisionController = gameObject.AddComponent<CubeCollisionController>();
-            collisionController.Initialize(gridManager);
-        }
+        transform.position = new Vector3(position.x, spawnHeight, position.y); // Use spawnHeight parameter
     }
 
     private void FixedUpdate()
