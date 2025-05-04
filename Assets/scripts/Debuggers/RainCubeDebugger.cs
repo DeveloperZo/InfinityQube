@@ -6,6 +6,7 @@ public class RainCubeDebugger : MonoBehaviour
 {
     [Header("References")]
     [SerializeField] private GridManager grid;
+    [SerializeField]private WaveManager waveManager;
     [SerializeField] private GameObject[] cubePrefabs; // Normal, Green, Black, Blue
     [SerializeField] private Material highlightMaterial;
 
@@ -36,6 +37,14 @@ public class RainCubeDebugger : MonoBehaviour
     private void OnDestroy()
     {
         ClearTileHighlight();
+    }
+
+    private void MoveWaveForward()
+    {
+        if (waveManager == null) return;
+
+        // Move the wave forward manually
+        waveManager.ManualMoveWaveForward();
     }
 
     public void RainCube()
@@ -76,17 +85,103 @@ public class RainCubeDebugger : MonoBehaviour
     {
         isRaining = true;
 
+        // Store original starting position
+        Vector3 startPos = cube.transform.position;
+
+        // Total distance to fall
+        float startHeight = startPos.y;
+        float targetHeight = 1f;
+        float totalDistance = startHeight - targetHeight;
+
+        // Fall in stages based on rainMoveCount
+        float distancePerStep = totalDistance / rainMoveCount;
+
         for (int i = 0; i < rainMoveCount; i++)
         {
             if (cube == null) break;
 
-            Vector3 targetPos = new Vector3(cube.position.x, 10f, cube.position.y - 1);
-            cube.transform.position = targetPos;
+            // Calculate target position for this step
+            float targetY = startHeight - (distancePerStep * (i + 1));
+            Vector3 targetPos = new Vector3(startPos.x, targetY, startPos.z);
 
-            yield return new WaitForSeconds(moveInterval);
+            // Animate the movement
+            float elapsed = 0f;
+            float stepDuration = moveInterval * 0.8f; // Leave time for bounce
+            Vector3 stepStartPos = cube.transform.position;
+
+            while (elapsed < stepDuration)
+            {
+                if (cube == null) break;
+
+                elapsed += Time.deltaTime;
+                float t = Mathf.Clamp01(elapsed / stepDuration);
+
+                // Use quadratic easing for gravity effect
+                float easedT = t * t;
+
+                cube.transform.position = Vector3.Lerp(stepStartPos, targetPos, easedT);
+
+                yield return null;
+            }
+
+            // Ensure position after each step
+            if (cube != null)
+            {
+                cube.transform.position = targetPos;
+
+                // Add small bounce after each step
+                StartCoroutine(BounceEffect(cube, moveInterval * 0.2f));
+            }
+
+            // Wait for next step
+            yield return new WaitForSeconds(moveInterval * 0.2f);
         }
 
         isRaining = false;
+    }
+
+    private IEnumerator BounceEffect(CubeBehavior cube, float duration)
+    {
+        if (cube == null) yield break;
+
+        Vector3 originalScale = cube.transform.localScale;
+        Vector3 squashedScale = new Vector3(1.1f, 0.9f, 1.1f);
+
+        // Squash
+        float elapsed = 0f;
+        float halfDuration = duration / 2f;
+
+        while (elapsed < halfDuration)
+        {
+            if (cube == null) yield break;
+
+            elapsed += Time.deltaTime;
+            float t = Mathf.Clamp01(elapsed / halfDuration);
+
+            cube.transform.localScale = Vector3.Lerp(originalScale, squashedScale, t);
+
+            yield return null;
+        }
+
+        // Return to normal
+        elapsed = 0f;
+        while (elapsed < halfDuration)
+        {
+            if (cube == null) yield break;
+
+            elapsed += Time.deltaTime;
+            float t = Mathf.Clamp01(elapsed / halfDuration);
+
+            cube.transform.localScale = Vector3.Lerp(squashedScale, originalScale, t);
+
+            yield return null;
+        }
+
+        // Ensure final scale
+        if (cube != null)
+        {
+            cube.transform.localScale = originalScale;
+        }
     }
 
     private void UpdateTileHighlight()

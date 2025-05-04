@@ -57,6 +57,11 @@ public class WaveDebugger : MonoBehaviour
             debuggerActive = !debuggerActive;
             Debug.Log($"Wave Debugger: {(debuggerActive ? "Active" : "Inactive")}");
         }
+
+        if (Input.GetKeyDown(KeyCode.M))
+        {
+            MoveWaveForward();
+        }
     }
 
     private void OnDestroy()
@@ -396,22 +401,12 @@ public class WaveDebugger : MonoBehaviour
 
     private void MoveWaveForward()
     {
-        if (waveManager == null || !manualWaveControl) return;
+        if (waveManager == null) return;
 
-        isProcessing = true;
-        StartCoroutine(ProcessWaveStep());
+        // Move the wave forward manually
+        waveManager.ManualMoveWaveForward();
     }
 
-    private IEnumerator ProcessWaveStep()
-    {
-        if (waveManager != null)
-        {
-            waveManager.ManualMoveWaveForward();
-        }
-
-        yield return new WaitForSeconds(stepDelay);
-        isProcessing = false;
-    }
 
     private void ClearAllCubes()
     {

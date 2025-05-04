@@ -204,6 +204,8 @@ public class WaveManager : MonoBehaviour
                 }
             }
 
+            cubesRemaining = !debugMode;
+
             // Use appropriate move interval based on speed up state
             float currentMoveInterval = isSpeedingUp ? fastMoveInterval : normalMoveInterval;
             yield return new WaitForSeconds(currentMoveInterval);
@@ -334,34 +336,7 @@ public class WaveManager : MonoBehaviour
         if (!debugMode || !manualControl) return;
 
         // Process one movement step for all active cubes
-        for (int i = activeCubes.Count - 1; i >= 0; i--)
-        {
-            if (i >= activeCubes.Count) continue; // Safety check
-
-            CubeBehavior cube = activeCubes[i];
-            if (cube != null)
-            {
-
-                cube.ResetMovementState();
-                bool stillAlive = cube.MoveForward();
-
-                if (!stillAlive)
-                {
-                    activeCubes.RemoveAt(i);
-                }
-            }
-            else
-            {
-                // Remove null references
-                activeCubes.RemoveAt(i);
-            }
-        }
-
-        // Tick any active zones
-        if (transienceManager != null && transienceManager.IsZoneActive)
-        {
-            transienceManager.TickZone();
-        }
+        RunWave();
     }
 
     private void SpawnReturningBlackCube(Vector2 column)
