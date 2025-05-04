@@ -8,7 +8,7 @@ public class CubeCollisionController : MonoBehaviour
     private GridManager grid;
     private DetonationManager detonationManager;
 
-    public void Initialize(Vector2 position, GridManager gridManager)
+    public void Initialize(GridManager gridManager)
     {
         grid = gridManager;
         detonationManager = FindObjectOfType<DetonationManager>();

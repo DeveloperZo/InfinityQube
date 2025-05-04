@@ -282,7 +282,8 @@ public class WaveManager : MonoBehaviour
         if (!activeCubes.Contains(cube))
         {
             activeCubes.Add(cube);
-            Debug.Log($"Rain cube registered at ({cube.position.x}, {cube.position.y}) of type {cube.CubeType}");
+            Debug.Log($"Rain cube registered at ({cube.position.x}, {cube.position.y}) " +
+                      $"of type {cube.CubeType}, moves remaining: {cube.moveCountRemaining}");
         }
     }
 
@@ -411,7 +412,7 @@ public class WaveManager : MonoBehaviour
 
         // Use your existing CubeCollisionController for the landing behavior
         CubeCollisionController controller = cube.AddComponent<CubeCollisionController>();
-        controller.Initialize(column, grid);
+        controller.Initialize(grid);
         StartCoroutine(controller.DelayedLanding(column));
     }
     private void SpawnCubes()
@@ -496,7 +497,7 @@ public class WaveManager : MonoBehaviour
 
                 // Add a rain controller component to handle the specialized behavior
                 CubeCollisionController rainController = cube.AddComponent<CubeCollisionController>();
-                rainController.Initialize(position, grid);
+                rainController.Initialize(grid);
 
                 // Don't add to active cubes - the rain controller will handle movement
             }
@@ -532,6 +533,31 @@ public class WaveManager : MonoBehaviour
                 Debug.Log($"[{i}] NULL CUBE REFERENCE");
             }
         }
+    }
+
+    public void CubeRainLanded(CubeBehavior cube)
+    {
+        if (cube == null) return;
+
+        // The cube has completed its vertical falling animation
+        // but it's still part of the wave system with moveCountRemaining
+
+        // Update tile reference if this is supposed to be the final position
+        if (cube.moveCountRemaining <= 0 && grid != null)
+        {
+            Vector2Int pos = cube.position;
+            if (pos.x >= 0 && pos.x < grid.Width && pos.y >= 0 && pos.y < grid.Height)
+            {
+                Tile tile = grid.tiles[pos.x, pos.y];
+                if (tile != null)
+                {
+                    tile.currentCube = cube;
+                }
+            }
+        }
+
+        Debug.Log($"Cube rain landed at ({cube.position.x}, {cube.position.y}), " +
+                  $"moves remaining: {cube.moveCountRemaining}");
     }
 
     private void UpdateReturnVisuals()

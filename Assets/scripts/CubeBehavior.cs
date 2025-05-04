@@ -17,8 +17,10 @@ public class CubeBehavior : MonoBehaviour
     private bool isMoving = false;
     private bool isDestroyed = false;
     public float rainSpeed = 3f;
-    private bool isRaining = false;
-    private float rainTargetY = 1f;
+    public float rainHeight = 5f;
+    public int targetRow = -1;
+    private bool isRainAnimating = false;
+    public int moveCountRemaining = 0;
     public bool isPhased { get; private set; }
 
     public void Init(GridManager gridManager, Vector2Int startPos, int startLevel)
@@ -46,20 +48,16 @@ public class CubeBehavior : MonoBehaviour
         if (collisionController == null)
         {
             collisionController = gameObject.AddComponent<CubeCollisionController>();
-            collisionController.Initialize(startPos, gridManager);
+            collisionController.Initialize(gridManager);
         }
     }
 
     private void FixedUpdate()
     {
-        if (isRainingCube && transform.position.y >= 1f)
+        if (isRainingCube && !isRainAnimating && transform.position.y > 1f)
         {
-            transform.position = new Vector3(transform.position.x, transform.position.y - 0.5f, transform.position.z);
-            if (transform.position.y <= 1f)
-            {
-                transform.position = new Vector3(transform.position.x, 1f, transform.position.z);
-            }
-
+            // Start the vertical rain animation
+            StartCoroutine(RainAnimation());
         }
     }
     // Add this method to reset movement state
@@ -80,35 +78,42 @@ public class CubeBehavior : MonoBehaviour
     {
         if (isMoving || isDestroyed) return true;
 
+        // Handle raining cubes and moveCount
+        if (isRainingCube)
+        {
+            if (moveCountRemaining > 0)
+            {
+                moveCountRemaining--;
 
-        // Store previous position for logging
+                // Don't actually move forward until moveCount is depleted
+                if (moveCountRemaining > 0)
+                {
+                    return true;
+                }
+
+                // Ready to join normal cube flow
+                isRainingCube = false;
+                Debug.Log("Rain cube now part of normal cube flow");
+            }
+        }
+
+        // Normal movement logic
         Vector2Int oldPos = position;
-        position.y -= 1;
+        position.y -= 1;  // Remember: in grid coordinates, y is the row (Z in 3D space)
 
         if (isPhased)
         {
-            // Skip collision/escape checks but update position
             transform.position = new Vector3(position.x, 1f, position.y);
             return true;
         }
 
-
-        // Check if this is a raining cube reaching the grid
-        if (isRainingCube && position.y == grid.Height - 1)
-        {
-            // Now the cube has reached the grid, it follows normal rules
-            isRainingCube = false;
-
-            // Check if we're landing on another cube
-            CheckForCubeBelow();
-        }
-
+        // Check for off-grid conditions
         if (position.y < 0 || position.x < 0 || position.x >= grid.Width)
         {
-            // Off the grid = escape (but raining cubes don't escape until they reach the grid)
-            if ((!isRainingCube && position.y < 0) || position.x < 0 || position.x >= grid.Width)
+            // Should the cube escape?
+            if (!isRainingCube || moveCountRemaining <= 0)
             {
-                // Special handling for black cubes that escape
+                // Handle black cubes that escape
                 if (CubeType == Enumerations.CubeType.Black)
                 {
                     WaveManager waveManager = FindObjectOfType<WaveManager>();
@@ -123,13 +128,17 @@ public class CubeBehavior : MonoBehaviour
             }
         }
 
-        Tile landingTile = grid.tiles[position.x, position.y];
-        if (landingTile != null && !isDestroyed && position.y >= 0)
+        // Process landing on tiles
+        if (position.y >= 0 && position.x >= 0 && position.x < grid.Width)
         {
-            // Then continue with normal landing behavior
-            landingTile.HandleCubeLanding(this);
+            Tile landingTile = grid.tiles[position.x, position.y];
+            if (landingTile != null && !isDestroyed)
+            {
+                landingTile.HandleCubeLanding(this);
+            }
         }
 
+        // Animate the forward movement
         StartCoroutine(AnimateMove(position));
         return true;
     }
@@ -263,44 +272,46 @@ public class CubeBehavior : MonoBehaviour
 
     private IEnumerator RainAnimation()
     {
-        // Store initial position
+        isRainAnimating = true;
+
+        // Calculate the target position (directly below, maintaining X and Z)
         Vector3 startPos = transform.position;
-        Vector3 targetPos = new Vector3(startPos.x, rainTargetY, startPos.z);
+        Vector3 targetPos = new Vector3(startPos.x, 1f, startPos.z);
 
-        // Calculate distance and time
-        float distance = startPos.y - rainTargetY;
-        float duration = distance / rainSpeed;
-
-        // Rain down smoothly
+        float fallDuration = Mathf.Max(0.5f, (startPos.y - 1f) / 5f);
         float elapsed = 0f;
-        while (elapsed < duration && !isDestroyed)
+
+        while (elapsed < fallDuration && !isDestroyed)
         {
             elapsed += Time.deltaTime;
-            float t = Mathf.Clamp01(elapsed / duration);
+            float t = Mathf.Clamp01(elapsed / fallDuration);
 
-            // Use a slight ease-in for natural falling
-            float easedT = 1f - Mathf.Pow(1f - t, 2f);
+            // Simulate gravity with quadratic easing
+            float easedT = t * t;
 
-            // Update position
             transform.position = Vector3.Lerp(startPos, targetPos, easedT);
 
             yield return null;
         }
 
-        // Ensure we're exactly at the target position
+        // Ensure final position
         if (!isDestroyed)
         {
             transform.position = targetPos;
 
-            // Add a small bounce effect
+            // Add bounce effect
             StartCoroutine(BounceEffect());
+
+            // Notify the wave manager that this cube has landed vertically
+            // It will still be part of the wave and move forward with moveCount
+            WaveManager waveManager = FindObjectOfType<WaveManager>();
+            if (waveManager != null)
+            {
+                waveManager.CubeRainLanded(this);
+            }
         }
 
-        // No longer raining
-        isRaining = false;
-
-        // Check for collision with tiles or cubes
-        CheckForCubeBelow();
+        isRainAnimating = false;
     }
 
     private IEnumerator BounceEffect()
@@ -308,9 +319,9 @@ public class CubeBehavior : MonoBehaviour
         if (isDestroyed) yield break;
 
         Vector3 originalScale = transform.localScale;
-        Vector3 squashedScale = new Vector3(1.2f, 0.8f, 1.2f);
+        Vector3 squashedScale = new Vector3(1.2f, 0.7f, 1.2f);
 
-        // Squash
+        // Squash on impact
         float squashDuration = 0.1f;
         float elapsed = 0f;
 

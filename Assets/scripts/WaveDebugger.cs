@@ -8,6 +8,7 @@ public class WaveDebugger : MonoBehaviour
     [SerializeField] private GridManager grid;
     [SerializeField] private WaveManager waveManager;
     [SerializeField] private GameObject[] cubePrefabs; // Normal, Green, Black, Blue
+    [SerializeField] private Material highlightMaterial; // For highlighting rain target tile
 
     [Header("Wave Settings")]
     [SerializeField] private int waveSize = 3;
@@ -18,9 +19,10 @@ public class WaveDebugger : MonoBehaviour
 
     [Header("Rain Controls")]
     [SerializeField] private Enumerations.CubeType rainCubeType;
-    [SerializeField] private int rainColumn = 0;
-    [SerializeField] private float rainHeight = 5f;
-    [SerializeField] private float rainSpeed = 3f; // Units per second
+    [SerializeField] private int rainMoveCount = 3; // Number of forward moves before landing
+    private int selectedColumn = 0;
+    private int selectedRow = 0;
+    private GameObject highlightObject;
 
     [Header("Manual Wave Control")]
     [SerializeField] private bool manualWaveControl = true;
@@ -30,12 +32,20 @@ public class WaveDebugger : MonoBehaviour
     private Vector2 scrollPosition;
     private List<GameObject> debugObjects = new List<GameObject>();
     private bool isProcessing = false;
+    private Material originalTileMaterial;
 
     private void Awake()
     {
         // Auto-find references if not set
         if (grid == null) grid = FindObjectOfType<GridManager>();
         if (waveManager == null) waveManager = FindObjectOfType<WaveManager>();
+
+        // Create highlight material if not set
+        if (highlightMaterial == null)
+        {
+            highlightMaterial = new Material(Shader.Find("Standard"));
+            highlightMaterial.color = new Color(0.3f, 0.5f, 1.0f, 0.7f); // Blue highlight
+        }
 
         // Validate prefabs
         if (cubePrefabs == null || cubePrefabs.Length < 3)
@@ -52,7 +62,23 @@ public class WaveDebugger : MonoBehaviour
         {
             debuggerActive = !debuggerActive;
             Debug.Log($"Wave Debugger: {(debuggerActive ? "Active" : "Inactive")}");
+
+            // Update highlight when toggling
+            if (debuggerActive)
+            {
+                UpdateTileHighlight();
+            }
+            else
+            {
+                ClearTileHighlight();
+            }
         }
+    }
+
+    private void OnDestroy()
+    {
+        // Ensure we remove the highlight when destroyed
+        ClearTileHighlight();
     }
 
     private void OnGUI()
@@ -141,7 +167,9 @@ public class WaveDebugger : MonoBehaviour
             typeof(Enumerations.CubeType),
             typeNames[GUILayout.SelectionGrid(selectedIndex, typeNames, 2)]);
 
-        // Column selection
+        // Rain target selection
+        GUILayout.Label("Rain Target Position:");
+
         GUILayout.BeginHorizontal();
         GUILayout.Label("Column: ");
 
@@ -150,26 +178,44 @@ public class WaveDebugger : MonoBehaviour
         {
             for (int i = 0; i < grid.Width; i++)
             {
-                GUI.backgroundColor = (rainColumn == i) ? Color.green : Color.white;
+                GUI.backgroundColor = (selectedColumn == i) ? Color.green : Color.white;
                 if (GUILayout.Button(i.ToString(), GUILayout.Width(25)))
                 {
-                    rainColumn = i;
+                    selectedColumn = i;
+                    UpdateTileHighlight();
                 }
             }
-        }
-        else
-        {
-            rainColumn = EditorIntField("", rainColumn);
         }
         GUI.backgroundColor = Color.white;
         GUILayout.EndHorizontal();
 
-        rainHeight = EditorSlider("Rain Height:", rainHeight, 2f, 10f);
-        rainSpeed = EditorSlider("Rain Speed:", rainSpeed, 1f, 10f);
+        // Row selection (Z-coordinate)
+        GUILayout.BeginHorizontal();
+        GUILayout.Label("Row: ");
+
+        // Create buttons for accessible rows
+        if (grid != null)
+        {
+            int maxDisplayRows = Mathf.Min(grid.Height, 10); // Limit to avoid UI clutter
+            for (int i = 0; i < maxDisplayRows; i++)
+            {
+                GUI.backgroundColor = (selectedRow == i) ? Color.green : Color.white;
+                if (GUILayout.Button(i.ToString(), GUILayout.Width(25)))
+                {
+                    selectedRow = i;
+                    UpdateTileHighlight();
+                }
+            }
+        }
+        GUI.backgroundColor = Color.white;
+        GUILayout.EndHorizontal();
+
+        // Move count before landing
+        rainMoveCount = Mathf.Clamp(EditorIntField("Moves before landing:", rainMoveCount), 1, 10);
 
         if (GUILayout.Button("Rain Cube"))
         {
-            RainCube(rainColumn, rainCubeType);
+            RainCube(selectedColumn, selectedRow, rainCubeType, rainMoveCount);
         }
 
         GUI.enabled = true;
@@ -314,21 +360,14 @@ public class WaveDebugger : MonoBehaviour
             debugObjects.Add(cube);
 
             // Make sure the tile knows about this cube
-            if (grid.tiles != null && position.x >= 0 && position.x < grid.Width &&
-                position.y >= 0 && position.y < grid.Height)
-            {
-                Tile tile = grid.tiles[position.x, position.y];
-                if (tile != null)
-                {
-                    tile.currentCube = behavior;
-                }
-            }
+            UpdateTileReference(position, behavior);
         }
     }
 
-    private void RainCube(int column, Enumerations.CubeType type)
+    private void RainCube(int column, int row, Enumerations.CubeType type, int moveCount)
     {
-        if (grid == null || column < 0 || column >= grid.Width) return;
+        if (grid == null || column < 0 || column >= grid.Width ||
+            row < 0 || row >= grid.Height) return;
 
         // Find prefab for this type
         int prefabIndex = (int)type;
@@ -338,8 +377,13 @@ public class WaveDebugger : MonoBehaviour
             return;
         }
 
-        // Spawn the cube high above the column
-        Vector3 spawnPos = new Vector3(column, rainHeight, grid.Height - 1);
+        // Calculate spawn height (Y) based on moveCount
+        float spawnHeight = 1f + moveCount * 2f;
+
+        // Calculate target position
+        // X = column (horizontal position)
+        // Z = row (depth position on grid)
+        Vector3 spawnPos = new Vector3(column, spawnHeight, row);
         GameObject cube = Instantiate(cubePrefabs[prefabIndex], spawnPos, Quaternion.identity);
 
         if (cube != null)
@@ -351,16 +395,19 @@ public class WaveDebugger : MonoBehaviour
                 behavior.CubeType = type;
             }
 
-            Vector2Int targetPos = new Vector2Int(column, grid.Height - 1);
-            behavior.Init(grid, targetPos, 1);
+            // IMPORTANT: Set the grid position in Vector2Int where x = column, y = row
+            // This maintains the proper relationship between Unity 3D coordinates and grid 2D indices
+            Vector2Int gridPos = new Vector2Int(column, row);
+            behavior.Init(grid, gridPos, 1);
 
-            // Set as raining cube to enable smooth fall animation
+            // Set raining properties - keep track of both grid position and world position
             behavior.isRainingCube = true;
-            behavior.rainSpeed = rainSpeed; // Set custom rain speed
+            behavior.rainHeight = spawnHeight;
+            behavior.moveCountRemaining = moveCount; // Store remaining moves
 
             debugObjects.Add(cube);
 
-            // Register with wave manager for movement with the wave
+            // Register with wave manager
             if (waveManager != null)
             {
                 waveManager.RegisterRainCube(behavior);
@@ -429,6 +476,98 @@ public class WaveDebugger : MonoBehaviour
                     grid.tiles[x, y].ResetTile();
                 }
             }
+        }
+
+        // Restore highlight
+        UpdateTileHighlight();
+    }
+
+    private void UpdateTileReference(Vector2Int position, CubeBehavior cube)
+    {
+        if (grid == null || position.x < 0 || position.x >= grid.Width ||
+            position.y < 0 || position.y >= grid.Height) return;
+
+        Tile tile = grid.tiles[position.x, position.y];
+        if (tile != null)
+        {
+            tile.currentCube = cube;
+        }
+    }
+
+    private void UpdateTileHighlight()
+    {
+        // Remove previous highlight if it exists
+        ClearTileHighlight();
+
+        // Make sure grid and position are valid
+        if (grid == null || selectedColumn < 0 || selectedColumn >= grid.Width ||
+            selectedRow < 0 || selectedRow >= grid.Height) return;
+
+        Tile targetTile = grid.tiles[selectedColumn, selectedRow];
+        if (targetTile == null) return;
+
+        // Store original material
+        Renderer tileRenderer = targetTile.GetComponent<Renderer>();
+        if (tileRenderer != null)
+        {
+            originalTileMaterial = tileRenderer.material;
+
+            // Apply highlight material
+            tileRenderer.material = highlightMaterial;
+
+            // Create highlight marker
+            highlightObject = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            highlightObject.name = "RainTargetHighlight";
+
+            // Position slightly above the tile with a small vertical offset
+            highlightObject.transform.position = new Vector3(
+                selectedColumn,
+                0.05f, // Slightly raised
+                selectedRow
+            );
+
+            // Scale down slightly to make it visually distinct
+            highlightObject.transform.localScale = new Vector3(0.9f, 0.1f, 0.9f);
+
+            // Apply the highlight material
+            Renderer highlightRenderer = highlightObject.GetComponent<Renderer>();
+            if (highlightRenderer != null)
+            {
+                highlightRenderer.material = highlightMaterial;
+            }
+
+            // Remove collider to avoid physics interference
+            Collider highlightCollider = highlightObject.GetComponent<Collider>();
+            if (highlightCollider != null)
+            {
+                Destroy(highlightCollider);
+            }
+        }
+    }
+
+    private void ClearTileHighlight()
+    {
+        // Restore original material if possible
+        if (grid != null && originalTileMaterial != null &&
+            selectedColumn >= 0 && selectedColumn < grid.Width &&
+            selectedRow >= 0 && selectedRow < grid.Height)
+        {
+            Tile targetTile = grid.tiles[selectedColumn, selectedRow];
+            if (targetTile != null)
+            {
+                Renderer tileRenderer = targetTile.GetComponent<Renderer>();
+                if (tileRenderer != null)
+                {
+                    tileRenderer.material = originalTileMaterial;
+                }
+            }
+        }
+
+        // Destroy highlight object
+        if (highlightObject != null)
+        {
+            Destroy(highlightObject);
+            highlightObject = null;
         }
     }
 

@@ -258,7 +258,7 @@ public class GeneralDebugger : MonoBehaviour
             if (collisionController == null)
             {
                 collisionController = cube.AddComponent<CubeCollisionController>();
-                collisionController.Initialize(targetPos, grid);
+                collisionController.Initialize(grid);
             }
 
             debugObjects.Add(cube);
@@ -296,7 +296,7 @@ public class GeneralDebugger : MonoBehaviour
                         if (effectController == null)
                         {
                             effectController = effectCube.AddComponent<CubeCollisionController>();
-                            effectController.Initialize(new Vector2Int(column, effectRowZ), grid);
+                            effectController.Initialize(grid);
                         }
 
                         debugObjects.Add(effectCube);
@@ -408,7 +408,7 @@ public class GeneralDebugger : MonoBehaviour
             if (controller == null)
             {
                 controller = cube.AddComponent<CubeCollisionController>();
-                controller.Initialize(position, grid);
+                controller.Initialize(grid);
             }
 
             // Trigger collision
@@ -697,7 +697,7 @@ public class GeneralDebugger : MonoBehaviour
                 if (controller == null)
                 {
                     controller = cube1.AddComponent<CubeCollisionController>();
-                    controller.Initialize(kvp.Key, grid);
+                    controller.Initialize(grid);
                 }
 
                 // Trigger collision
