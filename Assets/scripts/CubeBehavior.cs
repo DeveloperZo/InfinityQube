@@ -118,19 +118,30 @@ public class CubeBehavior : MonoBehaviour
         }
     }
 
-    private void CheckForCubeBelow()
+    public void CheckForCollisionOnLanding()
     {
-        if (CubeType != Enumerations.CubeType.Black) return;
+        if (isDestroyed) return;
 
-        // Find if there's a cube at our position
-        foreach (CubeBehavior cube in FindObjectsOfType<CubeBehavior>())
+        // Find any cubes at this position
+        foreach (CubeBehavior otherCube in FindObjectsOfType<CubeBehavior>())
         {
-            if (cube != this && // Not checking against ourselves
-                cube.position.x == position.x &&
-                cube.position.y == position.y)
+            if (otherCube != this &&
+                otherCube.position.x == position.x &&
+                otherCube.position.y == position.y &&
+                !otherCube.isPhased)
             {
-                // We found a cube below us, replace it
-                StartCoroutine(ReplaceExistingCube(cube));
+                // Found another cube at our position, trigger collision
+                CubeCollisionController collisionController = GetComponent<CubeCollisionController>();
+                if (collisionController == null)
+                {
+                    collisionController = gameObject.AddComponent<CubeCollisionController>();
+                    collisionController.Initialize(FindObjectOfType<GridManager>());
+                }
+
+                Debug.Log($"Triggering collision between raining {CubeType} and static {otherCube.CubeType} at ({position.x}, {position.y})");
+                collisionController.HandleCubeCollision(this, otherCube, position);
+
+                // No need to check further collisions
                 break;
             }
         }

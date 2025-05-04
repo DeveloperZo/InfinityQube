@@ -211,44 +211,44 @@ public class DetonationManager : MonoBehaviour
     // Perform the actual 3x3 detonation effect
     // In DetonationManager.cs
     private void PerformDetonation(Vector2Int center)
-{
-    if (!IsValidPosition(center)) return;
-
-    // Get the tile
-    Tile centerTile = gridManager.tiles[center.x, center.y];
-    if (centerTile == null) return;
-
-    // Remove this detonation point from the list
-    detonationPoints.Remove(center);
-    ResetTileMaterial(centerTile);
-
-    // Get the charge level (determines detonation size)
-    int detonationSize = centerTile.DetonationCharges;
-    if (detonationSize <= 0) detonationSize = 3; // Default to 3x3
-    
-    Debug.Log($"Detonating {detonationSize}x{detonationSize} area at {center}");
-
-    // Process the area based on size
-    int radius = (detonationSize - 1) / 2;
-    for (int x = center.x - radius; x <= center.x + radius; x++)
     {
-        for (int y = center.y - radius; y <= center.y + radius; y++)
-        {
-            Vector2Int position = new Vector2Int(x, y);
-            if (IsValidPosition(position))
-            {
-                // Visual effect
-                StartCoroutine(FlashTile(gridManager.tiles[x, y]));
+        if (!IsValidPosition(center)) return;
 
-                // Process cubes at this position
-                DetonateCubesAt(position);
+        // Get the tile
+        Tile centerTile = gridManager.tiles[center.x, center.y];
+        if (centerTile == null) return;
+
+        // Remove this detonation point from the list
+        detonationPoints.Remove(center);
+        ResetTileMaterial(centerTile);
+
+        // Get the charge level (determines detonation size)
+        int detonationSize = centerTile.DetonationCharges;
+        if (detonationSize <= 0) detonationSize = 3; // Default to 3x3
+
+        Debug.Log($"Detonating {detonationSize}x{detonationSize} area at {center}");
+
+        // Process the area based on size
+        int radius = (detonationSize - 1) / 2;
+        for (int x = center.x - radius; x <= center.x + radius; x++)
+        {
+            for (int y = center.y - radius; y <= center.y + radius; y++)
+            {
+                Vector2Int position = new Vector2Int(x, y);
+                if (IsValidPosition(position))
+                {
+                    // Visual effect
+                    StartCoroutine(FlashTile(gridManager.tiles[x, y]));
+
+                    // Process cubes at this position
+                    DetonateCubesAt(position);
+                }
             }
         }
+
+        // Reduce the charge level after detonation
+        centerTile.ReduceCharge();
     }
-    
-    // Reduce the charge level after detonation
-    centerTile.ReduceCharge();
-}
 
     // Flash a tile temporarily
     private IEnumerator FlashTile(Tile tile)

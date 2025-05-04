@@ -316,7 +316,7 @@ public class WaveManager : MonoBehaviour
 
     public void ManualMoveWaveForward()
     {
-        if (!debugMode || !manualControl) return;
+        if (!debugMode && !manualControl) return;
 
         // Process one movement step for all active cubes
         StartCoroutine(RunWave());
@@ -483,6 +483,9 @@ public class WaveManager : MonoBehaviour
                 }
             }
         }
+
+        // Check for collisions now that the cube has landed
+        cube.CheckForCollisionOnLanding();
 
         Debug.Log($"Cube rain landed at ({pos.x}, {pos.y}), " +
                   $"world pos ({cube.transform.position.x}, {cube.transform.position.y}, {cube.transform.position.z}), " +

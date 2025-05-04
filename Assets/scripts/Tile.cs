@@ -236,6 +236,7 @@ public class Tile : MonoBehaviour
         }
     }
 
+
     public void ReduceCharge()
     {
         if (detonationCharges > 0)

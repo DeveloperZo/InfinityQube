@@ -103,27 +103,37 @@ public class CubeCollisionController : MonoBehaviour
             Tile tile = grid.tiles[position.x, position.y];
             if (tile != null)
             {
-                tile.TransformTile(sourceType);
+                if (sourceType == Enumerations.CubeType.Black)
+                {
+                    // Black + Black = Blacken tile
+                    BlackenTile(position);
+                    Destroy(targetCube.gameObject);
+                    return;
+                }
+                else
+                {
+                    tile.TransformTile(sourceType);
 
-                // Consume both cubes after transformation
-                Destroy(sourceCube.gameObject);
-                Destroy(targetCube.gameObject);
-                return;
+                    // Consume both cubes after transformation
+                    Destroy(sourceCube.gameObject);
+                    Destroy(targetCube.gameObject);
+                    return;
+                }
             }
         }
 
-        // Otherwise, route to specific collision handlers based on cube types
-        if (sourceType == Enumerations.CubeType.Black)
+        // Process based on the source cube type (assuming source is the falling/moving cube)
+        switch (sourceType)
         {
-            HandleBlackCubeCollision(sourceCube, targetCube, position);
-        }
-        else if (sourceType == Enumerations.CubeType.Green)
-        {
-            HandleGreenCubeCollision(sourceCube, targetCube, position);
-        }
-        else if (sourceType == Enumerations.CubeType.Normal)
-        {
-            HandleNormalCubeCollision(sourceCube, targetCube, position);
+            case Enumerations.CubeType.Black:
+                HandleBlackCubeCollision(sourceCube, targetCube, position);
+                break;
+            case Enumerations.CubeType.Green:
+                HandleGreenCubeCollision(sourceCube, targetCube, position);
+                break;
+            case Enumerations.CubeType.Normal:
+                HandleNormalCubeCollision(sourceCube, targetCube, position);
+                break;
         }
     }
 
@@ -138,6 +148,8 @@ public class CubeCollisionController : MonoBehaviour
                 break;
 
             case Enumerations.CubeType.Green:
+                // Black + Green = Green automatically detonates in 2x2 area
+                TriggerSmallerDetonation(position);
                 Destroy(targetCube.gameObject);
                 break;
 
@@ -154,10 +166,10 @@ public class CubeCollisionController : MonoBehaviour
         {
             case Enumerations.CubeType.Black:
                 // Green + Black = Green consumed, triggers detonation
-                if (detonationManager != null)
+                if (FindObjectOfType<DetonationManager>() != null)
                 {
-                    detonationManager.RegisterDetonationPoint(position);
-                    detonationManager.TriggerNextDetonation();
+                    FindObjectOfType<DetonationManager>().RegisterDetonationPoint(position);
+                    FindObjectOfType<DetonationManager>().TriggerNextDetonation();
                 }
                 Destroy(sourceCube.gameObject);
                 break;
@@ -166,6 +178,7 @@ public class CubeCollisionController : MonoBehaviour
                 // Green + Green = Enhanced green tile
                 EnhanceGreenTile(position);
                 Destroy(targetCube.gameObject);
+                Destroy(sourceCube.gameObject);
                 break;
 
             case Enumerations.CubeType.Normal:
@@ -191,8 +204,8 @@ public class CubeCollisionController : MonoBehaviour
 
             case Enumerations.CubeType.Normal:
                 // Normal + Normal = Both consumed
-                Destroy(targetCube.gameObject);
                 Destroy(sourceCube.gameObject);
+                Destroy(targetCube.gameObject);
                 break;
         }
     }
@@ -206,8 +219,54 @@ public class CubeCollisionController : MonoBehaviour
         if (tile != null)
         {
             Debug.Log($"Black cube collision at ({position.x}, {position.y}). Blackening tile.");
-            tile.TransformTile(Enumerations.CubeType.Black);
+            tile.BlackenTile();
         }
+    }
+
+    private void TriggerSmallerDetonation(Vector2Int position)
+    {
+        DetonationManager detonationManager = FindObjectOfType<DetonationManager>();
+        if (detonationManager == null) return;
+
+        Debug.Log($"Black cube triggered 2x2 detonation at ({position.x}, {position.y})");
+
+        // First register the detonation point
+        detonationManager.RegisterDetonationPoint(position);
+
+        // Find the tile and set a smaller detonation area (2x2 instead of 3x3)
+        if (IsValidPosition(position))
+        {
+            Tile tile = grid.tiles[position.x, position.y];
+            if (tile != null)
+            {
+                // We'll use the charge system to control detonation size
+                // Assuming charges 3 = 3x3, 2 = 2x2, 1 = single tile
+                // Set to 2 for a 2x2 detonation
+                if (tile.HasCharges)
+                {
+                    // If it already has charges, ensure it's at level 2
+                    while (tile.DetonationCharges != 2)
+                    {
+                        tile.ReduceCharge(); // Reduce if higher
+                        if (tile.DetonationCharges < 2)
+                        {
+                            tile.EnhanceGreenTile(); // Enhance if lower
+                        }
+                    }
+                }
+                else
+                {
+                    // First transform to green
+                    tile.TransformTile(Enumerations.CubeType.Green);
+
+                    // Then enhance once to get to level 2
+                    tile.EnhanceGreenTile();
+                }
+            }
+        }
+
+        // Trigger the detonation immediately
+        detonationManager.TriggerNextDetonation();
     }
 
     private void EnhanceGreenTile(Vector2Int position)
@@ -217,10 +276,14 @@ public class CubeCollisionController : MonoBehaviour
         Tile tile = grid.tiles[position.x, position.y];
         if (tile != null)
         {
-            // Apply green transformation (will handle enhancement if already transformed)
+            // First ensure it's transformed to green
             tile.TransformTile(Enumerations.CubeType.Green);
 
-            // Register detonation point
+            // Then enhance it
+            tile.EnhanceGreenTile();
+
+            // Register with detonation manager
+            DetonationManager detonationManager = FindObjectOfType<DetonationManager>();
             if (detonationManager != null)
             {
                 detonationManager.RegisterDetonationPoint(position);
@@ -262,7 +325,7 @@ public class CubeCollisionController : MonoBehaviour
         }
     }
 
-private GameObject CreateMarker(Vector2Int position, Color color)
+    private GameObject CreateMarker(Vector2Int position, Color color)
     {
         GameObject marker = GameObject.CreatePrimitive(PrimitiveType.Sphere);
         marker.transform.position = new Vector3(position.x, 1.5f, position.y);

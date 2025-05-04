@@ -33,6 +33,7 @@ public class StaticCubeDebugger : MonoBehaviour
     private Dictionary<int, Enumerations.CubeType> columnCubeTypes = new Dictionary<int, Enumerations.CubeType>();
     public List<GameObject> debugObjects = new List<GameObject>();
     private Vector2 scrollPosition;
+    private Coroutine autoMoveCoroutine;
 
     private void Start()
     {
@@ -154,6 +155,15 @@ public class StaticCubeDebugger : MonoBehaviour
         {
             manualMode = !manualMode;
             if (waveManager != null) waveManager.manualControl = manualMode;
+
+            if (manualMode)
+            {
+                StopAutoMode();
+            }
+            else
+            {
+                StartAutoMode();
+            }
         }
 
         if (manualMode && GUILayout.Button("Move Wave Forward (M)"))
@@ -439,4 +449,46 @@ public class StaticCubeDebugger : MonoBehaviour
             waveManager.ClearAllCubes();
         }
     }
+
+    private void StartAutoMode()
+    {
+        StopAutoMode(); // Ensure any existing routine is stopped
+
+        if (!manualMode)
+        {
+            autoMoveCoroutine = StartCoroutine(AutoMoveRoutine());
+        }
+    }
+
+    private void StopAutoMode()
+    {
+        if (autoMoveCoroutine != null)
+        {
+            StopCoroutine(autoMoveCoroutine);
+            autoMoveCoroutine = null;
+        }
+    }
+
+    private IEnumerator AutoMoveRoutine()
+    {
+        while (debuggerActive && !manualMode)
+        {
+            // Wait a short time between moves
+            yield return new WaitForSeconds(0.5f);
+
+            // Check if any cubes are still active
+            if (waveManager != null && waveManager.activeCubes.Count > 0)
+            {
+                MoveWaveForward();
+            }
+            else
+            {
+                // No more cubes, stop auto movement
+                yield break;
+            }
+        }
+    }
+
+
+
 }
