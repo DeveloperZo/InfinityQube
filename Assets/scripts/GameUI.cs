@@ -213,7 +213,7 @@ public class GameUI : MonoBehaviour
                     for (int y = 0; y < grid.Height; y++)
                     {
                         Tile tile = grid.tiles[x, y];
-                        if (tile != null && tile.HasCharges)
+                        if (tile != null && (tile.HasCharges || detonationManager.GetDetonationPoint(new Vector2Int(tile.x, tile.y)) ))
                         {
                             foundCharged = true;
                             int charges = tile.DetonationCharges;

@@ -131,20 +131,16 @@ public class WaveManager : MonoBehaviour
         waveActive = true;
 
         // Toggle player input
-        if (player != null)
+        if (player != null && !debugMode)
         {
             player.enabled = true;
+            player.ResetMarkers(); // Only reset markers when not in debug mode
         }
 
-        // Reset all tile markers
-        if (grid != null)
+        // Reset all tile markers only when not in debug mode
+        if (grid != null && !debugMode)
         {
             grid.ClearAllMarkers();
-        }
-
-        if (transienceManager != null && transienceManager.IsZoneActive)
-        {
-            transienceManager.TickZone();
         }
 
         // Skip spawning cubes if in debug mode
@@ -317,10 +313,36 @@ public class WaveManager : MonoBehaviour
 
     public void ManualMoveWaveForward()
     {
-        if (!debugMode && !manualControl) return;
+        if (!debugMode) return;
+
+        // Don't reset player markers when in debug mode
+        bool resetMarkers = !debugMode;
 
         // Process one movement step for all active cubes
-        StartCoroutine(RunWave());
+        for (int i = activeCubes.Count - 1; i >= 0; i--)
+        {
+            if (i >= activeCubes.Count) continue; // Safety check
+
+            CubeBehavior cube = activeCubes[i];
+            if (cube != null)
+            {
+                cube.ResetMovementState();
+                bool stillAlive = cube.MoveForward();
+
+                if (!stillAlive)
+                {
+                    activeCubes.RemoveAt(i);
+                }
+            }
+            else
+            {
+                // Remove null references
+                activeCubes.RemoveAt(i);
+            }
+        }
+
+        // Notify that a movement cycle is complete
+        NotifyMovementComplete();
     }
     private void SpawnCubes()
     {

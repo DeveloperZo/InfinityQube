@@ -108,22 +108,32 @@ public class CubeCollisionController : MonoBehaviour
                 // Green + Black = Green consumed, triggers detonation
                 if (FindObjectOfType<DetonationManager>() != null)
                 {
-                    FindObjectOfType<DetonationManager>().RegisterDetonationPoint(position);
+                    FindObjectOfType<DetonationManager>().RegisterDetonationPoint(position, DetonationType.Small);
                     FindObjectOfType<DetonationManager>().TriggerNextDetonation();
                 }
                 Destroy(sourceCube.gameObject);
                 break;
 
             case Enumerations.CubeType.Green:
-                // Green + Green = Enhanced green tile
+                // Green + Green = Enhanced green tile and create detonation mark
                 EnhanceGreenTile(position);
+                // Register a detonation point at the tile position
+                if (detonationManager != null)
+                {
+                    detonationManager.RegisterDetonationPoint(position, DetonationType.Standard);
+                }
                 Destroy(targetCube.gameObject);
                 Destroy(sourceCube.gameObject);
                 break;
 
             case Enumerations.CubeType.Normal:
-                // Green + Normal = Consume normal
+                // Green + Normal = Consume normal and create detonation mark
                 Destroy(targetCube.gameObject);
+                // Register a detonation point at the tile position
+                if (detonationManager != null)
+                {
+                    detonationManager.RegisterDetonationPoint(position, DetonationType.Small);
+                }
                 break;
         }
     }

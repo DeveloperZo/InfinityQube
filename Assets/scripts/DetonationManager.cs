@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using static Enumerations;
+using System;
 
 
 public class DetonationManager : MonoBehaviour
@@ -316,6 +317,12 @@ public class DetonationManager : MonoBehaviour
         int startX = center.x;
         int startY = center.y;
 
+        if(detonationSize == 3)
+        {
+            startX--;
+            startY--;
+        }
+
         // Process the detonation area
         for (int x = startX; x < startX + detonationSize; x++)
         {
@@ -408,6 +415,11 @@ public class DetonationManager : MonoBehaviour
             // Apply penalty for black cubes
             //DamageTile(position);
         }
+        else if(cube.CubeType == CubeType.Green)
+        {
+            RegisterDetonationPoint(position, DetonationType.Standard);
+            Destroy(cube.gameObject);
+        }
         else
         {
             // Destroy other cube types
@@ -415,4 +427,8 @@ public class DetonationManager : MonoBehaviour
         }
     }
 
+    public bool GetDetonationPoint(Vector2Int position)
+    {
+        return detonationPoints.Any(point => point == position);
+    }
 }

@@ -314,6 +314,7 @@ MonoBehaviour:
   - {fileID: 1728893673582764340, guid: 28923bfb13f3dde44b857f03a0188e95, type: 3}
   player: {fileID: 885266531}
   transienceManager: {fileID: 395275203}
+  detonationManager: {fileID: 89692588}
   waveSize: 3
   waveStartDelay: 0.75
   normalCubeChance: 0.7
@@ -325,6 +326,7 @@ MonoBehaviour:
   isSpeedingUp: 0
   activeCubes: []
   escapedBlackCubePositions: []
+  waveActive: 0
   debugMode: 0
   manualControl: 0
 --- !u!4 &487637474
@@ -406,10 +408,10 @@ MonoBehaviour:
   blackCubeChance: 0.1
   autoCalculateBlackChance: 1
   escapedBlackCubesCount: 0
-  selectedTileX: 0
-  selectedTileY: 0
-  selectedTileMaterial: {fileID: 0}
-  normalTileMaterial: {fileID: 0}
+  selectedTileX: 2
+  selectedTileY: 15
+  selectedTileMaterial: {fileID: 2100000, guid: e2ac5a6cae92b554e87d710d109627cc, type: 2}
+  normalTileMaterial: {fileID: 2100000, guid: 15cc66d777e06464b9573ed0f29092da, type: 2}
   advantagedTileCharges: 3
   manualWaveControl: 1
   stepDelay: 0.25
