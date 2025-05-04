@@ -57,7 +57,7 @@ public class Tile : MonoBehaviour
     public bool HasCharges => detonationCharges > 0;
 
     public bool IsBlackened => isBlackened;
-    public bool IsPrimed => isPrimed;
+    public bool IsAdvantaged => isAdvantaged;
     public TileState currentState = TileState.Normal;
     private Color normalColor;
 
@@ -68,7 +68,7 @@ public class Tile : MonoBehaviour
     public CubeBehavior currentCube;
     private bool isInitialized = false;
     private bool isBlackened = false;
-    private bool isPrimed = false;
+    private bool isAdvantaged = false;
     public bool isPhasedZone { get; private set; }
     private TextMesh countdownText;
     private void Awake()
@@ -95,8 +95,7 @@ public class Tile : MonoBehaviour
 
                 case Enumerations.CubeType.Green:
                     // First green charge
-                    detonationCharges = 1;
-                    UpdateChargeVisuals();
+                    AdvantageTile();
                     break;
 
             }
@@ -159,7 +158,7 @@ public class Tile : MonoBehaviour
     public void BlackenTile()
     {
         isBlackened = true;
-        isPrimed = false;
+        isAdvantaged = false;
         ClearMarker(); // Remove any existing marker
 
         // Visual indication
@@ -178,18 +177,26 @@ public class Tile : MonoBehaviour
             transform.position.z);
     }
 
-    public void EnhanceGreenTile()
+    public void AdvantageTile()
     {
-        // Increase charges up to the max
-        if (detonationCharges < maxCharges)
+        if (isBlackened) { return; }
+
+        isAdvantaged = true;
+        detonationCharges = maxCharges;
+        ClearMarker();
+        if (tileRenderer != null)
         {
-            detonationCharges++;
-
-            // Visual indication of charge level
-            UpdateChargeVisuals();
-
-            Debug.Log($"Green tile at ({x}, {y}) enhanced to charge level {detonationCharges}");
+            tileRenderer.material.color = chargeColors[detonationCharges-1];
         }
+
+        transform.position = new Vector3(
+    transform.position.x,
+    -0.2f, // Lowered position
+    transform.position.z);
+
+        UpdateChargeVisuals();
+        Debug.Log($"Green tile at ({x}, {y}) enhanced to charge level {detonationCharges}");
+
     }
 
     public void SetPhased(bool phased)
@@ -241,7 +248,7 @@ public class Tile : MonoBehaviour
     {
         if (detonationCharges > 0)
         {
-            if (isPrimed)
+            if (isAdvantaged)
                 detonationCharges--;
             else
                 detonationCharges = 0; // Reset to 0 if not primed
@@ -343,6 +350,7 @@ public class Tile : MonoBehaviour
             currentCube = cube;
         }
         // No special logic needed here - we'll handle specific cube types in TriggerMarker
+        
     }
 
     public void TriggerMarker()
@@ -401,6 +409,15 @@ public class Tile : MonoBehaviour
         {
             // Black tiles have no effect
             return;
+        }
+
+        if (IsAdvantaged)
+        {
+            if(cube.CubeType == Enumerations.CubeType.Black)
+            {
+               Debug.Log("Black cube landed on an advantaged tile. Charge Reduced.");
+                ReduceCharge();
+            }
         }
     }
 }

@@ -11,4 +11,11 @@ public static class Enumerations
         Normal,
         Transformed 
     }
+
+    public enum DetonationType
+    {
+        Standard, // 3x3 area
+        Small,    // 2x2 area
+        Single    // Just the targeted tile
+    }
 }

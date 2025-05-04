@@ -2,75 +2,7 @@ using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 using System;
-
-public class AutoDetonationTag : MonoBehaviour
-{
-    public Vector2Int position;
-    public int size = 2; // Default to 2×2 area
-    private bool hasDetonated = false;
-
-    private void OnEnable()
-    {
-        // Register with the WaveManager to receive movement notifications
-        WaveManager waveManager = FindObjectOfType<WaveManager>();
-        if (waveManager != null)
-        {
-            // Subscribe to the movement event
-            // Assuming WaveManager has a way to notify when cubes move
-            // If not, we'll need to implement that
-        }
-    }
-
-    // This should be called after all cubes have moved forward once
-    public void OnWaveMovement()
-    {
-        if (hasDetonated) return;
-
-        // Auto-detonate on the next movement
-        Detonate();
-        hasDetonated = true;
-
-        // Self-destruct after detonation
-        Destroy(this);
-    }
-
-    private void Detonate()
-    {
-        Debug.Log($"Auto-detonating {size}×{size} area at ({position.x}, {position.y})");
-
-        // Calculate the area to detonate (centered on this position)
-        int startX = position.x - (size / 2);
-        int startY = position.y - (size / 2);
-
-        // Find all cubes in the detonation area and destroy them
-        foreach (CubeBehavior cube in FindObjectsOfType<CubeBehavior>())
-        {
-            if (cube == null) continue;
-
-            int cubeX = cube.position.x;
-            int cubeY = cube.position.y;
-
-            // Check if the cube is within the detonation area
-            if (cubeX >= startX && cubeX < startX + size &&
-                cubeY >= startY && cubeY < startY + size)
-            {
-                if (cube.CubeType != Enumerations.CubeType.Black)
-                {
-                    // Destroy cubes in the area (except black cubes)
-                    Destroy(cube.gameObject);
-                }
-                // Optional: Add visual effects for detonation here
-            }
-        }
-
-        // Clear the marker from the tile
-        Tile tile = GetComponent<Tile>();
-        if (tile != null)
-        {
-            tile.ClearMarker();
-        }
-    }
-}
+using static Enumerations;
 
 public class CubeCollisionController : MonoBehaviour
 {
@@ -217,7 +149,7 @@ public class CubeCollisionController : MonoBehaviour
                 break;
 
             case Enumerations.CubeType.Green:
-                // Black + Green = Mark the tile for automatic detonation
+                // Black + Green = Mark the tile for 2x2 auto-detonation
                 MarkTileForAutoDetonation(position);
                 Destroy(targetCube.gameObject);
                 break;
@@ -310,62 +242,22 @@ public class CubeCollisionController : MonoBehaviour
         Tile tile = grid.tiles[position.x, position.y];
         if (tile != null)
         {
-            // Mark the tile (this will create a marker similar to player placing a marker)
+            // Mark the tile (visually like a player marker)
             tile.PlaceMarker();
 
-            // Add a special component that will handle auto-detonation on the next move
-            AutoDetonationTag autoDetonation = tile.gameObject.AddComponent<AutoDetonationTag>();
-            autoDetonation.position = position;
-            autoDetonation.size = 2; // 2×2 area
-
-            Debug.Log($"Marked tile at ({position.x}, {position.y}) for 2×2 auto-detonation on next move");
-        }
-    }
-
-    private void TriggerSmallerDetonation(Vector2Int position)
-    {
-        DetonationManager detonationManager = FindObjectOfType<DetonationManager>();
-        if (detonationManager == null) return;
-
-        Debug.Log($"Black cube triggered 2x2 detonation at ({position.x}, {position.y})");
-
-        // First register the detonation point
-        detonationManager.RegisterDetonationPoint(position);
-
-        // Find the tile and set a smaller detonation area (2x2 instead of 3x3)
-        if (IsValidPosition(position))
-        {
-            Tile tile = grid.tiles[position.x, position.y];
-            if (tile != null)
+            // Register with DetonationManager for auto-detonation
+            DetonationManager detonationManager = FindObjectOfType<DetonationManager>();
+            if (detonationManager != null)
             {
-                // We'll use the charge system to control detonation size
-                // Assuming charges 3 = 3x3, 2 = 2x2, 1 = single tile
-                // Set to 2 for a 2x2 detonation
-                if (tile.HasCharges)
-                {
-                    // If it already has charges, ensure it's at level 2
-                    while (tile.DetonationCharges != 2)
-                    {
-                        tile.ReduceCharge(); // Reduce if higher
-                        if (tile.DetonationCharges < 2)
-                        {
-                            tile.EnhanceGreenTile(); // Enhance if lower
-                        }
-                    }
-                }
-                else
-                {
-                    // First transform to green
-                    tile.TransformTile(Enumerations.CubeType.Green);
+                detonationManager.RegisterDetonationPoint(
+                    position,
+                    DetonationType.Small, // 2x2 area
+                    true // Auto-detonate on next move
+                );
 
-                    // Then enhance once to get to level 2
-                    tile.EnhanceGreenTile();
-                }
+                Debug.Log($"Marked tile at ({position.x}, {position.y}) for 2x2 auto-detonation on next move");
             }
         }
-
-        // Trigger the detonation immediately
-        detonationManager.TriggerNextDetonation();
     }
 
     private void EnhanceGreenTile(Vector2Int position)
@@ -378,8 +270,6 @@ public class CubeCollisionController : MonoBehaviour
             // First ensure it's transformed to green
             tile.TransformTile(Enumerations.CubeType.Green);
 
-            // Then enhance it
-            tile.EnhanceGreenTile();
 
             // Register with detonation manager
             DetonationManager detonationManager = FindObjectOfType<DetonationManager>();

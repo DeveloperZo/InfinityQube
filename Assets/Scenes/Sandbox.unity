@@ -324,6 +324,9 @@ MonoBehaviour:
   returnIndicatorPrefab: {fileID: 1728893673582764340, guid: 561089724328b924199e8dfab927ae1d, type: 3}
   isSpeedingUp: 0
   activeCubes: []
+  escapedBlackCubePositions: []
+  debugMode: 0
+  manualControl: 0
 --- !u!4 &487637474
 Transform:
   m_ObjectHideFlags: 0
@@ -407,6 +410,7 @@ MonoBehaviour:
   rainMoveCount: 3
   manualWaveControl: 1
   stepDelay: 0.25
+  debugObjects: []
 --- !u!4 &606199698
 Transform:
   m_ObjectHideFlags: 0
@@ -615,7 +619,7 @@ GameObject:
   - component: {fileID: 1193796432}
   - component: {fileID: 1193796433}
   m_Layer: 0
-  m_Name: GeneralDebugger
+  m_Name: StaticDebugger
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -649,19 +653,25 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   grid: {fileID: 1786583425}
+  waveManager: {fileID: 0}
   cubePrefabs:
   - {fileID: 562176818}
   - {fileID: 1728893673582764340, guid: 026a402b860389d4aaea0e4f0b5c1ff6, type: 3}
   - {fileID: 1728893673582764340, guid: 28923bfb13f3dde44b857f03a0188e95, type: 3}
-  waveDebugger: {fileID: 606199697}
-  keepRainCubesInPlace: 1
-  rainMoveCount: 3
-  toggleDebugKey: 282
-  resetDebugKey: 283
-  executeTestKey: 284
+  highlightMaterial: {fileID: 0}
+  cubeRow: 3
+  tileEffectRow: 2
   spawnHeight: 5
-  defaultRowZ: 3
-  effectRowZ: 2
+  dropCubeType: 2
+  dropOnCubes: 0
+  dropOnTiles: 0
+  autoTileEffects: 1
+  rainMoveCount: 3
+  manualMode: 1
+  moveKey: 109
+  testKey: 116
+  clearKey: 99
+  debugObjects: []
 --- !u!1 &1211460831
 GameObject:
   m_ObjectHideFlags: 0
@@ -986,6 +996,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   grid: {fileID: 1786583425}
+  waveManager: {fileID: 487637473}
+  waveDebugger: {fileID: 606199697}
   cubePrefabs:
   - {fileID: 1728893673582764340, guid: f90c16e773c18f54eb1b70ddc1136373, type: 3}
   - {fileID: 1728893673582764340, guid: 026a402b860389d4aaea0e4f0b5c1ff6, type: 3}

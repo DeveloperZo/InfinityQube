@@ -2,6 +2,7 @@ using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using static Enumerations;
 
 public class DetonationManager : MonoBehaviour
 {
@@ -17,6 +18,9 @@ public class DetonationManager : MonoBehaviour
     private Dictionary<Tile, Material> originalTileMaterials = new Dictionary<Tile, Material>();
     private Dictionary<Vector2Int, bool> slashDetonationPoints = new Dictionary<Vector2Int, bool>();
 
+    private Dictionary<Vector2Int, DetonationType> detonationTypes = new Dictionary<Vector2Int, DetonationType>();
+    private List<Vector2Int> autoDetonationPoints = new List<Vector2Int>();
+
     private void Awake()
     {
         if (gridManager == null)
@@ -31,18 +35,45 @@ public class DetonationManager : MonoBehaviour
     }
 
     // In DetonationManager.cs, update RegisterDetonationPoint
-    public void RegisterDetonationPoint(Vector2Int position)
+    public void RegisterDetonationPoint(Vector2Int position, DetonationType type = DetonationType.Standard, bool autoDetonate = false)
     {
         if (!IsValidPosition(position)) return;
 
         Tile tile = gridManager.tiles[position.x, position.y];
         if (tile == null || tile.IsBlackened) return; // Skip blackened tiles
 
+        // Register the detonation point
         if (!detonationPoints.Contains(position))
         {
             detonationPoints.Add(position);
+            detonationTypes[position] = type;
             MarkTileAsDetonationPoint(position);
-            Debug.Log($"Detonation point registered at {position}");
+
+            // If this should auto-detonate on next wave movement, add to that list
+            if (autoDetonate && !autoDetonationPoints.Contains(position))
+            {
+                autoDetonationPoints.Add(position);
+            }
+
+            Debug.Log($"Detonation point registered at {position} with type {type}, autoDetonate: {autoDetonate}");
+        }
+    }
+
+    public void ProcessAutoDetonations()
+    {
+        if (autoDetonationPoints.Count <= 0) return;
+
+        // Create a copy of the list to avoid issues when modifying during iteration
+        List<Vector2Int> pointsToDetonate = new List<Vector2Int>(autoDetonationPoints);
+        autoDetonationPoints.Clear();
+
+        foreach (Vector2Int position in pointsToDetonate)
+        {
+            if (detonationPoints.Contains(position))
+            {
+                Debug.Log($"Auto-detonating at {position}");
+                PerformDetonation(position);
+            }
         }
     }
 
@@ -220,19 +251,62 @@ public class DetonationManager : MonoBehaviour
 
         // Remove this detonation point from the list
         detonationPoints.Remove(center);
+        autoDetonationPoints.Remove(center); // Ensure it's removed from auto list too
         ResetTileMaterial(centerTile);
 
-        // Get the charge level (determines detonation size)
-        int detonationSize = centerTile.DetonationCharges;
-        if (detonationSize <= 0) detonationSize = 3; // Default to 3x3
+        // Determine detonation size based on type or charge level
+        int detonationSize = 3; // Default for standard
+
+        // If we have a specific type registered, use it
+        if (detonationTypes.ContainsKey(center))
+        {
+            switch (detonationTypes[center])
+            {
+                case DetonationType.Standard:
+                    detonationSize = 3; // 3x3 area
+                    break;
+                case DetonationType.Small:
+                    detonationSize = 2; // 2x2 area
+                    break;
+                case DetonationType.Single:
+                    detonationSize = 1; // Just this tile
+                    break;
+            }
+
+            // Remove from tracking
+            detonationTypes.Remove(center);
+        }
+        // Otherwise use the tile's charge level (if any)
+        else if (centerTile.HasCharges)
+        {
+            // Use charge level to determine size (3 = 3x3, 2 = 2x2, 1 = single)
+            detonationSize = centerTile.DetonationCharges;
+        }
 
         Debug.Log($"Detonating {detonationSize}x{detonationSize} area at {center}");
 
-        // Process the area based on size
-        int radius = (detonationSize - 1) / 2;
-        for (int x = center.x - radius; x <= center.x + radius; x++)
+        // For 2x2 detonation, we need to adjust the center to ensure complete coverage
+        int startX = center.x;
+        int startY = center.y;
+
+        // Special handling for 2x2 (needs offset to work properly)
+        if (detonationSize == 2)
         {
-            for (int y = center.y - radius; y <= center.y + radius; y++)
+            // Start position is the center tile
+            // We'll process a 2x2 square from this position
+        }
+        else
+        {
+            // For other sizes, center the detonation
+            int radius = (detonationSize - 1) / 2;
+            startX = center.x - radius;
+            startY = center.y - radius;
+        }
+
+        // Process the detonation area
+        for (int x = startX; x < startX + detonationSize; x++)
+        {
+            for (int y = startY; y < startY + detonationSize; y++)
             {
                 Vector2Int position = new Vector2Int(x, y);
                 if (IsValidPosition(position))
@@ -246,8 +320,11 @@ public class DetonationManager : MonoBehaviour
             }
         }
 
-        // Reduce the charge level after detonation
-        centerTile.ReduceCharge();
+        // Reduce the charge level after detonation if the tile has charges
+        if (centerTile.HasCharges)
+        {
+            centerTile.ReduceCharge();
+        }
     }
 
     // Flash a tile temporarily

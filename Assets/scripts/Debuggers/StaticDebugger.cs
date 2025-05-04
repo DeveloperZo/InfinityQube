@@ -266,13 +266,6 @@ public class StaticCubeDebugger : MonoBehaviour
         {
             // Apply actual transformation
             tile.TransformTile(cubeType);
-
-            // If it's a green cube and we want to test multiple charges
-            if (cubeType == Enumerations.CubeType.Green)
-            {
-                // This is optional: Add a second charge for testing
-                // tile.EnhanceGreenTile();
-            }
         }
     }
 

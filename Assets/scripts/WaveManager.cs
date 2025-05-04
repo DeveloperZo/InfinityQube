@@ -117,10 +117,10 @@ public class WaveManager : MonoBehaviour
     private void NotifyMovementComplete()
     {
         // Find and notify all AutoDetonationTag components
-        AutoDetonationTag[] tags = FindObjectsOfType<AutoDetonationTag>();
-        foreach (AutoDetonationTag tag in tags)
+        DetonationManager detonationManager = FindObjectOfType<DetonationManager>();
+        if (detonationManager != null)
         {
-            tag.OnWaveMovement();
+            detonationManager.ProcessAutoDetonations();
         }
     }
 

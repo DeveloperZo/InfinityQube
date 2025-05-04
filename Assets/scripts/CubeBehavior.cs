@@ -97,6 +97,8 @@ public class CubeBehavior : MonoBehaviour
 
         // Animate the forward movement
         StartCoroutine(AnimateMove(position));
+
+        
         return true;
     }
 
