@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
 
 public class WaveManager : MonoBehaviour
@@ -19,10 +20,10 @@ public class WaveManager : MonoBehaviour
     [Header("References")]
     [SerializeField] private GridManager grid;
     [SerializeField] public GameObject[] cubePrefabs;
+    [SerializeField] public bool useWaveConfiguration = false;
     [SerializeField] private PlayerController player;
     [SerializeField] private DetonationManager detonationManager;
-    [SerializeField] public List<CubeSpawnData> waveConfiguration = new List<CubeSpawnData>();
-    private bool useWaveConfiguration = false;  
+    [SerializeField] private List<CubeSpawnData> waveConfiguration;
 
     [Header("Wave Settings")]
     [SerializeField] public int waveSize = 3;
@@ -145,11 +146,9 @@ public class WaveManager : MonoBehaviour
             grid.ClearAllMarkers();
         }
 
-        // Skip spawning cubes if in debug mode
-        if (!debugMode)
-        {
-            SpawnCubes();
-        }
+        
+         SpawnCubes();
+        
 
         yield return new WaitForSeconds(waveStartDelay);
 
@@ -351,50 +350,29 @@ public class WaveManager : MonoBehaviour
     {
         // Clear existing cubes
         ClearAllCubes();
+        waveConfiguration.Clear();
         activeCubes.Clear();
 
         // Set debug mode
         debugMode = useDebugMode;
         manualControl = useDebugMode;
-
         // Process wave data and spawn cubes
         foreach (var data in waveData)
         {
             Vector2Int pos = data.position;
-            Vector3 spawnPos = new Vector3(pos.x, 1f, pos.y);
+            pos.y = 0 - (pos.y - grid.Height);
 
-            // Select the correct prefab
-            int prefabIndex = (int)data.cubeType;
-            if (prefabIndex < 0 || prefabIndex >= cubePrefabs.Length || cubePrefabs[prefabIndex] == null)
+            waveConfiguration.Add(new CubeSpawnData
             {
-                Debug.LogWarning($"Missing cube prefab for type {data.cubeType}");
-                continue;
-            }
-
-            GameObject cube = Instantiate(cubePrefabs[prefabIndex], spawnPos, Quaternion.identity);
-            if (cube != null)
-            {
-                CubeBehavior cb = cube.GetComponent<CubeBehavior>();
-                if (cb == null)
-                {
-                    cb = cube.AddComponent<CubeBehavior>();
-                    cb.CubeType = data.cubeType;
-                }
-
-                cb.Init(grid, pos, 1);
-                activeCubes.Add(cb);
-            }
+                cubeType = data.cubeType,
+                position = pos,
+                waveIndex = data.waveIndex,
+            });
         }
 
         // Start wave if not in debug mode
-        if (!debugMode)
-        {
-            StartCoroutine(RunWave());
-        }
-        else
-        {
-            Debug.Log("Wave spawned in debug mode. Press M to advance the wave manually.");
-        }
+        StartCoroutine(RunWave());
+
     }
 
     private void SpawnCubes()
@@ -483,7 +461,7 @@ public class WaveManager : MonoBehaviour
                     cb.CubeType = spawnData.cubeType;
                 }
 
-                cb.Init(grid, pos, 1);
+                cb.Init(grid, pos, 1, 1);
                 activeCubes.Add(cb);
             }
         }

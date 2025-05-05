@@ -14,6 +14,7 @@ public class WaveDebugger : MonoBehaviour
     [SerializeField] private int defaultWidth = 5;
     [SerializeField] private int defaultHeight = 7;
     [SerializeField] private bool centerOnScreen = true;
+    [SerializeField] private Color pauseButtonColor = new Color(1f, 0.5f, 0.5f, 1f);
 
     // Debug state
     private bool showDebugger = false;
@@ -33,6 +34,7 @@ public class WaveDebugger : MonoBehaviour
     private List<CubeBehavior> trackedCubes = new List<CubeBehavior>();
     private bool trackingActive = false;
     private float lastUpdateTime = 0f;
+    private bool isPaused = false;
 
     // UI settings
     private int buttonSize = 30;
@@ -44,6 +46,7 @@ public class WaveDebugger : MonoBehaviour
     private Color greenCubeColor = new Color(0.2f, 0.8f, 0.2f, 1f);
     private Color blackCubeColor = new Color(0.1f, 0.1f, 0.1f, 1f);
     private Color disabledColor = new Color(0.3f, 0.3f, 0.3f, 0.5f);
+    private Color clearButtonColor = new Color(0.9f, 0.9f, 0.9f, 0.1f); // Almost transparent white
 
     private void Start()
     {
@@ -65,7 +68,7 @@ public class WaveDebugger : MonoBehaviour
     {
         // Calculate the window size and position
         int windowWidth = gridWidth * (buttonSize + 2) + 20;
-        int windowHeight = gridHeight * (buttonSize + 2) + headerHeight + 100;
+        int windowHeight = gridHeight * (buttonSize + 2) + headerHeight + 150; // Added more space for new controls
 
         if (centerOnScreen)
         {
@@ -134,24 +137,6 @@ public class WaveDebugger : MonoBehaviour
         trackingActive = true;
         trackedCubes = new List<CubeBehavior>(waveManager.activeCubes);
 
-        // Calculate grid dimensions based on active cubes
-        int maxX = 0;
-        int maxY = 0;
-
-        foreach (var cube in trackedCubes)
-        {
-            maxX = Mathf.Max(maxX, cube.position.x + 1);
-            maxY = Mathf.Max(maxY, cube.position.y + 1);
-        }
-
-        // Resize grid if needed
-        if (maxX > gridWidth || maxY > gridHeight)
-        {
-            gridWidth = Mathf.Max(gridWidth, maxX);
-            gridHeight = Mathf.Max(gridHeight, maxY);
-            InitializeGrid();
-            CalculateWindowSize();
-        }
 
         // Reset button states
         for (int x = 0; x < gridWidth; x++)
@@ -219,13 +204,14 @@ public class WaveDebugger : MonoBehaviour
     {
         // Top controls
         DrawCubeTypeSelection();
+        DrawPauseControls(); // New pause controls section
         DrawGridDimensions();
         DrawActionButtons();
         DrawDebugModeToggle();
-        
+
         // Grid area
         DrawGridArea();
-        
+
         // Stats
         GUILayout.Label(GetCubeStats());
 
@@ -252,7 +238,37 @@ public class WaveDebugger : MonoBehaviour
         if (GUILayout.Toggle(selectedCubeType == 3, "Black", blackButtonStyle))
             selectedCubeType = 3;
 
+        GUI.backgroundColor = clearButtonColor;
+        if (GUILayout.Toggle(selectedCubeType == 0, "Clear", "Button"))
+            selectedCubeType = 0;
+
         GUI.backgroundColor = Color.white;
+        GUILayout.EndHorizontal();
+    }
+
+    private void DrawPauseControls()
+    {
+        GUILayout.BeginHorizontal();
+
+        // Pause/Unpause button
+        GUI.backgroundColor = isPaused ? pauseButtonColor : Color.white;
+        string pauseButtonText = isPaused ? "Resume Wave" : "Pause Wave";
+
+        if (GUILayout.Button(pauseButtonText))
+        {
+            TogglePause();
+        }
+
+        GUI.backgroundColor = Color.white;
+
+        // Step Forward button (only enabled when paused)
+        GUI.enabled = isPaused;
+        if (GUILayout.Button("Step Forward"))
+        {
+            StepForward();
+        }
+        GUI.enabled = true;
+
         GUILayout.EndHorizontal();
     }
 
@@ -333,10 +349,10 @@ public class WaveDebugger : MonoBehaviour
                 if (buttonInteractable[x, y])
                 {
                     int currentState = buttonState[x, y];
-                    
+
                     // Set button color based on cube type
                     SetButtonColorForType(currentState);
-                    
+
                     if (GUILayout.Button("", GUILayout.Width(buttonSize), GUILayout.Height(buttonSize)))
                     {
                         ChangeCubeType(x, y, selectedCubeType);
@@ -349,7 +365,7 @@ public class WaveDebugger : MonoBehaviour
                     GUILayout.Button("", GUILayout.Width(buttonSize), GUILayout.Height(buttonSize));
                 }
             }
-            
+
             // Reset color
             GUI.backgroundColor = Color.white;
 
@@ -373,16 +389,16 @@ public class WaveDebugger : MonoBehaviour
             for (int x = 0; x < gridWidth; x++)
             {
                 int currentState = gridState[x, y];
-                
+
                 // Set button color based on cube type
                 SetButtonColorForType(currentState);
-                
+
                 if (GUILayout.Button("", GUILayout.Width(buttonSize), GUILayout.Height(buttonSize)))
                 {
                     gridState[x, y] = selectedCubeType;
                 }
             }
-            
+
             // Reset color
             GUI.backgroundColor = Color.white;
 
@@ -394,7 +410,7 @@ public class WaveDebugger : MonoBehaviour
     {
         switch (cubeType)
         {
-            case 0: // Disabled
+            case 0: // Disabled/Cleared
                 GUI.backgroundColor = disabledColor;
                 break;
             case 1: // Normal
@@ -429,7 +445,24 @@ public class WaveDebugger : MonoBehaviour
 
         if (targetCube != null)
         {
-            // Change cube type
+            if (newType == 0) // Special case: Clear/Remove the cube
+            {
+                // Remove from tracking lists
+                trackedCubes.Remove(targetCube);
+                if (waveManager != null && waveManager.activeCubes.Contains(targetCube))
+                {
+                    waveManager.activeCubes.Remove(targetCube);
+                }
+
+                // Destroy the cube GameObject
+                DestroyImmediate(targetCube.gameObject);
+
+                // Update tracking after removal
+                UpdateTracking();
+                return;
+            }
+
+            // For other types, replace the cube
             Enumerations.CubeType oldType = targetCube.CubeType;
             Enumerations.CubeType newCubeType = (Enumerations.CubeType)(newType - 1);
 
@@ -616,17 +649,46 @@ public class WaveDebugger : MonoBehaviour
                 waveData.Add(new WaveData
                 {
                     cubeType = (Enumerations.CubeType)(gridState[x, y] - 1), // Convert to enum (0-based)
-                    position = new Vector2Int(x, gridHeight - y - 1), // Invert Y axis
+                    position = new Vector2Int(x, y), // Invert Y axis
                     waveIndex = 0 // Single wave for now
                 });
             }
         }
 
         // Spawn the wave
-        waveManager.SpawnCustomWave(waveData, debugMode);
+        waveManager.useWaveConfiguration = true;
+        
+        waveManager.SpawnCustomWave(waveData, false);
 
         // Start tracking the new wave
         StartTracking();
+    }
+
+    // New methods for pause functionality
+    private void TogglePause()
+    {
+        isPaused = !isPaused;
+
+        if (waveManager != null)
+        {
+            // Update wave manager state
+            waveManager.waveActive = !isPaused;
+            waveManager.debugMode = true;
+            waveManager.manualControl = isPaused;
+
+            Debug.Log($"Wave {(isPaused ? "paused" : "resumed")} - Wave active: {waveManager.waveActive}, Manual control: {waveManager.manualControl}");
+        }
+    }
+
+    private void StepForward()
+    {
+        if (!isPaused || waveManager == null) return;
+
+        // Execute a single step forward
+        waveManager.ManualMoveWaveForward();
+
+        // Make sure to update tracking after the step
+        UpdateTracking();
     }
 
     [System.Serializable]
