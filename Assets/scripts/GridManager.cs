@@ -24,7 +24,7 @@ public class GridManager : MonoBehaviour
         GenerateGrid();
     }
 
-    private void GenerateGrid()
+    public void GenerateGrid()
     {
         tiles = new Tile[width, height];
         
@@ -73,6 +73,31 @@ public class GridManager : MonoBehaviour
                 if (tiles[x, y] != null && tiles[x, y].HasMarker)
                     tiles[x, y].ClearMarker();
             }
+        }
+    }
+
+    public void DestroyGrid()
+    {
+        if (tiles != null)
+        {
+            for (int x = 0; x < Width; x++)
+            {
+                for (int y = 0; y < Height; y++)
+                {
+                    if (tiles[x, y] != null)
+                    {
+                        Destroy(tiles[x, y].gameObject);
+                    }
+                }
+            }
+
+            tiles = null;
+        }
+
+        // Destroy any child objects (in case there are other grid elements)
+        foreach (Transform child in transform)
+        {
+            Destroy(child.gameObject);
         }
     }
 

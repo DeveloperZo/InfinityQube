@@ -261,4 +261,16 @@ public class PlayerController : MonoBehaviour
             }
         }
     }
+
+    public void SetPosition(int x, int z)
+    {
+        selX = Mathf.Clamp(x, 0, grid.Width - 1);
+        selZ = Mathf.Clamp(z, 0, grid.Height - 1);
+        UpdateSelectorPosition();
+    }
+
+    public void SetMaxMarkers(int max)
+    {
+        maxMarkers = Mathf.Max(1, max);
+    }
 }

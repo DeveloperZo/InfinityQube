@@ -21,9 +21,11 @@ public class WaveManager : MonoBehaviour
     [SerializeField] public GameObject[] cubePrefabs;
     [SerializeField] private PlayerController player;
     [SerializeField] private DetonationManager detonationManager;
+    [SerializeField] public List<CubeSpawnData> waveConfiguration = new List<CubeSpawnData>();
+    private bool useWaveConfiguration = false;  
 
     [Header("Wave Settings")]
-    [SerializeField] private int waveSize = 3;
+    [SerializeField] public int waveSize = 3;
     [SerializeField] private float waveStartDelay = 0.75f;
 
     [Header("Cube Type Chances")]
@@ -47,6 +49,7 @@ public class WaveManager : MonoBehaviour
     private bool isDebugWaveActive = false;
     public bool debugMode = false;
     public bool manualControl = false;
+    internal float[] cubeChances;
 
     public void SetSpeedState(bool isSpeeding)
     {
@@ -401,6 +404,20 @@ public class WaveManager : MonoBehaviour
 
         // Guard against missing grid
         if (grid == null) return;
+
+        if (useWaveConfiguration && waveConfiguration.Count > 0)
+        {
+            GenerateConfigurationWave();
+        }
+        else
+            GenerateRandomWave();
+
+        // Now spawn any escaped black cubes that need to "rain down"
+        SpawnRainingBlackCubes();
+    }
+
+    private void GenerateRandomWave()
+    {
         List<int> spawnZs = new List<int>();
         for (var i = 1; i <= waveSize; i++)
         {
@@ -439,9 +456,37 @@ public class WaveManager : MonoBehaviour
                 }
             }
         }
+    }
 
-        // Now spawn any escaped black cubes that need to "rain down"
-        SpawnRainingBlackCubes();
+    private void GenerateConfigurationWave()
+    {
+        foreach (var spawnData in waveConfiguration)
+        {
+            Vector2Int pos = spawnData.position;
+            Vector3 spawnPos = new Vector3(pos.x, 1f, pos.y);
+
+            // Guard against index out of bounds
+            int prefabIndex = (int)spawnData.cubeType;
+            if (prefabIndex < 0 || prefabIndex >= cubePrefabs.Length || cubePrefabs[prefabIndex] == null)
+            {
+                Debug.LogWarning($"Missing cube prefab for type {spawnData.cubeType}");
+                continue;
+            }
+
+            GameObject cube = Instantiate(cubePrefabs[prefabIndex], spawnPos, Quaternion.identity);
+            if (cube != null)
+            {
+                CubeBehavior cb = cube.GetComponent<CubeBehavior>();
+                if (cb == null)
+                {
+                    cb = cube.AddComponent<CubeBehavior>();
+                    cb.CubeType = spawnData.cubeType;
+                }
+
+                cb.Init(grid, pos, 1);
+                activeCubes.Add(cb);
+            }
+        }
     }
 
     public void SpawnRainingBlackCubes()
@@ -492,9 +537,9 @@ public class WaveManager : MonoBehaviour
     private Enumerations.CubeType GetRandomCubeType()
     {
         float random = Random.value;
-        if (random < normalCubeChance)
+        if (random < cubeChances[0])
             return Enumerations.CubeType.Normal;
-        else if (random < normalCubeChance + greenCubeChance)
+        else if (random < cubeChances[0] + cubeChances[1])
             return Enumerations.CubeType.Green;
         else
             return Enumerations.CubeType.Black;
@@ -626,5 +671,10 @@ public class WaveManager : MonoBehaviour
         }
 
         activeCubes.Clear();
+    }
+
+    internal void ConfigureSpawn(List<CubeSpawnData> spawnData)
+    {
+        
     }
 }
