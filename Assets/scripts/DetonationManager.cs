@@ -366,14 +366,7 @@ public class DetonationManager : MonoBehaviour
         // Only restore if the tile still exists
         if (tile != null && renderer != null)
         {
-            if (originalTileMaterials.ContainsKey(tile))
-            {
-                renderer.material = originalTileMaterials[tile];
-            }
-            else
-            {
-                renderer.material = originalMaterial;
-            }
+            renderer.material = originalMaterial;
         }
 
         if (marker != null)

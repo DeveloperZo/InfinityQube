@@ -211,6 +211,9 @@ public class Tile : MonoBehaviour
         {
             // Apply color based on charge level
             tileRenderer.material = chargeMaterials[detonationCharges - 1];
+        }else if (tileRenderer != null && detonationCharges == 0)
+        {
+            tileRenderer.material = originalMaterial; // Reset to original material
         }
 
     }

@@ -345,27 +345,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 71d16b3e0e02caf48b00e7fb037f7776, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  grid: {fileID: 1786583425}
+  gridManager: {fileID: 1786583425}
   waveManager: {fileID: 487637473}
-  cubePrefabs:
-  - {fileID: 1728893673582764340, guid: f90c16e773c18f54eb1b70ddc1136373, type: 3}
-  - {fileID: 1728893673582764340, guid: 026a402b860389d4aaea0e4f0b5c1ff6, type: 3}
-  - {fileID: 1728893673582764340, guid: 28923bfb13f3dde44b857f03a0188e95, type: 3}
-  detonationManager: {fileID: 89692588}
-  waveSize: 3
-  normalCubeChance: 0.7
-  greenCubeChance: 0.2
-  blackCubeChance: 0.1
-  autoCalculateBlackChance: 1
-  escapedBlackCubesCount: 0
-  selectedTileX: 2
-  selectedTileY: 15
-  selectedTileMaterial: {fileID: 2100000, guid: e2ac5a6cae92b554e87d710d109627cc, type: 2}
-  normalTileMaterial: {fileID: 2100000, guid: 15cc66d777e06464b9573ed0f29092da, type: 2}
-  advantagedTileCharges: 3
-  manualWaveControl: 1
-  stepDelay: 0.25
-  autoMoveInterval: 0.5
+  playerController: {fileID: 885266531}
+  toggleKey: 283
+  defaultWidth: 5
+  defaultHeight: 7
+  centerOnScreen: 1
   debugObjects: []
 --- !u!4 &606199698
 Transform:

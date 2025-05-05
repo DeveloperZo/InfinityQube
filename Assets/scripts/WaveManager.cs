@@ -343,6 +343,57 @@ public class WaveManager : MonoBehaviour
         // Notify that a movement cycle is complete
         NotifyMovementComplete();
     }
+
+    public void SpawnCustomWave(List<WaveDebugger.WaveData> waveData, bool useDebugMode)
+    {
+        // Clear existing cubes
+        ClearAllCubes();
+        activeCubes.Clear();
+
+        // Set debug mode
+        debugMode = useDebugMode;
+        manualControl = useDebugMode;
+
+        // Process wave data and spawn cubes
+        foreach (var data in waveData)
+        {
+            Vector2Int pos = data.position;
+            Vector3 spawnPos = new Vector3(pos.x, 1f, pos.y);
+
+            // Select the correct prefab
+            int prefabIndex = (int)data.cubeType;
+            if (prefabIndex < 0 || prefabIndex >= cubePrefabs.Length || cubePrefabs[prefabIndex] == null)
+            {
+                Debug.LogWarning($"Missing cube prefab for type {data.cubeType}");
+                continue;
+            }
+
+            GameObject cube = Instantiate(cubePrefabs[prefabIndex], spawnPos, Quaternion.identity);
+            if (cube != null)
+            {
+                CubeBehavior cb = cube.GetComponent<CubeBehavior>();
+                if (cb == null)
+                {
+                    cb = cube.AddComponent<CubeBehavior>();
+                    cb.CubeType = data.cubeType;
+                }
+
+                cb.Init(grid, pos, 1);
+                activeCubes.Add(cb);
+            }
+        }
+
+        // Start wave if not in debug mode
+        if (!debugMode)
+        {
+            StartCoroutine(RunWave());
+        }
+        else
+        {
+            Debug.Log("Wave spawned in debug mode. Press M to advance the wave manually.");
+        }
+    }
+
     private void SpawnCubes()
     {
         activeCubes.Clear();

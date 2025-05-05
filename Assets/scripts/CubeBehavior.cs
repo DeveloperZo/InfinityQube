@@ -16,13 +16,12 @@ public class CubeBehavior : MonoBehaviour
     private CubeCollisionController collisionController;
     private DetonationManager detonationManager;
     private bool isMoving = false;
-    private bool isDestroyed = false;
+    public bool isDestroyed = false;
     public float rainSpeed = 3f;
     public float rainHeight = 5f;
     public int targetRow = -1;
     private bool isRainAnimating = false;
     public int moveCountRemaining = 0;
-    public bool isPhased { get; private set; }
 
     public void Init(GridManager gridManager, Vector2Int startPos, int startLevel, float spawnHeight = 5f)
     {
@@ -292,15 +291,4 @@ public class CubeBehavior : MonoBehaviour
         }
     }
 
-    public void SetPhased(bool phased)
-    {
-        isPhased = phased;
-
-        // Update collider based on phased state
-        Collider collider = GetComponent<Collider>();
-        if (collider != null)
-        {
-            collider.enabled = !phased;
-        }
-    }
 }
