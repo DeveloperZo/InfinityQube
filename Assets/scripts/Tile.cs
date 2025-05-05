@@ -338,7 +338,7 @@ public class Tile : MonoBehaviour
         }
 
         // Handle cube type-specific behavior
-        switch (cubeToProcess.CubeType)
+        switch (cubeToProcess.type)
         {
             case Enumerations.CubeType.Black:
                 // Black cube captured = immediate corruption
@@ -383,7 +383,7 @@ public class Tile : MonoBehaviour
 
         if (IsAdvantaged)
         {
-            if(cube.CubeType == Enumerations.CubeType.Black)
+            if(cube.type == Enumerations.CubeType.Black)
             {
                Debug.Log("Black cube landed on an advantaged tile. Charge Reduced.");
             }

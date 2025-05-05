@@ -11,6 +11,8 @@ public class RainCubeDebugger : MonoBehaviour
     [SerializeField] private GameObject[] cubePrefabs; // Normal, Green, Black, Blue
     [SerializeField] private Material highlightMaterial;
 
+    [SerializeField] private CubeData cubeData;
+
     [Header("Rain Settings")]
     [SerializeField] private Enumerations.CubeType rainCubeType = Enumerations.CubeType.Normal;
     [SerializeField] private int rainX = 2;
@@ -67,12 +69,12 @@ public class RainCubeDebugger : MonoBehaviour
             if (behavior == null)
             {
                 behavior = cube.AddComponent<CubeBehavior>();
-                behavior.CubeType = type;
+                behavior.type = type;
             }
 
             // IMPORTANT: Set the grid position in Vector2Int where x = column, y = row
-            Vector2Int gridPos = new Vector2Int(column, row);
-            behavior.Init(grid, gridPos, 1);
+            cubeData.position = new Vector2Int(column, row);
+            behavior.Init(grid, cubeData);
 
             // Mark as a raining cube with move count
             behavior.isRainingCube = true;

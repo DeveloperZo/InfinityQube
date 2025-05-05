@@ -8,6 +8,7 @@ public class StageDebugger : MonoBehaviour
     [SerializeField] private GridManager gridManager;
     [SerializeField] private WaveManager waveManager;
     [SerializeField] private PlayerController playerController;
+    [SerializeField] private StageDB stageDatabase;
 
     [Header("Debug Settings")]
     [SerializeField] private bool showDebugger = true;
@@ -24,6 +25,7 @@ public class StageDebugger : MonoBehaviour
         if (gridManager == null) gridManager = FindObjectOfType<GridManager>();
         if (waveManager == null) waveManager = FindObjectOfType<WaveManager>();
         if (playerController == null) playerController = FindObjectOfType<PlayerController>();
+        if (stageDatabase == null) stageDatabase = Resources.Load<StageDB>("StageDatabase");
 
         // Initialize stage names
         InitializeStageNames();
@@ -44,13 +46,23 @@ public class StageDebugger : MonoBehaviour
     {
         stageNames.Clear();
 
-        // Tutorial stages
-        stageNames.Add(-1, "Tutorial -1: First Steps");
-
-        // Regular stages (will be populated later)
-        stageNames.Add(1, "Stage 1: Getting Started");
-        stageNames.Add(2, "Stage 2: Handling Pressure");
-        // etc.
+        if (stageDatabase != null)
+        {
+            foreach (int stageId in stageDatabase.GetAllStageIds())
+            {
+                StageData stage = stageDatabase.GetStage(stageId);
+                if (stage != null)
+                {
+                    stageNames[stageId] = $"{stage.stageName} ({stage.stageNumber})";
+                }
+            }
+        }
+        else
+        {
+            // Default tutorial stage if no database
+            stageNames.Add(-1, "Tutorial -1: First Steps");
+            stageNames.Add(1, "Stage 1: Getting Started");
+        }
     }
 
     private void OnGUI()
@@ -113,6 +125,7 @@ public class StageDebugger : MonoBehaviour
             if (waveManager != null)
             {
                 // Call StartWave through reflection or a public method
+                waveManager.StartWave();
             }
         }
 

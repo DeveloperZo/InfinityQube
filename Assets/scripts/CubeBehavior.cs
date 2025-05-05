@@ -1,19 +1,23 @@
 using UnityEngine;
 using System.Collections;
+using static Enumerations;
 
 public class CubeBehavior : MonoBehaviour
 {
     [Header("Cube Properties")]
     [SerializeField] public int level = 1;
     [SerializeField] public Vector2Int position;
-    [SerializeField] public Enumerations.CubeType CubeType;
+    [SerializeField] public CubeType type;
+    [SerializeField] public Material material;
+    [SerializeField] public GameObject prefab;
 
     [Header("Animation Settings")]
     [SerializeField] private float moveDuration = 0.25f;
     [SerializeField] private float squashDuration = 0.25f;
     public bool isRainingCube = false;
+
+
     private GridManager grid;
-    private CubeCollisionController collisionController;
     private DetonationManager detonationManager;
     private bool isMoving = false;
     public bool isDestroyed = false;
@@ -23,11 +27,17 @@ public class CubeBehavior : MonoBehaviour
     private bool isRainAnimating = false;
     public int moveCountRemaining = 0;
 
-    public void Init(GridManager gridManager, Vector2Int startPos, int startLevel, float spawnHeight = 5f)
+    public void Init(GridManager gridManager,CubeData cubeData, float spawnHeight = 5f)
     {
+        name = cubeData.name;
+        type = cubeData.type;
+        position = cubeData.position;
+        level = cubeData.level;
+        
+        material = cubeData.material;
+        prefab = cubeData.prefab;
         grid = gridManager;
-        position = startPos;
-        level = startLevel;
+
         transform.position = new Vector3(position.x, spawnHeight, position.y); // Use spawnHeight parameter
         detonationManager = FindAnyObjectByType<DetonationManager>();
     }
@@ -69,7 +79,7 @@ public class CubeBehavior : MonoBehaviour
             if (!isRainingCube || moveCountRemaining <= 0)
             {
                 // Handle black cubes that escape
-                if (CubeType == Enumerations.CubeType.Black)
+                if (type == Enumerations.CubeType.Black)
                 {
                     WaveManager waveManager = FindObjectOfType<WaveManager>();
                     if (waveManager != null)
@@ -124,7 +134,7 @@ public class CubeBehavior : MonoBehaviour
                     collisionController.Initialize(FindObjectOfType<GridManager>());
                 }
 
-                Debug.Log($"Triggering collision between raining {CubeType} and static {otherCube.CubeType} at ({position.x}, {position.y})");
+                Debug.Log($"Triggering collision between raining {type} and static {otherCube.type} at ({position.x}, {position.y})");
                 collisionController.HandleCubeCollision(this, otherCube, position);
 
                 // No need to check further collisions

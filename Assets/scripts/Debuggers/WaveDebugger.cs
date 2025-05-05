@@ -10,6 +10,8 @@ public class WaveDebugger : MonoBehaviour
     [SerializeField] private WaveManager waveManager;
     [SerializeField] private PlayerController playerController;
 
+    [SerializeField] private CubeData cubeData;
+
     [Header("Settings")]
     [SerializeField] private KeyCode toggleKey = KeyCode.F2;
     [SerializeField] private int defaultWidth = 5;
@@ -236,7 +238,7 @@ public class WaveDebugger : MonoBehaviour
             // Ensure we're within grid bounds
             if (x >= 0 && x < waveWidth && y >= 0 && y < waveHeight)
             {
-                buttonState[x, y] = (int)cube.CubeType + 1; // Convert to button state
+                buttonState[x, y] = (int)cube.type + 1; // Convert to button state
                 buttonInteractable[x, y] = true; // Cube is present, button is interactive
             }
         }
@@ -495,7 +497,7 @@ public class WaveDebugger : MonoBehaviour
             if (cube != null && cube.position.x == x && cube.position.y == actualY)
             {
                 targetCube = cube;
-                Debug.Log($"Found target cube of type {targetCube.CubeType} at position ({x}, {actualY})");
+                Debug.Log($"Found target cube of type {targetCube.type} at position ({x}, {actualY})");
                 break;
             }
         }
@@ -522,7 +524,7 @@ public class WaveDebugger : MonoBehaviour
             }
 
             // For other types, replace the cube
-            Enumerations.CubeType oldType = targetCube.CubeType;
+            Enumerations.CubeType oldType = targetCube.type;
             Enumerations.CubeType newCubeType = (Enumerations.CubeType)(newType - 1);
 
             // If type hasn't changed, do nothing
@@ -552,7 +554,7 @@ public class WaveDebugger : MonoBehaviour
         int moveCountRemaining = oldCube.moveCountRemaining;
         bool isRainingCube = oldCube.isRainingCube;
 
-        Debug.Log($"Replacing cube: Position={position}, WorldPos={worldPos}, Type={oldCube.CubeType} to {newType}");
+        Debug.Log($"Replacing cube: Position={position}, WorldPos={worldPos}, Type={oldCube.type} to {newType}");
 
         // Remove old cube from tracking and destroy
         trackedCubes.Remove(oldCube);
@@ -592,8 +594,11 @@ public class WaveDebugger : MonoBehaviour
         }
 
         // Set properties on the new cube
-        newCube.CubeType = newType;
-        newCube.Init(gridManager, position, 1);
+        cubeData.type = newType;
+        cubeData.position = position;
+
+
+        newCube.Init(gridManager, cubeData, 1);
         newCube.moveCountRemaining = moveCount;
         newCube.isRainingCube = isRaining;
 
@@ -622,7 +627,7 @@ public class WaveDebugger : MonoBehaviour
             {
                 if (cube == null) continue;
 
-                switch (cube.CubeType)
+                switch (cube.type)
                 {
                     case Enumerations.CubeType.Normal: normalCount++; break;
                     case Enumerations.CubeType.Green: greenCount++; break;
@@ -741,9 +746,6 @@ public class WaveDebugger : MonoBehaviour
 
                 waveData.Add(new WaveData
                 {
-                    cubeType = (Enumerations.CubeType)(gridState[x, y] - 1), // Convert to enum (0-based)
-                    position = new Vector2Int(x, y), // Invert Y axis
-                    waveIndex = 0 // Single wave for now
                 });
             }
         }
@@ -796,8 +798,7 @@ public class WaveDebugger : MonoBehaviour
     [System.Serializable]
     public class WaveData
     {
-        public Enumerations.CubeType cubeType;
-        public Vector2Int position;
+        public List<CubeData> cubesData;
         public int waveIndex;
     }
 }

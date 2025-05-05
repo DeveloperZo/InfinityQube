@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using Unity.VisualScripting;
 using UnityEngine;
+using static StageData;
 
 public class WaveManager : MonoBehaviour
 {
@@ -23,7 +24,9 @@ public class WaveManager : MonoBehaviour
     [SerializeField] public bool useWaveConfiguration = false;
     [SerializeField] private PlayerController player;
     [SerializeField] private DetonationManager detonationManager;
-    [SerializeField] private List<CubeSpawnData> waveConfiguration = new List<CubeSpawnData>();
+    [SerializeField] public List<WaveConfiguration> waveConfiguration = new List<WaveConfiguration>();
+
+    [Serialize] private CubeData cubeData;
 
     [Header("Wave Settings")]
     [SerializeField] public int waveSize = 3;
@@ -105,7 +108,7 @@ public class WaveManager : MonoBehaviour
         }
     }
 
-    private void StartWave()
+    public void StartWave()
     {
         if (waveActive) return;
 
@@ -271,16 +274,16 @@ public class WaveManager : MonoBehaviour
 
     public void RegisterEscapedCube(CubeBehavior cube)
     {
-        if (cube.CubeType != Enumerations.CubeType.Normal)
+        if (cube.type != Enumerations.CubeType.Normal)
         {
             returnQueue.Add(new ReturnQueueItem
             {
-                cubeType = cube.CubeType,
+                cubeType = cube.type,
                 position = cube.position
             });
 
             // Log for debugging
-            Debug.Log($"{cube.CubeType} cube escaped at X={cube.position.x}, queued for return");
+            Debug.Log($"{cube.type} cube escaped at X={cube.position.x}, queued for return");
         }
     }
 
@@ -359,11 +362,10 @@ public class WaveManager : MonoBehaviour
         // Process wave data and spawn cubes
         foreach (var data in waveData)
         {
-            waveConfiguration.Add(new CubeSpawnData
+            waveConfiguration.Add(new WaveConfiguration
             {
-                cubeType = data.cubeType,
-                position = data.position,
-                waveIndex = data.waveIndex,
+                Index = data.waveIndex,
+                CubesData = data.cubesData
             }); ;
         }
 
@@ -405,8 +407,11 @@ public class WaveManager : MonoBehaviour
             {
                 Vector2Int pos = new Vector2Int(x, z);
                 Vector3 spawnPos = new Vector3(x, 1f, z);
-
                 Enumerations.CubeType cubeType = GetRandomCubeType();
+
+                cubeData.position = pos;
+                cubeData.type = cubeType;
+
 
                 // Guard against index out of bounds
                 int prefabIndex = (int)cubeType;
@@ -423,10 +428,10 @@ public class WaveManager : MonoBehaviour
                     if (cb == null)
                     {
                         cb = cube.AddComponent<CubeBehavior>();
-                        cb.CubeType = cubeType; // Set type since it wasn't in prefab
+                        cb.type = cubeType; // Set type since it wasn't in prefab
                     }
 
-                    cb.Init(grid, pos, 1); // level 1 for all cubes in this version
+                    cb.Init(grid, cubeData, 1); // level 1 for all cubes in this version
                     activeCubes.Add(cb);
                 }
             }
@@ -437,30 +442,39 @@ public class WaveManager : MonoBehaviour
     {
         foreach (var spawnData in waveConfiguration)
         {
-            Vector2Int pos = spawnData.position;
-            Vector3 spawnPos = new Vector3(pos.x, 1f, 0 - (pos.y - grid.Height));
 
-            // Guard against index out of bounds
-            int prefabIndex = (int)spawnData.cubeType;
-            if (prefabIndex < 0 || prefabIndex >= cubePrefabs.Length || cubePrefabs[prefabIndex] == null)
-            {
-                Debug.LogWarning($"Missing cube prefab for type {spawnData.cubeType}");
-                continue;
-            }
+            var cubes = spawnData.CubesData;
 
-            GameObject cube = Instantiate(cubePrefabs[prefabIndex], spawnPos, Quaternion.identity);
-            if (cube != null)
+            foreach (var item in cubes)
             {
-                CubeBehavior cb = cube.GetComponent<CubeBehavior>();
-                if (cb == null)
+                Vector2Int pos = item.position;
+                item.position = new Vector2Int(pos.x, 0 - (pos.y - grid.Height));
+
+                Vector3 spawnPos = new Vector3(pos.x, 1f, 0 - (pos.y - grid.Height));
+
+                // Guard against index out of bounds
+                int prefabIndex = (int)item.type;
+                if (prefabIndex < 0 || prefabIndex >= cubePrefabs.Length || cubePrefabs[prefabIndex] == null)
                 {
-                    cb = cube.AddComponent<CubeBehavior>();
-                    cb.CubeType = spawnData.cubeType;
+                    Debug.LogWarning($"Missing cube prefab for type {item.type}");
+                    continue;
                 }
 
-                cb.Init(grid, new Vector2Int(pos.x, 0 - (pos.y - grid.Height)), 1, 1);
-                activeCubes.Add(cb);
+                GameObject cube = Instantiate(cubePrefabs[prefabIndex], spawnPos, Quaternion.identity);
+                if (cube != null)
+                {
+                    CubeBehavior cb = cube.GetComponent<CubeBehavior>();
+                    if (cb == null)
+                    {
+                        cb = cube.AddComponent<CubeBehavior>();
+                        cb.type = item.type;
+                    }
+
+                    cb.Init(grid, item, 1);
+                    activeCubes.Add(cb);
+                }
             }
+
         }
     }
 
@@ -491,7 +505,7 @@ public class WaveManager : MonoBehaviour
                 if (cb == null)
                 {
                     cb = cube.AddComponent<CubeBehavior>();
-                    cb.CubeType = Enumerations.CubeType.Black;
+                    cb.type = Enumerations.CubeType.Black;
                     cb.isRainingCube = true;
                 }
 
@@ -528,7 +542,7 @@ public class WaveManager : MonoBehaviour
             CubeBehavior cube = activeCubes[i];
             if (cube != null)
             {
-                Debug.Log($"[{i}] Cube at ({cube.position.x}, {cube.position.y}) of type {cube.CubeType}");
+                Debug.Log($"[{i}] Cube at ({cube.position.x}, {cube.position.y}) of type {cube.type}");
             }
             else
             {
@@ -547,7 +561,7 @@ public class WaveManager : MonoBehaviour
         {
             activeCubes.Add(cube);
 
-            Debug.Log($"Rain cube registered: Type={cube.CubeType}, " +
+            Debug.Log($"Rain cube registered: Type={cube.type}, " +
                       $"Grid Position=({cube.position.x}, {cube.position.y}), " +
                       $"World Position=({cube.transform.position.x}, {cube.transform.position.y}, {cube.transform.position.z}), " +
                       $"Moves Remaining={cube.moveCountRemaining}");
@@ -648,7 +662,7 @@ public class WaveManager : MonoBehaviour
         activeCubes.Clear();
     }
 
-    internal void ConfigureSpawn(List<CubeSpawnData> spawnData)
+    internal void ConfigureSpawn(List<CubeData> spawnData)
     {
         
     }

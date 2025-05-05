@@ -18,4 +18,12 @@ public static class Enumerations
         Small,    // 2x2 area
         Single    // Just the targeted tile
     }
+
+    public enum StageType
+    {
+        Tutorial,    // Tutorial stages: focused on teaching mechanics
+        Standard,    // Normal gameplay
+        Challenge,   // Difficult stages with special conditions
+        Bonus        // Special stages with unique rules
+    }
 }

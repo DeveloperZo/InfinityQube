@@ -386,7 +386,7 @@ public class DetonationManager : MonoBehaviour
             // Debug the comparison to help identify positioning issues
             if (cube.position.x == position.x && cube.position.y == position.y)
             {
-                Debug.Log($"Found cube to detonate at ({position.x}, {position.y}) of type {cube.CubeType}");
+                Debug.Log($"Found cube to detonate at ({position.x}, {position.y}) of type {cube.type}");
                 ProcessCubeDetonation(cube, position);
             }
         }
@@ -401,12 +401,12 @@ public class DetonationManager : MonoBehaviour
     // Process a specific cube's detonation
     private void ProcessCubeDetonation(CubeBehavior cube, Vector2Int position)
     {
-        if (cube.CubeType == Enumerations.CubeType.Black)
+        if (cube.type == Enumerations.CubeType.Black)
         {
             // Apply penalty for black cubes
             //DamageTile(position);
         }
-        else if(cube.CubeType == CubeType.Green)
+        else if(cube.type == CubeType.Green)
         {
             RegisterDetonationPoint(position, DetonationType.Standard);
             Destroy(cube.gameObject);

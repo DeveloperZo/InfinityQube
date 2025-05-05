@@ -1,7 +1,6 @@
 using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
-
 public class StageManager : MonoBehaviour
 {
     [Header("References")]
@@ -9,15 +8,14 @@ public class StageManager : MonoBehaviour
     [SerializeField] private WaveManager waveManager;
     [SerializeField] private PlayerController playerController;
     [SerializeField] private GameObject tutorialUI;
+    [SerializeField] private StageDB stageDatabase;
 
     [Header("Stage Settings")]
     [SerializeField] private bool startWithTutorial = true;
     [SerializeField] private int currentStageIndex = -1;
 
     private StageData currentStage;
-    private Dictionary<int, StageData> stageDatabase = new Dictionary<int, StageData>();
-
-
+    private bool stageInProgress = false;
     private int capturedCubeCount = 0;
     private int escapedCubeCount = 0;
 
@@ -29,7 +27,21 @@ public class StageManager : MonoBehaviour
         if (playerController == null) playerController = FindObjectOfType<PlayerController>();
 
         // Initialize stage database
-        InitializeStageDatabase();
+        if (stageDatabase == null)
+        {
+            stageDatabase = Resources.Load<StageDB>("StageDatabase");
+            if (stageDatabase == null)
+            {
+                Debug.LogError("StageDatabase not found in Resources folder!");
+                // Create a temporary database with the tutorial
+                stageDatabase = ScriptableObject.CreateInstance<StageDB>();
+                stageDatabase.Initialize();
+            }
+        }
+        else
+        {
+            stageDatabase.Initialize();
+        }
     }
 
     private void Start()
@@ -45,18 +57,11 @@ public class StageManager : MonoBehaviour
         }
     }
 
-    private void InitializeStageDatabase()
-    {
-        // Add tutorial stages (negative numbers)
-        stageDatabase.Add(-1, StageData.CreateTutorialMinus1());
-
-        // Add regular stages (positive numbers)
-        // Stage 1, 2, 3, etc. will be added here...
-    }
-
     public void LoadStage(int stageNumber)
     {
-        if (!stageDatabase.ContainsKey(stageNumber))
+        StageData stage = stageDatabase.GetStage(stageNumber);
+
+        if (stage == null)
         {
             Debug.LogWarning($"Stage {stageNumber} not found in the database!");
             return;
@@ -65,10 +70,11 @@ public class StageManager : MonoBehaviour
         // Reset counters
         capturedCubeCount = 0;
         escapedCubeCount = 0;
+        stageInProgress = true;
 
         // Store current stage
         currentStageIndex = stageNumber;
-        currentStage = stageDatabase[stageNumber];
+        currentStage = stage;
 
         // Configure grid based on stage data
         ConfigureGrid();
@@ -79,7 +85,10 @@ public class StageManager : MonoBehaviour
         // Set player position
         SetPlayerPosition();
 
+        // Show tutorial UI if applicable
+        ShowTutorialUI(stage.isTutorial);
 
+        Debug.Log($"Stage {stageNumber}: {stage.stageName} loaded");
     }
 
     private void ConfigureGrid()
@@ -102,38 +111,7 @@ public class StageManager : MonoBehaviour
     {
         if (waveManager != null)
         {
-            // Set wave parameters
-            waveManager.waveSize = (currentStage.waveSize);
 
-            // Set cube chances
-            waveManager.cubeChances = new[]
-            {
-                currentStage.normalCubeChance,
-                currentStage.greenCubeChance,
-                currentStage.blackCubeChance
-            };
-
-            // Set specific cube placements if any
-            if (currentStage.specificCubePlacements.Count > 0)
-            {
-                List<CubeSpawnData> spawnData = new List<CubeSpawnData>();
-
-                foreach (var placement in currentStage.specificCubePlacements)
-                {
-                    spawnData.Add(new CubeSpawnData
-                    {
-                        cubeType = placement.cubeType,
-                        position = placement.position,
-                        waveIndex = placement.waveIndex
-                    });
-                }
-
-                waveManager.ConfigureSpawn(spawnData);
-            }
-            else
-            {
-                waveManager.ClearAllCubes();
-            }
         }
     }
 
@@ -155,14 +133,33 @@ public class StageManager : MonoBehaviour
         }
     }
 
+    private void ShowTutorialUI(bool show)
+    {
+        if (tutorialUI != null)
+        {
+            tutorialUI.SetActive(show);
+
+            // Populate tutorial messages if available
+            if (show && currentStage.tutorialMessages.Count > 0)
+            {
+                // Implement UI message display here
+                // For example: tutorialUI.GetComponent<TutorialManager>().SetMessages(currentStage.tutorialMessages);
+            }
+        }
+    }
+
     public void OnCubeCaptured(Enumerations.CubeType cubeType)
     {
+        if (!stageInProgress) return;
+
         capturedCubeCount++;
         CheckStageCompletion();
     }
 
     public void OnCubeEscaped(Enumerations.CubeType cubeType)
     {
+        if (!stageInProgress) return;
+
         escapedCubeCount++;
         CheckStageCompletion();
     }
@@ -194,8 +191,11 @@ public class StageManager : MonoBehaviour
 
     private void CompleteStage()
     {
+        stageInProgress = false;
         Debug.Log($"Stage {currentStageIndex} completed!");
 
+        // Implement stage completion effects
+        // For example: Show completion UI, play sounds, etc.
 
         // Proceed to next stage after delay
         StartCoroutine(DelayedNextStage());
@@ -203,8 +203,11 @@ public class StageManager : MonoBehaviour
 
     private void FailStage()
     {
+        stageInProgress = false;
         Debug.Log($"Stage {currentStageIndex} failed!");
 
+        // Implement stage failure effects
+        // For example: Show failure UI, play sounds, etc.
 
         // Restart the same stage after delay
         StartCoroutine(DelayedRestartStage());
@@ -221,12 +224,4 @@ public class StageManager : MonoBehaviour
         yield return new WaitForSeconds(2.0f);
         LoadStage(currentStageIndex);
     }
-}
-
-
-public class CubeSpawnData
-{
-    public Enumerations.CubeType cubeType;
-    public Vector2Int position;
-    public int waveIndex = 0;
 }

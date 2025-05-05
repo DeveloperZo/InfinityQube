@@ -8,7 +8,10 @@ public class StaticCubeDebugger : MonoBehaviour
     [SerializeField] private GridManager grid;
     [SerializeField] private WaveManager waveManager;
     [SerializeField] private GameObject[] cubePrefabs; // Normal, Green, Black, Blue
+    [SerializeField] private Material[] materialPrefabs; // Normal, Green, Black, Blue
     [SerializeField] private Material highlightMaterial;
+
+    [SerializeField] private CubeData cubeData;
 
     [Header("Test Configuration")]
     [SerializeField] private int cubeRow = 3;        // Row for test cubes
@@ -218,10 +221,15 @@ public class StaticCubeDebugger : MonoBehaviour
         if (behavior == null)
         {
             behavior = cube.AddComponent<CubeBehavior>();
-            behavior.CubeType = cubeType;
+            behavior.type = cubeType;
         }
 
-        behavior.Init(grid, new Vector2Int(column, cubeRow), 1, 1);
+        cubeData.position = new Vector2Int(column, cubeRow);
+        cubeData.level = 1;
+           
+        
+
+        behavior.Init(grid, cubeData, 1);
 
         // Update tile reference
         if (cubeRow >= 0 && cubeRow < grid.Height)
@@ -395,9 +403,16 @@ public class StaticCubeDebugger : MonoBehaviour
         {
             behavior = cube.AddComponent<CubeBehavior>();
         }
+        var cubeData = new CubeData() { 
+            level = 1, 
+            prefab = cubePrefabs[(int)cubeType], 
+            position = new Vector2Int(column, row), 
+            type = cubeType,
+            material = materialPrefabs[(int)cubeType],
+            
+        };
 
-        behavior.CubeType = cubeType;
-        behavior.Init(grid, new Vector2Int(column, row), 1);
+        behavior.Init(grid, cubeData, 1);
         behavior.isRainingCube = true;
         behavior.moveCountRemaining = rainMoveCount;
 

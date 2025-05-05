@@ -20,8 +20,8 @@ public class CubeCollisionController : MonoBehaviour
         if (sourceCube == null || targetCube == null) return;
 
         // Get cube types for clarity
-        Enumerations.CubeType sourceType = sourceCube.CubeType;
-        Enumerations.CubeType targetType = targetCube.CubeType;
+        Enumerations.CubeType sourceType = sourceCube.type;
+        Enumerations.CubeType targetType = targetCube.type;
 
         Debug.Log($"Processing collision: {sourceType} cube colliding with {targetType} cube at ({position.x}, {position.y})");
 
@@ -69,7 +69,7 @@ public class CubeCollisionController : MonoBehaviour
 
     private void HandleBlackCubeCollision(CubeBehavior sourceCube, CubeBehavior targetCube, Vector2Int position)
     {
-        switch (targetCube.CubeType)
+        switch (targetCube.type)
         {
             case Enumerations.CubeType.Black:
                 // Black + Black = Blacken tile
@@ -103,7 +103,7 @@ public class CubeCollisionController : MonoBehaviour
 
     private void HandleGreenCubeCollision(CubeBehavior sourceCube, CubeBehavior targetCube, Vector2Int position)
     {
-        switch (targetCube.CubeType)
+        switch (targetCube.type)
         {
             case Enumerations.CubeType.Black:
                 // Green + Black = Green consumed, triggers detonation
@@ -141,7 +141,7 @@ public class CubeCollisionController : MonoBehaviour
 
     private void HandleNormalCubeCollision(CubeBehavior sourceCube, CubeBehavior targetCube, Vector2Int position)
     {
-        switch (targetCube.CubeType)
+        switch (targetCube.type)
         {
             case Enumerations.CubeType.Black:
                 // Normal + Black = Normal consumed
