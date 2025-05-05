@@ -36,6 +36,9 @@ public class WaveDebugger : MonoBehaviour
     private bool trackingActive = false;
     private float lastUpdateTime = 0f;
     private bool isPaused = false;
+    private int waveOffsetY = 0; // How many rows to offset the wave from the bottom
+    private bool autoResizeGrid = true;
+    private bool autoAdjustOffset = true;
 
     // UI settings
     private int buttonSize = 30;
@@ -138,6 +141,33 @@ public class WaveDebugger : MonoBehaviour
         trackingActive = true;
         trackedCubes = new List<CubeBehavior>(waveManager.activeCubes);
 
+        // Calculate grid dimensions and offset based on active cubes
+        int maxX = 0;
+        int minY = int.MaxValue;
+        int maxY = 0;
+
+        foreach (var cube in trackedCubes)
+        {
+            maxX = Mathf.Max(maxX, cube.position.x + 1);
+            minY = Mathf.Min(minY, cube.position.y);
+            maxY = Mathf.Max(maxY, cube.position.y + 1);
+        }
+
+        // Calculate required height and offset
+        int requiredHeight = maxY - minY;
+        waveOffsetY = minY; // Store the minimum Y as our offset
+
+        // Resize grid if needed
+        if (autoResizeGrid)
+        {
+            waveWidth = Mathf.Max(waveWidth, maxX);
+            waveHeight = Mathf.Max(waveHeight, requiredHeight);
+            InitializeGrid();
+            CalculateWindowSize();
+        }
+
+        Debug.Log($"Wave tracking started: Width={maxX}, MinY={minY}, MaxY={maxY}, " +
+                  $"RequiredHeight={requiredHeight}, Offset={waveOffsetY}");
 
         // Reset button states
         for (int x = 0; x < waveWidth; x++)
@@ -168,6 +198,25 @@ public class WaveDebugger : MonoBehaviour
             return;
         }
 
+        // Recalculate the offset if autoAdjustOffset is enabled
+        if (autoAdjustOffset)
+        {
+            // Find the current min Y position among all tracked cubes
+            int minY = int.MaxValue;
+            int maxY = 0;
+
+            foreach (var cube in trackedCubes)
+            {
+                minY = Mathf.Min(minY, cube.position.y);
+                maxY = Mathf.Max(maxY, cube.position.y);
+            }
+
+            // Update offset to track the wave
+            waveOffsetY = minY;
+
+
+        }
+
         // Reset all button states
         for (int x = 0; x < waveWidth; x++)
         {
@@ -178,11 +227,11 @@ public class WaveDebugger : MonoBehaviour
             }
         }
 
-        // Update button states based on current cube positions
+        // Update button states based on current cube positions, applying the offset
         foreach (var cube in trackedCubes)
         {
             int x = cube.position.x;
-            int y = cube.position.y;
+            int y = cube.position.y - waveOffsetY; // Apply the offset
 
             // Ensure we're within grid bounds
             if (x >= 0 && x < waveWidth && y >= 0 && y < waveHeight)
@@ -205,10 +254,11 @@ public class WaveDebugger : MonoBehaviour
     {
         // Top controls
         DrawCubeTypeSelection();
-        DrawPauseControls(); // New pause controls section
+        DrawPauseControls();
         DrawGridDimensions();
         DrawActionButtons();
         DrawDebugModeToggle();
+        DrawOffsetInfo(); // Add this line to display offset info
 
         // Grid area
         DrawGridArea();
@@ -433,17 +483,19 @@ public class WaveDebugger : MonoBehaviour
     {
         if (!trackingActive) return;
 
-        // Debug to verify we're getting the correct position
-        Debug.Log($"Attempting to change cube at ({x}, {y}) to type {newType}");
+        // Apply the offset to get the actual position in the game
+        int actualY = y + waveOffsetY;
 
-        // Find cube at this position
+        Debug.Log($"Attempting to change cube at display:({x}, {y}) actual:({x}, {actualY}) to type {newType}");
+
+        // Find cube at this position (using actual position, not display position)
         CubeBehavior targetCube = null;
         foreach (var cube in trackedCubes)
         {
-            if (cube != null && cube.position.x == x && cube.position.y == y)
+            if (cube != null && cube.position.x == x && cube.position.y == actualY)
             {
                 targetCube = cube;
-                Debug.Log($"Found target cube of type {targetCube.CubeType} at position ({x}, {y})");
+                Debug.Log($"Found target cube of type {targetCube.CubeType} at position ({x}, {actualY})");
                 break;
             }
         }
@@ -721,6 +773,15 @@ public class WaveDebugger : MonoBehaviour
         }
     }
 
+    private void DrawOffsetInfo()
+    {
+        if (trackingActive)
+        {
+            GUILayout.BeginHorizontal();
+            GUILayout.Label($"Wave Position: Y-Offset={waveOffsetY} (Row {waveOffsetY} and above)");
+            GUILayout.EndHorizontal();
+        }
+    }
     private void StepForward()
     {
         if (!isPaused || waveManager == null) return;
