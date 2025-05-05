@@ -6,8 +6,6 @@ public class PlayerController : MonoBehaviour
 {
     [Header("References")]
     [SerializeField] private GridManager grid;
-    [SerializeField] private TimeDistortionManager timeDistortionManager;
-    [SerializeField] private TransienceManager transienceManager; // Add this reference
 
     [Header("Settings")]
     [SerializeField] private int maxMarkers = 2;
@@ -80,7 +78,6 @@ public class PlayerController : MonoBehaviour
         HandleMarkerPlacement();
         HandleMarkerTrigger();
         HandleDetonation();
-        HandleTimeDistortion();
         HandleSpeedControl();
     }
 
@@ -161,13 +158,10 @@ public class PlayerController : MonoBehaviour
                 // Optional: add feedback that this tile can't be marked
                 return;
             }
-            TransienceManager transManager = FindObjectOfType<TransienceManager>();
-            bool inTransienceZone = transManager != null &&
-                                   transManager.IsTileInTransienceZone(new Vector2Int(selX, selZ));
 
             if (!currentTile.HasMarker)
             {
-                if (currentMarkers < maxMarkers || inTransienceZone)
+                if (currentMarkers < maxMarkers )
                 {
                     currentTile.PlaceMarker();
                     markerQueue.Enqueue(new Vector2Int(selX, selZ));
@@ -232,16 +226,6 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-    private void HandleTimeDistortion()
-    {
-        if (Input.GetKeyDown(KeyCode.T)) // Using 'T' for Time distortion
-        {
-            if (timeDistortionManager != null && timeDistortionManager.HasDistortionPoints())
-            {
-                timeDistortionManager.TriggerNextDistortion();
-            }
-        }
-    }
     private void HandleSpeedControl()
     {
         bool wasSpeedingUp = isSpeedingUp;

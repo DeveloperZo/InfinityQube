@@ -11,10 +11,10 @@ public class DetonationManager : MonoBehaviour
     [Header("References")]
     [SerializeField] private GridManager gridManager;
     [SerializeField] private Material detonationPointMaterial;
+    [SerializeField] private Material flashMaterial;
     
     [Header("Effects")]
     [SerializeField] private float flashDuration = 0.3f;
-    [SerializeField] private Color flashColor = Color.green;
     
     private List<Vector2Int> detonationPoints = new List<Vector2Int>();
     private Dictionary<Tile, Material> originalTileMaterials = new Dictionary<Tile, Material>();
@@ -350,16 +350,15 @@ public class DetonationManager : MonoBehaviour
         if (renderer == null) yield break;
 
         Material originalMaterial = renderer.material;
-        Color originalColor = renderer.material.color;
 
         // More visible flash effect
-        renderer.material.color = flashColor;
+        renderer.material = flashMaterial;
 
         // Optional: Add a temporary visual marker for debugging
         GameObject marker = GameObject.CreatePrimitive(PrimitiveType.Sphere);
         marker.transform.position = new Vector3(tile.transform.position.x, tile.transform.position.y + 0.5f, tile.transform.position.z);
         marker.transform.localScale = Vector3.one * 0.3f;
-        marker.GetComponent<Renderer>().material.color = flashColor;
+        marker.GetComponent<Renderer>().material = flashMaterial;
         Destroy(marker.GetComponent<Collider>()); // Remove collider to avoid physics issues
 
         yield return new WaitForSeconds(flashDuration);
@@ -374,7 +373,6 @@ public class DetonationManager : MonoBehaviour
             else
             {
                 renderer.material = originalMaterial;
-                renderer.material.color = originalColor;
             }
         }
 

@@ -63,7 +63,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: dbb41bfe144a31c4d8e8fb1648fee4b5, type: 2}
+  - {fileID: 2100000, guid: e2ac5a6cae92b554e87d710d109627cc, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -124,3 +124,7 @@ MonoBehaviour:
   moveDuration: 0.25
   squashDuration: 0.25
   isRainingCube: 0
+  rainSpeed: 3
+  rainHeight: 5
+  targetRow: -1
+  moveCountRemaining: 0

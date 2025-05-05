@@ -133,44 +133,7 @@ public class CubeBehavior : MonoBehaviour
             }
         }
     }
-
-    private IEnumerator ReplaceExistingCube(CubeBehavior targetCube)
-    {
-        if (targetCube == null) yield break;
-
-        // Flash effect on the target cube
-        Renderer renderer = targetCube.GetComponent<Renderer>();
-        if (renderer != null)
-        {
-            Color originalColor = renderer.material.color;
-            renderer.material.color = Color.white;
-            yield return new WaitForSeconds(0.1f);
-            renderer.material.color = originalColor;
-        }
-
-        // Squash effect
-        Vector3 originalScale = targetCube.transform.localScale;
-        float duration = 0.2f;
-        float elapsed = 0f;
-
-        while (elapsed < duration)
-        {
-            elapsed += Time.deltaTime;
-            float t = elapsed / duration;
-
-            targetCube.transform.localScale = Vector3.Lerp(
-                originalScale,
-                new Vector3(originalScale.x * 1.4f, originalScale.y * 0.1f, originalScale.z * 1.4f),
-                t
-            );
-
-            yield return null;
-        }
-
-        // Remove the target cube
-        Destroy(targetCube.gameObject);
-    }
-
+    
     private IEnumerator AnimateMove(Vector2Int newPos)
     {
         isMoving = true;

@@ -128,8 +128,16 @@ MonoBehaviour:
   detonationCharges: 0
   maxCharges: 3
   chargeColors:
-  - {r: 0, g: 0.8, b: 0.3, a: 1}
-  - {r: 0, g: 0.9, b: 0.4, a: 1}
-  - {r: 0, g: 1, b: 0.5, a: 1}
+  - {r: 0.06728373, g: 0.06728373, b: 0.6792453, a: 1}
+  - {r: 0.22054112, g: 0.31025276, b: 0.7924528, a: 1}
+  - {r: 0.5768512, g: 0.6152743, b: 0.8207547, a: 1}
+  markedTileMaterial: {fileID: 2100000, guid: 97f8d593d79a842448eb617153063982, type: 2}
+  forbiddenMaterial: {fileID: 2100000, guid: ba597e4280ccbe14bb9424ae288e2bb2, type: 2}
+  activateMarkerMaterial: {fileID: 2100000, guid: 1649820e4ae6e1047ae9cf8c9dd796f5, type: 2}
+  originalMaterial: {fileID: 2100000, guid: 15cc66d777e06464b9573ed0f29092da, type: 2}
+  chargeMaterials:
+  - {fileID: 2100000, guid: 9242e7b87b272a24f9f34dec818778b2, type: 2}
+  - {fileID: 2100000, guid: a768f9ee68bc0024998718437da0af1a, type: 2}
+  - {fileID: 2100000, guid: 96c3feadf6cae044ebc44b3bd165c909, type: 2}
   currentState: 0
   currentCube: {fileID: 0}

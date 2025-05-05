@@ -20,7 +20,6 @@ public class WaveManager : MonoBehaviour
     [SerializeField] private GridManager grid;
     [SerializeField] public GameObject[] cubePrefabs;
     [SerializeField] private PlayerController player;
-    [SerializeField] private TransienceManager transienceManager;
     [SerializeField] private DetonationManager detonationManager;
 
     [Header("Wave Settings")]

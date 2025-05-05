@@ -4,28 +4,6 @@ using UnityEngine;
 using static Enumerations;
 
 
-public class TimeFrozenTag : MonoBehaviour
-{
-    // Just a tag component to identify frozen cubes
-    public float frozenDuration = 1f; // Number of movement cycles to skip
-    public Color originalColor;
-
-    void Start()
-    {
-        // Auto-destroy after a set time to prevent permanent freeze
-        Destroy(this, 5f);
-    }
-
-    private void OnDestroy()
-    {
-        Renderer renderer = GetComponent<Renderer>();
-        if (renderer != null && originalColor != null)
-        {
-            renderer.material.color = originalColor;
-        }
-    }
-}
-
 public class Tile : MonoBehaviour
 {
     [Header("Tile Properties")]
@@ -33,24 +11,23 @@ public class Tile : MonoBehaviour
     [SerializeField] private bool hasMarker = false;
     [SerializeField] private float markerHeight = 0.3f;
     [SerializeField] private float markerScale = 0.5f;
-    [SerializeField] private Color markerColor = Color.blue;
-    [SerializeField] private Color markedTileColor = new Color(1f, 0.4f, 0.4f);
+
 
     private const float TRANSFORMED_HEIGHT = -0.25f;  // Lower by 0.25 for transformed tiles
     private const float MARKED_HEIGHT = 0.25f;        // Raise by 0.25 for marked tiles
-    private const float NORMAL_HEIGHT = 0f;           // Normal baseline height
+    private const float NORMAL_HEIGHT = 0f;
+    // Normal baseline height
 
-    [Header("Enhanced Green Tile")]
+    [Header("Enhanced Blue Tile")]
     [SerializeField] private int detonationCharges = 0;
     [SerializeField] private int maxCharges = 3;
 
 
-    [SerializeField]
-    private Color[] chargeColors = new Color[3] {
-    new Color(0f, 0.8f, 0.3f),  // First charge - green (1 tile)
-    new Color(0f, 0.9f, 0.4f),  // Second charge - brighter green (2x2)
-    new Color(0f, 1f, 0.5f)     // Third charge - brightest green (3x3)
-};
+    [SerializeField] private Material markedTileMaterial;
+    [SerializeField] private Material forbiddenMaterial;
+    [SerializeField] private Material activateMarkerMaterial;
+    [SerializeField] private Material originalMaterial;
+    [SerializeField] private Material[] chargeMaterials;
 
     // Properties to access charge information
     public int DetonationCharges => detonationCharges;
@@ -74,7 +51,6 @@ public class Tile : MonoBehaviour
     private void Awake()
     {
         tileRenderer = GetComponent<Renderer>();
-        normalColor = tileRenderer.material.color;
     }
 
     // In Tile.cs
@@ -106,11 +82,6 @@ public class Tile : MonoBehaviour
     {
         x = xPos;
         y = yPos;
-
-        if (tileRenderer != null)
-        {
-            originalColor = tileRenderer.material.color;
-        }
 
         isInitialized = true;
     }
@@ -148,7 +119,7 @@ public class Tile : MonoBehaviour
         // Make tile tint more obvious
         if (tileRenderer != null)
         {
-            tileRenderer.material.color = markedTileColor; // Brighter red
+            tileRenderer.material = markedTileMaterial; // Brighter red
 
             // Debug log for verification
             Debug.Log($"Marked tile at {x},{y} - hasMarker={hasMarker}");
@@ -164,7 +135,7 @@ public class Tile : MonoBehaviour
         // Visual indication
         if (tileRenderer != null)
         {
-            tileRenderer.material.color = Color.black;
+            tileRenderer.material = forbiddenMaterial;
         }
 
         // Optional: Add cracked texture or particle effect
@@ -186,7 +157,7 @@ public class Tile : MonoBehaviour
         ClearMarker();
         if (tileRenderer != null)
         {
-            tileRenderer.material.color = chargeColors[detonationCharges-1];
+            tileRenderer.material = chargeMaterials[detonationCharges-1];
         }
 
         transform.position = new Vector3(
@@ -195,7 +166,7 @@ public class Tile : MonoBehaviour
     transform.position.z);
 
         UpdateChargeVisuals();
-        Debug.Log($"Green tile at ({x}, {y}) enhanced to charge level {detonationCharges}");
+        Debug.Log($"Blue tile at ({x}, {y}) enhanced to charge level {detonationCharges}");
 
     }
 
@@ -236,39 +207,40 @@ public class Tile : MonoBehaviour
 
     private void UpdateChargeVisuals()
     {
-        if (tileRenderer != null && detonationCharges > 0 && detonationCharges <= chargeColors.Length)
+        if (tileRenderer != null && detonationCharges > 0 && detonationCharges <= chargeMaterials.Length)
         {
             // Apply color based on charge level
-            tileRenderer.material.color = chargeColors[detonationCharges - 1];
+            tileRenderer.material = chargeMaterials[detonationCharges - 1];
         }
+
     }
 
 
     public void ReduceCharge()
     {
+        if (detonationCharges <= 0)
+        {
+            ResetToNormalState();
+            return;
+        }
+
+        detonationCharges = isAdvantaged ? detonationCharges - 1 : 0;
+
         if (detonationCharges > 0)
         {
-            if (isAdvantaged)
-                detonationCharges--;
-            else
-                detonationCharges = 0; // Reset to 0 if not primed
-
-            if (detonationCharges > 0)
-            {
-                // Still has charges, update visuals
-                UpdateChargeVisuals();
-            }
-            else
-            {
-                // Reset to normal state if no charges left
-                currentState = TileState.Normal;
-                if (tileRenderer != null)
-                {
-                    tileRenderer.material.color = originalColor;
-                }
-                transform.position = new Vector3(transform.position.x, 0f, transform.position.z);
-            }
+            UpdateChargeVisuals();
         }
+        else
+        {
+            ResetToNormalState();
+        }
+    }
+
+    private void ResetToNormalState()
+    {
+        currentState = TileState.Normal;
+        tileRenderer.material = originalMaterial;
+        transform.position = new Vector3(transform.position.x, NORMAL_HEIGHT, transform.position.z);
     }
 
     public void ResetTile()
@@ -279,11 +251,7 @@ public class Tile : MonoBehaviour
         detonationCharges = 0;
 
         // Reset visual appearance
-        if (tileRenderer != null)
-        {
-            tileRenderer.material.color = originalColor;
-        }
-
+        
         // Reset position
         transform.position = new Vector3(transform.position.x, NORMAL_HEIGHT, transform.position.z);
         ClearMarker();
@@ -304,6 +272,7 @@ public class Tile : MonoBehaviour
     public void ClearMarker()
     {
         hasMarker = false;
+        tileRenderer.material = originalMaterial;
 
         if (markerObj != null)
         {
@@ -322,10 +291,7 @@ public class Tile : MonoBehaviour
             transform.position = new Vector3(transform.position.x, TRANSFORMED_HEIGHT, transform.position.z);
         }
 
-        if (tileRenderer != null)
-        {
-            tileRenderer.material.color = originalColor;
-        }
+
     }
 
     public void ActivateMarker()
@@ -340,7 +306,7 @@ public class Tile : MonoBehaviour
 
         if (tileRenderer != null)
         {
-            tileRenderer.material.color = Color.grey;
+            tileRenderer.material = activateMarkerMaterial;
         }
     }
 

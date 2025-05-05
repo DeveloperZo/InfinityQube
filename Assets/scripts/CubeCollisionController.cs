@@ -9,6 +9,7 @@ public class CubeCollisionController : MonoBehaviour
     private GridManager grid;
     private DetonationManager detonationManager;
 
+
     public void Initialize(GridManager gridManager)
     {
         grid = gridManager;
@@ -257,49 +258,10 @@ public class CubeCollisionController : MonoBehaviour
         marker.transform.position = new Vector3(position.x, 1.5f, position.y);
         marker.transform.localScale = Vector3.one * 0.4f;
 
-        Renderer renderer = marker.GetComponent<Renderer>();
-        if (renderer != null)
-        {
-            renderer.material.color = color;
-        }
-
         // Remove collider to avoid physics interference
         Destroy(marker.GetComponent<Collider>());
 
         return marker;
-    }
-
-    private IEnumerator PulseTileColor(Renderer renderer, Color originalColor, Color pulseColor, float duration)
-    {
-        if (renderer == null) yield break;
-
-        float elapsed = 0f;
-
-        // Pulse to new color
-        while (elapsed < duration / 2)
-        {
-            elapsed += Time.deltaTime;
-            float t = Mathf.Clamp01(elapsed / (duration / 2));
-
-            renderer.material.color = Color.Lerp(originalColor, pulseColor, t);
-
-            yield return null;
-        }
-
-        // Return to original color
-        elapsed = 0f;
-        while (elapsed < duration / 2)
-        {
-            elapsed += Time.deltaTime;
-            float t = Mathf.Clamp01(elapsed / (duration / 2));
-
-            renderer.material.color = Color.Lerp(pulseColor, originalColor, t);
-
-            yield return null;
-        }
-
-        // Ensure final color
-        renderer.material.color = originalColor;
     }
 
     private bool IsValidPosition(Vector2Int position)
@@ -307,24 +269,6 @@ public class CubeCollisionController : MonoBehaviour
         return grid != null &&
                position.x >= 0 && position.x < grid.Width &&
                position.y >= 0 && position.y < grid.Height;
-    }
-
-    private void CreateDebugMarker()
-    {
-        GameObject marker = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-        marker.transform.SetParent(transform);
-        marker.transform.localPosition = Vector3.up * 0.5f;
-        marker.transform.localScale = Vector3.one * 0.2f;
-        marker.GetComponent<Renderer>().material.color = Color.red;
-
-        // Remove collider to avoid physics issues
-        Destroy(marker.GetComponent<Collider>());
-
-        // Name it for easy identification in hierarchy
-        marker.name = "CollisionMarker";
-
-        // Auto-destroy after 5 seconds
-        Destroy(marker, 5f);
     }
 
 }
