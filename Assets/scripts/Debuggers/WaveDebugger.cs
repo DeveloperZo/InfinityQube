@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
+using System.Collections;
 
 public class WaveDebugger : MonoBehaviour
 {
@@ -12,7 +13,7 @@ public class WaveDebugger : MonoBehaviour
     [Header("Settings")]
     [SerializeField] private KeyCode toggleKey = KeyCode.F2;
     [SerializeField] private int defaultWidth = 5;
-    [SerializeField] private int defaultHeight = 7;
+    [SerializeField] private int defaultHeight = 2;
     [SerializeField] private bool centerOnScreen = true;
     [SerializeField] private Color pauseButtonColor = new Color(1f, 0.5f, 0.5f, 1f);
 
@@ -23,8 +24,8 @@ public class WaveDebugger : MonoBehaviour
     public List<GameObject> debugObjects = new List<GameObject>();
 
     // Grid settings
-    private int gridWidth;
-    private int gridHeight;
+    private int waveWidth;
+    private int waveHeight;
     private bool debugMode = true;
 
     // Wave state tracking
@@ -56,8 +57,8 @@ public class WaveDebugger : MonoBehaviour
         if (playerController == null) playerController = FindObjectOfType<PlayerController>();
 
         // Initialize settings
-        gridWidth = defaultWidth;
-        gridHeight = defaultHeight;
+        waveWidth = defaultWidth;
+        waveHeight = defaultHeight;
 
         // Initialize grid
         InitializeGrid();
@@ -67,8 +68,8 @@ public class WaveDebugger : MonoBehaviour
     private void CalculateWindowSize()
     {
         // Calculate the window size and position
-        int windowWidth = gridWidth * (buttonSize + 2) + 20;
-        int windowHeight = gridHeight * (buttonSize + 2) + headerHeight + 150; // Added more space for new controls
+        int windowWidth = waveWidth * (buttonSize + 2) + 20;
+        int windowHeight = waveHeight * (buttonSize + 2) + headerHeight + 150; // Added more space for new controls
 
         if (centerOnScreen)
         {
@@ -110,14 +111,14 @@ public class WaveDebugger : MonoBehaviour
 
     private void InitializeGrid()
     {
-        gridState = new int[gridWidth, gridHeight];
-        buttonState = new int[gridWidth, gridHeight];
-        buttonInteractable = new bool[gridWidth, gridHeight];
+        gridState = new int[waveWidth, waveHeight];
+        buttonState = new int[waveWidth, waveHeight];
+        buttonInteractable = new bool[waveWidth, waveHeight];
 
         // Fill with normal cubes by default
-        for (int x = 0; x < gridWidth; x++)
+        for (int x = 0; x < waveWidth; x++)
         {
-            for (int y = 0; y < gridHeight; y++)
+            for (int y = 0; y < waveHeight; y++)
             {
                 gridState[x, y] = 1; // Normal cube
                 buttonState[x, y] = 1; // Normal state
@@ -139,9 +140,9 @@ public class WaveDebugger : MonoBehaviour
 
 
         // Reset button states
-        for (int x = 0; x < gridWidth; x++)
+        for (int x = 0; x < waveWidth; x++)
         {
-            for (int y = 0; y < gridHeight; y++)
+            for (int y = 0; y < waveHeight; y++)
             {
                 buttonState[x, y] = 0; // Start with all disabled
                 buttonInteractable[x, y] = false;
@@ -168,9 +169,9 @@ public class WaveDebugger : MonoBehaviour
         }
 
         // Reset all button states
-        for (int x = 0; x < gridWidth; x++)
+        for (int x = 0; x < waveWidth; x++)
         {
-            for (int y = 0; y < gridHeight; y++)
+            for (int y = 0; y < waveHeight; y++)
             {
                 buttonState[x, y] = 0;
                 buttonInteractable[x, y] = false;
@@ -184,7 +185,7 @@ public class WaveDebugger : MonoBehaviour
             int y = cube.position.y;
 
             // Ensure we're within grid bounds
-            if (x >= 0 && x < gridWidth && y >= 0 && y < gridHeight)
+            if (x >= 0 && x < waveWidth && y >= 0 && y < waveHeight)
             {
                 buttonState[x, y] = (int)cube.CubeType + 1; // Convert to button state
                 buttonInteractable[x, y] = true; // Cube is present, button is interactive
@@ -276,19 +277,19 @@ public class WaveDebugger : MonoBehaviour
     {
         GUILayout.BeginHorizontal();
         GUILayout.Label("Width:", GUILayout.Width(40));
-        string widthStr = GUILayout.TextField(gridWidth.ToString(), GUILayout.Width(30));
-        if (int.TryParse(widthStr, out int newWidth) && newWidth != gridWidth && newWidth >= 2 && newWidth <= 12)
+        string widthStr = GUILayout.TextField(waveWidth.ToString(), GUILayout.Width(30));
+        if (int.TryParse(widthStr, out int newWidth) && newWidth != waveWidth && newWidth >= 2 && newWidth <= 12)
         {
-            gridWidth = newWidth;
+            waveWidth = newWidth;
             InitializeGrid();
             CalculateWindowSize();
         }
 
         GUILayout.Label("Height:", GUILayout.Width(40));
-        string heightStr = GUILayout.TextField(gridHeight.ToString(), GUILayout.Width(30));
-        if (int.TryParse(heightStr, out int newHeight) && newHeight != gridHeight && newHeight >= 2 && newHeight <= 15)
+        string heightStr = GUILayout.TextField(waveHeight.ToString(), GUILayout.Width(30));
+        if (int.TryParse(heightStr, out int newHeight) && newHeight != waveHeight && newHeight >= 2 && newHeight <= 15)
         {
-            gridHeight = newHeight;
+            waveHeight = newHeight;
             InitializeGrid();
             CalculateWindowSize();
         }
@@ -340,11 +341,11 @@ public class WaveDebugger : MonoBehaviour
     {
         GUILayout.Label("Currently tracking live wave - click cubes to modify them");
 
-        for (int y = gridHeight - 1; y >= 0; y--)
+        for (int y = waveHeight - 1; y >= 0; y--)
         {
             GUILayout.BeginHorizontal();
 
-            for (int x = 0; x < gridWidth; x++)
+            for (int x = 0; x < waveWidth; x++)
             {
                 if (buttonInteractable[x, y])
                 {
@@ -382,11 +383,11 @@ public class WaveDebugger : MonoBehaviour
     {
         GUILayout.Label("Design custom wave pattern:");
 
-        for (int y = gridHeight - 1; y >= 0; y--)
+        for (int y = waveHeight - 1; y >= 0; y--)
         {
             GUILayout.BeginHorizontal();
 
-            for (int x = 0; x < gridWidth; x++)
+            for (int x = 0; x < waveWidth; x++)
             {
                 int currentState = gridState[x, y];
 
@@ -432,6 +433,9 @@ public class WaveDebugger : MonoBehaviour
     {
         if (!trackingActive) return;
 
+        // Debug to verify we're getting the correct position
+        Debug.Log($"Attempting to change cube at ({x}, {y}) to type {newType}");
+
         // Find cube at this position
         CubeBehavior targetCube = null;
         foreach (var cube in trackedCubes)
@@ -439,6 +443,7 @@ public class WaveDebugger : MonoBehaviour
             if (cube != null && cube.position.x == x && cube.position.y == y)
             {
                 targetCube = cube;
+                Debug.Log($"Found target cube of type {targetCube.CubeType} at position ({x}, {y})");
                 break;
             }
         }
@@ -447,6 +452,8 @@ public class WaveDebugger : MonoBehaviour
         {
             if (newType == 0) // Special case: Clear/Remove the cube
             {
+                Debug.Log($"Removing cube at ({x}, {y})");
+
                 // Remove from tracking lists
                 trackedCubes.Remove(targetCube);
                 if (waveManager != null && waveManager.activeCubes.Contains(targetCube))
@@ -469,11 +476,17 @@ public class WaveDebugger : MonoBehaviour
             // If type hasn't changed, do nothing
             if (oldType == newCubeType) return;
 
+            Debug.Log($"Replacing cube at ({x}, {y}) from type {oldType} to {newCubeType}");
+
             // Replace the cube
             ReplaceActiveCube(targetCube, newCubeType);
 
             // Update tracking
             UpdateTracking();
+        }
+        else
+        {
+            Debug.LogWarning($"No cube found at position ({x}, {y})");
         }
     }
 
@@ -484,18 +497,37 @@ public class WaveDebugger : MonoBehaviour
         // Store cube position and properties
         Vector2Int position = oldCube.position;
         Vector3 worldPos = oldCube.transform.position;
+        int moveCountRemaining = oldCube.moveCountRemaining;
+        bool isRainingCube = oldCube.isRainingCube;
+
+        Debug.Log($"Replacing cube: Position={position}, WorldPos={worldPos}, Type={oldCube.CubeType} to {newType}");
 
         // Remove old cube from tracking and destroy
         trackedCubes.Remove(oldCube);
         waveManager.activeCubes.Remove(oldCube);
-        DestroyImmediate(oldCube.gameObject);
+
+        // Use Destroy with a delay to avoid conflicts
+        Destroy(oldCube.gameObject);
+
+        // Wait a frame before creating the new cube
+        StartCoroutine(SpawnReplacementCube(position, worldPos, newType, moveCountRemaining, isRainingCube));
+    }
+
+    private IEnumerator SpawnReplacementCube(Vector2Int position, Vector3 worldPos,
+                                           Enumerations.CubeType newType, int moveCount, bool isRaining)
+    {
+        // Wait a frame to ensure old cube is gone
+        yield return null;
+
+        // Make sure the system still exists
+        if (waveManager == null || !trackingActive) yield break;
 
         // Create new cube of the desired type
         int prefabIndex = (int)newType;
-        if (prefabIndex < 0 || prefabIndex >= waveManager.cubePrefabs.Length)
+        if (prefabIndex < 0 || prefabIndex >= waveManager.cubePrefabs.Length || waveManager.cubePrefabs[prefabIndex] == null)
         {
             Debug.LogWarning($"Missing cube prefab for type {newType}");
-            return;
+            yield break;
         }
 
         // Spawn new cube
@@ -505,16 +537,25 @@ public class WaveDebugger : MonoBehaviour
         if (newCube == null)
         {
             newCube = newCubeObj.AddComponent<CubeBehavior>();
-            newCube.CubeType = newType;
         }
 
-        // Initialize new cube
+        // Set properties on the new cube
+        newCube.CubeType = newType;
         newCube.Init(gridManager, position, 1);
+        newCube.moveCountRemaining = moveCount;
+        newCube.isRainingCube = isRaining;
+
+        // Set the world position after initialization
         newCube.transform.position = worldPos;
 
         // Add to tracking lists
         trackedCubes.Add(newCube);
         waveManager.activeCubes.Add(newCube);
+
+        Debug.Log($"Successfully created replacement cube at {position} of type {newType}");
+
+        // Update tracking display
+        UpdateTracking();
     }
 
     private string GetCubeStats()
@@ -539,9 +580,9 @@ public class WaveDebugger : MonoBehaviour
         }
         else
         {
-            for (int x = 0; x < gridWidth; x++)
+            for (int x = 0; x < waveWidth; x++)
             {
-                for (int y = 0; y < gridHeight; y++)
+                for (int y = 0; y < waveHeight; y++)
                 {
                     switch (gridState[x, y])
                     {
@@ -560,7 +601,7 @@ public class WaveDebugger : MonoBehaviour
     {
         if (trackingActive) return; // Cannot randomize during tracking
 
-        int totalCells = gridWidth * gridHeight;
+        int totalCells = waveWidth * waveHeight;
         int maxGreen = Mathf.FloorToInt(totalCells * 0.2f);
         int maxBlack = Mathf.FloorToInt(totalCells * 0.2f);
 
@@ -568,9 +609,9 @@ public class WaveDebugger : MonoBehaviour
         int blackCount = Random.Range(1, maxBlack + 1);
 
         // Reset all to normal cubes
-        for (int x = 0; x < gridWidth; x++)
+        for (int x = 0; x < waveWidth; x++)
         {
-            for (int y = 0; y < gridHeight; y++)
+            for (int y = 0; y < waveHeight; y++)
             {
                 gridState[x, y] = 1;
             }
@@ -591,8 +632,8 @@ public class WaveDebugger : MonoBehaviour
 
         while (placed < count && attempts < maxAttempts)
         {
-            int x = Random.Range(0, gridWidth);
-            int y = Random.Range(0, gridHeight);
+            int x = Random.Range(0, waveWidth);
+            int y = Random.Range(0, waveHeight);
 
             // Only place if it's a normal cube (to avoid overwriting other special cubes)
             if (gridState[x, y] == 1)
@@ -616,9 +657,9 @@ public class WaveDebugger : MonoBehaviour
         }
 
         // Set all cells to normal cubes
-        for (int x = 0; x < gridWidth; x++)
+        for (int x = 0; x < waveWidth; x++)
         {
-            for (int y = 0; y < gridHeight; y++)
+            for (int y = 0; y < waveHeight; y++)
             {
                 gridState[x, y] = 1;
             }
@@ -639,9 +680,9 @@ public class WaveDebugger : MonoBehaviour
         // Convert grid to wave data
         List<WaveData> waveData = new List<WaveData>();
 
-        for (int y = 0; y < gridHeight; y++)
+        for (int y = 0; y < waveHeight; y++)
         {
-            for (int x = 0; x < gridWidth; x++)
+            for (int x = 0; x < waveWidth; x++)
             {
                 // Skip empty cells
                 if (gridState[x, y] == 0) continue;

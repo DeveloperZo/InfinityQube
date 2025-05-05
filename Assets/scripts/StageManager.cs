@@ -224,7 +224,7 @@ public class StageManager : MonoBehaviour
 }
 
 
-public class CubeSpawnData : MonoBehaviour
+public class CubeSpawnData
 {
     public Enumerations.CubeType cubeType;
     public Vector2Int position;

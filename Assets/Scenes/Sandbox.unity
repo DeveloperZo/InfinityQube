@@ -263,6 +263,7 @@ MonoBehaviour:
   - {fileID: 1728893673582764340, guid: f90c16e773c18f54eb1b70ddc1136373, type: 3}
   - {fileID: 1728893673582764340, guid: 026a402b860389d4aaea0e4f0b5c1ff6, type: 3}
   - {fileID: 1728893673582764340, guid: 28923bfb13f3dde44b857f03a0188e95, type: 3}
+  useWaveConfiguration: 0
   player: {fileID: 885266531}
   detonationManager: {fileID: 89692588}
   waveSize: 3
@@ -350,8 +351,9 @@ MonoBehaviour:
   playerController: {fileID: 885266531}
   toggleKey: 283
   defaultWidth: 5
-  defaultHeight: 7
+  defaultHeight: 2
   centerOnScreen: 1
+  pauseButtonColor: {r: 1, g: 0.5, b: 0.5, a: 1}
   debugObjects: []
 --- !u!4 &606199698
 Transform:

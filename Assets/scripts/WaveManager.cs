@@ -23,7 +23,7 @@ public class WaveManager : MonoBehaviour
     [SerializeField] public bool useWaveConfiguration = false;
     [SerializeField] private PlayerController player;
     [SerializeField] private DetonationManager detonationManager;
-    [SerializeField] private List<CubeSpawnData> waveConfiguration;
+    [SerializeField] private List<CubeSpawnData> waveConfiguration = new List<CubeSpawnData>();
 
     [Header("Wave Settings")]
     [SerializeField] public int waveSize = 3;
@@ -359,15 +359,12 @@ public class WaveManager : MonoBehaviour
         // Process wave data and spawn cubes
         foreach (var data in waveData)
         {
-            Vector2Int pos = data.position;
-            pos.y = 0 - (pos.y - grid.Height);
-
             waveConfiguration.Add(new CubeSpawnData
             {
                 cubeType = data.cubeType,
-                position = pos,
+                position = data.position,
                 waveIndex = data.waveIndex,
-            });
+            }); ;
         }
 
         // Start wave if not in debug mode
@@ -441,7 +438,7 @@ public class WaveManager : MonoBehaviour
         foreach (var spawnData in waveConfiguration)
         {
             Vector2Int pos = spawnData.position;
-            Vector3 spawnPos = new Vector3(pos.x, 1f, pos.y);
+            Vector3 spawnPos = new Vector3(pos.x, 1f, 0 - (pos.y - grid.Height));
 
             // Guard against index out of bounds
             int prefabIndex = (int)spawnData.cubeType;
@@ -461,7 +458,7 @@ public class WaveManager : MonoBehaviour
                     cb.CubeType = spawnData.cubeType;
                 }
 
-                cb.Init(grid, pos, 1, 1);
+                cb.Init(grid, new Vector2Int(pos.x, 0 - (pos.y - grid.Height)), 1, 1);
                 activeCubes.Add(cb);
             }
         }
