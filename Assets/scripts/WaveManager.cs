@@ -30,6 +30,7 @@ public class WaveManager : MonoBehaviour
     [SerializeField] public List<WaveData> waveConfiguration = new List<WaveData>();
     [SerializeField] public int waveSize = 3;
     [SerializeField] private float waveStartDelay = 0.75f;
+    [SerializeField] public int MoveStep;
 
     [Header("Cube Type Chances")]
     [SerializeField][Range(0f, 1f)] private float normalCubeChance = 0.7f;
@@ -41,6 +42,7 @@ public class WaveManager : MonoBehaviour
     [SerializeField] private float fastMoveInterval = 0.1f;
     [SerializeField] private bool showDebugInfo = false;
     [SerializeField] private GameObject returnIndicatorPrefab;
+    
 
     public bool isSpeedingUp = false;
     public List<CubeBehavior> activeCubes = new List<CubeBehavior>();
@@ -52,6 +54,7 @@ public class WaveManager : MonoBehaviour
     private bool isDebugWaveActive = false;
     public bool debugMode = false;
     public bool manualControl = false;
+
     
 
     public void SetSpeedState(bool isSpeeding)
@@ -125,6 +128,8 @@ public class WaveManager : MonoBehaviour
 
     private void NotifyMovementComplete()
     {
+
+        MoveStep++;
         // Find and notify all AutoDetonationTag components
         DetonationManager detonationManager = FindObjectOfType<DetonationManager>();
         if (detonationManager != null)
@@ -202,7 +207,7 @@ public class WaveManager : MonoBehaviour
                     activeCubes.RemoveAt(i);
                 }
             }
-
+            
             // Notify that a movement cycle is complete
             NotifyMovementComplete();
 
@@ -218,7 +223,7 @@ public class WaveManager : MonoBehaviour
         {
             grid.ClearAllMarkers();
         }
-
+        
         waveActive = false;
         waveCoroutine = null;
     }
@@ -357,6 +362,7 @@ public class WaveManager : MonoBehaviour
         ClearAllCubes();
         waveConfiguration.Clear();
         activeCubes.Clear();
+        MoveStep = 0;
 
         // Set debug mode
         debugMode = useDebugMode;

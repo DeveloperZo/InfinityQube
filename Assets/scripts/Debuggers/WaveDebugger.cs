@@ -381,11 +381,13 @@ public class WaveDebugger : MonoBehaviour
 
         // Stats
         GUILayout.Label(GetCubeStats());
+
         if (GUILayout.Button("Save Wave as Asset"))
         {
             SaveCurrentWaveAsAsset();
         }
 
+        GUILayout.TextField(waveManager.MoveStep.ToString());
         // Make window draggable
         GUI.DragWindow();
     }
@@ -934,7 +936,7 @@ public class WaveDebugger : MonoBehaviour
             Debug.LogError("WaveManager not found!");
             return;
         }
-
+        
         // Stop tracking if active
         trackingActive = false;
 
