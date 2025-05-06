@@ -10,6 +10,7 @@ public class WaveDebugger : MonoBehaviour
     [SerializeField] private GridManager gridManager;
     [SerializeField] private WaveManager waveManager;
     [SerializeField] private PlayerController playerController;
+    [SerializeField] private string saveLocation = "Assets/data/waves/";
 
     [SerializeField] private CubeData cubeData;
 
@@ -70,7 +71,73 @@ public class WaveDebugger : MonoBehaviour
         InitializeGrid();
         CalculateWindowSize();
     }
+    public void SaveCurrentWaveAsAsset()
+    {
+        if (!trackingActive && gridState == null)
+        {
+            Debug.LogWarning("No wave data to save");
+            return;
+        }
 
+        // Create a new WaveData asset
+        WaveData waveData = ScriptableObject.CreateInstance<WaveData>();
+        waveData.CubesData = new List<CubeData>();
+
+        // Populate with current grid state
+        if (trackingActive)
+        {
+            // Use tracked cubes
+            foreach (var cube in trackedCubes)
+            {
+                if (cube == null || cube.isDestroyed) continue;
+
+                CubeData cubeData = new CubeData();
+                cubeData.type = cube.type;
+                cubeData.position = cube.position;
+                cubeData.level = cube.level;
+                cubeData.name = cube.type.ToString() + "_" + cube.position.x + "_" + cube.position.y;
+
+                waveData.CubesData.Add(cubeData);
+            }
+        }
+        else
+        {
+            // Use editor grid state
+            for (int x = 0; x < waveWidth; x++)
+            {
+                for (int y = 0; y < waveHeight; y++)
+                {
+                    if (gridState[x, y] > 0) // Not empty
+                    {
+                        CubeData cubeData = new CubeData();
+                        cubeData.type = (Enumerations.CubeType)(gridState[x, y] - 1); // Convert from button state
+                        cubeData.position = new Vector2Int(x, y);
+                        cubeData.level = 1;
+                        cubeData.name = cubeData.type.ToString() + "_" + x + "_" + y;
+
+                        waveData.CubesData.Add(cubeData);
+                    }
+                }
+            }
+        }
+
+        // Create directory if it doesn't exist
+        if (!System.IO.Directory.Exists(saveLocation))
+        {
+            System.IO.Directory.CreateDirectory(saveLocation);
+        }
+
+        // Get unique name
+        string timestamp = System.DateTime.Now.ToString("yyyyMMdd_HHmmss");
+        string assetPath = saveLocation + "Wave_" + timestamp + ".asset";
+
+        // Save the asset
+#if UNITY_EDITOR
+        UnityEditor.AssetDatabase.CreateAsset(waveData, assetPath);
+        UnityEditor.AssetDatabase.SaveAssets();
+        Debug.Log("Wave saved to: " + assetPath);
+#endif
+    }
     private void CalculateWindowSize()
     {
         // Calculate the window size and position
@@ -271,7 +338,10 @@ public class WaveDebugger : MonoBehaviour
 
         // Stats
         GUILayout.Label(GetCubeStats());
-
+        if (GUILayout.Button("Save Wave as Asset"))
+        {
+            SaveCurrentWaveAsAsset();
+        }
         // Make window draggable
         GUI.DragWindow();
     }
@@ -739,7 +809,7 @@ public class WaveDebugger : MonoBehaviour
         trackingActive = false;
 
         // Convert grid to wave data
-        WaveData waveData = new WaveData() { waveIndex = 0, cubesData = new List<CubeData>()};
+        WaveData waveData = new WaveData() { Index = 0, CubesData = new List<CubeData>()};
 
         for (int y = 0; y < waveHeight; y++)
         {
@@ -751,7 +821,7 @@ public class WaveDebugger : MonoBehaviour
                 cubeData.position = new Vector2Int(x, y);
                 cubeData.type = (CubeType)gridState[x, y] - 1;
                 cubeData.name = cubeData.type.ToString();
-                waveData.cubesData.Add(cubeData);
+                waveData.CubesData.Add(cubeData);
             }
         }
 
@@ -799,12 +869,5 @@ public class WaveDebugger : MonoBehaviour
 
         // Make sure to update tracking after the step
         UpdateTracking();
-    }
-
-    [System.Serializable]
-    public class WaveData
-    {
-        public List<CubeData> cubesData;
-        public int waveIndex;
     }
 }

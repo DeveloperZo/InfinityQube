@@ -86,7 +86,7 @@ public class StageManager : MonoBehaviour
         SetPlayerPosition();
 
         // Show tutorial UI if applicable
-        ShowTutorialUI(stage.isTutorial);
+        //ShowTutorialUI(stage.isTutorial);
 
         Debug.Log($"Stage {stageNumber}: {stage.stageName} loaded");
     }
@@ -140,11 +140,7 @@ public class StageManager : MonoBehaviour
             tutorialUI.SetActive(show);
 
             // Populate tutorial messages if available
-            if (show && currentStage.tutorialMessages.Count > 0)
-            {
-                // Implement UI message display here
-                // For example: tutorialUI.GetComponent<TutorialManager>().SetMessages(currentStage.tutorialMessages);
-            }
+
         }
     }
 

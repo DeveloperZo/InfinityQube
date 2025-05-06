@@ -27,7 +27,7 @@ public class WaveManager : MonoBehaviour
     [SerializeField] private CubeData cubeData;
 
     [Header("Wave Settings")]
-    [SerializeField] public List<WaveConfiguration> waveConfiguration = new List<WaveConfiguration>();
+    [SerializeField] public List<WaveData> waveConfiguration = new List<WaveData>();
     [SerializeField] public int waveSize = 3;
     [SerializeField] private float waveStartDelay = 0.75f;
 
@@ -351,7 +351,7 @@ public class WaveManager : MonoBehaviour
         NotifyMovementComplete();
     }
 
-    public void SpawnCustomWave(List<WaveDebugger.WaveData> waveData, bool useDebugMode)
+    public void SpawnCustomWave(List<WaveData> waveData, bool useDebugMode)
     {
         // Clear existing cubes
         ClearAllCubes();
@@ -364,10 +364,10 @@ public class WaveManager : MonoBehaviour
         // Process wave data and spawn cubes
         foreach (var data in waveData)
         {
-            waveConfiguration.Add(new WaveConfiguration
+            waveConfiguration.Add(new WaveData
             {
-                Index = data.waveIndex,
-                CubesData = data.cubesData
+                Index = data.Index,
+                CubesData = data.CubesData
             }); ;
         }
 

@@ -67,16 +67,9 @@ public class StageDB : ScriptableObject
 
         if (stage == null) return;
 
-        if (stage.isTutorial)
-        {
-            if (!tutorialStages.Contains(stage))
-                tutorialStages.Add(stage);
-        }
-        else
-        {
-            if (!stages.Contains(stage))
-                stages.Add(stage);
-        }
+        if (!stages.Contains(stage))
+            stages.Add(stage);
+        
 
         stageMap[stage.stageNumber] = stage;
     }

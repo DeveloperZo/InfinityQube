@@ -351,6 +351,7 @@ MonoBehaviour:
   gridManager: {fileID: 1786583425}
   waveManager: {fileID: 487637473}
   playerController: {fileID: 885266531}
+  saveLocation: Assets/data/waves/
   cubeData: {fileID: 0}
   toggleKey: 283
   defaultWidth: 5

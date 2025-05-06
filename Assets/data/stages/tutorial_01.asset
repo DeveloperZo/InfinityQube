@@ -12,16 +12,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: faaa491ad539cb444afed02f7554648d, type: 3}
   m_Name: tutorial_01
   m_EditorClassIdentifier: 
-  stageNumber: 0
-  stageName: 
-  description: 
-  objective: 
-  gridWidth: 5
-  gridHeight: 25
+  stageNumber: -1
+  stageName: Qube01
+  description: Learn how to move and place markers to capture cubes
+  objective: Destroy all gray cubes by placing markers in their path.
+  gridWidth: 3
+  gridHeight: 10
   playerStartPosition: {x: 2, y: 0}
-  waveConfigurations: []
-  isTutorial: 0
-  tutorialMessages: []
+  waveConfigurations:
+  - {fileID: 0}
+  messages: []
   limitMarkers: 0
   maxMarkers: 2
   requireAllCubesDestroyed: 0

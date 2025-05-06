@@ -18,13 +18,13 @@ public class StageData : ScriptableObject
     public Vector2Int playerStartPosition = new Vector2Int(2, 0);
 
     [Header("Wave Configuration")]
-    public List<WaveConfiguration> waveConfigurations = new List<WaveConfiguration>();
+    public List<WaveData> waveConfigurations = new List<WaveData>();
 
-    [Header("Tutorial Settings")]
-    public bool isTutorial = false;
-    public List<string> tutorialMessages = new List<string>();
+    [Header("Settings")]
+    public List<string> messages = new List<string>();
     public bool limitMarkers = false;
     public int maxMarkers = 2;
+   
 
     [Header("Success Conditions")]
     public bool requireAllCubesDestroyed = false;
