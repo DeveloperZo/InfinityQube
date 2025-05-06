@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Collections;
 using static Enumerations;
+using UnityEngine.UIElements;
 
 public class WaveDebugger : MonoBehaviour
 {
@@ -13,6 +14,7 @@ public class WaveDebugger : MonoBehaviour
     [SerializeField] private string saveLocation = "Assets/data/waves/";
 
     [SerializeField] private CubeData cubeData;
+    [SerializeField] public WaveData nextWave;
 
     [Header("Settings")]
     [SerializeField] private KeyCode toggleKey = KeyCode.F2;
@@ -93,9 +95,11 @@ public class WaveDebugger : MonoBehaviour
 
                 CubeData cubeData = new CubeData();
                 cubeData.type = cube.type;
-                cubeData.position = cube.position;
+                cubeData.position = new Vector2Int(
+                    cube.position.x,
+                    gridManager.Height - 1 - cube.position.y // Convert from grid Z to stored Y
+                );
                 cubeData.level = cube.level;
-                cubeData.name = cube.type.ToString() + "_" + cube.position.x + "_" + cube.position.y;
 
                 waveData.CubesData.Add(cubeData);
             }
@@ -111,9 +115,8 @@ public class WaveDebugger : MonoBehaviour
                     {
                         CubeData cubeData = new CubeData();
                         cubeData.type = (Enumerations.CubeType)(gridState[x, y] - 1); // Convert from button state
-                        cubeData.position = new Vector2Int(x, y);
+                        cubeData.position = new Vector2Int(x, waveHeight - 1 - y);
                         cubeData.level = 1;
-                        cubeData.name = cubeData.type.ToString() + "_" + x + "_" + y;
 
                         waveData.CubesData.Add(cubeData);
                     }
@@ -138,6 +141,7 @@ public class WaveDebugger : MonoBehaviour
         Debug.Log("Wave saved to: " + assetPath);
 #endif
     }
+
     private void CalculateWindowSize()
     {
         // Calculate the window size and position
@@ -335,7 +339,7 @@ public class WaveDebugger : MonoBehaviour
 
         // Grid area
         DrawGridArea();
-
+        DrawNextWaveSelector();
         // Stats
         GUILayout.Label(GetCubeStats());
         if (GUILayout.Button("Save Wave as Asset"))
@@ -467,6 +471,7 @@ public class WaveDebugger : MonoBehaviour
     {
         GUILayout.Label("Currently tracking live wave - click cubes to modify them");
 
+       
         for (int y = waveHeight - 1; y >= 0; y--)
         {
             GUILayout.BeginHorizontal();
@@ -797,6 +802,48 @@ public class WaveDebugger : MonoBehaviour
         }
     }
 
+    private void DrawNextWaveSelector()
+    {
+        GUILayout.Space(10);
+        GUILayout.Label("Next Wave Selection", GUI.skin.box);
+
+        // Display current nextWave if any
+        GUILayout.BeginHorizontal();
+        string waveName = (nextWave != null) ? nextWave.name : "None";
+        GUILayout.Label($"Current Next Wave: {waveName}");
+        GUILayout.EndHorizontal();
+
+        // Add buttons for available waves
+        GUILayout.BeginVertical(GUI.skin.box);
+        GUILayout.Label("Available Waves:");
+
+        // Find all WaveData assets in the project
+        string[] guids = UnityEditor.AssetDatabase.FindAssets("t:WaveData");
+        foreach (string guid in guids)
+        {
+            string path = UnityEditor.AssetDatabase.GUIDToAssetPath(guid);
+            WaveData wave = UnityEditor.AssetDatabase.LoadAssetAtPath<WaveData>(path);
+
+            if (wave != null)
+            {
+                GUILayout.BeginHorizontal();
+                if (GUILayout.Button(wave.name))
+                {
+                    nextWave = wave;
+                }
+                GUILayout.EndHorizontal();
+            }
+        }
+
+        // Clear button
+        if (GUILayout.Button("Clear Next Wave"))
+        {
+            nextWave = null;
+        }
+
+        GUILayout.EndVertical();
+    }
+
     private void SpawnWave()
     {
         if (waveManager == null)
@@ -810,20 +857,34 @@ public class WaveDebugger : MonoBehaviour
 
         // Convert grid to wave data
         WaveData waveData = new WaveData() { Index = 0, CubesData = new List<CubeData>()};
-
-        for (int y = 0; y < waveHeight; y++)
+        if(nextWave != null)
         {
-            for (int x = 0; x < waveWidth; x++)
+            foreach( var cube in nextWave.CubesData)
             {
-                // Skip empty cells
-                if (gridState[x, y] == 0) continue;
-                cubeData = new CubeData();
-                cubeData.position = new Vector2Int(x, y);
-                cubeData.type = (CubeType)gridState[x, y] - 1;
-                cubeData.name = cubeData.type.ToString();
-                waveData.CubesData.Add(cubeData);
+                cube.position = new Vector2Int(
+                     cube.position.x,
+                     0 - (cube.position.y - gridManager.Height) // Convert from grid Z to stored Y
+                 );
+                waveData.CubesData.Add(cube);
+            }
+            nextWave = null;
+        }
+        else
+        {
+            for (int y = 0; y < waveHeight; y++)
+            {
+                for (int x = 0; x < waveWidth; x++)
+                {
+                    // Skip empty cells
+                    if (gridState[x, y] == 0) continue;
+                    cubeData = new CubeData();
+                    cubeData.position = new Vector2Int(x, y);
+                    cubeData.type = (CubeType)gridState[x, y] - 1;
+                    waveData.CubesData.Add(cubeData);
+                }
             }
         }
+        
 
         
 

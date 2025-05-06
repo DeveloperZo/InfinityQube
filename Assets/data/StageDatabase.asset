@@ -10,8 +10,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 28f33cfeafdfb334f99e20ef7c23ec6e, type: 3}
-  m_Name: tutorialDatabase
+  m_Name: StageDatabase
   m_EditorClassIdentifier: 
-  stages: []
-  tutorialStages:
+  stages:
   - {fileID: 11400000, guid: 3c9b401723917c24bb17fa44ca55d756, type: 2}
+  tutorialStages: []

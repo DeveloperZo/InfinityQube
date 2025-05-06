@@ -30,7 +30,7 @@ public class CubeBehavior : MonoBehaviour
     public void Init(GridManager gridManager, CubeData cubeData, float spawnHeight = 5f)
     {
         // Use the provided cube data
-        name = cubeData.name;
+        name = cubeData.Definition.name;
         type = cubeData.type;
         position = cubeData.position;
         level = cubeData.level;
@@ -38,8 +38,8 @@ public class CubeBehavior : MonoBehaviour
         moveCountRemaining = cubeData.moveCountRemaining;
 
         // Set references
-        material = cubeData.material;
-        prefab = cubeData.prefab;
+        material = cubeData.Definition.material;
+        prefab = cubeData.Definition.prefab;
 
         // Initialize position and references
         grid = gridManager;

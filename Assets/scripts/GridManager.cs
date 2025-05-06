@@ -1,9 +1,11 @@
 using UnityEngine;
+using static Enumerations;
 
 public class GridManager : MonoBehaviour
 {
     [Header("Grid Settings")]
     [SerializeField] public GameObject tilePrefab;
+    [SerializeField] public CubeTypeDefinitions cubeTypeDefinitions;
     [SerializeField] public int width = 6;
     [SerializeField] public int height = 10;
     
@@ -104,4 +106,15 @@ public class GridManager : MonoBehaviour
     // Public getters for width and height
     public int Width => width;
     public int Height => height;
+
+    public static GridManager Instance { get
+        {
+            return FindObjectOfType<GridManager>();
+        }
+    }
+
+    public CubeTypeDefinition GetCubeDefinition(CubeType type)
+    {
+        return cubeTypeDefinitions.GetDefinition(type);
+    }
 }

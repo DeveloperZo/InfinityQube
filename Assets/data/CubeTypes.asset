@@ -1,0 +1,36 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 0}
+  m_Name: CubeTypes
+  m_EditorClassIdentifier: Assembly-CSharp::CubeTypeDefinitions
+  definitions:
+  - name: Normal
+    prefab: {fileID: 1728893673582764340, guid: f90c16e773c18f54eb1b70ddc1136373, type: 3}
+    material: {fileID: 2100000, guid: 15cc66d777e06464b9573ed0f29092da, type: 2}
+    canBeMarked: 1
+    causesCorruption: 0
+    enablesDetonation: 0
+    detonationRadius: 0
+  - name: Green
+    prefab: {fileID: 1728893673582764340, guid: 026a402b860389d4aaea0e4f0b5c1ff6, type: 3}
+    material: {fileID: 2100000, guid: dbb41bfe144a31c4d8e8fb1648fee4b5, type: 2}
+    canBeMarked: 1
+    causesCorruption: 0
+    enablesDetonation: 1
+    detonationRadius: 3
+  - name: Black
+    prefab: {fileID: 1728893673582764340, guid: 28923bfb13f3dde44b857f03a0188e95, type: 3}
+    material: {fileID: 2100000, guid: ba597e4280ccbe14bb9424ae288e2bb2, type: 2}
+    canBeMarked: 0
+    causesCorruption: 1
+    enablesDetonation: 0
+    detonationRadius: 0

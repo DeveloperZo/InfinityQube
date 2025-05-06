@@ -228,7 +228,6 @@ public class StaticCubeDebugger : MonoBehaviour
 
         cubeData.position = new Vector2Int(column, cubeRow);
         cubeData.level = 1;
-        cubeData.name = cubeType.ToString();
         cube.name = cubeType.ToString();
            
         
@@ -409,11 +408,9 @@ public class StaticCubeDebugger : MonoBehaviour
         }
 
         cubeData.level = 1;
-        cubeData.prefab = cubePrefabs[(int)cubeType];
         cubeData.position = new Vector2Int(column, row);
         cubeData.type = cubeType;
-        cubeData.material = materialPrefabs[(int)cubeType];
-        cubeData.name = cubeType.ToString();
+
             
         
         behavior.Init(grid, cubeData);
