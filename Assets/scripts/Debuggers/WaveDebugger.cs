@@ -83,7 +83,7 @@ public class WaveDebugger : MonoBehaviour
             cubeData = new CubeData();
     }
 
-    public void SaveCurrentWaveAsAsset()
+    private void SaveCurrentWaveAsAsset()
     {
         if (!trackingActive && gridState == null)
         {
@@ -95,10 +95,22 @@ public class WaveDebugger : MonoBehaviour
         WaveData waveData = ScriptableObject.CreateInstance<WaveData>();
         waveData.CubesData = new List<CubeData>();
 
-        // Populate with current grid state
+        // Find the highest position (closest to player) among cubes to use as reference
+        int minY = int.MaxValue;
+
+        // If tracking active cubes on screen
         if (trackingActive)
         {
-            // Use tracked cubes
+            foreach (var cube in trackedCubes)
+            {
+                if (cube == null || cube.isDestroyed) continue;
+                minY = Mathf.Min(minY, cube.position.y);
+            }
+
+            // Edge case: no valid cubes
+            if (minY == int.MaxValue) minY = 0;
+
+            // Populate with normalized positions (relative to the bottom-most cube)
             foreach (var cube in trackedCubes)
             {
                 if (cube == null || cube.isDestroyed) continue;
@@ -107,7 +119,7 @@ public class WaveDebugger : MonoBehaviour
                 cubeData.type = cube.type;
                 cubeData.position = new Vector2Int(
                     cube.position.x,
-                    gridManager.Height - 1 - cube.position.y // Convert from grid Z to stored Y
+                    cube.position.y - minY // Normalize Y position relative to the bottom row
                 );
                 cubeData.level = cube.level;
 
@@ -116,16 +128,37 @@ public class WaveDebugger : MonoBehaviour
         }
         else
         {
+            // Find the lowest populated row in the editor grid (highest Y value in the 2D array)
+            int lowestRow = waveHeight - 1;
+            while (lowestRow >= 0)
+            {
+                bool rowHasCubes = false;
+                for (int x = 0; x < waveWidth; x++)
+                {
+                    if (gridState[x, lowestRow] > 0)
+                    {
+                        rowHasCubes = true;
+                        break;
+                    }
+                }
+
+                if (rowHasCubes) break;
+                lowestRow--;
+            }
+
             // Use editor grid state
             for (int x = 0; x < waveWidth; x++)
             {
-                for (int y = 0; y < waveHeight; y++)
+                for (int y = 0; y <= lowestRow; y++) // Only process up to the lowest populated row
                 {
                     if (gridState[x, y] > 0) // Not empty
                     {
                         CubeData cubeData = new CubeData();
                         cubeData.type = (Enumerations.CubeType)(gridState[x, y] - 1); // Convert from button state
-                        cubeData.position = new Vector2Int(x, waveHeight - 1 - y);
+                        cubeData.position = new Vector2Int(
+                            x,
+                            lowestRow - y // Invert Y and make it relative to the lowest row
+                        );
                         cubeData.level = 1;
 
                         waveData.CubesData.Add(cubeData);
@@ -912,7 +945,11 @@ public class WaveDebugger : MonoBehaviour
             if(gridManager.width != nextWave.GridWidth || gridManager.height != nextWave.GridHeight)
             {
                 gridManager.width = nextWave.GridWidth;
+                waveWidth = nextWave.GridWidth;
+
                 gridManager.height = nextWave.GridHeight * 4;
+                waveHeight = nextWave.GridHeight;
+
                 gridManager.DestroyGrid();
                 gridManager.GenerateGrid();
 
@@ -925,7 +962,7 @@ public class WaveDebugger : MonoBehaviour
                 newCube.type = cube.type;
                 newCube.position = new Vector2Int(
                      cube.position.x,
-                     cube.position.y + gridManager.Height // Convert from grid Z to stored Y
+                     gridManager.Height-cube.position.y // Convert from grid Z to stored Y
                  );
                 newCube.level = cube.level;
                 waveData.CubesData.Add(newCube);

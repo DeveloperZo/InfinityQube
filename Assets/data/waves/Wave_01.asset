@@ -13,51 +13,15 @@ MonoBehaviour:
   m_Name: Wave_01
   m_EditorClassIdentifier: 
   Index: 0
-  GridHeight: 5
-  GridWidth: 5
+  GridHeight: 3
+  GridWidth: 3
   CubesData:
   - type: 0
-    position: {x: 0, y: 18}
+    position: {x: 1, y: 2}
     level: 1
   - type: 0
-    position: {x: 1, y: 18}
+    position: {x: 0, y: 1}
     level: 1
   - type: 0
-    position: {x: 2, y: 18}
-    level: 1
-  - type: 0
-    position: {x: 3, y: 18}
-    level: 1
-  - type: 0
-    position: {x: 4, y: 18}
-    level: 1
-  - type: 1
-    position: {x: 0, y: 17}
-    level: 1
-  - type: 0
-    position: {x: 1, y: 17}
-    level: 1
-  - type: 1
-    position: {x: 2, y: 17}
-    level: 1
-  - type: 0
-    position: {x: 3, y: 17}
-    level: 1
-  - type: 0
-    position: {x: 4, y: 17}
-    level: 1
-  - type: 0
-    position: {x: 0, y: 16}
-    level: 1
-  - type: 0
-    position: {x: 1, y: 16}
-    level: 1
-  - type: 0
-    position: {x: 2, y: 16}
-    level: 1
-  - type: 0
-    position: {x: 3, y: 16}
-    level: 1
-  - type: 0
-    position: {x: 4, y: 16}
+    position: {x: 2, y: 0}
     level: 1
