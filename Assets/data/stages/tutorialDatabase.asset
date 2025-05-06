@@ -13,4 +13,5 @@ MonoBehaviour:
   m_Name: tutorialDatabase
   m_EditorClassIdentifier: 
   stages: []
-  tutorialStages: []
+  tutorialStages:
+  - {fileID: 11400000, guid: 3c9b401723917c24bb17fa44ca55d756, type: 2}

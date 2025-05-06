@@ -48,6 +48,8 @@ public class StaticCubeDebugger : MonoBehaviour
             highlightMaterial = new Material(Shader.Find("Standard"));
             highlightMaterial.color = new Color(0.3f, 0.5f, 1.0f, 0.5f);
         }
+        if (cubeData == null)
+            cubeData = new CubeData();
     }
 
     private void Update()
@@ -226,6 +228,8 @@ public class StaticCubeDebugger : MonoBehaviour
 
         cubeData.position = new Vector2Int(column, cubeRow);
         cubeData.level = 1;
+        cubeData.name = cubeType.ToString();
+        cube.name = cubeType.ToString();
            
         
 
@@ -403,16 +407,16 @@ public class StaticCubeDebugger : MonoBehaviour
         {
             behavior = cube.AddComponent<CubeBehavior>();
         }
-        var cubeData = new CubeData() { 
-            level = 1, 
-            prefab = cubePrefabs[(int)cubeType], 
-            position = new Vector2Int(column, row), 
-            type = cubeType,
-            material = materialPrefabs[(int)cubeType],
-            
-        };
 
-        behavior.Init(grid, cubeData, 1);
+        cubeData.level = 1;
+        cubeData.prefab = cubePrefabs[(int)cubeType];
+        cubeData.position = new Vector2Int(column, row);
+        cubeData.type = cubeType;
+        cubeData.material = materialPrefabs[(int)cubeType];
+        cubeData.name = cubeType.ToString();
+            
+        
+        behavior.Init(grid, cubeData);
         behavior.isRainingCube = true;
         behavior.moveCountRemaining = rainMoveCount;
 

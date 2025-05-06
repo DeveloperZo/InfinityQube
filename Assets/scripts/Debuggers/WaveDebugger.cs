@@ -2,6 +2,7 @@ using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
 using System.Collections;
+using static Enumerations;
 
 public class WaveDebugger : MonoBehaviour
 {
@@ -130,6 +131,9 @@ public class WaveDebugger : MonoBehaviour
                 buttonInteractable[x, y] = true; // Interactive
             }
         }
+
+        if(cubeData == null)
+            cubeData = new CubeData();
     }
 
     private void StartTracking()
@@ -735,7 +739,7 @@ public class WaveDebugger : MonoBehaviour
         trackingActive = false;
 
         // Convert grid to wave data
-        List<WaveData> waveData = new List<WaveData>();
+        WaveData waveData = new WaveData() { waveIndex = 0, cubesData = new List<CubeData>()};
 
         for (int y = 0; y < waveHeight; y++)
         {
@@ -743,17 +747,19 @@ public class WaveDebugger : MonoBehaviour
             {
                 // Skip empty cells
                 if (gridState[x, y] == 0) continue;
-
-                waveData.Add(new WaveData
-                {
-                });
+                cubeData = new CubeData();
+                cubeData.position = new Vector2Int(x, y);
+                cubeData.type = (CubeType)gridState[x, y] - 1;
+                cubeData.name = cubeData.type.ToString();
+                waveData.cubesData.Add(cubeData);
             }
         }
 
-        // Spawn the wave
+        
+
         waveManager.useWaveConfiguration = true;
         
-        waveManager.SpawnCustomWave(waveData, false);
+        waveManager.SpawnCustomWave(new List<WaveData>{ waveData }, false);
 
         // Start tracking the new wave
         StartTracking();

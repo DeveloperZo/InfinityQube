@@ -266,6 +266,8 @@ MonoBehaviour:
   useWaveConfiguration: 0
   player: {fileID: 885266531}
   detonationManager: {fileID: 89692588}
+  cubeData: {fileID: 0}
+  waveConfiguration: []
   waveSize: 3
   waveStartDelay: 0.75
   normalCubeChance: 0.7
@@ -349,6 +351,7 @@ MonoBehaviour:
   gridManager: {fileID: 1786583425}
   waveManager: {fileID: 487637473}
   playerController: {fileID: 885266531}
+  cubeData: {fileID: 0}
   toggleKey: 283
   defaultWidth: 5
   defaultHeight: 2
@@ -600,7 +603,12 @@ MonoBehaviour:
   - {fileID: 562176818}
   - {fileID: 1728893673582764340, guid: 026a402b860389d4aaea0e4f0b5c1ff6, type: 3}
   - {fileID: 1728893673582764340, guid: 28923bfb13f3dde44b857f03a0188e95, type: 3}
+  materialPrefabs:
+  - {fileID: 2100000, guid: 15cc66d777e06464b9573ed0f29092da, type: 2}
+  - {fileID: 2100000, guid: dbb41bfe144a31c4d8e8fb1648fee4b5, type: 2}
+  - {fileID: 2100000, guid: ba597e4280ccbe14bb9424ae288e2bb2, type: 2}
   highlightMaterial: {fileID: 0}
+  cubeData: {fileID: 0}
   cubeRow: 3
   tileEffectRow: 2
   spawnHeight: 5
@@ -930,6 +938,7 @@ MonoBehaviour:
   - {fileID: 1728893673582764340, guid: 8c357a94dee798a45abbc3e55e82b353, type: 3}
   - {fileID: 1728893673582764340, guid: 28923bfb13f3dde44b857f03a0188e95, type: 3}
   highlightMaterial: {fileID: 2100000, guid: e2ac5a6cae92b554e87d710d109627cc, type: 2}
+  cubeData: {fileID: 0}
   rainCubeType: 2
   rainX: 2
   rainY: 3

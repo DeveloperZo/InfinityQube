@@ -27,19 +27,25 @@ public class CubeBehavior : MonoBehaviour
     private bool isRainAnimating = false;
     public int moveCountRemaining = 0;
 
-    public void Init(GridManager gridManager,CubeData cubeData, float spawnHeight = 5f)
+    public void Init(GridManager gridManager, CubeData cubeData, float spawnHeight = 5f)
     {
+        // Use the provided cube data
         name = cubeData.name;
         type = cubeData.type;
         position = cubeData.position;
         level = cubeData.level;
-        
+        isRainingCube = cubeData.isRainingCube;
+        moveCountRemaining = cubeData.moveCountRemaining;
+
+        // Set references
         material = cubeData.material;
         prefab = cubeData.prefab;
-        grid = gridManager;
 
-        transform.position = new Vector3(position.x, spawnHeight, position.y); // Use spawnHeight parameter
+        // Initialize position and references
+        grid = gridManager;
+        transform.position = new Vector3(position.x, spawnHeight, position.y);
         detonationManager = FindAnyObjectByType<DetonationManager>();
+        gameObject.name = name;
     }
 
     // Add this method to reset movement state

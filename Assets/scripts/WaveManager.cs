@@ -24,11 +24,10 @@ public class WaveManager : MonoBehaviour
     [SerializeField] public bool useWaveConfiguration = false;
     [SerializeField] private PlayerController player;
     [SerializeField] private DetonationManager detonationManager;
-    [SerializeField] public List<WaveConfiguration> waveConfiguration = new List<WaveConfiguration>();
-
-    [Serialize] private CubeData cubeData;
+    [SerializeField] private CubeData cubeData;
 
     [Header("Wave Settings")]
+    [SerializeField] public List<WaveConfiguration> waveConfiguration = new List<WaveConfiguration>();
     [SerializeField] public int waveSize = 3;
     [SerializeField] private float waveStartDelay = 0.75f;
 
@@ -53,7 +52,7 @@ public class WaveManager : MonoBehaviour
     private bool isDebugWaveActive = false;
     public bool debugMode = false;
     public bool manualControl = false;
-    internal float[] cubeChances;
+    
 
     public void SetSpeedState(bool isSpeeding)
     {
@@ -93,6 +92,9 @@ public class WaveManager : MonoBehaviour
             enabled = false;
             return;
         }
+
+        if(cubeData == null) 
+            cubeData = new CubeData();
     }
 
     private void Update()
@@ -526,9 +528,9 @@ public class WaveManager : MonoBehaviour
     private Enumerations.CubeType GetRandomCubeType()
     {
         float random = Random.value;
-        if (random < cubeChances[0])
+        if (random < normalCubeChance)
             return Enumerations.CubeType.Normal;
-        else if (random < cubeChances[0] + cubeChances[1])
+        else if (random < normalCubeChance + greenCubeChance)
             return Enumerations.CubeType.Green;
         else
             return Enumerations.CubeType.Black;

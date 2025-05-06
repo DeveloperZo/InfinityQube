@@ -16,18 +16,10 @@ MonoBehaviour:
   stageName: 
   description: 
   objective: 
-  gridWidth: 6
-  gridHeight: 10
-  waveSize: 1
-  maxWaves: 3
-  initialMoveInterval: 1
-  moveIntervalDecrease: 0.05
-  normalCubeChance: 1
-  greenCubeChance: 0
-  blackCubeChance: 0
-  blueCubeChance: 0
-  blackCubeIncreasePerWave: 0.05
-  greenCubeIncreasePerWave: 0.03
+  gridWidth: 5
+  gridHeight: 25
+  playerStartPosition: {x: 2, y: 0}
+  waveConfigurations: []
   isTutorial: 0
   tutorialMessages: []
   limitMarkers: 0
@@ -35,5 +27,3 @@ MonoBehaviour:
   requireAllCubesDestroyed: 0
   requiredCaptureCount: 0
   maxAllowedEscapes: 0
-  specificCubePlacements: []
-  playerStartPosition: {x: 2, y: 0}
