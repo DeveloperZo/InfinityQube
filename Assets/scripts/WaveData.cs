@@ -5,5 +5,7 @@ using System.Collections.Generic;
 public class WaveData : ScriptableObject
 {
     public int Index = 0;
+    public int GridHeight = 3;
+    public int GridWidth = 3;
     public List<CubeData> CubesData = new List<CubeData>();
 }

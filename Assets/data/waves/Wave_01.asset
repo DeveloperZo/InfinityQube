@@ -13,6 +13,8 @@ MonoBehaviour:
   m_Name: Wave_01
   m_EditorClassIdentifier: 
   Index: 0
+  GridHeight: 5
+  GridWidth: 5
   CubesData:
   - type: 0
     position: {x: 0, y: 18}

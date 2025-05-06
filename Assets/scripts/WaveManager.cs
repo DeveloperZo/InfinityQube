@@ -134,7 +134,7 @@ public class WaveManager : MonoBehaviour
     }
 
 
-    private IEnumerator RunWave()
+    private IEnumerator RunWave(bool resume = false)
     {
         waveActive = true;
 
@@ -151,17 +151,17 @@ public class WaveManager : MonoBehaviour
             grid.ClearAllMarkers();
         }
 
-        
-         SpawnCubes();
+        if(!resume)
+            SpawnCubes();
         
 
         yield return new WaitForSeconds(waveStartDelay);
 
         // Skip automatic wave progression if we're in manual control mode
-        if (debugMode && manualControl)
+        if (manualControl)
         {
             // Just wait indefinitely until manual control is disabled
-            while (debugMode && manualControl)
+            while (manualControl)
             {
                 yield return null;
             }
@@ -450,9 +450,9 @@ public class WaveManager : MonoBehaviour
             foreach (var item in cubes)
             {
                 Vector2Int pos = item.position;
-                item.position = new Vector2Int(pos.x, 0 - (pos.y - grid.Height));
+                item.position = new Vector2Int(pos.x, pos.y );
 
-                Vector3 spawnPos = new Vector3(pos.x, 1f, 0 - (pos.y - grid.Height));
+                Vector3 spawnPos = new Vector3(pos.x, 1f, pos.y );
 
                 // Guard against index out of bounds
                 int prefabIndex = (int)item.type;
@@ -667,5 +667,40 @@ public class WaveManager : MonoBehaviour
     internal void ConfigureSpawn(List<CubeData> spawnData)
     {
         
+    }
+
+    // Add these methods to your WaveManager.cs
+    public void PauseWave()
+    {
+        if (!waveActive) return;
+
+        // Stop the coroutine but maintain state
+        if (waveCoroutine != null)
+        {
+            StopCoroutine(waveCoroutine);
+        }
+
+        // Enter debug/manual mode
+        debugMode = true;
+        manualControl = true;
+        waveActive = false;
+    }
+
+    public void ResumeWave()
+    {
+        if (waveActive) return;
+
+        // Restart the wave coroutine
+        if (waveCoroutine != null)
+        {
+            StopCoroutine(waveCoroutine);
+        }
+
+        // Start a new wave coroutine
+        waveCoroutine = StartCoroutine(RunWave(true));
+
+        // Exit manual mode but keep debug
+        debugMode = true;
+        manualControl = false;
     }
 }

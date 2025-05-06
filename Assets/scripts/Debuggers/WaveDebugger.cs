@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Collections;
 using static Enumerations;
-using UnityEngine.UIElements;
 
 public class WaveDebugger : MonoBehaviour
 {
@@ -22,6 +21,7 @@ public class WaveDebugger : MonoBehaviour
     [SerializeField] private int defaultHeight = 2;
     [SerializeField] private bool centerOnScreen = true;
     [SerializeField] private Color pauseButtonColor = new Color(1f, 0.5f, 0.5f, 1f);
+    [SerializeField] private Color playSectionColor = new Color(0.2f, 0.7f, 0.3f, 0.8f);
 
     // Debug state
     private bool showDebugger = false;
@@ -45,6 +45,12 @@ public class WaveDebugger : MonoBehaviour
     private int waveOffsetY = 0; // How many rows to offset the wave from the bottom
     private bool autoResizeGrid = true;
     private bool autoAdjustOffset = true;
+
+    // Speed controls
+    private float currentMoveSpeed = 2f; // Default move speed (in seconds)
+    private float minMoveSpeed = 1f;
+    private float maxMoveSpeed = 4f;
+    private bool runningWave = false;
 
     // UI settings
     private int buttonSize = 30;
@@ -72,7 +78,11 @@ public class WaveDebugger : MonoBehaviour
         // Initialize grid
         InitializeGrid();
         CalculateWindowSize();
+
+        if (cubeData == null)
+            cubeData = new CubeData();
     }
+
     public void SaveCurrentWaveAsAsset()
     {
         if (!trackingActive && gridState == null)
@@ -146,7 +156,7 @@ public class WaveDebugger : MonoBehaviour
     {
         // Calculate the window size and position
         int windowWidth = waveWidth * (buttonSize + 2) + 20;
-        int windowHeight = waveHeight * (buttonSize + 2) + headerHeight + 150; // Added more space for new controls
+        int windowHeight = waveHeight * (buttonSize + 2) + headerHeight + 220; // Added more space for new controls
 
         if (centerOnScreen)
         {
@@ -202,9 +212,6 @@ public class WaveDebugger : MonoBehaviour
                 buttonInteractable[x, y] = true; // Interactive
             }
         }
-
-        if(cubeData == null)
-            cubeData = new CubeData();
     }
 
     private void StartTracking()
@@ -290,8 +297,6 @@ public class WaveDebugger : MonoBehaviour
 
             // Update offset to track the wave
             waveOffsetY = minY;
-
-
         }
 
         // Reset all button states
@@ -331,7 +336,7 @@ public class WaveDebugger : MonoBehaviour
     {
         // Top controls
         DrawCubeTypeSelection();
-        DrawPauseControls();
+        DrawPlayControls();
         DrawGridDimensions();
         DrawActionButtons();
         DrawDebugModeToggle();
@@ -340,12 +345,14 @@ public class WaveDebugger : MonoBehaviour
         // Grid area
         DrawGridArea();
         DrawNextWaveSelector();
+
         // Stats
         GUILayout.Label(GetCubeStats());
         if (GUILayout.Button("Save Wave as Asset"))
         {
             SaveCurrentWaveAsAsset();
         }
+
         // Make window draggable
         GUI.DragWindow();
     }
@@ -377,11 +384,18 @@ public class WaveDebugger : MonoBehaviour
         GUILayout.EndHorizontal();
     }
 
-    private void DrawPauseControls()
+    private void DrawPlayControls()
     {
+        // Play controls section background
+        GUI.backgroundColor = playSectionColor;
+        GUILayout.BeginVertical(GUI.skin.box);
+        GUI.backgroundColor = Color.white;
+
+        GUILayout.Label("Playback Controls:", GUI.skin.box);
+
         GUILayout.BeginHorizontal();
 
-        // Pause/Unpause button
+        // Pause/Resume button
         GUI.backgroundColor = isPaused ? pauseButtonColor : Color.white;
         string pauseButtonText = isPaused ? "Resume Wave" : "Pause Wave";
 
@@ -390,8 +404,6 @@ public class WaveDebugger : MonoBehaviour
             TogglePause();
         }
 
-        GUI.backgroundColor = Color.white;
-
         // Step Forward button (only enabled when paused)
         GUI.enabled = isPaused;
         if (GUILayout.Button("Step Forward"))
@@ -399,8 +411,42 @@ public class WaveDebugger : MonoBehaviour
             StepForward();
         }
         GUI.enabled = true;
+        GUI.backgroundColor = Color.white;
 
         GUILayout.EndHorizontal();
+
+        // Speed slider
+        GUILayout.BeginHorizontal();
+        GUILayout.Label("Move Speed:", GUILayout.Width(80));
+        float newSpeed = GUILayout.HorizontalSlider(currentMoveSpeed, minMoveSpeed, maxMoveSpeed);
+        if (newSpeed != currentMoveSpeed)
+        {
+            currentMoveSpeed = newSpeed;
+            UpdateMoveSpeed();
+        }
+        GUILayout.Label($"{currentMoveSpeed:F2}s", GUILayout.Width(50));
+        GUILayout.EndHorizontal();
+
+        // Quick preset speeds
+        GUILayout.BeginHorizontal();
+        if (GUILayout.Button("Fast (0.1s)"))
+        {
+            currentMoveSpeed = 0.1f;
+            UpdateMoveSpeed();
+        }
+        if (GUILayout.Button("Normal (0.5s)"))
+        {
+            currentMoveSpeed = 0.5f;
+            UpdateMoveSpeed();
+        }
+        if (GUILayout.Button("Slow (1.0s)"))
+        {
+            currentMoveSpeed = 1.0f;
+            UpdateMoveSpeed();
+        }
+        GUILayout.EndHorizontal();
+
+        GUILayout.EndVertical();
     }
 
     private void DrawGridDimensions()
@@ -471,7 +517,7 @@ public class WaveDebugger : MonoBehaviour
     {
         GUILayout.Label("Currently tracking live wave - click cubes to modify them");
 
-       
+
         for (int y = waveHeight - 1; y >= 0; y--)
         {
             GUILayout.BeginHorizontal();
@@ -676,7 +722,6 @@ public class WaveDebugger : MonoBehaviour
         cubeData.type = newType;
         cubeData.position = position;
 
-
         newCube.Init(gridManager, cubeData, 1);
         newCube.moveCountRemaining = moveCount;
         newCube.isRainingCube = isRaining;
@@ -800,6 +845,9 @@ public class WaveDebugger : MonoBehaviour
                 gridState[x, y] = 1;
             }
         }
+
+        waveManager.StopAllCoroutines();
+        waveManager.ClearAllCubes();
     }
 
     private void DrawNextWaveSelector()
@@ -818,6 +866,7 @@ public class WaveDebugger : MonoBehaviour
         GUILayout.Label("Available Waves:");
 
         // Find all WaveData assets in the project
+#if UNITY_EDITOR
         string[] guids = UnityEditor.AssetDatabase.FindAssets("t:WaveData");
         foreach (string guid in guids)
         {
@@ -834,6 +883,7 @@ public class WaveDebugger : MonoBehaviour
                 GUILayout.EndHorizontal();
             }
         }
+#endif
 
         // Clear button
         if (GUILayout.Button("Clear Next Wave"))
@@ -856,16 +906,29 @@ public class WaveDebugger : MonoBehaviour
         trackingActive = false;
 
         // Convert grid to wave data
-        WaveData waveData = new WaveData() { Index = 0, CubesData = new List<CubeData>()};
-        if(nextWave != null)
+        WaveData waveData = new WaveData() { Index = 0, CubesData = new List<CubeData>() };
+        if (nextWave != null)
         {
-            foreach( var cube in nextWave.CubesData)
+            if(gridManager.width != nextWave.GridWidth || gridManager.height != nextWave.GridHeight)
             {
-                cube.position = new Vector2Int(
+                gridManager.width = nextWave.GridWidth;
+                gridManager.height = nextWave.GridHeight * 4;
+                gridManager.DestroyGrid();
+                gridManager.GenerateGrid();
+
+            }
+            
+            
+            foreach (var cube in nextWave.CubesData)
+            {
+                CubeData newCube = new CubeData();
+                newCube.type = cube.type;
+                newCube.position = new Vector2Int(
                      cube.position.x,
-                     0 - (cube.position.y - gridManager.Height) // Convert from grid Z to stored Y
+                     cube.position.y + gridManager.Height // Convert from grid Z to stored Y
                  );
-                waveData.CubesData.Add(cube);
+                newCube.level = cube.level;
+                waveData.CubesData.Add(newCube);
             }
             nextWave = null;
         }
@@ -877,40 +940,59 @@ public class WaveDebugger : MonoBehaviour
                 {
                     // Skip empty cells
                     if (gridState[x, y] == 0) continue;
-                    cubeData = new CubeData();
-                    cubeData.position = new Vector2Int(x, y);
-                    cubeData.type = (CubeType)gridState[x, y] - 1;
-                    waveData.CubesData.Add(cubeData);
+
+                    CubeData newCube = new CubeData();
+                    newCube.position = new Vector2Int(x, y);
+                    newCube.type = (CubeType)(gridState[x, y] - 1);
+                    newCube.level = 1;
+                    waveData.CubesData.Add(newCube);
                 }
             }
         }
-        
 
-        
-
+        // Set appropriate wave manager flags
         waveManager.useWaveConfiguration = true;
-        
-        waveManager.SpawnCustomWave(new List<WaveData>{ waveData }, false);
+
+        // Spawn the wave and start tracking
+        isPaused = false; // Start unpaused
+        runningWave = true;
+        waveManager.SpawnCustomWave(new List<WaveData> { waveData }, debugMode);
+
+        // Update move speed settings
+        UpdateMoveSpeed();
 
         // Start tracking the new wave
+        StartCoroutine(DelayedTracking());
+    }
+
+    private IEnumerator DelayedTracking()
+    {
+        // Brief delay to allow cubes to spawn properly
+        yield return new WaitForSeconds(0.1f);
         StartTracking();
     }
 
-    // New methods for pause functionality
+    // Toggle between pause and play states
     private void TogglePause()
     {
         isPaused = !isPaused;
 
         if (waveManager != null)
         {
-            // Update wave manager state
-            waveManager.waveActive = !isPaused;
-            waveManager.debugMode = true;
-            waveManager.manualControl = isPaused;
+            if (isPaused)
+            {
+                waveManager.PauseWave();
+            }
+            else
+            {
+                waveManager.ResumeWave();
+                UpdateMoveSpeed(); // Ensure correct speed on resume
+            }
 
-            Debug.Log($"Wave {(isPaused ? "paused" : "resumed")} - Wave active: {waveManager.waveActive}, Manual control: {waveManager.manualControl}");
+            Debug.Log($"Wave {(isPaused ? "paused" : "resumed")} - Manual control: {waveManager.manualControl}");
         }
     }
+
 
     private void DrawOffsetInfo()
     {
@@ -921,6 +1003,8 @@ public class WaveDebugger : MonoBehaviour
             GUILayout.EndHorizontal();
         }
     }
+
+    // Step forward a single move when paused
     private void StepForward()
     {
         if (!isPaused || waveManager == null) return;
@@ -930,5 +1014,45 @@ public class WaveDebugger : MonoBehaviour
 
         // Make sure to update tracking after the step
         UpdateTracking();
+    }
+
+    // Update the move speed in the WaveManager
+    private void UpdateMoveSpeed()
+    {
+        if (waveManager != null)
+        {
+            // Directly modify the move intervals in WaveManager
+            // Access using reflection to avoid modifying WaveManager class
+            var normalSpeedField = waveManager.GetType().GetField("normalMoveInterval",
+                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public);
+
+            var fastSpeedField = waveManager.GetType().GetField("fastMoveInterval",
+                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public);
+
+            if (normalSpeedField != null)
+            {
+                normalSpeedField.SetValue(waveManager, currentMoveSpeed);
+                Debug.Log($"Set normal move interval to {currentMoveSpeed}s");
+            }
+
+            if (fastSpeedField != null)
+            {
+                // Fast speed is always 20% of normal speed
+                float fastSpeed = currentMoveSpeed * 0.2f;
+                fastSpeedField.SetValue(waveManager, fastSpeed);
+                Debug.Log($"Set fast move interval to {fastSpeed}s");
+            }
+        }
+    }
+
+    // Called when the game is being shut down or scene is changing
+    private void OnDestroy()
+    {
+        // Ensure we don't leave the WaveManager in manual/debug mode
+        if (waveManager != null)
+        {
+            waveManager.debugMode = false;
+            waveManager.manualControl = false;
+        }
     }
 }
