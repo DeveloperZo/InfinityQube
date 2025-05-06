@@ -20,8 +20,12 @@ MonoBehaviour:
   gridHeight: 10
   playerStartPosition: {x: 2, y: 0}
   waveConfigurations:
-  - {fileID: 11400000, guid: a3edb9f425c3f5943b145ad182a7cd4a, type: 2}
-  messages: []
+  - {fileID: 11400000, guid: c048cf1c79b0afc47962b3b22d32c777, type: 2}
+  messages:
+  - DisplayMoveStep: 0
+    Message: hello tutorial
+  - DisplayMoveStep: 2
+    Message: use marker
   limitMarkers: 0
   maxMarkers: 2
   requireAllCubesDestroyed: 0

@@ -6,6 +6,7 @@ using System;
 using UnityEditor.SceneManagement;
 using System.Linq;
 using UnityEditor.VersionControl;
+using TMPro;
 
 public class StageManager : MonoBehaviour
 {
@@ -17,7 +18,7 @@ public class StageManager : MonoBehaviour
 
     [Header("UI Elements")]
     [SerializeField] private GameObject messagePanel;
-    [SerializeField] private Text messageText;
+    [SerializeField] private TextMeshProUGUI messageText;
     [SerializeField] private GameObject continuePrompt;
 
     [Header("Highlight System")]
@@ -116,7 +117,18 @@ public class StageManager : MonoBehaviour
         // Set player position
         SetPlayerPosition();
 
-       
+        // Show initial message if available
+        var initialMessage = currentStage.messages.FirstOrDefault(m => m.DisplayMoveStep == 0);
+        if (initialMessage != null)
+        {
+            ShowMessage(initialMessage, initialMessage.RequirePause, initialMessage.AutoHideDelay);
+
+            // Apply any initial highlights
+            if (initialMessage.HighlightTile)
+            {
+                HighlightTile(initialMessage.TilePosition.x, initialMessage.TilePosition.y, initialMessage.HighlightColor);
+            }
+        }
 
         Debug.Log($"Stage {stageNumber}: {stage.stageName} loaded");
     }
@@ -393,18 +405,19 @@ public class StageManager : MonoBehaviour
 
     public void OnMoveStep(int step)
     {
-        // This can be called from WaveManager at specific movement steps
-        // We can use this to show contextual messages or highlights
+        // Find all messages that should be displayed at this step
+        var stageMessages = currentStage.messages.Where(m => m.DisplayMoveStep == step).ToList();
 
-        // Example: For stage 1, highlight on first move step
-        if (currentStageIndex == -1 && step == 1)
+        foreach (var message in stageMessages)
         {
-            // Show a hint message about marking tiles
-            if (currentStage.messages.Count >= 2)
-                ShowMessage(currentStage.messages[1], false, 5f);
+            // Show the message
+            ShowMessage(message, message.RequirePause, message.AutoHideDelay);
 
-            // Highlight a specific tile to mark
-            HighlightTile(1, 1, Color.yellow);
+            // Apply any highlight specified in the message
+            if (message.HighlightTile)
+            {
+                HighlightTile(message.TilePosition.x, message.TilePosition.y, message.HighlightColor);
+            }
         }
     }
 

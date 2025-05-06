@@ -1,11 +1,11 @@
 using UnityEngine;
 using System.Collections.Generic;
+using System.Linq;
 
 [CreateAssetMenu(fileName = "StageDatabase", menuName = "Infinity Qube/Stage Database")]
 public class StageDB : ScriptableObject
 {
     [SerializeField] private List<StageData> stages = new List<StageData>();
-    [SerializeField] private List<StageData> tutorialStages = new List<StageData>();
 
     // Dictionary to quickly access stages by ID (populated at runtime)
     private Dictionary<int, StageData> stageMap = new Dictionary<int, StageData>();
@@ -14,17 +14,11 @@ public class StageDB : ScriptableObject
     // Initialization
     public void Initialize()
     {
-        if (initialized) return;
+        if (initialized && stageMap.Any()) return;
 
         // Populate the stage map
         stageMap.Clear();
 
-        // Add tutorial stages first (negative IDs)
-        foreach (var stage in tutorialStages)
-        {
-            if (stage != null)
-                stageMap[stage.stageNumber] = stage;
-        }
 
         // Add regular stages
         foreach (var stage in stages)
