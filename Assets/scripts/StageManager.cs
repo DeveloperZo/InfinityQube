@@ -11,7 +11,6 @@ public class StageManager : MonoBehaviour
     [SerializeField] private StageDB stageDatabase;
 
     [Header("Stage Settings")]
-    [SerializeField] private bool startWithTutorial = true;
     [SerializeField] private int currentStageIndex = -1;
 
     private StageData currentStage;
@@ -46,15 +45,9 @@ public class StageManager : MonoBehaviour
 
     private void Start()
     {
-        // Start with tutorial or first regular stage
-        if (startWithTutorial)
-        {
-            LoadStage(-1); // The first tutorial stage
-        }
-        else
-        {
-            LoadStage(1); // The first regular stage
-        }
+        
+         LoadStage(1); // The first regular stage
+        
     }
 
     public void LoadStage(int stageNumber)
@@ -85,8 +78,6 @@ public class StageManager : MonoBehaviour
         // Set player position
         SetPlayerPosition();
 
-        // Show tutorial UI if applicable
-        //ShowTutorialUI(stage.isTutorial);
 
         Debug.Log($"Stage {stageNumber}: {stage.stageName} loaded");
     }
