@@ -944,20 +944,18 @@ public class WaveDebugger : MonoBehaviour
         WaveData waveData = new WaveData() { Index = 0, CubesData = new List<CubeData>() };
         if (nextWave != null)
         {
-            if(gridManager.width != nextWave.GridWidth || gridManager.height != nextWave.GridHeight)
+            if (gridManager.width != nextWave.GridWidth || gridManager.height != nextWave.GridHeight)
             {
                 gridManager.width = nextWave.GridWidth;
                 waveWidth = nextWave.GridWidth;
 
-                gridManager.height = nextWave.GridHeight * 4;
+                gridManager.height = nextWave.GridHeight > gridManager.Height ? nextWave.GridHeight * 4 : gridManager.Height;
                 waveHeight = nextWave.GridHeight;
 
                 gridManager.DestroyGrid();
                 gridManager.GenerateGrid();
 
             }
-            
-            
             foreach (var cube in nextWave.CubesData)
             {
                 CubeData newCube = new CubeData();

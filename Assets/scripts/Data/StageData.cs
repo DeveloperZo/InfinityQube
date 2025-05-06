@@ -21,7 +21,7 @@ public class StageData : ScriptableObject
     public List<WaveData> waveConfigurations = new List<WaveData>();
 
     [Header("Settings")]
-    public List<string> messages = new List<string>();
+    public List<StageMessage> messages = new List<StageMessage>();
     public bool limitMarkers = false;
     public int maxMarkers = 2;
    

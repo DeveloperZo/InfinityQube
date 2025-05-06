@@ -136,6 +136,13 @@ public class WaveManager : MonoBehaviour
         {
             detonationManager.ProcessAutoDetonations();
         }
+
+        StageManager stageManager= FindObjectOfType<StageManager>();
+        if (stageManager!= null)
+        {
+            stageManager.MoveStepComplete();
+        }
+
     }
 
 
