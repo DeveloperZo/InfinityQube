@@ -2,7 +2,7 @@ using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
 
-public class PlayerController : MonoBehaviour
+public class PlayerManager : MonoBehaviour
 {
     [Header("References")]
     [SerializeField] private GridManager grid;

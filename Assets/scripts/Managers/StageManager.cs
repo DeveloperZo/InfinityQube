@@ -13,7 +13,7 @@ public class StageManager : MonoBehaviour
     [Header("References")]
     [SerializeField] private GridManager gridManager;
     [SerializeField] private WaveManager waveManager;
-    [SerializeField] private PlayerController playerController;
+    [SerializeField] private PlayerManager playerController;
     [SerializeField] private DetonationManager detonationManager;
 
     [Header("UI Elements")]
@@ -54,7 +54,7 @@ public class StageManager : MonoBehaviour
         // Auto-find references if not assigned
         if (gridManager == null) gridManager = FindObjectOfType<GridManager>();
         if (waveManager == null) waveManager = FindObjectOfType<WaveManager>();
-        if (playerController == null) playerController = FindObjectOfType<PlayerController>();
+        if (playerController == null) playerController = FindObjectOfType<PlayerManager>();
         if (detonationManager == null) detonationManager = FindObjectOfType<DetonationManager>();
 
         // Initialize stage database

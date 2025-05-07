@@ -7,7 +7,7 @@ public class StageDebugger : MonoBehaviour
     [SerializeField] private StageManager stageManager;
     [SerializeField] private GridManager gridManager;
     [SerializeField] private WaveManager waveManager;
-    [SerializeField] private PlayerController playerController;
+    [SerializeField] private PlayerManager playerController;
     [SerializeField] private StageDB stageDatabase;
 
     [Header("Debug Settings")]
@@ -24,7 +24,7 @@ public class StageDebugger : MonoBehaviour
         if (stageManager == null) stageManager = FindObjectOfType<StageManager>();
         if (gridManager == null) gridManager = FindObjectOfType<GridManager>();
         if (waveManager == null) waveManager = FindObjectOfType<WaveManager>();
-        if (playerController == null) playerController = FindObjectOfType<PlayerController>();
+        if (playerController == null) playerController = FindObjectOfType<PlayerManager>();
         if (stageDatabase == null) stageDatabase = Resources.Load<StageDB>("StageDatabase");
 
         // Initialize stage names

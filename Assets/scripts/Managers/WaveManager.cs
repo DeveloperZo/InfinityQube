@@ -22,7 +22,7 @@ public class WaveManager : MonoBehaviour
     [SerializeField] private GridManager grid;
     [SerializeField] public GameObject[] cubePrefabs;
     [SerializeField] public bool useWaveConfiguration = false;
-    [SerializeField] private PlayerController player;
+    [SerializeField] private PlayerManager player;
     [SerializeField] private DetonationManager detonationManager;
     [SerializeField] private CubeData cubeData;
 
@@ -82,7 +82,7 @@ public class WaveManager : MonoBehaviour
 
         if (player == null)
         {
-            player = FindObjectOfType<PlayerController>();
+            player = FindObjectOfType<PlayerManager>();
             if (player == null)
             {
                 Debug.LogWarning("PlayerController reference not set in WaveManager!");
