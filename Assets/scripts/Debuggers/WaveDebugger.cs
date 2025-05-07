@@ -946,13 +946,14 @@ public class WaveDebugger : MonoBehaviour
         {
             if (gridManager.width != nextWave.GridWidth || gridManager.height != nextWave.GridHeight)
             {
+                gridManager.DestroyGrid();
+
                 gridManager.width = nextWave.GridWidth;
                 waveWidth = nextWave.GridWidth;
 
                 gridManager.height = nextWave.GridHeight > gridManager.Height ? nextWave.GridHeight * 4 : gridManager.Height;
                 waveHeight = nextWave.GridHeight;
 
-                gridManager.DestroyGrid();
                 gridManager.GenerateGrid();
 
             }

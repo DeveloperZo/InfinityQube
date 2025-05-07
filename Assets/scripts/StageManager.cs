@@ -40,6 +40,10 @@ public class StageManager : MonoBehaviour
     private bool isPaused = false;
     private List<GameObject> activeHighlights = new List<GameObject>();
 
+    private List<StageMessage> activeMessageObjects = new List<StageMessage>();
+    private Queue<StageMessage> pendingMessages = new Queue<StageMessage>();
+    private bool isProcessingMessageQueue = false;
+
     // Callbacks for stage events
     public delegate void StageEvent();
     public event StageEvent OnStageCompleted;
@@ -83,9 +87,16 @@ public class StageManager : MonoBehaviour
     private void Update()
     {
         // Handle message confirmation
-        if (isMessageActive && isPaused && Input.GetKeyDown(KeyCode.Space))
+        if (isPaused && Input.GetKeyDown(KeyCode.K))
         {
-            ResumeGameplay();
+            HideCurrentMessage();
+
+            // If no more messages, resume gameplay
+            if (activeMessageObjects.Count == 0)
+            {
+                Time.timeScale = 1f;
+                isPaused = false;
+            }
         }
     }
 
@@ -118,15 +129,12 @@ public class StageManager : MonoBehaviour
         SetPlayerPosition();
 
         // Show initial message if available
-        var initialMessage = currentStage.messages.FirstOrDefault(m => m.DisplayMoveStep == 0);
-        if (initialMessage != null)
+        var initialMessages = currentStage.messages.Where(m => m.DisplayMoveStep == 0).ToList();
+        if (initialMessages.Any())
         {
-            ShowMessage(initialMessage, initialMessage.RequirePause, initialMessage.AutoHideDelay);
-
-            // Apply any initial highlights
-            if (initialMessage.HighlightTile)
+            foreach (var message in initialMessages)
             {
-                HighlightTile(initialMessage.TilePosition.x, initialMessage.TilePosition.y, initialMessage.HighlightColor);
+                ShowMessage(message, message.RequirePause, message.AutoHideDelay);
             }
         }
 
@@ -179,29 +187,105 @@ public class StageManager : MonoBehaviour
     // Message display system with pause functionality
     public void ShowMessage(StageMessage message, bool pauseGameplay = false, float autoHideDelay = 0f)
     {
-        if (messagePanel == null || messageText == null || message.DisplayMoveStep != waveManager.MoveStep && message.DisplayMoveStep != -1)
+        if (messagePanel == null || messageText == null ||
+            (message.DisplayMoveStep != waveManager.MoveStep && message.DisplayMoveStep != -1))
             return;
 
-        // Show message panel
+        // Add message to queue
+        pendingMessages.Enqueue(message);
+
+        // Start processing queue if not already doing so
+        if (!isProcessingMessageQueue)
+        {
+            StartCoroutine(ProcessMessageQueue());
+        }
+    }
+
+    // Process messages one at a time
+    private IEnumerator ProcessMessageQueue()
+    {
+        isProcessingMessageQueue = true;
+
+        while (pendingMessages.Count > 0)
+        {
+            // Get next message
+            StageMessage currentMessage = pendingMessages.Dequeue();
+
+            // Wait for any previous message to be closed if this message requires pause
+            if (currentMessage.RequirePause && isPaused)
+            {
+                yield return new WaitUntil(() => !isPaused);
+            }
+
+            // Display the message
+            DisplaySingleMessage(currentMessage);
+
+            // If message requires pause, wait until it's closed
+            if (currentMessage.RequirePause)
+            {
+                isPaused = true;
+                Time.timeScale = 0f;
+                yield return new WaitUntil(() => !isPaused);
+            }
+            else if (currentMessage.AutoHideDelay > 0)
+            {
+                // Wait for auto-hide delay
+                yield return new WaitForSeconds(currentMessage.AutoHideDelay);
+                HideCurrentMessage();
+            }
+        }
+
+        isProcessingMessageQueue = false;
+    }
+
+    // Display a single message
+    private void DisplaySingleMessage(StageMessage message)
+    {
+        // Instantiate the message panel
+
         messagePanel.SetActive(true);
         messageText.text = message.Message;
-        isMessageActive = true;
 
-        // Show continue prompt if game is paused
-        if (continuePrompt != null)
-            continuePrompt.SetActive(pauseGameplay);
 
-        // Pause if requested
-        if (pauseGameplay)
+
+
+        // Track this message
+        activeMessageObjects.Add(message);
+
+        // Apply highlights if specified
+        if (message.HighlightTile)
         {
-            Time.timeScale = 0f;
-            isPaused = true;
+            HighlightTile(message.TilePosition.x, message.TilePosition.y, message.HighlightColor);
         }
-        else if (autoHideDelay > 0f)
+    }
+
+    // Update to hide only the most recent message
+    private void HideCurrentMessage()
+    {
+        if (activeMessageObjects.Count > 0)
         {
-            // Auto-hide after delay if not pausing
-            StartCoroutine(AutoHideMessage(autoHideDelay));
+            // Get the last message
+            int lastIndex = activeMessageObjects.Count - 1;
+            StageMessage msgObj = activeMessageObjects[lastIndex];
+
+            // Remove and destroy it
+            activeMessageObjects.RemoveAt(lastIndex);
+            if (msgObj.Message == messageText.text)
+                messageText.text = "";
+
+            messagePanel.SetActive(false);
         }
+    }
+
+   
+
+    // Update HideMessage to be able to hide all messages
+    public void HideAllMessages()
+    {
+        activeMessageObjects.Clear();
+        pendingMessages.Clear();
+        Time.timeScale = 1f;
+        isPaused = false;
     }
 
     private IEnumerator AutoHideMessage(float delay)

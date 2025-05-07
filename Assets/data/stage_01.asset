@@ -22,10 +22,28 @@ MonoBehaviour:
   waveConfigurations:
   - {fileID: 11400000, guid: c048cf1c79b0afc47962b3b22d32c777, type: 2}
   messages:
-  - DisplayMoveStep: 0
-    Message: hello tutorial
-  - DisplayMoveStep: 2
-    Message: use marker
+  - Message: '"Use arrow keys to move and SPACE to mark tiles.'
+    DisplayMoveStep: 0
+    RequirePause: 0
+    AutoHideDelay: 5
+    HighlightTile: 0
+    TilePosition: {x: 0, y: 0}
+    HighlightColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  - Message: Mark tiles in the path of cubes and wait for the cube lt land on the
+      tile to destroy them.
+    DisplayMoveStep: 0
+    RequirePause: 0
+    AutoHideDelay: 5
+    HighlightTile: 0
+    TilePosition: {x: 0, y: 0}
+    HighlightColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  - Message: Be careful not to be crushed by the cubes...
+    DisplayMoveStep: 0
+    RequirePause: 0
+    AutoHideDelay: 5
+    HighlightTile: 0
+    TilePosition: {x: 0, y: 0}
+    HighlightColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   limitMarkers: 0
   maxMarkers: 2
   requireAllCubesDestroyed: 0
