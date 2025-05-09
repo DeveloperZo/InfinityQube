@@ -8,7 +8,7 @@ public class RainCubeDebugger : MonoBehaviour
     [SerializeField] private GridManager grid;
     [SerializeField] private WaveManager waveManager;
     [SerializeField] private WaveDebugger waveDebugger;
-    [SerializeField] private GameObject[] cubePrefabs; // Normal, Green, Black, Blue
+    [SerializeField] private GameObject[] cubePrefabs; // Normal, Blue, Black
     [SerializeField] private Material highlightMaterial;
 
     [SerializeField] private CubeData cubeData;

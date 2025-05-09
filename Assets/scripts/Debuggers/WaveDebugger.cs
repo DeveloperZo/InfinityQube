@@ -24,7 +24,7 @@ public class WaveDebugger : MonoBehaviour
     // Debug state
     private bool showDebugger = false;
     private Vector2 scrollPosition;
-    private int selectedCubeType = 1; // 1=Normal, 2=Green, 3=Black
+    private int selectedCubeType = 1; // 1=Normal, 2=Blue, 3=Black
     public List<GameObject> debugObjects = new List<GameObject>();
 
     // Grid settings
@@ -66,7 +66,7 @@ public class WaveDebugger : MonoBehaviour
     private Color disabledColor = new Color(0.3f, 0.3f, 0.3f, 0.5f);
     private Color clearButtonColor = new Color(0.9f, 0.9f, 0.9f, 0.1f); // Almost transparent white
 
-    private void Awake()
+    private void Start()
     {
         // Auto-find references if not assigned
         if (gridManager == null) gridManager = FindObjectOfType<GridManager>();
@@ -234,7 +234,7 @@ public class WaveDebugger : MonoBehaviour
             waveHeight = Mathf.Max(1, Mathf.Min(waveHeight, 15));
 
             // Clear and recreate arrays
-            gridState = new int[waveWidth, waveHeight];
+            gridState = new int[gridWidth, gridHeight];
             buttonState = new int[waveWidth, waveHeight];
             buttonInteractable = new bool[waveWidth, waveHeight];
 
@@ -438,7 +438,7 @@ public class WaveDebugger : MonoBehaviour
             selectedCubeType = 1;
 
         GUI.backgroundColor = greenCubeColor;
-        if (GUILayout.Toggle(selectedCubeType == 2, "Green", "Button"))
+        if (GUILayout.Toggle(selectedCubeType == 2, "Blue", "Button"))
             selectedCubeType = 2;
 
         GUI.backgroundColor = blackCubeColor;
@@ -844,7 +844,7 @@ public class WaveDebugger : MonoBehaviour
             case 1: // Normal
                 GUI.backgroundColor = normalCubeColor;
                 break;
-            case 2: // Green
+            case 2: // Blue
                 GUI.backgroundColor = greenCubeColor;
                 break;
             case 3: // Black
@@ -1005,7 +1005,7 @@ public class WaveDebugger : MonoBehaviour
                 switch (cube.type)
                 {
                     case Enumerations.CubeType.Normal: normalCount++; break;
-                    case Enumerations.CubeType.Green: greenCount++; break;
+                    case Enumerations.CubeType.Blue: greenCount++; break;
                     case Enumerations.CubeType.Black: blackCount++; break;
                 }
             }
@@ -1026,7 +1026,7 @@ public class WaveDebugger : MonoBehaviour
             }
         }
 
-        return $"Normal: {normalCount}, Green: {greenCount}, Black: {blackCount}";
+        return $"Normal: {normalCount}, Blue: {greenCount}, Black: {blackCount}";
     }
 
     private void RandomizeGrid()
@@ -1272,8 +1272,9 @@ public class WaveDebugger : MonoBehaviour
     {
         // Make sure grid height is at least 9 tiles
         gridHeight = Mathf.Max(gridHeight, 9);
+        gridWidth = gridWidth < 3 ? Mathf.Max(3, waveWidth) : gridWidth;
 
-        // Apply changes to the actual grid in the scene
+        // Apply changes to the actual grid in the scene ONLY when explicitly requested
         if (gridManager != null)
         {
             bool needsResize = gridManager.Width != gridWidth || gridManager.height != gridHeight;
@@ -1291,6 +1292,9 @@ public class WaveDebugger : MonoBehaviour
                 gridManager.GenerateGrid();
 
                 Debug.Log($"Applied new grid dimensions to scene: {gridWidth}x{gridHeight}");
+
+                // Reset flag after updating
+                shouldUpdateGrid = false;
             }
         }
 

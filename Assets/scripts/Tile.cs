@@ -69,7 +69,7 @@ public class Tile : MonoBehaviour
                     BlackenTile();
                     break;
 
-                case Enumerations.CubeType.Green:
+                case Enumerations.CubeType.Blue:
                     // First green charge
                     AdvantageTile();
                     break;
@@ -357,7 +357,7 @@ public class Tile : MonoBehaviour
                 // Could add visual feedback or sound effect here
                 break;
 
-            case Enumerations.CubeType.Green:
+            case Enumerations.CubeType.Blue:
                 // Register with DetonationManager as before
                 DetonationManager detonationManager = FindObjectOfType<DetonationManager>();
                 if (detonationManager != null)
@@ -398,6 +398,7 @@ public class Tile : MonoBehaviour
             else
             {
                 tileRenderer.material = originalMaterial;
+                transform.position = new Vector3(transform.position.x, NORMAL_HEIGHT, transform.position.z);
             }
         }
     }

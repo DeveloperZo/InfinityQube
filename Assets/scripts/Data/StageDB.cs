@@ -39,7 +39,8 @@ public class StageDB : ScriptableObject
 
         if (stageMap.TryGetValue(stageId, out StageData stage))
         {
-            var newStage = stage;
+            var newStage = Instantiate(stage);
+            newStage.waveConfigurations = stage.waveConfigurations.Select(x=>Instantiate(x)).ToList();  
             return newStage;
         }
 

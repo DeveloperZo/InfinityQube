@@ -406,7 +406,7 @@ public class DetonationManager : MonoBehaviour
             // Apply penalty for black cubes
             //DamageTile(position);
         }
-        else if(cube.type == CubeType.Green)
+        else if(cube.type == CubeType.Blue)
         {
             RegisterDetonationPoint(position, DetonationType.Standard);
             Destroy(cube.gameObject);

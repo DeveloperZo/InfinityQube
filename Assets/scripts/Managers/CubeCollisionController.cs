@@ -39,7 +39,7 @@ public class CubeCollisionController : MonoBehaviour
                     Destroy(targetCube.gameObject);
                     return;
                 }
-                else if (sourceType == Enumerations.CubeType.Green)
+                else if (sourceType == Enumerations.CubeType.Blue)
                 {
                     tile.TransformTile(sourceType);
                     detonationManager.RegisterDetonationPoint(new Vector2Int(tile.x, tile.y), DetonationType.Small);
@@ -58,7 +58,7 @@ public class CubeCollisionController : MonoBehaviour
             case Enumerations.CubeType.Black:
                 HandleBlackCubeCollision(sourceCube, targetCube, position);
                 break;
-            case Enumerations.CubeType.Green:
+            case Enumerations.CubeType.Blue:
                 HandleGreenCubeCollision(sourceCube, targetCube, position);
                 break;
             case Enumerations.CubeType.Normal:
@@ -77,8 +77,8 @@ public class CubeCollisionController : MonoBehaviour
                 Destroy(targetCube.gameObject);
                 break;
 
-            case Enumerations.CubeType.Green:
-                // Black + Green = Mark the tile for 2x2 auto-detonation
+            case Enumerations.CubeType.Blue:
+                // Black + Blue = Mark the tile for 2x2 auto-detonation
                 MarkTileForAutoDetonation(position);
                 Destroy(targetCube.gameObject);
                 break;
@@ -106,7 +106,7 @@ public class CubeCollisionController : MonoBehaviour
         switch (targetCube.type)
         {
             case Enumerations.CubeType.Black:
-                // Green + Black = Green consumed, triggers detonation
+                // Blue + Black = Blue consumed, triggers detonation
                 if (FindObjectOfType<DetonationManager>() != null)
                 {
                     FindObjectOfType<DetonationManager>().RegisterDetonationPoint(position, DetonationType.Small);
@@ -115,8 +115,8 @@ public class CubeCollisionController : MonoBehaviour
                 Destroy(sourceCube.gameObject);
                 break;
 
-            case Enumerations.CubeType.Green:
-                // Green + Green = Enhanced green tile and create detonation mark
+            case Enumerations.CubeType.Blue:
+                // Blue + Blue = Enhanced green tile and create detonation mark
                 EnhanceGreenTile(position);
                 // Register a detonation point at the tile position
                 if (detonationManager != null)
@@ -128,7 +128,7 @@ public class CubeCollisionController : MonoBehaviour
                 break;
 
             case Enumerations.CubeType.Normal:
-                // Green + Normal = Consume normal and create detonation mark
+                // Blue + Normal = Consume normal and create detonation mark
                 Destroy(targetCube.gameObject);
                 // Register a detonation point at the tile position
                 if (detonationManager != null)
@@ -148,8 +148,8 @@ public class CubeCollisionController : MonoBehaviour
                 Destroy(sourceCube.gameObject);
                 break;
 
-            case Enumerations.CubeType.Green:
-                // Normal + Green = Normal consumed
+            case Enumerations.CubeType.Blue:
+                // Normal + Blue = Normal consumed
                 Destroy(sourceCube.gameObject);
                 break;
 
@@ -206,7 +206,7 @@ public class CubeCollisionController : MonoBehaviour
         if (tile != null)
         {
             // First ensure it's transformed to green
-            tile.TransformTile(Enumerations.CubeType.Green);
+            tile.TransformTile(Enumerations.CubeType.Blue);
 
 
             // Register with detonation manager
@@ -222,7 +222,7 @@ public class CubeCollisionController : MonoBehaviour
     {
         // Create visualization objects for the pattern
         List<GameObject> markers = new List<GameObject>();
-        Color markerColor = (type == Enumerations.CubeType.Green) ?
+        Color markerColor = (type == Enumerations.CubeType.Blue) ?
             new Color(0, 1, 0, 0.5f) : new Color(0, 0.7f, 1f, 0.5f);
 
         // Create markers for each position in the square

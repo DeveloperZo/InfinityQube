@@ -7,8 +7,8 @@ public class StaticCubeDebugger : MonoBehaviour
     [Header("References")]
     [SerializeField] private GridManager grid;
     [SerializeField] private WaveManager waveManager;
-    [SerializeField] private GameObject[] cubePrefabs; // Normal, Green, Black, Blue
-    [SerializeField] private Material[] materialPrefabs; // Normal, Green, Black, Blue
+    [SerializeField] private GameObject[] cubePrefabs; // Normal, Blue, Black, Blue
+    [SerializeField] private Material[] materialPrefabs; // Normal, Blue, Black, Blue
     [SerializeField] private Material highlightMaterial;
 
     [SerializeField] private CubeData cubeData;
@@ -130,9 +130,9 @@ public class StaticCubeDebugger : MonoBehaviour
                 UpdateColumnCube(col, Enumerations.CubeType.Normal);
             }
 
-            if (GUILayout.Button("Green", GUILayout.Width(60)))
+            if (GUILayout.Button("Blue", GUILayout.Width(60)))
             {
-                UpdateColumnCube(col, Enumerations.CubeType.Green);
+                UpdateColumnCube(col, Enumerations.CubeType.Blue);
             }
 
             if (GUILayout.Button("Black", GUILayout.Width(60)))

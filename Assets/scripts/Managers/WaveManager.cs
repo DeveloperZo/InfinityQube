@@ -101,7 +101,7 @@ public class WaveManager : MonoBehaviour
 
         if (cubePrefabs == null || cubePrefabs.Length < 3)
         {
-            Debug.LogError("WaveManager requires at least 3 cube prefabs (Normal, Green, Black)!");
+            Debug.LogError("WaveManager requires at least 3 cube prefabs (Normal, Blue, Black)!");
             enabled = false;
             return;
         }
@@ -586,7 +586,7 @@ public class WaveManager : MonoBehaviour
         if (random < normalCubeChance)
             return Enumerations.CubeType.Normal;
         else if (random < normalCubeChance + greenCubeChance)
-            return Enumerations.CubeType.Green;
+            return Enumerations.CubeType.Blue;
         else
             return Enumerations.CubeType.Black;
     }
@@ -689,7 +689,7 @@ public class WaveManager : MonoBehaviour
                     case Enumerations.CubeType.Black:
                         renderer.material.color = Color.black;
                         break;
-                    case Enumerations.CubeType.Green:
+                    case Enumerations.CubeType.Blue:
                         renderer.material.color = Color.green;
                         break;
                 }
@@ -831,7 +831,7 @@ public class WaveManager : MonoBehaviour
             case Enumerations.CubeType.Normal:
                 normalCubesCaptured++;
                 break;
-            case Enumerations.CubeType.Green:
+            case Enumerations.CubeType.Blue:
                 greenCubesCaptured++;
                 break;
         }
