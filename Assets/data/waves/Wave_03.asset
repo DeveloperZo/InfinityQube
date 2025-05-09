@@ -43,3 +43,38 @@ MonoBehaviour:
   - type: 0
     position: {x: 2, y: 0}
     level: 1
+  limitMarkers: 0
+  maxMarkers: 2
+  waveStartDelay: 0.75
+  moveInterval: 0.75
+  fastMoveInterval: 0.1
+  hasOwnSuccessCriteria: 0
+  requiredCaptureCount: 0
+  maxAllowedEscapes: 0
+  messages:
+  - Message: 'DEV: Forcing strategic decision-making with limited resources.'
+    DisplayMoveStep: 0
+    RequirePause: 0
+    AutoHideDelay: 0
+    HighlightTile: 0
+    highlightTiles: []
+    highlightColor: {r: 0, g: 0, b: 0, a: 0}
+  - Message: 'DEV: Reinforcing black cube properties.'
+    DisplayMoveStep: 4
+    RequirePause: 0
+    AutoHideDelay: 0
+    HighlightTile: 0
+    highlightTiles: []
+    highlightColor: {r: 0, g: 0, b: 0, a: 0}
+  - Message: 'DEV: Concluding Stage 1 basic training.'
+    DisplayMoveStep: -1
+    RequirePause: 0
+    AutoHideDelay: 0
+    HighlightTile: 0
+    highlightTiles: []
+    highlightColor: {r: 0, g: 0, b: 0, a: 0}
+  normalCubesCaptured: 0
+  greenCubesCaptured: 0
+  cubesEscaped: 0
+  markersPlaced: 0
+  detonationsUsed: 0

@@ -11,8 +11,6 @@ public class WaveDebugger : MonoBehaviour
     [SerializeField] private WaveManager waveManager;
     [SerializeField] private PlayerManager playerController;
     [SerializeField] private string saveLocation = "Assets/data/waves/";
-
-    [SerializeField] private CubeData cubeData;
     [SerializeField] public WaveData nextWave;
 
     [Header("Settings")]
@@ -68,23 +66,21 @@ public class WaveDebugger : MonoBehaviour
     private Color disabledColor = new Color(0.3f, 0.3f, 0.3f, 0.5f);
     private Color clearButtonColor = new Color(0.9f, 0.9f, 0.9f, 0.1f); // Almost transparent white
 
-    private void Start()
+    private void Awake()
     {
         // Auto-find references if not assigned
         if (gridManager == null) gridManager = FindObjectOfType<GridManager>();
         if (waveManager == null) waveManager = FindObjectOfType<WaveManager>();
         if (playerController == null) playerController = FindObjectOfType<PlayerManager>();
 
-        // Initialize settings
-        gridWidth = defaultWidth;
-        gridHeight = defaultHeight*3+1;
 
         // Initialize grid
-        InitializeGrid();
-        CalculateWindowSize();
 
-        if (cubeData == null)
-            cubeData = new CubeData();
+        if (gridManager.tiles == null)
+        {
+            CalculateWindowSize();
+        }
+
     }
 
     private void SaveCurrentWaveAsAsset()
@@ -973,6 +969,7 @@ public class WaveDebugger : MonoBehaviour
         }
 
         // Set properties on the new cube
+        CubeData cubeData = new CubeData();
         cubeData.type = newType;
         cubeData.position = position;
 

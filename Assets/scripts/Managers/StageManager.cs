@@ -139,6 +139,7 @@ public class StageManager : MonoBehaviour
         //}
 
         Debug.Log($"Stage {stageNumber}: {stage.stageName} loaded");
+        waveManager.StartWave();
     }
 
     private void ConfigureGrid()
@@ -161,9 +162,29 @@ public class StageManager : MonoBehaviour
     {
         if (waveManager != null && currentStage.waveConfigurations.Count > 0)
         {
-            waveManager.waveConfiguration = currentStage.waveConfigurations;
+            List<WaveData> wavesWithOffSet = UpdateWavePositionsWithGridSize(currentStage.waveConfigurations);
+               // Clear previous wave configurations
+            waveManager.waveConfiguration = wavesWithOffSet;
+
             waveManager.useWaveConfiguration = true;
         }
+    }
+
+
+    private List<WaveData> UpdateWavePositionsWithGridSize(List<WaveData> waves)
+    {
+        List<WaveData> updatedWaves = waves.ToList();
+
+        foreach (var wave in waves)
+        {
+            foreach (var cube in wave.CubesData)
+            {
+                // Adjust the position of each cube in the wave
+                cube.position.y = gridManager.height - (wave.GridHeight - cube.position.y);
+            }
+        }
+
+        return updatedWaves;
     }
 
     private void SetPlayerPosition()

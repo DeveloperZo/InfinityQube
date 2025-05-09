@@ -20,9 +20,6 @@ MonoBehaviour:
   gridHeight: 10
   playerStartPosition: {x: 2, y: 0}
   waveConfigurations: []
-  messages: []
-  limitMarkers: 0
-  maxMarkers: 2
   requireAllCubesDestroyed: 0
   requiredCaptureCount: 0
   maxAllowedEscapes: 0

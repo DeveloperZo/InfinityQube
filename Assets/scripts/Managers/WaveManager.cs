@@ -272,7 +272,7 @@ public class WaveManager : MonoBehaviour
         // If there are more waves, advance to the next one
         if (useWaveConfiguration && currentWaveIndex < waveConfiguration.Count - 1)
         {
-            AdvanceToNextWave();
+            StartCoroutine(AdvanceToNextWave());
         }
         else
         {
@@ -501,42 +501,38 @@ public class WaveManager : MonoBehaviour
 
     private void GenerateConfigurationWave()
     {
-        foreach (var spawnData in waveConfiguration)
+        
+        var cubes = waveConfiguration[currentWaveIndex].CubesData;
+
+        foreach (var item in cubes)
         {
+            Vector2Int pos = item.position;
+            item.position = new Vector2Int(pos.x, pos.y );
 
-            var cubes = spawnData.CubesData;
+            Vector3 spawnPos = new Vector3(pos.x, 1f, pos.y );
 
-            foreach (var item in cubes)
+            // Guard against index out of bounds
+            int prefabIndex = (int)item.type;
+            if (prefabIndex < 0 || prefabIndex >= cubePrefabs.Length || cubePrefabs[prefabIndex] == null)
             {
-                Vector2Int pos = item.position;
-                item.position = new Vector2Int(pos.x, pos.y );
-
-                Vector3 spawnPos = new Vector3(pos.x, 1f, pos.y );
-
-                // Guard against index out of bounds
-                int prefabIndex = (int)item.type;
-                if (prefabIndex < 0 || prefabIndex >= cubePrefabs.Length || cubePrefabs[prefabIndex] == null)
-                {
-                    Debug.LogWarning($"Missing cube prefab for type {item.type}");
-                    continue;
-                }
-
-                GameObject cube = Instantiate(cubePrefabs[prefabIndex], spawnPos, Quaternion.identity);
-                if (cube != null)
-                {
-                    CubeBehavior cb = cube.GetComponent<CubeBehavior>();
-                    if (cb == null)
-                    {
-                        cb = cube.AddComponent<CubeBehavior>();
-                        cb.type = item.type;
-                    }
-
-                    cb.Init(grid, item, 1);
-                    activeCubes.Add(cb);
-                }
+                Debug.LogWarning($"Missing cube prefab for type {item.type}");
+                continue;
             }
 
-        }
+            GameObject cube = Instantiate(cubePrefabs[prefabIndex], spawnPos, Quaternion.identity);
+            if (cube != null)
+            {
+                CubeBehavior cb = cube.GetComponent<CubeBehavior>();
+                if (cb == null)
+                {
+                    cb = cube.AddComponent<CubeBehavior>();
+                    cb.type = item.type;
+                }
+
+                cb.Init(grid, item, 1);
+                activeCubes.Add(cb);
+            }
+        }   
     }
 
     public void SpawnRainingBlackCubes()
@@ -782,9 +778,9 @@ public class WaveManager : MonoBehaviour
         return -1; // No limit
     }
 
-    public void AdvanceToNextWave()
+    public IEnumerator AdvanceToNextWave()
     {
-        if (!useWaveConfiguration) return;
+        if (!useWaveConfiguration)  yield return null;
 
         // Save statistics for the current wave
         if (currentWave != null)
@@ -798,11 +794,14 @@ public class WaveManager : MonoBehaviour
 
         // Move to next wave
         currentWaveIndex++;
+
+        yield return new WaitForSeconds(3);
+
         if (currentWaveIndex < waveConfiguration.Count)
         {
             currentWave = waveConfiguration[currentWaveIndex];
             ResetWaveStatistics();
-
+            
             // Start the new wave
             if (waveCoroutine != null)
             {

@@ -38,7 +38,10 @@ public class StageDB : ScriptableObject
             Initialize();
 
         if (stageMap.TryGetValue(stageId, out StageData stage))
-            return stage;
+        {
+            var newStage = stage;
+            return newStage;
+        }
 
         Debug.LogWarning($"Stage {stageId} not found in database!");
         return null;
