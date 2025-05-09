@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 [Serializable]
-public class StageMessage
+public class WaveMessage
 {
     [TextArea(3, 5)]
     public string Message;
@@ -17,6 +17,6 @@ public class StageMessage
 
     [Header("Highlight Options")]
     public bool HighlightTile = false;
-    public Vector2Int TilePosition;
-    public Color HighlightColor = Color.yellow;
+    public List<Vector2Int> highlightTiles = new List<Vector2Int>();
+    public Color highlightColor = Color.yellow;
 }

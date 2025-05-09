@@ -40,8 +40,8 @@ public class StageManager : MonoBehaviour
     private bool isPaused = false;
     private List<GameObject> activeHighlights = new List<GameObject>();
 
-    private List<StageMessage> activeMessageObjects = new List<StageMessage>();
-    private Queue<StageMessage> pendingMessages = new Queue<StageMessage>();
+    private List<WaveMessage> activeMessageObjects = new List<WaveMessage>();
+    private Queue<WaveMessage> pendingMessages = new Queue<WaveMessage>();
     private bool isProcessingMessageQueue = false;
 
     // Callbacks for stage events
@@ -129,14 +129,14 @@ public class StageManager : MonoBehaviour
         SetPlayerPosition();
 
         // Show initial message if available
-        var initialMessages = currentStage.messages.Where(m => m.DisplayMoveStep == 0).ToList();
-        if (initialMessages.Any())
-        {
-            foreach (var message in initialMessages)
-            {
-                ShowMessage(message, message.RequirePause, message.AutoHideDelay);
-            }
-        }
+        //var initialMessages = currentStage.messages.Where(m => m.DisplayMoveStep == 0).ToList();
+        //if (initialMessages.Any())
+        //{
+        //    foreach (var message in initialMessages)
+        //    {
+        //        ShowMessage(message, message.RequirePause, message.AutoHideDelay);
+        //    }
+        //}
 
         Debug.Log($"Stage {stageNumber}: {stage.stageName} loaded");
     }
@@ -171,21 +171,11 @@ public class StageManager : MonoBehaviour
         if (playerController != null)
         {
             playerController.SetPosition(currentStage.playerStartPosition.x, currentStage.playerStartPosition.y);
-
-            // Set marker limit if applicable
-            if (currentStage.limitMarkers)
-            {
-                playerController.SetMaxMarkers(currentStage.maxMarkers);
-            }
-            else
-            {
-                playerController.SetMaxMarkers(2); // Default value
-            }
         }
     }
 
     // Message display system with pause functionality
-    public void ShowMessage(StageMessage message, bool pauseGameplay = false, float autoHideDelay = 0f)
+    public void ShowMessage(WaveMessage message, bool pauseGameplay = false, float autoHideDelay = 0f)
     {
         if (messagePanel == null || messageText == null ||
             (message.DisplayMoveStep != waveManager.MoveStep && message.DisplayMoveStep != -1))
@@ -209,7 +199,7 @@ public class StageManager : MonoBehaviour
         while (pendingMessages.Count > 0)
         {
             // Get next message
-            StageMessage currentMessage = pendingMessages.Dequeue();
+            WaveMessage currentMessage = pendingMessages.Dequeue();
 
             // Wait for any previous message to be closed if this message requires pause
             if (currentMessage.RequirePause && isPaused)
@@ -239,7 +229,7 @@ public class StageManager : MonoBehaviour
     }
 
     // Display a single message
-    private void DisplaySingleMessage(StageMessage message)
+    private void DisplaySingleMessage(WaveMessage message)
     {
         // Instantiate the message panel
 
@@ -255,7 +245,11 @@ public class StageManager : MonoBehaviour
         // Apply highlights if specified
         if (message.HighlightTile)
         {
-            HighlightTile(message.TilePosition.x, message.TilePosition.y, message.HighlightColor);
+            foreach (var tile in message.highlightTiles)
+            {
+                HighlightTile(tile.x, tile.y, message.highlightColor);
+            }
+
         }
     }
 
@@ -266,7 +260,7 @@ public class StageManager : MonoBehaviour
         {
             // Get the last message
             int lastIndex = activeMessageObjects.Count - 1;
-            StageMessage msgObj = activeMessageObjects[lastIndex];
+            WaveMessage msgObj = activeMessageObjects[lastIndex];
 
             // Remove and destroy it
             activeMessageObjects.RemoveAt(lastIndex);
@@ -487,23 +481,6 @@ public class StageManager : MonoBehaviour
         CheckStageCompletion();
     }
 
-    public void OnMoveStep(int step)
-    {
-        // Find all messages that should be displayed at this step
-        var stageMessages = currentStage.messages.Where(m => m.DisplayMoveStep == step).ToList();
-
-        foreach (var message in stageMessages)
-        {
-            // Show the message
-            ShowMessage(message, message.RequirePause, message.AutoHideDelay);
-
-            // Apply any highlight specified in the message
-            if (message.HighlightTile)
-            {
-                HighlightTile(message.TilePosition.x, message.TilePosition.y, message.HighlightColor);
-            }
-        }
-    }
 
     private void CheckStageCompletion()
     {
@@ -536,8 +513,6 @@ public class StageManager : MonoBehaviour
         Debug.Log($"Stage {currentStageIndex} completed!");
 
         // Show completion message if available
-        if (currentStage.messages.Count >= 3)
-            ShowMessage(currentStage.messages[2], true);
 
         // Clear highlights
         ClearAllHighlights();
@@ -556,7 +531,7 @@ public class StageManager : MonoBehaviour
         Debug.Log($"Stage {currentStageIndex} failed!");
 
         // Show failure message
-        ShowMessage(new StageMessage() { Message = "Stage failed. Some cubes escaped. Try again." , DisplayMoveStep = -1}, true);
+        ShowMessage(new WaveMessage() { Message = "Stage failed. Some cubes escaped. Try again." , DisplayMoveStep = -1}, true);
 
         // Clear highlights
         ClearAllHighlights();
@@ -583,12 +558,6 @@ public class StageManager : MonoBehaviour
 
     internal void MoveStepComplete()
     {
-        var anyMessage = currentStage.messages.Any(x => x.DisplayMoveStep == waveManager.MoveStep);
-        if (anyMessage) 
-        {
-            var message = currentStage.messages.First(x => x.DisplayMoveStep == waveManager.MoveStep);
-            ShowMessage(message, true);
 
-        } 
     }
 }

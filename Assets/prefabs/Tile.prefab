@@ -125,7 +125,7 @@ MonoBehaviour:
   markerScale: 0.5
   detonationCharges: 0
   maxCharges: 3
-  markedTileMaterial: {fileID: 2100000, guid: 1649820e4ae6e1047ae9cf8c9dd796f5, type: 2}
+  markedTileMaterial: {fileID: 2100000, guid: b50adb8e93e06c048b599a38a3962972, type: 2}
   forbiddenMaterial: {fileID: 2100000, guid: ba597e4280ccbe14bb9424ae288e2bb2, type: 2}
   activateMarkerMaterial: {fileID: 2100000, guid: 1649820e4ae6e1047ae9cf8c9dd796f5, type: 2}
   originalMaterial: {fileID: 2100000, guid: 15cc66d777e06464b9573ed0f29092da, type: 2}

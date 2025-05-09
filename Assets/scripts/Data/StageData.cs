@@ -20,12 +20,6 @@ public class StageData : ScriptableObject
     [Header("Wave Configuration")]
     public List<WaveData> waveConfigurations = new List<WaveData>();
 
-    [Header("Settings")]
-    public List<StageMessage> messages = new List<StageMessage>();
-    public bool limitMarkers = false;
-    public int maxMarkers = 2;
-   
-
     [Header("Success Conditions")]
     public bool requireAllCubesDestroyed = false;
     public int requiredCaptureCount = 0;

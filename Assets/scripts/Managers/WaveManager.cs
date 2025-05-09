@@ -42,7 +42,17 @@ public class WaveManager : MonoBehaviour
     [SerializeField] private float fastMoveInterval = 0.1f;
     [SerializeField] private bool showDebugInfo = false;
     [SerializeField] private GameObject returnIndicatorPrefab;
-    
+
+    [Header("Wave Tracking")]
+    [SerializeField] private int currentWaveIndex = 0;
+    private WaveData currentWave;
+    public int CurrentWaveIndex => currentWaveIndex;
+    public WaveData CurrentWave => currentWave;
+    private int normalCubesCaptured = 0;
+    private int greenCubesCaptured = 0;
+    private int cubesEscaped = 0;
+    private int markersPlaced = 0;
+    private int detonationsUsed = 0;
 
     public bool isSpeedingUp = false;
     public List<CubeBehavior> activeCubes = new List<CubeBehavior>();
@@ -121,7 +131,19 @@ public class WaveManager : MonoBehaviour
         {
             StopCoroutine(waveCoroutine);
         }
-        
+
+        // Set the current wave
+        if (useWaveConfiguration && waveConfiguration.Count > 0)
+        {
+            currentWaveIndex = 0;
+            currentWave = waveConfiguration[currentWaveIndex];
+        }
+        else
+        {
+            currentWave = null;
+        }
+
+        ResetWaveStatistics();
         waveCoroutine = StartCoroutine(RunWave());
         UpdateReturnVisuals();
     }
@@ -149,6 +171,7 @@ public class WaveManager : MonoBehaviour
     private IEnumerator RunWave(bool resume = false)
     {
         waveActive = true;
+        MoveStep = 0;
 
         // Toggle player input
         if (player != null && !debugMode)
@@ -163,11 +186,13 @@ public class WaveManager : MonoBehaviour
             grid.ClearAllMarkers();
         }
 
-        if(!resume)
+        if (!resume)
             SpawnCubes();
-        
 
-        yield return new WaitForSeconds(waveStartDelay);
+        // Get wave-specific start delay
+        float startDelay = currentWave != null ? currentWave.waveStartDelay : waveStartDelay;
+        yield return new WaitForSeconds(startDelay);
+
 
         // Skip automatic wave progression if we're in manual control mode
         if (manualControl)
@@ -214,14 +239,18 @@ public class WaveManager : MonoBehaviour
                     activeCubes.RemoveAt(i);
                 }
             }
-            
+
             // Notify that a movement cycle is complete
             NotifyMovementComplete();
 
-            cubesRemaining = !debugMode;
+            if (activeCubes.Count == 0 && !debugMode)
+                cubesRemaining = false;
 
-            // Use appropriate move interval based on speed up state
-            float currentMoveInterval = isSpeedingUp ? fastMoveInterval : normalMoveInterval;
+            // Use appropriate move interval based on speed up state and current wave settings
+            float normalInterval = currentWave != null ? currentWave.moveInterval : normalMoveInterval;
+            float fastInterval = currentWave != null ? currentWave.fastMoveInterval : fastMoveInterval;
+            float currentMoveInterval = isSpeedingUp ? fastInterval : normalInterval;
+
             yield return new WaitForSeconds(currentMoveInterval);
         }
 
@@ -230,9 +259,26 @@ public class WaveManager : MonoBehaviour
         {
             grid.ClearAllMarkers();
         }
-        
+
         waveActive = false;
-        waveCoroutine = null;
+
+        // Clear any highlights
+        StageManager stageManager = FindObjectOfType<StageManager>();
+        if (stageManager != null)
+        {
+            stageManager.ClearAllHighlights();
+        }
+
+        // If there are more waves, advance to the next one
+        if (useWaveConfiguration && currentWaveIndex < waveConfiguration.Count - 1)
+        {
+            AdvanceToNextWave();
+        }
+        else
+        {
+            // All waves complete
+            waveCoroutine = null;
+        }
     }
 
     public void RegisterDebugWave(List<GameObject> debugCubes)
@@ -715,5 +761,109 @@ public class WaveManager : MonoBehaviour
         // Exit manual mode but keep debug
         debugMode = true;
         manualControl = false;
+    }
+
+    private void ResetWaveStatistics()
+    {
+        normalCubesCaptured = 0;
+        greenCubesCaptured = 0;
+        cubesEscaped = 0;
+        markersPlaced = 0;
+        detonationsUsed = 0;
+    }
+
+    // Method to get the current marker limit
+    public int GetCurrentMarkerLimit()
+    {
+        if (currentWave != null && currentWave.limitMarkers)
+        {
+            return currentWave.maxMarkers;
+        }
+        return -1; // No limit
+    }
+
+    public void AdvanceToNextWave()
+    {
+        if (!useWaveConfiguration) return;
+
+        // Save statistics for the current wave
+        if (currentWave != null)
+        {
+            currentWave.normalCubesCaptured = normalCubesCaptured;
+            currentWave.greenCubesCaptured = greenCubesCaptured;
+            currentWave.cubesEscaped = cubesEscaped;
+            currentWave.markersPlaced = markersPlaced;
+            currentWave.detonationsUsed = detonationsUsed;
+        }
+
+        // Move to next wave
+        currentWaveIndex++;
+        if (currentWaveIndex < waveConfiguration.Count)
+        {
+            currentWave = waveConfiguration[currentWaveIndex];
+            ResetWaveStatistics();
+
+            // Start the new wave
+            if (waveCoroutine != null)
+            {
+                StopCoroutine(waveCoroutine);
+            }
+            waveCoroutine = StartCoroutine(RunWave());
+        }
+        else
+        {
+            // End of all waves
+            currentWaveIndex = -1;
+            currentWave = null;
+
+            // Notify stage manager that all waves are complete
+            StageManager stageManager = FindObjectOfType<StageManager>();
+            if (stageManager != null)
+            {
+                stageManager.OnWaveCompleted();
+            }
+        }
+    }
+
+    public void OnCubeCaptured(Enumerations.CubeType cubeType)
+    {
+        switch (cubeType)
+        {
+            case Enumerations.CubeType.Normal:
+                normalCubesCaptured++;
+                break;
+            case Enumerations.CubeType.Green:
+                greenCubesCaptured++;
+                break;
+        }
+
+        // Notify stage manager
+        StageManager stageManager = FindObjectOfType<StageManager>();
+        if (stageManager != null)
+        {
+            stageManager.OnCubeCaptured(cubeType);
+        }
+    }
+
+    public void OnCubeEscaped(Enumerations.CubeType cubeType)
+    {
+        cubesEscaped++;
+
+        // Notify stage manager
+        StageManager stageManager = FindObjectOfType<StageManager>();
+        if (stageManager != null)
+        {
+            stageManager.OnCubeEscaped(cubeType);
+        }
+    }
+
+    public void OnMarkerPlaced()
+    {
+        markersPlaced++;
+    }
+
+    public void OnDetonationUsed()
+    {
+        detonationsUsed++;
     }
 }

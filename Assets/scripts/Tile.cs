@@ -311,6 +311,9 @@ public class Tile : MonoBehaviour
         {
             tileRenderer.material = activateMarkerMaterial;
         }
+
+        // We do NOT immediately reset the material here
+        // That happens in ResetMarkerAfterDelay
     }
 
     public void ProcessCubeInteraction(CubeBehavior cube)
@@ -329,7 +332,13 @@ public class Tile : MonoBehaviour
 
         // Store reference to cube before changing marker state
         CubeBehavior cubeToProcess = currentCube;
+
+        // Change visual state to "activated"
         ActivateMarker();
+
+        // Start a coroutine to reset the material after a delay,
+        // regardless of whether a cube was captured
+        StartCoroutine(ResetMarkerAfterDelay(0.5f));
 
         if (cubeToProcess == null)
         {
@@ -368,6 +377,29 @@ public class Tile : MonoBehaviour
 
         // Clear cube reference after processing
         currentCube = null;
+    }
+
+    private IEnumerator ResetMarkerAfterDelay(float delay)
+    {
+        yield return new WaitForSeconds(delay);
+
+        // Reset the tile appearance, but don't reset its state
+        // (e.g., if it was blackened, keep it blackened)
+        if (tileRenderer != null)
+        {
+            if (IsBlackened)
+            {
+                tileRenderer.material = forbiddenMaterial;
+            }
+            else if (IsAdvantaged)
+            {
+                UpdateChargeVisuals();
+            }
+            else
+            {
+                tileRenderer.material = originalMaterial;
+            }
+        }
     }
 
     public void HandleCubeLanding(CubeBehavior cube)

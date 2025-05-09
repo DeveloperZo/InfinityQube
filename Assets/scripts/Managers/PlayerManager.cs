@@ -159,13 +159,31 @@ public class PlayerManager : MonoBehaviour
                 return;
             }
 
+            // Get wave-specific marker limit if available
+            int effectiveMaxMarkers = maxMarkers;
+            WaveManager waveManager = FindObjectOfType<WaveManager>();
+            if (waveManager != null)
+            {
+                int waveLimit = waveManager.GetCurrentMarkerLimit();
+                if (waveLimit > 0)
+                {
+                    effectiveMaxMarkers = waveLimit;
+                }
+            }
+
             if (!currentTile.HasMarker)
             {
-                if (currentMarkers < maxMarkers )
+                if (currentMarkers < effectiveMaxMarkers)
                 {
                     currentTile.PlaceMarker();
                     markerQueue.Enqueue(new Vector2Int(selX, selZ));
                     currentMarkers++;
+
+                    // Notify wave manager that a marker was placed
+                    if (waveManager != null)
+                    {
+                        waveManager.OnMarkerPlaced();
+                    }
                 }
             }
             else
