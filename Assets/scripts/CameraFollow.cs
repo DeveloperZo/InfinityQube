@@ -7,13 +7,15 @@ public class CameraFollow : MonoBehaviour
     [SerializeField] private float distance = 5f;
     [SerializeField] private float positionSmoothTime = 0.25f; // Smaller value for smoother transitions
     [SerializeField] private float rotationSmoothTime = 0.2f;
-    [SerializeField] private Vector3 offset = new Vector3(0, 0, 0); // Fine-tune position if needed
-    
+    [SerializeField] private Vector3 offset = new Vector3(-5f, -2.5f, 2.5f); // Fine-tune position if needed
+    [SerializeField] private Vector3 rotationOffset = new Vector3(0, 15f, -15f);
+
     // Using separate velocities for more stable movement
     private Vector3 positionVelocity = Vector3.zero;
     private Vector3 lookAtVelocity = Vector3.zero;
     private Vector3 currentLookAt;
-    
+    private Quaternion targetRotation;
+
     private void Start()
     {
         if (target == null)
@@ -34,6 +36,9 @@ public class CameraFollow : MonoBehaviour
         
         // Initialize look target
         currentLookAt = target.position;
+        targetRotation = Quaternion.identity;
+        transform.rotation = transform.rotation * Quaternion.Euler(rotationOffset.x, rotationOffset.y, rotationOffset.z);
+
     }
     
     private void LateUpdate()
@@ -49,9 +54,11 @@ public class CameraFollow : MonoBehaviour
         
         // Smoothly update the look target (prevents jitter when the selector jumps positions)
         currentLookAt = Vector3.SmoothDamp(currentLookAt, targetPosition, ref lookAtVelocity, rotationSmoothTime);
-        
+
         // Look at the smoothed target position
         transform.LookAt(currentLookAt);
+            
+        transform.rotation = transform.rotation * Quaternion.Euler(rotationOffset.x, rotationOffset.y, rotationOffset.z);
     }
     
     // Public method to instantly update camera on scene changes or warps
@@ -65,7 +72,9 @@ public class CameraFollow : MonoBehaviour
         transform.position = desiredPosition;
         currentLookAt = targetPosition;
         transform.LookAt(currentLookAt);
-        
+
+        transform.rotation = transform.rotation * Quaternion.Euler(rotationOffset.x, rotationOffset.y, rotationOffset.z);
+
         // Reset velocities
         positionVelocity = Vector3.zero;
         lookAtVelocity = Vector3.zero;

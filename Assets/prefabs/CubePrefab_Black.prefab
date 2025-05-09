@@ -120,7 +120,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   level: 1
   position: {x: 0, y: 0}
-  CubeType: 2
+  type: 0
+  material: {fileID: 0}
+  prefab: {fileID: 0}
   moveDuration: 0.25
   squashDuration: 0.25
   isRainingCube: 0
+  isDestroyed: 0
+  rainSpeed: 3
+  rainHeight: 5
+  targetRow: -1
+  moveCountRemaining: 0

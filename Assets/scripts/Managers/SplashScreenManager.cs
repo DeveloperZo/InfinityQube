@@ -2,13 +2,15 @@ using UnityEngine;
 using UnityEngine.Video;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using UnityEditor.SceneManagement;
+using System.IO;
 
 public class SplashScreenManager : MonoBehaviour
 {
     [Header("Video Configuration")]
     [SerializeField] private VideoPlayer videoPlayer;
     [SerializeField] private RawImage displayImage; // UI element to display video
-    [SerializeField] private string nextSceneName = "MainMenu";
+    [SerializeField] private string nextSceneName = "Sandbox";
 
     [Header("Playback Options")]
     [SerializeField] private bool canSkip = true;
@@ -71,6 +73,32 @@ public class SplashScreenManager : MonoBehaviour
     private void Start()
     {
         LogDebug("Preparing video for playback");
+
+        // Set up the RawImage to fill the screen
+        if (displayImage != null)
+        {
+            RectTransform rectTransform = displayImage.GetComponent<RectTransform>();
+            if (rectTransform != null)
+            {
+                rectTransform.anchorMin = Vector2.zero;
+                rectTransform.anchorMax = Vector2.one;
+                rectTransform.offsetMin = Vector2.zero;
+                rectTransform.offsetMax = Vector2.zero;
+            }
+
+            // Create render texture with correct aspect ratio
+            if (videoPlayer.renderMode == VideoRenderMode.RenderTexture)
+            {
+                int width = Screen.width;
+                int height = Screen.height;
+                RenderTexture renderTexture = new RenderTexture(width, height, 24);
+                videoPlayer.targetTexture = renderTexture;
+                displayImage.texture = renderTexture;
+                LogDebug($"Created render texture at {width}x{height}");
+            }
+        }
+
+        // Prepare the video
         videoPlayer.Prepare();
     }
 
@@ -121,6 +149,9 @@ public class SplashScreenManager : MonoBehaviour
     private void LoadNextScene()
     {
         LogDebug($"Loading next scene: {nextSceneName}");
+
+        // Don't unload the current scene first - just load the new scene
+        // This is more reliable for scene transitions
         SceneManager.LoadScene(nextSceneName);
     }
 
