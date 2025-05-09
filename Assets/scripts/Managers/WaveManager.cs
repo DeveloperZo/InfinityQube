@@ -463,7 +463,7 @@ public class WaveManager : MonoBehaviour
             foreach (var item in cubes)
             {
                 Vector2Int pos = item.position;
-                item.position = new Vector2Int(pos.x, grid.Height - pos.y );
+                item.position = new Vector2Int(pos.x, pos.y );
 
                 Vector3 spawnPos = new Vector3(pos.x, 1f, pos.y );
 

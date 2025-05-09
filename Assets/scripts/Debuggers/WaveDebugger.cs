@@ -33,6 +33,7 @@ public class WaveDebugger : MonoBehaviour
     private int waveWidth;
     private int waveHeight;
     private bool debugMode = true;
+    private bool shouldUpdateGrid = false;
 
     // Wave state tracking
     private int[,] gridState;
@@ -93,6 +94,8 @@ public class WaveDebugger : MonoBehaviour
 
         // Create a new WaveData asset
         WaveData waveData = ScriptableObject.CreateInstance<WaveData>();
+        waveData.GridWidth = waveWidth;
+        waveData.GridHeight = waveHeight;
         waveData.CubesData = new List<CubeData>();
 
         // Find the highest position (closest to player) among cubes to use as reference
@@ -187,23 +190,17 @@ public class WaveDebugger : MonoBehaviour
 
     private void CalculateWindowSize()
     {
-        // Calculate the window size and position
+        // Calculate the window size with fixed position on left side
         int windowWidth = waveWidth * (buttonSize + 2) + 20;
-        int windowHeight = waveHeight * (buttonSize + 2) + headerHeight + 220; // Added more space for new controls
+        int windowHeight = waveHeight * (buttonSize + 2) + headerHeight + 320; // Added more space for controls
 
-        if (centerOnScreen)
-        {
-            windowRect = new Rect(
-                (Screen.width - windowWidth) / 2,
-                (Screen.height - windowHeight) / 2,
-                windowWidth,
-                windowHeight
-            );
-        }
-        else
-        {
-            windowRect = new Rect(20, 20, windowWidth, windowHeight);
-        }
+        // Position on left side of screen with margin
+        windowRect = new Rect(
+            20, // Fixed left margin
+            60, // Fixed top margin (leave space for other UI)
+            windowWidth,
+            windowHeight
+        );
     }
 
     private void Update()
@@ -489,23 +486,32 @@ public class WaveDebugger : MonoBehaviour
         GUILayout.BeginHorizontal();
         GUILayout.Label("Width:", GUILayout.Width(40));
         string widthStr = GUILayout.TextField(waveWidth.ToString(), GUILayout.Width(30));
-        if (int.TryParse(widthStr, out int newWidth) && newWidth != waveWidth && newWidth >= 2 && newWidth <= 12)
+        int newWidth = waveWidth;
+        if (int.TryParse(widthStr, out newWidth) && newWidth >= 2 && newWidth <= 12)
         {
+            // Only store the value, don't apply yet
             waveWidth = newWidth;
-            InitializeGrid();
-            CalculateWindowSize();
         }
 
         GUILayout.Label("Height:", GUILayout.Width(40));
         string heightStr = GUILayout.TextField(waveHeight.ToString(), GUILayout.Width(30));
-        if (int.TryParse(heightStr, out int newHeight) && newHeight != waveHeight && newHeight >= 2 && newHeight <= 15)
+        int newHeight = waveHeight;
+        if (int.TryParse(heightStr, out newHeight) && newHeight >= 2 && newHeight <= 15)
         {
+            // Only store the value, don't apply yet
             waveHeight = newHeight;
+        }
+
+        // Add apply button
+        if (GUILayout.Button("Apply", GUILayout.Width(50)))
+        {
             InitializeGrid();
             CalculateWindowSize();
         }
+
         GUILayout.EndHorizontal();
     }
+
 
     private void DrawActionButtons()
     {
@@ -532,6 +538,12 @@ public class WaveDebugger : MonoBehaviour
     private void DrawDebugModeToggle()
     {
         debugMode = GUILayout.Toggle(debugMode, "Debug Mode (Manual Control)");
+
+        // Add checkbox for grid updating
+        if (nextWave != null)
+        {
+            shouldUpdateGrid = GUILayout.Toggle(shouldUpdateGrid, "Update Grid Size When Spawning");
+        }
     }
 
     private void DrawGridArea()
@@ -896,6 +908,22 @@ public class WaveDebugger : MonoBehaviour
         GUILayout.Label($"Current Next Wave: {waveName}");
         GUILayout.EndHorizontal();
 
+        // Show details about wave size if available
+        if (nextWave != null)
+        {
+            GUILayout.BeginHorizontal();
+            GUILayout.Label($"Wave Grid Size: {nextWave.GridWidth}x{nextWave.GridHeight} - " +
+                            $"Cubes: {nextWave.CubesData.Count}");
+
+            // Add update grid button
+            if (GUILayout.Button("Update Grid", GUILayout.Width(80)))
+            {
+                ResizeGridForNextWave();
+            }
+
+            GUILayout.EndHorizontal();
+        }
+
         // Add buttons for available waves
         GUILayout.BeginVertical(GUI.skin.box);
         GUILayout.Label("Available Waves:");
@@ -936,7 +964,7 @@ public class WaveDebugger : MonoBehaviour
             Debug.LogError("WaveManager not found!");
             return;
         }
-        
+
         // Stop tracking if active
         trackingActive = false;
 
@@ -944,34 +972,40 @@ public class WaveDebugger : MonoBehaviour
         WaveData waveData = new WaveData() { Index = 0, CubesData = new List<CubeData>() };
         if (nextWave != null)
         {
-            if (gridManager.width != nextWave.GridWidth || gridManager.height != nextWave.GridHeight)
-            {
-                gridManager.DestroyGrid();
+            // First ensure grid is properly sized
+            ResizeGridForNextWave();
 
-                gridManager.width = nextWave.GridWidth;
-                waveWidth = nextWave.GridWidth;
+            waveData.GridWidth = nextWave.GridWidth;
+            waveData.GridHeight = nextWave.GridHeight;
 
-                gridManager.height = nextWave.GridHeight > gridManager.Height ? nextWave.GridHeight * 4 : gridManager.Height;
-                waveHeight = nextWave.GridHeight;
+            // For a wave that is waveHeight rows tall, the top row should be placed at 
+            // gridManager.height - waveHeight to ensure the entire wave fits at the top
+            int topRowPosition = gridManager.height - nextWave.GridHeight;
 
-                gridManager.GenerateGrid();
-
-            }
             foreach (var cube in nextWave.CubesData)
             {
                 CubeData newCube = new CubeData();
                 newCube.type = cube.type;
-                newCube.position = new Vector2Int(
-                     cube.position.x,
-                     gridManager.Height-cube.position.y // Convert from grid Z to stored Y
-                 );
+
+                // Since wave data positions are from bottom (0) to top (height-1)
+                // We map them to the grid starting at the calculated top row
+                newCube.position = new Vector2Int(cube.position.x, gridManager.height + (cube.position.y - waveHeight) - 1);
+
                 newCube.level = cube.level;
                 waveData.CubesData.Add(newCube);
+
+                Debug.Log($"Spawning {newCube.type} cube at position ({newCube.position.x}, {newCube.position.y}) - Original wave pos: ({cube.position.x}, {cube.position.y})");
             }
-            nextWave = null;
         }
         else
         {
+            // Use the custom designed wave from the grid editor
+            waveData.GridWidth = waveWidth;
+            waveData.GridHeight = waveHeight;
+
+            // Top position for placing the wave is grid height - wave height
+            int topGridRow = gridManager.height - waveHeight;
+
             for (int y = 0; y < waveHeight; y++)
             {
                 for (int x = 0; x < waveWidth; x++)
@@ -980,10 +1014,14 @@ public class WaveDebugger : MonoBehaviour
                     if (gridState[x, y] == 0) continue;
 
                     CubeData newCube = new CubeData();
-                    newCube.position = new Vector2Int(x, y);
+                    // Map editor y coordinates (where 0 is top row) to grid positions
+                    // starting from the calculated top row
+                    newCube.position = new Vector2Int(x, gridManager.height + (y - waveHeight + 1));
                     newCube.type = (CubeType)(gridState[x, y] - 1);
                     newCube.level = 1;
                     waveData.CubesData.Add(newCube);
+
+                    Debug.Log($"Spawning custom {newCube.type} cube at position ({newCube.position.x}, {newCube.position.y}) - From editor pos: ({x}, {y})");
                 }
             }
         }
@@ -1001,6 +1039,54 @@ public class WaveDebugger : MonoBehaviour
 
         // Start tracking the new wave
         StartCoroutine(DelayedTracking());
+    }
+
+    private void ResizeGridForNextWave()
+    {
+        if (nextWave == null || nextWave.GridWidth <= 0 || nextWave.GridHeight <= 0) return;
+
+        bool needsResize = false;
+        int newWidth = nextWave.GridWidth;
+        int newHeight = nextWave.GridHeight * 3; // 3x wave height for plenty of movement space
+
+        // Check if resize is needed
+        if (gridManager.Width != newWidth || gridManager.height < newHeight)
+        {
+            needsResize = true;
+        }
+
+        if (needsResize)
+        {
+            // Destroy the existing grid
+            gridManager.DestroyGrid();
+
+            // Update grid dimensions
+            gridManager.width = newWidth;
+            gridManager.height = newHeight;
+
+            // Generate new grid - this will recreate the tiles array
+            gridManager.GenerateGrid();
+
+            // Update our local grid size to match the wave
+            waveWidth = nextWave.GridWidth;
+            waveHeight = nextWave.GridHeight;
+
+            // Update our local grid state arrays to match the new size
+            InitializeGrid();
+            CalculateWindowSize();
+
+            Debug.Log($"Grid resized to {gridManager.width}x{gridManager.height} for wave {nextWave.name} (Wave size: {nextWave.GridWidth}x{nextWave.GridHeight})");
+        }
+        else
+        {
+            Debug.Log($"Grid resize not needed - current size {gridManager.Width}x{gridManager.height} is sufficient for wave {nextWave.name}");
+
+            // Still update our local grid size to match the wave
+            waveWidth = nextWave.GridWidth;
+            waveHeight = nextWave.GridHeight;
+            InitializeGrid();
+            CalculateWindowSize();
+        }
     }
 
     private IEnumerator DelayedTracking()
