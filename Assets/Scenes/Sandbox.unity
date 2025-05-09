@@ -139,7 +139,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &150564767
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6570,7 +6570,7 @@ MonoBehaviour:
   distance: 5
   positionSmoothTime: 0.25
   rotationSmoothTime: 0.2
-  offset: {x: -5, y: -2.5, z: 2.5}
+  offset: {x: -6, y: -2, z: 4}
   rotationOffset: {x: 0, y: 15, z: -15}
 --- !u!1 &2046394294
 GameObject:
@@ -6835,7 +6835,7 @@ PrefabInstance:
       objectReference: {fileID: 2100000, guid: bda83a2874ae38043b32dc22c3288953, type: 2}
     - target: {fileID: 2398996257696515441, guid: cf05136bcc5a77245b89ea2c84ed7a9f, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3964670251850146430, guid: cf05136bcc5a77245b89ea2c84ed7a9f, type: 3}
       propertyPath: m_IsActive

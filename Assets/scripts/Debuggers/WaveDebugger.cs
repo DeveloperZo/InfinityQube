@@ -989,7 +989,7 @@ public class WaveDebugger : MonoBehaviour
 
                 // Since wave data positions are from bottom (0) to top (height-1)
                 // We map them to the grid starting at the calculated top row
-                newCube.position = new Vector2Int(cube.position.x, gridManager.height + (cube.position.y - waveHeight) - 1);
+                newCube.position = new Vector2Int(cube.position.x, gridManager.height + (cube.position.y - waveHeight));
 
                 newCube.level = cube.level;
                 waveData.CubesData.Add(newCube);
@@ -1016,7 +1016,7 @@ public class WaveDebugger : MonoBehaviour
                     CubeData newCube = new CubeData();
                     // Map editor y coordinates (where 0 is top row) to grid positions
                     // starting from the calculated top row
-                    newCube.position = new Vector2Int(x, gridManager.height + (y - waveHeight + 1));
+                    newCube.position = new Vector2Int(x, gridManager.height + (y - waveHeight));
                     newCube.type = (CubeType)(gridState[x, y] - 1);
                     newCube.level = 1;
                     waveData.CubesData.Add(newCube);

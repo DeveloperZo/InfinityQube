@@ -20,7 +20,7 @@ MonoBehaviour:
   gridHeight: 10
   playerStartPosition: {x: 2, y: 0}
   waveConfigurations:
-  - {fileID: 11400000, guid: c048cf1c79b0afc47962b3b22d32c777, type: 2}
+  - {fileID: 0}
   messages:
   - Message: '"Use arrow keys to move and SPACE to mark tiles.'
     DisplayMoveStep: 0
