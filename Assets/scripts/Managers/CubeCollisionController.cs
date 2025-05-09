@@ -59,7 +59,7 @@ public class CubeCollisionController : MonoBehaviour
                 HandleBlackCubeCollision(sourceCube, targetCube, position);
                 break;
             case Enumerations.CubeType.Blue:
-                HandleGreenCubeCollision(sourceCube, targetCube, position);
+                HandleBlueCubeCollision(sourceCube, targetCube, position);
                 break;
             case Enumerations.CubeType.Normal:
                 HandleNormalCubeCollision(sourceCube, targetCube, position);
@@ -101,7 +101,7 @@ public class CubeCollisionController : MonoBehaviour
         }
     }
 
-    private void HandleGreenCubeCollision(CubeBehavior sourceCube, CubeBehavior targetCube, Vector2Int position)
+    private void HandleBlueCubeCollision(CubeBehavior sourceCube, CubeBehavior targetCube, Vector2Int position)
     {
         switch (targetCube.type)
         {
@@ -116,8 +116,8 @@ public class CubeCollisionController : MonoBehaviour
                 break;
 
             case Enumerations.CubeType.Blue:
-                // Blue + Blue = Enhanced green tile and create detonation mark
-                EnhanceGreenTile(position);
+                // Blue + Blue = Enhanced blue tile and create detonation mark
+                EnhanceBlueTile(position);
                 // Register a detonation point at the tile position
                 if (detonationManager != null)
                 {
@@ -198,14 +198,14 @@ public class CubeCollisionController : MonoBehaviour
         }
     }
 
-    private void EnhanceGreenTile(Vector2Int position)
+    private void EnhanceBlueTile(Vector2Int position)
     {
         if (grid == null || !IsValidPosition(position)) return;
 
         Tile tile = grid.tiles[position.x, position.y];
         if (tile != null)
         {
-            // First ensure it's transformed to green
+            // First ensure it's transformed to blue
             tile.TransformTile(Enumerations.CubeType.Blue);
 
 

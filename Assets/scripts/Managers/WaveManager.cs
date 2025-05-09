@@ -34,7 +34,7 @@ public class WaveManager : MonoBehaviour
 
     [Header("Cube Type Chances")]
     [SerializeField][Range(0f, 1f)] private float normalCubeChance = 0.7f;
-    [SerializeField][Range(0f, 1f)] private float greenCubeChance = 0.2f;
+    [SerializeField][Range(0f, 1f)] private float blueCubeChance = 0.2f;
     // Black cubes make up the remainder
 
     [Header("Speed Controls")]
@@ -49,7 +49,7 @@ public class WaveManager : MonoBehaviour
     public int CurrentWaveIndex => currentWaveIndex;
     public WaveData CurrentWave => currentWave;
     private int normalCubesCaptured = 0;
-    private int greenCubesCaptured = 0;
+    private int blueCubesCaptured = 0;
     private int cubesEscaped = 0;
     private int markersPlaced = 0;
     private int detonationsUsed = 0;
@@ -585,7 +585,7 @@ public class WaveManager : MonoBehaviour
         float random = Random.value;
         if (random < normalCubeChance)
             return Enumerations.CubeType.Normal;
-        else if (random < normalCubeChance + greenCubeChance)
+        else if (random < normalCubeChance + blueCubeChance)
             return Enumerations.CubeType.Blue;
         else
             return Enumerations.CubeType.Black;
@@ -690,7 +690,7 @@ public class WaveManager : MonoBehaviour
                         renderer.material.color = Color.black;
                         break;
                     case Enumerations.CubeType.Blue:
-                        renderer.material.color = Color.green;
+                        renderer.material.color = Color.blue;
                         break;
                 }
             }
@@ -762,7 +762,7 @@ public class WaveManager : MonoBehaviour
     private void ResetWaveStatistics()
     {
         normalCubesCaptured = 0;
-        greenCubesCaptured = 0;
+        blueCubesCaptured = 0;
         cubesEscaped = 0;
         markersPlaced = 0;
         detonationsUsed = 0;
@@ -786,7 +786,7 @@ public class WaveManager : MonoBehaviour
         if (currentWave != null)
         {
             currentWave.normalCubesCaptured = normalCubesCaptured;
-            currentWave.greenCubesCaptured = greenCubesCaptured;
+            currentWave.blueCubesCaptured = blueCubesCaptured;
             currentWave.cubesEscaped = cubesEscaped;
             currentWave.markersPlaced = markersPlaced;
             currentWave.detonationsUsed = detonationsUsed;
@@ -832,7 +832,7 @@ public class WaveManager : MonoBehaviour
                 normalCubesCaptured++;
                 break;
             case Enumerations.CubeType.Blue:
-                greenCubesCaptured++;
+                blueCubesCaptured++;
                 break;
         }
 

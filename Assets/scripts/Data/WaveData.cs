@@ -29,7 +29,7 @@ public class WaveData : ScriptableObject
 
     [Header("Statistics")]
     public int normalCubesCaptured = 0;
-    public int greenCubesCaptured = 0;
+    public int blueCubesCaptured = 0;
     public int cubesEscaped = 0;
     public int markersPlaced = 0;
     public int detonationsUsed = 0;

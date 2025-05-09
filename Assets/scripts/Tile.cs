@@ -70,7 +70,7 @@ public class Tile : MonoBehaviour
                     break;
 
                 case Enumerations.CubeType.Blue:
-                    // First green charge
+                    // First blue charge
                     AdvantageTile();
                     break;
 
@@ -365,7 +365,7 @@ public class Tile : MonoBehaviour
                     detonationManager.RegisterDetonationPoint(new Vector2Int(x, y));
                 }
 
-                // Consume the green cube
+                // Consume the blue cube
                 Destroy(cubeToProcess.gameObject);
                 break;
 

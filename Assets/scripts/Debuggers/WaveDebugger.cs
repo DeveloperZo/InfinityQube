@@ -38,7 +38,7 @@ public class WaveDebugger : MonoBehaviour
 
     // Wave state tracking
     private int[,] gridState;
-    private int[,] buttonState; // 0=disabled, 1=normal, 2=green, 3=black
+    private int[,] buttonState; // 0=disabled, 1=normal, 2=blue, 3=black
     private bool[,] buttonInteractable;
     private List<CubeBehavior> trackedCubes = new List<CubeBehavior>();
     private bool trackingActive = false;
@@ -61,7 +61,7 @@ public class WaveDebugger : MonoBehaviour
 
     // Color settings for buttons
     private Color normalCubeColor = new Color(0.7f, 0.7f, 0.7f, 1f);
-    private Color greenCubeColor = new Color(0.2f, 0.8f, 0.2f, 1f);
+    private Color blueCubeColor = new Color(0.2f, 0.8f, 0.2f, 1f);
     private Color blackCubeColor = new Color(0.1f, 0.1f, 0.1f, 1f);
     private Color disabledColor = new Color(0.3f, 0.3f, 0.3f, 0.5f);
     private Color clearButtonColor = new Color(0.9f, 0.9f, 0.9f, 0.1f); // Almost transparent white
@@ -437,7 +437,7 @@ public class WaveDebugger : MonoBehaviour
         if (GUILayout.Toggle(selectedCubeType == 1, "Normal", "Button"))
             selectedCubeType = 1;
 
-        GUI.backgroundColor = greenCubeColor;
+        GUI.backgroundColor = blueCubeColor;
         if (GUILayout.Toggle(selectedCubeType == 2, "Blue", "Button"))
             selectedCubeType = 2;
 
@@ -845,7 +845,7 @@ public class WaveDebugger : MonoBehaviour
                 GUI.backgroundColor = normalCubeColor;
                 break;
             case 2: // Blue
-                GUI.backgroundColor = greenCubeColor;
+                GUI.backgroundColor = blueCubeColor;
                 break;
             case 3: // Black
                 GUI.backgroundColor = blackCubeColor;
@@ -993,7 +993,7 @@ public class WaveDebugger : MonoBehaviour
     private string GetCubeStats()
     {
         int normalCount = 0;
-        int greenCount = 0;
+        int blueCount = 0;
         int blackCount = 0;
 
         if (trackingActive)
@@ -1005,7 +1005,7 @@ public class WaveDebugger : MonoBehaviour
                 switch (cube.type)
                 {
                     case Enumerations.CubeType.Normal: normalCount++; break;
-                    case Enumerations.CubeType.Blue: greenCount++; break;
+                    case Enumerations.CubeType.Blue: blueCount++; break;
                     case Enumerations.CubeType.Black: blackCount++; break;
                 }
             }
@@ -1019,14 +1019,14 @@ public class WaveDebugger : MonoBehaviour
                     switch (gridState[x, y])
                     {
                         case 1: normalCount++; break;
-                        case 2: greenCount++; break;
+                        case 2: blueCount++; break;
                         case 3: blackCount++; break;
                     }
                 }
             }
         }
 
-        return $"Normal: {normalCount}, Blue: {greenCount}, Black: {blackCount}";
+        return $"Normal: {normalCount}, Blue: {blueCount}, Black: {blackCount}";
     }
 
     private void RandomizeGrid()
@@ -1034,10 +1034,10 @@ public class WaveDebugger : MonoBehaviour
         if (trackingActive) return; // Cannot randomize during tracking
 
         int totalCells = waveWidth * waveHeight;
-        int maxGreen = Mathf.FloorToInt(totalCells * 0.2f);
+        int maxBlue = Mathf.FloorToInt(totalCells * 0.2f);
         int maxBlack = Mathf.FloorToInt(totalCells * 0.2f);
 
-        int greenCount = Random.Range(1, maxGreen + 1);
+        int blueCount = Random.Range(1, maxBlue + 1);
         int blackCount = Random.Range(1, maxBlack + 1);
 
         // Reset all to normal cubes
@@ -1049,8 +1049,8 @@ public class WaveDebugger : MonoBehaviour
             }
         }
 
-        // Place green cubes randomly
-        PlaceRandomCubes(2, greenCount);
+        // Place blue cubes randomly
+        PlaceRandomCubes(2, blueCount);
 
         // Place black cubes randomly
         PlaceRandomCubes(3, blackCount);
