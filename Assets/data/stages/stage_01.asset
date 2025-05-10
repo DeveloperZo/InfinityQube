@@ -22,6 +22,7 @@ MonoBehaviour:
   waveConfigurations:
   - {fileID: 11400000, guid: 9351411930ad5ce4084db5e29248b3f4, type: 2}
   - {fileID: 11400000, guid: 2e465d29e5e1def48b4c17c56dbc282d, type: 2}
+  - {fileID: 11400000, guid: 7870837b1b39cae4693b19c0e07ec41b, type: 2}
   requireAllCubesDestroyed: 0
   requiredCaptureCount: 0
   maxAllowedEscapes: 0

@@ -8,7 +8,8 @@ public class PlayerManager : MonoBehaviour
     [SerializeField] private GridManager grid;
 
     [Header("Settings")]
-    [SerializeField] private int maxMarkers = 2;
+    [SerializeField] private int maxMarkerCharge = 2;
+    [SerializeField] private int maxMarkerCount = 99;
     [SerializeField] private Color selectorColor = Color.yellow;
     [SerializeField] private float selectorHeight = 0.2f;
     [Header("Speed Control")]
@@ -160,20 +161,26 @@ public class PlayerManager : MonoBehaviour
             }
 
             // Get wave-specific marker limit if available
-            int effectiveMaxMarkers = maxMarkers;
+            int markerCount = maxMarkerCount;
+            int markerChargeCount = this.maxMarkerCharge;
             WaveManager waveManager = FindObjectOfType<WaveManager>();
             if (waveManager != null)
             {
-                int waveLimit = waveManager.GetCurrentMarkerLimit();
-                if (waveLimit > 0)
+                int waveChargeLimit = waveManager.MarkerChargeLimit();
+                if (waveChargeLimit > 0)
                 {
-                    effectiveMaxMarkers = waveLimit;
+                    markerChargeCount = waveChargeLimit;
+                }
+                int waveCountLimit = waveManager.MarkerCountLimit();
+                if (waveCountLimit > 0)
+                {
+                    markerCount = waveCountLimit;
                 }
             }
 
             if (!currentTile.HasMarker)
             {
-                if (currentMarkers < effectiveMaxMarkers)
+                if (currentMarkers < markerChargeCount)
                 {
                     currentTile.PlaceMarker();
                     markerQueue.Enqueue(new Vector2Int(selX, selZ));
@@ -289,6 +296,6 @@ public class PlayerManager : MonoBehaviour
 
     public void SetMaxMarkers(int max)
     {
-        maxMarkers = Mathf.Max(1, max);
+        maxMarkerCharge = Mathf.Max(1, max);
     }
 }

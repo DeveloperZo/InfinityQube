@@ -737,12 +737,12 @@ MonoBehaviour:
   gridManager: {fileID: 1786583425}
   waveManager: {fileID: 487637473}
   playerController: {fileID: 1676735593}
+  stageManager: {fileID: 0}
   saveLocation: Assets/data/waves/
   nextWave: {fileID: 11400000, guid: a3edb9f425c3f5943b145ad182a7cd4a, type: 2}
   toggleKey: 283
   defaultWidth: 3
   defaultHeight: 3
-  centerOnScreen: 1
   pauseButtonColor: {r: 1, g: 0.5, b: 0.5, a: 1}
   playSectionColor: {r: 0.2, g: 0.7, b: 0.3, a: 0.8}
   debugObjects: []
@@ -6957,7 +6957,7 @@ PrefabInstance:
       objectReference: {fileID: 2100000, guid: bda83a2874ae38043b32dc22c3288953, type: 2}
     - target: {fileID: 2398996257696515441, guid: cf05136bcc5a77245b89ea2c84ed7a9f, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3964670251850146430, guid: cf05136bcc5a77245b89ea2c84ed7a9f, type: 3}
       propertyPath: m_IsActive

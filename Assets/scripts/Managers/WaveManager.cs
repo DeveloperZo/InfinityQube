@@ -43,6 +43,15 @@ public class WaveManager : MonoBehaviour
     [SerializeField] private bool showDebugInfo = false;
     [SerializeField] private GameObject returnIndicatorPrefab;
 
+    [Header("UI References")]
+    [SerializeField] private GameObject messagePanel;
+    [SerializeField] private UnityEngine.UI.Text messageText;
+    [SerializeField] private GameObject continuePrompt;
+
+    [Header("Highlight System")]
+    [SerializeField] private Material tileHighlightMaterial;
+    [SerializeField] private Material cubeHighlightMaterial;
+
     [Header("Wave Tracking")]
     [SerializeField] private int currentWaveIndex = 0;
     private WaveData currentWave;
@@ -65,7 +74,15 @@ public class WaveManager : MonoBehaviour
     public bool debugMode = false;
     public bool manualControl = false;
 
-    
+    // Message system
+    private bool isMessageActive = false;
+    private bool isPaused = false;
+    private List<GameObject> activeHighlights = new List<GameObject>();
+    private List<WaveMessage> activeMessageObjects = new List<WaveMessage>();
+    private Queue<WaveMessage> pendingMessages = new Queue<WaveMessage>();
+    private bool isProcessingMessageQueue = false;
+
+
 
     public void SetSpeedState(bool isSpeeding)
     {
@@ -106,8 +123,12 @@ public class WaveManager : MonoBehaviour
             return;
         }
 
-        if(cubeData == null) 
+        if (cubeData == null)
             cubeData = new CubeData();
+
+        // Hide message panel initially
+        if (messagePanel != null)
+            messagePanel.SetActive(false);
     }
 
     private void Update()
@@ -120,6 +141,19 @@ public class WaveManager : MonoBehaviour
         if (showDebugInfo && Input.GetKeyDown(KeyCode.L))
         {
             DebugActiveCubes();
+        }
+
+        // Handle message confirmation
+        if (isPaused && Input.GetKeyDown(KeyCode.K))
+        {
+            HideCurrentMessage();
+
+            // If no more messages, resume gameplay
+            if (activeMessageObjects.Count == 0)
+            {
+                Time.timeScale = 1f;
+                isPaused = false;
+            }
         }
     }
 
@@ -150,28 +184,47 @@ public class WaveManager : MonoBehaviour
 
     private void NotifyMovementComplete()
     {
-
         MoveStep++;
-        // Find and notify all AutoDetonationTag components
+
+        // Check for wave messages at this move step
+        if (currentWave != null)
+        {
+            var messages = currentWave.messages.FindAll(m => m.DisplayMoveStep == MoveStep);
+            foreach (var message in messages)
+            {
+                ShowMessage(message, message.RequirePause, message.AutoHideDelay);
+            }
+        }
+
+        // Process auto detonations
         DetonationManager detonationManager = FindObjectOfType<DetonationManager>();
         if (detonationManager != null)
         {
             detonationManager.ProcessAutoDetonations();
         }
 
-        StageManager stageManager= FindObjectOfType<StageManager>();
-        if (stageManager!= null)
+        // Notify stage manager
+        StageManager stageManager = FindObjectOfType<StageManager>();
+        if (stageManager != null)
         {
             stageManager.MoveStepComplete();
         }
-
     }
-
 
     private IEnumerator RunWave(bool resume = false)
     {
         waveActive = true;
         MoveStep = 0;
+
+        // Show initial messages if available
+        if (currentWave != null && !resume)
+        {
+            var initialMessages = currentWave.messages.FindAll(m => m.DisplayMoveStep == 0);
+            foreach (var message in initialMessages)
+            {
+                ShowMessage(message, message.RequirePause, message.AutoHideDelay);
+            }
+        }
 
         // Toggle player input
         if (player != null && !debugMode)
@@ -263,10 +316,16 @@ public class WaveManager : MonoBehaviour
         waveActive = false;
 
         // Clear any highlights
-        StageManager stageManager = FindObjectOfType<StageManager>();
-        if (stageManager != null)
+        ClearAllHighlights();
+
+        // Check for end-of-wave messages
+        if (currentWave != null)
         {
-            stageManager.ClearAllHighlights();
+            var endMessages = currentWave.messages.FindAll(m => m.DisplayMoveStep == -1);
+            foreach (var message in endMessages)
+            {
+                ShowMessage(message, message.RequirePause, message.AutoHideDelay);
+            }
         }
 
         // If there are more waves, advance to the next one
@@ -278,6 +337,256 @@ public class WaveManager : MonoBehaviour
         {
             // All waves complete
             waveCoroutine = null;
+        }
+    }
+
+    // Message display system with pause functionality
+    public void ShowMessage(WaveMessage message, bool pauseGameplay = false, float autoHideDelay = 0f)
+    {
+        if (messagePanel == null || messageText == null ||
+            (message.DisplayMoveStep != MoveStep && message.DisplayMoveStep != -1))
+            return;
+
+        // Add message to queue
+        pendingMessages.Enqueue(message);
+
+        // Start processing queue if not already doing so
+        if (!isProcessingMessageQueue)
+        {
+            StartCoroutine(ProcessMessageQueue());
+        }
+    }
+
+    // Process messages one at a time
+    private IEnumerator ProcessMessageQueue()
+    {
+        isProcessingMessageQueue = true;
+
+        while (pendingMessages.Count > 0)
+        {
+            // Get next message
+            WaveMessage currentMessage = pendingMessages.Dequeue();
+
+            // Wait for any previous message to be closed if this message requires pause
+            if (currentMessage.RequirePause && isPaused)
+            {
+                yield return new WaitUntil(() => !isPaused);
+            }
+
+            // Display the message
+            DisplaySingleMessage(currentMessage);
+
+            // If message requires pause, wait until it's closed
+            if (currentMessage.RequirePause)
+            {
+                isPaused = true;
+                Time.timeScale = 0f;
+                yield return new WaitUntil(() => !isPaused);
+            }
+            else if (currentMessage.AutoHideDelay > 0)
+            {
+                // Wait for auto-hide delay
+                yield return new WaitForSeconds(currentMessage.AutoHideDelay);
+                HideCurrentMessage();
+            }
+        }
+
+        isProcessingMessageQueue = false;
+    }
+
+    // Display a single message
+    private void DisplaySingleMessage(WaveMessage message)
+    {
+        // Instantiate the message panel
+        messagePanel.SetActive(true);
+        messageText.text = message.Message;
+
+        // Track this message
+        activeMessageObjects.Add(message);
+
+        // Apply highlights if specified
+        if (message.HighlightTile)
+        {
+            foreach (var tile in message.highlightTiles)
+            {
+                HighlightTile(tile.x, tile.y, message.highlightColor);
+            }
+        }
+    }
+
+    // Update to hide only the most recent message
+    private void HideCurrentMessage()
+    {
+        if (activeMessageObjects.Count > 0)
+        {
+            // Get the last message
+            int lastIndex = activeMessageObjects.Count - 1;
+            WaveMessage msgObj = activeMessageObjects[lastIndex];
+
+            // Remove and destroy it
+            activeMessageObjects.RemoveAt(lastIndex);
+            if (msgObj.Message == messageText.text)
+                messageText.text = "";
+
+            messagePanel.SetActive(false);
+        }
+    }
+
+    // Update HideMessage to be able to hide all messages
+    public void HideAllMessages()
+    {
+        activeMessageObjects.Clear();
+        pendingMessages.Clear();
+        Time.timeScale = 1f;
+        isPaused = false;
+    }
+
+    // Highlight system for tiles and cubes
+    public void HighlightTile(int x, int y, Color color)
+    {
+        if (x < 0 || x >= grid.Width || y < 0 || y >= grid.Height)
+            return;
+
+        // Create a highlight at the tile position
+        Vector3 position = new Vector3(x, 0.05f, y); // Slightly above tile
+        GameObject highlight = CreateHighlight(position, color, tileHighlightMaterial);
+        activeHighlights.Add(highlight);
+    }
+
+    public void HighlightCube(CubeBehavior cube, Color color)
+    {
+        if (cube == null)
+            return;
+
+        // Create a highlight that follows the cube
+        GameObject highlight = CreateHighlight(cube.transform.position, color, cubeHighlightMaterial);
+
+        // Setup to follow cube
+        HighlightFollower follower = highlight.AddComponent<HighlightFollower>();
+        follower.SetTarget(cube.transform);
+
+        activeHighlights.Add(highlight);
+    }
+
+    public void HighlightMultipleTiles(List<Vector2Int> positions, Color color)
+    {
+        foreach (Vector2Int pos in positions)
+        {
+            HighlightTile(pos.x, pos.y, color);
+        }
+    }
+
+    public void ClearAllHighlights()
+    {
+        foreach (GameObject highlight in activeHighlights)
+        {
+            if (highlight != null)
+                Destroy(highlight);
+        }
+
+        activeHighlights.Clear();
+    }
+
+    private GameObject CreateHighlight(Vector3 position, Color color, Material baseMaterial)
+    {
+        GameObject highlight = new GameObject("Highlight");
+        highlight.transform.position = position;
+
+        // Add mesh components
+        MeshFilter meshFilter = highlight.AddComponent<MeshFilter>();
+        meshFilter.mesh = CreateHighlightMesh();
+
+        MeshRenderer meshRenderer = highlight.AddComponent<MeshRenderer>();
+        meshRenderer.material = new Material(baseMaterial);
+        meshRenderer.material.color = color;
+
+        // Add pulsing effect
+        PulseEffect pulser = highlight.AddComponent<PulseEffect>();
+
+        return highlight;
+    }
+
+    private Mesh CreateHighlightMesh()
+    {
+        // Create a simple quad mesh for highlighting
+        Mesh mesh = new Mesh();
+
+        float size = 0.9f; // Slightly smaller than a full tile
+        Vector3[] vertices = new Vector3[4]
+        {
+            new Vector3(-size/2, 0, -size/2),
+            new Vector3(size/2, 0, -size/2),
+            new Vector3(-size/2, 0, size/2),
+            new Vector3(size/2, 0, size/2)
+        };
+
+        int[] triangles = new int[6]
+        {
+            0, 2, 1,
+            2, 3, 1
+        };
+
+        Vector2[] uv = new Vector2[4]
+        {
+            new Vector2(0, 0),
+            new Vector2(1, 0),
+            new Vector2(0, 1),
+            new Vector2(1, 1)
+        };
+
+        mesh.vertices = vertices;
+        mesh.triangles = triangles;
+        mesh.uv = uv;
+        mesh.RecalculateNormals();
+
+        return mesh;
+    }
+
+    // Helper component for highlights that follow cubes
+    private class HighlightFollower : MonoBehaviour
+    {
+        private Transform target;
+        private Vector3 offset = new Vector3(0, 0.1f, 0); // Slight offset above
+
+        public void SetTarget(Transform targetTransform)
+        {
+            target = targetTransform;
+        }
+
+        private void Update()
+        {
+            if (target != null)
+            {
+                transform.position = target.position + offset;
+            }
+            else
+            {
+                // Target was destroyed, destroy this highlight
+                Destroy(gameObject);
+            }
+        }
+    }
+
+    // Simple pulse effect for highlights
+    private class PulseEffect : MonoBehaviour
+    {
+        public float minScale = 0.8f;
+        public float maxScale = 1.2f;
+        public float pulseSpeed = 2f;
+
+        private Vector3 baseScale;
+
+        private void Start()
+        {
+            baseScale = transform.localScale;
+        }
+
+        private void Update()
+        {
+            float pulse = Mathf.Lerp(minScale, maxScale,
+                (Mathf.Sin(Time.unscaledTime * pulseSpeed) + 1f) * 0.5f);
+
+            transform.localScale = baseScale * pulse;
         }
     }
 
@@ -501,15 +810,15 @@ public class WaveManager : MonoBehaviour
 
     private void GenerateConfigurationWave()
     {
-        
+
         var cubes = waveConfiguration[currentWaveIndex].CubesData;
 
         foreach (var item in cubes)
         {
             Vector2Int pos = item.position;
-            item.position = new Vector2Int(pos.x, pos.y );
+            item.position = new Vector2Int(pos.x, pos.y);
 
-            Vector3 spawnPos = new Vector3(pos.x, 1f, pos.y );
+            Vector3 spawnPos = new Vector3(pos.x, 1f, pos.y);
 
             // Guard against index out of bounds
             int prefabIndex = (int)item.type;
@@ -532,7 +841,7 @@ public class WaveManager : MonoBehaviour
                 cb.Init(grid, item, 1);
                 activeCubes.Add(cb);
             }
-        }   
+        }
     }
 
     public void SpawnRainingBlackCubes()
@@ -651,7 +960,7 @@ public class WaveManager : MonoBehaviour
 
         // Check for collisions now that the cube has landed
         cube.CheckForCollisionOnLanding();
-        if(tile != null)
+        if (tile != null)
         {
             if (tile.IsAdvantaged)
             {
@@ -721,7 +1030,7 @@ public class WaveManager : MonoBehaviour
 
     internal void ConfigureSpawn(List<CubeData> spawnData)
     {
-        
+
     }
 
     // Add these methods to your WaveManager.cs
@@ -769,7 +1078,7 @@ public class WaveManager : MonoBehaviour
     }
 
     // Method to get the current marker limit
-    public int GetCurrentMarkerLimit()
+    public int MarkerChargeLimit()
     {
         if (currentWave != null && currentWave.limitMarkers)
         {
@@ -778,9 +1087,18 @@ public class WaveManager : MonoBehaviour
         return -1; // No limit
     }
 
+    public int MarkerCountLimit()
+    {
+        if (currentWave != null && currentWave.limitMarkers)
+        {
+            return currentWave.maxMarkerCount;
+        }
+        return -1; // No limit
+    }
+
     public IEnumerator AdvanceToNextWave()
     {
-        if (!useWaveConfiguration)  yield return null;
+        if (!useWaveConfiguration) yield return null;
 
         // Save statistics for the current wave
         if (currentWave != null)
@@ -801,7 +1119,7 @@ public class WaveManager : MonoBehaviour
         {
             currentWave = waveConfiguration[currentWaveIndex];
             ResetWaveStatistics();
-            
+
             // Start the new wave
             if (waveCoroutine != null)
             {
