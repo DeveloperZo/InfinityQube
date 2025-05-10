@@ -773,7 +773,7 @@ public class WaveManager : MonoBehaviour
     {
         if (currentWave != null && currentWave.limitMarkers)
         {
-            return currentWave.maxMarkers;
+            return currentWave.maxMarkerCharge;
         }
         return -1; // No limit
     }

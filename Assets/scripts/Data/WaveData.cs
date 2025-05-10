@@ -14,7 +14,8 @@ public class WaveData : ScriptableObject
 
     [Header("Wave Settings")]
     public bool limitMarkers = false;
-    public int maxMarkers = 2;
+    public int maxMarkerCharge = 2;
+    public int maxMarkerCount = 99;
     public float waveStartDelay = 0.75f;
     public float moveInterval = 0.75f;
     public float fastMoveInterval = 0.1f;
