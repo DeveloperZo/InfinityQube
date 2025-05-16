@@ -1433,8 +1433,10 @@ public class WaveDebugger : MonoBehaviour
         // Spawn the wave and start tracking
         isPaused = false; // Start unpaused
         runningWave = true;
-        waveManager.SpawnCustomWave(new List<WaveData> { waveData }, debugMode);
-
+        waveManager.waveActive = false;
+        waveManager.waveConfiguration = new List<WaveData>() { waveData };
+        waveManager.StartWave();
+        
         // Update move speed settings
         UpdateMoveSpeed();
 

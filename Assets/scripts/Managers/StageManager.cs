@@ -98,11 +98,12 @@ public class StageManager : MonoBehaviour
         // Regenerate grid with stage dimensions
         if (gridManager != null)
         {
+            // Destroy old grid
+            gridManager.DestroyGrid();
+
             gridManager.width = currentStage.gridWidth;
             gridManager.height = currentStage.gridHeight;
 
-            // Destroy old grid
-            gridManager.DestroyGrid();
 
             // Create new grid
             gridManager.GenerateGrid();

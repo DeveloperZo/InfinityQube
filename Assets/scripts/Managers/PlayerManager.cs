@@ -1,37 +1,40 @@
-using UnityEngine;
+﻿using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
+using System;
+using System.Collections;
 
 public class PlayerManager : MonoBehaviour
 {
     [Header("References")]
     [SerializeField] private GridManager grid;
+    private int lastLoggedTileX = -1;
+    private int lastLoggedTileZ = -1;
 
     [Header("Settings")]
     [SerializeField] private int maxMarkerCharge = 2;
     [SerializeField] private int maxMarkerCount = 99;
-    [SerializeField] private Color selectorColor = Color.yellow;
-    [SerializeField] private float selectorHeight = 0.2f;
+
     [Header("Speed Control")]
+    [SerializeField]
+    private float worldSpeed = 3f;
     [SerializeField] private KeyCode speedUpKey = KeyCode.LeftShift;
+    [SerializeField] private Animator _anim;
+    private static readonly int IsRunningHash = Animator.StringToHash("IsRunning");
+    private bool isMoving = false;
+    private Coroutine moveRoutine;
 
     private int currentMarkers = 0;
     private int selX = 0, selZ = 0;
     private DetonationManager detonationManager;
-    private Renderer selectorRenderer;
+
     private Queue<Vector2Int> markerQueue = new Queue<Vector2Int>(); // Track marker order
     private bool isInitialized = false;
     private bool isSpeedingUp = false;
 
     private void Awake()
     {
-        selectorRenderer = GetComponent<Renderer>();
-        if (selectorRenderer == null)
-        {
-            Debug.LogError("Selector requires a Renderer component!");
-            enabled = false;
-            return;
-        }
+
     }
 
     private void Start()
@@ -53,12 +56,6 @@ public class PlayerManager : MonoBehaviour
             Debug.LogWarning("DetonationManager not found in scene. Detonation functionality will be limited.");
         }
         
-        // Set selector color
-        if (selectorRenderer != null && selectorRenderer.material != null)
-        {
-            selectorRenderer.material.color = selectorColor;
-        }
-        
         isInitialized = true;
     }
 
@@ -74,8 +71,9 @@ public class PlayerManager : MonoBehaviour
     private void Update()
     {
         if (!isInitialized) return;
-        
+
         HandleMovement();
+        TrackAndLogTilePosition();
         HandleMarkerPlacement();
         HandleMarkerTrigger();
         HandleDetonation();
@@ -84,48 +82,49 @@ public class PlayerManager : MonoBehaviour
 
     private void HandleMovement()
     {
-        bool moved = false;
+        // 1) Read raw input axes
+        float h = 0, v = 0;
+        if (Input.GetKey(KeyCode.LeftArrow)) h = -1;
+        if (Input.GetKey(KeyCode.RightArrow)) h = +1;
+        if (Input.GetKey(KeyCode.UpArrow)) v = +1;
+        if (Input.GetKey(KeyCode.DownArrow)) v = -1;
 
-        if (Input.GetKeyDown(KeyCode.LeftArrow))
-        {
-            selX = Mathf.Max(0, selX - 1);
-            moved = true;
-        }
-        if (Input.GetKeyDown(KeyCode.RightArrow))
-        {
-            selX = Mathf.Min(grid.Width - 1, selX + 1);
-            moved = true;
-        }
-        if (Input.GetKeyDown(KeyCode.UpArrow))
-        {
-            selZ = Mathf.Min(grid.Height - 1, selZ + 1);
-            moved = true;
-        }
-        if (Input.GetKeyDown(KeyCode.DownArrow))
-        {
-            selZ = Mathf.Max(0, selZ - 1);
-            moved = true;
-        }
-        
-        int newX = selX;
-        int newZ = selZ;
+        Vector3 dir = new Vector3(h, 0, v);
 
-        if (moved)
+        // 2) If any input, face and run
+        bool isRunning = dir.sqrMagnitude > 0.01f;
+        _anim.SetBool(IsRunningHash, isRunning);
+
+        if (isRunning)
         {
-            // Check if the target tile is valid to move to
-            if (IsValidMoveTarget(newX, newZ))
-            {
-                selX = newX;
-                selZ = newZ;
-                UpdateSelectorPosition();
-            }
-            else
-            {
-                // Blocked movement - could add visual/audio feedback here
-                Debug.Log("Movement blocked: tile is corrupted");
-            }
+            // rotate smoothly (or instantly) to face move direction
+            transform.rotation = Quaternion.LookRotation(dir, Vector3.up);
+
+            // 3) translate in world space
+            transform.Translate(dir.normalized * worldSpeed * Time.deltaTime, Space.World);
         }
     }
+
+    private void TrackAndLogTilePosition()
+    {
+        // Assuming your grid origin is at (0, 0) and each tile is 1 unit
+        int tileX = Mathf.FloorToInt(transform.position.x + 0.5f);
+        int tileZ = Mathf.FloorToInt(transform.position.z + 0.5f);
+
+        // clamp within your grid bounds
+        tileX = Mathf.Clamp(tileX, 0, grid.Width - 1);
+        tileZ = Mathf.Clamp(tileZ, 0, grid.Height - 1);
+
+        // only log when it changes
+        if (tileX != lastLoggedTileX || tileZ != lastLoggedTileZ)
+        {
+            lastLoggedTileX = tileX;
+            lastLoggedTileZ = tileZ;
+
+            Debug.Log($"WorldPos={transform.position:F2}  →  Tile=({tileX},{tileZ})");
+        }
+    }
+
     private bool IsValidMoveTarget(int x, int z)
     {
         // Check grid bounds
@@ -139,7 +138,7 @@ public class PlayerManager : MonoBehaviour
 
     private void UpdateSelectorPosition()
     {
-        transform.position = new Vector3(selX, selectorHeight, selZ);
+        transform.position = new Vector3(selX, 1, selZ);
     }
 
     // In PlayerController.cs, update HandleMarkerPlacement
