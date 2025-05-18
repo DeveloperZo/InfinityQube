@@ -14,6 +14,7 @@ public class PlayerManager : MonoBehaviour
     [Header("Settings")]
     [SerializeField] private int maxMarkerCharge = 2;
     [SerializeField] private int maxMarkerCount = 99;
+    [SerializeField] private float tileScale = 3f; // Added tile scale parameter
 
     [Header("Speed Control")]
     [SerializeField]
@@ -25,17 +26,12 @@ public class PlayerManager : MonoBehaviour
     private Coroutine moveRoutine;
 
     private int currentMarkers = 0;
-    private int selX = 0, selZ = 0;
+    private Vector2Int currentTilePosition = new Vector2Int(0, 0);
     private DetonationManager detonationManager;
 
     private Queue<Vector2Int> markerQueue = new Queue<Vector2Int>(); // Track marker order
     private bool isInitialized = false;
     private bool isSpeedingUp = false;
-
-    private void Awake()
-    {
-
-    }
 
     private void Start()
     {
@@ -49,13 +45,15 @@ public class PlayerManager : MonoBehaviour
                 return;
             }
         }
-        
+
         detonationManager = FindObjectOfType<DetonationManager>();
         if (detonationManager == null)
         {
             Debug.LogWarning("DetonationManager not found in scene. Detonation functionality will be limited.");
         }
-        
+
+        // Initialize the current position based on the player's world position
+        UpdateCurrentTilePosition();
         isInitialized = true;
     }
 
@@ -63,8 +61,7 @@ public class PlayerManager : MonoBehaviour
     {
         if (isInitialized)
         {
-            // Reset the selector position when enabled
-            UpdateSelectorPosition();
+            UpdateCurrentTilePosition();
         }
     }
 
@@ -97,25 +94,51 @@ public class PlayerManager : MonoBehaviour
 
         if (isRunning)
         {
-            // rotate smoothly (or instantly) to face move direction
+            // rotate smoothly to face move direction
             transform.rotation = Quaternion.LookRotation(dir, Vector3.up);
 
-            // 3) translate in world space
-            transform.Translate(dir.normalized * worldSpeed * Time.deltaTime, Space.World);
+            // Calculate the potential new position
+            Vector3 newPosition = transform.position + dir.normalized * worldSpeed * Time.deltaTime;
+
+            // Check if the new position would be within grid boundaries with tile scale
+            float minX = 0f;
+            float maxX = (grid.Width - 1) * tileScale;
+            float minZ = 0f;
+            float maxZ = (grid.Height - 1) * tileScale;
+
+            // Clamp the new position to grid boundaries
+            newPosition.x = Mathf.Clamp(newPosition.x, minX, maxX);
+            newPosition.z = Mathf.Clamp(newPosition.z, minZ, maxZ);
+
+            // Move to the clamped position
+            transform.position = newPosition;
+
+            // Update current tile position after movement
+            UpdateCurrentTilePosition();
         }
+    }
+
+    private void UpdateCurrentTilePosition()
+    {
+        // Calculate the tile position based on world position with scale
+        int tileX = Mathf.FloorToInt(transform.position.x / tileScale);
+        int tileZ = Mathf.FloorToInt(transform.position.z / tileScale);
+
+        // Clamp to grid bounds
+        tileX = Mathf.Clamp(tileX, 0, grid.Width - 1);
+        tileZ = Mathf.Clamp(tileZ, 0, grid.Height - 1);
+
+        // Update the current tile position
+        currentTilePosition = new Vector2Int(tileX, tileZ);
     }
 
     private void TrackAndLogTilePosition()
     {
-        // Assuming your grid origin is at (0, 0) and each tile is 1 unit
-        int tileX = Mathf.FloorToInt(transform.position.x + 0.5f);
-        int tileZ = Mathf.FloorToInt(transform.position.z + 0.5f);
+        // Get the current tile position
+        int tileX = currentTilePosition.x;
+        int tileZ = currentTilePosition.y;
 
-        // clamp within your grid bounds
-        tileX = Mathf.Clamp(tileX, 0, grid.Width - 1);
-        tileZ = Mathf.Clamp(tileZ, 0, grid.Height - 1);
-
-        // only log when it changes
+        // Only log when it changes
         if (tileX != lastLoggedTileX || tileZ != lastLoggedTileZ)
         {
             lastLoggedTileX = tileX;
@@ -136,16 +159,13 @@ public class PlayerManager : MonoBehaviour
         return tile != null && !tile.IsBlackened;
     }
 
-    private void UpdateSelectorPosition()
-    {
-        transform.position = new Vector3(selX, 1, selZ);
-    }
-
-    // In PlayerController.cs, update HandleMarkerPlacement
     private void HandleMarkerPlacement()
     {
         if (Input.GetKeyDown(KeyCode.Space))
         {
+            int selX = currentTilePosition.x;
+            int selZ = currentTilePosition.y;
+
             if (selX < 0 || selX >= grid.Width || selZ < 0 || selZ >= grid.Height)
                 return;
 
@@ -211,7 +231,7 @@ public class PlayerManager : MonoBehaviour
                 Vector2Int markerPos = markerQueue.Dequeue();
 
                 // Ensure position is within bounds
-                if (markerPos.x < 0 || markerPos.x >= grid.Width || 
+                if (markerPos.x < 0 || markerPos.x >= grid.Width ||
                     markerPos.y < 0 || markerPos.y >= grid.Height)
                 {
                     Debug.LogWarning("Detonation position is out of bounds and will be ignored.");
@@ -228,6 +248,7 @@ public class PlayerManager : MonoBehaviour
             }
         }
     }
+
     private void HandleDetonation()
     {
         if (Input.GetKeyDown(KeyCode.D))
@@ -254,7 +275,7 @@ public class PlayerManager : MonoBehaviour
     {
         bool wasSpeedingUp = isSpeedingUp;
         isSpeedingUp = Input.GetKey(speedUpKey);
-        
+
         // Only notify on state changes to avoid constant calls
         if (isSpeedingUp != wasSpeedingUp)
         {
@@ -266,21 +287,22 @@ public class PlayerManager : MonoBehaviour
             }
         }
     }
+
     public void ResetMarkers()
     {
         currentMarkers = 0;
         markerQueue.Clear();
     }
 
-    // In PlayerController.cs - Update() method
+    // Check for collision with cubes
     private void CheckForGameOver()
     {
         // Check all active cubes for collision with player
         foreach (CubeBehavior cube in FindObjectsOfType<CubeBehavior>())
         {
-            if (cube.position.x == selX && cube.position.y == selZ)
+            if (cube.position.x == currentTilePosition.x && cube.position.y == currentTilePosition.y)
             {
-                
+                // Logic for player colliding with cube
                 return;
             }
         }
@@ -288,9 +310,18 @@ public class PlayerManager : MonoBehaviour
 
     public void SetPosition(int x, int z)
     {
-        selX = Mathf.Clamp(x, 0, grid.Width - 1);
-        selZ = Mathf.Clamp(z, 0, grid.Height - 1);
-        UpdateSelectorPosition();
+        x = Mathf.Clamp(x, 0, grid.Width - 1);
+        z = Mathf.Clamp(z, 0, grid.Height - 1);
+
+        // Update physical position with tile scale
+        transform.position = new Vector3(x * tileScale, transform.position.y, z * tileScale);
+
+        // Update current tile position
+        currentTilePosition = new Vector2Int(x, z);
+
+        // Update logged positions
+        lastLoggedTileX = x;
+        lastLoggedTileZ = z;
     }
 
     public void SetMaxMarkers(int max)

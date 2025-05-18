@@ -8,6 +8,7 @@ public class GridManager : MonoBehaviour
     [SerializeField] public CubeTypeDefinitions cubeTypeDefinitions;
     [SerializeField] public int width = 5;
     [SerializeField] public int height = 10;
+    [SerializeField] public float tileScale = 3f; // Added scale parameter
     
     [HideInInspector] public Tile[,] tiles;
 
@@ -34,8 +35,13 @@ public class GridManager : MonoBehaviour
         {
             for (int y = 0; y < height; y++)
             {
-                GameObject tileObj = Instantiate(tilePrefab, new Vector3(x, 0.4f, y), Quaternion.identity, transform);
+                // Apply scale to the position calculation
+                Vector3 position = new Vector3(x * tileScale, 1f, y * tileScale);
+                GameObject tileObj = Instantiate(tilePrefab, position, Quaternion.identity, transform);
                 tileObj.name = $"Tile_{x}_{y}";
+                
+                // Scale the tile GameObject
+                tileObj.transform.localScale = new Vector3(tileScale, 1, tileScale);
                 
                 Tile tile = tileObj.GetComponent<Tile>();
                 if (tile == null)
@@ -106,6 +112,7 @@ public class GridManager : MonoBehaviour
     // Public getters for width and height
     public int Width => width;
     public int Height => height;
+    public float TileScale => tileScale; // Added getter for tile scale
 
     public static GridManager Instance { get
         {
@@ -116,5 +123,24 @@ public class GridManager : MonoBehaviour
     public CubeTypeDefinition GetCubeDefinition(CubeType type)
     {
         return cubeTypeDefinitions.GetDefinition(type);
+    }
+
+    // Helper method to convert grid position to world position
+    public Vector3 GridToWorldPosition(int x, int y, float heightOffset = 0)
+    {
+        return new Vector3(x * tileScale, heightOffset, y * tileScale);
+    }
+
+    // Helper method to convert world position to grid position
+    public Vector2Int WorldToGridPosition(Vector3 worldPosition)
+    {
+        int x = Mathf.FloorToInt(worldPosition.x / tileScale);
+        int y = Mathf.FloorToInt(worldPosition.z / tileScale);
+        
+        // Clamp to grid bounds
+        x = Mathf.Clamp(x, 0, width - 1);
+        y = Mathf.Clamp(y, 0, height - 1);
+        
+        return new Vector2Int(x, y);
     }
 }

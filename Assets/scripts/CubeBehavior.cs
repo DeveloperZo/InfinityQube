@@ -16,7 +16,6 @@ public class CubeBehavior : MonoBehaviour
     [SerializeField] private float squashDuration = 0.25f;
     public bool isRainingCube = false;
 
-
     private GridManager grid;
     private DetonationManager detonationManager;
     private bool isMoving = false;
@@ -26,9 +25,14 @@ public class CubeBehavior : MonoBehaviour
     public int targetRow = -1;
     private bool isRainAnimating = false;
     public int moveCountRemaining = 0;
+    private float tileScale = 3f; // Default scale value
 
     public void Init(GridManager gridManager, CubeData cubeData, float spawnHeight = 5f)
     {
+        // Store reference to grid manager and get the tile scale
+        grid = gridManager;
+        tileScale = grid.TileScale;
+
         // Use the provided cube data
         name = cubeData.Definition.name;
         type = cubeData.type;
@@ -41,9 +45,11 @@ public class CubeBehavior : MonoBehaviour
         material = cubeData.Definition.material;
         prefab = cubeData.Definition.prefab;
 
+        // Scale the cube to match tile scale
+        transform.localScale = new Vector3(tileScale, tileScale, tileScale);
+
         // Initialize position and references
-        grid = gridManager;
-        transform.position = new Vector3(position.x, spawnHeight, position.y);
+        transform.position = new Vector3(position.x * tileScale, spawnHeight, position.y * tileScale);
         detonationManager = FindAnyObjectByType<DetonationManager>();
         gameObject.name = name;
     }
@@ -117,7 +123,6 @@ public class CubeBehavior : MonoBehaviour
             }
         }
 
-
         return true;
     }
 
@@ -148,13 +153,15 @@ public class CubeBehavior : MonoBehaviour
             }
         }
     }
-    
+
     private IEnumerator AnimateMove(Vector2Int newPos)
     {
         isMoving = true;
 
+        // Calculate scaled world positions
         Vector3 start = transform.position;
-        Vector3 end = new Vector3(newPos.x, 1f, newPos.y);
+        Vector3 end = new Vector3(newPos.x * tileScale, 1f * tileScale, newPos.y * tileScale);
+
         float elapsed = 0f;
         Quaternion startRot = transform.rotation;
         Quaternion endRot = startRot * Quaternion.Euler(-90f, 0f, 0f); // 90° roll forward
@@ -182,12 +189,12 @@ public class CubeBehavior : MonoBehaviour
 
         // Weighty visual squash
         transform.position = end;
-        transform.localScale = new Vector3(1.05f, 0.9f, 1.05f);
+        transform.localScale = new Vector3(tileScale * 1.05f, tileScale * 0.9f, tileScale * 1.05f);
         yield return new WaitForSeconds(squashDuration);
 
         if (isDestroyed) yield break;
 
-        transform.localScale = Vector3.one;
+        transform.localScale = new Vector3(tileScale, tileScale, tileScale);
 
         // Check for marker interaction (guard against destroyed tiles)
         if (grid != null && newPos.x >= 0 && newPos.x < grid.Width &&
@@ -211,12 +218,12 @@ public class CubeBehavior : MonoBehaviour
         Vector3 startPos = transform.position;
 
         // Calculate the total height and divide into segments based on remaining moves
-        float totalHeight = startPos.y - 1f; // Distance to ground level
+        float totalHeight = startPos.y - (1f * tileScale); // Distance to ground level with scale
         float segmentHeight = totalHeight / (moveCountRemaining > 0 ? moveCountRemaining : 1);
 
         // Calculate target position for this tick
         float targetY = startPos.y - segmentHeight;
-        Vector3 targetPos = new Vector3(position.x, targetY, position.y);
+        Vector3 targetPos = new Vector3(position.x * tileScale, targetY, position.y * tileScale);
 
         // Animate this segment of the fall
         float segmentDuration = 0.4f; // Adjust as needed to match movement interval
@@ -250,7 +257,7 @@ public class CubeBehavior : MonoBehaviour
             if (moveCountRemaining <= 0)
             {
                 // Make sure we're at final ground position
-                transform.position = new Vector3(position.x, 1f, position.y);
+                transform.position = new Vector3(position.x * tileScale, 1f * tileScale, position.y * tileScale);
 
                 // Notify the wave manager that this cube has landed vertically
                 WaveManager waveManager = FindObjectOfType<WaveManager>();
@@ -272,7 +279,7 @@ public class CubeBehavior : MonoBehaviour
         if (isDestroyed) yield break;
 
         Vector3 originalScale = transform.localScale;
-        Vector3 squashedScale = new Vector3(1.2f, 0.7f, 1.2f);
+        Vector3 squashedScale = new Vector3(tileScale * 1.2f, tileScale * 0.7f, tileScale * 1.2f);
 
         // Squash on impact
         float squashDuration = 0.1f;
@@ -306,5 +313,4 @@ public class CubeBehavior : MonoBehaviour
             transform.localScale = originalScale;
         }
     }
-
 }
