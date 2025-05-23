@@ -39,7 +39,7 @@ public class SplashScreenManager : MonoBehaviour
 
         // Don't unload the current scene first - just load the new scene
         // This is more reliable for scene transitions
-        SceneManager.LoadScene(nextSceneName);
+        SceneManager.LoadSceneAsync(nextSceneName);
     }
 
 }

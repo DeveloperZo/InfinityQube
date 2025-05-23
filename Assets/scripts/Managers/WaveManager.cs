@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 using Unity.VisualScripting;
 using UnityEngine;
 using static StageData;
@@ -46,7 +47,7 @@ public class WaveManager : MonoBehaviour
 
     [Header("UI References")]
     [SerializeField] private GameObject messagePanel;
-    [SerializeField] private UnityEngine.UI.Text messageText;
+    [SerializeField] private TextMeshProUGUI messageText;
     [SerializeField] private GameObject continuePrompt;
 
     [Header("Highlight System")]

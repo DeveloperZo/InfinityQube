@@ -166,7 +166,7 @@ public class WaveDebugger : MonoBehaviour
         CalculateWindowSize();
     }
 
-    private void InitializeGrid()
+    public void InitializeGrid()
     {
         try
         {
@@ -358,22 +358,11 @@ public class WaveDebugger : MonoBehaviour
         EditorGUILayout.LabelField($"Total Tiles: {gridWidth * gridHeight} | Corrupted: {CountCorruptedTiles()} | Enhanced: {CountEnhancedTiles()} | Marked: {CountMarkedTiles()}");
     }
 
-    private void DrawWaveIdentitySection()
-    {
-        GUI.backgroundColor = new Color(1f, 0.9f, 0.9f, 1f);
-        GUILayout.BeginVertical(GUI.skin.box);
-        GUILayout.Label("WAVE IDENTITY", GUI.skin.box);
-        DrawNextWaveSelector();
-        DrawActiveWaveInfo();
-        DrawWaveMessages();
-        GUILayout.EndVertical();
-        GUI.backgroundColor = Color.white;
-    }
 
     private void DrawWaveConfigurationSection()
     {
         EditorGUILayout.BeginHorizontal();
-
+        DrawWaveMessages();
         waveWidth = EditorGUILayout.IntSlider("Wave Width", waveWidth, 1, gridWidth);
         waveHeight = EditorGUILayout.IntSlider("Wave Height", waveHeight, 1, gridHeight / 3);
         EditorGUILayout.EndHorizontal();
@@ -522,67 +511,6 @@ public class WaveDebugger : MonoBehaviour
 
     #region Grid Configuration UI
 
-    private void DrawGridDimensions()
-    {
-        GUILayout.BeginHorizontal();
-
-        // Width controls
-        GUILayout.Label("Width:", GUILayout.Width(50));
-        GUI.enabled = gridWidth > 3;
-        if (GUILayout.Button("-", GUILayout.Width(20)))
-        {
-            gridWidth--;
-        }
-        GUI.enabled = true;
-        GUILayout.Label(gridWidth.ToString(), GUILayout.Width(30));
-        GUI.enabled = gridWidth < 12;
-        if (GUILayout.Button("+", GUILayout.Width(20)))
-        {
-            gridWidth++;
-        }
-        GUI.enabled = true;
-
-        GUILayout.Space(10);
-
-        // Height controls
-        GUILayout.Label("Height:", GUILayout.Width(50));
-        GUI.enabled = gridHeight > 9;
-        if (GUILayout.Button("-", GUILayout.Width(20)))
-        {
-            gridHeight--;
-        }
-        GUI.enabled = true;
-        GUILayout.Label(gridHeight.ToString(), GUILayout.Width(30));
-        GUI.enabled = gridHeight < 15;
-        if (GUILayout.Button("+", GUILayout.Width(20)))
-        {
-            gridHeight++;
-        }
-        GUI.enabled = true;
-
-        GUILayout.EndHorizontal();
-
-        if (GUILayout.Button("Apply Grid Size"))
-        {
-            ApplyGridSize();
-        }
-    }
-
-    private void DrawGridStatistics()
-    {
-        GUILayout.Label("Grid Statistics:", GUI.skin.box);
-
-        GUILayout.BeginHorizontal();
-        GUILayout.Label($"Total Tiles: {gridWidth * gridHeight}", GUILayout.Width(120));
-        GUILayout.Label($"Corrupted Tiles: {CountCorruptedTiles()}", GUILayout.Width(120));
-        GUILayout.EndHorizontal();
-
-        GUILayout.BeginHorizontal();
-        GUILayout.Label($"Enhanced Tiles: {CountEnhancedTiles()}", GUILayout.Width(120));
-        GUILayout.Label($"Marked Tiles: {CountMarkedTiles()}", GUILayout.Width(120));
-        GUILayout.EndHorizontal();
-    }
-
     #endregion
 
     #region Wave Identity UI
@@ -660,12 +588,13 @@ public class WaveDebugger : MonoBehaviour
 
     private void DrawWaveMessages()
     {
-        if (!hideMessages && waveManager != null && waveManager.CurrentWave != null)
+        if (waveManager != null && waveManager.CurrentWave != null)
         {
+            GUILayout.BeginHorizontal();
             GUILayout.Label("Wave Messages:", GUI.skin.box);
 
             var currentWave = waveManager.CurrentWave;
-            if (currentWave.messages != null && currentWave.messages.Count > 0)
+            if (!hideMessages && currentWave.messages != null && currentWave.messages.Count > 0)
             {
                 foreach (var message in currentWave.messages)
                 {
@@ -683,446 +612,29 @@ public class WaveDebugger : MonoBehaviour
             {
                 GUILayout.Label("No messages for this wave");
             }
+
+            GUILayout.EndHorizontal();
         }
     }
 
     #endregion
 
     #region Wave Configuration UI
-
-    private void DrawWaveDimensions()
-    {
-        GUILayout.BeginHorizontal();
-
-        // Wave Width
-        GUILayout.Label("Width:", GUILayout.Width(50));
-        GUI.enabled = waveWidth > 1;
-        if (GUILayout.Button("-", GUILayout.Width(20)))
-        {
-            waveWidth--;
-            InitializeGrid();
-            CalculateWindowSize();
-        }
-        GUI.enabled = true;
-        GUILayout.Label(waveWidth.ToString(), GUILayout.Width(30));
-        GUI.enabled = waveWidth < gridWidth;
-        if (GUILayout.Button("+", GUILayout.Width(20)))
-        {
-            waveWidth++;
-            InitializeGrid();
-            CalculateWindowSize();
-        }
-        GUI.enabled = true;
-
-        GUILayout.Space(10);
-
-        // Wave Height
-        GUILayout.Label("Height:", GUILayout.Width(50));
-        GUI.enabled = waveHeight > 1;
-        if (GUILayout.Button("-", GUILayout.Width(20)))
-        {
-            waveHeight--;
-            InitializeGrid();
-            CalculateWindowSize();
-        }
-        GUI.enabled = true;
-        GUILayout.Label(waveHeight.ToString(), GUILayout.Width(30));
-        GUI.enabled = waveHeight < Mathf.Min(gridHeight / 3, 15);
-        if (GUILayout.Button("+", GUILayout.Width(20)))
-        {
-            waveHeight++;
-            InitializeGrid();
-            CalculateWindowSize();
-        }
-        GUI.enabled = true;
-
-        GUILayout.EndHorizontal();
-    }
-
-    private void DrawWaveSettings()
-    {
-        // Timing Settings
-        GUILayout.Label("Timing Settings:", GUI.skin.box);
-
-        GUILayout.BeginHorizontal();
-        GUILayout.Label("Start Delay:", GUILayout.Width(80));
-        string waveStartDelayStr = GUILayout.TextField(waveStartDelay.ToString("F2"), GUILayout.Width(60));
-        if (float.TryParse(waveStartDelayStr, out float parsedDelay))
-        {
-            waveStartDelay = parsedDelay;
-        }
-        GUILayout.Label("seconds");
-        GUILayout.EndHorizontal();
-
-        GUILayout.BeginHorizontal();
-        GUILayout.Label("Move Interval:", GUILayout.Width(80));
-        string moveIntervalStr = GUILayout.TextField(moveInterval.ToString("F2"), GUILayout.Width(60));
-        if (float.TryParse(moveIntervalStr, out float parsedMove))
-        {
-            moveInterval = parsedMove;
-        }
-        GUILayout.Label("seconds");
-        GUILayout.EndHorizontal();
-
-        GUILayout.BeginHorizontal();
-        GUILayout.Label("Fast Interval:", GUILayout.Width(80));
-        string fastIntervalStr = GUILayout.TextField(fastMoveInterval.ToString("F2"), GUILayout.Width(60));
-        if (float.TryParse(fastIntervalStr, out float parsedFast))
-        {
-            fastMoveInterval = parsedFast;
-        }
-        GUILayout.Label("seconds");
-        GUILayout.EndHorizontal();
-
-        GUILayout.Space(10);
-
-        // Gameplay Settings
-        GUILayout.Label("Gameplay Settings:", GUI.skin.box);
-
-        GUILayout.BeginHorizontal();
-        GUILayout.Label("Max Markers:", GUILayout.Width(80));
-        if (GUILayout.Button("-", GUILayout.Width(25)))
-        {
-            maxMarkerCharge = Mathf.Max(1, maxMarkerCharge - 1);
-        }
-        maxMarkerCharge = Mathf.RoundToInt(GUILayout.HorizontalSlider(maxMarkerCharge, 1, 10, GUILayout.Width(100)));
-        GUILayout.Label(maxMarkerCharge.ToString(), GUILayout.Width(30));
-        if (GUILayout.Button("+", GUILayout.Width(25)))
-        {
-            maxMarkerCharge = Mathf.Min(10, maxMarkerCharge + 1);
-        }
-        GUILayout.EndHorizontal();
-
-        hideMessages = GUILayout.Toggle(hideMessages, "Hide Messages");
-
-        GUILayout.Space(10);
-
-        // Success Criteria
-        GUILayout.Label("Success Criteria:", GUI.skin.box);
-        hasOwnSuccessCriteria = GUILayout.Toggle(hasOwnSuccessCriteria, "Has Own Success Criteria");
-
-        if (hasOwnSuccessCriteria)
-        {
-            GUILayout.BeginHorizontal();
-            GUILayout.Label("Required Captures:", GUILayout.Width(120));
-            string requiredStr = GUILayout.TextField(requiredCaptureCount.ToString(), GUILayout.Width(60));
-            if (int.TryParse(requiredStr, out int parsedRequired))
-            {
-                requiredCaptureCount = parsedRequired;
-            }
-            GUILayout.EndHorizontal();
-
-            GUILayout.BeginHorizontal();
-            GUILayout.Label("Max Escapes:", GUILayout.Width(120));
-            string maxEscapesStr = GUILayout.TextField(maxAllowedEscapes.ToString(), GUILayout.Width(60));
-            if (int.TryParse(maxEscapesStr, out int parsedMax))
-            {
-                maxAllowedEscapes = parsedMax;
-            }
-            GUILayout.EndHorizontal();
-        }
-    }
-
-    private void DrawWaveStatistics()
-    {
-        GUILayout.Label("Wave Statistics:", GUI.skin.box);
-
-        GUILayout.BeginHorizontal();
-        GUILayout.Label($"Total Spawned: {totalCubesSpawned}", GUILayout.Width(120));
-        GUILayout.Label($"Captured: {cubesCaptured}", GUILayout.Width(120));
-        GUILayout.EndHorizontal();
-
-        GUILayout.BeginHorizontal();
-        GUILayout.Label($"Escaped: {cubesEscaped}", GUILayout.Width(120));
-        GUILayout.Label($"Active: {trackedCubes.Count}", GUILayout.Width(120));
-        GUILayout.EndHorizontal();
-
-        GUILayout.BeginHorizontal();
-        GUILayout.Label($"Markers Used: {markersUsed}", GUILayout.Width(120));
-        GUILayout.Label($"Detonations: {detonationPointsCreated}", GUILayout.Width(120));
-        GUILayout.EndHorizontal();
-    }
-
+   
     #endregion
 
     #region Play Controls UI
 
-    private void DrawPlayControls()
-    {
-        GUILayout.BeginHorizontal();
-
-        // Pause/Resume button
-        GUI.backgroundColor = isPaused ? pauseButtonColor : Color.white;
-        string pauseButtonText = isPaused ? "Resume Wave" : "Pause Wave";
-
-        if (GUILayout.Button(pauseButtonText))
-        {
-            TogglePause();
-        }
-
-        // Step Forward button (only enabled when paused)
-        GUI.enabled = isPaused;
-        if (GUILayout.Button("Step Forward"))
-        {
-            StepForward();
-        }
-        GUI.enabled = true;
-        GUI.backgroundColor = Color.white;
-
-        GUILayout.EndHorizontal();
-
-        // Speed controls
-        GUILayout.BeginHorizontal();
-        GUILayout.Label("Speed:", GUILayout.Width(50));
-        float newSpeed = GUILayout.HorizontalSlider(currentMoveSpeed, minMoveSpeed, maxMoveSpeed);
-        if (Mathf.Abs(newSpeed - currentMoveSpeed) > 0.01f)
-        {
-            currentMoveSpeed = newSpeed;
-            UpdateMoveSpeed();
-        }
-        GUILayout.Label($"{currentMoveSpeed:F2}s", GUILayout.Width(50));
-        GUILayout.EndHorizontal();
-
-        // Quick preset speeds
-        GUILayout.BeginHorizontal();
-        if (GUILayout.Button("Fast"))
-        {
-            currentMoveSpeed = 0.1f;
-            UpdateMoveSpeed();
-        }
-        if (GUILayout.Button("Normal"))
-        {
-            currentMoveSpeed = 0.75f;
-            UpdateMoveSpeed();
-        }
-        if (GUILayout.Button("Slow"))
-        {
-            currentMoveSpeed = 1.5f;
-            UpdateMoveSpeed();
-        }
-        GUILayout.EndHorizontal();
-
-        // Debug mode toggle
-        debugMode = GUILayout.Toggle(debugMode, "Debug Mode (Manual Control)");
-
-        // Auto-tracking toggle
-        autoResizeGrid = GUILayout.Toggle(autoResizeGrid, "Auto-Resize Grid");
-        autoAdjustOffset = GUILayout.Toggle(autoAdjustOffset, "Auto-Adjust Offset");
-    }
 
     #endregion
 
     #region Cube Editor UI
 
-    private void DrawCubeTypeSelection()
-    {
-        GUILayout.BeginHorizontal();
-        GUILayout.Label("Cube Type:", GUILayout.Width(70));
-
-        GUI.backgroundColor = normalCubeColor;
-        if (GUILayout.Toggle(selectedCubeType == 1, "Normal", "Button"))
-            selectedCubeType = 1;
-
-        GUI.backgroundColor = blueCubeColor;
-        if (GUILayout.Toggle(selectedCubeType == 2, "Blue", "Button"))
-            selectedCubeType = 2;
-
-        GUI.backgroundColor = blackCubeColor;
-        GUIStyle blackButtonStyle = new GUIStyle(GUI.skin.button);
-        blackButtonStyle.normal.textColor = Color.white;
-        if (GUILayout.Toggle(selectedCubeType == 3, "Black", blackButtonStyle))
-            selectedCubeType = 3;
-
-        GUI.backgroundColor = clearButtonColor;
-        if (GUILayout.Toggle(selectedCubeType == 0, "Clear", "Button"))
-            selectedCubeType = 0;
-
-        GUI.backgroundColor = Color.white;
-        GUILayout.EndHorizontal();
-    }
-
-    private void DrawGridArea()
-    {
-        GUILayout.Space(5);
-
-        // Create a scroll area specifically for the grid
-        gridScrollPosition = GUILayout.BeginScrollView(gridScrollPosition, GUILayout.Height(300));
-
-        if (trackingActive)
-        {
-            DrawTrackedGrid();
-        }
-        else
-        {
-            DrawEditorGrid();
-        }
-
-        GUILayout.EndScrollView();
-    }
-
-    private void DrawTrackedGrid()
-    {
-        // Make sure our arrays are initialized
-        if (gridState == null || buttonState == null || buttonInteractable == null)
-        {
-            InitializeGrid();
-        }
-
-        GUILayout.Label("Currently tracking live wave - click cubes to modify them");
-
-        // Make sure waveWidth and waveHeight are within sensible bounds
-        int displayWidth = Mathf.Min(waveWidth, 12);
-        int displayHeight = Mathf.Min(waveHeight, 15);
-
-        for (int y = 0; y < displayHeight; y++)
-        {
-            GUILayout.BeginHorizontal();
-
-            for (int x = 0; x < displayWidth; x++)
-            {
-                // Safety check to avoid index out of range
-                bool isInteractable = false;
-                int currentState = 0;
-
-                if (x < buttonInteractable.GetLength(0) && y < buttonInteractable.GetLength(1))
-                {
-                    isInteractable = buttonInteractable[x, y];
-                    if (x < buttonState.GetLength(0) && y < buttonState.GetLength(1))
-                    {
-                        currentState = buttonState[x, y];
-                    }
-                }
-
-                if (isInteractable)
-                {
-                    // Set button color based on cube type
-                    SetButtonColorForType(currentState);
-
-                    if (GUILayout.Button("", GUILayout.Width(buttonSize), GUILayout.Height(buttonSize)))
-                    {
-                        ChangeCubeType(x, y, selectedCubeType);
-                    }
-                }
-                else
-                {
-                    // Disabled button
-                    GUI.backgroundColor = disabledColor;
-                    GUILayout.Button("", GUILayout.Width(buttonSize), GUILayout.Height(buttonSize));
-                }
-            }
-
-            // Reset color
-            GUI.backgroundColor = Color.white;
-
-            GUILayout.EndHorizontal();
-        }
-    }
-
-    private void DrawEditorGrid()
-    {
-        // Make sure our arrays are initialized
-        if (gridState == null || buttonState == null || buttonInteractable == null)
-        {
-            InitializeGrid();
-        }
-
-        GUILayout.Label("Design custom wave pattern:");
-
-        // Make sure waveWidth and waveHeight are within sensible bounds
-        int displayWidth = Mathf.Min(waveWidth, 12);  // Limit to reasonable display size
-        int displayHeight = Mathf.Min(waveHeight, 15);
-
-        for (int y = 0; y < displayHeight; y++)
-        {
-            GUILayout.BeginHorizontal();
-
-            for (int x = 0; x < displayWidth; x++)
-            {
-                // Safety check to avoid index out of range
-                int currentState = 0;
-                if (x < gridState.GetLength(0) && y < gridState.GetLength(1))
-                {
-                    currentState = gridState[x, y];
-                }
-                else
-                {
-                    Debug.LogWarning($"Attempted to access invalid gridState index: [{x},{y}]");
-                }
-
-                // Set button color based on cube type
-                SetButtonColorForType(currentState);
-
-                if (GUILayout.Button("", GUILayout.Width(buttonSize), GUILayout.Height(buttonSize)))
-                {
-                    // Safety check before setting
-                    if (x < gridState.GetLength(0) && y < gridState.GetLength(1))
-                    {
-                        gridState[x, y] = selectedCubeType;
-                    }
-                    else
-                    {
-                        Debug.LogWarning($"Attempted to set invalid gridState index: [{x},{y}]");
-                    }
-                }
-            }
-
-            // Reset color
-            GUI.backgroundColor = Color.white;
-
-            GUILayout.EndHorizontal();
-        }
-    }
 
     #endregion
 
     #region Actions UI
 
-    private void DrawActionButtons()
-    {
-        GUILayout.BeginHorizontal();
-
-        if (GUILayout.Button("Clear Grid"))
-        {
-            ClearGrid();
-        }
-
-        if (GUILayout.Button("Randomize"))
-        {
-            RandomizeGrid();
-        }
-
-        GUILayout.EndHorizontal();
-
-        GUILayout.Space(5);
-
-        GUILayout.BeginHorizontal();
-
-        if (GUILayout.Button("Spawn Wave"))
-        {
-            SpawnWave();
-        }
-
-        if (GUILayout.Button("Save as Asset"))
-        {
-            SaveCurrentWaveAsAsset();
-        }
-
-        GUILayout.EndHorizontal();
-
-        GUILayout.Space(5);
-
-        if (trackingActive && GUILayout.Button("Stop Tracking"))
-        {
-            trackingActive = false;
-        }
-        else if (!trackingActive && waveManager != null && waveManager.activeCubes.Count > 0)
-        {
-            if (GUILayout.Button("Start Tracking"))
-            {
-                StartTracking();
-            }
-        }
-    }
 
     #endregion
 
@@ -1939,50 +1451,8 @@ public class WaveDebugger : MonoBehaviour
         return count;
     }
 
-    private void UpdateCubeStatistics()
-    {
 
-    }
-    private string GetCubeStats()
-    {
-        int normalCount = 0;
-        int blueCount = 0;
-        int blackCount = 0;
-
-        if (trackingActive)
-        {
-            foreach (var cube in trackedCubes)
-            {
-                if (cube == null) continue;
-
-                switch (cube.type)
-                {
-                    case Enumerations.CubeType.Normal: normalCount++; break;
-                    case Enumerations.CubeType.Blue: blueCount++; break;
-                    case Enumerations.CubeType.Black: blackCount++; break;
-                }
-            }
-        }
-        else
-        {
-            for (int x = 0; x < waveWidth; x++)
-            {
-                for (int y = 0; y < waveHeight; y++)
-                {
-                    switch (gridState[x, y])
-                    {
-                        case 1: normalCount++; break;
-                        case 2: blueCount++; break;
-                        case 3: blackCount++; break;
-                    }
-                }
-            }
-        }
-
-        return $"Normal: {normalCount}, Blue: {blueCount}, Black: {blackCount}";
-    }
-
-    private void CalculateWindowSize()
+    public void CalculateWindowSize()
     {
         windowRect = new Rect(10, 50, 420, Screen.height - 100);
     }
@@ -2010,26 +1480,6 @@ public class WaveDebugger : MonoBehaviour
         }
     }
 
-    private void DrawDebugModeToggle()
-    {
-        debugMode = GUILayout.Toggle(debugMode, "Debug Mode (Manual Control)");
-
-        // Add checkbox for grid updating
-        if (nextWave != null)
-        {
-            shouldUpdateGrid = GUILayout.Toggle(shouldUpdateGrid, "Update Grid Size When Spawning");
-        }
-    }
-
-    private void DrawOffsetInfo()
-    {
-        if (trackingActive)
-        {
-            GUILayout.BeginHorizontal();
-            GUILayout.Label($"Wave Position: Y-Offset={waveOffsetY} (Row {waveOffsetY} and above)");
-            GUILayout.EndHorizontal();
-        }
-    }
 
     private IEnumerator DelayedTracking()
     {
@@ -2038,14 +1488,6 @@ public class WaveDebugger : MonoBehaviour
         StartTracking();
     }
 
-    private void ResetStatistics()
-    {
-        totalCubesSpawned = 0;
-        cubesCaptured = 0;
-        cubesEscaped = 0;
-        markersUsed = 0;
-        detonationPointsCreated = 0;
-    }
 
     private void CleanupDebugState()
     {
@@ -2076,68 +1518,6 @@ public class WaveDebugger : MonoBehaviour
         Debug.Log("WaveDebugger cleaned up");
     }
 
-    // Validation helpers
-    private bool ValidateGridDimensions()
-    {
-        if (gridWidth < 3 || gridWidth > 12)
-        {
-            Debug.LogWarning($"Invalid grid width: {gridWidth}. Must be between 3 and 12.");
-            return false;
-        }
-
-        if (gridHeight < 9 || gridHeight > 15)
-        {
-            Debug.LogWarning($"Invalid grid height: {gridHeight}. Must be between 9 and 15.");
-            return false;
-        }
-
-        return true;
-    }
-
-    private bool ValidateWaveDimensions()
-    {
-        if (waveWidth < 1 || waveWidth > gridWidth)
-        {
-            Debug.LogWarning($"Invalid wave width: {waveWidth}. Must be between 1 and {gridWidth}.");
-            return false;
-        }
-
-        if (waveHeight < 1 || waveHeight > gridHeight)
-        {
-            Debug.LogWarning($"Invalid wave height: {waveHeight}. Must be between 1 and {gridHeight}.");
-            return false;
-        }
-
-        return true;
-    }
-
-    // Debug helpers
-    private void LogDebugInfo(string message)
-    {
-        if (debugMode)
-        {
-            Debug.Log($"[WaveDebugger] {message}");
-        }
-    }
-
-    private void LogGridState()
-    {
-        if (!debugMode) return;
-
-        System.Text.StringBuilder sb = new System.Text.StringBuilder();
-        sb.AppendLine("Current Grid State:");
-
-        for (int y = 0; y < waveHeight; y++)
-        {
-            for (int x = 0; x < waveWidth; x++)
-            {
-                sb.Append(gridState[x, y] + " ");
-            }
-            sb.AppendLine();
-        }
-
-        Debug.Log(sb.ToString());
-    }
 
     #endregion
 

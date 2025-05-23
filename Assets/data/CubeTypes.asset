@@ -13,24 +13,24 @@ MonoBehaviour:
   m_Name: CubeTypes
   m_EditorClassIdentifier: Assembly-CSharp::CubeTypeDefinitions
   definitions:
-  - name: Normal
-    prefab: {fileID: 1728893673582764340, guid: f90c16e773c18f54eb1b70ddc1136373, type: 3}
-    material: {fileID: 2100000, guid: 15cc66d777e06464b9573ed0f29092da, type: 2}
+  - name: Constant
+    prefab: {fileID: 289956281136618938, guid: a8ca1976e1fcb884eab23247f3a7c0ef, type: 3}
+    material: {fileID: 2100000, guid: be913c819811d334f8b9ab7ed8845641, type: 2}
     canBeMarked: 1
     causesCorruption: 0
     enablesDetonation: 0
     detonationRadius: 0
-  - name: Green
-    prefab: {fileID: 1728893673582764340, guid: 026a402b860389d4aaea0e4f0b5c1ff6, type: 3}
-    material: {fileID: 2100000, guid: dbb41bfe144a31c4d8e8fb1648fee4b5, type: 2}
+  - name: Infinite
+    prefab: {fileID: 6551000342905767615, guid: 803e7cb2fd38540438990c9b40d27126, type: 3}
+    material: {fileID: 2100000, guid: a85f9ed5dfb6ed64b89ade32ef958cc5, type: 2}
+    canBeMarked: 0
+    causesCorruption: 0
+    enablesDetonation: 0
+    detonationRadius: 0
+  - name: Marvelous
+    prefab: {fileID: 2727342813801045048, guid: 28aedf15c99f1914991a9066ec8020e5, type: 3}
+    material: {fileID: 2100000, guid: 0d112ce4130a1714e9308a63cbec6265, type: 2}
     canBeMarked: 1
     causesCorruption: 0
     enablesDetonation: 1
     detonationRadius: 3
-  - name: Black
-    prefab: {fileID: 1728893673582764340, guid: 28923bfb13f3dde44b857f03a0188e95, type: 3}
-    material: {fileID: 2100000, guid: ba597e4280ccbe14bb9424ae288e2bb2, type: 2}
-    canBeMarked: 0
-    causesCorruption: 1
-    enablesDetonation: 0
-    detonationRadius: 0

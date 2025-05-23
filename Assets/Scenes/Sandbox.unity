@@ -6577,7 +6577,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   tilePrefab: {fileID: 6551000342905767615, guid: 1b3ce2c40720bac4f80c30da84c34fa1, type: 3}
-  cubeTypeDefinitions: {fileID: 11400000, guid: bd0534948152a974390cafb4c4f0367c, type: 2}
+  cubeTypeDefinitions: {fileID: 11400000, guid: 4478fc2c664202247ab6000c9b6c283a, type: 2}
   width: 5
   height: 10
   tileScale: 3
