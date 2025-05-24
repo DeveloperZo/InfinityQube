@@ -19,8 +19,9 @@ MonoBehaviour:
   - type: 2
     position: {x: 1, y: 1}
     level: 1
-  limitMarkers: 0
-  maxMarkers: 2
+  limitMarkers: 1
+  maxMarkerCharge: 0
+  maxMarkerCount: 99
   waveStartDelay: 0.75
   moveInterval: 0.75
   fastMoveInterval: 0.1
@@ -29,21 +30,21 @@ MonoBehaviour:
   maxAllowedEscapes: 0
   messages:
   - Message: 'DEV: Black cubes cannot be captured. Player should move to avoid collision.'
-    DisplayMoveStep: 0
-    RequirePause: 0
+    DisplayMoveStep: 2
+    RequirePause: 1
     AutoHideDelay: 0
     HighlightTile: 0
     highlightTiles: []
     highlightColor: {r: 0, g: 0, b: 0, a: 0}
-  - Message: 'DEV: Black cube escape event - introduces persistence concept.'
-    DisplayMoveStep: -1
-    RequirePause: 0
+  - Message: 'DEV: Black cube escape event'
+    DisplayMoveStep: 9
+    RequirePause: 1
     AutoHideDelay: 0
     HighlightTile: 0
     highlightTiles: []
     highlightColor: {r: 0, g: 0, b: 0, a: 0}
   normalCubesCaptured: 0
-  greenCubesCaptured: 0
+  blueCubesCaptured: 0
   cubesEscaped: 0
   markersPlaced: 0
   detonationsUsed: 0

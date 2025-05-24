@@ -47,8 +47,8 @@ MonoBehaviour:
   grid: {fileID: 0}
   waveManager: {fileID: 0}
   cubePrefabs:
-  - {fileID: 0}
-  - {fileID: 1728893673582764340, guid: 8c357a94dee798a45abbc3e55e82b353, type: 3}
+  - {fileID: 289956281136618938, guid: a8ca1976e1fcb884eab23247f3a7c0ef, type: 3}
+  - {fileID: 2727342813801045048, guid: 28aedf15c99f1914991a9066ec8020e5, type: 3}
   - {fileID: 6551000342905767615, guid: 803e7cb2fd38540438990c9b40d27126, type: 3}
   materialPrefabs:
   - {fileID: 2100000, guid: 15cc66d777e06464b9573ed0f29092da, type: 2}
@@ -114,7 +114,12 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 4583394693390871362}
-  - component: {fileID: 6373220894527096382}
+  - component: {fileID: 7576808658913243278}
+  - component: {fileID: 5984956403287882642}
+  - component: {fileID: 5082329325639627527}
+  - component: {fileID: 240527117112806704}
+  - component: {fileID: 8658655910098155877}
+  - component: {fileID: 1075331095789861135}
   m_Layer: 0
   m_Name: WaveDebugger
   m_TagString: Untagged
@@ -137,7 +142,7 @@ Transform:
   m_Children: []
   m_Father: {fileID: 4829993287443180072}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &6373220894527096382
+--- !u!114 &7576808658913243278
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -146,18 +151,79 @@ MonoBehaviour:
   m_GameObject: {fileID: 8711813508856984169}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 71d16b3e0e02caf48b00e7fb037f7776, type: 3}
+  m_Script: {fileID: 11500000, guid: 6cbad666076e1c84ba8ceeb8b05acb3a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &5984956403287882642
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8711813508856984169}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 742c68a34a3328240b35ccbe036126cc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  gridManager: {fileID: 0}
+  defaultWidth: 3
+  defaultHeight: 3
+--- !u!114 &5082329325639627527
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8711813508856984169}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 144f7aff41ae2c6419808fee2ba230a8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   gridManager: {fileID: 0}
   waveManager: {fileID: 0}
-  playerController: {fileID: 0}
-  stageManager: {fileID: 0}
+  gridConfig: {fileID: 5984956403287882642}
+  dataCollector: {fileID: 7576808658913243278}
   saveLocation: Assets/data/waves/
-  nextWave: {fileID: 11400000, guid: 9351411930ad5ce4084db5e29248b3f4, type: 2}
+  nextWave: {fileID: 0}
+--- !u!114 &240527117112806704
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8711813508856984169}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c88aa763ec4f76742b3cc543d7080e34, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
   toggleKey: 283
-  defaultWidth: 3
-  defaultHeight: 3
   pauseButtonColor: {r: 1, g: 0.5, b: 0.5, a: 1}
-  playSectionColor: {r: 0.2, g: 0.7, b: 0.3, a: 0.8}
-  debugObjects: []
+  buttonSize: 30
+--- !u!114 &8658655910098155877
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8711813508856984169}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a4c237381a9d89c4d9c912cde5c63eb4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  toggleKey: 283
+--- !u!114 &1075331095789861135
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8711813508856984169}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0d7db90754bac634ebbf70d820cfb958, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 

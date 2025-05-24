@@ -610,7 +610,7 @@ public class WaveDebugger : MonoBehaviour
             }
             else
             {
-                GUILayout.Label("No messages for this wave");
+                GUILayout.Label(hideMessages ? "" : "No messages for this wave");
             }
 
             GUILayout.EndHorizontal();
