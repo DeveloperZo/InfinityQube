@@ -57,6 +57,29 @@ public class WaveDebugWaveController : MonoBehaviour
         }
     }
 
+    /// <summary>Force sync when debugger is opened - call this from UI</summary>
+    public void OnDebuggerOpened()
+    {
+        // Check if there's an active wave to track
+        if (waveManager != null && waveManager.waveActive && waveManager.activeCubes.Count > 0)
+        {
+            StartTracking();
+        }
+        else
+        {
+            // Load from existing wave configuration if available
+            if (waveManager != null && waveManager.CurrentWave != null)
+            {
+                LoadWave(waveManager.CurrentWave);
+            }
+            else
+            {
+                // Initialize with empty state
+                InitializeWaveState();
+            }
+        }
+    }
+
     #region Wave State Management
 
     /// <summary>Initialize the internal wave state based on grid configurator</summary>
@@ -64,15 +87,25 @@ public class WaveDebugWaveController : MonoBehaviour
     {
         waveState.Clear();
 
-        for (int x = 0; x < gridConfig.WaveWidth; x++)
+        // Check if we're currently tracking an active wave
+        if (isTrackingActiveWave && trackedCubes.Count > 0)
         {
-            for (int y = 0; y < gridConfig.WaveHeight; y++)
+            // Load from active cubes
+            SyncWaveStateWithActiveCubes();
+        }
+        else
+        {
+            // Load from grid configurator state
+            for (int x = 0; x < gridConfig.WaveWidth; x++)
             {
-                int gridValue = gridConfig.GridState[x, y];
-                if (gridValue > 0)
+                for (int y = 0; y < gridConfig.WaveHeight; y++)
                 {
-                    CubeType cubeType = (CubeType)(gridValue - 1);
-                    waveState[new Vector2Int(x, y)] = cubeType;
+                    int gridValue = gridConfig.GridState[x, y];
+                    if (gridValue > 0)
+                    {
+                        CubeType cubeType = (CubeType)(gridValue - 1);
+                        waveState[new Vector2Int(x, y)] = cubeType;
+                    }
                 }
             }
         }
@@ -92,29 +125,34 @@ public class WaveDebugWaveController : MonoBehaviour
 
         Vector2Int pos = new Vector2Int(x, y);
 
-        // Cycle through cube types: Normal -> Blue -> Black -> Empty -> Normal
-        CubeType currentType = waveState.ContainsKey(pos) ? waveState[pos] : CubeType.Normal;
-        CubeType newType = GetNextCubeType(currentType);
+        // Get current state
+        bool hasCube = waveState.ContainsKey(pos);
+        CubeType currentType = hasCube ? waveState[pos] : CubeType.Normal;
 
-        // Update internal state
-        if (newType == CubeType.Normal && !waveState.ContainsKey(pos))
+        // Cycle through: Empty -> Normal -> Blue -> Black -> Empty
+        if (!hasCube)
         {
-            // Special case: if we're cycling to Normal but there's no cube, place Normal
+            // Empty -> Normal
             waveState[pos] = CubeType.Normal;
-        }
-        else if (newType == CubeType.Normal && currentType != CubeType.Normal)
-        {
-            // If cycling from another type to Normal
-            waveState[pos] = CubeType.Normal;
-        }
-        else if (newType == CubeType.Normal)
-        {
-            // If cycling from Normal, remove the cube (empty space)
-            waveState.Remove(pos);
+            Debug.Log($"Added Normal cube at ({x}, {y})");
         }
         else
         {
-            waveState[pos] = newType;
+            switch (currentType)
+            {
+                case CubeType.Normal:
+                    waveState[pos] = CubeType.Blue;
+                    Debug.Log($"Changed to Blue cube at ({x}, {y})");
+                    break;
+                case CubeType.Blue:
+                    waveState[pos] = CubeType.Black;
+                    Debug.Log($"Changed to Black cube at ({x}, {y})");
+                    break;
+                case CubeType.Black:
+                    waveState.Remove(pos);
+                    Debug.Log($"Removed cube at ({x}, {y})");
+                    break;
+            }
         }
 
         // Update grid configurator to stay in sync
@@ -127,7 +165,6 @@ public class WaveDebugWaveController : MonoBehaviour
         }
 
         isDirty = true;
-        Debug.Log($"Toggled cube at ({x}, {y}) to {(waveState.ContainsKey(pos) ? waveState[pos].ToString() : "Empty")}");
     }
 
     /// <summary>Set a specific cube type at the specified position</summary>
@@ -212,6 +249,9 @@ public class WaveDebugWaveController : MonoBehaviour
                 gridConfig.GridState[pos.x, pos.y] = (int)cubeType + 1;
             }
         }
+
+        Debug.Log($"Synced grid config with wave state. Wave state has {waveState.Count} cubes");
+        Debug.Log($"Grid state preview: {string.Join(", ", waveState.Select(kvp => $"({kvp.Key.x},{kvp.Key.y}):{gridConfig.GridState[kvp.Key.x, kvp.Key.y]}"))}");
     }
 
     #endregion
@@ -253,6 +293,7 @@ public class WaveDebugWaveController : MonoBehaviour
         isDirty = false;
 
         Debug.Log($"Loaded wave: {waveData.name} ({waveData.GridWidth}x{waveData.GridHeight}) with {waveData.CubesData.Count} cubes");
+        Debug.Log($"Wave state after load: {string.Join(", ", waveState.Select(kvp => $"({kvp.Key.x},{kvp.Key.y}):{kvp.Value}"))}");
     }
 
     /// <summary>Create a new WaveData from current wave state</summary>
@@ -343,7 +384,13 @@ public class WaveDebugWaveController : MonoBehaviour
     {
         StopTracking();
         waveState.Clear();
+
+        // Clear the grid configurator state as well
+        gridConfig.ClearGrid();
+
+        // Sync to ensure everything is cleared
         SyncGridConfigWithWaveState();
+
         currentWaveData = null;
         lastLoadedWaveName = "";
         isDirty = false;

@@ -71,7 +71,7 @@ public class WaveDebugUIRenderer : MonoBehaviour
     private void OnDebuggerOpened()
     {
         // Sync with current wave state when debugger opens
-        waveController.InitializeWaveState();
+        waveController.OnDebuggerOpened();
     }
 
     #region Main Window Drawing
@@ -216,7 +216,7 @@ public class WaveDebugUIRenderer : MonoBehaviour
     {
         EditorGUILayout.BeginVertical(GUI.skin.box);
 
-        EditorGUILayout.LabelField("Click cubes to cycle: Normal → Blue → Black → Empty", EditorStyles.helpBox);
+        EditorGUILayout.LabelField("Click cubes to cycle: Empty → Normal → Blue → Black → Empty", EditorStyles.helpBox);
 
         // Cube grid
         gridScrollPosition = EditorGUILayout.BeginScrollView(gridScrollPosition, GUILayout.Height(250));
@@ -230,8 +230,8 @@ public class WaveDebugUIRenderer : MonoBehaviour
             for (int x = 0; x < gridConfig.WaveWidth; x++)
             {
                 Vector2Int pos = new Vector2Int(x, y);
-                Enumerations.CubeType cubeType = waveState.ContainsKey(pos) ? waveState[pos] : Enumerations.CubeType.Normal;
                 bool hasCube = waveState.ContainsKey(pos);
+                Enumerations.CubeType cubeType = hasCube ? waveState[pos] : Enumerations.CubeType.Normal;
 
                 // Set button color based on cube type
                 if (hasCube)
@@ -255,7 +255,7 @@ public class WaveDebugUIRenderer : MonoBehaviour
                 }
 
                 // Draw button
-                string buttonText = hasCube ? GetCubeTypeShortName(cubeType) : "";
+                string buttonText = hasCube ? GetCubeTypeShortName(cubeType) : "·";
                 if (GUILayout.Button(buttonText, GUILayout.Width(buttonSize), GUILayout.Height(buttonSize)))
                 {
                     waveController.ToggleCubeAtPosition(x, y);
