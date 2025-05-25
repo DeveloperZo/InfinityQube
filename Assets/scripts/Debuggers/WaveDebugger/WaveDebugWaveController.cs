@@ -29,6 +29,8 @@ public class WaveDebugWaveController : MonoBehaviour
     // Wave configuration tracking
     private Dictionary<Vector2Int, CubeType> waveState = new Dictionary<Vector2Int, CubeType>();
     private bool isDirty = false;
+    private WaveData lastTrackedWave = null;
+    private int lastWaveIndex = -1;
 
     private void Awake()
     {
@@ -37,6 +39,8 @@ public class WaveDebugWaveController : MonoBehaviour
 
     private void Update()
     {
+        CheckForWaveManagerUpdates();
+
         if (isTrackingActiveWave)
         {
             UpdateActiveWaveTracking();
@@ -60,24 +64,7 @@ public class WaveDebugWaveController : MonoBehaviour
     /// <summary>Force sync when debugger is opened - call this from UI</summary>
     public void OnDebuggerOpened()
     {
-        // Check if there's an active wave to track
-        if (waveManager != null && waveManager.waveActive && waveManager.activeCubes.Count > 0)
-        {
-            StartTracking();
-        }
-        else
-        {
-            // Load from existing wave configuration if available
-            if (waveManager != null && waveManager.CurrentWave != null)
-            {
-                LoadWave(waveManager.CurrentWave);
-            }
-            else
-            {
-                // Initialize with empty state
-                InitializeWaveState();
-            }
-        }
+        SyncWithWaveManager();
     }
 
     #region Wave State Management
@@ -280,7 +267,11 @@ public class WaveDebugWaveController : MonoBehaviour
         // Load cube data
         foreach (var cubeData in waveData.CubesData)
         {
-            Vector2Int pos = new Vector2Int(cubeData.position.x, cubeData.position.y);
+            // Convert wave data coordinates to display coordinates
+            int displayX = cubeData.position.x;
+            int displayY = (gridConfig.WaveHeight - 1) - cubeData.position.y;
+
+            Vector2Int pos = new Vector2Int(displayX, displayY);
             waveState[pos] = cubeData.type;
         }
 
@@ -319,10 +310,14 @@ public class WaveDebugWaveController : MonoBehaviour
 
         foreach (var kvp in waveState)
         {
+            // Convert display coordinates back to wave data coordinates
+            int waveX = kvp.Key.x;
+            int waveY = (gridConfig.WaveHeight - 1) - kvp.Key.y;
+
             CubeData cubeData = new CubeData
             {
                 type = kvp.Value,
-                position = kvp.Key,
+                position = new Vector2Int(waveX, waveY),
                 level = 1
             };
             newWave.CubesData.Add(cubeData);
@@ -533,7 +528,7 @@ public class WaveDebugWaveController : MonoBehaviour
         if (trackedCubes.Count == 0) return;
 
         int minY = trackedCubes.Min(c => c.position.y);
-        waveOffsetY = minY;
+         waveOffsetY = minY;
     }
 
     private void SyncWaveStateWithActiveCubes()
@@ -545,14 +540,72 @@ public class WaveDebugWaveController : MonoBehaviour
             int localX = cube.position.x;
             int localY = cube.position.y - waveOffsetY;
 
+            // Flip Y coordinate to match UI display (UI shows top-to-bottom, wave data is bottom-to-top)
+            int displayY = (gridConfig.WaveHeight - 1) - localY;
+
             if (localX >= 0 && localX < gridConfig.WaveWidth &&
-                localY >= 0 && localY < gridConfig.WaveHeight)
+                displayY >= 0 && displayY < gridConfig.WaveHeight)
             {
-                waveState[new Vector2Int(localX, localY)] = cube.type;
+                waveState[new Vector2Int(localX, displayY)] = cube.type;
             }
         }
 
         SyncGridConfigWithWaveState();
+    }
+
+    private void CheckForWaveManagerUpdates()
+    {
+        if (waveManager == null) return;
+
+        // Check if wave manager has an active wave and we're not tracking
+        bool hasActiveCubes = waveManager.activeCubes.Count > 0;
+        bool waveChanged = waveManager.CurrentWave != lastTrackedWave;
+        bool waveIndexChanged = waveManager.CurrentWaveIndex != lastWaveIndex;
+
+        if (waveChanged || waveIndexChanged)
+        {
+            Debug.Log($"Wave change detected: CurrentWave={waveManager.CurrentWave?.name}, Index={waveManager.CurrentWaveIndex}");
+            SyncWithWaveManager();
+        }
+        else if (hasActiveCubes && !isTrackingActiveWave)
+        {
+            // New cubes spawned, start tracking
+            StartTracking();
+        }
+        else if (!hasActiveCubes && isTrackingActiveWave)
+        {
+            // Wave ended, stop tracking but keep the wave data loaded
+            StopTracking();
+        }
+    }
+
+    /// <summary>Sync with current WaveManager state</summary>
+    private void SyncWithWaveManager()
+    {
+        if (waveManager == null) return;
+
+        // Update tracking variables
+        lastTrackedWave = waveManager.CurrentWave;
+        lastWaveIndex = waveManager.CurrentWaveIndex;
+
+        // Check if there's an active wave to track
+        if (waveManager.waveActive && waveManager.activeCubes.Count > 0)
+        {
+            Debug.Log("Active wave detected - starting tracking");
+            StartTracking();
+        }
+        else if (waveManager.CurrentWave != null)
+        {
+            // Load the current wave configuration
+            Debug.Log($"Loading current wave configuration: {waveManager.CurrentWave.name}");
+            LoadWave(waveManager.CurrentWave);
+        }
+        else
+        {
+            // No wave active, initialize empty
+            Debug.Log("No active wave - initializing empty state");
+            InitializeWaveState();
+        }
     }
 
     #endregion

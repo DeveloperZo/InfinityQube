@@ -3,9 +3,9 @@ using System.Collections.Generic;
 
 public class WaveDebugDataCollector : MonoBehaviour
 {
-    public int TotalSpawned { get; private set; }
-    public int TotalRemoved { get; private set; }
-    public List<WaveMessage> CurrentWaveMessages { get; private set; } = new List<WaveMessage>();
+    [SerializeField] public int TotalSpawned;
+    [SerializeField] public int TotalRemoved;
+    [SerializeField] public List<WaveMessage> CurrentWaveMessages;
 
     /// <summary>Call when a new cube appears in waveManager.activeCubes.</summary>
     public void RecordCubeSpawned(CubeBehavior cube)
