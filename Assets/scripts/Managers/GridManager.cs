@@ -84,6 +84,24 @@ public class GridManager : MonoBehaviour
         }
     }
 
+    public void ResizeGrid(int newWidth, int newHeight)
+    {
+        Debug.Log($"Resizing grid from {width}x{height} to {newWidth}x{newHeight}");
+
+        // Destroy existing grid
+        DestroyGrid();
+
+        // Update properties first
+        width = newWidth;
+        height = newHeight;
+
+
+        // Regenerate with new dimensions
+        GenerateGrid();
+
+        Debug.Log($"Grid successfully resized to {width}x{height}");
+    }
+
     public void DestroyGrid()
     {
         if (tiles != null)

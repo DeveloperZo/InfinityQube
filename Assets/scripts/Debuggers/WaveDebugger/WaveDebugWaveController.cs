@@ -87,7 +87,7 @@ public class WaveDebugWaveController : MonoBehaviour
             {
                 for (int y = 0; y < gridConfig.WaveHeight; y++)
                 {
-                    int gridValue = gridConfig.GridState[x, y];
+                    int gridValue = gridConfig.gridState[x, y];
                     if (gridValue > 0)
                     {
                         CubeType cubeType = (CubeType)(gridValue - 1);
@@ -212,7 +212,7 @@ public class WaveDebugWaveController : MonoBehaviour
         }
     }
 
-    /// <summary>Sync the grid configurator's GridState with our internal wave state</summary>
+    /// <summary>Sync the grid configurator's gridState with our internal wave state</summary>
     private void SyncGridConfigWithWaveState()
     {
         // Clear the grid first
@@ -220,7 +220,7 @@ public class WaveDebugWaveController : MonoBehaviour
         {
             for (int y = 0; y < gridConfig.WaveHeight; y++)
             {
-                gridConfig.GridState[x, y] = 0; // Empty
+                gridConfig.gridState[x, y] = 0; // Empty
             }
         }
 
@@ -233,12 +233,12 @@ public class WaveDebugWaveController : MonoBehaviour
             if (pos.x >= 0 && pos.x < gridConfig.WaveWidth &&
                 pos.y >= 0 && pos.y < gridConfig.WaveHeight)
             {
-                gridConfig.GridState[pos.x, pos.y] = (int)cubeType + 1;
+                gridConfig.gridState[pos.x, pos.y] = (int)cubeType + 1;
             }
         }
 
         Debug.Log($"Synced grid config with wave state. Wave state has {waveState.Count} cubes");
-        Debug.Log($"Grid state preview: {string.Join(", ", waveState.Select(kvp => $"({kvp.Key.x},{kvp.Key.y}):{gridConfig.GridState[kvp.Key.x, kvp.Key.y]}"))}");
+        Debug.Log($"Grid state preview: {string.Join(", ", waveState.Select(kvp => $"({kvp.Key.x},{kvp.Key.y}):{gridConfig.gridState[kvp.Key.x, kvp.Key.y]}"))}");
     }
 
     #endregion
@@ -254,12 +254,25 @@ public class WaveDebugWaveController : MonoBehaviour
             return;
         }
 
-        // Stop any active tracking
-        StopTracking();
+        Debug.Log($"Loading wave: {waveData.name}");
 
-        // Update grid dimensions
+        // Don't stop tracking if we're just loading a blueprint
+        // Only stop if we're forcing a new wave
+
+        // Update grid dimensions first
         gridConfig.SetWaveDimensions(waveData.GridWidth, waveData.GridHeight);
-        gridConfig.InitializeGrid();
+
+        // Ensure grid is big enough
+        if (gridManager != null)
+        {
+            int requiredGridWidth = Mathf.Max(gridManager.width, waveData.GridWidth);
+            int requiredGridHeight = Mathf.Max(gridManager.height, waveData.GridHeight * 3);
+
+            if (requiredGridWidth > gridManager.width || requiredGridHeight > gridManager.height)
+            {
+                UpdateGridDimensions(requiredGridWidth, requiredGridHeight);
+            }
+        }
 
         // Clear current state
         waveState.Clear();
@@ -267,12 +280,10 @@ public class WaveDebugWaveController : MonoBehaviour
         // Load cube data
         foreach (var cubeData in waveData.CubesData)
         {
-            // Convert wave data coordinates to display coordinates
-            int displayX = cubeData.position.x;
-            int displayY = (gridConfig.WaveHeight - 1) - cubeData.position.y;
-
-            Vector2Int pos = new Vector2Int(displayX, displayY);
+            Vector2Int pos = new Vector2Int(cubeData.position.x, cubeData.position.y);
             waveState[pos] = cubeData.type;
+
+            Debug.Log($"Loading cube: {cubeData.type} at position ({pos.x}, {pos.y}) in {gridConfig.WaveWidth}x{gridConfig.WaveHeight} grid");
         }
 
         // Sync with grid configurator
@@ -284,7 +295,6 @@ public class WaveDebugWaveController : MonoBehaviour
         isDirty = false;
 
         Debug.Log($"Loaded wave: {waveData.name} ({waveData.GridWidth}x{waveData.GridHeight}) with {waveData.CubesData.Count} cubes");
-        Debug.Log($"Wave state after load: {string.Join(", ", waveState.Select(kvp => $"({kvp.Key.x},{kvp.Key.y}):{kvp.Value}"))}");
     }
 
     /// <summary>Create a new WaveData from current wave state</summary>
@@ -775,36 +785,61 @@ public class WaveDebugWaveController : MonoBehaviour
     /// <summary>Start/Resume the current wave</summary>
     public void StartWave()
     {
+        EnsureWaveManagerState();
         if (waveManager == null) return;
 
-        if (waveManager.waveActive)
+        // If we have cubes but wave isn't active, resume
+        if (waveManager.activeCubes.Count > 0 && !waveManager.waveActive)
         {
-            // Resume if paused
+            waveManager.debugMode = true;
+            waveManager.manualControl = false;
             waveManager.ResumeWave();
             Debug.Log("Wave resumed");
         }
-        else if (waveManager.activeCubes.Count > 0)
+        // If no cubes, spawn the current wave
+        else if (waveManager.activeCubes.Count == 0)
         {
-            // Resume existing cubes
-            waveManager.ResumeWave();
-            Debug.Log("Wave resumed with existing cubes");
-        }
-        else
-        {
-            // Start new wave only if no cubes exist
             SpawnWave();
+        }
+        // If wave is already active, just ensure it's not in manual mode
+        else if (waveManager.waveActive)
+        {
+            waveManager.manualControl = false;
+            Debug.Log("Wave already active, disabled manual control");
         }
     }
 
     /// <summary>Stop/Pause the current wave</summary>
     public void StopWave()
     {
-        if (waveManager == null || !waveManager.waveActive) return;
+        EnsureWaveManagerState();
+        if (waveManager == null) return;
 
-        waveManager.PauseWave();
-        Debug.Log("Wave paused - manual control enabled");
+        if (waveManager.waveActive)
+        {
+            waveManager.PauseWave();
+            Debug.Log("Wave paused - manual control enabled");
+        }
+        else
+        {
+            // Force manual control even if wave isn't active
+            waveManager.debugMode = true;
+            waveManager.manualControl = true;
+            Debug.Log("Manual control enabled");
+        }
     }
+    /// <summary>Ensure wave manager is in correct state for debugger operations</summary>
+    private void EnsureWaveManagerState()
+    {
+        if (waveManager == null) return;
 
+        // Always ensure debug mode is enabled when using debugger
+        if (!waveManager.debugMode)
+        {
+            waveManager.debugMode = true;
+            Debug.Log("Enabled debug mode for wave manager");
+        }
+    }
     /// <summary>Reset the current wave</summary>
     public void ResetCurrentWave()
     {
@@ -828,6 +863,7 @@ public class WaveDebugWaveController : MonoBehaviour
     /// <summary>Manually step the wave forward one move</summary>
     public void StepWaveForward()
     {
+        EnsureWaveManagerState();
         if (waveManager == null) return;
 
         if (waveManager.manualControl)
@@ -846,13 +882,12 @@ public class WaveDebugWaveController : MonoBehaviour
     {
         if (waveData == null) return;
 
-        // Stop any active wave
-        if (waveManager != null)
+        // Clear any active cubes but don't break wave manager state
+        if (waveManager != null && waveManager.activeCubes.Count > 0)
         {
             waveManager.ClearAllCubes();
+            StopTracking();
         }
-
-        StopTracking();
 
         // Load the wave data
         LoadWave(waveData);
@@ -865,7 +900,6 @@ public class WaveDebugWaveController : MonoBehaviour
     #region Grid Management Methods
 
     /// <summary>Update grid dimensions and auto-resize if needed</summary>
-    /// <summary>Update grid dimensions and auto-resize if needed</summary>
     public void UpdateGridDimensions(int newGridWidth, int newGridHeight)
     {
         if (gridManager == null) return;
@@ -876,20 +910,31 @@ public class WaveDebugWaveController : MonoBehaviour
 
         Debug.Log($"Updating grid from {gridManager.width}x{gridManager.height} to {requiredWidth}x{requiredHeight}");
 
-        // Update grid manager properties
-        gridManager.width = requiredWidth;
-        gridManager.height = requiredHeight;
+        // Store current wave state
+        var tempWaveState = new Dictionary<Vector2Int, CubeType>(waveState);
 
-        // Regenerate the actual grid
-        gridManager.DestroyGrid();
-        gridManager.GenerateGrid();
+        // Use the proper resize method
+        gridManager.ResizeGrid(requiredWidth, requiredHeight);
+
+        // Update grid configurator to match
+        gridConfig.gridWidth = requiredWidth;
+        gridConfig.gridHeight = requiredHeight;
 
         // Reinitialize grid configurator arrays
-        gridConfig.SetWaveDimensions(gridConfig.WaveWidth, gridConfig.WaveHeight);
-        gridConfig.ApplyGridSize();
+        gridConfig.InitializeGrid();
 
-        // Reinitialize wave state
-        InitializeWaveState();
+        // Restore wave state if it fits in new dimensions
+        waveState.Clear();
+        foreach (var kvp in tempWaveState)
+        {
+            if (kvp.Key.x < gridConfig.WaveWidth && kvp.Key.y < gridConfig.WaveHeight)
+            {
+                waveState[kvp.Key] = kvp.Value;
+            }
+        }
+
+        // Sync everything
+        SyncGridConfigWithWaveState();
 
         Debug.Log($"Grid successfully resized to {requiredWidth}x{requiredHeight}");
     }

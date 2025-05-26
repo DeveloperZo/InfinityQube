@@ -103,6 +103,8 @@ public class GameUI : MonoBehaviour
         {
             DrawControlsPanel();
             DrawDetonationTracker();
+            DrawPlayerStatus();
+            DrawPlayerStatistics();
         }
     }
 
@@ -237,6 +239,103 @@ public class GameUI : MonoBehaviour
         else
         {
             GUILayout.Label("Detonation Manager not found!", textStyle);
+        }
+
+        GUILayout.EndVertical();
+        GUILayout.EndArea();
+    }
+    private void DrawPlayerStatus()
+    {
+        // Player status panel
+        GUILayout.BeginArea(new Rect(Screen.width - 300, 630, 290, 80));
+
+        // Panel background
+        GUILayout.BeginVertical(panelStyle);
+
+        // Header
+        GUILayout.Label("PLAYER STATUS", headerStyle);
+
+        GUILayout.Space(5);
+
+        if (FindObjectOfType<PlayerManager>() != null)
+        {
+            var player = FindObjectOfType<PlayerManager>();
+
+            GUILayout.BeginVertical(boxStyle);
+
+            if (player.IsAlive())
+            {
+                GUI.color = Color.green;
+                GUILayout.Label("ALIVE", textStyle);
+            }
+            else
+            {
+                GUI.color = Color.red;
+                GUILayout.Label("DEAD - Respawning...", textStyle);
+            }
+            GUI.color = Color.white;
+
+            GUILayout.EndVertical();
+        }
+        else
+        {
+            GUILayout.Label("Player not found!", textStyle);
+        }
+
+        GUILayout.EndVertical();
+        GUILayout.EndArea();
+    }
+
+    private void DrawPlayerStatistics()
+    {
+        // Player statistics panel
+        GUILayout.BeginArea(new Rect(10, Screen.height - 250, 320, 240));
+
+        // Panel background
+        GUILayout.BeginVertical(panelStyle);
+
+        // Header
+        GUILayout.Label("PLAYER STATISTICS", headerStyle);
+
+        GUILayout.Space(5);
+
+        PlayerManager player = FindObjectOfType<PlayerManager>();
+        if (player != null)
+        {
+            PlayerStatistics stats = player.GetCurrentStatistics();
+
+            GUILayout.BeginVertical(boxStyle);
+
+            // Cube statistics
+            GUILayout.Label("CUBES:", GUI.skin.box);
+            GUILayout.Label($"Normal Captured: {stats.normalCubesCaptured}", textStyle);
+            GUILayout.Label($"Blue Captured: {stats.blueCubesCaptured}", textStyle);
+            GUILayout.Label($"Black Captured: {stats.blackCubesCaptured}", textStyle);
+            GUILayout.Label($"Escaped: {stats.cubesEscaped}", textStyle);
+            GUILayout.Label($"Capture Rate: {stats.captureRate:P1}", textStyle);
+
+            GUILayout.Space(3);
+
+            // Action statistics  
+            GUILayout.Label("ACTIONS:", GUI.skin.box);
+            GUILayout.Label($"Markers Placed: {stats.markersPlaced}", textStyle);
+            GUILayout.Label($"Markers Triggered: {stats.markersTriggered}", textStyle);
+            GUILayout.Label($"Detonations: {stats.detonationsUsed}", textStyle);
+            GUILayout.Label($"Moves: {stats.movesCount}", textStyle);
+
+            GUILayout.Space(3);
+
+            // Player statistics
+            GUILayout.Label("PLAYER:", GUI.skin.box);
+            GUILayout.Label($"Deaths: {stats.playerDeaths}", textStyle);
+            GUILayout.Label($"Time Alive: {stats.timeAlive:F1}s", textStyle);
+            GUILayout.Label($"Death Rate: {stats.deathRate:F2}/min", textStyle);
+
+            GUILayout.EndVertical();
+        }
+        else
+        {
+            GUILayout.Label("Player not found!", textStyle);
         }
 
         GUILayout.EndVertical();

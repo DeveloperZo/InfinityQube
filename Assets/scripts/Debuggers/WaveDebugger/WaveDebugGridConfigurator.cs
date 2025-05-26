@@ -9,17 +9,14 @@ public class WaveDebugGridConfigurator : MonoBehaviour
     [SerializeField] private int defaultWidth = 3;
     [SerializeField] private int defaultHeight = 3;
 
-    private int[,] gridState;
-    private int gridWidth;
-    private int gridHeight;
+    public int[,] gridState;
+    public int gridWidth;
+    public int gridHeight;
     private int waveWidth;
     private int waveHeight;
 
-    public int GridWidth => gridWidth;
-    public int GridHeight => gridHeight;
     public int WaveWidth => waveWidth;
     public int WaveHeight => waveHeight;
-    public int[,] GridState => gridState;
 
     private void Awake()
     {
@@ -50,22 +47,59 @@ public class WaveDebugGridConfigurator : MonoBehaviour
 
     public void ApplyGridSize()
     {
-        gridWidth = Mathf.Max(gridWidth, waveWidth);
-        gridHeight = Mathf.Max(gridHeight, waveHeight * 3);
-        gridWidth = Mathf.Max(3, gridWidth);
-        gridHeight = Mathf.Max(9, gridHeight);
+        // Make sure grid height is at least 9 tiles
+        gridHeight = Mathf.Max(gridHeight, 9);
+        gridWidth = gridWidth < 3 ? Mathf.Max(3, waveWidth) : gridWidth;
 
+        // Apply changes to the actual grid in the scene
         if (gridManager != null)
         {
-            if (gridManager.Width != gridWidth || gridManager.Height != gridHeight)
+            bool needsResize = gridManager.Width != gridWidth || gridManager.height != gridHeight;
+
+            if (needsResize)
             {
-                gridManager.DestroyGrid();
-                gridManager.width = gridWidth;
-                gridManager.height = gridHeight;
-                gridManager.GenerateGrid();
+                Debug.Log($"ApplyGridSize: Resizing grid to {gridWidth}x{gridHeight}");
+
+                // Use the proper resize method
+                gridManager.ResizeGrid(gridWidth, gridHeight);
             }
         }
-        InitializeGrid();
+
+        // Recreate the local grid arrays for the editor
+        int[,] newGridState = new int[waveWidth, waveHeight];
+
+        // Copy existing values where possible
+        if (gridState != null)
+        {
+            int oldWidth = Mathf.Min(gridState.GetLength(0), waveWidth);
+            int oldHeight = Mathf.Min(gridState.GetLength(1), waveHeight);
+
+            for (int x = 0; x < oldWidth; x++)
+            {
+                for (int y = 0; y < oldHeight; y++)
+                {
+                    newGridState[x, y] = gridState[x, y];
+                }
+            }
+        }
+
+        // Initialize any new cells
+        for (int x = 0; x < waveWidth; x++)
+        {
+            for (int y = 0; y < waveHeight; y++)
+            {
+                // Only set values for cells that weren't copied
+                if (gridState == null || x >= gridState.GetLength(0) || y >= gridState.GetLength(1))
+                {
+                    newGridState[x, y] = 1; // Default to normal cube
+                }
+            }
+        }
+
+        // Update the arrays
+        gridState = newGridState;
+
+        Debug.Log($"Applied new local wave dimensions for editor: {waveWidth}x{waveHeight}");
     }
 
     public void ClearGrid()

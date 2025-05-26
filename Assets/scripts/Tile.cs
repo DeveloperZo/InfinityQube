@@ -138,6 +138,12 @@ public class Tile : MonoBehaviour
             tileRenderer.material = forbiddenMaterial;
         }
 
+        PlayerManager player = FindObjectOfType<PlayerManager>();
+        if (player != null)
+        {
+            player.OnTileCorrupted();
+        }
+
         // Optional: Add cracked texture or particle effect
         // PlayCorruptionEffect();
 
@@ -160,6 +166,11 @@ public class Tile : MonoBehaviour
             tileRenderer.material = chargeMaterials[detonationCharges-1];
         }
 
+        PlayerManager player = FindObjectOfType<PlayerManager>();
+        if (player != null)
+        {
+            player.OnTileEnhanced();
+        }
         transform.position = new Vector3(
     transform.position.x,
     -0.2f, // Lowered position
@@ -353,8 +364,13 @@ public class Tile : MonoBehaviour
                 // Black cube captured = immediate corruption
                 BlackenTile();
 
+                // Notify player of capture
+                PlayerManager player = FindObjectOfType<PlayerManager>();
+                if (player != null)
+                {
+                    player.OnCubeCaptured(Enumerations.CubeType.Black);
+                }
                 // The black cube remains (not destroyed)
-                // Could add visual feedback or sound effect here
                 break;
 
             case Enumerations.CubeType.Blue:
@@ -365,11 +381,25 @@ public class Tile : MonoBehaviour
                     detonationManager.RegisterDetonationPoint(new Vector2Int(x, y));
                 }
 
+                // Notify player of capture
+                PlayerManager playerBlue = FindObjectOfType<PlayerManager>();
+                if (playerBlue != null)
+                {
+                    playerBlue.OnCubeCaptured(Enumerations.CubeType.Blue);
+                }
+
                 // Consume the blue cube
                 Destroy(cubeToProcess.gameObject);
                 break;
 
             case Enumerations.CubeType.Normal:
+                // Notify player of capture
+                PlayerManager playerNormal = FindObjectOfType<PlayerManager>();
+                if (playerNormal != null)
+                {
+                    playerNormal.OnCubeCaptured(Enumerations.CubeType.Normal);
+                }
+
                 // Normal cubes are simply consumed
                 Destroy(cubeToProcess.gameObject);
                 break;

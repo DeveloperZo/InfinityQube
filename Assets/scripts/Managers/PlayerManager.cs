@@ -11,6 +11,26 @@ public class PlayerManager : MonoBehaviour
     private int lastLoggedTileX = -1;
     private int lastLoggedTileZ = -1;
 
+    [Header("Player Death")]
+    [SerializeField] private bool isDead = false;
+    [SerializeField] private float respawnDelay = 2.0f;
+
+    [Header("Player Statistics")]
+    [SerializeField] private int normalCubesCaptured = 0;
+    [SerializeField] private int blueCubesCaptured = 0;
+    [SerializeField] private int blackCubesCaptured = 0;
+    [SerializeField] private int cubesEscaped = 0;
+    [SerializeField] private int markersPlaced = 0;
+    [SerializeField] private int markersTriggered = 0;
+    [SerializeField] private int detonationsUsed = 0;
+    [SerializeField] private int tilesCorrupted = 0;
+    [SerializeField] private int tilesEnhanced = 0;
+    [SerializeField] private int playerDeaths = 0;
+    [SerializeField] private int movesCount = 0;
+    [SerializeField] private float timeAlive = 0f;
+    [SerializeField] private float totalPlayTime = 0f;
+
+
     [Header("Settings")]
     [SerializeField] private int maxMarkerCharge = 2;
     [SerializeField] private int maxMarkerCount = 99;
@@ -32,6 +52,12 @@ public class PlayerManager : MonoBehaviour
     private Queue<Vector2Int> markerQueue = new Queue<Vector2Int>(); // Track marker order
     private bool isInitialized = false;
     private bool isSpeedingUp = false;
+    private Vector2Int lastPosition;
+    private float sessionStartTime;
+
+    public System.Action<PlayerStatistics> OnStatisticsUpdated;
+    public System.Action OnPlayerDied;
+    public System.Action OnPlayerRespawned;
 
     private void Start()
     {
@@ -52,6 +78,13 @@ public class PlayerManager : MonoBehaviour
             Debug.LogWarning("DetonationManager not found in scene. Detonation functionality will be limited.");
         }
 
+        // Initialize state
+        isDead = false;
+
+        // Initialize statistics
+        lastPosition = new Vector2Int(-1, -1);
+        sessionStartTime = Time.time;
+
         // Initialize the current position based on the player's world position
         UpdateCurrentTilePosition();
         isInitialized = true;
@@ -68,6 +101,13 @@ public class PlayerManager : MonoBehaviour
     private void Update()
     {
         if (!isInitialized) return;
+        if (!isDead)
+        {
+            timeAlive += Time.deltaTime;
+        }
+        totalPlayTime += Time.deltaTime;
+        
+        if (isDead) return;
 
         HandleMovement();
         TrackAndLogTilePosition();
@@ -75,6 +115,10 @@ public class PlayerManager : MonoBehaviour
         HandleMarkerTrigger();
         HandleDetonation();
         HandleSpeedControl();
+        
+        //TrackMovement();
+
+        CheckForCollisions();
     }
 
     private void HandleMovement()
@@ -204,6 +248,7 @@ public class PlayerManager : MonoBehaviour
                     currentTile.PlaceMarker();
                     markerQueue.Enqueue(new Vector2Int(selX, selZ));
                     currentMarkers++;
+                    OnMarkerPlaced();
 
                     // Notify wave manager that a marker was placed
                     if (waveManager != null)
@@ -243,6 +288,7 @@ public class PlayerManager : MonoBehaviour
                 {
                     tile.TriggerMarker();
                     currentMarkers--;
+                    OnMarkerTriggered();
                     Debug.Log($"Detonated marker at {markerPos}");
                 }
             }
@@ -258,6 +304,7 @@ public class PlayerManager : MonoBehaviour
             {
                 Debug.Log($"Triggering next detonation (Points available: {detonationManager.DetonationPointCount})");
                 detonationManager.TriggerNextDetonation();
+                OnDetonationUsed();
             }
             else
             {
@@ -294,18 +341,81 @@ public class PlayerManager : MonoBehaviour
         markerQueue.Clear();
     }
 
-    // Check for collision with cubes
-    private void CheckForGameOver()
+    private void CheckForCollisions()
     {
+        if (isDead) return;
+
         // Check all active cubes for collision with player
-        foreach (CubeBehavior cube in FindObjectsOfType<CubeBehavior>())
+        CubeBehavior[] allCubes = FindObjectsOfType<CubeBehavior>();
+        foreach (CubeBehavior cube in allCubes)
         {
+            if (cube == null || cube.isDestroyed) continue;
+
+            // Check if cube and player are on the same tile
             if (cube.position.x == currentTilePosition.x && cube.position.y == currentTilePosition.y)
             {
-                // Logic for player colliding with cube
-                return;
+                Debug.Log($"Player collision with {cube.type} cube at ({currentTilePosition.x}, {currentTilePosition.y})");
+                Die();
+                break; // Only need to process one collision
             }
         }
+    }
+
+    private void Die()
+    {
+        if (isDead) return;
+
+        isDead = true;
+        playerDeaths++;
+        UpdateStatistics();
+        Debug.Log($"Player died! Total deaths: {playerDeaths}");
+
+        // Stop all input and movement
+        enabled = false;
+
+        // Notify other systems
+        OnPlayerDied?.Invoke();
+
+        // Optional: Add death effects here (animation, sound, screen shake, etc.)
+
+        // Handle respawn
+        StartCoroutine(HandleDeath());
+    }
+
+    private System.Collections.IEnumerator HandleDeath()
+    {
+        // Wait before respawning
+        yield return new WaitForSeconds(respawnDelay);
+
+        // Respawn player
+        RespawnPlayer();
+    }
+
+    private void RespawnPlayer()
+    {
+        // Reset state
+        isDead = false;
+
+        // Reset position to start (you can customize this spawn point)
+        if (grid != null)
+        {
+            SetPosition(0, 0); // Or get spawn point from StageManager
+        }
+
+        // Re-enable movement and input
+        enabled = true;
+
+        Debug.Log("Player respawned!");
+        OnPlayerRespawned?.Invoke();
+    }
+
+    // Public methods for other systems
+    public bool IsAlive() => !isDead;
+
+    public void Kill()
+    {
+        if (!isDead)
+            Die();
     }
 
     public void SetPosition(int x, int z)
@@ -327,5 +437,124 @@ public class PlayerManager : MonoBehaviour
     public void SetMaxMarkers(int max)
     {
         maxMarkerCharge = Mathf.Max(1, max);
+    }
+
+    private void TrackMovement()
+    {
+        // Only track movement when player actually changes tiles, not continuous movement
+        if (lastPosition.x != currentTilePosition.x || lastPosition.y != currentTilePosition.y)
+        {
+            if (lastPosition.x != -1 && lastPosition.y != -1) // Don't count the initial position set
+            {
+                movesCount++;
+                Debug.Log($"Player moved to tile ({currentTilePosition.x}, {currentTilePosition.y}). Total moves: {movesCount}");
+            }
+            lastPosition = currentTilePosition;
+        }
+    }
+
+    public void OnCubeCaptured(Enumerations.CubeType cubeType)
+    {
+        switch (cubeType)
+        {
+            case Enumerations.CubeType.Normal:
+                normalCubesCaptured++;
+                break;
+            case Enumerations.CubeType.Blue:
+                blueCubesCaptured++;
+                break;
+            case Enumerations.CubeType.Black:
+                blackCubesCaptured++;
+                break;
+        }
+
+        UpdateStatistics();
+        Debug.Log($"Player captured {cubeType} cube. Total: Normal={normalCubesCaptured}, Blue={blueCubesCaptured}, Black={blackCubesCaptured}");
+    }
+
+    public void OnCubeEscaped(Enumerations.CubeType cubeType)
+    {
+        cubesEscaped++;
+        UpdateStatistics();
+        Debug.Log($"Cube escaped. Total escapes: {cubesEscaped}");
+    }
+
+    public void OnMarkerPlaced()
+    {
+        markersPlaced++;
+        UpdateStatistics();
+    }
+
+    public void OnMarkerTriggered()
+    {
+        markersTriggered++;
+        UpdateStatistics();
+    }
+
+    public void OnDetonationUsed()
+    {
+        detonationsUsed++;
+        UpdateStatistics();
+    }
+
+    public void OnTileCorrupted()
+    {
+        tilesCorrupted++;
+        UpdateStatistics();
+        Debug.Log($"Tile corrupted. Total corrupted tiles: {tilesCorrupted}");
+    }
+
+    public void OnTileEnhanced()
+    {
+        tilesEnhanced++;
+        UpdateStatistics();
+        Debug.Log($"Tile enhanced. Total enhanced tiles: {tilesEnhanced}");
+    }
+
+    private void UpdateStatistics()
+    {
+        OnStatisticsUpdated?.Invoke(GetCurrentStatistics());
+    }
+
+    public PlayerStatistics GetCurrentStatistics()
+    {
+        return new PlayerStatistics
+        {
+            normalCubesCaptured = this.normalCubesCaptured,
+            blueCubesCaptured = this.blueCubesCaptured,
+            blackCubesCaptured = this.blackCubesCaptured,
+            cubesEscaped = this.cubesEscaped,
+            markersPlaced = this.markersPlaced,
+            markersTriggered = this.markersTriggered,
+            detonationsUsed = this.detonationsUsed,
+            tilesCorrupted = this.tilesCorrupted,
+            tilesEnhanced = this.tilesEnhanced,
+            playerDeaths = this.playerDeaths,
+            movesCount = this.movesCount,
+            timeAlive = this.timeAlive,
+            totalPlayTime = this.totalPlayTime,
+        };
+    }
+
+    public void ResetStatistics()
+    {
+        normalCubesCaptured = 0;
+        blueCubesCaptured = 0;
+        blackCubesCaptured = 0;
+        cubesEscaped = 0;
+        markersPlaced = 0;
+        markersTriggered = 0;
+        detonationsUsed = 0;
+        tilesCorrupted = 0;
+        tilesEnhanced = 0;
+        playerDeaths = 0;
+        movesCount = 0;
+        timeAlive = 0f;
+        totalPlayTime = 0f;
+        lastPosition = new Vector2Int(-1, -1);
+        sessionStartTime = Time.time;
+
+        UpdateStatistics();
+        Debug.Log("Player statistics reset");
     }
 }

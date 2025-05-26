@@ -163,22 +163,33 @@ public class WaveDebugUIRenderer : MonoBehaviour
 
         EditorGUILayout.BeginHorizontal();
         GUILayout.Label("Grid Width:", GUILayout.Width(100));
-        if (GUILayout.Button("-", GUILayout.Width(25))) currentGridWidth = Mathf.Max(3, currentGridWidth - 1);
+        if (GUILayout.Button("-", GUILayout.Width(25)))
+        {
+            int newWidth = Mathf.Max(3, currentGridWidth - 1);
+            waveController.UpdateGridDimensions(newWidth, currentGridHeight);
+        }
         GUILayout.Label(currentGridWidth.ToString(), GUILayout.Width(30));
-        if (GUILayout.Button("+", GUILayout.Width(25))) currentGridWidth = Mathf.Min(15, currentGridWidth + 1);
+        if (GUILayout.Button("+", GUILayout.Width(25)))
+        {
+            int newWidth = Mathf.Min(15, currentGridWidth + 1);
+            waveController.UpdateGridDimensions(newWidth, currentGridHeight);
+        }
         EditorGUILayout.EndHorizontal();
 
         EditorGUILayout.BeginHorizontal();
         GUILayout.Label("Grid Height:", GUILayout.Width(100));
-        if (GUILayout.Button("-", GUILayout.Width(25))) currentGridHeight = Mathf.Max(9, currentGridHeight - 1);
-        GUILayout.Label(currentGridHeight.ToString(), GUILayout.Width(30));
-        if (GUILayout.Button("+", GUILayout.Width(25))) currentGridHeight = Mathf.Min(20, currentGridHeight + 1);
-        EditorGUILayout.EndHorizontal();
-
-        if (GUILayout.Button("Apply Grid Size"))
+        if (GUILayout.Button("-", GUILayout.Width(25)))
         {
-            waveController.UpdateGridDimensions(currentGridWidth, currentGridHeight);
+            int newHeight = Mathf.Max(9, currentGridHeight - 1);
+            waveController.UpdateGridDimensions(currentGridWidth, newHeight);
         }
+        GUILayout.Label(currentGridHeight.ToString(), GUILayout.Width(30));
+        if (GUILayout.Button("+", GUILayout.Width(25)))
+        {
+            int newHeight = Mathf.Min(20, currentGridHeight + 1);
+            waveController.UpdateGridDimensions(currentGridWidth, newHeight);
+        }
+        EditorGUILayout.EndHorizontal();
 
         EditorGUILayout.Space(10);
 
