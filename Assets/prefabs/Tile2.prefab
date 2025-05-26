@@ -407,6 +407,9 @@ MonoBehaviour:
   markerScale: 0.5
   detonationCharges: 0
   maxCharges: 3
+  isPlayerOnTile: 0
+  softHighlightObject: {fileID: 0}
+  playerHoverMaterial: {fileID: 2100000, guid: bda83a2874ae38043b32dc22c3288953, type: 2}
   markedTileMaterial: {fileID: 2100000, guid: 1649820e4ae6e1047ae9cf8c9dd796f5, type: 2}
   forbiddenMaterial: {fileID: 2100000, guid: ba597e4280ccbe14bb9424ae288e2bb2, type: 2}
   activateMarkerMaterial: {fileID: 2100000, guid: bda83a2874ae38043b32dc22c3288953, type: 2}

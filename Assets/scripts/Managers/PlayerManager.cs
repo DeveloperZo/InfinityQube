@@ -14,11 +14,6 @@ public class PlayerManager : MonoBehaviour
     [Header("Player Death")]
     [SerializeField] private bool isDead = false;
     [SerializeField] private float respawnDelay = 2.0f;
-
-    [Header("Visual Feedback")]
-    [SerializeField] private Material playerHoverMaterial;
-    [SerializeField] private GameObject softHighlightObject;
-    [SerializeField] private bool isPlayerOnTile = false;
     
     [Header("Settings")]
     [SerializeField] private int maxMarkerCharge = 2;
@@ -575,8 +570,8 @@ public class PlayerManager : MonoBehaviour
     }
 
     private void TrackMovement()
-    {
-        SetPlayerHover(false);
+    { 
+        
         // Only track movement when player actually changes tiles, not continuous movement
         if (lastPosition.x != currentTilePosition.x || lastPosition.y != currentTilePosition.y)
         {
@@ -585,8 +580,11 @@ public class PlayerManager : MonoBehaviour
                 movesCount++;
                 Debug.Log($"Player moved to tile ({currentTilePosition.x}, {currentTilePosition.y}). Total moves: {movesCount}");
             }
+
+            currentHoveredTile.SetPlayerHover(false);
+
             lastPosition = currentTilePosition;
-            SetPlayerHover(true);
+            currentHoveredTile.SetPlayerHover(true);
         }
     }
 
@@ -694,69 +692,7 @@ public class PlayerManager : MonoBehaviour
         UpdateStatistics();
         Debug.Log("Player statistics reset");
     }
-    public void SetPlayerHover(bool isHovering)
-    {
-        if (isPlayerOnTile == isHovering) return; // No change needed
 
-        isPlayerOnTile = isHovering;
-
-        if (isHovering && !currentHoveredTile.HasMarker) // Only show highlight if not already marked
-        {
-            ShowSoftHighlight();
-        }
-        else
-        {
-            HideSoftHighlight();
-        }
-    }
-
-    private void ShowSoftHighlight()
-    {
-        if (currentHoveredTile.IsBlackened) return; // Don't highlight blackened tiles
-
-        if (softHighlightObject == null)
-        {
-            // Create soft highlight object
-            softHighlightObject = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            softHighlightObject.transform.SetParent(transform);
-            softHighlightObject.transform.localPosition = new Vector3(0, 0.05f, 0);
-            softHighlightObject.transform.localScale = new Vector3(0.9f, 0.05f, 0.9f);
-            softHighlightObject.name = $"SoftHighlight_{currentHoveredTile.x}_{currentHoveredTile.y}";
-
-            // Remove collider
-            Collider highlightCollider = softHighlightObject.GetComponent<Collider>();
-            if (highlightCollider != null)
-            {
-                Destroy(highlightCollider);
-            }
-
-            // Create hover material
-            if (playerHoverMaterial == null)
-            {
-                playerHoverMaterial = new Material(Shader.Find("Standard"));
-                playerHoverMaterial.color = new Color(0.3f, 0.8f, 1f, 0.5f);
-            }
-
-            Renderer highlightRenderer = softHighlightObject.GetComponent<Renderer>();
-            if (highlightRenderer != null)
-            {
-                highlightRenderer.material = playerHoverMaterial;
-            }
-        }
-
-        if (softHighlightObject != null)
-        {
-            softHighlightObject.SetActive(true);
-        }
-    }
-
-    private void HideSoftHighlight()
-    {
-        if (softHighlightObject != null)
-        {
-            softHighlightObject.SetActive(false);
-        }
-    }
     private void OnDestroy()
     {
         // Clear hover effect when player is destroyed

@@ -20,9 +20,9 @@ public class Tile : MonoBehaviour
     [SerializeField] private int maxCharges = 3;
 
     [Header("Player Hover Effect")]
-    private bool isPlayerOnTile = false;
-    private GameObject softHighlightObject;
-    private Material playerHoverMaterial;
+    [SerializeField] private bool isPlayerOnTile = false;
+    [SerializeField] private GameObject softHighlightObject;
+    [SerializeField] private Material playerHoverMaterial;
 
     [Header("Materials")]
     [SerializeField] private Material markedTileMaterial;
@@ -132,7 +132,10 @@ public class Tile : MonoBehaviour
         transform.position = new Vector3(transform.position.x, MARKED_HEIGHT, transform.position.z);
 
         // Hide soft highlight when marked (marker takes precedence)
-        HideSoftHighlight();
+        if (softHighlightObject != null)
+        {
+            Destroy(softHighlightObject);
+        }
 
         Debug.Log($"Marked tile at ({x}, {y})");
     }
@@ -339,7 +342,7 @@ public class Tile : MonoBehaviour
         }
     }
 
-    private void ShowSoftHighlight()
+    public void ShowSoftHighlight()
     {
         if (isBlackened) return; // Don't highlight blackened or marked tiles
 
@@ -371,7 +374,7 @@ public class Tile : MonoBehaviour
         softHighlightObject.SetActive(true);
     }
 
-    private void HideSoftHighlight()
+    public void HideSoftHighlight()
     {
         if (softHighlightObject != null)
         {
