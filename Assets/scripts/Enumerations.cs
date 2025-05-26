@@ -14,6 +14,7 @@ public static class Enumerations
 
     public enum DetonationType
     {
+        Large,
         Standard, // 3x3 area
         Small,    // 2x2 area
         Single    // Just the targeted tile

@@ -422,7 +422,8 @@ public class PlayerManager : MonoBehaviour
             Debug.Log("D key pressed, checking for detonation points...");
             if (detonationManager != null && detonationManager.HasDetonationPoints())
             {
-                Debug.Log($"Triggering next detonation (Points available: {detonationManager.DetonationPointCount})");
+                Vector2Int nextPoint = detonationManager.GetNextDetonationPoint();
+                Debug.Log($"Triggering manual detonation at ({nextPoint.x}, {nextPoint.y}) - Points available: {detonationManager.DetonationPointCount}");
                 detonationManager.TriggerNextDetonation();
                 OnDetonationUsed();
             }
@@ -434,6 +435,16 @@ public class PlayerManager : MonoBehaviour
                     detonationManager = FindObjectOfType<DetonationManager>();
                     Debug.Log($"Attempted to find DetonationManager: {(detonationManager != null ? "Found" : "Not found")}");
                 }
+            }
+        }
+
+        // Optional: Show preview when holding Shift+D
+        if (Input.GetKey(KeyCode.LeftShift) && Input.GetKeyDown(KeyCode.D) && detonationManager != null)
+        {
+            Vector2Int nextPoint = detonationManager.GetNextDetonationPoint();
+            if (nextPoint.x >= 0 && nextPoint.y >= 0)
+            {
+                detonationManager.ShowDetonationPreview(nextPoint);
             }
         }
     }

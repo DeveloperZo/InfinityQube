@@ -226,11 +226,12 @@ public class Tile : MonoBehaviour
                 break;
 
             case Enumerations.CubeType.Blue:
-                // Register with DetonationManager
+                // Blue cube captured = create detonation point (NO auto-detonate)
                 DetonationManager detonationManager = FindObjectOfType<DetonationManager>();
                 if (detonationManager != null)
                 {
-                    detonationManager.RegisterDetonationPoint(new Vector2Int(x, y));
+                    detonationManager.RegisterDetonationPoint(new Vector2Int(x, y), DetonationType.Standard, false); // false = no auto-detonate
+                    Debug.Log($"Blue cube captured at ({x}, {y}) - Detonation point created, awaiting player trigger");
                 }
                 NotifyPlayerCubeCapture(Enumerations.CubeType.Blue);
                 // Consume the blue cube

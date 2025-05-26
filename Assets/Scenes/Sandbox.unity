@@ -7622,6 +7622,7 @@ MonoBehaviour:
   detonationPointMaterial: {fileID: 2100000, guid: e2ac5a6cae92b554e87d710d109627cc, type: 2}
   flashMaterial: {fileID: 2100000, guid: 9242e7b87b272a24f9f34dec818778b2, type: 2}
   flashDuration: 0.3
+  detonationPreviewColor: {r: 1, g: 0.5, b: 0, a: 0.7}
 --- !u!4 &6427810843586173654
 Transform:
   m_ObjectHideFlags: 0
@@ -7654,7 +7655,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!1 &6651779974930358319
 GameObject:
   m_ObjectHideFlags: 0

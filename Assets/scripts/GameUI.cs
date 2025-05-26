@@ -189,9 +189,26 @@ public class GameUI : MonoBehaviour
             // Button to trigger next detonation
             if (count > 0)
             {
-                if (GUILayout.Button("Detonate Next (D)", buttonStyle))
+                nextPoint = detonationManager.GetNextDetonationPoint();
+                if (nextPoint.x >= 0)
                 {
-                    detonationManager.TriggerNextDetonation();
+                    // Determine area size based on grid width
+                    string areaSize = "2x2"; // Default
+                    if (grid != null)
+                    {
+                        int width = grid.Width;
+                        if (width <= 3) areaSize = "2x2";
+                        else if (width <= 5) areaSize = "3x3";
+                        else areaSize = "5x5";
+                    }
+
+                    GUILayout.Label($"Next Detonation: ({nextPoint.x}, {nextPoint.y})", textStyle);
+                    GUILayout.Label($"Area: {areaSize}", textStyle);
+                    GUILayout.Label("Hold P to preview area", textStyle);
+                }
+                else
+                {
+                    GUILayout.Label("No pending detonations", textStyle);
                 }
             }
 

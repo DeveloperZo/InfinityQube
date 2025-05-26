@@ -201,13 +201,6 @@ public class WaveManager : MonoBehaviour
             }
         }
 
-        // Process auto detonations
-        DetonationManager detonationManager = FindObjectOfType<DetonationManager>();
-        if (detonationManager != null)
-        {
-            detonationManager.ProcessAutoDetonations();
-        }
-
         // Notify stage manager
         StageManager stageManager = FindObjectOfType<StageManager>();
         if (stageManager != null)
