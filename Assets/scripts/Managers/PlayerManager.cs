@@ -36,6 +36,13 @@ public class PlayerManager : MonoBehaviour
     [SerializeField] private int maxMarkerCount = 99;
     [SerializeField] private float tileScale = 3f; // Added tile scale parameter
 
+    [Header("Movement Settings")]
+    [SerializeField] private float acceleration = 15f;
+    [SerializeField] private float deceleration = 20f;
+
+    private Vector3 currentVelocity = Vector3.zero;
+
+
     [Header("Speed Control")]
     [SerializeField]
     private float worldSpeed = 3f;
@@ -123,50 +130,72 @@ public class PlayerManager : MonoBehaviour
 
     private void HandleMovement()
     {
-        // 1) Read raw input axes
-        float h = 0, v = 0;
-        if (Input.GetKey(KeyCode.LeftArrow)) h = -1;
-        if (Input.GetKey(KeyCode.RightArrow)) h = +1;
-        if (Input.GetKey(KeyCode.UpArrow)) v = +1;
-        if (Input.GetKey(KeyCode.DownArrow)) v = -1;
+        // Get input direction
+        Vector3 inputDirection = Vector3.zero;
+        if (Input.GetKey(KeyCode.LeftArrow)) inputDirection.x = -1;
+        if (Input.GetKey(KeyCode.RightArrow)) inputDirection.x = 1;
+        if (Input.GetKey(KeyCode.UpArrow)) inputDirection.z = 1;
+        if (Input.GetKey(KeyCode.DownArrow)) inputDirection.z = -1;
 
-        Vector3 dir = new Vector3(h, 0, v);
-
-        // 2) If any input, face and run
-        bool isRunning = dir.sqrMagnitude > 0.01f;
-        _anim.SetBool(IsRunningHash, isRunning);
-
-        if (isRunning)
+        // Normalize diagonal movement
+        if (inputDirection.magnitude > 1f)
         {
-            // rotate smoothly to face move direction
-            transform.rotation = Quaternion.LookRotation(dir, Vector3.up);
+            inputDirection.Normalize();
+        }
 
-            // Calculate the potential new position
-            Vector3 newPosition = transform.position + dir.normalized * worldSpeed * Time.deltaTime;
+        Vector3 targetVelocity = inputDirection * worldSpeed;
+        bool isMoving = inputDirection.magnitude > 0f;
 
-            // Check if the new position would be within grid boundaries with tile scale
+        // Smooth acceleration/deceleration
+        if (isMoving)
+        {
+            currentVelocity = Vector3.MoveTowards(currentVelocity, targetVelocity, acceleration * Time.deltaTime);
+        }
+        else
+        {
+            currentVelocity = Vector3.MoveTowards(currentVelocity, Vector3.zero, deceleration * Time.deltaTime);
+        }
+
+        // Update animation based on actual velocity
+        if (_anim != null)
+        {
+            bool shouldAnimate = currentVelocity.magnitude > 0.1f;
+            _anim.SetBool(IsRunningHash, shouldAnimate);
+        }
+
+        // Rotate to face movement direction
+        if (currentVelocity.magnitude > 0.1f)
+        {
+            Quaternion targetRotation = Quaternion.LookRotation(currentVelocity.normalized);
+            transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, Time.deltaTime * 10f);
+        }
+
+        // Apply movement
+        if (currentVelocity.magnitude > 0.01f)
+        {
+            Vector3 newPosition = transform.position + currentVelocity * Time.deltaTime;
+
+            // Apply grid boundaries with tile scale
             float minX = 0f;
             float maxX = (grid.Width - 1) * tileScale;
             float minZ = 0f;
             float maxZ = (grid.Height - 1) * tileScale;
 
-            // Clamp the new position to grid boundaries
             newPosition.x = Mathf.Clamp(newPosition.x, minX, maxX);
             newPosition.z = Mathf.Clamp(newPosition.z, minZ, maxZ);
 
-            // Move to the clamped position
             transform.position = newPosition;
-
-            // Update current tile position after movement
-            UpdateCurrentTilePosition();
         }
+
+        // Update current tile position after movement
+        UpdateCurrentTilePosition();
     }
 
     private void UpdateCurrentTilePosition()
     {
         // Calculate the tile position based on world position with scale
-        int tileX = Mathf.FloorToInt(transform.position.x / tileScale);
-        int tileZ = Mathf.FloorToInt(transform.position.z / tileScale);
+        int tileX = Mathf.RoundToInt(transform.position.x / tileScale);
+        int tileZ = Mathf.RoundToInt(transform.position.z / tileScale);
 
         // Clamp to grid bounds
         tileX = Mathf.Clamp(tileX, 0, grid.Width - 1);
@@ -404,7 +433,7 @@ public class PlayerManager : MonoBehaviour
 
         // Re-enable movement and input
         enabled = true;
-
+        currentVelocity = Vector3.zero;
         Debug.Log("Player respawned!");
         OnPlayerRespawned?.Invoke();
     }
@@ -423,7 +452,7 @@ public class PlayerManager : MonoBehaviour
         x = Mathf.Clamp(x, 0, grid.Width - 1);
         z = Mathf.Clamp(z, 0, grid.Height - 1);
 
-        // Update physical position with tile scale
+        // Update physical position with tile scale - center the player on the tile
         transform.position = new Vector3(x * tileScale, transform.position.y, z * tileScale);
 
         // Update current tile position
