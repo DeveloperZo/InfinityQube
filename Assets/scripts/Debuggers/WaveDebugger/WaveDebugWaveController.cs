@@ -769,4 +769,215 @@ public class WaveDebugWaveController : MonoBehaviour
     }
 
     #endregion
+
+    #region Wave Control Methods
+
+    /// <summary>Start/Resume the current wave</summary>
+    public void StartWave()
+    {
+        if (waveManager == null) return;
+
+        if (waveManager.waveActive)
+        {
+            // Resume if paused
+            waveManager.ResumeWave();
+            Debug.Log("Wave resumed");
+        }
+        else if (waveManager.activeCubes.Count > 0)
+        {
+            // Resume existing cubes
+            waveManager.ResumeWave();
+            Debug.Log("Wave resumed with existing cubes");
+        }
+        else
+        {
+            // Start new wave only if no cubes exist
+            SpawnWave();
+        }
+    }
+
+    /// <summary>Stop/Pause the current wave</summary>
+    public void StopWave()
+    {
+        if (waveManager == null || !waveManager.waveActive) return;
+
+        waveManager.PauseWave();
+        Debug.Log("Wave paused - manual control enabled");
+    }
+
+    /// <summary>Reset the current wave</summary>
+    public void ResetCurrentWave()
+    {
+        if (waveManager == null) return;
+
+        // Clear all active cubes
+        waveManager.ClearAllCubes();
+
+        // Stop tracking
+        StopTracking();
+
+        // If we have a current wave loaded, respawn it
+        if (currentWaveData != null)
+        {
+            SpawnWave();
+        }
+
+        Debug.Log("Wave reset");
+    }
+
+    /// <summary>Manually step the wave forward one move</summary>
+    public void StepWaveForward()
+    {
+        if (waveManager == null) return;
+
+        if (waveManager.manualControl)
+        {
+            waveManager.ManualMoveWaveForward();
+            Debug.Log("Wave stepped forward manually");
+        }
+        else
+        {
+            Debug.LogWarning("Wave must be stopped to step manually");
+        }
+    }
+
+    /// <summary>Force load a specific wave (even if one is active)</summary>
+    public void ForceLoadWave(WaveData waveData)
+    {
+        if (waveData == null) return;
+
+        // Stop any active wave
+        if (waveManager != null)
+        {
+            waveManager.ClearAllCubes();
+        }
+
+        StopTracking();
+
+        // Load the wave data
+        LoadWave(waveData);
+
+        Debug.Log($"Force loaded wave: {waveData.name}");
+    }
+
+    #endregion
+
+    #region Grid Management Methods
+
+    /// <summary>Update grid dimensions and auto-resize if needed</summary>
+    /// <summary>Update grid dimensions and auto-resize if needed</summary>
+    public void UpdateGridDimensions(int newGridWidth, int newGridHeight)
+    {
+        if (gridManager == null) return;
+
+        // Ensure grid is at least as big as the wave
+        int requiredWidth = Mathf.Max(newGridWidth, gridConfig.WaveWidth);
+        int requiredHeight = Mathf.Max(newGridHeight, gridConfig.WaveHeight * 3);
+
+        Debug.Log($"Updating grid from {gridManager.width}x{gridManager.height} to {requiredWidth}x{requiredHeight}");
+
+        // Update grid manager properties
+        gridManager.width = requiredWidth;
+        gridManager.height = requiredHeight;
+
+        // Regenerate the actual grid
+        gridManager.DestroyGrid();
+        gridManager.GenerateGrid();
+
+        // Reinitialize grid configurator arrays
+        gridConfig.SetWaveDimensions(gridConfig.WaveWidth, gridConfig.WaveHeight);
+        gridConfig.ApplyGridSize();
+
+        // Reinitialize wave state
+        InitializeWaveState();
+
+        Debug.Log($"Grid successfully resized to {requiredWidth}x{requiredHeight}");
+    }
+
+    /// <summary>Update wave dimensions and auto-resize grid if needed</summary>
+    public void UpdateWaveDimensions(int newWaveWidth, int newWaveHeight)
+    {
+        Debug.Log($"Updating wave dimensions from {gridConfig.WaveWidth}x{gridConfig.WaveHeight} to {newWaveWidth}x{newWaveHeight}");
+
+        // Check if grid needs to be expanded
+        bool needsGridResize = false;
+        int requiredGridWidth = gridManager.width;
+        int requiredGridHeight = gridManager.height;
+
+        if (newWaveWidth > gridManager.width)
+        {
+            requiredGridWidth = newWaveWidth;
+            needsGridResize = true;
+        }
+
+        if (newWaveHeight * 3 > gridManager.height)
+        {
+            requiredGridHeight = newWaveHeight * 3;
+            needsGridResize = true;
+        }
+
+        // Resize grid first if needed
+        if (needsGridResize)
+        {
+            UpdateGridDimensions(requiredGridWidth, requiredGridHeight);
+        }
+
+        // Update wave dimensions
+        gridConfig.SetWaveDimensions(newWaveWidth, newWaveHeight);
+        gridConfig.InitializeGrid();
+
+        // Reinitialize wave state with new dimensions
+        InitializeWaveState();
+
+        Debug.Log($"Wave dimensions updated to {newWaveWidth}x{newWaveHeight}");
+    }
+
+    #endregion
+    #region Wave State Access Methods
+
+    /// <summary>Get current wave manager state for UI display</summary>
+    public bool IsWaveActive()
+    {
+        return waveManager != null && waveManager.waveActive;
+    }
+
+    /// <summary>Get manual control state</summary>
+    public bool IsManualControl()
+    {
+        return waveManager != null && waveManager.manualControl;
+    }
+
+    /// <summary>Get debug mode state</summary>
+    public bool IsDebugMode()
+    {
+        return waveManager != null && waveManager.debugMode;
+    }
+
+    /// <summary>Set manual control mode</summary>
+    public void SetManualControl(bool manual)
+    {
+        if (waveManager != null)
+        {
+            waveManager.manualControl = manual;
+            Debug.Log($"Manual control set to: {manual}");
+        }
+    }
+
+    /// <summary>Set debug mode</summary>
+    public void SetDebugMode(bool debug)
+    {
+        if (waveManager != null)
+        {
+            waveManager.debugMode = debug;
+            Debug.Log($"Debug mode set to: {debug}");
+        }
+    }
+
+    /// <summary>Get active cube count</summary>
+    public int GetActiveCubeCount()
+    {
+        return waveManager != null ? waveManager.activeCubes.Count : 0;
+    }
+
+    #endregion
 }

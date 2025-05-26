@@ -154,29 +154,69 @@ public class WaveDebugUIRenderer : MonoBehaviour
     {
         EditorGUILayout.BeginVertical(GUI.skin.box);
 
-        // Grid size controls
+        // Grid size controls with increment/decrement
+        EditorGUILayout.LabelField("Grid Dimensions:", EditorStyles.boldLabel);
+
+        var gridManager = FindObjectOfType<GridManager>();
+        int currentGridWidth = gridManager != null ? gridManager.width : 6;
+        int currentGridHeight = gridManager != null ? gridManager.height : 10;
+
         EditorGUILayout.BeginHorizontal();
-        int newWidth = EditorGUILayout.IntSlider("Wave Width", gridConfig.WaveWidth, 3, 8);
-        int newHeight = EditorGUILayout.IntSlider("Wave Height", gridConfig.WaveHeight, 3, 8);
+        GUILayout.Label("Grid Width:", GUILayout.Width(100));
+        if (GUILayout.Button("-", GUILayout.Width(25))) currentGridWidth = Mathf.Max(3, currentGridWidth - 1);
+        GUILayout.Label(currentGridWidth.ToString(), GUILayout.Width(30));
+        if (GUILayout.Button("+", GUILayout.Width(25))) currentGridWidth = Mathf.Min(15, currentGridWidth + 1);
         EditorGUILayout.EndHorizontal();
 
-        // Apply size changes
-        if (newWidth != gridConfig.WaveWidth || newHeight != gridConfig.WaveHeight)
+        EditorGUILayout.BeginHorizontal();
+        GUILayout.Label("Grid Height:", GUILayout.Width(100));
+        if (GUILayout.Button("-", GUILayout.Width(25))) currentGridHeight = Mathf.Max(9, currentGridHeight - 1);
+        GUILayout.Label(currentGridHeight.ToString(), GUILayout.Width(30));
+        if (GUILayout.Button("+", GUILayout.Width(25))) currentGridHeight = Mathf.Min(20, currentGridHeight + 1);
+        EditorGUILayout.EndHorizontal();
+
+        if (GUILayout.Button("Apply Grid Size"))
         {
-            gridConfig.SetWaveDimensions(newWidth, newHeight);
-            waveController.InitializeWaveState();
+            waveController.UpdateGridDimensions(currentGridWidth, currentGridHeight);
         }
+
+        EditorGUILayout.Space(10);
+
+        // Wave size controls
+        EditorGUILayout.LabelField("Wave Dimensions:", EditorStyles.boldLabel);
+
+        EditorGUILayout.BeginHorizontal();
+        GUILayout.Label("Wave Width:", GUILayout.Width(100));
+        if (GUILayout.Button("-", GUILayout.Width(25)))
+        {
+            int newWidth = Mathf.Max(3, gridConfig.WaveWidth - 1);
+            waveController.UpdateWaveDimensions(newWidth, gridConfig.WaveHeight);
+        }
+        GUILayout.Label(gridConfig.WaveWidth.ToString(), GUILayout.Width(30));
+        if (GUILayout.Button("+", GUILayout.Width(25)))
+        {
+            int newWidth = Mathf.Min(8, gridConfig.WaveWidth + 1);
+            waveController.UpdateWaveDimensions(newWidth, gridConfig.WaveHeight);
+        }
+        EditorGUILayout.EndHorizontal();
+
+        EditorGUILayout.BeginHorizontal();
+        GUILayout.Label("Wave Height:", GUILayout.Width(100));
+        if (GUILayout.Button("-", GUILayout.Width(25)))
+        {
+            int newHeight = Mathf.Max(3, gridConfig.WaveHeight - 1);
+            waveController.UpdateWaveDimensions(gridConfig.WaveWidth, newHeight);
+        }
+        GUILayout.Label(gridConfig.WaveHeight.ToString(), GUILayout.Width(30));
+        if (GUILayout.Button("+", GUILayout.Width(25)))
+        {
+            int newHeight = Mathf.Min(8, gridConfig.WaveHeight + 1);
+            waveController.UpdateWaveDimensions(gridConfig.WaveWidth, newHeight);
+        }
+        EditorGUILayout.EndHorizontal();
 
         // Grid actions
         EditorGUILayout.BeginHorizontal();
-        if (GUILayout.Button("Apply Grid Size"))
-        {
-            gridConfig.ApplyGridSize();
-        }
-        if (GUILayout.Button("Clear All"))
-        {
-            waveController.ResetWave();
-        }
         if (GUILayout.Button("Randomize"))
         {
             gridConfig.RandomizeGrid();
@@ -204,9 +244,40 @@ public class WaveDebugUIRenderer : MonoBehaviour
             int totalCount = waveController.GetCubeCount();
 
             EditorGUILayout.LabelField("Cube Counts:", $"Normal: {normalCount}, Blue: {blueCount}, Black: {blackCount}, Total: {totalCount}");
+            EditorGUILayout.LabelField("Active Cubes:", waveController.GetActiveCubeCount().ToString());
         }
 
+        // Wave Manager State Controls
+        EditorGUILayout.Space(5);
+        EditorGUILayout.LabelField("Wave Manager State:", EditorStyles.boldLabel);
+
+        EditorGUILayout.BeginHorizontal();
+        EditorGUILayout.LabelField("Wave Active:", GUILayout.Width(100));
+        EditorGUILayout.LabelField(waveController != null ? waveController.IsWaveActive().ToString() : "Unknown");
+        EditorGUILayout.EndHorizontal();
+
+        EditorGUILayout.BeginHorizontal();
+        EditorGUILayout.LabelField("Debug Mode:", GUILayout.Width(100));
+        bool debugMode = waveController != null ? waveController.IsDebugMode() : false;
+        bool newDebugMode = EditorGUILayout.Toggle(debugMode);
+        if (newDebugMode != debugMode && waveController != null)
+        {
+            waveController.SetDebugMode(newDebugMode);
+        }
+        EditorGUILayout.EndHorizontal();
+
+        EditorGUILayout.BeginHorizontal();
+        EditorGUILayout.LabelField("Manual Control:", GUILayout.Width(100));
+        bool manualControl = waveController != null ? waveController.IsManualControl() : false;
+        bool newManualControl = EditorGUILayout.Toggle(manualControl);
+        if (newManualControl != manualControl && waveController != null)
+        {
+            waveController.SetManualControl(newManualControl);
+        }
+        EditorGUILayout.EndHorizontal();
+
         // Data collector stats
+        EditorGUILayout.Space(5);
         EditorGUILayout.LabelField("Session Stats:", $"Spawned: {dataCollector.TotalSpawned}, Removed: {dataCollector.TotalRemoved}");
 
         EditorGUILayout.EndVertical();
@@ -329,7 +400,7 @@ public class WaveDebugUIRenderer : MonoBehaviour
                     string buttonLabel = $"{wave.name}\n({wave.GridWidth}x{wave.GridHeight})";
                     if (GUILayout.Button(buttonLabel, GUILayout.Height(40)))
                     {
-                        waveController.LoadWave(wave);
+                        waveController.ForceLoadWave(wave);  // Use ForceLoadWave instead
                     }
                 }
 
@@ -354,11 +425,32 @@ public class WaveDebugUIRenderer : MonoBehaviour
     {
         EditorGUILayout.BeginVertical(GUI.skin.box);
 
-        // Wave spawning
+        // Wave control buttons
+        EditorGUILayout.LabelField("Wave Controls:", EditorStyles.boldLabel);
         EditorGUILayout.BeginHorizontal();
-        if (GUILayout.Button("Spawn Wave", GUILayout.Height(30)))
+
+        if (GUILayout.Button("Start Wave", GUILayout.Height(30)))
         {
-            waveController.SpawnWave();
+            waveController.StartWave();
+        }
+
+        if (GUILayout.Button("Stop Wave", GUILayout.Height(30)))
+        {
+            waveController.StopWave();
+        }
+
+        if (GUILayout.Button("Reset Wave", GUILayout.Height(30)))
+        {
+            waveController.ResetCurrentWave();
+        }
+
+        EditorGUILayout.EndHorizontal();
+
+        // Manual control
+        EditorGUILayout.BeginHorizontal();
+        if (GUILayout.Button("Step Forward", GUILayout.Height(25)))
+        {
+            waveController.StepWaveForward();
         }
 
         bool isTracking = waveController != null && (waveController.GetType()
@@ -367,14 +459,18 @@ public class WaveDebugUIRenderer : MonoBehaviour
 
         if (isTracking)
         {
-            if (GUILayout.Button("Stop Tracking", GUILayout.Height(30)))
+            if (GUILayout.Button("Stop Tracking", GUILayout.Height(25)))
             {
                 waveController.StopTracking();
             }
         }
         EditorGUILayout.EndHorizontal();
 
+        EditorGUILayout.Space(10);
+
         // Utility actions
+        // Utility actions
+        EditorGUILayout.LabelField("Utilities:", EditorStyles.boldLabel);
         EditorGUILayout.BeginHorizontal();
         if (GUILayout.Button("Reset Data Collector"))
         {
