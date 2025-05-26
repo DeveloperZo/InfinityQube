@@ -15,6 +15,10 @@ public class Tile : MonoBehaviour
     private const float MARKED_HEIGHT = 0.25f;        // Raise by 0.25 for marked tiles
     private const float NORMAL_HEIGHT = 0f;           // Normal baseline height
 
+    [Header("Detonation Point")]
+    [SerializeField] private bool hasDetonationPoint = false;
+    public bool HasDetonationPoint => hasDetonationPoint;
+
     [Header("Enhanced Blue Tile")]
     [SerializeField] private int detonationCharges = 0;
     [SerializeField] private int maxCharges = 3;
@@ -36,6 +40,8 @@ public class Tile : MonoBehaviour
     public bool HasCharges => detonationCharges > 0;
     public bool IsBlackened => isBlackened;
     public bool IsAdvantaged => isAdvantaged;
+
+    public bool IsPrimed => isPrimed;
     public bool HasMarker => hasMarker;
     public TileState currentState = TileState.Normal;
 
@@ -47,6 +53,7 @@ public class Tile : MonoBehaviour
     private bool isInitialized = false;
     private bool isBlackened = false;
     private bool isAdvantaged = false;
+    private bool isPrimed = false;
     public bool isPhasedZone { get; private set; }
     private TextMesh countdownText;
 
@@ -166,6 +173,10 @@ public class Tile : MonoBehaviour
             {
                 UpdateChargeVisuals();
             }
+            else if (IsPrimed) 
+            {
+                tileRenderer.material = chargeMaterials[0];
+            } 
             else
             {
                 tileRenderer.material = originalMaterial;
@@ -227,13 +238,10 @@ public class Tile : MonoBehaviour
 
             case Enumerations.CubeType.Blue:
                 // Blue cube captured = create detonation point (NO auto-detonate)
-                DetonationManager detonationManager = FindObjectOfType<DetonationManager>();
-                if (detonationManager != null)
-                {
-                    detonationManager.RegisterDetonationPoint(new Vector2Int(x, y), DetonationType.Standard, false); // false = no auto-detonate
-                    Debug.Log($"Blue cube captured at ({x}, {y}) - Detonation point created, awaiting player trigger");
-                }
+                Debug.Log($"Blue cube captured at ({x}, {y}) - Tile Primed, awaiting player trigger");
+                PrimeTile();
                 NotifyPlayerCubeCapture(Enumerations.CubeType.Blue);
+                PrimeTile();
                 // Consume the blue cube
                 Destroy(cubeToProcess.gameObject);
                 break;
@@ -296,10 +304,14 @@ public class Tile : MonoBehaviour
             {
                 UpdateChargeVisuals();
             }
+            else if(IsPrimed)
+            {
+                tileRenderer.material = chargeMaterials[0];
+            }
             else
             {
                 tileRenderer.material = originalMaterial;
-            }
+             }
             Debug.Log($"Tile ({x},{y}): Tile material reset");
         }
 
@@ -330,12 +342,12 @@ public class Tile : MonoBehaviour
     {
         if (isPlayerOnTile == isHovering) return; // No change needed
 
-        Debug.Log($"Tile ({x},{y}): SetPlayerHover({isHovering}) - hasMarker={hasMarker}, isBlackened={isBlackened}");
+        Debug.Log($"Tile ({x},{y}): SetPlayerHover({isHovering}) - hasMarker={hasMarker}, isBlackened={isBlackened}, hasDetonationPoint={hasDetonationPoint}");
 
         isPlayerOnTile = isHovering;
 
-        // Only show highlight if not marked and not blackened
-        if (isHovering && !hasMarker && !isBlackened)
+        // Only show highlight if not marked, not blackened, and not a detonation point
+        if (isHovering && !hasMarker && !isBlackened &&  !isPrimed && !hasDetonationPoint)
         {
             ShowSoftHighlight();
         }
@@ -347,10 +359,10 @@ public class Tile : MonoBehaviour
 
     private void ShowSoftHighlight()
     {
-        if (isBlackened || hasMarker)
+        if (isBlackened || hasMarker || hasDetonationPoint)
         {
-            Debug.Log($"Tile ({x},{y}): Cannot show highlight - isBlackened={isBlackened}, hasMarker={hasMarker}");
-            return; // Don't highlight blackened or marked tiles
+            Debug.Log($"Tile ({x},{y}): Cannot show highlight - isBlackened={isBlackened}, hasMarker={hasMarker}, hasDetonationPoint={hasDetonationPoint}");
+            return; // Don't highlight blackened, marked, or detonation point tiles
         }
 
         Debug.Log($"Tile ({x},{y}): Showing soft highlight");
@@ -399,7 +411,11 @@ public class Tile : MonoBehaviour
         }
     }
 
-
+    public void SetDetonationPoint(bool hasPoint)
+    {
+        hasDetonationPoint = hasPoint;
+        Debug.Log($"Tile ({x},{y}): Detonation point set to {hasPoint}");
+    }
     // Tile state management methods
     public void TransformTile(Enumerations.CubeType cubeType)
     {
@@ -443,6 +459,31 @@ public class Tile : MonoBehaviour
        
     }
 
+
+    public void PrimeTile()
+    {
+        if (isBlackened) return;
+        isPrimed = true;
+
+        ClearMarker();
+        PlayerManager player = FindObjectOfType<PlayerManager>();
+        if (player != null)
+        {
+            player.OnTilePrimed();
+        }
+        DetonationManager detonationManager = FindObjectOfType<DetonationManager>();
+        if (detonationManager != null)
+        {
+            detonationManager.RegisterDetonationPoint(new Vector2Int(x,y));
+        }
+
+
+        if (tileRenderer != null)
+        {
+            tileRenderer.material = chargeMaterials[0];
+        }
+
+    }
     public void AdvantageTile(int charges = 3)
     {
         if (isBlackened) return;
@@ -513,15 +554,15 @@ public class Tile : MonoBehaviour
         currentState = TileState.Normal;
         isBlackened = false;
         isAdvantaged = false;
+        isPrimed = false;
         detonationCharges = 0;
+        hasDetonationPoint = false; // Add this line
         ClearMarker();
 
         if (tileRenderer != null)
         {
             tileRenderer.material = originalMaterial;
         }
-
-
     }
 
     public void ProcessCubeInteraction(CubeBehavior cube)
@@ -551,38 +592,6 @@ public class Tile : MonoBehaviour
             }
             ReduceCharge();
         }
-    }
 
-    // Phase zone methods (keeping existing functionality)
-    public void SetPhased(bool phased)
-    {
-        isPhasedZone = phased;
-
-        if (phased && countdownText == null)
-        {
-            GameObject textObj = new GameObject("CountdownText");
-            textObj.transform.SetParent(transform);
-            textObj.transform.localPosition = new Vector3(0, 1.5f, 0);
-            textObj.transform.rotation = Quaternion.Euler(90, 0, 0);
-
-            countdownText = textObj.AddComponent<TextMesh>();
-            countdownText.fontSize = 14;
-            countdownText.alignment = TextAlignment.Center;
-            countdownText.color = Color.red;
-        }
-
-        if (!phased && countdownText != null)
-        {
-            Destroy(countdownText.gameObject);
-            countdownText = null;
-        }
-    }
-
-    public void UpdatePhaseCountdown(int remaining)
-    {
-        if (countdownText != null)
-        {
-            countdownText.text = remaining.ToString();
-        }
     }
 }

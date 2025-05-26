@@ -46,6 +46,7 @@ public class PlayerManager : MonoBehaviour
     [SerializeField] private int markersTriggered = 0;
     [SerializeField] private int detonationsUsed = 0;
     [SerializeField] private int tilesCorrupted = 0;
+    [SerializeField] private int tilesPrimed = 0;
     [SerializeField] private int tilesEnhanced = 0;
     [SerializeField] private int playerDeaths = 0;
     [SerializeField] private int movesCount = 0;
@@ -144,7 +145,7 @@ public class PlayerManager : MonoBehaviour
         TrackAndLogTilePosition();
         HandleMarkerPlacement();
         HandleMarkerTrigger();
-        HandleDetonation();
+        HandlePrimedTile();
         HandleSpeedControl();
 
         // Track movement
@@ -415,7 +416,7 @@ public class PlayerManager : MonoBehaviour
         yield return new WaitForSeconds(0.1f);
     }
 
-    private void HandleDetonation()
+    private void HandlePrimedTile()
     {
         if (Input.GetKeyDown(KeyCode.D))
         {
@@ -608,7 +609,7 @@ public class PlayerManager : MonoBehaviour
             currentHoveredTile.SetPlayerHover(false);
 
             lastPosition = currentTilePosition;
-            currentHoveredTile.SetPlayerHover(true);
+             currentHoveredTile.SetPlayerHover(true);
         }
     }
 
@@ -661,6 +662,12 @@ public class PlayerManager : MonoBehaviour
         tilesCorrupted++;
         UpdateStatistics();
         Debug.Log($"Tile corrupted. Total corrupted tiles: {tilesCorrupted}");
+    }
+    public void OnTilePrimed()
+    {
+        tilesPrimed++;
+        UpdateStatistics();
+        Debug.Log($"Tile Prime. Total primed tiles: {tilesPrimed}");
     }
 
     public void OnTileEnhanced()

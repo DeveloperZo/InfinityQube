@@ -378,14 +378,29 @@ public class DetonationManager : MonoBehaviour
         if (tile != null)
         {
             Renderer renderer = tile.GetComponent<Renderer>();
-            if (renderer != null && detonationPointMaterial != null)
+            if (renderer != null)
             {
+                // Store original material if not already stored
                 if (!originalTileMaterials.ContainsKey(tile))
                 {
                     originalTileMaterials[tile] = renderer.material;
                 }
 
-                renderer.material = detonationPointMaterial;
+                // Set blue material to match captured blue cube
+                if (detonationPointMaterial != null)
+                {
+                    renderer.material = detonationPointMaterial;
+                }
+                else
+                {
+                    // Fallback: create a blue material
+                    Material blueMaterial = new Material(Shader.Find("Standard"));
+                    blueMaterial.color = Color.blue;
+                    renderer.material = blueMaterial;
+                }
+
+                // Mark tile as having a detonation point to prevent highlight override
+                tile.SetDetonationPoint(true);
             }
         }
     }
@@ -400,6 +415,9 @@ public class DetonationManager : MonoBehaviour
         {
             renderer.material = originalTileMaterials[tile];
             originalTileMaterials.Remove(tile);
+
+            // Remove detonation point flag
+            tile.SetDetonationPoint(false);
         }
     }
 
@@ -431,27 +449,6 @@ public class DetonationManager : MonoBehaviour
         return detonationPoints.Any(point => point == position);
     }
 
-    // Calculate auto-detonation delay based on wave move interval
-    private float CalculateAutoDetonationDelay()
-    {
-        if (waveManager != null)
-        {
-            return waveManager.CurrentWave != null ?
-                   waveManager.CurrentWave.moveInterval * 0.5f :
-                   0.375f;
-        }
-        return 0.375f;
-    }
 
-    // Coroutine for auto-detonation after delay
-    private IEnumerator AutoDetonateAfterDelay(Vector2Int position, float delay)
-    {
-        yield return new WaitForSeconds(delay);
 
-        if (IsValidPosition(position) && detonationPoints.Contains(position))
-        {
-            Debug.Log($"Auto-detonating at {position} after {delay} seconds");
-            PerformDetonation(position);
-        }
-    }
 }
