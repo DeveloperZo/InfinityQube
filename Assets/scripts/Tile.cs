@@ -129,7 +129,7 @@ public class Tile : MonoBehaviour
         }
 
         // Raise the tile slightly for marked state
-        transform.position = new Vector3(transform.position.x, MARKED_HEIGHT, transform.position.z);
+        
 
         // Hide soft highlight when marked (marker takes precedence)
         if (softHighlightObject != null)
@@ -143,6 +143,8 @@ public class Tile : MonoBehaviour
     public void ClearMarker()
     {
         if (!hasMarker) return;
+
+        Debug.Log($"Tile ({x},{y}): ClearMarker called");
 
         hasMarker = false;
 
@@ -171,15 +173,15 @@ public class Tile : MonoBehaviour
         }
 
         // Reset tile height based on current state
-        ResetTileHeight();
 
         // Restore soft highlight if player is still on this tile
         if (isPlayerOnTile)
         {
+            Debug.Log($"Tile ({x},{y}): After clearing marker, restoring soft highlight");
             ShowSoftHighlight();
         }
 
-        Debug.Log($"Cleared marker from tile at ({x}, {y})");
+        Debug.Log($"Tile ({x},{y}): Marker cleared successfully");
     }
 
     public void ToggleMarker()
@@ -248,30 +250,38 @@ public class Tile : MonoBehaviour
 
     private void ActivateMarker()
     {
+        Debug.Log($"Tile ({x},{y}): ActivateMarker called - hasMarker before: {hasMarker}");
 
+        // Hide the marker object temporarily but don't change hasMarker state yet
         if (markerObj != null)
         {
-            Destroy(markerObj);
-            markerObj = null;
+            markerObj.SetActive(false);
+            Debug.Log($"Tile ({x},{y}): Marker object hidden");
         }
 
         if (tileRenderer != null && activateMarkerMaterial != null)
         {
             tileRenderer.material = activateMarkerMaterial;
+            Debug.Log($"Tile ({x},{y}): Applied activation material");
         }
     }
 
     private IEnumerator ResetMarkerAfterDelay(float delay)
     {
+        Debug.Log($"Tile ({x},{y}): Starting marker reset delay of {delay} seconds");
+
         yield return new WaitForSeconds(delay);
 
-        // Clear the marker completely after activation
+        Debug.Log($"Tile ({x},{y}): Resetting marker after delay - isPlayerOnTile: {isPlayerOnTile}");
+
+        // Now clear the marker state completely
         hasMarker = false;
 
         if (markerObj != null)
         {
             Destroy(markerObj);
             markerObj = null;
+            Debug.Log($"Tile ({x},{y}): Marker object destroyed");
         }
 
         // Reset the tile appearance based on current state
@@ -289,31 +299,21 @@ public class Tile : MonoBehaviour
             {
                 tileRenderer.material = originalMaterial;
             }
+            Debug.Log($"Tile ({x},{y}): Tile material reset");
         }
 
-        ResetTileHeight();
+        
 
-        // Restore soft highlight if player is still on this tile
+        // IMPORTANT: Restore soft highlight if player is still on this tile
         if (isPlayerOnTile)
         {
+            Debug.Log($"Tile ({x},{y}): Player still on tile, restoring soft highlight");
             ShowSoftHighlight();
         }
-    }
-
-    private void ResetTileHeight()
-    {
-        float targetHeight = NORMAL_HEIGHT;
-
-        if (currentState == TileState.Transformed)
+        else
         {
-            targetHeight = TRANSFORMED_HEIGHT;
+            Debug.Log($"Tile ({x},{y}): Player not on tile, no highlight needed");
         }
-        else if (hasMarker)
-        {
-            targetHeight = MARKED_HEIGHT;
-        }
-
-        transform.position = new Vector3(transform.position.x, targetHeight, transform.position.z);
     }
 
     private void NotifyPlayerCubeCapture(Enumerations.CubeType cubeType)
@@ -329,6 +329,8 @@ public class Tile : MonoBehaviour
     {
         if (isPlayerOnTile == isHovering) return; // No change needed
 
+        Debug.Log($"Tile ({x},{y}): SetPlayerHover({isHovering}) - hasMarker={hasMarker}, isBlackened={isBlackened}");
+
         isPlayerOnTile = isHovering;
 
         // Only show highlight if not marked and not blackened
@@ -342,9 +344,15 @@ public class Tile : MonoBehaviour
         }
     }
 
-    public void ShowSoftHighlight()
+    private void ShowSoftHighlight()
     {
-        if (isBlackened) return; // Don't highlight blackened or marked tiles
+        if (isBlackened || hasMarker)
+        {
+            Debug.Log($"Tile ({x},{y}): Cannot show highlight - isBlackened={isBlackened}, hasMarker={hasMarker}");
+            return; // Don't highlight blackened or marked tiles
+        }
+
+        Debug.Log($"Tile ({x},{y}): Showing soft highlight");
 
         if (softHighlightObject == null)
         {
@@ -368,19 +376,28 @@ public class Tile : MonoBehaviour
             {
                 highlightRenderer.material = playerHoverMaterial;
             }
+
+            Debug.Log($"Tile ({x},{y}): Created new soft highlight object");
         }
 
-        // Simply activate existing highlight object
-        softHighlightObject.SetActive(true);
+        // Activate the highlight object
+        if (softHighlightObject != null)
+        {
+            softHighlightObject.SetActive(true);
+            Debug.Log($"Tile ({x},{y}): Activated soft highlight object");
+        }
     }
 
-    public void HideSoftHighlight()
+    private void HideSoftHighlight()
     {
+        Debug.Log($"Tile ({x},{y}): Hiding soft highlight");
+
         if (softHighlightObject != null)
         {
             softHighlightObject.SetActive(false);
         }
     }
+
 
     // Tile state management methods
     public void TransformTile(Enumerations.CubeType cubeType)
@@ -388,7 +405,6 @@ public class Tile : MonoBehaviour
         if (currentState != Enumerations.TileState.Transformed)
         {
             currentState = Enumerations.TileState.Transformed;
-            ResetTileHeight();
 
             switch (cubeType)
             {
@@ -423,7 +439,7 @@ public class Tile : MonoBehaviour
         // Hide any highlights
         HideSoftHighlight();
 
-        ResetTileHeight();
+       
     }
 
     public void AdvantageTile(int charges = 3)
@@ -441,7 +457,6 @@ public class Tile : MonoBehaviour
         }
 
         UpdateChargeVisuals();
-        ResetTileHeight();
 
         Debug.Log($"Blue tile at ({x}, {y}) enhanced to charge level {detonationCharges}");
     }
@@ -490,7 +505,6 @@ public class Tile : MonoBehaviour
             tileRenderer.material = originalMaterial;
         }
 
-        ResetTileHeight();
     }
 
     public void ResetTile()
@@ -506,7 +520,7 @@ public class Tile : MonoBehaviour
             tileRenderer.material = originalMaterial;
         }
 
-        ResetTileHeight();
+
     }
 
     public void ProcessCubeInteraction(CubeBehavior cube)

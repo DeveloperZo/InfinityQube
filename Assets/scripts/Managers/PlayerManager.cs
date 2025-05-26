@@ -71,6 +71,17 @@ public class PlayerManager : MonoBehaviour
     public System.Action OnPlayerDied;
     public System.Action OnPlayerRespawned;
 
+
+    private void OnGUI()
+    {
+        if (currentHoveredTile != null)
+        {
+            GUI.Label(new Rect(10, 10, 300, 20), $"Current Tile: ({currentTilePosition.x}, {currentTilePosition.y})");
+            GUI.Label(new Rect(10, 30, 300, 20), $"Has Marker: {currentHoveredTile.HasMarker}");
+            GUI.Label(new Rect(10, 50, 300, 20), $"Is Blackened: {currentHoveredTile.IsBlackened}");
+        }
+    }
+
     private void Start()
     {
         if (grid == null)
@@ -222,6 +233,8 @@ public class PlayerManager : MonoBehaviour
 
         if (tileChanged)
         {
+            Debug.Log($"Player moved from tile ({currentTilePosition.x}, {currentTilePosition.y}) to ({newTilePosition.x}, {newTilePosition.y})");
+
             // Clear hover effect from previous tile
             if (currentHoveredTile != null)
             {

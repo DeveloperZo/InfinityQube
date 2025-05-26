@@ -17,7 +17,7 @@ MonoBehaviour:
   description: Learn how to move and place markers to capture cubes
   objective: Destroy all gray cubes by placing markers in their path.
   gridWidth: 3
-  gridHeight: 10
+  gridHeight: 15
   playerStartPosition: {x: 0, y: 1}
   waveConfigurations:
   - {fileID: 11400000, guid: 9351411930ad5ce4084db5e29248b3f4, type: 2}

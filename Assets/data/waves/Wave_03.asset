@@ -44,9 +44,10 @@ MonoBehaviour:
     position: {x: 2, y: 1}
     level: 1
   limitMarkers: 0
-  maxMarkers: 2
+  maxMarkerCharge: 2
+  maxMarkerCount: 99
   waveStartDelay: 0.75
-  moveInterval: 0.75
+  moveInterval: 2.5
   fastMoveInterval: 0.1
   hasOwnSuccessCriteria: 0
   requiredCaptureCount: 0

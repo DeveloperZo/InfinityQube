@@ -11,6 +11,7 @@ public class GridManager : MonoBehaviour
     [SerializeField] public float tileScale = 3f; // Added scale parameter
     
     [HideInInspector] public Tile[,] tiles;
+    private bool isGridGenerated = false; // Prevent duplicate generation
 
     private void Awake()
     {
@@ -29,30 +30,50 @@ public class GridManager : MonoBehaviour
 
     public void GenerateGrid()
     {
+        // Prevent duplicate generation
+        if (isGridGenerated && tiles != null)
+        {
+            Debug.LogWarning("Grid already generated, use RegenerateGrid() to force regeneration");
+            return;
+        }
+
+        Debug.Log($"Generating grid: {width}x{height} with scale {tileScale}");
+
         tiles = new Tile[width, height];
-        
+
         for (int x = 0; x < width; x++)
         {
             for (int y = 0; y < height; y++)
             {
                 // Apply scale to the position calculation
-                Vector3 position = new Vector3(x * tileScale, 1f, y * tileScale);
+                Vector3 position = new Vector3(x * tileScale, 0f, y * tileScale); // Keep Y at 0
                 GameObject tileObj = Instantiate(tilePrefab, position, Quaternion.identity, transform);
                 tileObj.name = $"Tile_{x}_{y}";
-                
+
                 // Scale the tile GameObject
                 tileObj.transform.localScale = new Vector3(tileScale, 1, tileScale);
-                
+                tileObj.transform.localPosition = new Vector3(tileObj.transform.localPosition.x, -2, tileObj.transform.localPosition.z);
                 Tile tile = tileObj.GetComponent<Tile>();
                 if (tile == null)
                 {
                     tile = tileObj.AddComponent<Tile>();
                 }
-                
+
                 tile.Init(x, y);
                 tiles[x, y] = tile;
             }
         }
+
+        isGridGenerated = true;
+        Debug.Log($"Grid generation complete: {width * height} tiles created");
+    }
+
+    public void RegenerateGrid()
+    {
+        Debug.Log("Force regenerating grid...");
+        DestroyGrid();
+        isGridGenerated = false;
+        GenerateGrid();
     }
 
     public bool PlaceMarker(int x, int y)
@@ -65,7 +86,7 @@ public class GridManager : MonoBehaviour
 
         if (tiles[x, y] == null || tiles[x, y].HasMarker)
             return false;
-            
+
         tiles[x, y].PlaceMarker();
         return true;
     }
@@ -73,7 +94,7 @@ public class GridManager : MonoBehaviour
     public void ClearAllMarkers()
     {
         if (tiles == null) return;
-        
+
         for (int x = 0; x < width; x++)
         {
             for (int y = 0; y < height; y++)
@@ -94,7 +115,7 @@ public class GridManager : MonoBehaviour
         // Update properties first
         width = newWidth;
         height = newHeight;
-
+        isGridGenerated = false; // Allow regeneration
 
         // Regenerate with new dimensions
         GenerateGrid();
@@ -104,6 +125,8 @@ public class GridManager : MonoBehaviour
 
     public void DestroyGrid()
     {
+        Debug.Log("Destroying existing grid...");
+
         if (tiles != null)
         {
             for (int x = 0; x < Width; x++)
@@ -120,13 +143,15 @@ public class GridManager : MonoBehaviour
             tiles = null;
         }
 
-        // Destroy any child objects (in case there are other grid elements)
+        // Destroy any remaining child objects
         foreach (Transform child in transform)
         {
             Destroy(child.gameObject);
         }
-    }
 
+        isGridGenerated = false;
+        Debug.Log("Grid destruction complete");
+    }
     // Public getters for width and height
     public int Width => width;
     public int Height => height;

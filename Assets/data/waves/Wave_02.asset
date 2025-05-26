@@ -29,7 +29,7 @@ MonoBehaviour:
   maxMarkerCharge: 2
   maxMarkerCount: 99
   waveStartDelay: 0.75
-  moveInterval: 0.75
+  moveInterval: 3
   fastMoveInterval: 0.1
   hasOwnSuccessCriteria: 0
   requiredCaptureCount: 0

@@ -6687,7 +6687,7 @@ MonoBehaviour:
   tilePrefab: {fileID: 6551000342905767615, guid: 1b3ce2c40720bac4f80c30da84c34fa1, type: 3}
   cubeTypeDefinitions: {fileID: 11400000, guid: 4478fc2c664202247ab6000c9b6c283a, type: 2}
   width: 5
-  height: 10
+  height: 20
   tileScale: 3
 --- !u!4 &1986112192492535162
 Transform:
@@ -7618,6 +7618,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   gridManager: {fileID: 1928190495848794802}
+  waveManager: {fileID: 0}
   detonationPointMaterial: {fileID: 2100000, guid: e2ac5a6cae92b554e87d710d109627cc, type: 2}
   flashMaterial: {fileID: 2100000, guid: 9242e7b87b272a24f9f34dec818778b2, type: 2}
   flashDuration: 0.3
@@ -7921,9 +7922,6 @@ MonoBehaviour:
   grid: {fileID: 1928190495848794802}
   isDead: 0
   respawnDelay: 2
-  playerHoverMaterial: {fileID: 2100000, guid: 32d767b86292e3046846dded6ea065c5, type: 2}
-  softHighlightObject: {fileID: 1868695612083896382, guid: 83447c49f4b9a1b4a8171c2a6dceb1ea, type: 3}
-  isPlayerOnTile: 0
   maxMarkerCharge: 2
   maxMarkerCount: 99
   tileScale: 3

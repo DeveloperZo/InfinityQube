@@ -23,7 +23,7 @@ MonoBehaviour:
   maxMarkerCharge: 0
   maxMarkerCount: 99
   waveStartDelay: 0.75
-  moveInterval: 0.75
+  moveInterval: 2
   fastMoveInterval: 0.1
   hasOwnSuccessCriteria: 0
   requiredCaptureCount: 0
@@ -37,7 +37,7 @@ MonoBehaviour:
     highlightTiles: []
     highlightColor: {r: 0, g: 0, b: 0, a: 0}
   - Message: 'DEV: Black cube escape event'
-    DisplayMoveStep: 9
+    DisplayMoveStep: 14
     RequirePause: 1
     AutoHideDelay: 0
     HighlightTile: 0

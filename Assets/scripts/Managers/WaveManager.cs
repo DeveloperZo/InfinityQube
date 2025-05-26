@@ -40,7 +40,7 @@ public class WaveManager : MonoBehaviour
     // Black cubes make up the remainder
 
     [Header("Speed Controls")]
-    [SerializeField] private float normalMoveInterval = 0.75f; // Default speed
+    [SerializeField] private float normalMoveInterval = 1.75f; // Default speed
     [SerializeField] private float fastMoveInterval = 0.1f;
     [SerializeField] private bool showDebugInfo = false;
     [SerializeField] private GameObject returnIndicatorPrefab;
