@@ -405,6 +405,7 @@ MonoBehaviour:
   hasMarker: 0
   markerHeight: 1.25
   markerScale: 0.5
+  hasDetonationPoint: 0
   detonationCharges: 0
   maxCharges: 3
   isPlayerOnTile: 0
@@ -414,6 +415,7 @@ MonoBehaviour:
   forbiddenMaterial: {fileID: 2100000, guid: ba597e4280ccbe14bb9424ae288e2bb2, type: 2}
   activateMarkerMaterial: {fileID: 2100000, guid: bda83a2874ae38043b32dc22c3288953, type: 2}
   originalMaterial: {fileID: 2100000, guid: a85f9ed5dfb6ed64b89ade32ef958cc5, type: 2}
-  chargeMaterials: []
+  chargeMaterials:
+  - {fileID: 2100000, guid: a768f9ee68bc0024998718437da0af1a, type: 2}
   currentState: 0
   currentCube: {fileID: 0}

@@ -237,12 +237,11 @@ public class Tile : MonoBehaviour
                 break;
 
             case Enumerations.CubeType.Blue:
-                // Blue cube captured = create detonation point (NO auto-detonate)
-                Debug.Log($"Blue cube captured at ({x}, {y}) - Tile Primed, awaiting player trigger");
-                PrimeTile();
+                // Blue cube captured = create detonation point
+                Debug.Log($"Blue cube captured at ({x}, {y}) - Priming tile for detonation");
                 NotifyPlayerCubeCapture(Enumerations.CubeType.Blue);
-                PrimeTile();
-                // Consume the blue cube
+                PrimeTile(); // This will register with DetonationManager
+                             // Consume the blue cube
                 Destroy(cubeToProcess.gameObject);
                 break;
 
@@ -467,18 +466,28 @@ public class Tile : MonoBehaviour
         hasDetonationPoint = true; // Set this flag for highlight prevention
 
         ClearMarker();
+
+        // Notify player manager
         PlayerManager player = FindObjectOfType<PlayerManager>();
         if (player != null)
         {
             player.OnTilePrimed();
         }
 
+        // Register with DetonationManager - this was missing!
+        DetonationManager detonationManager = FindObjectOfType<DetonationManager>();
+        if (detonationManager != null)
+        {
+            detonationManager.RegisterDetonationPoint(new Vector2Int(x, y));
+        }
+
+        // Set visual state
         if (tileRenderer != null && chargeMaterials != null && chargeMaterials.Length > 0)
         {
             tileRenderer.material = chargeMaterials[0];
         }
 
-        Debug.Log($"Tile ({x},{y}): Primed for detonation");
+        Debug.Log($"Tile ({x},{y}): Primed for detonation and registered with DetonationManager");
     }
     public void AdvantageTile(int charges = 3)
     {

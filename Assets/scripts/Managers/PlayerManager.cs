@@ -421,32 +421,42 @@ public class PlayerManager : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.D))
         {
             Debug.Log("D key pressed, checking for detonation points...");
-            if (detonationManager != null && detonationManager.HasDetonationPoints())
+            if (detonationManager != null)
             {
-                Vector2Int nextPoint = detonationManager.GetNextDetonationPoint();
-                Debug.Log($"Triggering manual detonation at ({nextPoint.x}, {nextPoint.y}) - Points available: {detonationManager.DetonationPointCount}");
-                detonationManager.TriggerNextDetonation();
-                OnDetonationUsed();
+                Debug.Log($"DetonationManager found. Has detonation points: {detonationManager.HasDetonationPoints()}, Count: {detonationManager.DetonationPointCount}");
+
+                if (detonationManager.HasDetonationPoints())
+                {
+                    Vector2Int nextPoint = detonationManager.GetNextDetonationPoint();
+                    Debug.Log($"Triggering manual detonation at ({nextPoint.x}, {nextPoint.y}) - Points available: {detonationManager.DetonationPointCount}");
+                    detonationManager.TriggerNextDetonation();
+                    OnDetonationUsed();
+                }
+                else
+                {
+                    Debug.Log("No detonation points available");
+                }
             }
             else
             {
-                Debug.Log("No detonation points available or DetonationManager is null");
-                if (detonationManager == null)
-                {
-                    detonationManager = FindObjectOfType<DetonationManager>();
-                    Debug.Log($"Attempted to find DetonationManager: {(detonationManager != null ? "Found" : "Not found")}");
-                }
+                Debug.Log("DetonationManager is null, attempting to find...");
+                detonationManager = FindObjectOfType<DetonationManager>();
+                Debug.Log($"Attempted to find DetonationManager: {(detonationManager != null ? "Found" : "Not found")}");
             }
         }
 
-        // Optional: Show preview when holding Shift+D
-        if (Input.GetKey(KeyCode.LeftShift) && Input.GetKeyDown(KeyCode.D) && detonationManager != null)
+        // Optional: Show preview when holding P
+        if (Input.GetKey(KeyCode.P) && detonationManager != null)
         {
             Vector2Int nextPoint = detonationManager.GetNextDetonationPoint();
             if (nextPoint.x >= 0 && nextPoint.y >= 0)
             {
                 detonationManager.ShowDetonationPreview(nextPoint);
             }
+        }
+        else if (Input.GetKeyUp(KeyCode.P) && detonationManager != null)
+        {
+            detonationManager.HideDetonationPreview();
         }
     }
 
