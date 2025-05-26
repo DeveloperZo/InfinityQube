@@ -760,18 +760,6 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 8711813508856984169, guid: dbeadcabd11c21345a6e9dda5a221658, type: 3}
   m_PrefabInstance: {fileID: 4419111386995842257}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &1093078151
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1093078149}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 002df87c738ee854c98e079c00b4a233, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &1093078152
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -784,7 +772,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8bbb4c85740b3bd4489fcd86c252ee56, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  uiRenderer: {fileID: 1093078153}
   toggleKey: 283
 --- !u!114 &1093078153
 MonoBehaviour:
@@ -798,9 +785,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 75a686b56a54f2642bfadf0271be1538, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  gridConfig: {fileID: 1093078155}
-  waveController: {fileID: 1093078154}
-  dataCollector: {fileID: 1093078156}
+  toggleKey: 283
+  buttonSize: 30
+  windowPadding: 10
+  normalCubeColor: {r: 0.7, g: 0.7, b: 0.7, a: 1}
+  blueCubeColor: {r: 0.3, g: 0.3, b: 1, a: 1}
+  blackCubeColor: {r: 0.1, g: 0.1, b: 0.1, a: 1}
+  emptyCubeColor: {r: 0.9, g: 0.9, b: 0.9, a: 0.3}
+  trackingActiveColor: {r: 0, g: 1, b: 0, a: 1}
+  editorModeColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
 --- !u!114 &1093078154
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -818,7 +811,11 @@ MonoBehaviour:
   gridConfig: {fileID: 1093078155}
   dataCollector: {fileID: 1093078156}
   saveLocation: Assets/data/waves/
-  nextWave: {fileID: 11400000, guid: 9351411930ad5ce4084db5e29248b3f4, type: 2}
+  currentWaveData: {fileID: 0}
+  lastLoadedWaveName: 
+  isTrackingActiveWave: 0
+  trackedCubes: []
+  waveOffsetY: 0
 --- !u!114 &1093078155
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -831,10 +828,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5e676d1d9b08fcb488d5b13b68d9dc1c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  minWidth: 1
-  maxWidth: 12
-  minHeight: 3
-  maxHeight: 15
+  gridManager: {fileID: 1928190495848794802}
+  defaultWidth: 3
+  defaultHeight: 3
+  gridWidth: 0
+  gridHeight: 0
 --- !u!114 &1093078156
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -847,6 +845,24 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8ab38c2b7bc723a4eb313bac7c4dfd84, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  TotalSpawned: 0
+  TotalRemoved: 0
+  CurrentWaveMessages: []
+--- !u!114 &1093078158
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1093078149}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8ab38c2b7bc723a4eb313bac7c4dfd84, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  TotalSpawned: 0
+  TotalRemoved: 0
+  CurrentWaveMessages: []
 --- !u!1 &1512999512
 GameObject:
   m_ObjectHideFlags: 0
@@ -7223,7 +7239,7 @@ PrefabInstance:
       addedObject: {fileID: 1093078152}
     - targetCorrespondingSourceObject: {fileID: 8711813508856984169, guid: dbeadcabd11c21345a6e9dda5a221658, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 1093078151}
+      addedObject: {fileID: 1093078158}
   m_SourcePrefab: {fileID: 100100000, guid: dbeadcabd11c21345a6e9dda5a221658, type: 3}
 --- !u!4 &4475572359430206244
 Transform:
@@ -7903,9 +7919,27 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   grid: {fileID: 1928190495848794802}
+  isDead: 0
+  respawnDelay: 2
+  normalCubesCaptured: 0
+  blueCubesCaptured: 0
+  blackCubesCaptured: 0
+  cubesEscaped: 0
+  markersPlaced: 0
+  markersTriggered: 0
+  detonationsUsed: 0
+  tilesCorrupted: 0
+  tilesEnhanced: 0
+  playerDeaths: 0
+  movesCount: 0
+  timeAlive: 0
+  totalPlayTime: 0
   maxMarkerCharge: 2
   maxMarkerCount: 99
   tileScale: 3
+  acceleration: 15
+  deceleration: 20
+  respawnInvulnerabilityTime: 2
   worldSpeed: 3
   speedUpKey: 304
   _anim: {fileID: 7665709929118310106}

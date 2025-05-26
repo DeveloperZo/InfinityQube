@@ -42,6 +42,9 @@ public class PlayerManager : MonoBehaviour
 
     private Vector3 currentVelocity = Vector3.zero;
 
+    [Header("Respawn Settings")]
+    [SerializeField] private float respawnInvulnerabilityTime = 2.0f;
+    private float respawnInvulnerabilityTimer = 0f;
 
     [Header("Speed Control")]
     [SerializeField]
@@ -108,12 +111,20 @@ public class PlayerManager : MonoBehaviour
     private void Update()
     {
         if (!isInitialized) return;
+
+        // Update timers
         if (!isDead)
         {
             timeAlive += Time.deltaTime;
         }
         totalPlayTime += Time.deltaTime;
-        
+
+        // Update respawn invulnerability
+        if (respawnInvulnerabilityTimer > 0f)
+        {
+            respawnInvulnerabilityTimer -= Time.deltaTime;
+        }
+
         if (isDead) return;
 
         HandleMovement();
@@ -122,9 +133,11 @@ public class PlayerManager : MonoBehaviour
         HandleMarkerTrigger();
         HandleDetonation();
         HandleSpeedControl();
-        
-        //TrackMovement();
 
+        // Track movement
+        TrackMovement();
+
+        // Check for collisions after all movement and actions
         CheckForCollisions();
     }
 
@@ -372,7 +385,7 @@ public class PlayerManager : MonoBehaviour
 
     private void CheckForCollisions()
     {
-        if (isDead) return;
+        if (isDead || respawnInvulnerabilityTimer > 0f) return;
 
         // Check all active cubes for collision with player
         CubeBehavior[] allCubes = FindObjectsOfType<CubeBehavior>();
@@ -424,17 +437,23 @@ public class PlayerManager : MonoBehaviour
     {
         // Reset state
         isDead = false;
+        respawnInvulnerabilityTimer = respawnInvulnerabilityTime; // Add invulnerability period
 
-        // Reset position to start (you can customize this spawn point)
+        if (currentVelocity != Vector3.zero) // Only if using momentum version
+        {
+            currentVelocity = Vector3.zero; // Reset velocity on respawn
+        }
+
+        // Reset position to start
         if (grid != null)
         {
-            SetPosition(0, 0); // Or get spawn point from StageManager
+            SetPosition(0, 0); // Or use FindSafeSpawnPosition() for safer respawn
         }
 
         // Re-enable movement and input
         enabled = true;
-        currentVelocity = Vector3.zero;
-        Debug.Log("Player respawned!");
+
+        Debug.Log($"Player respawned with {respawnInvulnerabilityTime}s invulnerability!");
         OnPlayerRespawned?.Invoke();
     }
 
