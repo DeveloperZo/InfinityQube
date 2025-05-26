@@ -291,33 +291,35 @@ public class PlayerManager : MonoBehaviour
             if (currentTile == null) return;
 
             // Skip blackened tiles
-            if (currentTile.IsBlackened)
+            if (!currentTile.CanBeMarked)
             {
-                // Optional: add feedback that this tile can't be marked
+                Debug.Log($"Cannot mark tile at ({selX}, {selZ}) - tile is blackened or transformed");
                 return;
             }
 
-            // Get wave-specific marker limit if available
-            int markerCount = maxMarkerCount;
-            int markerChargeCount = this.maxMarkerCharge;
+            // Get wave-specific marker limits if available
+            int markerCountLimit = maxMarkerCount;
+            int markerChargeLimit = maxMarkerCharge;
+
             WaveManager waveManager = FindObjectOfType<WaveManager>();
             if (waveManager != null)
             {
                 int waveChargeLimit = waveManager.MarkerChargeLimit();
                 if (waveChargeLimit > 0)
                 {
-                    markerChargeCount = waveChargeLimit;
+                    markerChargeLimit = waveChargeLimit;
                 }
                 int waveCountLimit = waveManager.MarkerCountLimit();
                 if (waveCountLimit > 0)
                 {
-                    markerCount = waveCountLimit;
+                    markerCountLimit = waveCountLimit;
                 }
             }
 
             if (!currentTile.HasMarker)
             {
-                if (currentMarkers < markerChargeCount)
+                // Check if we can place more markers
+                if (currentMarkers < markerChargeLimit)
                 {
                     currentTile.PlaceMarker();
                     markerQueue.Enqueue(new Vector2Int(selX, selZ));
@@ -329,14 +331,33 @@ public class PlayerManager : MonoBehaviour
                     {
                         waveManager.OnMarkerPlaced();
                     }
+
+                    Debug.Log($"Placed marker at ({selX}, {selZ}). Total markers: {currentMarkers}/{markerChargeLimit}");
+                }
+                else
+                {
+                    Debug.Log($"Cannot place more markers. Limit reached: {currentMarkers}/{markerChargeLimit}");
                 }
             }
             else
             {
+                // Remove existing marker
                 currentTile.ClearMarker();
-                markerQueue = new Queue<Vector2Int>(
-                    markerQueue.Where(pos => pos.x != selX || pos.y != selZ));
+
+                // Remove from queue (need to rebuild queue without this position)
+                var tempQueue = new Queue<Vector2Int>();
+                while (markerQueue.Count > 0)
+                {
+                    var pos = markerQueue.Dequeue();
+                    if (pos.x != selX || pos.y != selZ)
+                    {
+                        tempQueue.Enqueue(pos);
+                    }
+                }
+                markerQueue = tempQueue;
+
                 currentMarkers--;
+                Debug.Log($"Removed marker from ({selX}, {selZ}). Total markers: {currentMarkers}/{markerChargeLimit}");
             }
         }
     }
@@ -363,10 +384,27 @@ public class PlayerManager : MonoBehaviour
                     tile.TriggerMarker();
                     currentMarkers--;
                     OnMarkerTriggered();
-                    Debug.Log($"Detonated marker at {markerPos}");
+                    Debug.Log($"Triggered marker at ({markerPos.x}, {markerPos.y}). Remaining markers: {currentMarkers}");
+
+                    // Add a slight delay before allowing next trigger to prevent accidental rapid firing
+                    StartCoroutine(MarkerTriggerCooldown());
+                }
+                else
+                {
+                    Debug.LogWarning($"Tried to trigger marker at ({markerPos.x}, {markerPos.y}) but no marker found");
                 }
             }
+            else
+            {
+                Debug.Log("No markers in queue to trigger");
+            }
         }
+    }
+
+    private IEnumerator MarkerTriggerCooldown()
+    {
+        // Prevent rapid marker triggering
+        yield return new WaitForSeconds(0.1f);
     }
 
     private void HandleDetonation()

@@ -403,7 +403,7 @@ MonoBehaviour:
   x: 0
   y: 0
   hasMarker: 0
-  markerHeight: 0.3
+  markerHeight: 1.25
   markerScale: 0.5
   detonationCharges: 0
   maxCharges: 3

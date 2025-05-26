@@ -3,20 +3,17 @@ using System.Collections;
 using UnityEngine;
 using static Enumerations;
 
-
 public class Tile : MonoBehaviour
 {
     [Header("Tile Properties")]
     [SerializeField] public int x, y;
     [SerializeField] private bool hasMarker = false;
-    [SerializeField] private float markerHeight = 0.3f;
-    [SerializeField] private float markerScale = 0.5f;
-
+    [SerializeField] private float markerHeight = 0.5f;
+    [SerializeField] private float markerScale = 0.8f;
 
     private const float TRANSFORMED_HEIGHT = -0.25f;  // Lower by 0.25 for transformed tiles
     private const float MARKED_HEIGHT = 0.25f;        // Raise by 0.25 for marked tiles
-    private const float NORMAL_HEIGHT = 0f;
-    // Normal baseline height
+    private const float NORMAL_HEIGHT = 0f;           // Normal baseline height
 
     [Header("Enhanced Blue Tile")]
     [SerializeField] private int detonationCharges = 0;
@@ -27,7 +24,7 @@ public class Tile : MonoBehaviour
     private GameObject softHighlightObject;
     private Material playerHoverMaterial;
 
-
+    [Header("Materials")]
     [SerializeField] private Material markedTileMaterial;
     [SerializeField] private Material forbiddenMaterial;
     [SerializeField] private Material activateMarkerMaterial;
@@ -37,15 +34,14 @@ public class Tile : MonoBehaviour
     // Properties to access charge information
     public int DetonationCharges => detonationCharges;
     public bool HasCharges => detonationCharges > 0;
-
     public bool IsBlackened => isBlackened;
     public bool IsAdvantaged => isAdvantaged;
+    public bool HasMarker => hasMarker;
     public TileState currentState = TileState.Normal;
-    private Color normalColor;
 
-    public bool CanBeMarked => currentState == TileState.Normal;
+    public bool CanBeMarked => currentState == TileState.Normal && !isBlackened;
+
     private GameObject markerObj;
-    private Color originalColor;
     private Renderer tileRenderer;
     public CubeBehavior currentCube;
     private bool isInitialized = false;
@@ -53,33 +49,13 @@ public class Tile : MonoBehaviour
     private bool isAdvantaged = false;
     public bool isPhasedZone { get; private set; }
     private TextMesh countdownText;
+
     private void Awake()
     {
         tileRenderer = GetComponent<Renderer>();
-    }
-
-    // In Tile.cs
-    public void TransformTile(Enumerations.CubeType cubeType)
-    {
-        if (currentState != Enumerations.TileState.Transformed)
+        if (tileRenderer != null)
         {
-            currentState = Enumerations.TileState.Transformed;
-
-            // Visual change - sink the tile
-            transform.position = new Vector3(transform.position.x, TRANSFORMED_HEIGHT, transform.position.z);
-
-            switch (cubeType)
-            {
-                case Enumerations.CubeType.Black:
-                    BlackenTile();
-                    break;
-
-                case Enumerations.CubeType.Blue:
-                    // First blue charge
-                    AdvantageTile();
-                    break;
-
-            }
+            originalMaterial = tileRenderer.material;
         }
     }
 
@@ -87,8 +63,14 @@ public class Tile : MonoBehaviour
     {
         x = xPos;
         y = yPos;
-
         isInitialized = true;
+
+        // Initialize hover material
+        if (playerHoverMaterial == null)
+        {
+            playerHoverMaterial = new Material(Shader.Find("Standard"));
+            playerHoverMaterial.color = new Color(0.3f, 0.8f, 1f, 0.5f);
+        }
     }
 
     private void OnDestroy()
@@ -106,22 +88,19 @@ public class Tile : MonoBehaviour
         }
     }
 
-    public bool HasMarker => hasMarker;
-
     public void PlaceMarker()
     {
-        if (!isInitialized || hasMarker || isBlackened) return;
+        if (!isInitialized || hasMarker || !CanBeMarked) return;
 
         hasMarker = true;
 
-        // Create marker object
+        // Create marker object if it doesn't exist
         if (markerObj == null)
         {
             markerObj = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
             markerObj.transform.SetParent(transform);
-            markerObj.transform.localPosition = Vector3.up * markerHeight;
-            markerObj.transform.localPosition = new Vector3(markerObj.transform.localPosition.x, .5f, markerObj.transform.localPosition.z);
-            markerObj.transform.localScale = new Vector3(markerScale, 0.2f, markerScale); // Made taller for better visibility
+            markerObj.transform.localPosition = new Vector3(0, markerHeight, 0);
+            markerObj.transform.localScale = new Vector3(markerScale, 0.3f, markerScale);
             markerObj.name = $"Marker_{x}_{y}";
 
             // Remove collider to avoid physics interference
@@ -130,22 +109,282 @@ public class Tile : MonoBehaviour
             {
                 Destroy(markerCollider);
             }
+
+            // Set marker color (bright red/orange for visibility)
+            Renderer markerRenderer = markerObj.GetComponent<Renderer>();
+            if (markerRenderer != null)
+            {
+                Material markerMaterial = new Material(Shader.Find("Standard"));
+                markerMaterial.color = Color.red;
+                markerMaterial.SetFloat("_Metallic", 0.2f);
+                markerMaterial.SetFloat("_Smoothness", 0.8f);
+                markerRenderer.material = markerMaterial;
+            }
         }
 
-        // Raise the tile for marked state
-        transform.position = new Vector3(transform.position.x, MARKED_HEIGHT, transform.position.z);
-
-        // Make tile tint more obvious
-        if (tileRenderer != null)
+        // Update tile appearance for marked state
+        if (tileRenderer != null && markedTileMaterial != null)
         {
-            tileRenderer.material = markedTileMaterial; // Brighter red
+            tileRenderer.material = markedTileMaterial;
         }
+
+        // Raise the tile slightly for marked state
+        transform.position = new Vector3(transform.position.x, MARKED_HEIGHT, transform.position.z);
 
         // Hide soft highlight when marked (marker takes precedence)
         HideSoftHighlight();
 
-        // Debug log for verification
-        Debug.Log($"Marked tile at {x},{y} - hasMarker={hasMarker}");
+        Debug.Log($"Marked tile at ({x}, {y})");
+    }
+
+    public void ClearMarker()
+    {
+        if (!hasMarker) return;
+
+        hasMarker = false;
+
+        // Destroy marker object
+        if (markerObj != null)
+        {
+            Destroy(markerObj);
+            markerObj = null;
+        }
+
+        // Reset tile appearance
+        if (tileRenderer != null)
+        {
+            if (IsBlackened)
+            {
+                tileRenderer.material = forbiddenMaterial;
+            }
+            else if (IsAdvantaged)
+            {
+                UpdateChargeVisuals();
+            }
+            else
+            {
+                tileRenderer.material = originalMaterial;
+            }
+        }
+
+        // Reset tile height based on current state
+        ResetTileHeight();
+
+        // Restore soft highlight if player is still on this tile
+        if (isPlayerOnTile)
+        {
+            ShowSoftHighlight();
+        }
+
+        Debug.Log($"Cleared marker from tile at ({x}, {y})");
+    }
+
+    public void ToggleMarker()
+    {
+        if (hasMarker)
+        {
+            ClearMarker();
+        }
+        else
+        {
+            PlaceMarker();
+        }
+    }
+
+    public void TriggerMarker()
+    {
+        if (!hasMarker) return;
+
+        // Store reference to cube before changing marker state
+        CubeBehavior cubeToProcess = currentCube;
+
+        // Change visual state to "activated"
+        ActivateMarker();
+
+        // Start a coroutine to reset the material after a delay
+        StartCoroutine(ResetMarkerAfterDelay(0.5f));
+
+        if (cubeToProcess == null)
+        {
+            Debug.LogWarning($"No cube to process on marker trigger at ({x}, {y}).");
+            return;
+        }
+
+        // Handle cube type-specific behavior
+        switch (cubeToProcess.type)
+        {
+            case Enumerations.CubeType.Black:
+                // Black cube captured = immediate corruption
+                BlackenTile();
+                NotifyPlayerCubeCapture(Enumerations.CubeType.Black);
+                // The black cube remains (not destroyed)
+                break;
+
+            case Enumerations.CubeType.Blue:
+                // Register with DetonationManager
+                DetonationManager detonationManager = FindObjectOfType<DetonationManager>();
+                if (detonationManager != null)
+                {
+                    detonationManager.RegisterDetonationPoint(new Vector2Int(x, y));
+                }
+                NotifyPlayerCubeCapture(Enumerations.CubeType.Blue);
+                // Consume the blue cube
+                Destroy(cubeToProcess.gameObject);
+                break;
+
+            case Enumerations.CubeType.Normal:
+                NotifyPlayerCubeCapture(Enumerations.CubeType.Normal);
+                // Normal cubes are simply consumed
+                Destroy(cubeToProcess.gameObject);
+                break;
+        }
+
+        // Clear cube reference after processing
+        currentCube = null;
+    }
+
+    private void ActivateMarker()
+    {
+        hasMarker = false;
+
+        if (markerObj != null)
+        {
+            Destroy(markerObj);
+            markerObj = null;
+        }
+
+        if (tileRenderer != null && activateMarkerMaterial != null)
+        {
+            tileRenderer.material = activateMarkerMaterial;
+        }
+    }
+
+    private IEnumerator ResetMarkerAfterDelay(float delay)
+    {
+        yield return new WaitForSeconds(delay);
+
+        // Reset the tile appearance based on current state
+        if (tileRenderer != null)
+        {
+            if (IsBlackened)
+            {
+                tileRenderer.material = forbiddenMaterial;
+            }
+            else if (IsAdvantaged)
+            {
+                UpdateChargeVisuals();
+            }
+            else
+            {
+                tileRenderer.material = originalMaterial;
+            }
+        }
+
+        ResetTileHeight();
+    }
+
+    private void ResetTileHeight()
+    {
+        float targetHeight = NORMAL_HEIGHT;
+
+        if (currentState == TileState.Transformed)
+        {
+            targetHeight = TRANSFORMED_HEIGHT;
+        }
+        else if (hasMarker)
+        {
+            targetHeight = MARKED_HEIGHT;
+        }
+
+        transform.position = new Vector3(transform.position.x, targetHeight, transform.position.z);
+    }
+
+    private void NotifyPlayerCubeCapture(Enumerations.CubeType cubeType)
+    {
+        PlayerManager player = FindObjectOfType<PlayerManager>();
+        if (player != null)
+        {
+            player.OnCubeCaptured(cubeType);
+        }
+    }
+
+    public void SetPlayerHover(bool isHovering)
+    {
+        if (isPlayerOnTile == isHovering) return; // No change needed
+
+        isPlayerOnTile = isHovering;
+
+        // Only show highlight if not marked and not blackened
+        if (isHovering && !hasMarker && !isBlackened)
+        {
+            ShowSoftHighlight();
+        }
+        else
+        {
+            HideSoftHighlight();
+        }
+    }
+
+    private void ShowSoftHighlight()
+    {
+        if (isBlackened || hasMarker) return; // Don't highlight blackened or marked tiles
+
+        if (softHighlightObject == null)
+        {
+            // Create soft highlight object
+            softHighlightObject = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            softHighlightObject.transform.SetParent(transform);
+            softHighlightObject.transform.localPosition = new Vector3(0, 0.51f, 0); // Just above the tile
+            softHighlightObject.transform.localScale = new Vector3(0.9f, 0.05f, 0.9f);
+            softHighlightObject.name = $"SoftHighlight_{x}_{y}";
+
+            // Remove collider
+            Collider highlightCollider = softHighlightObject.GetComponent<Collider>();
+            if (highlightCollider != null)
+            {
+                Destroy(highlightCollider);
+            }
+
+            // Apply hover material
+            Renderer highlightRenderer = softHighlightObject.GetComponent<Renderer>();
+            if (highlightRenderer != null && playerHoverMaterial != null)
+            {
+                highlightRenderer.material = playerHoverMaterial;
+            }
+        }
+
+        if (softHighlightObject != null)
+        {
+            softHighlightObject.SetActive(true);
+        }
+    }
+
+    private void HideSoftHighlight()
+    {
+        if (softHighlightObject != null)
+        {
+            softHighlightObject.SetActive(false);
+        }
+    }
+
+    // Tile state management methods
+    public void TransformTile(Enumerations.CubeType cubeType)
+    {
+        if (currentState != Enumerations.TileState.Transformed)
+        {
+            currentState = Enumerations.TileState.Transformed;
+            ResetTileHeight();
+
+            switch (cubeType)
+            {
+                case Enumerations.CubeType.Black:
+                    BlackenTile();
+                    break;
+                case Enumerations.CubeType.Blue:
+                    AdvantageTile();
+                    break;
+            }
+        }
     }
 
     public void BlackenTile()
@@ -155,7 +394,7 @@ public class Tile : MonoBehaviour
         ClearMarker(); // Remove any existing marker
 
         // Visual indication
-        if (tileRenderer != null)
+        if (tileRenderer != null && forbiddenMaterial != null)
         {
             tileRenderer.material = forbiddenMaterial;
         }
@@ -166,91 +405,44 @@ public class Tile : MonoBehaviour
             player.OnTileCorrupted();
         }
 
-        // Optional: Add cracked texture or particle effect
-        // PlayCorruptionEffect();
+        // Hide any highlights
+        HideSoftHighlight();
 
-        // Lower the tile slightly to indicate it's damaged
-        transform.position = new Vector3(
-            transform.position.x,
-            -0.2f, // Lowered position
-            transform.position.z);
+        ResetTileHeight();
     }
 
     public void AdvantageTile(int charges = 3)
     {
-        if (isBlackened) { return; }
+        if (isBlackened) return;
 
         isAdvantaged = true;
         detonationCharges = charges > maxCharges ? maxCharges : charges;
         ClearMarker();
-        if (tileRenderer != null)
-        {
-            tileRenderer.material = chargeMaterials[detonationCharges-1];
-        }
 
         PlayerManager player = FindObjectOfType<PlayerManager>();
         if (player != null)
         {
             player.OnTileEnhanced();
         }
-        transform.position = new Vector3(
-    transform.position.x,
-    -0.2f, // Lowered position
-    transform.position.z);
 
         UpdateChargeVisuals();
+        ResetTileHeight();
+
         Debug.Log($"Blue tile at ({x}, {y}) enhanced to charge level {detonationCharges}");
-
     }
-
-    public void SetPhased(bool phased)
-    {
-        isPhasedZone = phased;
-
-        // Create countdown text if entering phased state
-        if (phased && countdownText == null)
-        {
-            GameObject textObj = new GameObject("CountdownText");
-            textObj.transform.SetParent(transform);
-            textObj.transform.localPosition = new Vector3(0, 1.5f, 0);
-            textObj.transform.rotation = Quaternion.Euler(90, 0, 0);
-
-            countdownText = textObj.AddComponent<TextMesh>();
-            countdownText.fontSize = 14;
-            countdownText.alignment = TextAlignment.Center;
-            countdownText.color = Color.red;
-        }
-
-        // Remove countdown text if exiting phased state
-        if (!phased && countdownText != null)
-        {
-            Destroy(countdownText.gameObject);
-            countdownText = null;
-        }
-    }
-
-    public void UpdatePhaseCountdown(int remaining)
-    {
-        if (countdownText != null)
-        {
-            countdownText.text = remaining.ToString();
-        }
-    }
-
 
     private void UpdateChargeVisuals()
     {
-        if (tileRenderer != null && detonationCharges > 0 && detonationCharges <= chargeMaterials.Length)
+        if (tileRenderer != null && detonationCharges > 0 &&
+            chargeMaterials != null && detonationCharges <= chargeMaterials.Length)
         {
-            // Apply color based on charge level
             tileRenderer.material = chargeMaterials[detonationCharges - 1];
-        }else if (tileRenderer != null && detonationCharges == 0)
-        {
-            tileRenderer.material = originalMaterial; // Reset to original material
         }
-
+        else if (tileRenderer != null && detonationCharges == 0)
+        {
+            tileRenderer.material = originalMaterial;
+        }
     }
-
 
     public void ReduceCharge()
     {
@@ -275,8 +467,15 @@ public class Tile : MonoBehaviour
     private void ResetToNormalState()
     {
         currentState = TileState.Normal;
-        tileRenderer.material = originalMaterial;
-        transform.position = new Vector3(transform.position.x, NORMAL_HEIGHT, transform.position.z);
+        isAdvantaged = false;
+        detonationCharges = 0;
+
+        if (tileRenderer != null)
+        {
+            tileRenderer.material = originalMaterial;
+        }
+
+        ResetTileHeight();
     }
 
     public void ResetTile()
@@ -285,72 +484,14 @@ public class Tile : MonoBehaviour
         isBlackened = false;
         isAdvantaged = false;
         detonationCharges = 0;
-
-        // Reset visual appearance
-        
-        // Reset position
-        transform.position = new Vector3(transform.position.x, NORMAL_HEIGHT, transform.position.z);
         ClearMarker();
-    }
-
-    public void ToggleMarker()
-    {
-        if (hasMarker)
-        {
-            ClearMarker();
-        }
-        else
-        {
-            PlaceMarker();
-        }
-    }
-
-    public void ClearMarker()
-    {
-        hasMarker = false;
-        tileRenderer.material = originalMaterial;
-
-        if (markerObj != null)
-        {
-            Destroy(markerObj);
-            markerObj = null;
-        }
-
-        // Reset the tile height if not transformed
-        if (currentState != TileState.Transformed)
-        {
-            transform.position = new Vector3(transform.position.x, NORMAL_HEIGHT, transform.position.z);
-        }
-        else
-        {
-            // Keep transformed height
-            transform.position = new Vector3(transform.position.x, TRANSFORMED_HEIGHT, transform.position.z);
-        }
-
-        // Restore soft highlight if player is still on this tile
-        if (isPlayerOnTile)
-        {
-            ShowSoftHighlight();
-        }
-    }
-
-    public void ActivateMarker()
-    {
-        hasMarker = false;
-
-        if (markerObj != null)
-        {
-            Destroy(markerObj);
-            markerObj = null;
-        }
 
         if (tileRenderer != null)
         {
-            tileRenderer.material = activateMarkerMaterial;
+            tileRenderer.material = originalMaterial;
         }
 
-        // We do NOT immediately reset the material here
-        // That happens in ResetMarkerAfterDelay
+        ResetTileHeight();
     }
 
     public void ProcessCubeInteraction(CubeBehavior cube)
@@ -358,104 +499,6 @@ public class Tile : MonoBehaviour
         if (cube != null)
         {
             currentCube = cube;
-        }
-        // No special logic needed here - we'll handle specific cube types in TriggerMarker
-        
-    }
-
-    public void TriggerMarker()
-    {
-        if (!hasMarker) return;
-
-        // Store reference to cube before changing marker state
-        CubeBehavior cubeToProcess = currentCube;
-
-        // Change visual state to "activated"
-        ActivateMarker();
-
-        // Start a coroutine to reset the material after a delay,
-        // regardless of whether a cube was captured
-        StartCoroutine(ResetMarkerAfterDelay(0.5f));
-
-        if (cubeToProcess == null)
-        {
-            Debug.LogWarning("No cube to process on marker trigger.");
-            return;
-        }
-
-        // Handle cube type-specific behavior
-        switch (cubeToProcess.type)
-        {
-            case Enumerations.CubeType.Black:
-                // Black cube captured = immediate corruption
-                BlackenTile();
-
-                // Notify player of capture
-                PlayerManager player = FindObjectOfType<PlayerManager>();
-                if (player != null)
-                {
-                    player.OnCubeCaptured(Enumerations.CubeType.Black);
-                }
-                // The black cube remains (not destroyed)
-                break;
-
-            case Enumerations.CubeType.Blue:
-                // Register with DetonationManager as before
-                DetonationManager detonationManager = FindObjectOfType<DetonationManager>();
-                if (detonationManager != null)
-                {
-                    detonationManager.RegisterDetonationPoint(new Vector2Int(x, y));
-                }
-
-                // Notify player of capture
-                PlayerManager playerBlue = FindObjectOfType<PlayerManager>();
-                if (playerBlue != null)
-                {
-                    playerBlue.OnCubeCaptured(Enumerations.CubeType.Blue);
-                }
-
-                // Consume the blue cube
-                Destroy(cubeToProcess.gameObject);
-                break;
-
-            case Enumerations.CubeType.Normal:
-                // Notify player of capture
-                PlayerManager playerNormal = FindObjectOfType<PlayerManager>();
-                if (playerNormal != null)
-                {
-                    playerNormal.OnCubeCaptured(Enumerations.CubeType.Normal);
-                }
-
-                // Normal cubes are simply consumed
-                Destroy(cubeToProcess.gameObject);
-                break;
-        }
-
-        // Clear cube reference after processing
-        currentCube = null;
-    }
-
-    private IEnumerator ResetMarkerAfterDelay(float delay)
-    {
-        yield return new WaitForSeconds(delay);
-
-        // Reset the tile appearance, but don't reset its state
-        // (e.g., if it was blackened, keep it blackened)
-        if (tileRenderer != null)
-        {
-            if (IsBlackened)
-            {
-                tileRenderer.material = forbiddenMaterial;
-            }
-            else if (IsAdvantaged)
-            {
-                UpdateChargeVisuals();
-            }
-            else
-            {
-                tileRenderer.material = originalMaterial;
-                transform.position = new Vector3(transform.position.x, NORMAL_HEIGHT, transform.position.z);
-            }
         }
     }
 
@@ -472,76 +515,44 @@ public class Tile : MonoBehaviour
 
         if (IsAdvantaged)
         {
-            if(cube.type == Enumerations.CubeType.Black)
+            if (cube.type == Enumerations.CubeType.Black)
             {
-               Debug.Log("Black cube landed on an advantaged tile. Charge Reduced.");
+                Debug.Log("Black cube landed on an advantaged tile. Charge Reduced.");
             }
-
             ReduceCharge();
         }
     }
 
-    public void SetPlayerHover(bool isHovering)
+    // Phase zone methods (keeping existing functionality)
+    public void SetPhased(bool phased)
     {
-        if (isPlayerOnTile == isHovering) return; // No change needed
+        isPhasedZone = phased;
 
-        isPlayerOnTile = isHovering;
-
-        if (isHovering && !hasMarker) // Only show highlight if not already marked
+        if (phased && countdownText == null)
         {
-            ShowSoftHighlight();
+            GameObject textObj = new GameObject("CountdownText");
+            textObj.transform.SetParent(transform);
+            textObj.transform.localPosition = new Vector3(0, 1.5f, 0);
+            textObj.transform.rotation = Quaternion.Euler(90, 0, 0);
+
+            countdownText = textObj.AddComponent<TextMesh>();
+            countdownText.fontSize = 14;
+            countdownText.alignment = TextAlignment.Center;
+            countdownText.color = Color.red;
         }
-        else
+
+        if (!phased && countdownText != null)
         {
-            HideSoftHighlight();
+            Destroy(countdownText.gameObject);
+            countdownText = null;
         }
     }
 
-    private void ShowSoftHighlight()
+    public void UpdatePhaseCountdown(int remaining)
     {
-        if (isBlackened) return; // Don't highlight blackened tiles
-
-        if (softHighlightObject == null)
+        if (countdownText != null)
         {
-            // Create soft highlight object
-            softHighlightObject = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            softHighlightObject.transform.SetParent(transform);
-            softHighlightObject.transform.localPosition = new Vector3(0, .5f, 0);
-            softHighlightObject.transform.localScale = new Vector3(0.9f, 0.05f, 0.9f);
-            softHighlightObject.name = $"SoftHighlight_{x}_{y}";
-
-            // Remove collider
-            Collider highlightCollider = softHighlightObject.GetComponent<Collider>();
-            if (highlightCollider != null)
-            {
-                Destroy(highlightCollider);
-            }
-
-            // Create hover material
-            if (playerHoverMaterial == null)
-            {
-                playerHoverMaterial = new Material(Shader.Find("Standard"));
-                playerHoverMaterial.color = new Color(0.3f, 0.8f, 1f, 0.5f);
-            }
-
-            Renderer highlightRenderer = softHighlightObject.GetComponent<Renderer>();
-            if (highlightRenderer != null)
-            {
-                highlightRenderer.material = playerHoverMaterial;
-            }
-        }
-
-        if (softHighlightObject != null)
-        {
-            softHighlightObject.SetActive(true);
-        }
-    }
-
-    private void HideSoftHighlight()
-    {
-        if (softHighlightObject != null)
-        {
-            softHighlightObject.SetActive(false);
+            countdownText.text = remaining.ToString();
         }
     }
 }
