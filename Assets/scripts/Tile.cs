@@ -22,6 +22,11 @@ public class Tile : MonoBehaviour
     [SerializeField] private int detonationCharges = 0;
     [SerializeField] private int maxCharges = 3;
 
+    [Header("Player Hover Effect")]
+    private bool isPlayerOnTile = false;
+    private GameObject softHighlightObject;
+    private Material playerHoverMaterial;
+
 
     [SerializeField] private Material markedTileMaterial;
     [SerializeField] private Material forbiddenMaterial;
@@ -93,6 +98,12 @@ public class Tile : MonoBehaviour
             Destroy(markerObj);
             markerObj = null;
         }
+
+        if (softHighlightObject != null)
+        {
+            Destroy(softHighlightObject);
+            softHighlightObject = null;
+        }
     }
 
     public bool HasMarker => hasMarker;
@@ -109,8 +120,16 @@ public class Tile : MonoBehaviour
             markerObj = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
             markerObj.transform.SetParent(transform);
             markerObj.transform.localPosition = Vector3.up * markerHeight;
-            markerObj.transform.localScale = new Vector3(markerScale, 0.1f, markerScale);
+            markerObj.transform.localPosition = new Vector3(markerObj.transform.localPosition.x, .5f, markerObj.transform.localPosition.z);
+            markerObj.transform.localScale = new Vector3(markerScale, 0.2f, markerScale); // Made taller for better visibility
             markerObj.name = $"Marker_{x}_{y}";
+
+            // Remove collider to avoid physics interference
+            Collider markerCollider = markerObj.GetComponent<Collider>();
+            if (markerCollider != null)
+            {
+                Destroy(markerCollider);
+            }
         }
 
         // Raise the tile for marked state
@@ -120,10 +139,13 @@ public class Tile : MonoBehaviour
         if (tileRenderer != null)
         {
             tileRenderer.material = markedTileMaterial; // Brighter red
-
-            // Debug log for verification
-            Debug.Log($"Marked tile at {x},{y} - hasMarker={hasMarker}");
         }
+
+        // Hide soft highlight when marked (marker takes precedence)
+        HideSoftHighlight();
+
+        // Debug log for verification
+        Debug.Log($"Marked tile at {x},{y} - hasMarker={hasMarker}");
     }
 
     public void BlackenTile()
@@ -305,7 +327,11 @@ public class Tile : MonoBehaviour
             transform.position = new Vector3(transform.position.x, TRANSFORMED_HEIGHT, transform.position.z);
         }
 
-
+        // Restore soft highlight if player is still on this tile
+        if (isPlayerOnTile)
+        {
+            ShowSoftHighlight();
+        }
     }
 
     public void ActivateMarker()
@@ -452,6 +478,70 @@ public class Tile : MonoBehaviour
             }
 
             ReduceCharge();
+        }
+    }
+
+    public void SetPlayerHover(bool isHovering)
+    {
+        if (isPlayerOnTile == isHovering) return; // No change needed
+
+        isPlayerOnTile = isHovering;
+
+        if (isHovering && !hasMarker) // Only show highlight if not already marked
+        {
+            ShowSoftHighlight();
+        }
+        else
+        {
+            HideSoftHighlight();
+        }
+    }
+
+    private void ShowSoftHighlight()
+    {
+        if (isBlackened) return; // Don't highlight blackened tiles
+
+        if (softHighlightObject == null)
+        {
+            // Create soft highlight object
+            softHighlightObject = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            softHighlightObject.transform.SetParent(transform);
+            softHighlightObject.transform.localPosition = new Vector3(0, .5f, 0);
+            softHighlightObject.transform.localScale = new Vector3(0.9f, 0.05f, 0.9f);
+            softHighlightObject.name = $"SoftHighlight_{x}_{y}";
+
+            // Remove collider
+            Collider highlightCollider = softHighlightObject.GetComponent<Collider>();
+            if (highlightCollider != null)
+            {
+                Destroy(highlightCollider);
+            }
+
+            // Create hover material
+            if (playerHoverMaterial == null)
+            {
+                playerHoverMaterial = new Material(Shader.Find("Standard"));
+                playerHoverMaterial.color = new Color(0.3f, 0.8f, 1f, 0.5f);
+            }
+
+            Renderer highlightRenderer = softHighlightObject.GetComponent<Renderer>();
+            if (highlightRenderer != null)
+            {
+                highlightRenderer.material = playerHoverMaterial;
+            }
+        }
+
+        if (softHighlightObject != null)
+        {
+            softHighlightObject.SetActive(true);
+        }
+    }
+
+    private void HideSoftHighlight()
+    {
+        if (softHighlightObject != null)
+        {
+            softHighlightObject.SetActive(false);
         }
     }
 }

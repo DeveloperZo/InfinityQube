@@ -15,22 +15,11 @@ public class PlayerManager : MonoBehaviour
     [SerializeField] private bool isDead = false;
     [SerializeField] private float respawnDelay = 2.0f;
 
-    [Header("Player Statistics")]
-    [SerializeField] private int normalCubesCaptured = 0;
-    [SerializeField] private int blueCubesCaptured = 0;
-    [SerializeField] private int blackCubesCaptured = 0;
-    [SerializeField] private int cubesEscaped = 0;
-    [SerializeField] private int markersPlaced = 0;
-    [SerializeField] private int markersTriggered = 0;
-    [SerializeField] private int detonationsUsed = 0;
-    [SerializeField] private int tilesCorrupted = 0;
-    [SerializeField] private int tilesEnhanced = 0;
-    [SerializeField] private int playerDeaths = 0;
-    [SerializeField] private int movesCount = 0;
-    [SerializeField] private float timeAlive = 0f;
-    [SerializeField] private float totalPlayTime = 0f;
-
-
+    [Header("Visual Feedback")]
+    [SerializeField] private Material playerHoverMaterial;
+    [SerializeField] private GameObject softHighlightObject;
+    [SerializeField] private bool isPlayerOnTile = false;
+    
     [Header("Settings")]
     [SerializeField] private int maxMarkerCharge = 2;
     [SerializeField] private int maxMarkerCount = 99;
@@ -51,12 +40,30 @@ public class PlayerManager : MonoBehaviour
     private float worldSpeed = 3f;
     [SerializeField] private KeyCode speedUpKey = KeyCode.LeftShift;
     [SerializeField] private Animator _anim;
+
+
+    [Header("Player Statistics")]
+    [SerializeField] private int normalCubesCaptured = 0;
+    [SerializeField] private int blueCubesCaptured = 0;
+    [SerializeField] private int blackCubesCaptured = 0;
+    [SerializeField] private int cubesEscaped = 0;
+    [SerializeField] private int markersPlaced = 0;
+    [SerializeField] private int markersTriggered = 0;
+    [SerializeField] private int detonationsUsed = 0;
+    [SerializeField] private int tilesCorrupted = 0;
+    [SerializeField] private int tilesEnhanced = 0;
+    [SerializeField] private int playerDeaths = 0;
+    [SerializeField] private int movesCount = 0;
+    [SerializeField] private float timeAlive = 0f;
+    [SerializeField] private float totalPlayTime = 0f;
+
+
     private static readonly int IsRunningHash = Animator.StringToHash("IsRunning");
     private bool isMoving = false;
     private Coroutine moveRoutine;
-
     private int currentMarkers = 0;
     private Vector2Int currentTilePosition = new Vector2Int(0, 0);
+    private Tile currentHoveredTile = null;
     private DetonationManager detonationManager;
 
     private Queue<Vector2Int> markerQueue = new Queue<Vector2Int>(); // Track marker order
@@ -214,8 +221,33 @@ public class PlayerManager : MonoBehaviour
         tileX = Mathf.Clamp(tileX, 0, grid.Width - 1);
         tileZ = Mathf.Clamp(tileZ, 0, grid.Height - 1);
 
-        // Update the current tile position
-        currentTilePosition = new Vector2Int(tileX, tileZ);
+        // Check if we've moved to a different tile
+        Vector2Int newTilePosition = new Vector2Int(tileX, tileZ);
+        bool tileChanged = (currentTilePosition.x != newTilePosition.x || currentTilePosition.y != newTilePosition.y);
+
+        if (tileChanged)
+        {
+            // Clear hover effect from previous tile
+            if (currentHoveredTile != null)
+            {
+                currentHoveredTile.SetPlayerHover(false);
+            }
+
+            // Update the current tile position
+            currentTilePosition = newTilePosition;
+
+            // Set hover effect on new tile
+            if (grid.tiles != null &&
+                currentTilePosition.x >= 0 && currentTilePosition.x < grid.Width &&
+                currentTilePosition.y >= 0 && currentTilePosition.y < grid.Height)
+            {
+                currentHoveredTile = grid.tiles[currentTilePosition.x, currentTilePosition.y];
+                if (currentHoveredTile != null)
+                {
+                    currentHoveredTile.SetPlayerHover(true);
+                }
+            }
+        }
     }
 
     private void TrackAndLogTilePosition()
@@ -471,6 +503,12 @@ public class PlayerManager : MonoBehaviour
         x = Mathf.Clamp(x, 0, grid.Width - 1);
         z = Mathf.Clamp(z, 0, grid.Height - 1);
 
+        // Clear hover effect from current tile
+        if (currentHoveredTile != null)
+        {
+            currentHoveredTile.SetPlayerHover(false);
+        }
+
         // Update physical position with tile scale - center the player on the tile
         transform.position = new Vector3(x * tileScale, transform.position.y, z * tileScale);
 
@@ -480,6 +518,16 @@ public class PlayerManager : MonoBehaviour
         // Update logged positions
         lastLoggedTileX = x;
         lastLoggedTileZ = z;
+
+        // Set hover effect on new tile
+        if (grid.tiles != null)
+        {
+            currentHoveredTile = grid.tiles[x, z];
+            if (currentHoveredTile != null)
+            {
+                currentHoveredTile.SetPlayerHover(true);
+            }
+        }
     }
 
     public void SetMaxMarkers(int max)
@@ -604,5 +652,76 @@ public class PlayerManager : MonoBehaviour
 
         UpdateStatistics();
         Debug.Log("Player statistics reset");
+    }
+    public void SetPlayerHover(bool isHovering)
+    {
+        if (isPlayerOnTile == isHovering) return; // No change needed
+
+        isPlayerOnTile = isHovering;
+
+        if (isHovering && !currentHoveredTile.HasMarker) // Only show highlight if not already marked
+        {
+            ShowSoftHighlight();
+        }
+        else
+        {
+            HideSoftHighlight();
+        }
+    }
+
+    private void ShowSoftHighlight()
+    {
+        if (currentHoveredTile.IsBlackened) return; // Don't highlight blackened tiles
+
+        if (softHighlightObject == null)
+        {
+            // Create soft highlight object
+            softHighlightObject = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            softHighlightObject.transform.SetParent(transform);
+            softHighlightObject.transform.localPosition = new Vector3(0, 0.05f, 0);
+            softHighlightObject.transform.localScale = new Vector3(0.9f, 0.05f, 0.9f);
+            softHighlightObject.name = $"SoftHighlight_{currentHoveredTile.x}_{currentHoveredTile.y}";
+
+            // Remove collider
+            Collider highlightCollider = softHighlightObject.GetComponent<Collider>();
+            if (highlightCollider != null)
+            {
+                Destroy(highlightCollider);
+            }
+
+            // Create hover material
+            if (playerHoverMaterial == null)
+            {
+                playerHoverMaterial = new Material(Shader.Find("Standard"));
+                playerHoverMaterial.color = new Color(0.3f, 0.8f, 1f, 0.5f);
+            }
+
+            Renderer highlightRenderer = softHighlightObject.GetComponent<Renderer>();
+            if (highlightRenderer != null)
+            {
+                highlightRenderer.material = playerHoverMaterial;
+            }
+        }
+
+        if (softHighlightObject != null)
+        {
+            softHighlightObject.SetActive(true);
+        }
+    }
+
+    private void HideSoftHighlight()
+    {
+        if (softHighlightObject != null)
+        {
+            softHighlightObject.SetActive(false);
+        }
+    }
+    private void OnDestroy()
+    {
+        // Clear hover effect when player is destroyed
+        if (currentHoveredTile != null)
+        {
+            currentHoveredTile.SetPlayerHover(false);
+        }
     }
 }

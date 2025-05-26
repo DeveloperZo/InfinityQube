@@ -128,7 +128,7 @@ public class GameUI : MonoBehaviour
         GUILayout.Label("F2: Wave Debugger", textStyle);
         GUILayout.Label("R: Rain Cube at Selected Position", textStyle);
 
-        GUILayout.Label("Space: Mark/Unmark Tile", textStyle);
+        GUILayout.Label("Space: Mark/Unmark Current Tile", textStyle);
         GUILayout.Label("D: Trigger Next Detonation", textStyle);
         GUILayout.Label("T: Trigger Time Distortion", textStyle);
         
