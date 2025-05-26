@@ -61,10 +61,10 @@ public class DetonationManager : MonoBehaviour
 
             detonationTypes[position] = type;
 
-            // Always mark the tile visually - no auto-detonation
-            MarkTileAsDetonationPoint(position);
+            // Prime the tile instead of just marking it
+            tile.PrimeTile();
 
-            Debug.Log($"Detonation point registered at {position} with type {type} (area: {GetDetonationSize(type)}x{GetDetonationSize(type)}) - Ready for manual trigger");
+            Debug.Log($"Detonation point registered at {position} with type {type} (area: {GetDetonationSize(type)}x{GetDetonationSize(type)}) - Tile primed for manual trigger");
         }
     }
 
@@ -224,46 +224,48 @@ public class DetonationManager : MonoBehaviour
     }
 
     private void PerformDetonation(Vector2Int center)
+{
+    if (!IsValidPosition(center)) return;
+
+    Tile centerTile = gridManager.tiles[center.x, center.y];
+    if (centerTile == null) return;
+
+    // Hide any preview
+    HideDetonationPreview();
+
+    // Remove from detonation points list (detonation is consumed)
+    detonationPoints.Remove(center);
+    detonationTypes.Remove(center);
+    
+    // Reset the tile from primed state
+    centerTile.ResetPrimedState();
+
+    // Determine detonation type and size
+    DetonationType type = detonationTypes.ContainsKey(center) ? detonationTypes[center] : GetDetonationTypeFromGridWidth();
+    int size = GetDetonationSize(type);
+
+    Debug.Log($"Player-triggered detonation: {size}x{size} area at {center}");
+
+    // Get all affected positions
+    List<Vector2Int> affectedPositions = GetDetonationArea(center, size);
+
+    // Process each position in the detonation area
+    foreach (Vector2Int position in affectedPositions)
     {
-        if (!IsValidPosition(center)) return;
+        // Visual effect
+        StartCoroutine(FlashTile(gridManager.tiles[position.x, position.y]));
 
-        Tile centerTile = gridManager.tiles[center.x, center.y];
-        if (centerTile == null) return;
-
-        // Hide any preview
-        HideDetonationPreview();
-
-        // Remove from detonation points list (detonation is consumed)
-        detonationPoints.Remove(center);
-        detonationTypes.Remove(center);
-        ResetTileMaterial(centerTile);
-
-        // Determine detonation type and size
-        DetonationType type = detonationTypes.ContainsKey(center) ? detonationTypes[center] : GetDetonationTypeFromGridWidth();
-        int size = GetDetonationSize(type);
-
-        Debug.Log($"Player-triggered detonation: {size}x{size} area at {center}");
-
-        // Get all affected positions
-        List<Vector2Int> affectedPositions = GetDetonationArea(center, size);
-
-        // Process each position in the detonation area
-        foreach (Vector2Int position in affectedPositions)
-        {
-            // Visual effect
-            StartCoroutine(FlashTile(gridManager.tiles[position.x, position.y]));
-
-            // Capture/process cubes at this position
-            CaptureCubesAt(position);
-        }
-
-        // Notify player manager about detonation use
-        PlayerManager player = FindObjectOfType<PlayerManager>();
-        if (player != null)
-        {
-            player.OnDetonationUsed();
-        }
+        // Capture/process cubes at this position
+        CaptureCubesAt(position);
     }
+
+    // Notify player manager about detonation use
+    PlayerManager player = FindObjectOfType<PlayerManager>();
+    if (player != null)
+    {
+        player.OnDetonationUsed();
+    }
+}
 
     // Modified to be "capture" instead of "detonate" - cubes are captured, not destroyed
     private void CaptureCubesAt(Vector2Int position)
@@ -343,6 +345,7 @@ public class DetonationManager : MonoBehaviour
     }
 
     // Clear all detonation points
+    // Clear all detonation points
     public void ClearDetonationPoints()
     {
         HideDetonationPreview();
@@ -351,7 +354,11 @@ public class DetonationManager : MonoBehaviour
         {
             if (IsValidPosition(position))
             {
-                ResetTileMaterial(gridManager.tiles[position.x, position.y]);
+                Tile tile = gridManager.tiles[position.x, position.y];
+                if (tile != null)
+                {
+                    tile.ResetPrimedState();
+                }
             }
         }
 

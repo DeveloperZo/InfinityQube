@@ -464,6 +464,7 @@ public class Tile : MonoBehaviour
     {
         if (isBlackened) return;
         isPrimed = true;
+        hasDetonationPoint = true; // Set this flag for highlight prevention
 
         ClearMarker();
         PlayerManager player = FindObjectOfType<PlayerManager>();
@@ -471,18 +472,13 @@ public class Tile : MonoBehaviour
         {
             player.OnTilePrimed();
         }
-        DetonationManager detonationManager = FindObjectOfType<DetonationManager>();
-        if (detonationManager != null)
-        {
-            detonationManager.RegisterDetonationPoint(new Vector2Int(x,y));
-        }
 
-
-        if (tileRenderer != null)
+        if (tileRenderer != null && chargeMaterials != null && chargeMaterials.Length > 0)
         {
             tileRenderer.material = chargeMaterials[0];
         }
 
+        Debug.Log($"Tile ({x},{y}): Primed for detonation");
     }
     public void AdvantageTile(int charges = 3)
     {
@@ -515,7 +511,32 @@ public class Tile : MonoBehaviour
             tileRenderer.material = originalMaterial;
         }
     }
+    public void ResetPrimedState()
+    {
+        if (!isPrimed) return;
 
+        isPrimed = false;
+        hasDetonationPoint = false;
+
+        // Reset visual state
+        if (tileRenderer != null)
+        {
+            if (isBlackened)
+            {
+                tileRenderer.material = forbiddenMaterial;
+            }
+            else if (isAdvantaged)
+            {
+                UpdateChargeVisuals();
+            }
+            else
+            {
+                tileRenderer.material = originalMaterial;
+            }
+        }
+
+        Debug.Log($"Tile ({x},{y}): Reset from primed state");
+    }
     public void ReduceCharge()
     {
         if (detonationCharges <= 0)
@@ -556,7 +577,7 @@ public class Tile : MonoBehaviour
         isAdvantaged = false;
         isPrimed = false;
         detonationCharges = 0;
-        hasDetonationPoint = false; // Add this line
+        hasDetonationPoint = false;
         ClearMarker();
 
         if (tileRenderer != null)
