@@ -475,6 +475,7 @@ public class PlayerManager : MonoBehaviour
 
     private void Die()
     {
+        return;
         if (isDead) return;
 
         isDead = true;
@@ -575,6 +576,7 @@ public class PlayerManager : MonoBehaviour
 
     private void TrackMovement()
     {
+        SetPlayerHover(false);
         // Only track movement when player actually changes tiles, not continuous movement
         if (lastPosition.x != currentTilePosition.x || lastPosition.y != currentTilePosition.y)
         {
@@ -584,6 +586,7 @@ public class PlayerManager : MonoBehaviour
                 Debug.Log($"Player moved to tile ({currentTilePosition.x}, {currentTilePosition.y}). Total moves: {movesCount}");
             }
             lastPosition = currentTilePosition;
+            SetPlayerHover(true);
         }
     }
 

@@ -7,7 +7,7 @@ public class GridManager : MonoBehaviour
     [SerializeField] public GameObject tilePrefab;
     [SerializeField] public CubeTypeDefinitions cubeTypeDefinitions;
     [SerializeField] public int width = 5;
-    [SerializeField] public int height = 10;
+    [SerializeField] public int height = 20;
     [SerializeField] public float tileScale = 3f; // Added scale parameter
     
     [HideInInspector] public Tile[,] tiles;

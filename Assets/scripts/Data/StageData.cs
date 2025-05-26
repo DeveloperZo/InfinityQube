@@ -14,7 +14,7 @@ public class StageData : ScriptableObject
 
     [Header("Grid Configuration")]
     public int gridWidth = 6;
-    public int gridHeight = 10;
+    public int gridHeight = 20;
     public Vector2Int playerStartPosition = new Vector2Int(2, 0);
 
     [Header("Wave Configuration")]

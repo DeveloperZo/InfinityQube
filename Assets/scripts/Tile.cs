@@ -245,7 +245,6 @@ public class Tile : MonoBehaviour
 
     private void ActivateMarker()
     {
-        hasMarker = false;
 
         if (markerObj != null)
         {
@@ -262,6 +261,15 @@ public class Tile : MonoBehaviour
     private IEnumerator ResetMarkerAfterDelay(float delay)
     {
         yield return new WaitForSeconds(delay);
+
+        // Clear the marker completely after activation
+        hasMarker = false;
+
+        if (markerObj != null)
+        {
+            Destroy(markerObj);
+            markerObj = null;
+        }
 
         // Reset the tile appearance based on current state
         if (tileRenderer != null)
@@ -281,6 +289,12 @@ public class Tile : MonoBehaviour
         }
 
         ResetTileHeight();
+
+        // Restore soft highlight if player is still on this tile
+        if (isPlayerOnTile)
+        {
+            ShowSoftHighlight();
+        }
     }
 
     private void ResetTileHeight()
@@ -327,7 +341,7 @@ public class Tile : MonoBehaviour
 
     private void ShowSoftHighlight()
     {
-        if (isBlackened || hasMarker) return; // Don't highlight blackened or marked tiles
+        if (isBlackened) return; // Don't highlight blackened or marked tiles
 
         if (softHighlightObject == null)
         {
@@ -353,10 +367,8 @@ public class Tile : MonoBehaviour
             }
         }
 
-        if (softHighlightObject != null)
-        {
-            softHighlightObject.SetActive(true);
-        }
+        // Simply activate existing highlight object
+        softHighlightObject.SetActive(true);
     }
 
     private void HideSoftHighlight()
