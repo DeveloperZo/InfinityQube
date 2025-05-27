@@ -36,6 +36,9 @@ public class PlayerManager : MonoBehaviour
     [SerializeField] private KeyCode speedUpKey = KeyCode.LeftShift;
     [SerializeField] private Animator _anim;
 
+    [Header("Physics")]
+    [SerializeField] private LayerMask cubeLayer = -1; // All layers by default
+    [SerializeField] private float collisionCheckRadius = 0.5f;
 
     [Header("Player Statistics")]
     [SerializeField] private int normalCubesCaptured = 0;
@@ -170,7 +173,7 @@ public class PlayerManager : MonoBehaviour
             inputDirection.Normalize();
         }
 
-        Vector3 targetVelocity = inputDirection * worldSpeed;
+        Vector3 targetVelocity = inputDirection * acceleration;
         bool isMoving = inputDirection.magnitude > 0f;
 
         // Smooth acceleration/deceleration
@@ -636,6 +639,13 @@ public class PlayerManager : MonoBehaviour
             case Enumerations.CubeType.Black:
                 blackCubesCaptured++;
                 break;
+        }
+
+        // Notify wave manager for completion tracking
+        WaveManager waveManager = FindObjectOfType<WaveManager>();
+        if (waveManager != null)
+        {
+            waveManager.OnNonBlackCubeProcessed(cubeType, true); // true = captured
         }
 
         UpdateStatistics();

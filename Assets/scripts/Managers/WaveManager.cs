@@ -65,6 +65,16 @@ public class WaveManager : MonoBehaviour
     private int markersPlaced = 0;
     private int detonationsUsed = 0;
 
+    [Header("Wave Completion")]
+    [SerializeField] private bool trackWaveCompletion = true;
+    [SerializeField] private int totalNonBlackCubes = 0;
+    [SerializeField] private int processedNonBlackCubes = 0;
+
+    // Events for wave completion
+    public System.Action OnWaveCompleted;
+    public System.Action<string> OnWaveCompletedWithReason;
+
+
     public bool isSpeedingUp = false;
     public List<CubeBehavior> activeCubes = new List<CubeBehavior>();
     public List<Vector2> escapedBlackCubePositions = new List<Vector2>();
@@ -747,6 +757,10 @@ public class WaveManager : MonoBehaviour
         activeCubes.Clear();
         player.ResetMarkers();
 
+        // Reset wave completion tracking
+        totalNonBlackCubes = 0;
+        processedNonBlackCubes = 0;
+
         // Guard against missing grid
         if (grid == null) return;
 
@@ -757,8 +771,13 @@ public class WaveManager : MonoBehaviour
         else
             GenerateRandomWave();
 
+        // Count total non-black cubes for completion tracking
+        CountNonBlackCubes();
+
         // Now spawn any escaped black cubes that need to "rain down"
         SpawnRainingBlackCubes();
+
+        Debug.Log($"Wave started with {totalNonBlackCubes} non-black cubes to process");
     }
 
     private void GenerateRandomWave()
@@ -1180,5 +1199,89 @@ public class WaveManager : MonoBehaviour
     public void OnDetonationUsed()
     {
         detonationsUsed++;
+    }
+
+    private void CountNonBlackCubes()
+    {
+        totalNonBlackCubes = 0;
+        foreach (CubeBehavior cube in activeCubes)
+        {
+            if (cube != null && cube.type != Enumerations.CubeType.Black)
+            {
+                totalNonBlackCubes++;
+            }
+        }
+    }
+
+    public void OnNonBlackCubeProcessed(Enumerations.CubeType cubeType, bool wasCaptured)
+    {
+        if (!trackWaveCompletion || cubeType == Enumerations.CubeType.Black) return;
+
+        processedNonBlackCubes++;
+
+        string reason = wasCaptured ? "captured" : "escaped";
+        Debug.Log($"Non-black cube {reason}. Progress: {processedNonBlackCubes}/{totalNonBlackCubes}");
+
+        // Check if wave is complete
+        if (processedNonBlackCubes >= totalNonBlackCubes)
+        {
+            CompleteWave(wasCaptured ? "All non-black cubes captured!" : "All non-black cubes processed!");
+        }
+    }
+
+    private void CompleteWave(string reason)
+    {
+        Debug.Log($"Wave completed: {reason}");
+
+        // Stop the wave
+        if (waveCoroutine != null)
+        {
+            StopCoroutine(waveCoroutine);
+            waveCoroutine = null;
+        }
+
+        waveActive = false;
+
+        // Clear remaining cubes (only black cubes should remain)
+        for (int i = activeCubes.Count - 1; i >= 0; i--)
+        {
+            if (activeCubes[i] != null && activeCubes[i].type != Enumerations.CubeType.Black)
+            {
+                Destroy(activeCubes[i].gameObject);
+                activeCubes.RemoveAt(i);
+            }
+        }
+
+        // Notify listeners
+        OnWaveCompleted?.Invoke();
+        OnWaveCompletedWithReason?.Invoke(reason);
+
+        // Show completion message
+        StartCoroutine(ShowWaveCompletionMessage(reason));
+    }
+
+    private IEnumerator ShowWaveCompletionMessage(string reason)
+    {
+        // Create a simple wave completion message
+        WaveMessage completionMessage = new WaveMessage
+        {
+            Message = $"Wave Complete!\n{reason}",
+            RequirePause = true,
+            AutoHideDelay = 0f
+        };
+
+        ShowMessage(completionMessage, true, 0f);
+
+        yield return new WaitForSeconds(2f);
+
+        // Check for next wave or end
+        if (useWaveConfiguration && currentWaveIndex < waveConfiguration.Count - 1)
+        {
+            StartCoroutine(AdvanceToNextWave());
+        }
+        else
+        {
+            Debug.Log("All waves completed!");
+        }
     }
 }

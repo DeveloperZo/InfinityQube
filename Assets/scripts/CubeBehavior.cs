@@ -16,6 +16,12 @@ public class CubeBehavior : MonoBehaviour
     [SerializeField] private float squashDuration = 0.25f;
     public bool isRainingCube = false;
 
+    [Header("Physics")]
+    [SerializeField] private bool usePhysics = true;
+    [SerializeField] private Rigidbody cubeRigidbody;
+    [SerializeField] private Collider cubeCollider;
+
+
     private GridManager grid;
     private DetonationManager detonationManager;
     private bool isMoving = false;
@@ -52,6 +58,37 @@ public class CubeBehavior : MonoBehaviour
         transform.position = new Vector3(position.x * tileScale, spawnHeight, position.y * tileScale);
         detonationManager = FindAnyObjectByType<DetonationManager>();
         gameObject.name = name;
+
+        // Setup physics
+        SetupPhysics();
+    }
+
+    private void SetupPhysics()
+    {
+        if (!usePhysics) return;
+
+        // Add rigidbody if not present
+        cubeRigidbody = GetComponent<Rigidbody>();
+        if (cubeRigidbody == null)
+        {
+            cubeRigidbody = gameObject.AddComponent<Rigidbody>();
+        }
+
+        // Configure rigidbody for game mechanics
+        cubeRigidbody.isKinematic = true; // We control movement, but want collision detection
+        cubeRigidbody.useGravity = false; // We handle our own movement
+
+        // Add collider if not present
+        cubeCollider = GetComponent<Collider>();
+        if (cubeCollider == null)
+        {
+            cubeCollider = gameObject.AddComponent<BoxCollider>();
+        }
+
+        // Make sure collider is trigger for now (can change if you want physical blocking)
+        cubeCollider.isTrigger = false; // Set to false for physical collision
+
+        Debug.Log($"Physics setup complete for {name} cube at {transform.position}");
     }
 
     // Add this method to reset movement state
@@ -97,6 +134,16 @@ public class CubeBehavior : MonoBehaviour
                     if (waveManager != null)
                     {
                         waveManager.RegisterEscapedBlackCube(position);
+                    }
+                }
+                else
+                {
+                    // Non-black cube escaped - notify wave manager
+                    WaveManager waveManager = FindObjectOfType<WaveManager>();
+                    if (waveManager != null)
+                    {
+                        waveManager.OnNonBlackCubeProcessed(type, false); // false = escaped
+                        waveManager.OnCubeEscaped(type);
                     }
                 }
 

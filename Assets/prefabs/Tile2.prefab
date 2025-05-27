@@ -14,7 +14,6 @@ GameObject:
   - component: {fileID: 4212091518156062685}
   - component: {fileID: 3295677466937139108}
   - component: {fileID: 9166974427087316160}
-  - component: {fileID: 9123525476028745564}
   - component: {fileID: -1167463154322963631}
   m_Layer: 0
   m_Name: Tile2
@@ -258,7 +257,7 @@ MonoBehaviour:
   m_PreserveMeshAssetOnDestroy: 0
   assetGuid: 
   m_Mesh: {fileID: 0}
-  m_VersionIndex: 4153
+  m_VersionIndex: 4156
   m_IsSelectable: 1
   m_SelectedFaces: 
   m_SelectedEdges: []
@@ -363,31 +362,6 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: 0}
---- !u!114 &9123525476028745564
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6551000342905767615}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2edaef2e509af074d8462d7440467daa, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  level: 1
-  position: {x: 0, y: 0}
-  type: 2
-  material: {fileID: 2100000, guid: a85f9ed5dfb6ed64b89ade32ef958cc5, type: 2}
-  prefab: {fileID: 6551000342905767615}
-  moveDuration: 0.25
-  squashDuration: 0.25
-  isRainingCube: 0
-  isDestroyed: 0
-  rainSpeed: 3
-  rainHeight: 5
-  targetRow: -1
-  moveCountRemaining: 0
 --- !u!114 &-1167463154322963631
 MonoBehaviour:
   m_ObjectHideFlags: 0

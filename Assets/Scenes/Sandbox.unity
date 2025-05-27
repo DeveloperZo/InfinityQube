@@ -553,6 +553,50 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &630863027
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 630863028}
+  - component: {fileID: 630863029}
+  m_Layer: 5
+  m_Name: TMP SubMeshUI [Alata-Regular SDF Material + LiberationSans SDF Atlas]
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &630863028
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 630863027}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1883002199}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
+  m_AnchoredPosition: {x: 0, y: 0.0670166}
+  m_SizeDelta: {x: 0, y: 0}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!222 &630863029
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 630863027}
+  m_CullTransparentMesh: 0
 --- !u!1 &719410077
 GameObject:
   m_ObjectHideFlags: 0
@@ -5760,6 +5804,7 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 854205501}
+  - {fileID: 630863028}
   m_Father: {fileID: 1753889800}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
@@ -6685,7 +6730,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   tilePrefab: {fileID: 6551000342905767615, guid: 1b3ce2c40720bac4f80c30da84c34fa1, type: 3}
-  cubeTypeDefinitions: {fileID: 11400000, guid: 4478fc2c664202247ab6000c9b6c283a, type: 2}
+  cubeTypeDefinitions: {fileID: 11400000, guid: 9b3d75336cd65f44382e0a54c8253136, type: 2}
   width: 5
   height: 20
   tileScale: 3
@@ -7022,6 +7067,8 @@ GameObject:
   - component: {fileID: 4360115852523455648}
   - component: {fileID: 7665709929118310106}
   - component: {fileID: 7665709929118310107}
+  - component: {fileID: 7665709929118310109}
+  - component: {fileID: 7665709929118310108}
   m_Layer: 0
   m_Name: PlayerManager
   m_TagString: Untagged
@@ -7618,7 +7665,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   gridManager: {fileID: 1928190495848794802}
-  waveManager: {fileID: 0}
+  waveManager: {fileID: 4327591077324849160}
   detonationPointMaterial: {fileID: 2100000, guid: e2ac5a6cae92b554e87d710d109627cc, type: 2}
   flashMaterial: {fileID: 2100000, guid: 9242e7b87b272a24f9f34dec818778b2, type: 2}
   flashDuration: 0.3
@@ -7655,7 +7702,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!1 &6651779974930358319
 GameObject:
   m_ObjectHideFlags: 0
@@ -7940,11 +7987,40 @@ MonoBehaviour:
   markersTriggered: 0
   detonationsUsed: 0
   tilesCorrupted: 0
+  tilesPrimed: 0
   tilesEnhanced: 0
   playerDeaths: 0
   movesCount: 0
   timeAlive: 0
   totalPlayTime: 0
+--- !u!114 &7665709929118310108
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4020006825885015578}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ac359e300a123be4fb3b5c493d8c7845, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  buildVersion: 0.1.0-alpha
+  buildDate: 
+--- !u!114 &7665709929118310109
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4020006825885015578}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0339d7e0efd4f644faba24664752c954, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  feedbackKey: 293
+  feedbackEmail: awilliams9293@gmail.com
 --- !u!4 &7705285898521335331
 Transform:
   m_ObjectHideFlags: 0

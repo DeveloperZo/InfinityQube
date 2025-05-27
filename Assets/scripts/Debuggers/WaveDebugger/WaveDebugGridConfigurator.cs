@@ -39,16 +39,16 @@ public class WaveDebugGridConfigurator : MonoBehaviour
 
     public void InitializeGrid()
     {
-        gridState = new int[waveWidth, waveHeight];
+        gridState = new int[waveWidth, 15];
         for (int x = 0; x < waveWidth; x++)
-            for (int y = 0; y < waveHeight; y++)
+            for (int y = 0; y < 15; y++)
                 gridState[x, y] = 1; // Default: normal
     }
 
     public void ApplyGridSize()
     {
-        // Make sure grid height is at least 9 tiles
-        gridHeight = Mathf.Max(gridHeight, 9);
+        // Make sure grid height is at least 15 tiles
+        gridHeight = Mathf.Max(gridHeight, 15);
         gridWidth = gridWidth < 3 ? Mathf.Max(3, waveWidth) : gridWidth;
 
         // Apply changes to the actual grid in the scene

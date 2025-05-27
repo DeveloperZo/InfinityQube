@@ -1,0 +1,36 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ce94b5931971d71409f59a4245220bea, type: 3}
+  m_Name: DefaultCubeTypes
+  m_EditorClassIdentifier: 
+  definitions:
+  - name: Black
+    prefab: {fileID: 1728893673582764340, guid: 28923bfb13f3dde44b857f03a0188e95, type: 3}
+    material: {fileID: 2100000, guid: a85f9ed5dfb6ed64b89ade32ef958cc5, type: 2}
+    canBeMarked: 0
+    causesCorruption: 1
+    enablesDetonation: 0
+    detonationRadius: 0
+  - name: Normal
+    prefab: {fileID: 1728893673582764340, guid: f90c16e773c18f54eb1b70ddc1136373, type: 3}
+    material: {fileID: 2100000, guid: be913c819811d334f8b9ab7ed8845641, type: 2}
+    canBeMarked: 1
+    causesCorruption: 0
+    enablesDetonation: 0
+    detonationRadius: 0
+  - name: Blue
+    prefab: {fileID: 2727342813801045048, guid: 28aedf15c99f1914991a9066ec8020e5, type: 3}
+    material: {fileID: 2100000, guid: 0d112ce4130a1714e9308a63cbec6265, type: 2}
+    canBeMarked: 0
+    causesCorruption: 0
+    enablesDetonation: 1
+    detonationRadius: 3
