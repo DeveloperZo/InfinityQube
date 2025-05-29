@@ -69,7 +69,7 @@ public class WaveDebugPanel : IDebugPanel
     public void Initialize()
     {
         waveManager = Object.FindObjectOfType<WaveManager>();
-        gridManager = GridManager.Instance;
+        gridManager = Object.FindObjectOfType<GridManager>();
         stageManager = Object.FindObjectOfType<StageManager>();
 
         InitializeCubeGrid();
@@ -247,7 +247,7 @@ public class WaveDebugPanel : IDebugPanel
 
         // Unified reset and control
         GUILayout.BeginHorizontal();
-        GUI.backgroundColor = Color.yellow;
+        GUI.backgroundColor = Color.red;
         if (GUILayout.Button("Full Reset"))
         {
             FullReset();
@@ -298,7 +298,23 @@ public class WaveDebugPanel : IDebugPanel
 
         // Message override
         GUILayout.BeginHorizontal();
-        overrideMessages = GUILayout.Toggle(overrideMessages, "Override Messages (Hide All)");
+        bool newOverrideMessages = GUILayout.Toggle(overrideMessages, "Override Messages (Hide All)");
+        if (newOverrideMessages != overrideMessages)
+        {
+            overrideMessages = newOverrideMessages;
+            // Show reload button when state changes
+        }
+
+        // Show reload button if message override state changed
+        if (overrideMessages != GetOriginalMessageState())
+        {
+            GUI.backgroundColor = Color.yellow;
+            if (GUILayout.Button("Reload Wave"))
+            {
+                ReloadCurrentWave();
+            }
+            GUI.backgroundColor = Color.white;
+        }
         GUILayout.EndHorizontal();
 
         GUILayout.BeginHorizontal();
@@ -1051,7 +1067,7 @@ public class WaveDebugPanel : IDebugPanel
         hasOwnSuccessCriteria = wave.hasOwnSuccessCriteria;
         requiredCaptureCount = wave.requiredCaptureCount;
         maxAllowedEscapes = wave.maxAllowedEscapes;
-        editingMessages = new List<WaveMessage>(wave.messages);
+        editingMessages = new List<WaveMessage>(overrideMessages ? null :  wave.messages);
 
         // Load cube data into grid
         InitializeCubeGrid();
@@ -1072,7 +1088,49 @@ public class WaveDebugPanel : IDebugPanel
     {
         if (waveManager != null)
         {
-            waveManager.waveConfiguration = new List<WaveData> { wave };
+            // Create a copy of the wave for testing
+            WaveData testWave = ScriptableObject.CreateInstance<WaveData>();
+
+            // Copy all properties
+            testWave.Index = wave.Index;
+            testWave.name = wave.name;
+            testWave.GridWidth = wave.GridWidth;
+            testWave.GridHeight = wave.GridHeight;
+            testWave.limitMarkers = wave.limitMarkers;
+            testWave.maxMarkerCharge = wave.maxMarkerCharge;
+            testWave.maxMarkerCount = wave.maxMarkerCount;
+            testWave.waveStartDelay = wave.waveStartDelay;
+            testWave.moveInterval = wave.moveInterval;
+            testWave.fastMoveInterval = wave.fastMoveInterval;
+            testWave.hasOwnSuccessCriteria = wave.hasOwnSuccessCriteria;
+            testWave.requiredCaptureCount = wave.requiredCaptureCount;
+            testWave.maxAllowedEscapes = wave.maxAllowedEscapes;
+
+            // Apply message override
+            if (overrideMessages)
+            {
+                testWave.messages = new List<WaveMessage>(); // Empty list
+            }
+            else
+            {
+                testWave.messages = new List<WaveMessage>(wave.messages);
+            }
+
+            // Copy cube data and position at top of grid
+            testWave.CubesData = new List<CubeData>();
+            int spawnY = gridManager.Height - testWave.GridHeight;
+
+            foreach (var cubeData in wave.CubesData)
+            {
+                testWave.CubesData.Add(new CubeData
+                {
+                    type = cubeData.type,
+                    position = new Vector2Int(cubeData.position.x, spawnY + cubeData.position.y),
+                    level = cubeData.level
+                });
+            }
+
+            waveManager.waveConfiguration = new List<WaveData> { testWave };
             waveManager.useWaveConfiguration = true;
             waveManager.currentWaveIndex = 0;
         }
@@ -1139,15 +1197,6 @@ public class WaveDebugPanel : IDebugPanel
         waveToSave.requiredCaptureCount = requiredCaptureCount;
         waveToSave.maxAllowedEscapes = maxAllowedEscapes;
 
-        // Apply message override
-        if (overrideMessages)
-        {
-            waveToSave.messages = new List<WaveMessage>(); // Empty list
-        }
-        else
-        {
-            waveToSave.messages = new List<WaveMessage>(editingMessages);
-        }
 
         // Convert cube grid to CubeData list
         waveToSave.CubesData = new List<CubeData>();
@@ -1363,12 +1412,6 @@ public class WaveDebugPanel : IDebugPanel
 
     private void FullReset()
     {
-        // Reset stage first
-        if (stageManager != null)
-        {
-            stageManager.RestartCurrentStage();
-        }
-
         // Reset wave
         if (waveManager != null)
         {
@@ -1378,6 +1421,14 @@ public class WaveDebugPanel : IDebugPanel
 
         // Clear any debug state
         liveCubeMap.Clear();
+
+        if(editingWave != null)
+        {
+            waveManager.waveConfiguration = new List<WaveData> { editingWave };
+            waveManager.useWaveConfiguration = true;
+            waveManager.currentWaveIndex = 0;
+        }
+
 
         Debug.Log("Full reset completed - Stage and Wave reset");
     }
@@ -1392,13 +1443,12 @@ public class WaveDebugPanel : IDebugPanel
         // Create cubes based on design
         var tempWave = CreateTempWaveFromDesign();
 
-        // Position cubes at top of grid
-        int spawnY = gridManager.Height - gridHeight;
+        // Spawn cubes at top of grid
         foreach (var cubeData in tempWave.CubesData)
         {
             Vector3 worldPos = gridManager.GridToWorldPosition(
                 cubeData.position.x,
-                spawnY + cubeData.position.y,
+                cubeData.position.y,
                 2f);
 
             if (waveManager.cubePrefabs != null && (int)cubeData.type < waveManager.cubePrefabs.Length)
@@ -1407,14 +1457,7 @@ public class WaveDebugPanel : IDebugPanel
                 var cube = cubeObj.GetComponent<CubeBehavior>();
                 if (cube == null) cube = cubeObj.AddComponent<CubeBehavior>();
 
-                var adjustedCubeData = new CubeData
-                {
-                    type = cubeData.type,
-                    position = new Vector2Int(cubeData.position.x, spawnY + cubeData.position.y),
-                    level = 1
-                };
-
-                cube.Init(gridManager, adjustedCubeData, 2f);
+                cube.Init(gridManager, cubeData, 2f);
                 waveManager.activeCubes.Add(cube);
             }
         }
@@ -1425,7 +1468,7 @@ public class WaveDebugPanel : IDebugPanel
             waveManager.EnterDebugMode(true);
         }
 
-        Debug.Log($"Loaded {tempWave.CubesData.Count} cubes to grid");
+        Debug.Log($"Loaded {tempWave.CubesData.Count} cubes to grid at top (Y={gridManager.Height - gridHeight})");
     }
 
     private void SpawnFromDesign()
@@ -1463,7 +1506,10 @@ public class WaveDebugPanel : IDebugPanel
             tempWave.messages = new List<WaveMessage>(editingMessages);
         }
 
+        // Position cubes at top of grid
         tempWave.CubesData = new List<CubeData>();
+        int spawnY = gridManager.Height - gridHeight;
+
         for (int x = 0; x < gridWidth; x++)
         {
             for (int y = 0; y < gridHeight; y++)
@@ -1473,7 +1519,7 @@ public class WaveDebugPanel : IDebugPanel
                     tempWave.CubesData.Add(new CubeData
                     {
                         type = (CubeType)(cubeGrid[x, y] - 1),
-                        position = new Vector2Int(x, y),
+                        position = new Vector2Int(x, spawnY + y),
                         level = 1
                     });
                 }
@@ -1481,6 +1527,32 @@ public class WaveDebugPanel : IDebugPanel
         }
 
         return tempWave;
+    }
+
+    private bool GetOriginalMessageState()
+    {
+        // Check if current wave originally had messages
+        if (waveManager?.CurrentWave != null)
+        {
+            return waveManager.CurrentWave.messages.Count == 0;
+        }
+        return false; // Default to messages enabled
+    }
+
+    private void ReloadCurrentWave()
+    {
+        if (waveManager?.CurrentWave != null)
+        {
+            // Stop current wave
+            waveManager.StopWave();
+
+            // Reload with current message override setting
+            var originalWave = waveManager.CurrentWave;
+            originalWave.CubesData.ForEach(x => x.position = new Vector2Int(x.position.x, x.position.y - gridManager.height));
+            LoadWaveForTesting(originalWave);
+
+            Debug.Log($"Reloaded wave with messages {(overrideMessages ? "disabled" : "enabled")}");
+        }
     }
 
     private void MoveAllCubesForward()
