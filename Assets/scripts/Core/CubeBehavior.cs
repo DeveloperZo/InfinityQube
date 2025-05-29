@@ -98,17 +98,7 @@ public class CubeBehavior : MonoBehaviour
     {
         if (isMoving || isDestroyed) return true;
 
-        // Handle raining cubes and moveCount
-        if (isRainingCube)
-        {
-            StartCoroutine(RainAnimation());
-            return true;
-        }
 
-        if (isRainingCube && isRainAnimating)
-        {
-            return true;
-        }
 
         // Check for off-grid conditions
         if (position.y < 0 || position.x < 0 || position.x >= grid.Width)
@@ -119,11 +109,7 @@ public class CubeBehavior : MonoBehaviour
                 // Handle black cubes that escape
                 if (type == Enumerations.CubeType.Black)
                 {
-                    WaveManager waveManager = FindObjectOfType<WaveManager>();
-                    if (waveManager != null)
-                    {
-                        waveManager.RegisterEscapedBlackCube(position);
-                    }
+
                 }
                 else
                 {
@@ -244,70 +230,6 @@ public class CubeBehavior : MonoBehaviour
         }
 
         isMoving = false;
-    }
-
-    private IEnumerator RainAnimation()
-    {
-        isRainAnimating = true;
-
-        // Get the current position and calculate target position for this tick
-        Vector3 startPos = transform.position;
-
-        // Calculate the total height and divide into segments based on remaining moves
-        float totalHeight = startPos.y - (1f * tileScale); // Distance to ground level with scale
-        float segmentHeight = totalHeight / (moveCountRemaining > 0 ? moveCountRemaining : 1);
-
-        // Calculate target position for this tick
-        float targetY = startPos.y - segmentHeight;
-        Vector3 targetPos = new Vector3(position.x * tileScale, targetY, position.y * tileScale);
-
-        // Animate this segment of the fall
-        float segmentDuration = 0.4f; // Adjust as needed to match movement interval
-        float elapsed = 0f;
-
-        while (elapsed < segmentDuration && !isDestroyed)
-        {
-            elapsed += Time.deltaTime;
-            float t = Mathf.Clamp01(elapsed / segmentDuration);
-
-            // Simulate gravity with quadratic easing
-            float easedT = t * t;
-
-            transform.position = Vector3.Lerp(startPos, targetPos, easedT);
-
-            yield return null;
-        }
-
-        // Ensure we're at the target position
-        if (!isDestroyed)
-        {
-            transform.position = targetPos;
-
-            // Decrement the move count
-            moveCountRemaining--;
-
-            // Add bounce effect
-            StartCoroutine(BounceEffect());
-
-            // If we've reached zero remaining moves, notify that the cube has landed
-            if (moveCountRemaining <= 0)
-            {
-                // Make sure we're at final ground position
-                transform.position = new Vector3(position.x * tileScale, 1f * tileScale, position.y * tileScale);
-
-                // Notify the wave manager that this cube has landed vertically
-                WaveManager waveManager = FindObjectOfType<WaveManager>();
-                if (waveManager != null)
-                {
-                    waveManager.CubeRainLanded(this);
-                }
-
-                // No longer a raining cube
-                isRainingCube = false;
-            }
-        }
-
-        isRainAnimating = false;
     }
 
     private IEnumerator BounceEffect()

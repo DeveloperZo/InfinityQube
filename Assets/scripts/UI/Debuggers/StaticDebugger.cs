@@ -348,15 +348,6 @@ public class StaticCubeDebugger : MonoBehaviour
             }
         }
 
-        if (waveManager != null && newActiveCubes.Count > 0)
-        {
-            waveManager.EnterDebugMode(manualMode);
-
-            foreach (CubeBehavior cube in newActiveCubes)
-            {
-                waveManager.RegisterRainCube(cube);
-            }
-        }
     }
 
     private void DropCubeOnColumn(int column)

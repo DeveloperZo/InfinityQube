@@ -6,94 +6,130 @@ using System.Collections;
 
 public class PlayerManager : MonoBehaviour
 {
-    [Header("References")]
-    [SerializeField] private GridManager grid;
+    #region Inspector Configuration
+    [Header("Core References")]
+    public GridManager grid;
+    public Animator _anim;
+
+    [Header("Movement Settings")]
+    public float acceleration = 15f;
+    public float deceleration = 20f;
+    public KeyCode speedUpKey = KeyCode.LeftShift;
+
+    [Header("Marker Settings")]
+    public int maxMarkerCharge = 2;
+    public int maxMarkerCount = 99;
+
+    [Header("Death & Respawn")]
+    public float respawnDelay = 2.0f;
+    public float respawnInvulnerabilityTime = 2.0f;
+
+    [Header("Physics & Collision")]
+    public LayerMask cubeLayer = -1;
+    public float collisionCheckRadius = 0.5f;
+
+    [Header("Debug")]
+    public bool enableDebugLogs = false;
+    public bool showTileInfo = false;
+    #endregion
+
+    #region Runtime State
+    // Position & Movement
+    public Vector2Int currentTilePosition = new Vector2Int(0, 0);
+    private Vector3 currentVelocity = Vector3.zero;
+    private bool isMoving = false;
+    private bool isSpeedingUp = false;
+
+    // Tile Interaction
+    private Tile currentHoveredTile = null;
     private int lastLoggedTileX = -1;
     private int lastLoggedTileZ = -1;
 
-    [Header("Player Death")]
-    [SerializeField] private bool isDead = false;
-    [SerializeField] private float respawnDelay = 2.0f;
-    
-    [Header("Settings")]
-    [SerializeField] private int maxMarkerCharge = 2;
-    [SerializeField] private int maxMarkerCount = 99;
-    [SerializeField] private float tileScale = 3f; // Added tile scale parameter
+    // Markers
+    private int currentMarkers = 0;
+    private Queue<Vector2Int> markerQueue = new Queue<Vector2Int>();
 
-    [Header("Movement Settings")]
-    [SerializeField] private float acceleration = 15f;
-    [SerializeField] private float deceleration = 20f;
-
-    private Vector3 currentVelocity = Vector3.zero;
-
-    [Header("Respawn Settings")]
-    [SerializeField] private float respawnInvulnerabilityTime = 2.0f;
+    // Death System
+    public bool isDead = false;
     private float respawnInvulnerabilityTimer = 0f;
 
-    [Header("Speed Control")]
-    [SerializeField]
-    private float worldSpeed = 3f;
-    [SerializeField] private KeyCode speedUpKey = KeyCode.LeftShift;
-    [SerializeField] private Animator _anim;
+    // Statistics
+    public int normalCubesCaptured = 0;
+    public int blueCubesCaptured = 0;
+    public int blackCubesCaptured = 0;
+    public int cubesEscaped = 0;
+    public int markersPlaced = 0;
+    public int markersTriggered = 0;
+    public int detonationsUsed = 0;
+    public int tilesCorrupted = 0;
+    public int tilesPrimed = 0;
+    public int tilesEnhanced = 0;
+    public int playerDeaths = 0;
+    public int movesCount = 0;
+    public float timeAlive = 0f;
+    public float totalPlayTime = 0f;
 
-    [Header("Physics")]
-    [SerializeField] private LayerMask cubeLayer = -1; // All layers by default
-    [SerializeField] private float collisionCheckRadius = 0.5f;
-
-    [Header("Player Statistics")]
-    [SerializeField] private int normalCubesCaptured = 0;
-    [SerializeField] private int blueCubesCaptured = 0;
-    [SerializeField] private int blackCubesCaptured = 0;
-    [SerializeField] private int cubesEscaped = 0;
-    [SerializeField] private int markersPlaced = 0;
-    [SerializeField] private int markersTriggered = 0;
-    [SerializeField] private int detonationsUsed = 0;
-    [SerializeField] private int tilesCorrupted = 0;
-    [SerializeField] private int tilesPrimed = 0;
-    [SerializeField] private int tilesEnhanced = 0;
-    [SerializeField] private int playerDeaths = 0;
-    [SerializeField] private int movesCount = 0;
-    [SerializeField] private float timeAlive = 0f;
-    [SerializeField] private float totalPlayTime = 0f;
-
-
-    private static readonly int IsRunningHash = Animator.StringToHash("IsRunning");
-    private bool isMoving = false;
-    private Coroutine moveRoutine;
-    private int currentMarkers = 0;
-    private Vector2Int currentTilePosition = new Vector2Int(0, 0);
-    private Tile currentHoveredTile = null;
+    // Internal State
     private DetonationManager detonationManager;
-
-    private Queue<Vector2Int> markerQueue = new Queue<Vector2Int>(); // Track marker order
+    private static readonly int IsRunningHash = Animator.StringToHash("IsRunning");
     private bool isInitialized = false;
-    private bool isSpeedingUp = false;
     private Vector2Int lastPosition;
     private float sessionStartTime;
+    #endregion
 
+    #region Events
     public System.Action<PlayerStatistics> OnStatisticsUpdated;
     public System.Action OnPlayerDied;
     public System.Action OnPlayerRespawned;
+    #endregion
 
-
-    private void OnGUI()
+    #region Unity Lifecycle
+    private void Start()
     {
-        if (currentHoveredTile != null)
-        {
-            GUI.Label(new Rect(10, 10, 300, 20), $"Current Tile: ({currentTilePosition.x}, {currentTilePosition.y})");
-            GUI.Label(new Rect(10, 30, 300, 20), $"Has Marker: {currentHoveredTile.HasMarker}");
-            GUI.Label(new Rect(10, 50, 300, 20), $"Is Blackened: {currentHoveredTile.IsBlackened}");
-        }
+        InitializePlayer();
     }
 
-    private void Start()
+    private void Update()
+    {
+        if (!isInitialized) return;
+
+        UpdateTimers();
+        if (isDead) return;
+
+        HandleMovement();
+        HandleTileTracking();
+        HandleMarkerActions();
+        HandleDetonationActions();
+        HandleSpeedControl();
+        TrackMovement();
+        CheckForCollisions();
+    }
+
+    private void OnDestroy()
+    {
+        CleanupPlayer();
+    }
+    #endregion
+
+    #region Initialization
+    private void InitializePlayer()
+    {
+        FindReferences();
+        InitializeState();
+        SetInitialPosition();
+
+        isInitialized = true;
+        DebugLog("✅ Player Initialized");
+    }
+
+    private void FindReferences()
     {
         if (grid == null)
         {
-            grid = FindObjectOfType<GridManager>();
+            grid = GridManager.Instance ?? FindObjectOfType<GridManager>();
             if (grid == null)
             {
-                Debug.LogError("PlayerController requires a GridManager reference!");
+                Debug.LogError("❌ PlayerManager requires GridManager!");
                 enabled = false;
                 return;
             }
@@ -102,94 +138,49 @@ public class PlayerManager : MonoBehaviour
         detonationManager = FindObjectOfType<DetonationManager>();
         if (detonationManager == null)
         {
-            Debug.LogWarning("DetonationManager not found in scene. Detonation functionality will be limited.");
+            Debug.LogWarning("⚠️ DetonationManager not found - detonation features limited");
         }
+    }
 
-        // Initialize state
+    private void InitializeState()
+    {
         isDead = false;
-
-        // Initialize statistics
         lastPosition = new Vector2Int(-1, -1);
         sessionStartTime = Time.time;
-
-        // Initialize the current position based on the player's world position
-        UpdateCurrentTilePosition();
-        isInitialized = true;
+        respawnInvulnerabilityTimer = 0f;
     }
 
-    private void OnEnable()
+    private void SetInitialPosition()
     {
-        if (isInitialized)
-        {
-            UpdateCurrentTilePosition();
-        }
+        SetPosition(grid.Width / 2, 0); // Center bottom
     }
+    #endregion
 
-    private void Update()
-    {
-        if (!isInitialized) return;
-        //DebugYPosition();
-        // Update timers
-        if (!isDead)
-        {
-            timeAlive += Time.deltaTime;
-        }
-        totalPlayTime += Time.deltaTime;
-
-        // Update respawn invulnerability
-        if (respawnInvulnerabilityTimer > 0f)
-        {
-            respawnInvulnerabilityTimer -= Time.deltaTime;
-        }
-
-        if (isDead) return;
-
-        HandleMovement();
-        TrackAndLogTilePosition();
-        HandleMarkerPlacement();
-        HandleMarkerTrigger();
-        HandlePrimedTile();
-        HandleSpeedControl();
-
-        // Track movement
-        TrackMovement();
-
-        // Check for collisions after all movement and actions
-        CheckForCollisions();
-    }
-    private void DebugYPosition()
-    {
-        if (transform.position.y != 9f)
-        {
-            Debug.Log($"Y position is {transform.position.y}, should be 9. Current position: {transform.position}");
-
-            // Force set Y position
-            Vector3 correctedPosition = transform.position;
-            correctedPosition.y = 9f;
-            transform.position = correctedPosition;
-
-            Debug.Log($"Corrected Y position to: {transform.position}");
-        }
-    }
+    #region Movement System
     private void HandleMovement()
     {
-        // Get input direction
+        ProcessMovementInput();
+        ApplyMovement();
+        UpdateAnimations();
+        UpdateCurrentTilePosition();
+    }
+
+    private void ProcessMovementInput()
+    {
         Vector3 inputDirection = Vector3.zero;
         if (Input.GetKey(KeyCode.LeftArrow)) inputDirection.x = -1;
         if (Input.GetKey(KeyCode.RightArrow)) inputDirection.x = 1;
         if (Input.GetKey(KeyCode.UpArrow)) inputDirection.z = 1;
         if (Input.GetKey(KeyCode.DownArrow)) inputDirection.z = -1;
 
-        // Normalize diagonal movement
         if (inputDirection.magnitude > 1f)
         {
             inputDirection.Normalize();
         }
 
         Vector3 targetVelocity = inputDirection * acceleration;
-        bool isMoving = inputDirection.magnitude > 0f;
+        isMoving = inputDirection.magnitude > 0f;
 
-        // Smooth acceleration/deceleration
         if (isMoving)
         {
             currentVelocity = Vector3.MoveTowards(currentVelocity, targetVelocity, acceleration * Time.deltaTime);
@@ -198,283 +189,269 @@ public class PlayerManager : MonoBehaviour
         {
             currentVelocity = Vector3.MoveTowards(currentVelocity, Vector3.zero, deceleration * Time.deltaTime);
         }
+    }
 
-        // Update animation based on actual velocity
+    private void ApplyMovement()
+    {
+        if (currentVelocity.magnitude > 0.1f)
+        {
+            // Rotate to face movement direction
+            Quaternion targetRotation = Quaternion.LookRotation(currentVelocity.normalized);
+            transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, Time.deltaTime * 10f);
+        }
+
+        CharacterController controller = GetComponent<CharacterController>();
+        if (controller != null && currentVelocity.magnitude > 0.01f)
+        {
+            Vector3 movement = currentVelocity * Time.deltaTime;
+            Vector3 futurePosition = transform.position + movement;
+
+            // Clamp to grid bounds
+            Vector3 minBounds = grid.GridToWorldPosition(0, 0);
+            Vector3 maxBounds = grid.GridToWorldPosition(grid.Width - 1, grid.Height - 1);
+
+            futurePosition.x = Mathf.Clamp(futurePosition.x, minBounds.x, maxBounds.x);
+            futurePosition.z = Mathf.Clamp(futurePosition.z, minBounds.z, maxBounds.z);
+            futurePosition.y = 0f; // Keep at proper height
+
+            Vector3 clampedMovement = futurePosition - transform.position;
+            controller.Move(clampedMovement);
+        }
+    }
+
+    private void UpdateAnimations()
+    {
         if (_anim != null)
         {
             bool shouldAnimate = currentVelocity.magnitude > 0.1f;
             _anim.SetBool(IsRunningHash, shouldAnimate);
         }
-
-        // Rotate to face movement direction
-        if (currentVelocity.magnitude > 0.1f)
-        {
-            Quaternion targetRotation = Quaternion.LookRotation(currentVelocity.normalized);
-            transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, Time.deltaTime * 10f);
-        }
-
-        // Apply movement using CharacterController
-        CharacterController controller = GetComponent<CharacterController>();
-        if (controller != null && currentVelocity.magnitude > 0.01f)
-        {
-            Vector3 movement = currentVelocity * Time.deltaTime;
-
-            // Apply grid boundaries manually since CharacterController doesn't have constraints
-            Vector3 futurePosition = transform.position + movement;
-            float minX = controller.radius;
-            float maxX = (grid.Width - 1) * tileScale - controller.radius;
-            float minZ = controller.radius;
-            float maxZ = (grid.Height - 1) * tileScale - controller.radius;
-
-            futurePosition.x = Mathf.Clamp(futurePosition.x, minX, maxX);
-            futurePosition.z = Mathf.Clamp(futurePosition.z, minZ, maxZ);
-
-
-            // Calculate clamped movement
-            Vector3 clampedMovement = futurePosition - transform.position;
-            // Move with CharacterController (automatically handles collisions)
-            controller.Move(clampedMovement);
-        }
-
-        // Update current tile position after movement
-        UpdateCurrentTilePosition();
     }
 
-    private void EnsureGrounded()
-    {
-        Vector3 groundedPosition = transform.position;
-        groundedPosition.y = 9f; // Your desired ground level
-        transform.position = groundedPosition;
-    }
     private void UpdateCurrentTilePosition()
     {
-        // Calculate the tile position based on world position with scale
-        int tileX = Mathf.RoundToInt(transform.position.x / tileScale);
-        int tileZ = Mathf.RoundToInt(transform.position.z / tileScale);
-
-        // Clamp to grid bounds
-        tileX = Mathf.Clamp(tileX, 0, grid.Width - 1);
-        tileZ = Mathf.Clamp(tileZ, 0, grid.Height - 1);
-
-        // Check if we've moved to a different tile
-        Vector2Int newTilePosition = new Vector2Int(tileX, tileZ);
+        Vector2Int newTilePosition = grid.WorldToGridPosition(transform.position);
         bool tileChanged = (currentTilePosition.x != newTilePosition.x || currentTilePosition.y != newTilePosition.y);
 
         if (tileChanged)
         {
-            Debug.Log($"Player moved from tile ({currentTilePosition.x}, {currentTilePosition.y}) to ({newTilePosition.x}, {newTilePosition.y})");
+            HandleTileChange(newTilePosition);
+        }
+    }
 
-            // Clear hover effect from previous tile
+    private void HandleTileChange(Vector2Int newPosition)
+    {
+        DebugLog($"🚶 Player moved from ({currentTilePosition.x}, {currentTilePosition.y}) to ({newPosition.x}, {newPosition.y})");
+
+        // Clear hover from old tile
+        if (currentHoveredTile != null)
+        {
+            currentHoveredTile.SetPlayerHover(false);
+        }
+
+        currentTilePosition = newPosition;
+
+        // Set hover on new tile
+        if (IsValidTilePosition(newPosition))
+        {
+            currentHoveredTile = grid.tiles[newPosition.x, newPosition.y];
             if (currentHoveredTile != null)
             {
-                currentHoveredTile.SetPlayerHover(false);
-            }
-
-            // Update the current tile position
-            currentTilePosition = newTilePosition;
-
-            // Set hover effect on new tile
-            if (grid.tiles != null &&
-                currentTilePosition.x >= 0 && currentTilePosition.x < grid.Width &&
-                currentTilePosition.y >= 0 && currentTilePosition.y < grid.Height)
-            {
-                currentHoveredTile = grid.tiles[currentTilePosition.x, currentTilePosition.y];
-                if (currentHoveredTile != null)
-                {
-                    currentHoveredTile.SetPlayerHover(true);
-                }
+                currentHoveredTile.SetPlayerHover(true);
             }
         }
+    }
+    #endregion
+
+    #region Tile Tracking & Debug
+    private void HandleTileTracking()
+    {
+        TrackAndLogTilePosition();
+        HandleDebugDisplay();
     }
 
     private void TrackAndLogTilePosition()
     {
-        // Get the current tile position
         int tileX = currentTilePosition.x;
         int tileZ = currentTilePosition.y;
 
-        // Only log when it changes
         if (tileX != lastLoggedTileX || tileZ != lastLoggedTileZ)
         {
             lastLoggedTileX = tileX;
             lastLoggedTileZ = tileZ;
-
-            Debug.Log($"WorldPos={transform.position:F2}  →  Tile=({tileX},{tileZ})");
+            DebugLog($"WorldPos={transform.position:F2} → Tile=({tileX},{tileZ})");
         }
     }
 
-    private bool IsValidMoveTarget(int x, int z)
+    private void HandleDebugDisplay()
     {
-        // Check grid bounds
-        if (x < 0 || x >= grid.Width || z < 0 || z >= grid.Height)
-            return false;
+        // OnGUI info is handled separately
+    }
 
-        // Check if tile is corrupted
-        Tile tile = grid.tiles[x, z];
-        return tile != null && !tile.IsBlackened;
+    private void OnGUI()
+    {
+        if (!showTileInfo || currentHoveredTile == null) return;
+
+        GUI.Label(new Rect(10, 10, 300, 20), $"Current Tile: ({currentTilePosition.x}, {currentTilePosition.y})");
+        GUI.Label(new Rect(10, 30, 300, 20), $"Has Marker: {currentHoveredTile.HasMarker}");
+        GUI.Label(new Rect(10, 50, 300, 20), $"Is Blackened: {currentHoveredTile.IsBlackened}");
+    }
+    #endregion
+
+    #region Marker System
+    private void HandleMarkerActions()
+    {
+        HandleMarkerPlacement();
+        HandleMarkerTrigger();
     }
 
     private void HandleMarkerPlacement()
     {
-        if (Input.GetKeyDown(KeyCode.Space))
+        if (!Input.GetKeyDown(KeyCode.Space)) return;
+
+        if (!IsValidTilePosition(currentTilePosition)) return;
+
+        Tile currentTile = grid.tiles[currentTilePosition.x, currentTilePosition.y];
+        if (currentTile == null || !currentTile.CanBeMarked)
         {
-            int selX = currentTilePosition.x;
-            int selZ = currentTilePosition.y;
+            DebugLog($"⚠️ Cannot mark tile at ({currentTilePosition.x}, {currentTilePosition.y})");
+            return;
+        }
 
-            if (selX < 0 || selX >= grid.Width || selZ < 0 || selZ >= grid.Height)
-                return;
+        if (currentTile.HasMarker)
+        {
+            RemoveMarker(currentTile);
+        }
+        else
+        {
+            PlaceMarker(currentTile);
+        }
+    }
 
-            Tile currentTile = grid.tiles[selX, selZ];
-            if (currentTile == null) return;
+    private void PlaceMarker(Tile tile)
+    {
+        int chargeLimit = GetMarkerChargeLimit();
 
-            // Skip blackened tiles
-            if (!currentTile.CanBeMarked)
+        if (currentMarkers >= chargeLimit)
+        {
+            DebugLog($"⚠️ Marker limit reached: {currentMarkers}/{chargeLimit}");
+            return;
+        }
+
+        tile.PlaceMarker();
+        markerQueue.Enqueue(currentTilePosition);
+        currentMarkers++;
+        OnMarkerPlaced();
+
+        NotifyWaveManager(wm => wm.OnMarkerPlaced());
+        DebugLog($"📍 Marker placed at ({currentTilePosition.x}, {currentTilePosition.y}). Total: {currentMarkers}/{chargeLimit}");
+    }
+
+    private void RemoveMarker(Tile tile)
+    {
+        tile.ClearMarker();
+
+        // Rebuild queue without this position
+        var tempQueue = new Queue<Vector2Int>();
+        while (markerQueue.Count > 0)
+        {
+            var pos = markerQueue.Dequeue();
+            if (pos.x != currentTilePosition.x || pos.y != currentTilePosition.y)
             {
-                Debug.Log($"Cannot mark tile at ({selX}, {selZ}) - tile is blackened or transformed");
-                return;
-            }
-
-            // Get wave-specific marker limits if available
-            int markerCountLimit = maxMarkerCount;
-            int markerChargeLimit = maxMarkerCharge;
-
-            WaveManager waveManager = FindObjectOfType<WaveManager>();
-            if (waveManager != null)
-            {
-                int waveChargeLimit = waveManager.MarkerChargeLimit();
-                if (waveChargeLimit > 0)
-                {
-                    markerChargeLimit = waveChargeLimit;
-                }
-                int waveCountLimit = waveManager.MarkerCountLimit();
-                if (waveCountLimit > 0)
-                {
-                    markerCountLimit = waveCountLimit;
-                }
-            }
-
-            if (!currentTile.HasMarker)
-            {
-                // Check if we can place more markers
-                if (currentMarkers < markerChargeLimit)
-                {
-                    currentTile.PlaceMarker();
-                    markerQueue.Enqueue(new Vector2Int(selX, selZ));
-                    currentMarkers++;
-                    OnMarkerPlaced();
-
-                    // Notify wave manager that a marker was placed
-                    if (waveManager != null)
-                    {
-                        waveManager.OnMarkerPlaced();
-                    }
-
-                    Debug.Log($"Placed marker at ({selX}, {selZ}). Total markers: {currentMarkers}/{markerChargeLimit}");
-                }
-                else
-                {
-                    Debug.Log($"Cannot place more markers. Limit reached: {currentMarkers}/{markerChargeLimit}");
-                }
-            }
-            else
-            {
-                // Remove existing marker
-                currentTile.ClearMarker();
-
-                // Remove from queue (need to rebuild queue without this position)
-                var tempQueue = new Queue<Vector2Int>();
-                while (markerQueue.Count > 0)
-                {
-                    var pos = markerQueue.Dequeue();
-                    if (pos.x != selX || pos.y != selZ)
-                    {
-                        tempQueue.Enqueue(pos);
-                    }
-                }
-                markerQueue = tempQueue;
-
-                currentMarkers--;
-                Debug.Log($"Removed marker from ({selX}, {selZ}). Total markers: {currentMarkers}/{markerChargeLimit}");
+                tempQueue.Enqueue(pos);
             }
         }
+        markerQueue = tempQueue;
+
+        currentMarkers--;
+        DebugLog($"🗑️ Marker removed from ({currentTilePosition.x}, {currentTilePosition.y}). Total: {currentMarkers}");
     }
 
     private void HandleMarkerTrigger()
     {
-        if (Input.GetKeyDown(KeyCode.F))
+        if (!Input.GetKeyDown(KeyCode.F)) return;
+
+        if (markerQueue.Count == 0)
         {
-            if (markerQueue.Count > 0)
-            {
-                Vector2Int markerPos = markerQueue.Dequeue();
+            DebugLog("⚠️ No markers to trigger");
+            return;
+        }
 
-                // Ensure position is within bounds
-                if (markerPos.x < 0 || markerPos.x >= grid.Width ||
-                    markerPos.y < 0 || markerPos.y >= grid.Height)
-                {
-                    Debug.LogWarning("Detonation position is out of bounds and will be ignored.");
-                    return;
-                }
+        Vector2Int markerPos = markerQueue.Dequeue();
 
-                Tile tile = grid.tiles[markerPos.x, markerPos.y];
-                if (tile != null && tile.HasMarker)
-                {
-                    tile.TriggerMarker();
-                    currentMarkers--;
-                    OnMarkerTriggered();
-                    Debug.Log($"Triggered marker at ({markerPos.x}, {markerPos.y}). Remaining markers: {currentMarkers}");
+        if (!IsValidTilePosition(markerPos))
+        {
+            DebugLog("⚠️ Marker position out of bounds");
+            return;
+        }
 
-                    // Add a slight delay before allowing next trigger to prevent accidental rapid firing
-                    StartCoroutine(MarkerTriggerCooldown());
-                }
-                else
-                {
-                    Debug.LogWarning($"Tried to trigger marker at ({markerPos.x}, {markerPos.y}) but no marker found");
-                }
-            }
-            else
-            {
-                Debug.Log("No markers in queue to trigger");
-            }
+        Tile tile = grid.tiles[markerPos.x, markerPos.y];
+        if (tile != null && tile.HasMarker)
+        {
+            tile.TriggerMarker();
+            currentMarkers--;
+            OnMarkerTriggered();
+            DebugLog($"💥 Marker triggered at ({markerPos.x}, {markerPos.y}). Remaining: {currentMarkers}");
+
+            StartCoroutine(MarkerTriggerCooldown());
         }
     }
 
     private IEnumerator MarkerTriggerCooldown()
     {
-        // Prevent rapid marker triggering
         yield return new WaitForSeconds(0.1f);
     }
 
-    private void HandlePrimedTile()
+    private int GetMarkerChargeLimit()
     {
-        if (Input.GetKeyDown(KeyCode.D))
+        var waveManager = FindObjectOfType<WaveManager>();
+        if (waveManager != null)
         {
-            Debug.Log("D key pressed, checking for detonation points...");
-            if (detonationManager != null)
-            {
-                Debug.Log($"DetonationManager found. Has detonation points: {detonationManager.HasDetonationPoints()}, Count: {detonationManager.DetonationPointCount}");
+            int waveLimit = waveManager.MarkerChargeLimit();
+            if (waveLimit > 0) return waveLimit;
+        }
+        return maxMarkerCharge;
+    }
+    #endregion
 
-                if (detonationManager.HasDetonationPoints())
-                {
-                    Vector2Int nextPoint = detonationManager.GetNextDetonationPoint();
-                    Debug.Log($"Triggering manual detonation at ({nextPoint.x}, {nextPoint.y}) - Points available: {detonationManager.DetonationPointCount}");
-                    detonationManager.TriggerNextDetonation();
-                    OnDetonationUsed();
-                }
-                else
-                {
-                    Debug.Log("No detonation points available");
-                }
-            }
-            else
-            {
-                Debug.Log("DetonationManager is null, attempting to find...");
-                detonationManager = FindObjectOfType<DetonationManager>();
-                Debug.Log($"Attempted to find DetonationManager: {(detonationManager != null ? "Found" : "Not found")}");
-            }
+    #region Detonation System
+    private void HandleDetonationActions()
+    {
+        HandleDetonationTrigger();
+        HandleDetonationPreview();
+    }
+
+    private void HandleDetonationTrigger()
+    {
+        if (!Input.GetKeyDown(KeyCode.D)) return;
+
+        DebugLog("🔥 D key pressed, checking detonations...");
+
+        if (detonationManager == null)
+        {
+            DebugLog("⚠️ DetonationManager not found");
+            RefindDetonationManager();
+            return;
         }
 
-        // Optional: Show preview when holding P
-        if (Input.GetKey(KeyCode.P) && detonationManager != null)
+        if (detonationManager.HasDetonationPoints())
+        {
+            Vector2Int nextPoint = detonationManager.GetNextDetonationPoint();
+            DebugLog($"💥 Triggering detonation at ({nextPoint.x}, {nextPoint.y})");
+            detonationManager.TriggerNextDetonation();
+            OnDetonationUsed();
+        }
+        else
+        {
+            DebugLog("⚠️ No detonation points available");
+        }
+    }
+
+    private void HandleDetonationPreview()
+    {
+        if (detonationManager == null) return;
+
+        if (Input.GetKey(KeyCode.P))
         {
             Vector2Int nextPoint = detonationManager.GetNextDetonationPoint();
             if (nextPoint.x >= 0 && nextPoint.y >= 0)
@@ -482,206 +459,107 @@ public class PlayerManager : MonoBehaviour
                 detonationManager.ShowDetonationPreview(nextPoint);
             }
         }
-        else if (Input.GetKeyUp(KeyCode.P) && detonationManager != null)
+        else if (Input.GetKeyUp(KeyCode.P))
         {
             detonationManager.HideDetonationPreview();
         }
     }
 
+    private void RefindDetonationManager()
+    {
+        detonationManager = FindObjectOfType<DetonationManager>();
+        DebugLog($"🔍 Searched for DetonationManager: {(detonationManager != null ? "Found" : "Not found")}");
+    }
+    #endregion
+
+    #region Speed Control
     private void HandleSpeedControl()
     {
         bool wasSpeedingUp = isSpeedingUp;
         isSpeedingUp = Input.GetKey(speedUpKey);
 
-        // Only notify on state changes to avoid constant calls
         if (isSpeedingUp != wasSpeedingUp)
         {
-            // Find and notify WaveManager
-            WaveManager waveManager = FindObjectOfType<WaveManager>();
-            if (waveManager != null)
-            {
-                waveManager.SetSpeedState(isSpeedingUp);
-            }
+            NotifyWaveManager(wm => wm.SetSpeedState(isSpeedingUp));
         }
     }
+    #endregion
 
-    public void ResetMarkers()
+    #region Death & Respawn System
+    public void Die()
     {
-        currentMarkers = 0;
-        markerQueue.Clear();
+        if (isDead || respawnInvulnerabilityTimer > 0f) return;
+
+        isDead = true;
+        playerDeaths++;
+        UpdateStatistics();
+
+        DebugLog($"💀 Player died! Total deaths: {playerDeaths}");
+
+        enabled = false;
+        OnPlayerDied?.Invoke();
+
+        StartCoroutine(HandleDeathSequence());
+    }
+
+    private IEnumerator HandleDeathSequence()
+    {
+        yield return new WaitForSeconds(respawnDelay);
+        RespawnPlayer();
+    }
+
+    private void RespawnPlayer()
+    {
+        isDead = false;
+        respawnInvulnerabilityTimer = respawnInvulnerabilityTime;
+        currentVelocity = Vector3.zero;
+
+        SetPosition(grid.Width / 2, 0); // Respawn at center bottom
+        enabled = true;
+
+        DebugLog($"🔄 Player respawned with {respawnInvulnerabilityTime}s invulnerability");
+        OnPlayerRespawned?.Invoke();
     }
 
     private void CheckForCollisions()
     {
         if (isDead || respawnInvulnerabilityTimer > 0f) return;
 
-        // Check all active cubes for collision with player
-        CubeBehavior[] allCubes = FindObjectsOfType<CubeBehavior>();
-        foreach (CubeBehavior cube in allCubes)
+        var allCubes = FindObjectsOfType<CubeBehavior>();
+        foreach (var cube in allCubes)
         {
             if (cube == null || cube.isDestroyed) continue;
 
-            // Check if cube and player are on the same tile
             if (cube.position.x == currentTilePosition.x && cube.position.y == currentTilePosition.y)
             {
-                Debug.Log($"Player collision with {cube.type} cube at ({currentTilePosition.x}, {currentTilePosition.y})");
+                DebugLog($"💥 Collision with {cube.type} cube at ({currentTilePosition.x}, {currentTilePosition.y})");
                 Die();
-                break; // Only need to process one collision
+                break;
             }
         }
     }
+    #endregion
 
-    private void Die()
-    {
-        return;
-        if (isDead) return;
-
-        isDead = true;
-        playerDeaths++;
-        UpdateStatistics();
-        Debug.Log($"Player died! Total deaths: {playerDeaths}");
-
-        // Stop all input and movement
-        enabled = false;
-
-        // Notify other systems
-        OnPlayerDied?.Invoke();
-
-        // Optional: Add death effects here (animation, sound, screen shake, etc.)
-
-        // Handle respawn
-        StartCoroutine(HandleDeath());
-    }
-
-    private System.Collections.IEnumerator HandleDeath()
-    {
-        // Wait before respawning
-        yield return new WaitForSeconds(respawnDelay);
-
-        // Respawn player
-        RespawnPlayer();
-    }
-
-    private void RespawnPlayer()
-    {
-        // Reset state
-        isDead = false;
-        respawnInvulnerabilityTimer = respawnInvulnerabilityTime; // Add invulnerability period
-
-        if (currentVelocity != Vector3.zero) // Only if using momentum version
-        {
-            currentVelocity = Vector3.zero; // Reset velocity on respawn
-        }
-
-        // Reset position to start
-        if (grid != null)
-        {
-            SetPosition(0, 0); // Or use FindSafeSpawnPosition() for safer respawn
-        }
-
-        // Re-enable movement and input
-        enabled = true;
-
-        Debug.Log($"Player respawned with {respawnInvulnerabilityTime}s invulnerability!");
-        OnPlayerRespawned?.Invoke();
-    }
-
-    // Public methods for other systems
-    public bool IsAlive() => !isDead;
-
-    public void Kill()
-    {
-        if (!isDead)
-            Die();
-    }
-
-    public void SetPosition(int x, int z)
-    {
-        x = Mathf.Clamp(x, 0, grid.Width - 1);
-        z = Mathf.Clamp(z, 0, grid.Height - 1);
-
-        // Clear hover effect from current tile
-        if (currentHoveredTile != null)
-        {
-            currentHoveredTile.SetPlayerHover(false); 
-        }
-
-        // Update physical position with tile scale - center the player on the tile
-        transform.position = new Vector3(x * tileScale, 0, z * tileScale);
-
-        // Update current tile position
-        currentTilePosition = new Vector2Int(x, z);
-
-        // Update logged positions
-        lastLoggedTileX = x;
-        lastLoggedTileZ = z;
-
-        // Set hover effect on new tile
-        if (grid.tiles != null)
-        {
-            currentHoveredTile = grid.tiles[x, z];
-            if (currentHoveredTile != null)
-            {
-                currentHoveredTile.SetPlayerHover(true);
-            }
-        }
-    }
-
-    public void SetMaxMarkers(int max)
-    {
-        maxMarkerCharge = Mathf.Max(1, max);
-    }
-
-    private void TrackMovement()
-    { 
-        
-        // Only track movement when player actually changes tiles, not continuous movement
-        if (lastPosition.x != currentTilePosition.x || lastPosition.y != currentTilePosition.y)
-        {
-            if (lastPosition.x != -1 && lastPosition.y != -1) // Don't count the initial position set
-            {
-                movesCount++;
-                Debug.Log($"Player moved to tile ({currentTilePosition.x}, {currentTilePosition.y}). Total moves: {movesCount}");
-            }
-
-            currentHoveredTile.SetPlayerHover(false);
-
-            lastPosition = currentTilePosition;
-             currentHoveredTile.SetPlayerHover(true);
-        }
-    }
-
+    #region Statistics & Events
     public void OnCubeCaptured(Enumerations.CubeType cubeType)
     {
         switch (cubeType)
         {
-            case Enumerations.CubeType.Normal:
-                normalCubesCaptured++;
-                break;
-            case Enumerations.CubeType.Blue:
-                blueCubesCaptured++;
-                break;
-            case Enumerations.CubeType.Black:
-                blackCubesCaptured++;
-                break;
+            case Enumerations.CubeType.Normal: normalCubesCaptured++; break;
+            case Enumerations.CubeType.Blue: blueCubesCaptured++; break;
+            case Enumerations.CubeType.Black: blackCubesCaptured++; break;
         }
 
-        // Notify wave manager for completion tracking
-        WaveManager waveManager = FindObjectOfType<WaveManager>();
-        if (waveManager != null)
-        {
-            waveManager.OnNonBlackCubeProcessed(cubeType, true); // true = captured
-        }
-
+        NotifyWaveManager(wm => wm.OnNonBlackCubeProcessed(cubeType, true));
         UpdateStatistics();
-        Debug.Log($"Player captured {cubeType} cube. Total: Normal={normalCubesCaptured}, Blue={blueCubesCaptured}, Black={blackCubesCaptured}");
+        DebugLog($"📦 {cubeType} cube captured. Totals: N={normalCubesCaptured}, B={blueCubesCaptured}, X={blackCubesCaptured}");
     }
 
     public void OnCubeEscaped(Enumerations.CubeType cubeType)
     {
         cubesEscaped++;
         UpdateStatistics();
-        Debug.Log($"Cube escaped. Total escapes: {cubesEscaped}");
+        DebugLog($"💨 Cube escaped. Total: {cubesEscaped}");
     }
 
     public void OnMarkerPlaced()
@@ -706,20 +584,21 @@ public class PlayerManager : MonoBehaviour
     {
         tilesCorrupted++;
         UpdateStatistics();
-        Debug.Log($"Tile corrupted. Total corrupted tiles: {tilesCorrupted}");
+        DebugLog($"🔥 Tile corrupted. Total: {tilesCorrupted}");
     }
+
     public void OnTilePrimed()
     {
         tilesPrimed++;
         UpdateStatistics();
-        Debug.Log($"Tile Prime. Total primed tiles: {tilesPrimed}");
+        DebugLog($"💎 Tile primed. Total: {tilesPrimed}");
     }
 
     public void OnTileEnhanced()
     {
         tilesEnhanced++;
         UpdateStatistics();
-        Debug.Log($"Tile enhanced. Total enhanced tiles: {tilesEnhanced}");
+        DebugLog($"⭐ Tile enhanced. Total: {tilesEnhanced}");
     }
 
     private void UpdateStatistics()
@@ -766,15 +645,104 @@ public class PlayerManager : MonoBehaviour
         sessionStartTime = Time.time;
 
         UpdateStatistics();
-        Debug.Log("Player statistics reset");
+        DebugLog("📊 Statistics reset");
+    }
+    #endregion
+
+    #region Public Interface
+    public bool IsAlive() => !isDead;
+
+    public void Kill()
+    {
+        if (!isDead) Die();
     }
 
-    private void OnDestroy()
+    public void SetPosition(int x, int z)
     {
-        // Clear hover effect when player is destroyed
+        x = Mathf.Clamp(x, 0, grid.Width - 1);
+        z = Mathf.Clamp(z, 0, grid.Height - 1);
+
+        if (currentHoveredTile != null)
+        {
+            currentHoveredTile.SetPlayerHover(false);
+        }
+
+        Vector3 worldPos = grid.GridToWorldPosition(x, z, 0f);
+        transform.position = worldPos;
+
+        currentTilePosition = new Vector2Int(x, z);
+        lastLoggedTileX = x;
+        lastLoggedTileZ = z;
+
+        if (IsValidTilePosition(currentTilePosition))
+        {
+            currentHoveredTile = grid.tiles[x, z];
+            if (currentHoveredTile != null)
+            {
+                currentHoveredTile.SetPlayerHover(true);
+            }
+        }
+    }
+
+    public void SetMaxMarkers(int max)
+    {
+        maxMarkerCharge = Mathf.Max(1, max);
+    }
+
+    public void ResetMarkers()
+    {
+        currentMarkers = 0;
+        markerQueue.Clear();
+    }
+    #endregion
+
+    #region Utility Methods
+    private void UpdateTimers()
+    {
+        if (!isDead) timeAlive += Time.deltaTime;
+        totalPlayTime += Time.deltaTime;
+
+        if (respawnInvulnerabilityTimer > 0f)
+        {
+            respawnInvulnerabilityTimer -= Time.deltaTime;
+        }
+    }
+
+    private void TrackMovement()
+    {
+        if (lastPosition.x != currentTilePosition.x || lastPosition.y != currentTilePosition.y)
+        {
+            if (lastPosition.x != -1 && lastPosition.y != -1)
+            {
+                movesCount++;
+                DebugLog($"🚶 Move #{movesCount} to ({currentTilePosition.x}, {currentTilePosition.y})");
+            }
+            lastPosition = currentTilePosition;
+        }
+    }
+
+    private bool IsValidTilePosition(Vector2Int pos)
+    {
+        return pos.x >= 0 && pos.x < grid.Width && pos.y >= 0 && pos.y < grid.Height;
+    }
+
+    private void NotifyWaveManager(System.Action<WaveManager> action)
+    {
+        var waveManager = FindObjectOfType<WaveManager>();
+        if (waveManager != null) action(waveManager);
+    }
+
+    private void CleanupPlayer()
+    {
         if (currentHoveredTile != null)
         {
             currentHoveredTile.SetPlayerHover(false);
         }
     }
+
+    private void DebugLog(string message)
+    {
+        if (enableDebugLogs) Debug.Log($"[PlayerManager] {message}");
+    }
+    #endregion
 }

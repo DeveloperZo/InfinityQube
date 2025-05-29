@@ -83,11 +83,6 @@ public class RainCubeDebugger : MonoBehaviour
 
             waveDebugger.debugObjects.Add(cube);
 
-            // Register with wave manager but don't add to active cubes yet
-            if (waveManager != null)
-            {
-                waveManager.RegisterRainCube(behavior);
-            }
 
             Debug.Log($"Created rain cube of type {type} at column {column}, row {row} with {moveCount} moves remaining");
         }
