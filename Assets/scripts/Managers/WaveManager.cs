@@ -583,7 +583,7 @@ public class WaveManager : MonoBehaviour
 
     private void NotifyStepComplete()
     {
-        NotifyStageManager(sm => sm.MoveStepComplete());
+        
     }
 
     private void NotifyStageManager(System.Action<StageManager> action)
