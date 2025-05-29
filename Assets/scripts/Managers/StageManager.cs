@@ -64,13 +64,6 @@ public class StageManager : MonoBehaviour
         }
     }
 
-    private void OnGUI()
-    {
-        if (showStageInfo)
-        {
-            DrawStageDebugInfo();
-        }
-    }
     #endregion
 
     #region Initialization
@@ -421,29 +414,6 @@ public class StageManager : MonoBehaviour
     #endregion
 
     #region Debug Interface
-    private void DrawStageDebugInfo()
-    {
-        if (CurrentStage == null) return;
-
-        GUILayout.BeginArea(new Rect(10, Screen.height - 150, 300, 140));
-        GUILayout.BeginVertical(GUI.skin.box);
-
-        GUILayout.Label($"STAGE DEBUG", GUI.skin.box);
-        GUILayout.Label($"Current: {CurrentStageIndex} - {CurrentStage.stageName}");
-        GUILayout.Label($"Status: {(IsStageInProgress ? "IN PROGRESS" : "INACTIVE")}");
-        GUILayout.Label($"Captured: {capturedCubeCount} | Escaped: {escapedCubeCount}");
-        GUILayout.Label($"Time: {(Time.time - stageStartTime):F1}s");
-        GUILayout.Label($"Attempts: {(stageAttempts.ContainsKey(CurrentStageIndex) ? stageAttempts[CurrentStageIndex] : 0)}");
-
-        GUILayout.EndVertical();
-        GUILayout.EndArea();
-    }
-
-    public void MoveStepComplete()
-    {
-        // Called by WaveManager after each move step
-        // Can be used for stage-specific logic
-    }
 
     private void DebugLog(string message)
     {
