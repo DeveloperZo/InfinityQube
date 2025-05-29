@@ -262,9 +262,15 @@ public class WaveManager : MonoBehaviour
     private void SpawnCube(CubeData cubeData)
     {
         int prefabIndex = (int)cubeData.type;
-        if (prefabIndex < 0 || prefabIndex >= cubePrefabs.Length) return;
+        if (prefabIndex < 0 || prefabIndex >= cubePrefabs.Length)
+        {
+            Debug.LogError($"Invalid prefab index {prefabIndex} for cube type {cubeData.type}");
+            return;
+        }
 
         Vector3 spawnPos = grid.GridToWorldPosition(cubeData.position.x, cubeData.position.y, 2f);
+        Debug.Log($"Spawning {cubeData.type} cube at grid ({cubeData.position.x}, {cubeData.position.y}) -> world {spawnPos}");
+
         GameObject cubeObj = Instantiate(cubePrefabs[prefabIndex], spawnPos, Quaternion.identity);
 
         var cube = cubeObj.GetComponent<CubeBehavior>();
@@ -272,6 +278,8 @@ public class WaveManager : MonoBehaviour
 
         cube.Init(grid, cubeData, 2f);
         activeCubes.Add(cube);
+
+        Debug.Log($"Cube spawned successfully. Active cubes: {activeCubes.Count}");
     }
 
     private CubeData CreateRandomCubeData(int x, int z)

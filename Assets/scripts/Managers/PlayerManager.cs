@@ -14,7 +14,18 @@ public class PlayerManager : MonoBehaviour
     [Header("Movement Settings")]
     public float acceleration = 15f;
     public float deceleration = 20f;
+    public float maxSpeed = 8f; // Add max speed cap
+    [Range(0f, 1f)]
+    public float collisionDamping = 0.8f; // How much to reduce velocity when hitting obstacles
+    public float rotationSpeed = 12f; // How fast to rotate when changing direction
+    public float movementThreshold = 0.01f; // Minimum movement before applying
+    public float animationThreshold = 0.2f; // Minimum velocity for animation
     public KeyCode speedUpKey = KeyCode.LeftShift;
+
+    [Header("Collision Detection")]
+    public float cubeCollisionBuffer = 0.1f; // Buffer around cubes for smoother collision
+    [Range(0.1f, 0.9f)]
+    public float slideSmoothing = 0.5f; // How smoothly to slide along walls
 
     [Header("Marker Settings")]
     public int maxMarkerCharge = 2;
@@ -157,10 +168,11 @@ public class PlayerManager : MonoBehaviour
     #endregion
 
     #region Movement System
+    #region Movement System
     private void HandleMovement()
     {
         ProcessMovementInput();
-        ApplyMovement();
+        ApplyMovementWithCollisionSmoothing();
         UpdateAnimations();
         UpdateCurrentTilePosition();
     }
@@ -178,44 +190,157 @@ public class PlayerManager : MonoBehaviour
             inputDirection.Normalize();
         }
 
-        Vector3 targetVelocity = inputDirection * acceleration;
+        // Apply max speed cap
+        Vector3 targetVelocity = inputDirection * Mathf.Min(acceleration, maxSpeed);
         isMoving = inputDirection.magnitude > 0f;
 
+        // Smooth velocity changes with improved responsiveness
         if (isMoving)
         {
             currentVelocity = Vector3.MoveTowards(currentVelocity, targetVelocity, acceleration * Time.deltaTime);
         }
         else
         {
-            currentVelocity = Vector3.MoveTowards(currentVelocity, Vector3.zero, deceleration * Time.deltaTime);
+            // Exponential decay for more natural stopping
+            currentVelocity = Vector3.Lerp(currentVelocity, Vector3.zero, deceleration * Time.deltaTime);
+
+            // Snap to zero when very close to prevent micro-movements
+            if (currentVelocity.magnitude < movementThreshold)
+            {
+                currentVelocity = Vector3.zero;
+            }
         }
     }
 
-    private void ApplyMovement()
+    private void ApplyMovementWithCollisionSmoothing()
     {
+        if (currentVelocity.magnitude < 0.01f) return;
+
+        // Rotate to face movement direction smoothly
         if (currentVelocity.magnitude > 0.1f)
         {
-            // Rotate to face movement direction
             Quaternion targetRotation = Quaternion.LookRotation(currentVelocity.normalized);
-            transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, Time.deltaTime * 10f);
+            transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, Time.deltaTime * 12f);
         }
 
         CharacterController controller = GetComponent<CharacterController>();
-        if (controller != null && currentVelocity.magnitude > 0.01f)
+        if (controller == null) return;
+
+        Vector3 movement = currentVelocity * Time.deltaTime;
+        Vector3 desiredPosition = transform.position + movement;
+
+        // Check for collisions and smooth handling
+        Vector3 finalPosition = CalculateCollisionSafePosition(desiredPosition);
+        Vector3 actualMovement = finalPosition - transform.position;
+
+        // Apply the collision-safe movement
+        if (actualMovement.magnitude > 0.001f)
         {
-            Vector3 movement = currentVelocity * Time.deltaTime;
-            Vector3 futurePosition = transform.position + movement;
+            controller.Move(actualMovement);
+        }
 
-            // Clamp to grid bounds
-            Vector3 minBounds = grid.GridToWorldPosition(0, 0);
-            Vector3 maxBounds = grid.GridToWorldPosition(grid.Width - 1, grid.Height - 1);
+        // Handle collision feedback for velocity
+        HandleCollisionVelocityAdjustment(movement, actualMovement);
+    }
 
-            futurePosition.x = Mathf.Clamp(futurePosition.x, minBounds.x, maxBounds.x);
-            futurePosition.z = Mathf.Clamp(futurePosition.z, minBounds.z, maxBounds.z);
-            futurePosition.y = 0f; // Keep at proper height
+    private Vector3 CalculateCollisionSafePosition(Vector3 desiredPosition)
+    {
+        // Get grid bounds
+        Vector3 minBounds = grid.GridToWorldPosition(0, 0);
+        Vector3 maxBounds = grid.GridToWorldPosition(grid.Width - 1, grid.Height - 1);
 
-            Vector3 clampedMovement = futurePosition - transform.position;
-            controller.Move(clampedMovement);
+        // Clamp to grid bounds with smooth approach
+        Vector3 clampedPosition = desiredPosition;
+        clampedPosition.x = Mathf.Clamp(clampedPosition.x, minBounds.x, maxBounds.x);
+        clampedPosition.z = Mathf.Clamp(clampedPosition.z, minBounds.z, maxBounds.z);
+        clampedPosition.y = 0f; // Keep at ground level
+
+        // Check for cube collisions at future position
+        Vector2Int futureGridPos = grid.WorldToGridPosition(clampedPosition);
+
+        if (IsPositionBlockedByCube(futureGridPos))
+        {
+            // Find the closest safe position
+            clampedPosition = FindClosestSafePosition(clampedPosition, futureGridPos);
+        }
+
+        return clampedPosition;
+    }
+
+    private bool IsPositionBlockedByCube(Vector2Int gridPos)
+    {
+        if (!IsValidTilePosition(gridPos)) return true;
+
+        // Check for cubes at this position
+        var allCubes = FindObjectsOfType<CubeBehavior>();
+        foreach (var cube in allCubes)
+        {
+            if (cube == null || cube.isDestroyed) continue;
+            if (cube.position.x == gridPos.x && cube.position.y == gridPos.y)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private Vector3 FindClosestSafePosition(Vector3 desiredPosition, Vector2Int blockedGridPos)
+    {
+        Vector3 currentPos = transform.position;
+
+        // Try to slide along the collision surface
+        Vector3 slideDirection = (desiredPosition - currentPos).normalized;
+
+        // Try moving along X-axis only
+        Vector3 xOnlyMovement = new Vector3(slideDirection.x, 0, 0) * currentVelocity.magnitude * Time.deltaTime;
+        Vector3 xOnlyPosition = currentPos + xOnlyMovement;
+        Vector2Int xOnlyGridPos = grid.WorldToGridPosition(xOnlyPosition);
+
+        if (!IsPositionBlockedByCube(xOnlyGridPos) && IsValidTilePosition(xOnlyGridPos))
+        {
+            return ClampToGridBounds(xOnlyPosition);
+        }
+
+        // Try moving along Z-axis only
+        Vector3 zOnlyMovement = new Vector3(0, 0, slideDirection.z) * currentVelocity.magnitude * Time.deltaTime;
+        Vector3 zOnlyPosition = currentPos + zOnlyMovement;
+        Vector2Int zOnlyGridPos = grid.WorldToGridPosition(zOnlyPosition);
+
+        if (!IsPositionBlockedByCube(zOnlyGridPos) && IsValidTilePosition(zOnlyGridPos))
+        {
+            return ClampToGridBounds(zOnlyPosition);
+        }
+
+        // If we can't slide, stay at current position
+        return currentPos;
+    }
+
+    private Vector3 ClampToGridBounds(Vector3 position)
+    {
+        Vector3 minBounds = grid.GridToWorldPosition(0, 0);
+        Vector3 maxBounds = grid.GridToWorldPosition(grid.Width - 1, grid.Height - 1);
+
+        position.x = Mathf.Clamp(position.x, minBounds.x, maxBounds.x);
+        position.z = Mathf.Clamp(position.z, minBounds.z, maxBounds.z);
+        position.y = 0f;
+
+        return position;
+    }
+
+    private void HandleCollisionVelocityAdjustment(Vector3 intendedMovement, Vector3 actualMovement)
+    {
+        // If we didn't move as much as intended, reduce velocity in that direction
+        if (intendedMovement.magnitude > 0.001f && actualMovement.magnitude < intendedMovement.magnitude * 0.9f)
+        {
+            // Calculate which direction was blocked
+            Vector3 blockedDirection = (intendedMovement - actualMovement).normalized;
+
+            // Reduce velocity in the blocked direction to prevent slingshot
+            Vector3 velocityInBlockedDirection = Vector3.Project(currentVelocity, blockedDirection);
+            currentVelocity -= velocityInBlockedDirection * 0.8f; // Dampen the blocked velocity
+
+            DebugLog($"🚧 Movement blocked, dampening velocity. Blocked direction: {blockedDirection}");
         }
     }
 
@@ -223,7 +348,8 @@ public class PlayerManager : MonoBehaviour
     {
         if (_anim != null)
         {
-            bool shouldAnimate = currentVelocity.magnitude > 0.1f;
+            // Use a slightly higher threshold for animation to prevent micro-movements
+            bool shouldAnimate = currentVelocity.magnitude > 0.2f;
             _anim.SetBool(IsRunningHash, shouldAnimate);
         }
     }
@@ -238,6 +364,7 @@ public class PlayerManager : MonoBehaviour
             HandleTileChange(newTilePosition);
         }
     }
+    #endregion
 
     private void HandleTileChange(Vector2Int newPosition)
     {

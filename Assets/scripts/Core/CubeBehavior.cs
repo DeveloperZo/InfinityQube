@@ -10,6 +10,7 @@ public class CubeBehavior : MonoBehaviour
     [SerializeField] public CubeType type;
     [SerializeField] public Material material;
     [SerializeField] public GameObject prefab;
+    [SerializeField] public float spawnHeight;
 
     [Header("Animation Settings")]
     [SerializeField] private float moveDuration = 0.25f;
@@ -32,15 +33,16 @@ public class CubeBehavior : MonoBehaviour
     private bool isRainAnimating = false;
     public int moveCountRemaining = 0;
     private float tileScale = 3f; // Default scale value
+    private float tileSize = 1f;
 
-    public void Init(GridManager gridManager, CubeData cubeData, float spawnHeight = 5f)
+    public void Init(GridManager gridManager, CubeData cubeData, float spawnHeight = 2f)
     {
         // Store reference to grid manager and get the tile scale
         grid = gridManager;
-        tileScale = grid.TileScale;
+        tileSize = grid.TileSize;
 
         // Use the provided cube data
-        name = cubeData.Definition.name;
+        name = cubeData.Definition?.name ?? cubeData.type.ToString();
         type = cubeData.type;
         position = cubeData.position;
         level = cubeData.level;
@@ -48,14 +50,18 @@ public class CubeBehavior : MonoBehaviour
         moveCountRemaining = cubeData.moveCountRemaining;
 
         // Set references
-        material = cubeData.Definition.material;
-        prefab = cubeData.Definition.prefab;
+        material = cubeData.Definition?.material;
+        prefab = cubeData.Definition?.prefab;
 
         // Scale the cube to match tile scale
-        transform.localScale = new Vector3(tileScale, tileScale, tileScale);
+        transform.localScale = new Vector3(tileSize, tileSize, tileSize);
 
-        // Initialize position and references
-        transform.position = new Vector3(position.x * tileScale, spawnHeight, position.y * tileScale);
+        // FIXED: Use grid's coordinate conversion instead of manual calculation
+        Vector3 worldPos = grid.GridToWorldPosition(position.x, position.y, spawnHeight);
+        transform.position = worldPos;
+
+        Debug.Log($"Cube {type} initialized at grid ({position.x}, {position.y}) -> world {worldPos}");
+
         detonationManager = FindAnyObjectByType<DetonationManager>();
         gameObject.name = name;
 
@@ -98,18 +104,20 @@ public class CubeBehavior : MonoBehaviour
     {
         if (isMoving || isDestroyed) return true;
 
-
+        Debug.Log($"Moving cube {type} from ({position.x}, {position.y}) forward");
 
         // Check for off-grid conditions
         if (position.y < 0 || position.x < 0 || position.x >= grid.Width)
         {
+            Debug.Log($"Cube {type} at ({position.x}, {position.y}) is off-grid. Grid bounds: {grid.Width}x{grid.Height}");
+
             // Should the cube escape?
             if (!isRainingCube || moveCountRemaining <= 0)
             {
                 // Handle black cubes that escape
                 if (type == Enumerations.CubeType.Black)
                 {
-
+                    Debug.Log("Black cube escaped");
                 }
                 else
                 {
@@ -120,6 +128,7 @@ public class CubeBehavior : MonoBehaviour
                         waveManager.OnNonBlackCubeProcessed(type, false); // false = escaped
                         waveManager.OnCubeEscaped(type);
                     }
+                    Debug.Log($"Non-black cube {type} escaped");
                 }
 
                 Destroy(gameObject);
@@ -129,6 +138,7 @@ public class CubeBehavior : MonoBehaviour
 
         // Animate the forward movement
         position.y -= 1;
+        Debug.Log($"Cube {type} moved to ({position.x}, {position.y})");
         StartCoroutine(AnimateMove(position));
 
         // Process landing on tiles
@@ -180,9 +190,11 @@ public class CubeBehavior : MonoBehaviour
     {
         isMoving = true;
 
-        // Calculate scaled world positions
+        // Calculate world positions using grid conversion
         Vector3 start = transform.position;
-        Vector3 end = new Vector3(newPos.x * tileScale, 2, newPos.y * tileScale);
+        Vector3 end = grid.GridToWorldPosition(newPos.x, newPos.y, 2f); // Keep cubes slightly above ground
+
+        Debug.Log($"Animating cube from {start} to {end} (grid pos {newPos})");
 
         float elapsed = 0f;
         Quaternion startRot = transform.rotation;
