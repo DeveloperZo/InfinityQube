@@ -14,18 +14,7 @@ public class PlayerManager : MonoBehaviour
     [Header("Movement Settings")]
     public float acceleration = 15f;
     public float deceleration = 20f;
-    public float maxSpeed = 8f; // Add max speed cap
-    [Range(0f, 1f)]
-    public float collisionDamping = 0.8f; // How much to reduce velocity when hitting obstacles
-    public float rotationSpeed = 12f; // How fast to rotate when changing direction
-    public float movementThreshold = 0.01f; // Minimum movement before applying
-    public float animationThreshold = 0.2f; // Minimum velocity for animation
     public KeyCode speedUpKey = KeyCode.LeftShift;
-
-    [Header("Collision Detection")]
-    public float cubeCollisionBuffer = 0.1f; // Buffer around cubes for smoother collision
-    [Range(0.1f, 0.9f)]
-    public float slideSmoothing = 0.5f; // How smoothly to slide along walls
 
     [Header("Marker Settings")]
     public int maxMarkerCharge = 2;
@@ -190,25 +179,18 @@ public class PlayerManager : MonoBehaviour
             inputDirection.Normalize();
         }
 
-        // Apply max speed cap
-        Vector3 targetVelocity = inputDirection * Mathf.Min(acceleration, maxSpeed);
+        Vector3 targetVelocity = inputDirection * acceleration;
         isMoving = inputDirection.magnitude > 0f;
 
-        // Smooth velocity changes with improved responsiveness
+        // Smooth velocity changes for better feel
         if (isMoving)
         {
             currentVelocity = Vector3.MoveTowards(currentVelocity, targetVelocity, acceleration * Time.deltaTime);
         }
         else
         {
-            // Exponential decay for more natural stopping
-            currentVelocity = Vector3.Lerp(currentVelocity, Vector3.zero, deceleration * Time.deltaTime);
-
-            // Snap to zero when very close to prevent micro-movements
-            if (currentVelocity.magnitude < movementThreshold)
-            {
-                currentVelocity = Vector3.zero;
-            }
+            // Faster deceleration for snappier stopping
+            currentVelocity = Vector3.MoveTowards(currentVelocity, Vector3.zero, deceleration * Time.deltaTime);
         }
     }
 

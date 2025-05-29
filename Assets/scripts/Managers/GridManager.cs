@@ -136,10 +136,14 @@ public class GridManager : MonoBehaviour
             calculatedGridOffset = gridOffset;
         }
 
-        // Calculate world bounds
+        // Update world bounds
         UpdateWorldBounds();
 
         DebugLog($"Grid metrics calculated: {width}x{height}, TileSize: {tileSize}, Offset: {calculatedGridOffset}");
+
+        // DEBUG: Test a few coordinate conversions
+        Vector3 testPos = GridToWorldPosition(1, 5, 0f);
+        DebugLog($"DEBUG: Grid (1,5) converts to world {testPos}");
     }
 
     private void UpdateWorldBounds()
