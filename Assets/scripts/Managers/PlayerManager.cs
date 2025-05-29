@@ -630,7 +630,7 @@ public class PlayerManager : MonoBehaviour
         OnPlayerRespawned?.Invoke();
     }
 
-    private void CheckForCollisions()
+    private void CheckForCollisions() 
     {
         if (isDead || respawnInvulnerabilityTimer > 0f) return;
 
