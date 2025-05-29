@@ -67,17 +67,6 @@ public class CubeBehavior : MonoBehaviour
     {
         if (!usePhysics) return;
 
-        // Add rigidbody if not present
-        cubeRigidbody = GetComponent<Rigidbody>();
-        if (cubeRigidbody == null)
-        {
-            cubeRigidbody = gameObject.AddComponent<Rigidbody>();
-        }
-
-        // Configure rigidbody for game mechanics
-        cubeRigidbody.isKinematic = true; // We control movement, but want collision detection
-        cubeRigidbody.useGravity = false; // We handle our own movement
-
         // Add collider if not present
         cubeCollider = GetComponent<Collider>();
         if (cubeCollider == null)
@@ -85,10 +74,10 @@ public class CubeBehavior : MonoBehaviour
             cubeCollider = gameObject.AddComponent<BoxCollider>();
         }
 
-        // Make sure collider is trigger for now (can change if you want physical blocking)
-        cubeCollider.isTrigger = false; // Set to false for physical collision
+        // Make sure collider is NOT a trigger
+        cubeCollider.isTrigger = false;
 
-        Debug.Log($"Physics setup complete for {name} cube at {transform.position}");
+        Debug.Log($"Collider setup complete for {name} cube");
     }
 
     // Add this method to reset movement state

@@ -128,7 +128,7 @@ public class PlayerManager : MonoBehaviour
     private void Update()
     {
         if (!isInitialized) return;
-
+        //DebugYPosition();
         // Update timers
         if (!isDead)
         {
@@ -157,7 +157,20 @@ public class PlayerManager : MonoBehaviour
         // Check for collisions after all movement and actions
         CheckForCollisions();
     }
+    private void DebugYPosition()
+    {
+        if (transform.position.y != 9f)
+        {
+            Debug.Log($"Y position is {transform.position.y}, should be 9. Current position: {transform.position}");
 
+            // Force set Y position
+            Vector3 correctedPosition = transform.position;
+            correctedPosition.y = 9f;
+            transform.position = correctedPosition;
+
+            Debug.Log($"Corrected Y position to: {transform.position}");
+        }
+    }
     private void HandleMovement()
     {
         // Get input direction
@@ -200,27 +213,39 @@ public class PlayerManager : MonoBehaviour
             transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, Time.deltaTime * 10f);
         }
 
-        // Apply movement
-        if (currentVelocity.magnitude > 0.01f)
+        // Apply movement using CharacterController
+        CharacterController controller = GetComponent<CharacterController>();
+        if (controller != null && currentVelocity.magnitude > 0.01f)
         {
-            Vector3 newPosition = transform.position + currentVelocity * Time.deltaTime;
+            Vector3 movement = currentVelocity * Time.deltaTime;
 
-            // Apply grid boundaries with tile scale
-            float minX = 0f;
-            float maxX = (grid.Width - 1) * tileScale;
-            float minZ = 0f;
-            float maxZ = (grid.Height - 1) * tileScale;
+            // Apply grid boundaries manually since CharacterController doesn't have constraints
+            Vector3 futurePosition = transform.position + movement;
+            float minX = controller.radius;
+            float maxX = (grid.Width - 1) * tileScale - controller.radius;
+            float minZ = controller.radius;
+            float maxZ = (grid.Height - 1) * tileScale - controller.radius;
 
-            newPosition.x = Mathf.Clamp(newPosition.x, minX, maxX);
-            newPosition.z = Mathf.Clamp(newPosition.z, minZ, maxZ);
+            futurePosition.x = Mathf.Clamp(futurePosition.x, minX, maxX);
+            futurePosition.z = Mathf.Clamp(futurePosition.z, minZ, maxZ);
 
-            transform.position = newPosition;
+
+            // Calculate clamped movement
+            Vector3 clampedMovement = futurePosition - transform.position;
+            // Move with CharacterController (automatically handles collisions)
+            controller.Move(clampedMovement);
         }
 
         // Update current tile position after movement
         UpdateCurrentTilePosition();
     }
 
+    private void EnsureGrounded()
+    {
+        Vector3 groundedPosition = transform.position;
+        groundedPosition.y = 9f; // Your desired ground level
+        transform.position = groundedPosition;
+    }
     private void UpdateCurrentTilePosition()
     {
         // Calculate the tile position based on world position with scale
@@ -578,11 +603,11 @@ public class PlayerManager : MonoBehaviour
         // Clear hover effect from current tile
         if (currentHoveredTile != null)
         {
-            currentHoveredTile.SetPlayerHover(false);
+            currentHoveredTile.SetPlayerHover(false); 
         }
 
         // Update physical position with tile scale - center the player on the tile
-        transform.position = new Vector3(x * tileScale, transform.position.y, z * tileScale);
+        transform.position = new Vector3(x * tileScale, 0, z * tileScale);
 
         // Update current tile position
         currentTilePosition = new Vector2Int(x, z);
