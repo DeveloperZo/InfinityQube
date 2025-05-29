@@ -793,7 +793,7 @@ public class WaveManager : MonoBehaviour
             for (int x = 0; x < grid.Width; x++)
             {
                 Vector2Int pos = new Vector2Int(x, z);
-                Vector3 spawnPos = new Vector3(x * tileScale, 1f * tileScale, z * tileScale);
+                Vector3 spawnPos = new Vector3(x * tileScale, 2, z * tileScale);
                 Enumerations.CubeType cubeType = GetRandomCubeType();
 
                 cubeData.position = pos;
@@ -818,7 +818,7 @@ public class WaveManager : MonoBehaviour
                         cb.type = cubeType; // Set type since it wasn't in prefab
                     }
 
-                    cb.Init(grid, cubeData, 1 * tileScale); // level 1 for all cubes in this version
+                    cb.Init(grid, cubeData, 2); // level 1 for all cubes in this version
                     activeCubes.Add(cb);
                 }
             }
@@ -835,7 +835,7 @@ public class WaveManager : MonoBehaviour
             Vector2Int pos = item.position;
             item.position = new Vector2Int(pos.x, pos.y);
 
-            Vector3 spawnPos = new Vector3(pos.x * tileScale, 1f * tileScale, pos.y * tileScale);
+            Vector3 spawnPos = new Vector3(pos.x * tileScale, 2, pos.y * tileScale);
 
             // Guard against index out of bounds
             int prefabIndex = (int)item.type;
@@ -855,7 +855,7 @@ public class WaveManager : MonoBehaviour
                     cb.type = item.type;
                 }
 
-                cb.Init(grid, item, 1 * tileScale);
+                cb.Init(grid, item, 2);
                 activeCubes.Add(cb);
             }
         }

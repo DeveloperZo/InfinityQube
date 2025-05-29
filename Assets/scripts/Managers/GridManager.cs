@@ -52,7 +52,7 @@ public class GridManager : MonoBehaviour
 
                 // Scale the tile GameObject
                 tileObj.transform.localScale = new Vector3(tileScale, 1, tileScale);
-                tileObj.transform.localPosition = new Vector3(tileObj.transform.localPosition.x, -2, tileObj.transform.localPosition.z);
+                tileObj.transform.localPosition = new Vector3(tileObj.transform.localPosition.x, 0, tileObj.transform.localPosition.z);
                 Tile tile = tileObj.GetComponent<Tile>();
                 if (tile == null)
                 {

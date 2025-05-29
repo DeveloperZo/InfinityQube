@@ -196,7 +196,7 @@ public class CubeBehavior : MonoBehaviour
 
         // Calculate scaled world positions
         Vector3 start = transform.position;
-        Vector3 end = new Vector3(newPos.x * tileScale, 1f * tileScale, newPos.y * tileScale);
+        Vector3 end = new Vector3(newPos.x * tileScale, 2, newPos.y * tileScale);
 
         float elapsed = 0f;
         Quaternion startRot = transform.rotation;
