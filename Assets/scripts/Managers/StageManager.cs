@@ -1,239 +1,454 @@
 using UnityEngine;
-using UnityEngine.UI;
 using System.Collections;
 using System.Collections.Generic;
 using System;
-using UnityEditor.SceneManagement;
 using System.Linq;
-using UnityEditor.VersionControl;
-using TMPro;
 
 public class StageManager : MonoBehaviour
 {
+    #region Inspector Configuration
     [Header("References")]
     [SerializeField] private GridManager gridManager;
     [SerializeField] private WaveManager waveManager;
     [SerializeField] private PlayerManager playerController;
     [SerializeField] private DetonationManager detonationManager;
 
-    [Header("Stage Settings")]
-    [SerializeField] private int currentStageIndex = -1;
+    [Header("Stage Database")]
     [SerializeField] private StageDB stageDatabase;
+    [SerializeField] private int startingStageIndex = -1; // Tutorial stage
 
-    private StageData currentStage;
-    private bool stageInProgress = false;
+    [Header("Stage Flow")]
+    [SerializeField] private bool autoAdvanceStages = true;
+    [SerializeField] private float stageTransitionDelay = 2f;
+    [SerializeField] private bool restartOnFailure = true;
+
+    [Header("Debug")]
+    [SerializeField] private bool enableDebugLogs = true;
+    [SerializeField] private bool showStageInfo = false;
+    #endregion
+
+    #region Runtime State
+    // Current Stage
+    public int CurrentStageIndex { get; private set; }
+    public StageData CurrentStage { get; private set; }
+    public bool IsStageInProgress { get; private set; }
+
+    // Stage Statistics
     private int capturedCubeCount = 0;
     private int escapedCubeCount = 0;
+    private float stageStartTime = 0f;
 
-    // Callbacks for stage events
-    public delegate void StageEvent();
-    public event StageEvent OnStageCompleted;
-    public event StageEvent OnStageFailed;
+    // Stage History for debugging
+    private List<int> completedStages = new List<int>();
+    private Dictionary<int, int> stageAttempts = new Dictionary<int, int>();
+    #endregion
 
+    #region Events
+    public event Action<StageData> OnStageStarted;
+    public event Action<StageData, bool> OnStageCompleted; // stage, success
+    public event Action<StageData> OnStageRestarted;
+    #endregion
+
+    #region Unity Lifecycle
     private void Awake()
     {
-        // Auto-find references if not assigned
-        if (gridManager == null) gridManager = FindObjectOfType<GridManager>();
+        FindReferences();
+        InitializeStageDatabase();
+    }
+
+    private void Start()
+    {
+        if (startingStageIndex != 0)
+        {
+            LoadStage(startingStageIndex);
+        }
+    }
+
+    private void OnGUI()
+    {
+        if (showStageInfo)
+        {
+            DrawStageDebugInfo();
+        }
+    }
+    #endregion
+
+    #region Initialization
+    private void FindReferences()
+    {
+        if (gridManager == null) gridManager = GridManager.Instance;
         if (waveManager == null) waveManager = FindObjectOfType<WaveManager>();
         if (playerController == null) playerController = FindObjectOfType<PlayerManager>();
         if (detonationManager == null) detonationManager = FindObjectOfType<DetonationManager>();
+    }
 
-        // Initialize stage database
+    private void InitializeStageDatabase()
+    {
         if (stageDatabase == null)
         {
             stageDatabase = Resources.Load<StageDB>("StageDatabase");
             if (stageDatabase == null)
             {
-                Debug.LogError("StageDatabase not found in Resources folder!");
-                stageDatabase = ScriptableObject.CreateInstance<StageDB>();
-                stageDatabase.Initialize();
+                Debug.LogError("StageDatabase not found in Resources!");
+                stageDatabase = CreateFallbackDatabase();
             }
         }
-        else
-        {
-            stageDatabase.Initialize();
-        }
+
+        stageDatabase.Initialize();
+        DebugLog("Stage database initialized");
     }
 
-    private void Start()
+    private StageDB CreateFallbackDatabase()
     {
-        // Start with first stage (can be tutorial or regular)
-        LoadStage(currentStageIndex);
+        StageDB fallback = ScriptableObject.CreateInstance<StageDB>();
+        fallback.Initialize();
+        return fallback;
     }
+    #endregion
 
+    #region Public Interface - For Debuggers
     public void LoadStage(int stageNumber)
     {
-        StageData stage = stageDatabase.GetStage(stageNumber);
+        StartCoroutine(LoadStageCoroutine(stageNumber));
+    }
 
+    public void RestartCurrentStage()
+    {
+        if (CurrentStage != null)
+        {
+            DebugLog($"Restarting stage {CurrentStageIndex}");
+            LoadStage(CurrentStageIndex);
+        }
+    }
+
+    public void LoadNextStage()
+    {
+        LoadStage(CurrentStageIndex + 1);
+    }
+
+    public void LoadPreviousStage()
+    {
+        if (CurrentStageIndex > -1)
+        {
+            LoadStage(CurrentStageIndex - 1);
+        }
+    }
+
+    public void ResetToFirstStage()
+    {
+        LoadStage(startingStageIndex);
+    }
+
+    public void ForceCompleteStage(bool success = true)
+    {
+        if (IsStageInProgress)
+        {
+            DebugLog($"Force completing stage {CurrentStageIndex} with success: {success}");
+            CompleteStage(success);
+        }
+    }
+
+    public List<int> GetAvailableStages()
+    {
+        return stageDatabase.GetAllStageIds();
+    }
+
+    public Dictionary<int, int> GetStageAttempts()
+    {
+        return new Dictionary<int, int>(stageAttempts);
+    }
+    #endregion
+
+    #region Stage Loading
+    private IEnumerator LoadStageCoroutine(int stageNumber)
+    {
+        DebugLog($"Loading Stage {stageNumber}...");
+
+        StageData stage = stageDatabase.GetStage(stageNumber);
         if (stage == null)
         {
-            Debug.LogWarning($"Stage {stageNumber} not found in the database!");
-            return;
+            Debug.LogError($"Stage {stageNumber} not found!");
+            yield break;
         }
 
-        // Reset counters
+        // Clean up previous stage
+        CleanupCurrentStage();
+
+        // Reset state
+        IsStageInProgress = false;
         capturedCubeCount = 0;
         escapedCubeCount = 0;
-        stageInProgress = true;
+        stageStartTime = Time.time;
 
-        // Store current stage
-        currentStageIndex = stageNumber;
-        currentStage = stage;
+        // Store stage info
+        CurrentStageIndex = stageNumber;
+        CurrentStage = stage;
 
-        // Configure grid based on stage data
-        ConfigureGrid();
+        // Track attempts
+        if (!stageAttempts.ContainsKey(stageNumber))
+            stageAttempts[stageNumber] = 0;
+        stageAttempts[stageNumber]++;
+
+        // Configure systems
+        yield return StartCoroutine(ConfigureForStage(stage));
+
+        // Mark stage as started
+        IsStageInProgress = true;
+
+        // Fire events
+        OnStageStarted?.Invoke(stage);
+
+        DebugLog($"Stage {stageNumber}: '{stage.stageName}' loaded successfully (Attempt #{stageAttempts[stageNumber]})");
+
+        // Start the first wave
+        if (waveManager != null)
+        {
+            yield return new WaitForSeconds(0.1f); // Brief delay to ensure everything is ready
+            waveManager.StartWave();
+        }
+    }
+
+    private IEnumerator ConfigureForStage(StageData stage)
+    {
+        // Configure grid
+        yield return StartCoroutine(ConfigureGrid(stage));
 
         // Configure wave manager
-        ConfigureWaveManager();
+        ConfigureWaveManager(stage);
 
-        // Set player position
-        SetPlayerPosition();
+        // Configure player
+        ConfigurePlayer(stage);
 
-        Debug.Log($"Stage {stageNumber}: {stage.stageName} loaded");
-        waveManager.StartWave();
+        // Configure detonation manager
+        ConfigureDetonationManager(stage);
     }
 
-    private void ConfigureGrid()
+    private IEnumerator ConfigureGrid(StageData stage)
     {
-        // Regenerate grid with stage dimensions
-        if (gridManager != null)
+        if (gridManager == null) yield break;
+
+        DebugLog($"Configuring grid: {stage.gridWidth}x{stage.gridHeight}");
+
+        if (gridManager.Width != stage.gridWidth || gridManager.Height != stage.gridHeight)
         {
-            // Destroy old grid
-            gridManager.DestroyGrid();
+            gridManager.ResizeGrid(stage.gridWidth, stage.gridHeight);
 
-            gridManager.width = currentStage.gridWidth;
-            gridManager.height = currentStage.gridHeight;
-
-
-            // Create new grid
-            gridManager.GenerateGrid();
+            while (!gridManager.IsGridReady)
+            {
+                yield return null;
+            }
         }
+
+        gridManager.ClearAllMarkers();
     }
 
-    private void ConfigureWaveManager()
+    private void ConfigureWaveManager(StageData stage)
     {
-        if (waveManager != null && currentStage.waveConfigurations.Count > 0)
-        {
-            List<WaveData> wavesWithOffSet = UpdateWavePositionsWithGridSize(currentStage.waveConfigurations);
-            // Clear previous wave configurations
-            waveManager.waveConfiguration = wavesWithOffSet;
+        if (waveManager == null || stage.waveConfigurations.Count == 0) return;
 
-            waveManager.useWaveConfiguration = true;
-        }
+        DebugLog($"Configuring {stage.waveConfigurations.Count} waves");
+
+        List<WaveData> adjustedWaves = AdjustWavePositionsForGrid(stage.waveConfigurations);
+
+        waveManager.waveConfiguration = adjustedWaves;
+        waveManager.useWaveConfiguration = true;
+        waveManager.currentWaveIndex = 0; // Reset to first wave
     }
 
-    private List<WaveData> UpdateWavePositionsWithGridSize(List<WaveData> waves)
+    private void ConfigurePlayer(StageData stage)
     {
-        List<WaveData> updatedWaves = waves.ToList();
+        if (playerController == null) return;
+
+        DebugLog($"Setting player start position: ({stage.playerStartPosition.x}, {stage.playerStartPosition.y})");
+        playerController.SetPosition(stage.playerStartPosition.x, stage.playerStartPosition.y);
+        playerController.ResetStatistics();
+    }
+
+    private void ConfigureDetonationManager(StageData stage)
+    {
+        if (detonationManager == null) return;
+
+        detonationManager.ClearDetonationPoints();
+    }
+
+    private List<WaveData> AdjustWavePositionsForGrid(List<WaveData> waves)
+    {
+        List<WaveData> adjustedWaves = new List<WaveData>();
 
         foreach (var wave in waves)
         {
-            foreach (var cube in wave.CubesData)
+            WaveData adjustedWave = Instantiate(wave);
+
+            foreach (var cube in adjustedWave.CubesData)
             {
-                // Adjust the position of each cube in the wave
-                cube.position.y = gridManager.height - (wave.GridHeight - cube.position.y);
+                cube.position.y = gridManager.Height - (wave.GridHeight - cube.position.y);
             }
+
+            adjustedWaves.Add(adjustedWave);
         }
 
-        return updatedWaves;
+        return adjustedWaves;
     }
 
-    private void SetPlayerPosition()
+    private void CleanupCurrentStage()
     {
-        if (playerController != null)
+        if (waveManager != null)
         {
-            playerController.SetPosition(currentStage.playerStartPosition.x, currentStage.playerStartPosition.y);
+            waveManager.StopWave();
+        }
+
+        if (detonationManager != null)
+        {
+            detonationManager.ClearDetonationPoints();
         }
     }
+    #endregion
 
-    // Event handlers for game events
+    #region Stage Completion Logic
     public void OnCubeCaptured(Enumerations.CubeType cubeType)
     {
-        if (!stageInProgress) return;
+        if (!IsStageInProgress) return;
 
         capturedCubeCount++;
+        DebugLog($"Cube captured: {cubeType}. Total: {capturedCubeCount}");
+
         CheckStageCompletion();
     }
 
     public void OnCubeEscaped(Enumerations.CubeType cubeType)
     {
-        if (!stageInProgress) return;
+        if (!IsStageInProgress) return;
 
         escapedCubeCount++;
+        DebugLog($"Cube escaped: {cubeType}. Total escapes: {escapedCubeCount}");
+
         CheckStageCompletion();
     }
 
     public void OnWaveCompleted()
     {
-        // This will be called from WaveManager when a wave ends
+        if (!IsStageInProgress) return;
+
+        DebugLog("Wave completed, checking stage completion...");
         CheckStageCompletion();
     }
 
     private void CheckStageCompletion()
     {
-        // Each stage can have unique completion conditions
-        bool success = false;
+        if (CurrentStage == null) return;
 
-        // Check general success conditions
-        if (currentStage.requiredCaptureCount > 0 && capturedCubeCount >= currentStage.requiredCaptureCount)
+        bool success = false;
+        bool failure = false;
+
+        // Check success conditions
+        if (CurrentStage.requiredCaptureCount > 0 && capturedCubeCount >= CurrentStage.requiredCaptureCount)
         {
             success = true;
         }
 
-        // Check if too many escapes
-        if (currentStage.maxAllowedEscapes >= 0 && escapedCubeCount > currentStage.maxAllowedEscapes)
+        // Check failure conditions
+        if (CurrentStage.maxAllowedEscapes >= 0 && escapedCubeCount > CurrentStage.maxAllowedEscapes)
         {
-            // Failed the stage
-            FailStage();
-            return;
+            failure = true;
         }
+
+        if (success && !failure)
+        {
+            CompleteStage(true);
+        }
+        else if (failure)
+        {
+            CompleteStage(false);
+        }
+    }
+
+    private void CompleteStage(bool success)
+    {
+        if (!IsStageInProgress) return;
+
+        IsStageInProgress = false;
+        float completionTime = Time.time - stageStartTime;
+
+        string result = success ? "SUCCESS" : "FAILED";
+        DebugLog($"Stage {CurrentStageIndex} completed: {result} (Time: {completionTime:F1}s)");
+
+        if (success && !completedStages.Contains(CurrentStageIndex))
+        {
+            completedStages.Add(CurrentStageIndex);
+        }
+
+        // Fire events
+        OnStageCompleted?.Invoke(CurrentStage, success);
 
         if (success)
         {
-            CompleteStage();
+            StartCoroutine(HandleStageSuccess());
+        }
+        else
+        {
+            StartCoroutine(HandleStageFailure());
         }
     }
 
-    private void CompleteStage()
+    private IEnumerator HandleStageSuccess()
     {
-        stageInProgress = false;
-        Debug.Log($"Stage {currentStageIndex} completed!");
+        yield return new WaitForSeconds(stageTransitionDelay);
 
-        // Trigger the completion event
-        if (OnStageCompleted != null)
-            OnStageCompleted.Invoke();
-
-        // Proceed to next stage after delay
-        StartCoroutine(DelayedNextStage());
+        if (autoAdvanceStages)
+        {
+            int nextStage = CurrentStageIndex + 1;
+            if (stageDatabase.GetStage(nextStage) != null)
+            {
+                LoadStage(nextStage);
+            }
+            else
+            {
+                DebugLog("All stages completed!");
+            }
+        }
     }
 
-    private void FailStage()
+    private IEnumerator HandleStageFailure()
     {
-        stageInProgress = false;
-        Debug.Log($"Stage {currentStageIndex} failed!");
+        yield return new WaitForSeconds(stageTransitionDelay);
 
-        // Trigger the failure event
-        if (OnStageFailed != null)
-            OnStageFailed.Invoke();
+        if (restartOnFailure)
+        {
+            OnStageRestarted?.Invoke(CurrentStage);
+            RestartCurrentStage();
+        }
+    }
+    #endregion
 
-        // Restart the same stage after delay
-        StartCoroutine(DelayedRestartStage());
+    #region Debug Interface
+    private void DrawStageDebugInfo()
+    {
+        if (CurrentStage == null) return;
+
+        GUILayout.BeginArea(new Rect(10, Screen.height - 150, 300, 140));
+        GUILayout.BeginVertical(GUI.skin.box);
+
+        GUILayout.Label($"STAGE DEBUG", GUI.skin.box);
+        GUILayout.Label($"Current: {CurrentStageIndex} - {CurrentStage.stageName}");
+        GUILayout.Label($"Status: {(IsStageInProgress ? "IN PROGRESS" : "INACTIVE")}");
+        GUILayout.Label($"Captured: {capturedCubeCount} | Escaped: {escapedCubeCount}");
+        GUILayout.Label($"Time: {(Time.time - stageStartTime):F1}s");
+        GUILayout.Label($"Attempts: {(stageAttempts.ContainsKey(CurrentStageIndex) ? stageAttempts[CurrentStageIndex] : 0)}");
+
+        GUILayout.EndVertical();
+        GUILayout.EndArea();
     }
 
-    private IEnumerator DelayedNextStage()
+    public void MoveStepComplete()
     {
-        yield return new WaitForSeconds(1.0f);
-        LoadStage(currentStageIndex + 1);
+        // Called by WaveManager after each move step
+        // Can be used for stage-specific logic
     }
 
-    private IEnumerator DelayedRestartStage()
+    private void DebugLog(string message)
     {
-        yield return new WaitForSeconds(1.0f);
-        LoadStage(currentStageIndex);
+        if (enableDebugLogs)
+            Debug.Log($"[StageManager] {message}");
     }
-
-    internal void MoveStepComplete()
-    {
-        // Handle any stage-specific move step logic here
-    }
+    #endregion
 }
