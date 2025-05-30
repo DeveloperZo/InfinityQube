@@ -23,6 +23,7 @@ public class PlayerManager : MonoBehaviour
     [Header("Death & Respawn")]
     public float respawnDelay = 2.0f;
     public float respawnInvulnerabilityTime = 2.0f;
+    public bool debugDeathOverride = false;
 
     [Header("Physics & Collision")]
     public LayerMask cubeLayer = -1;
@@ -94,6 +95,7 @@ public class PlayerManager : MonoBehaviour
         if (!isInitialized) return;
 
         UpdateTimers();
+       
         if (isDead) return;
 
         HandleMovement();
@@ -623,10 +625,9 @@ public class PlayerManager : MonoBehaviour
         respawnInvulnerabilityTimer = respawnInvulnerabilityTime;
         currentVelocity = Vector3.zero;
 
-        SetPosition(grid.Width / 2, 0); // Respawn at center bottom
+        SetPosition(0, 0); // Respawn at center bottom
         enabled = true;
-
-        DebugLog($"🔄 Player respawned with {respawnInvulnerabilityTime}s invulnerability");
+        DebugLog($"Player respawned with {respawnInvulnerabilityTime}s invulnerability");
         OnPlayerRespawned?.Invoke();
     }
 
@@ -641,8 +642,15 @@ public class PlayerManager : MonoBehaviour
 
             if (cube.position.x == currentTilePosition.x && cube.position.y == currentTilePosition.y)
             {
-                DebugLog($"💥 Collision with {cube.type} cube at ({currentTilePosition.x}, {currentTilePosition.y})");
-                Die();
+                DebugLog($"Collision with {cube.type} cube at ({currentTilePosition.x}, {currentTilePosition.y})");
+                if (!debugDeathOverride)
+                {
+                    Die();
+                }
+                else
+                {
+                    DebugLog("Death prevented by debug override");
+                }
                 break;
             }
         }
