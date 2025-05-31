@@ -12,22 +12,21 @@ public class PlayerActionDebugPanel : IDebugPanel
     private WaveManager waveManager;
 
     // UI State
-    private Vector2 scrollPosition;
     private bool showActionControls = true;
     private bool showCubeSpawner = true;
     private bool showTileEditor = true;
     private bool showActionInfo = true;
 
     // Cube Spawner
-    [SerializeField] private int cubeSpawnRow = 15; // Default spawn row (configurable)
-    private int selectedCubeType = 1; // 1=Normal, 2=Blue, 3=Black, 0=Empty
+    private int cubeSpawnRow = 15;
+    private int selectedCubeType = 1;
     private bool showCubeGrid = true;
-    private Vector2 cubeGridScrollPosition;
+    private Vector2 cubeGridScrollPosition = Vector2.zero;
 
     // Tile Editor
-    private int selectedTileState = 0; // 0=Normal, 1=Primed, 2=Corrupted, 3=Enhanced
+    private int selectedTileState = 0;
     private bool showTileGrid = false;
-    private Vector2 tileGridScrollPosition;
+    private Vector2 tileGridScrollPosition = Vector2.zero;
     private int enhancedTileCharges = 3;
 
     // Action Testing
@@ -43,10 +42,9 @@ public class PlayerActionDebugPanel : IDebugPanel
     {
         actionManager = Object.FindObjectOfType<PlayerActionManager>();
         playerManager = Object.FindObjectOfType<PlayerManager>();
-        gridManager = GridManager.Instance;
+        gridManager = Object.FindObjectOfType<GridManager>();
         waveManager = Object.FindObjectOfType<WaveManager>();
 
-        // Set default spawn row based on grid height
         if (gridManager != null)
         {
             cubeSpawnRow = Mathf.Max(10, gridManager.Height - 5);
@@ -57,7 +55,6 @@ public class PlayerActionDebugPanel : IDebugPanel
 
     public void Update()
     {
-        // Auto-trigger markers if enabled
         if (autoTriggerMarkers && actionManager != null && actionManager.HasCubeMarkers())
         {
             if (Time.time - lastTriggerTime > autoTriggerDelay)
@@ -70,8 +67,6 @@ public class PlayerActionDebugPanel : IDebugPanel
 
     public void DrawPanel()
     {
-        scrollPosition = GUILayout.BeginScrollView(scrollPosition);
-
         DrawPanelTabs();
         GUILayout.Space(5);
 
@@ -86,8 +81,6 @@ public class PlayerActionDebugPanel : IDebugPanel
 
         if (showTileEditor)
             DrawTileEditorSection();
-
-        GUILayout.EndScrollView();
     }
 
     private void DrawPanelTabs()
@@ -121,7 +114,6 @@ public class PlayerActionDebugPanel : IDebugPanel
 
         if (actionManager != null)
         {
-            // Cube Markers
             GUILayout.Label($"Active Cube Markers: {actionManager.CubeMarkerCount}");
 
             Vector2Int nextMarker = actionManager.GetNextCubeMarker();
@@ -139,7 +131,6 @@ public class PlayerActionDebugPanel : IDebugPanel
                 GUILayout.Label("No cube markers available");
             }
 
-            // Player Markers
             int playerMarkers = 0;
             if (gridManager != null)
             {
@@ -147,7 +138,6 @@ public class PlayerActionDebugPanel : IDebugPanel
             }
             GUILayout.Label($"Player Markers Placed: {playerMarkers}");
 
-            // Player Position
             if (playerManager != null)
             {
                 GUILayout.Label($"Player Position: ({playerManager.currentTilePosition.x}, {playerManager.currentTilePosition.y})");
@@ -178,10 +168,10 @@ public class PlayerActionDebugPanel : IDebugPanel
         if (actionManager == null)
         {
             GUILayout.Label("PlayerActionManager not found");
+            GUILayout.EndVertical();
             return;
         }
 
-        // Manual Action Controls
         GUILayout.Label("Manual Controls:");
         GUILayout.BeginHorizontal();
         if (GUILayout.Button("Trigger Next Cube Marker"))
@@ -194,7 +184,6 @@ public class PlayerActionDebugPanel : IDebugPanel
         }
         GUILayout.EndHorizontal();
 
-        // Marker Placement Test
         GUILayout.Label("Test Marker Placement:");
         GUILayout.BeginHorizontal();
         GUILayout.Label("X:", GUILayout.Width(20));
@@ -224,11 +213,8 @@ public class PlayerActionDebugPanel : IDebugPanel
         }
         GUILayout.EndHorizontal();
 
-        // Auto Features
         GUILayout.Label("Automation:");
-        GUILayout.BeginHorizontal();
         autoTriggerMarkers = GUILayout.Toggle(autoTriggerMarkers, "Auto-Trigger Cube Markers");
-        GUILayout.EndHorizontal();
 
         if (autoTriggerMarkers)
         {
@@ -243,7 +229,6 @@ public class PlayerActionDebugPanel : IDebugPanel
 
         showAreaPreviews = GUILayout.Toggle(showAreaPreviews, "Show Area Previews");
 
-        // Quick Test Scenarios
         showQuickScenarios = GUILayout.Toggle(showQuickScenarios, "Show Quick Scenarios");
         if (showQuickScenarios)
         {
@@ -258,7 +243,6 @@ public class PlayerActionDebugPanel : IDebugPanel
         GUILayout.BeginVertical(GUI.skin.box);
         GUILayout.Label("CUBE SPAWNER", GUI.skin.box);
 
-        // Spawn Row Configuration
         GUILayout.BeginHorizontal();
         GUILayout.Label("Spawn Row:", GUILayout.Width(80));
         string rowStr = GUILayout.TextField(cubeSpawnRow.ToString(), GUILayout.Width(50));
@@ -275,17 +259,14 @@ public class PlayerActionDebugPanel : IDebugPanel
         }
         GUILayout.EndHorizontal();
 
-        // Cube Type Selector
         DrawCubeTypeSelector();
 
-        // Cube Grid Toggle
         showCubeGrid = GUILayout.Toggle(showCubeGrid, "Show Cube Placement Grid");
         if (showCubeGrid)
         {
             DrawCubeSpawnerGrid();
         }
 
-        // Quick Spawn Actions
         GUILayout.Label("Quick Spawn:");
         GUILayout.BeginHorizontal();
         if (GUILayout.Button("Spawn Normal Row"))
@@ -321,11 +302,9 @@ public class PlayerActionDebugPanel : IDebugPanel
         GUILayout.BeginVertical(GUI.skin.box);
         GUILayout.Label("TILE EDITOR", GUI.skin.box);
 
-        // Tile State Selector
         DrawTileStateSelector();
 
-        // Enhanced tile configuration
-        if (selectedTileState == 3) // Enhanced
+        if (selectedTileState == 3)
         {
             GUILayout.BeginHorizontal();
             GUILayout.Label("Charges:", GUILayout.Width(60));
@@ -335,23 +314,21 @@ public class PlayerActionDebugPanel : IDebugPanel
             GUILayout.EndHorizontal();
         }
 
-        // Tile Grid Toggle
         showTileGrid = GUILayout.Toggle(showTileGrid, "Show Tile State Grid");
         if (showTileGrid)
         {
             DrawTileStateGrid();
         }
 
-        // Quick Tile Actions
         GUILayout.Label("Quick Actions:");
         GUILayout.BeginHorizontal();
         if (GUILayout.Button("Prime Player Tile"))
         {
-            SetPlayerTileState(1); // Primed
+            SetPlayerTileState(1);
         }
         if (GUILayout.Button("Corrupt Player Tile"))
         {
-            SetPlayerTileState(2); // Corrupted
+            SetPlayerTileState(2);
         }
         GUILayout.EndHorizontal();
 
@@ -374,6 +351,8 @@ public class PlayerActionDebugPanel : IDebugPanel
         GUILayout.Label("Cube Type:");
         GUILayout.BeginHorizontal();
 
+        Color originalColor = GUI.backgroundColor;
+
         GUI.backgroundColor = selectedCubeType == 0 ? Color.gray : Color.white;
         if (GUILayout.Button("Empty"))
             selectedCubeType = 0;
@@ -390,7 +369,7 @@ public class PlayerActionDebugPanel : IDebugPanel
         if (GUILayout.Button("Black"))
             selectedCubeType = 3;
 
-        GUI.backgroundColor = Color.white;
+        GUI.backgroundColor = originalColor;
         GUILayout.EndHorizontal();
     }
 
@@ -400,12 +379,13 @@ public class PlayerActionDebugPanel : IDebugPanel
 
         GUILayout.Label($"Cube Grid (Row {cubeSpawnRow}):");
 
+        Color originalColor = GUI.backgroundColor;
+
         cubeGridScrollPosition = GUILayout.BeginScrollView(cubeGridScrollPosition, GUILayout.Height(100));
 
         GUILayout.BeginHorizontal();
         for (int x = 0; x < gridManager.Width; x++)
         {
-            // Check if there's already a cube at this position
             bool hasCube = HasCubeAt(new Vector2Int(x, cubeSpawnRow));
             CubeType existingType = GetCubeTypeAt(new Vector2Int(x, cubeSpawnRow));
 
@@ -422,11 +402,11 @@ public class PlayerActionDebugPanel : IDebugPanel
 
             if (GUILayout.Button(buttonText, GUILayout.Width(30), GUILayout.Height(30)))
             {
-                if (selectedCubeType == 0) // Empty - remove cube
+                if (selectedCubeType == 0)
                 {
                     RemoveCubeAt(new Vector2Int(x, cubeSpawnRow));
                 }
-                else // Spawn cube
+                else
                 {
                     SpawnCubeAt(new Vector2Int(x, cubeSpawnRow), (CubeType)(selectedCubeType - 1));
                 }
@@ -434,7 +414,7 @@ public class PlayerActionDebugPanel : IDebugPanel
         }
         GUILayout.EndHorizontal();
 
-        GUI.backgroundColor = Color.white;
+        GUI.backgroundColor = originalColor;
         GUILayout.EndScrollView();
     }
 
@@ -442,6 +422,8 @@ public class PlayerActionDebugPanel : IDebugPanel
     {
         GUILayout.Label("Tile State:");
         GUILayout.BeginHorizontal();
+
+        Color originalColor = GUI.backgroundColor;
 
         GUI.backgroundColor = selectedTileState == 0 ? Color.green : Color.white;
         if (GUILayout.Button("Normal"))
@@ -459,7 +441,7 @@ public class PlayerActionDebugPanel : IDebugPanel
         if (GUILayout.Button("Enhanced"))
             selectedTileState = 3;
 
-        GUI.backgroundColor = Color.white;
+        GUI.backgroundColor = originalColor;
         GUILayout.EndHorizontal();
     }
 
@@ -469,9 +451,10 @@ public class PlayerActionDebugPanel : IDebugPanel
 
         GUILayout.Label("Tile State Grid (click to set state):");
 
+        Color originalColor = GUI.backgroundColor;
+
         tileGridScrollPosition = GUILayout.BeginScrollView(tileGridScrollPosition, GUILayout.Height(150));
 
-        // Show a subset of the grid around the player
         int playerX = playerManager?.currentTilePosition.x ?? 3;
         int playerY = playerManager?.currentTilePosition.y ?? 5;
 
@@ -490,7 +473,6 @@ public class PlayerActionDebugPanel : IDebugPanel
                 Tile tile = gridManager.GetTileAt(x, y);
                 bool isPlayerTile = (x == playerX && y == playerY);
 
-                // Set button color based on tile state
                 if (isPlayerTile)
                 {
                     GUI.backgroundColor = Color.green;
@@ -518,7 +500,7 @@ public class PlayerActionDebugPanel : IDebugPanel
             GUILayout.EndHorizontal();
         }
 
-        GUI.backgroundColor = Color.white;
+        GUI.backgroundColor = originalColor;
         GUILayout.EndScrollView();
     }
 
@@ -526,21 +508,26 @@ public class PlayerActionDebugPanel : IDebugPanel
     {
         GUILayout.Label("Quick Test Scenarios:");
 
+        // Add Mark Player Tile action
+        if (GUILayout.Button("Mark Player Tile"))
+        {
+            if (playerManager != null && actionManager != null)
+            {
+                actionManager.PlacePlayerMarker(playerManager.currentTilePosition);
+            }
+        }
+
         if (GUILayout.Button("Blue Cube Capture Test"))
         {
-            // Spawn blue cube at player position + 1
             Vector2Int spawnPos = new Vector2Int(
                 playerManager.currentTilePosition.x,
                 playerManager.currentTilePosition.y + 1);
             SpawnCubeAt(spawnPos, CubeType.Blue);
-
-            // Place player marker at player position
             actionManager.PlacePlayerMarker(playerManager.currentTilePosition);
         }
 
         if (GUILayout.Button("Chain Reaction Test"))
         {
-            // Create a line of blue cubes
             for (int i = 0; i < 3; i++)
             {
                 Vector2Int pos = new Vector2Int(
@@ -552,14 +539,14 @@ public class PlayerActionDebugPanel : IDebugPanel
 
         if (GUILayout.Button("Area Effect Test"))
         {
-            // Create a 3x3 grid of cubes around a central point
             Vector2Int center = new Vector2Int(
                 playerManager.currentTilePosition.x,
                 playerManager.currentTilePosition.y + 3);
 
-            for (int x = -1; x <= 1; x++)
+            // Create a 2x2 grid of cubes for testing area capture
+            for (int x = 0; x <= 1; x++)
             {
-                for (int y = -1; y <= 1; y++)
+                for (int y = 0; y <= 1; y++)
                 {
                     Vector2Int pos = new Vector2Int(center.x + x, center.y + y);
                     CubeType type = (x == 0 && y == 0) ? CubeType.Blue : CubeType.Normal;
@@ -567,13 +554,13 @@ public class PlayerActionDebugPanel : IDebugPanel
                 }
             }
 
-            // Create cube marker at center
+            // Create cube marker at center for 2x2 area effect
             actionManager.CreateCubeMarker(center);
+            Debug.Log($"Created 2x2 test area with cube marker at ({center.x}, {center.y})");
         }
     }
 
     // Helper Methods
-
     private bool HasCubeAt(Vector2Int position)
     {
         foreach (CubeBehavior cube in Object.FindObjectsOfType<CubeBehavior>())
@@ -621,10 +608,8 @@ public class PlayerActionDebugPanel : IDebugPanel
             return;
         }
 
-        // Remove existing cube first
         RemoveCubeAt(position);
 
-        // Spawn new cube
         Vector3 worldPos = gridManager.GridToWorldPosition(position.x, position.y, 2f);
         GameObject cubeObj = Object.Instantiate(waveManager.cubePrefabs[(int)cubeType], worldPos, Quaternion.identity);
 
@@ -639,7 +624,19 @@ public class PlayerActionDebugPanel : IDebugPanel
         };
 
         cube.Init(gridManager, cubeData, 2f);
-
+        // IMPORTANT: Register the cube with the tile so it can be captured
+        if (gridManager.IsValidGridPosition(position))
+        {
+            Tile tile = gridManager.GetTileAt(position);
+            if (tile != null)
+            {
+                tile.ProcessCubeInteraction(cube);
+            }
+        }
+        if (waveManager != null)
+        {
+            waveManager.activeCubes.Add(cube);
+        }
         Debug.Log($"Spawned {cubeType} cube at ({position.x}, {position.y})");
     }
 
@@ -699,16 +696,16 @@ public class PlayerActionDebugPanel : IDebugPanel
 
         switch (state)
         {
-            case 0: // Normal
+            case 0:
                 tile.ResetTile();
                 break;
-            case 1: // Primed
+            case 1:
                 tile.PrimeTile();
                 break;
-            case 2: // Corrupted
+            case 2:
                 tile.BlackenTile();
                 break;
-            case 3: // Enhanced
+            case 3:
                 tile.AdvantageTile(enhancedTileCharges);
                 break;
         }
@@ -749,12 +746,11 @@ public class PlayerActionDebugPanel : IDebugPanel
 
         Vector2Int center = playerManager.currentTilePosition;
 
-        // Create a test pattern around the player
-        SetTileState(new Vector2Int(center.x - 1, center.y + 1), 1); // Primed
-        SetTileState(new Vector2Int(center.x + 1, center.y + 1), 1); // Primed
-        SetTileState(new Vector2Int(center.x, center.y + 2), 3); // Enhanced
-        SetTileState(new Vector2Int(center.x - 1, center.y - 1), 2); // Corrupted
-        SetTileState(new Vector2Int(center.x + 1, center.y - 1), 2); // Corrupted
+        SetTileState(new Vector2Int(center.x - 1, center.y + 1), 1);
+        SetTileState(new Vector2Int(center.x + 1, center.y + 1), 1);
+        SetTileState(new Vector2Int(center.x, center.y + 2), 3);
+        SetTileState(new Vector2Int(center.x - 1, center.y - 1), 2);
+        SetTileState(new Vector2Int(center.x + 1, center.y - 1), 2);
 
         Debug.Log("Created test tile pattern around player");
     }
@@ -783,10 +779,10 @@ public class PlayerActionDebugPanel : IDebugPanel
     {
         switch (cubeType)
         {
-            case 0: GUI.backgroundColor = new Color(0.8f, 0.8f, 0.8f, 0.3f); break; // Empty
-            case 1: GUI.backgroundColor = Color.white; break; // Normal
-            case 2: GUI.backgroundColor = Color.blue; break; // Blue
-            case 3: GUI.backgroundColor = Color.black; break; // Black
+            case 0: GUI.backgroundColor = new Color(0.8f, 0.8f, 0.8f, 0.3f); break;
+            case 1: GUI.backgroundColor = Color.white; break;
+            case 2: GUI.backgroundColor = Color.blue; break;
+            case 3: GUI.backgroundColor = Color.black; break;
             default: GUI.backgroundColor = Color.white; break;
         }
     }

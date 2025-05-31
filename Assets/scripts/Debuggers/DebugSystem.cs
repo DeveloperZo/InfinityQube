@@ -144,7 +144,14 @@ public class DebugSystem : MonoBehaviour
         if (selectedTab >= 0 && selectedTab < debugPanels.Count)
         {
             scrollPosition = GUILayout.BeginScrollView(scrollPosition, GUILayout.Height(windowSize.y - 100));
-            debugPanels[selectedTab].DrawPanel();
+            try
+            {
+                debugPanels[selectedTab].DrawPanel();
+            }
+            catch (System.Exception e)
+            {
+                GUILayout.Label($"Error in panel: {e.Message}");
+            }
             GUILayout.EndScrollView();
         }
 

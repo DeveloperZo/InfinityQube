@@ -188,12 +188,15 @@ public class PlayerActionManager : MonoBehaviour
 
         // Get all affected positions
         List<Vector2Int> affectedPositions = GetAreaPositions(center, size);
+        Debug.Log($"Area positions: {string.Join(", ", affectedPositions)}");
 
         // Process each position in the area
         foreach (Vector2Int position in affectedPositions)
         {
             if (IsValidPosition(position))
             {
+                Debug.Log($"Processing area position: ({position.x}, {position.y})");
+
                 // Visual effect
                 StartCoroutine(FlashTile(gridManager.tiles[position.x, position.y]));
 
@@ -210,22 +213,45 @@ public class PlayerActionManager : MonoBehaviour
     {
         List<CubeBehavior> cubesAtPosition = new List<CubeBehavior>();
 
-        // Find all cubes at this position
+        // Find all cubes at this position - check both WaveManager's active cubes and all CubeBehavior objects
+        if (FindObjectOfType<WaveManager>() != null)
+        {
+            var waveManager = FindObjectOfType<WaveManager>();
+            foreach (CubeBehavior cube in waveManager.activeCubes)
+            {
+                if (cube != null && !cube.isDestroyed &&
+                    cube.position.x == position.x && cube.position.y == position.y)
+                {
+                    cubesAtPosition.Add(cube);
+                }
+            }
+        }
+
+        // Also check all CubeBehavior objects in scene (for manually spawned cubes)
         foreach (CubeBehavior cube in FindObjectsOfType<CubeBehavior>())
         {
-            if (cube == null || cube.isDestroyed) continue;
-
-            if (cube.position.x == position.x && cube.position.y == position.y)
+            if (cube != null && !cube.isDestroyed &&
+                cube.position.x == position.x && cube.position.y == position.y &&
+                !cubesAtPosition.Contains(cube))
             {
                 cubesAtPosition.Add(cube);
             }
         }
+
+        Debug.Log($"Found {cubesAtPosition.Count} cubes at position ({position.x}, {position.y})");
 
         // Process each cube found
         foreach (CubeBehavior cube in cubesAtPosition)
         {
             Debug.Log($"Capturing {cube.type} cube at ({position.x}, {position.y}) via cube marker");
             ProcessCubeMarkerCapture(cube, position);
+
+            // Remove from wave manager's active list
+            if (FindObjectOfType<WaveManager>() != null)
+            {
+                var waveManager = FindObjectOfType<WaveManager>();
+                waveManager.activeCubes.Remove(cube);
+            }
         }
 
         if (cubesAtPosition.Count == 0)
@@ -413,16 +439,25 @@ public class PlayerActionManager : MonoBehaviour
     {
         List<Vector2Int> positions = new List<Vector2Int>();
 
-        // Calculate start position (center the area)
+        // For 2x2 area, center should be bottom-left of the 2x2
+        // For 3x3 area, center should be middle
         int halfSize = size / 2;
-        int startX = center.x - halfSize;
-        int startY = center.y - halfSize;
+        int startX, startY;
 
-        // For even-sized areas, adjust to make center the bottom-left of the center 2x2
-        if (size % 2 == 0)
+        if (size == 2)
         {
-            // No adjustment needed - center is bottom-left
+            // For 2x2, treat center as bottom-left corner
+            startX = center.x;
+            startY = center.y;
         }
+        else
+        {
+            // For odd sizes (3x3, 5x5), center the area
+            startX = center.x - halfSize;
+            startY = center.y - halfSize;
+        }
+
+        Debug.Log($"Area calculation: size={size}, center=({center.x},{center.y}), start=({startX},{startY})");
 
         for (int x = startX; x < startX + size; x++)
         {
@@ -432,6 +467,7 @@ public class PlayerActionManager : MonoBehaviour
                 if (IsValidPosition(pos))
                 {
                     positions.Add(pos);
+                    Debug.Log($"Added area position: ({x}, {y})");
                 }
             }
         }
