@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
 using static Enumerations;
+using static UnityEditor.PlayerSettings;
 
 public class PlayerActionDebugPanel : IDebugPanel
 {
@@ -508,7 +509,6 @@ public class PlayerActionDebugPanel : IDebugPanel
     {
         GUILayout.Label("Quick Test Scenarios:");
 
-        // Add Mark Player Tile action
         if (GUILayout.Button("Mark Player Tile"))
         {
             if (playerManager != null && actionManager != null)
@@ -520,10 +520,10 @@ public class PlayerActionDebugPanel : IDebugPanel
         if (GUILayout.Button("Blue Cube Capture Test"))
         {
             Vector2Int spawnPos = new Vector2Int(
-                playerManager.currentTilePosition.x,
-                playerManager.currentTilePosition.y + 1);
+                1,
+                cubeSpawnRow);
             SpawnCubeAt(spawnPos, CubeType.Blue);
-            actionManager.PlacePlayerMarkerAt(playerManager.currentTilePosition);
+            actionManager.PlacePlayerMarkerAt(spawnPos);
         }
 
         if (GUILayout.Button("Chain Reaction Test"))
@@ -531,10 +531,11 @@ public class PlayerActionDebugPanel : IDebugPanel
             for (int i = 0; i < 3; i++)
             {
                 Vector2Int pos = new Vector2Int(
-                    playerManager.currentTilePosition.x + i,
-                    playerManager.currentTilePosition.y + 2);
+                    i,
+                    cubeSpawnRow);
                 SpawnCubeAt(pos, CubeType.Blue);
             }
+            actionManager.PlacePlayerMarkerAt(new Vector2Int(0, cubeSpawnRow));
         }
 
         if (GUILayout.Button("Area Effect Test"))
@@ -557,6 +558,29 @@ public class PlayerActionDebugPanel : IDebugPanel
             // Create cube marker at center for 2x2 area effect
             actionManager.CreateCubeMarker(center);
             Debug.Log($"Created 2x2 test area with cube marker at ({center.x}, {center.y})");
+        }
+
+        if (GUILayout.Button("Cascading Blue Test"))
+        {
+            Vector2Int center = new Vector2Int(
+                playerManager.currentTilePosition.x,
+                playerManager.currentTilePosition.y + 4);
+
+            // Create a pattern where blue cubes will cascade
+            // First blue cube that will be captured and create a marker
+            SpawnCubeAt(center, CubeType.Blue);
+
+            // Second blue cube that should be captured by the first's marker
+            SpawnCubeAt(new Vector2Int(center.x + 1, center.y), CubeType.Blue);
+
+            // Some normal cubes in the area
+            SpawnCubeAt(new Vector2Int(center.x, center.y + 1), CubeType.Normal);
+            SpawnCubeAt(new Vector2Int(center.x + 1, center.y + 1), CubeType.Normal);
+
+            // Place initial player marker to start the cascade
+            actionManager.PlacePlayerMarkerAt(center);
+
+            Debug.Log($"Created cascading blue cube test at ({center.x}, {center.y})");
         }
     }
 

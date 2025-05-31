@@ -328,18 +328,154 @@ public class PlayerActionManager : MonoBehaviour
         List<Vector2Int> affectedPositions = GetAreaPositions(center, size);
         Debug.Log($"Area positions: {string.Join(", ", affectedPositions)}");
 
+        // Process each position in the area with proper marker simulation
         foreach (Vector2Int position in affectedPositions)
         {
             if (IsValidPosition(position))
             {
-                StartCoroutine(FlashTile(gridManager.tiles[position.x, position.y]));
-                CaptureCubesAt(position);
+                ProcessAreaCapture(position);
             }
         }
 
         detonationsUsed++;
         NotifyWaveManager(wm => wm.OnDetonationUsed());
         return true;
+    }
+
+    private void ProcessAreaCapture(Vector2Int position)
+    {
+        Tile tile = gridManager.tiles[position.x, position.y];
+        if (tile == null) return;
+
+        // Flash the tile to show it's being affected
+        StartCoroutine(FlashTile(tile));
+
+        // Find all cubes at this position
+        List<CubeBehavior> cubesAtPosition = FindAllCubesAt(position);
+
+        Debug.Log($"Processing area capture at ({position.x}, {position.y}) - found {cubesAtPosition.Count} cubes");
+
+        foreach (CubeBehavior cube in cubesAtPosition)
+        {
+            ProcessAreaCubeCapture(cube, position);
+        }
+    }
+
+    private void ProcessAreaCubeCapture(CubeBehavior cube, Vector2Int position)
+    {
+        Debug.Log($"Area capturing {cube.type} cube at ({position.x}, {position.y})");
+
+        switch (cube.type)
+        {
+            case CubeType.Normal:
+                // Simulate marker trigger effect for normal cubes
+                StartCoroutine(SimulateMarkerTrigger(position));
+                normalCubesCaptured++;
+                NotifyWaveManager(wm => wm.OnCubeCaptured(CubeType.Normal));
+                NotifyWaveManager(wm => wm.OnNonBlackCubeProcessed(CubeType.Normal, true));
+                RemoveCubeFromWaveManager(cube);
+                Destroy(cube.gameObject);
+                break;
+
+            case CubeType.Blue:
+                // Simulate marker trigger effect for blue cubes
+                StartCoroutine(SimulateMarkerTrigger(position));
+                blueCubesCaptured++;
+                NotifyWaveManager(wm => wm.OnCubeCaptured(CubeType.Blue));
+                NotifyWaveManager(wm => wm.OnNonBlackCubeProcessed(CubeType.Blue, true));
+
+                // Create cascade cube marker for blue cubes
+                CreateCubeMarker(position);
+                Debug.Log($"Created cascading cube marker at ({position.x}, {position.y}) from blue cube capture");
+
+                RemoveCubeFromWaveManager(cube);
+                Destroy(cube.gameObject);
+                break;
+
+            case CubeType.Black:
+                // Simulate marker trigger effect for black cubes
+                StartCoroutine(SimulateMarkerTrigger(position));
+                blackCubesCaptured++;
+                NotifyWaveManager(wm => wm.OnCubeCaptured(CubeType.Black));
+
+                // Blacken the tile
+                Tile tile = gridManager.tiles[position.x, position.y];
+                if (tile != null)
+                {
+                    tile.BlackenTile();
+                }
+
+                RemoveCubeFromWaveManager(cube);
+                // Black cubes may or may not be destroyed depending on game rules
+                break;
+        }
+    }
+
+    private IEnumerator SimulateMarkerTrigger(Vector2Int position)
+    {
+        if (!IsValidPosition(position)) yield break;
+
+        Tile tile = gridManager.tiles[position.x, position.y];
+        if (tile == null) yield break;
+
+        // Create temporary marker visual effect
+        GameObject tempMarker = CreateTempMarkerEffect(position);
+
+        // Wait a bit to show the effect
+        yield return new WaitForSeconds(0.1f);
+
+        // Make it "activate" like a real marker
+        if (tempMarker != null)
+        {
+            Renderer markerRenderer = tempMarker.GetComponent<Renderer>();
+            if (markerRenderer != null)
+            {
+                Material activeMaterial = new Material(Shader.Find("Standard"));
+                activeMaterial.color = Color.yellow;
+                activeMaterial.SetFloat("_Metallic", 0.2f);
+                activeMaterial.SetFloat("_Smoothness", 0.8f);
+                markerRenderer.material = activeMaterial;
+            }
+        }
+
+        // Wait for activation effect
+        yield return new WaitForSeconds(0.3f);
+
+        // Clean up temp marker
+        if (tempMarker != null)
+        {
+            Destroy(tempMarker);
+        }
+    }
+
+    private GameObject CreateTempMarkerEffect(Vector2Int position)
+    {
+        Vector3 worldPos = gridManager.GridToWorldPosition(position.x, position.y, 0.5f);
+
+        GameObject tempMarker = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+        tempMarker.name = $"TempMarker_{position.x}_{position.y}";
+        tempMarker.transform.position = worldPos;
+        tempMarker.transform.localScale = new Vector3(0.8f, 0.3f, 0.8f);
+
+        // Remove collider
+        Collider markerCollider = tempMarker.GetComponent<Collider>();
+        if (markerCollider != null)
+        {
+            Destroy(markerCollider);
+        }
+
+        // Set initial marker color (red like regular markers)
+        Renderer markerRenderer = tempMarker.GetComponent<Renderer>();
+        if (markerRenderer != null)
+        {
+            Material markerMaterial = new Material(Shader.Find("Standard"));
+            markerMaterial.color = Color.red;
+            markerMaterial.SetFloat("_Metallic", 0.2f);
+            markerMaterial.SetFloat("_Smoothness", 0.8f);
+            markerRenderer.material = markerMaterial;
+        }
+
+        return tempMarker;
     }
 
     public bool HasCubeMarkers() => cubeMarkers.Count > 0;
@@ -689,16 +825,33 @@ public class PlayerActionManager : MonoBehaviour
 
         Material originalMaterial = renderer.material;
 
-        if (flashMaterial != null)
-        {
-            renderer.material = flashMaterial;
-        }
+        // Create a bright flash material
+        Material flashMat = new Material(Shader.Find("Standard"));
+        flashMat.color = Color.white;
+        flashMat.SetFloat("_Metallic", 0.5f);
+        flashMat.SetFloat("_Smoothness", 0.9f);
 
-        yield return new WaitForSeconds(flashDuration);
+        // Apply flash
+        renderer.material = flashMat;
 
+        yield return new WaitForSeconds(flashDuration * 0.3f);
+
+        // Quick fade to yellow
+        flashMat.color = Color.yellow;
+        renderer.material = flashMat;
+
+        yield return new WaitForSeconds(flashDuration * 0.4f);
+
+        // Fade back to original
         if (tile != null && renderer != null)
         {
             renderer.material = originalMaterial;
+        }
+
+        // Clean up
+        if (flashMat != null)
+        {
+            Destroy(flashMat);
         }
     }
 
