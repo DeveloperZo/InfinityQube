@@ -330,11 +330,7 @@ public class Tile : MonoBehaviour
 
     private void NotifyPlayerCubeCapture(Enumerations.CubeType cubeType)
     {
-        PlayerManager player = FindObjectOfType<PlayerManager>();
-        if (player != null)
-        {
-            player.OnCubeCaptured(cubeType);
-        }
+
     }
 
     public void SetPlayerHover(bool isHovering)
@@ -446,11 +442,6 @@ public class Tile : MonoBehaviour
             tileRenderer.material = forbiddenMaterial;
         }
 
-        PlayerManager player = FindObjectOfType<PlayerManager>();
-        if (player != null)
-        {
-            player.OnTileCorrupted();
-        }
 
         // Hide any highlights
         HideSoftHighlight();
@@ -468,11 +459,6 @@ public class Tile : MonoBehaviour
         ClearMarker();
 
         // Notify player manager
-        PlayerManager player = FindObjectOfType<PlayerManager>();
-        if (player != null)
-        {
-            player.OnTilePrimed();
-        }
 
         // Register with PlayerActionManager - this was missing!
         PlayerActionManager playerActionManager = FindObjectOfType<PlayerActionManager>();
@@ -497,11 +483,6 @@ public class Tile : MonoBehaviour
         detonationCharges = charges > maxCharges ? maxCharges : charges;
         ClearMarker();
 
-        PlayerManager player = FindObjectOfType<PlayerManager>();
-        if (player != null)
-        {
-            player.OnTileEnhanced();
-        }
 
         UpdateChargeVisuals();
 

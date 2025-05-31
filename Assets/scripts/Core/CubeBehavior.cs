@@ -150,7 +150,7 @@ public class CubeBehavior : MonoBehaviour
                 landingTile.HandleCubeLanding(this);
                 if (landingTile.IsAdvantaged)
                 {
-                    playerActionManager.TriggerNextCubeMarker(position.x, position.y);
+                    playerActionManager.TriggerCubeMarkerAt(new Vector2Int(position.x, position.y));
                 }
             }
         }

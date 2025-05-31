@@ -100,8 +100,6 @@ public class PlayerManager : MonoBehaviour
 
         HandleMovement();
         HandleTileTracking();
-        HandleMarkerActions();
-        HandleDetonationActions();
         HandleSpeedControl();
         TrackMovement();
         CheckForCollisions();
@@ -131,7 +129,7 @@ public class PlayerManager : MonoBehaviour
             grid = GridManager.Instance ?? FindObjectOfType<GridManager>();
             if (grid == null)
             {
-                Debug.LogError("❌ PlayerManager requires GridManager!");
+                Debug.LogError("PlayerManager requires GridManager!");
                 enabled = false;
                 return;
             }
@@ -158,7 +156,7 @@ public class PlayerManager : MonoBehaviour
     }
     #endregion
 
-    #region Movement System
+
     #region Movement System
     private void HandleMovement()
     {
@@ -348,7 +346,6 @@ public class PlayerManager : MonoBehaviour
             HandleTileChange(newTilePosition);
         }
     }
-    #endregion
 
     private void HandleTileChange(Vector2Int newPosition)
     {
@@ -406,180 +403,6 @@ public class PlayerManager : MonoBehaviour
         GUI.Label(new Rect(10, 10, 300, 20), $"Current Tile: ({currentTilePosition.x}, {currentTilePosition.y})");
         GUI.Label(new Rect(10, 30, 300, 20), $"Has Marker: {currentHoveredTile.HasMarker}");
         GUI.Label(new Rect(10, 50, 300, 20), $"Is Blackened: {currentHoveredTile.IsBlackened}");
-    }
-    #endregion
-
-    #region Marker System
-    private void HandleMarkerActions()
-    {
-        HandleMarkerPlacement();
-        HandleMarkerTrigger();
-    }
-
-    private void HandleMarkerPlacement()
-    {
-        if (!Input.GetKeyDown(KeyCode.Space)) return;
-
-        if (!IsValidTilePosition(currentTilePosition)) return;
-
-        Tile currentTile = grid.tiles[currentTilePosition.x, currentTilePosition.y];
-        if (currentTile == null || !currentTile.CanBeMarked)
-        {
-            DebugLog($"⚠️ Cannot mark tile at ({currentTilePosition.x}, {currentTilePosition.y})");
-            return;
-        }
-
-        if (currentTile.HasMarker)
-        {
-            RemoveMarker(currentTile);
-        }
-        else
-        {
-            PlaceMarker(currentTile);
-        }
-    }
-
-    private void PlaceMarker(Tile tile)
-    {
-        int chargeLimit = GetMarkerChargeLimit();
-
-        if (currentMarkers >= chargeLimit)
-        {
-            DebugLog($"⚠️ Marker limit reached: {currentMarkers}/{chargeLimit}");
-            return;
-        }
-
-        tile.PlaceMarker();
-        markerQueue.Enqueue(currentTilePosition);
-        currentMarkers++;
-        OnMarkerPlaced();
-
-        NotifyWaveManager(wm => wm.OnMarkerPlaced());
-        DebugLog($"📍 Marker placed at ({currentTilePosition.x}, {currentTilePosition.y}). Total: {currentMarkers}/{chargeLimit}");
-    }
-
-    private void RemoveMarker(Tile tile)
-    {
-        tile.ClearMarker();
-
-        // Rebuild queue without this position
-        var tempQueue = new Queue<Vector2Int>();
-        while (markerQueue.Count > 0)
-        {
-            var pos = markerQueue.Dequeue();
-            if (pos.x != currentTilePosition.x || pos.y != currentTilePosition.y)
-            {
-                tempQueue.Enqueue(pos);
-            }
-        }
-        markerQueue = tempQueue;
-
-        currentMarkers--;
-        DebugLog($"🗑️ Marker removed from ({currentTilePosition.x}, {currentTilePosition.y}). Total: {currentMarkers}");
-    }
-
-    private void HandleMarkerTrigger()
-    {
-        if (!Input.GetKeyDown(KeyCode.F)) return;
-
-        if (markerQueue.Count == 0)
-        {
-            DebugLog("⚠️ No markers to trigger");
-            return;
-        }
-
-        Vector2Int markerPos = markerQueue.Dequeue();
-
-        if (!IsValidTilePosition(markerPos))
-        {
-            DebugLog("⚠️ Marker position out of bounds");
-            return;
-        }
-
-        Tile tile = grid.tiles[markerPos.x, markerPos.y];
-        if (tile != null && tile.HasMarker)
-        {
-            tile.TriggerMarker();
-            currentMarkers--;
-            OnMarkerTriggered();
-            DebugLog($"💥 Marker triggered at ({markerPos.x}, {markerPos.y}). Remaining: {currentMarkers}");
-
-            StartCoroutine(MarkerTriggerCooldown());
-        }
-    }
-
-    private IEnumerator MarkerTriggerCooldown()
-    {
-        yield return new WaitForSeconds(0.1f);
-    }
-
-    private int GetMarkerChargeLimit()
-    {
-        var waveManager = FindObjectOfType<WaveManager>();
-        if (waveManager != null)
-        {
-            int waveLimit = waveManager.MarkerChargeLimit();
-            if (waveLimit > 0) return waveLimit;
-        }
-        return maxMarkerCharge;
-    }
-    #endregion
-
-    #region Detonation System
-    private void HandleDetonationActions()
-    {
-        HandleDetonationTrigger();
-        HandleDetonationPreview();
-    }
-
-    private void HandleDetonationTrigger()
-    {
-        if (!Input.GetKeyDown(KeyCode.D)) return;
-
-        DebugLog("🔥 D key pressed, checking detonations...");
-
-        if (playerActionManager == null)
-        {
-            DebugLog("⚠️ DetonationManager not found");
-            RefindDetonationManager();
-            return;
-        }
-
-        if (playerActionManager.HasCubeMarkers())
-        {
-            Vector2Int nextPoint = playerActionManager.GetNextCubeMarker();
-            DebugLog($"Triggering detonation at ({nextPoint.x}, {nextPoint.y})");
-            playerActionManager.TriggerNextCubeMarker();
-            OnDetonationUsed();
-        }
-        else
-        {
-            DebugLog("No detonation points available");
-        }
-    }
-
-    private void HandleDetonationPreview()
-    {
-        if (playerActionManager == null) return;
-
-        if (Input.GetKey(KeyCode.P))
-        {
-            Vector2Int nextPoint = playerActionManager.GetNextCubeMarker();
-            if (nextPoint.x >= 0 && nextPoint.y >= 0)
-            {
-                playerActionManager.ShowAreaPreview(nextPoint);
-            }
-        }
-        else if (Input.GetKeyUp(KeyCode.P))
-        {
-            playerActionManager.HideAreaPreview();
-        }
-    }
-
-    private void RefindDetonationManager()
-    {
-        playerActionManager = FindObjectOfType<PlayerActionManager>();
-        DebugLog($"Searched for PlayerActionManager: {(playerActionManager != null ? "Found" : "Not found")}");
     }
     #endregion
 
@@ -658,65 +481,6 @@ public class PlayerManager : MonoBehaviour
     #endregion
 
     #region Statistics & Events
-    public void OnCubeCaptured(Enumerations.CubeType cubeType)
-    {
-        switch (cubeType)
-        {
-            case Enumerations.CubeType.Normal: normalCubesCaptured++; break;
-            case Enumerations.CubeType.Blue: blueCubesCaptured++; break;
-            case Enumerations.CubeType.Black: blackCubesCaptured++; break;
-        }
-
-        NotifyWaveManager(wm => wm.OnNonBlackCubeProcessed(cubeType, true));
-        UpdateStatistics();
-        DebugLog($"📦 {cubeType} cube captured. Totals: N={normalCubesCaptured}, B={blueCubesCaptured}, X={blackCubesCaptured}");
-    }
-
-    public void OnCubeEscaped(Enumerations.CubeType cubeType)
-    {
-        cubesEscaped++;
-        UpdateStatistics();
-        DebugLog($"💨 Cube escaped. Total: {cubesEscaped}");
-    }
-
-    public void OnMarkerPlaced()
-    {
-        markersPlaced++;
-        UpdateStatistics();
-    }
-
-    public void OnMarkerTriggered()
-    {
-        markersTriggered++;
-        UpdateStatistics();
-    }
-
-    public void OnDetonationUsed()
-    {
-        detonationsUsed++;
-        UpdateStatistics();
-    }
-
-    public void OnTileCorrupted()
-    {
-        tilesCorrupted++;
-        UpdateStatistics();
-        DebugLog($"🔥 Tile corrupted. Total: {tilesCorrupted}");
-    }
-
-    public void OnTilePrimed()
-    {
-        tilesPrimed++;
-        UpdateStatistics();
-        DebugLog($"💎 Tile primed. Total: {tilesPrimed}");
-    }
-
-    public void OnTileEnhanced()
-    {
-        tilesEnhanced++;
-        UpdateStatistics();
-        DebugLog($"⭐ Tile enhanced. Total: {tilesEnhanced}");
-    }
 
     private void UpdateStatistics()
     {

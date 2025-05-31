@@ -198,14 +198,14 @@ public class PlayerActionDebugPanel : IDebugPanel
 
         if (GUILayout.Button("Place Player Marker"))
         {
-            actionManager.PlacePlayerMarker(testMarkerPosition);
+            actionManager.PlacePlayerMarkerAt(testMarkerPosition);
         }
         GUILayout.EndHorizontal();
 
         GUILayout.BeginHorizontal();
         if (GUILayout.Button("Trigger Player Marker"))
         {
-            actionManager.TriggerPlayerMarker(testMarkerPosition);
+            actionManager.TriggerPlayerMarkerAt(testMarkerPosition);
         }
         if (GUILayout.Button("Create Cube Marker"))
         {
@@ -513,7 +513,7 @@ public class PlayerActionDebugPanel : IDebugPanel
         {
             if (playerManager != null && actionManager != null)
             {
-                actionManager.PlacePlayerMarker(playerManager.currentTilePosition);
+                actionManager.PlacePlayerMarkerAt(playerManager.currentTilePosition);
             }
         }
 
@@ -523,7 +523,7 @@ public class PlayerActionDebugPanel : IDebugPanel
                 playerManager.currentTilePosition.x,
                 playerManager.currentTilePosition.y + 1);
             SpawnCubeAt(spawnPos, CubeType.Blue);
-            actionManager.PlacePlayerMarker(playerManager.currentTilePosition);
+            actionManager.PlacePlayerMarkerAt(playerManager.currentTilePosition);
         }
 
         if (GUILayout.Button("Chain Reaction Test"))
