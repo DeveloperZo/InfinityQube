@@ -217,59 +217,43 @@ public class Tile : MonoBehaviour
         // Change visual state to "activated"
         ActivateMarker();
 
-        if (cubeToProcess != null)
-        {
-            // Handle cube type-specific behavior
-            switch (cubeToProcess.type)
-            {
-                case Enumerations.CubeType.Black:
-                    // Black cube captured = immediate corruption
-                    BlackenTile();
-                    NotifyPlayerCubeCapture(Enumerations.CubeType.Black);
-                    // The black cube remains (not destroyed)
-                    break;
-
-                case Enumerations.CubeType.Blue:
-                    // Blue cube captured = create detonation point
-                    Debug.Log($"Blue cube captured at ({x}, {y}) - Priming tile for detonation");
-                    NotifyPlayerCubeCapture(Enumerations.CubeType.Blue);
-                    PrimeTile(); // This will register with DetonationManager
-                                 // Consume the blue cube
-                    Destroy(cubeToProcess.gameObject);
-                    break;
-
-                case Enumerations.CubeType.Normal:
-                    NotifyPlayerCubeCapture(Enumerations.CubeType.Normal);
-                    // Normal cubes are simply consumed
-                    Destroy(cubeToProcess.gameObject);
-                    break;
-            }
-        }
-
-
         // Start a coroutine to reset the material after a delay
         StartCoroutine(ResetMarkerAfterDelay(0.5f));
 
+        if (cubeToProcess == null)
+        {
+            Debug.LogWarning($"No cube to process on marker trigger at ({x}, {y}).");
+            return;
+        }
+
+        // Handle cube type-specific behavior
+        switch (cubeToProcess.type)
+        {
+            case Enumerations.CubeType.Black:
+                // Black cube captured = immediate corruption
+                BlackenTile();
+                NotifyPlayerCubeCapture(Enumerations.CubeType.Black);
+                // The black cube remains (not destroyed)
+                break;
+
+            case Enumerations.CubeType.Blue:
+                // Blue cube captured = create detonation point
+                Debug.Log($"Blue cube captured at ({x}, {y}) - Priming tile for detonation");
+                NotifyPlayerCubeCapture(Enumerations.CubeType.Blue);
+                PrimeTile(); // This will register with DetonationManager
+                             // Consume the blue cube
+                Destroy(cubeToProcess.gameObject);
+                break;
+
+            case Enumerations.CubeType.Normal:
+                NotifyPlayerCubeCapture(Enumerations.CubeType.Normal);
+                // Normal cubes are simply consumed
+                Destroy(cubeToProcess.gameObject);
+                break;
+        }
+
         // Clear cube reference after processing
         currentCube = null;
-    }
-
-    private void ActivateMarker()
-    {
-        Debug.Log($"Tile ({x},{y}): ActivateMarker called - hasMarker before: {hasMarker}");
-
-        // Hide the marker object temporarily but don't change hasMarker state yet
-        if (markerObj != null)
-        {
-            markerObj.SetActive(false);
-            Debug.Log($"Tile ({x},{y}): Marker object hidden");
-        }
-
-        if (tileRenderer != null && activateMarkerMaterial != null)
-        {
-            tileRenderer.material = activateMarkerMaterial;
-            Debug.Log($"Tile ({x},{y}): Applied activation material");
-        }
     }
 
     private IEnumerator ResetMarkerAfterDelay(float delay)
@@ -290,28 +274,8 @@ public class Tile : MonoBehaviour
             Debug.Log($"Tile ({x},{y}): Marker object destroyed");
         }
 
-        // Reset the tile appearance based on current state
-        if (tileRenderer != null)
-        {
-            tileRenderer.material = originalMaterial;
-
-            if (IsBlackened)
-            {
-                tileRenderer.material = forbiddenMaterial;
-            }
-            else if (IsAdvantaged)
-            {
-                UpdateChargeVisuals();
-            }
-            else if(IsPrimed)
-            {
-                tileRenderer.material = chargeMaterials[0];
-            }
-
-            Debug.Log($"Tile ({x},{y}): Tile material reset");
-        }
-
-        
+        // CRITICAL: Reset the tile appearance based on current state with proper priority
+        ResetTileAppearance();
 
         // IMPORTANT: Restore soft highlight if player is still on this tile
         if (isPlayerOnTile)
@@ -322,6 +286,54 @@ public class Tile : MonoBehaviour
         else
         {
             Debug.Log($"Tile ({x},{y}): Player not on tile, no highlight needed");
+        }
+    }
+
+    public void ResetTileAppearance()
+    {
+        if (tileRenderer == null) return;
+
+        // Reset based on current tile state in priority order
+        if (IsBlackened)
+        {
+            tileRenderer.material = forbiddenMaterial;
+            Debug.Log($"Tile ({x},{y}): Reset to blackened material");
+        }
+        else if (IsAdvantaged && HasCharges)
+        {
+            UpdateChargeVisuals();
+            Debug.Log($"Tile ({x},{y}): Reset to advantaged material with {DetonationCharges} charges");
+        }
+        else if (IsPrimed)
+        {
+            if (chargeMaterials != null && chargeMaterials.Length > 0)
+            {
+                tileRenderer.material = chargeMaterials[0];
+            }
+            Debug.Log($"Tile ({x},{y}): Reset to primed material");
+        }
+        else
+        {
+            tileRenderer.material = originalMaterial;
+            Debug.Log($"Tile ({x},{y}): Reset to original material");
+        }
+    }
+
+    private void ActivateMarker()
+    {
+        Debug.Log($"Tile ({x},{y}): ActivateMarker called - hasMarker before: {hasMarker}");
+
+        // Hide the marker object temporarily but don't change hasMarker state yet
+        if (markerObj != null)
+        {
+            markerObj.SetActive(false);
+            Debug.Log($"Tile ({x},{y}): Marker object hidden");
+        }
+
+        if (tileRenderer != null && activateMarkerMaterial != null)
+        {
+            tileRenderer.material = activateMarkerMaterial;
+            Debug.Log($"Tile ({x},{y}): Applied activation material");
         }
     }
 

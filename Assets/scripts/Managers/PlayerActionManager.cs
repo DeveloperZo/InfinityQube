@@ -739,13 +739,18 @@ public class PlayerActionManager : MonoBehaviour
     {
         if (tile == null) return;
 
-        Renderer renderer = tile.GetComponent<Renderer>();
-        if (renderer != null && originalTileMaterials.ContainsKey(tile))
+        // Remove from our tracking
+        if (originalTileMaterials.ContainsKey(tile))
         {
-            renderer.material = originalTileMaterials[tile];
             originalTileMaterials.Remove(tile);
-            tile.SetDetonationPoint(false);
         }
+
+        tile.SetDetonationPoint(false);
+
+        // Force the tile to reset its appearance based on current state
+        tile.ResetTileAppearance();
+
+        Debug.Log($"Reset cube marker material for tile at ({tile.x}, {tile.y})");
     }
 
     private IEnumerator FlashTile(Tile tile)
