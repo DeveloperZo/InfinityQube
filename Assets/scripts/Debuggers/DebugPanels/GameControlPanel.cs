@@ -9,7 +9,7 @@ public class GameControlPanel : IDebugPanel
     private WaveManager waveManager;
     private PlayerManager playerManager;
     private GridManager gridManager;
-    private DetonationManager detonationManager;
+    private PlayerActionManager playerActionManager;
 
     // Update tracking
     private int lastMoveStep = -1;
@@ -22,7 +22,7 @@ public class GameControlPanel : IDebugPanel
         waveManager = Object.FindObjectOfType<WaveManager>();
         playerManager = Object.FindObjectOfType<PlayerManager>();
         gridManager = GridManager.Instance;
-        detonationManager = Object.FindObjectOfType<DetonationManager>();
+        playerActionManager = Object.FindObjectOfType<PlayerActionManager>();
     }
 
     public void Update()
@@ -219,7 +219,7 @@ public class GameControlPanel : IDebugPanel
         if (GUILayout.Button("Clear All Markers"))
             gridManager?.ClearAllMarkers();
         if (GUILayout.Button("Clear Detonations"))
-            detonationManager?.ClearDetonationPoints();
+            playerActionManager?.ClearAllActions();
         GUILayout.EndHorizontal();
     }
 }

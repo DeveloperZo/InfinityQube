@@ -71,7 +71,7 @@ public class PlayerManager : MonoBehaviour
     public float totalPlayTime = 0f;
 
     // Internal State
-    private DetonationManager detonationManager;
+    private PlayerActionManager playerActionManager;
     private static readonly int IsRunningHash = Animator.StringToHash("IsRunning");
     private bool isInitialized = false;
     private Vector2Int lastPosition;
@@ -137,10 +137,10 @@ public class PlayerManager : MonoBehaviour
             }
         }
 
-        detonationManager = FindObjectOfType<DetonationManager>();
-        if (detonationManager == null)
+        playerActionManager = FindObjectOfType<PlayerActionManager>();
+        if (playerActionManager == null)
         {
-            Debug.LogWarning("⚠️ DetonationManager not found - detonation features limited");
+            Debug.LogWarning("PlayerActionManager not found - player actions features limited");
         }
     }
 
@@ -538,48 +538,48 @@ public class PlayerManager : MonoBehaviour
 
         DebugLog("🔥 D key pressed, checking detonations...");
 
-        if (detonationManager == null)
+        if (playerActionManager == null)
         {
             DebugLog("⚠️ DetonationManager not found");
             RefindDetonationManager();
             return;
         }
 
-        if (detonationManager.HasDetonationPoints())
+        if (playerActionManager.HasCubeMarkers())
         {
-            Vector2Int nextPoint = detonationManager.GetNextDetonationPoint();
-            DebugLog($"💥 Triggering detonation at ({nextPoint.x}, {nextPoint.y})");
-            detonationManager.TriggerNextDetonation();
+            Vector2Int nextPoint = playerActionManager.GetNextCubeMarker();
+            DebugLog($"Triggering detonation at ({nextPoint.x}, {nextPoint.y})");
+            playerActionManager.TriggerNextCubeMarker();
             OnDetonationUsed();
         }
         else
         {
-            DebugLog("⚠️ No detonation points available");
+            DebugLog("No detonation points available");
         }
     }
 
     private void HandleDetonationPreview()
     {
-        if (detonationManager == null) return;
+        if (playerActionManager == null) return;
 
         if (Input.GetKey(KeyCode.P))
         {
-            Vector2Int nextPoint = detonationManager.GetNextDetonationPoint();
+            Vector2Int nextPoint = playerActionManager.GetNextCubeMarker();
             if (nextPoint.x >= 0 && nextPoint.y >= 0)
             {
-                detonationManager.ShowDetonationPreview(nextPoint);
+                playerActionManager.ShowAreaPreview(nextPoint);
             }
         }
         else if (Input.GetKeyUp(KeyCode.P))
         {
-            detonationManager.HideDetonationPreview();
+            playerActionManager.HideAreaPreview();
         }
     }
 
     private void RefindDetonationManager()
     {
-        detonationManager = FindObjectOfType<DetonationManager>();
-        DebugLog($"🔍 Searched for DetonationManager: {(detonationManager != null ? "Found" : "Not found")}");
+        playerActionManager = FindObjectOfType<PlayerActionManager>();
+        DebugLog($"Searched for PlayerActionManager: {(playerActionManager != null ? "Found" : "Not found")}");
     }
     #endregion
 
@@ -785,7 +785,22 @@ public class PlayerManager : MonoBehaviour
         }
 
         Vector3 worldPos = grid.GridToWorldPosition(x, z, 0f);
-        transform.position = worldPos;
+
+        // Handle CharacterController properly
+        CharacterController controller = GetComponent<CharacterController>();
+        if (controller != null)
+        {
+            controller.enabled = false; // Temporarily disable
+            transform.position = worldPos;
+            controller.enabled = true; // Re-enable
+        }
+        else
+        {
+            transform.position = worldPos;
+        }
+
+        // Reset velocity to prevent sliding
+        currentVelocity = Vector3.zero;
 
         currentTilePosition = new Vector2Int(x, z);
         lastLoggedTileX = x;

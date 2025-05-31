@@ -17,7 +17,7 @@ public class GameUI : MonoBehaviour
 
     // References
     private GridManager grid;
-    private DetonationManager detonationManager;
+    private PlayerActionManager playerActionManager;
 
 
     // UI style caching
@@ -32,7 +32,7 @@ public class GameUI : MonoBehaviour
     {
         // Find references
         grid = FindObjectOfType<GridManager>();
-        detonationManager = FindObjectOfType<DetonationManager>();
+        playerActionManager = FindObjectOfType<PlayerActionManager>();
 
         // Initialize rain position to center of grid
         if (grid != null)
@@ -147,9 +147,9 @@ public class GameUI : MonoBehaviour
     private void DrawDetonationTracker()
     {
         // Refresh references if needed
-        if (detonationManager == null)
+        if (playerActionManager == null)
         {
-            detonationManager = FindObjectOfType<DetonationManager>();
+            playerActionManager = FindObjectOfType<PlayerActionManager>();
         }
         if (grid == null)
         {
@@ -167,16 +167,16 @@ public class GameUI : MonoBehaviour
 
         GUILayout.Space(5);
 
-        if (detonationManager != null)
+        if (playerActionManager != null)
         {
             GUILayout.BeginVertical(boxStyle);
 
             // Count of active detonation points
-            int count = detonationManager.DetonationPointCount;
+            int count = playerActionManager.CubeMarkerCount;
             GUILayout.Label($"Active Detonation Points: {count}", textStyle);
 
             // Show next detonation position
-            Vector2Int nextPoint = detonationManager.GetNextDetonationPoint();
+            Vector2Int nextPoint = playerActionManager.GetNextCubeMarker();
             if (nextPoint.x >= 0)
             {
                 GUILayout.Label($"Next Detonation: ({nextPoint.x}, {nextPoint.y})", textStyle);
@@ -189,7 +189,7 @@ public class GameUI : MonoBehaviour
             // Button to trigger next detonation
             if (count > 0)
             {
-                nextPoint = detonationManager.GetNextDetonationPoint();
+                nextPoint = playerActionManager.GetNextCubeMarker();
                 if (nextPoint.x >= 0)
                 {
                     // Determine area size based on grid width
@@ -232,7 +232,7 @@ public class GameUI : MonoBehaviour
                     for (int y = 0; y < grid.Height; y++)
                     {
                         Tile tile = grid.tiles[x, y];
-                        if (tile != null && (tile.HasCharges || detonationManager.GetDetonationPoint(new Vector2Int(tile.x, tile.y)) ))
+                        if (tile != null && (tile.HasCharges || playerActionManager.GetCubeMarker(new Vector2Int(tile.x, tile.y)) ))
                         {
                             foundCharged = true;
                             int charges = tile.DetonationCharges;

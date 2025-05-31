@@ -11,7 +11,7 @@ public class StageManager : MonoBehaviour
     [SerializeField] private GridManager gridManager;
     [SerializeField] private WaveManager waveManager;
     [SerializeField] private PlayerManager playerController;
-    [SerializeField] private DetonationManager detonationManager;
+    [SerializeField] private PlayerActionManager playerActionManager;
 
     [Header("Stage Database")]
     [SerializeField] private StageDB stageDatabase;
@@ -72,7 +72,7 @@ public class StageManager : MonoBehaviour
         if (gridManager == null) gridManager = GridManager.Instance;
         if (waveManager == null) waveManager = FindObjectOfType<WaveManager>();
         if (playerController == null) playerController = FindObjectOfType<PlayerManager>();
-        if (detonationManager == null) detonationManager = FindObjectOfType<DetonationManager>();
+        if (playerActionManager == null) playerActionManager = FindObjectOfType<PlayerActionManager>();
     }
 
     private void InitializeStageDatabase()
@@ -259,9 +259,9 @@ public class StageManager : MonoBehaviour
 
     private void ConfigureDetonationManager(StageData stage)
     {
-        if (detonationManager == null) return;
+        if (playerActionManager == null) return;
 
-        detonationManager.ClearDetonationPoints();
+        playerActionManager.ClearAllActions();
     }
 
     private List<WaveData> AdjustWavePositionsForGrid(List<WaveData> waves)
@@ -290,9 +290,9 @@ public class StageManager : MonoBehaviour
             waveManager.StopWave();
         }
 
-        if (detonationManager != null)
+        if (playerActionManager != null)
         {
-            detonationManager.ClearDetonationPoints();
+            playerActionManager.ClearAllActions();
         }
     }
     #endregion

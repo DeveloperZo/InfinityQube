@@ -5,7 +5,7 @@ public class SystemDebugPanel : IDebugPanel
     public string PanelName => "System";
 
     private GridManager gridManager;
-    private DetonationManager detonationManager;
+    private PlayerActionManager playerActionManager;
 
     // Performance tracking
     private float lastFrameRate = 0f;
@@ -15,7 +15,7 @@ public class SystemDebugPanel : IDebugPanel
     public void Initialize()
     {
         gridManager = GridManager.Instance;
-        detonationManager = Object.FindObjectOfType<DetonationManager>();
+        playerActionManager = Object.FindObjectOfType<PlayerActionManager>();
     }
 
     public void Update()
@@ -108,12 +108,12 @@ public class SystemDebugPanel : IDebugPanel
     {
         GUILayout.Label("DETONATION INFO", GUI.skin.box);
 
-        if (detonationManager != null)
+        if (playerActionManager != null)
         {
-            GUILayout.Label($"Detonation Points: {detonationManager.DetonationPointCount}");
-            GUILayout.Label($"Has Points: {detonationManager.HasDetonationPoints()}");
+            GUILayout.Label($"Detonation Points: {playerActionManager.CubeMarkerCount}");
+            GUILayout.Label($"Has Points: {playerActionManager.HasCubeMarkers()}");
 
-            Vector2Int nextPoint = detonationManager.GetNextDetonationPoint();
+            Vector2Int nextPoint = playerActionManager.GetNextCubeMarker();
             if (nextPoint.x >= 0)
             {
                 GUILayout.Label($"Next Point: ({nextPoint.x}, {nextPoint.y})");
@@ -125,7 +125,7 @@ public class SystemDebugPanel : IDebugPanel
 
             if (GUILayout.Button("Clear All Detonations"))
             {
-                detonationManager.ClearDetonationPoints();
+                playerActionManager.ClearAllActions();
             }
         }
         else
@@ -145,7 +145,7 @@ public class SystemDebugPanel : IDebugPanel
 
         if (GUILayout.Button("Clear All Detonations"))
         {
-            detonationManager?.ClearDetonationPoints();
+            playerActionManager?.ClearAllActions();
         }
 
         if (GUILayout.Button("Force Garbage Collection"))

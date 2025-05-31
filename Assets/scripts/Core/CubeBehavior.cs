@@ -24,7 +24,7 @@ public class CubeBehavior : MonoBehaviour
 
 
     private GridManager grid;
-    private DetonationManager detonationManager;
+    private PlayerActionManager playerActionManager;
     private bool isMoving = false;
     public bool isDestroyed = false;
     public float rainSpeed = 3f;
@@ -62,7 +62,7 @@ public class CubeBehavior : MonoBehaviour
 
         Debug.Log($"Cube {type} initialized at grid ({position.x}, {position.y}) -> world {worldPos}");
 
-        detonationManager = FindAnyObjectByType<DetonationManager>();
+        playerActionManager = FindAnyObjectByType<PlayerActionManager>();
         gameObject.name = name;
 
         // Setup physics
@@ -150,7 +150,7 @@ public class CubeBehavior : MonoBehaviour
                 landingTile.HandleCubeLanding(this);
                 if (landingTile.IsAdvantaged)
                 {
-                    detonationManager.TriggerNextDetonation(position.x, position.y);
+                    playerActionManager.TriggerNextCubeMarker(position.x, position.y);
                 }
             }
         }

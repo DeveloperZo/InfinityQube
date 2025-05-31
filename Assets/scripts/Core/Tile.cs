@@ -474,11 +474,11 @@ public class Tile : MonoBehaviour
             player.OnTilePrimed();
         }
 
-        // Register with DetonationManager - this was missing!
-        DetonationManager detonationManager = FindObjectOfType<DetonationManager>();
-        if (detonationManager != null)
+        // Register with PlayerActionManager - this was missing!
+        PlayerActionManager playerActionManager = FindObjectOfType<PlayerActionManager>();
+        if (playerActionManager != null)
         {
-            detonationManager.RegisterDetonationPoint(new Vector2Int(x, y));
+            playerActionManager.CreateCubeMarker(new Vector2Int(x, y));
         }
 
         // Set visual state
@@ -487,7 +487,7 @@ public class Tile : MonoBehaviour
             tileRenderer.material = chargeMaterials[0];
         }
 
-        Debug.Log($"Tile ({x},{y}): Primed for detonation and registered with DetonationManager");
+        Debug.Log($"Tile ({x},{y}): Primed for detonation and registered with PlayerActionManager");
     }
     public void AdvantageTile(int charges = 3)
     {

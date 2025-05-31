@@ -7,13 +7,13 @@ using static Enumerations;
 public class CubeCollisionController : MonoBehaviour
 {
     private GridManager grid;
-    private DetonationManager detonationManager;
+    private PlayerActionManager playerActionManager;
 
 
     public void Initialize(GridManager gridManager)
     {
         grid = gridManager;
-        detonationManager = FindObjectOfType<DetonationManager>();
+        playerActionManager = FindObjectOfType<PlayerActionManager>();
     }
     public void HandleCubeCollision(CubeBehavior sourceCube, CubeBehavior targetCube, Vector2Int position)
     {
@@ -42,7 +42,7 @@ public class CubeCollisionController : MonoBehaviour
                 else if (sourceType == Enumerations.CubeType.Blue)
                 {
                     tile.TransformTile(sourceType);
-                    detonationManager.RegisterDetonationPoint(new Vector2Int(tile.x, tile.y), DetonationType.Small);
+                    playerActionManager.CreateCubeMarker(new Vector2Int(tile.x, tile.y), DetonationType.Small);
 
                     // Consume both cubes after transformation
                     Destroy(sourceCube.gameObject);
@@ -107,10 +107,10 @@ public class CubeCollisionController : MonoBehaviour
         {
             case Enumerations.CubeType.Black:
                 // Blue + Black = Blue consumed, triggers detonation
-                if (FindObjectOfType<DetonationManager>() != null)
+                if (FindObjectOfType<PlayerActionManager>() != null)
                 {
-                    FindObjectOfType<DetonationManager>().RegisterDetonationPoint(position, DetonationType.Small);
-                    FindObjectOfType<DetonationManager>().TriggerNextDetonation();
+                    FindObjectOfType<PlayerActionManager>().CreateCubeMarker(position, DetonationType.Small);
+                    FindObjectOfType<PlayerActionManager>().TriggerNextCubeMarker();
                 }
                 Destroy(sourceCube.gameObject);
                 break;
@@ -119,9 +119,9 @@ public class CubeCollisionController : MonoBehaviour
                 // Blue + Blue = Enhanced blue tile and create detonation mark
                 EnhanceBlueTile(position);
                 // Register a detonation point at the tile position
-                if (detonationManager != null)
+                if (playerActionManager != null)
                 {
-                    detonationManager.RegisterDetonationPoint(position, DetonationType.Standard);
+                    playerActionManager.CreateCubeMarker(position, DetonationType.Standard);
                 }
                 Destroy(targetCube.gameObject);
                 Destroy(sourceCube.gameObject);
@@ -131,9 +131,9 @@ public class CubeCollisionController : MonoBehaviour
                 // Blue + Normal = Consume normal and create detonation mark
                 Destroy(targetCube.gameObject);
                 // Register a detonation point at the tile position
-                if (detonationManager != null)
+                if (playerActionManager != null)
                 {
-                    detonationManager.RegisterDetonationPoint(position, DetonationType.Small);
+                    playerActionManager.CreateCubeMarker(position, DetonationType.Small);
                 }
                 break;
         }
@@ -184,13 +184,12 @@ public class CubeCollisionController : MonoBehaviour
             tile.PlaceMarker();
 
             // Register with DetonationManager for auto-detonation
-            DetonationManager detonationManager = FindObjectOfType<DetonationManager>();
+            PlayerActionManager detonationManager = FindObjectOfType<PlayerActionManager>();
             if (detonationManager != null)
             {
-                detonationManager.RegisterDetonationPoint(
+                detonationManager.CreateCubeMarker(
                     position,
-                    DetonationType.Small, // 2x2 area
-                    true // Auto-detonate on next move
+                    DetonationType.Small
                 );
 
                 Debug.Log($"Marked tile at ({position.x}, {position.y}) for 2x2 auto-detonation on next move");
@@ -210,10 +209,10 @@ public class CubeCollisionController : MonoBehaviour
 
 
             // Register with detonation manager
-            DetonationManager detonationManager = FindObjectOfType<DetonationManager>();
+            PlayerActionManager detonationManager = FindObjectOfType<PlayerActionManager>();
             if (detonationManager != null)
             {
-                detonationManager.RegisterDetonationPoint(position);
+                detonationManager.CreateCubeMarker(position);
             }
         }
     }

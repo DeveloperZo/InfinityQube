@@ -11,7 +11,7 @@ public class WaveManager : MonoBehaviour
     public GridManager grid;
     public GameObject[] cubePrefabs;
     public PlayerManager player;
-    public DetonationManager detonationManager;
+    public PlayerActionManager playerActionManager;
 
     [Header("Wave Configuration")]
     public bool useWaveConfiguration = false;
@@ -91,7 +91,7 @@ public class WaveManager : MonoBehaviour
     {
         if (grid == null) grid = FindObjectOfType<GridManager>();
         if (player == null) player = FindObjectOfType<PlayerManager>();
-        if (detonationManager == null) detonationManager = FindObjectOfType<DetonationManager>();
+        if (playerActionManager == null) playerActionManager = FindObjectOfType<PlayerActionManager>();
 
         ValidateReferences();
     }

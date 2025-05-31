@@ -92,6 +92,7 @@ public class DebugSystem : MonoBehaviour
         RegisterPanel(new StageDebugPanel());
         RegisterPanel(new WaveDebugPanel());
         RegisterPanel(new PlayerDebugPanel());
+        RegisterPanel(new PlayerActionDebugPanel());
         RegisterPanel(new SystemDebugPanel());
     }
 
