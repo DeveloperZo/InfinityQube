@@ -217,40 +217,38 @@ public class Tile : MonoBehaviour
         // Change visual state to "activated"
         ActivateMarker();
 
+        if (cubeToProcess != null)
+        {
+            // Handle cube type-specific behavior
+            switch (cubeToProcess.type)
+            {
+                case Enumerations.CubeType.Black:
+                    // Black cube captured = immediate corruption
+                    BlackenTile();
+                    NotifyPlayerCubeCapture(Enumerations.CubeType.Black);
+                    // The black cube remains (not destroyed)
+                    break;
+
+                case Enumerations.CubeType.Blue:
+                    // Blue cube captured = create detonation point
+                    Debug.Log($"Blue cube captured at ({x}, {y}) - Priming tile for detonation");
+                    NotifyPlayerCubeCapture(Enumerations.CubeType.Blue);
+                    PrimeTile(); // This will register with DetonationManager
+                                 // Consume the blue cube
+                    Destroy(cubeToProcess.gameObject);
+                    break;
+
+                case Enumerations.CubeType.Normal:
+                    NotifyPlayerCubeCapture(Enumerations.CubeType.Normal);
+                    // Normal cubes are simply consumed
+                    Destroy(cubeToProcess.gameObject);
+                    break;
+            }
+        }
+
+
         // Start a coroutine to reset the material after a delay
         StartCoroutine(ResetMarkerAfterDelay(0.5f));
-
-        if (cubeToProcess == null)
-        {
-            Debug.LogWarning($"No cube to process on marker trigger at ({x}, {y}).");
-            return;
-        }
-
-        // Handle cube type-specific behavior
-        switch (cubeToProcess.type)
-        {
-            case Enumerations.CubeType.Black:
-                // Black cube captured = immediate corruption
-                BlackenTile();
-                NotifyPlayerCubeCapture(Enumerations.CubeType.Black);
-                // The black cube remains (not destroyed)
-                break;
-
-            case Enumerations.CubeType.Blue:
-                // Blue cube captured = create detonation point
-                Debug.Log($"Blue cube captured at ({x}, {y}) - Priming tile for detonation");
-                NotifyPlayerCubeCapture(Enumerations.CubeType.Blue);
-                PrimeTile(); // This will register with DetonationManager
-                             // Consume the blue cube
-                Destroy(cubeToProcess.gameObject);
-                break;
-
-            case Enumerations.CubeType.Normal:
-                NotifyPlayerCubeCapture(Enumerations.CubeType.Normal);
-                // Normal cubes are simply consumed
-                Destroy(cubeToProcess.gameObject);
-                break;
-        }
 
         // Clear cube reference after processing
         currentCube = null;
@@ -295,6 +293,8 @@ public class Tile : MonoBehaviour
         // Reset the tile appearance based on current state
         if (tileRenderer != null)
         {
+            tileRenderer.material = originalMaterial;
+
             if (IsBlackened)
             {
                 tileRenderer.material = forbiddenMaterial;
@@ -307,10 +307,7 @@ public class Tile : MonoBehaviour
             {
                 tileRenderer.material = chargeMaterials[0];
             }
-            else
-            {
-                tileRenderer.material = originalMaterial;
-             }
+
             Debug.Log($"Tile ({x},{y}): Tile material reset");
         }
 

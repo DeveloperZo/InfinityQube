@@ -226,25 +226,36 @@ public class PlayerActionManager : MonoBehaviour
         if (!IsValidPosition(position)) return false;
 
         Tile tile = gridManager.tiles[position.x, position.y];
-        if (tile == null || !tile.HasMarker) return false;
+        if (tile == null) return false;
+
+        bool hadRealMarker = tile.HasMarker;
 
         // Find cube at this position
         CubeBehavior cubeAtPosition = FindCubeAt(position);
 
         if (cubeAtPosition != null)
         {
-            ProcessCubeCapture(cubeAtPosition, position, "player marker");
+            ProcessCubeCapture(cubeAtPosition, position, hadRealMarker ? "player marker" : "simulated marker");
         }
         else
         {
-            Debug.Log($"Player marker triggered at ({position.x}, {position.y}) but no cube found");
+            Debug.Log($"Marker triggered at ({position.x}, {position.y}) but no cube found");
         }
 
-        // Clear the marker
-        tile.TriggerMarker();
-        markersTriggered++;
+        // Only trigger real markers, simulate visual effect for non-marker tiles
+        if (hadRealMarker)
+        {
+            tile.TriggerMarker();
+            markersTriggered++;
+            Debug.Log($"Real player marker triggered at ({position.x}, {position.y})");
+        }
+        else
+        {
+            // Simulate marker trigger effect for area captures
+            StartCoroutine(SimulateMarkerTrigger(position));
+            Debug.Log($"Simulated marker trigger at ({position.x}, {position.y})");
+        }
 
-        Debug.Log($"Player marker triggered at ({position.x}, {position.y}). Remaining: {playerMarkerQueue.Count}");
         return true;
     }
 
@@ -328,87 +339,18 @@ public class PlayerActionManager : MonoBehaviour
         List<Vector2Int> affectedPositions = GetAreaPositions(center, size);
         Debug.Log($"Area positions: {string.Join(", ", affectedPositions)}");
 
-        // Process each position in the area with proper marker simulation
+        // Process each position in the area as if it had a player marker
         foreach (Vector2Int position in affectedPositions)
         {
             if (IsValidPosition(position))
             {
-                ProcessAreaCapture(position);
+                TriggerPlayerMarkerAt(position);
             }
         }
 
         detonationsUsed++;
         NotifyWaveManager(wm => wm.OnDetonationUsed());
         return true;
-    }
-
-    private void ProcessAreaCapture(Vector2Int position)
-    {
-        Tile tile = gridManager.tiles[position.x, position.y];
-        if (tile == null) return;
-
-        // Flash the tile to show it's being affected
-        StartCoroutine(FlashTile(tile));
-
-        // Find all cubes at this position
-        List<CubeBehavior> cubesAtPosition = FindAllCubesAt(position);
-
-        Debug.Log($"Processing area capture at ({position.x}, {position.y}) - found {cubesAtPosition.Count} cubes");
-
-        foreach (CubeBehavior cube in cubesAtPosition)
-        {
-            ProcessAreaCubeCapture(cube, position);
-        }
-    }
-
-    private void ProcessAreaCubeCapture(CubeBehavior cube, Vector2Int position)
-    {
-        Debug.Log($"Area capturing {cube.type} cube at ({position.x}, {position.y})");
-
-        switch (cube.type)
-        {
-            case CubeType.Normal:
-                // Simulate marker trigger effect for normal cubes
-                StartCoroutine(SimulateMarkerTrigger(position));
-                normalCubesCaptured++;
-                NotifyWaveManager(wm => wm.OnCubeCaptured(CubeType.Normal));
-                NotifyWaveManager(wm => wm.OnNonBlackCubeProcessed(CubeType.Normal, true));
-                RemoveCubeFromWaveManager(cube);
-                Destroy(cube.gameObject);
-                break;
-
-            case CubeType.Blue:
-                // Simulate marker trigger effect for blue cubes
-                StartCoroutine(SimulateMarkerTrigger(position));
-                blueCubesCaptured++;
-                NotifyWaveManager(wm => wm.OnCubeCaptured(CubeType.Blue));
-                NotifyWaveManager(wm => wm.OnNonBlackCubeProcessed(CubeType.Blue, true));
-
-                // Create cascade cube marker for blue cubes
-                CreateCubeMarker(position);
-                Debug.Log($"Created cascading cube marker at ({position.x}, {position.y}) from blue cube capture");
-
-                RemoveCubeFromWaveManager(cube);
-                Destroy(cube.gameObject);
-                break;
-
-            case CubeType.Black:
-                // Simulate marker trigger effect for black cubes
-                StartCoroutine(SimulateMarkerTrigger(position));
-                blackCubesCaptured++;
-                NotifyWaveManager(wm => wm.OnCubeCaptured(CubeType.Black));
-
-                // Blacken the tile
-                Tile tile = gridManager.tiles[position.x, position.y];
-                if (tile != null)
-                {
-                    tile.BlackenTile();
-                }
-
-                RemoveCubeFromWaveManager(cube);
-                // Black cubes may or may not be destroyed depending on game rules
-                break;
-        }
     }
 
     private IEnumerator SimulateMarkerTrigger(Vector2Int position)
@@ -421,10 +363,10 @@ public class PlayerActionManager : MonoBehaviour
         // Create temporary marker visual effect
         GameObject tempMarker = CreateTempMarkerEffect(position);
 
-        // Wait a bit to show the effect
+        // Show red marker briefly
         yield return new WaitForSeconds(0.1f);
 
-        // Make it "activate" like a real marker
+        // Make it "activate" like a real marker (yellow flash)
         if (tempMarker != null)
         {
             Renderer markerRenderer = tempMarker.GetComponent<Renderer>();
@@ -526,19 +468,9 @@ public class PlayerActionManager : MonoBehaviour
 
     private void CaptureCubesAt(Vector2Int position)
     {
-        List<CubeBehavior> cubesAtPosition = FindAllCubesAt(position);
-
-        Debug.Log($"Found {cubesAtPosition.Count} cubes at position ({position.x}, {position.y})");
-
-        foreach (CubeBehavior cube in cubesAtPosition)
-        {
-            ProcessCubeCapture(cube, position, "cube marker area effect");
-        }
-
-        if (cubesAtPosition.Count == 0)
-        {
-            Debug.Log($"No cubes found at position ({position.x}, {position.y}) to capture");
-        }
+        // This method is now redundant since TriggerPlayerMarkerAt handles everything
+        // Keeping for backward compatibility but it just delegates
+        TriggerPlayerMarkerAt(position);
     }
 
     private List<CubeBehavior> FindAllCubesAt(Vector2Int position)
