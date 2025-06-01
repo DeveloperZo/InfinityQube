@@ -10,7 +10,13 @@ public class Tile : MonoBehaviour
     [SerializeField] private bool hasMarker = false;
     [SerializeField] private float markerHeight = 0.5f;
     [SerializeField] private float markerScale = 0.8f;
-
+    
+    [Header("Tile State")]
+    [SerializeField] private bool hasFallen = false;
+    public bool HasFallen => hasFallen;
+    public bool IsPlayable => !hasFallen;
+    
+    
     private const float TRANSFORMED_HEIGHT = -0.25f;  // Lower by 0.25 for transformed tiles
     private const float MARKED_HEIGHT = 0.25f;        // Raise by 0.25 for marked tiles
     private const float NORMAL_HEIGHT = 0f;           // Normal baseline height
@@ -175,7 +181,48 @@ public class Tile : MonoBehaviour
         UpdateTileVisuals();
         Debug.Log($"Tile ({x},{y}): Detonation point set to {hasPoint}");
     }
+    public void MakeTileFall()
+    {
+        if (hasFallen) return;
 
+        hasFallen = true;
+
+        // Clear any existing state
+        ClearMarker();
+        ResetTile();
+
+        // Visual indication - make tile disappear or look destroyed
+        MakeTileVisuallyFallen();
+
+        Debug.Log($"Tile ({x},{y}) has fallen");
+    }
+
+    private void MakeTileVisuallyFallen()
+    {
+        // Option 1: Hide the tile completely
+        gameObject.SetActive(false);
+
+        // Option 2: Make it look destroyed (uncomment this instead if you prefer)
+        // if (tileRenderer != null)
+        // {
+        //     Material fallenMaterial = new Material(Shader.Find("Standard"));
+        //     fallenMaterial.color = new Color(0.2f, 0.2f, 0.2f, 0.3f); // Dark, transparent
+        //     tileRenderer.material = fallenMaterial;
+        // }
+        // 
+        // // Lower the tile visually
+        // transform.position += Vector3.down * 0.5f;
+    }
+    public void RestoreTile()
+    {
+        if (!hasFallen) return;
+
+        hasFallen = false;
+        gameObject.SetActive(true);
+        ResetTile();
+
+        Debug.Log($"Tile ({x},{y}) has been restored");
+    }
     public void BlackenTile()
     {
         isBlackened = true;

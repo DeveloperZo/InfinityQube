@@ -24,6 +24,9 @@ public class WaveManager : MonoBehaviour
     public float waveStartDelay = 0.75f;
     public KeyCode speedUpKey = KeyCode.LeftShift;
 
+
+
+
     [Header("Random Wave Settings")]
     public int waveSize = 3;
     [Range(0f, 1f)] public float normalCubeChance = 0.7f;
@@ -197,8 +200,6 @@ public class WaveManager : MonoBehaviour
     private IEnumerator ProcessWaveStep()
     {
         MoveCubesForward();
-        MoveStep++;
-
         ProcessStepMessages();
         NotifyStepComplete();
 
@@ -299,7 +300,7 @@ public class WaveManager : MonoBehaviour
         for (int i = activeCubes.Count - 1; i >= 0; i--)
         {
             if (i >= activeCubes.Count) continue;
-
+            MoveStep++;
             var cube = activeCubes[i];
             if (cube == null)
             {
@@ -307,15 +308,19 @@ public class WaveManager : MonoBehaviour
                 continue;
             }
 
-            cube.ResetMovementState();
-            bool stillAlive = cube.MoveForward();
-
-            if (!stillAlive)
+            // Only move cubes that aren't currently animating (atomic movement)
+            if (!cube.isMoving)
             {
-                activeCubes.RemoveAt(i);
+                cube.ResetMovementState();
+                bool stillAlive = cube.MoveForward();
+
+                if (!stillAlive)
+                {
+                    activeCubes.RemoveAt(i);
+                }
             }
         }
-    }
+    } 
 
     public void ClearAllCubes()
     {
@@ -459,8 +464,12 @@ public class WaveManager : MonoBehaviour
 
     public void OnCubeEscaped(Enumerations.CubeType cubeType)
     {
-        cubesEscaped++;
-        NotifyStageManager(sm => sm.OnCubeEscaped(cubeType));
+        // Replace the grid reduction call with row removal
+        if (cubeType == Enumerations.CubeType.Normal)
+        {
+            Debug.Log($"Normal cube escaped - triggering bottom row removal");
+            grid.RemoveBottomRow();
+        }
     }
 
     public void OnMarkerPlaced() => markersPlaced++;

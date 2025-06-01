@@ -168,10 +168,10 @@ public class PlayerManager : MonoBehaviour
     private void ProcessMovementInput()
     {
         Vector3 inputDirection = Vector3.zero;
-        if (Input.GetKey(KeyCode.LeftArrow)) inputDirection.x = -1;
-        if (Input.GetKey(KeyCode.RightArrow)) inputDirection.x = 1;
-        if (Input.GetKey(KeyCode.UpArrow)) inputDirection.z = 1;
-        if (Input.GetKey(KeyCode.DownArrow)) inputDirection.z = -1;
+        if (Input.GetKey(KeyCode.LeftArrow) || Input.GetKey(KeyCode.A)) inputDirection.x = -1;
+        if (Input.GetKey(KeyCode.RightArrow) || Input.GetKey(KeyCode.D)) inputDirection.x = 1;
+        if (Input.GetKey(KeyCode.UpArrow) || Input.GetKey(KeyCode.W)) inputDirection.z = 1;
+        if (Input.GetKey(KeyCode.DownArrow) || Input.GetKey(KeyCode.S)) inputDirection.z = -1;
 
         if (inputDirection.magnitude > 1f)
         {
@@ -250,7 +250,11 @@ public class PlayerManager : MonoBehaviour
 
     private bool IsPositionBlockedByCube(Vector2Int gridPos)
     {
+        // First check if position is valid and playable
         if (!IsValidTilePosition(gridPos)) return true;
+
+        Tile tile = grid.GetTileAt(gridPos.x, gridPos.y);
+        if (tile == null || !tile.IsPlayable) return true;
 
         // Check for cubes at this position
         var allCubes = FindObjectsOfType<CubeBehavior>();
@@ -606,7 +610,10 @@ public class PlayerManager : MonoBehaviour
 
     private bool IsValidTilePosition(Vector2Int pos)
     {
-        return pos.x >= 0 && pos.x < grid.Width && pos.y >= 0 && pos.y < grid.Height;
+        if (pos.x < 0 || pos.x >= grid.Width || pos.y < 0 || pos.y >= grid.Height) return false;
+
+        Tile tile = grid.GetTileAt(pos.x, pos.y);
+        return tile != null && tile.IsPlayable;
     }
 
     private void NotifyWaveManager(System.Action<WaveManager> action)

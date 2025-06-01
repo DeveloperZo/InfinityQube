@@ -166,10 +166,10 @@ public class GameUI : MonoBehaviour
         GUILayout.Space(8);
 
         // Essential controls
-        GUILayout.Label("↑↓←→  Move Player", textStyle);
+        GUILayout.Label("WASD  Move Player", textStyle);
         GUILayout.Label("SPACE  Place/Remove Marker", textStyle);
         GUILayout.Label("F      Trigger Marker", textStyle);
-        GUILayout.Label("D      Trigger Detonation", textStyle);
+        GUILayout.Label("G      Trigger Detonation", textStyle);
         GUILayout.Label("K      Close Dialog", textStyle);
 
         GUILayout.Space(5);
@@ -291,13 +291,25 @@ public class GameUI : MonoBehaviour
             }
         }
 
-        // Player position tips
-        if (playerManager.currentTilePosition.y < 3)
+        // Check for fallen rows
+        var gridManager = GridManager.Instance;
+        if (gridManager != null)
         {
-            return "Stay near the bottom to avoid cubes";
+            int playableRows = gridManager.GetPlayableRowCount();
+            int totalRows = gridManager.Height;
+
+            if (playableRows < totalRows)
+            {
+                return $"Warning: {totalRows - playableRows} row(s) have fallen!";
+            }
+
+            if (playableRows <= 5)
+            {
+                return "Critical: Very few rows remain!";
+            }
         }
 
-        return ""; // No tip needed
+        return "";
     }
 
     private Texture2D MakeTexture(int width, int height, Color color)

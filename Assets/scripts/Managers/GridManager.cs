@@ -11,6 +11,7 @@ public class GridManager : MonoBehaviour
 
     [Header("Grid Dimensions")]
     public int width = 5;
+    public int bottom = 0;
     public int height = 20;
     public float tileSize = 1f;
 
@@ -374,7 +375,11 @@ public class GridManager : MonoBehaviour
 
     public bool IsValidGridPosition(int x, int y)
     {
-        return x >= 0 && x < width && y >= 0 && y < height;
+        if (x < 0 || x >= width || y < 0 || y >= height) return false;
+
+        // Check if the tile has fallen
+        Tile tile = GetTileAt(x, y);
+        return tile != null && tile.IsPlayable;
     }
 
     public bool IsValidGridPosition(Vector2Int pos)
@@ -384,10 +389,10 @@ public class GridManager : MonoBehaviour
 
     public Tile GetTileAt(int x, int y)
     {
-        if (!IsValidGridPosition(x, y) || tiles == null)
+        if (x < 0 || x >= width || y < 0 || y >= height || tiles == null)
             return null;
 
-        return tiles[x, y];
+        return tiles[x, y]; // Return the tile even if fallen - let caller check IsPlayable
     }
 
     public Tile GetTileAt(Vector2Int pos)
@@ -610,5 +615,114 @@ public class GridManager : MonoBehaviour
     // Keep backward compatibility
     [System.Obsolete("Use TileSize instead")]
     public float TileScale => tileSize;
+    #endregion
+
+    #region Row Management
+    public void RemoveBottomRow()
+    {
+        if (!IsGridReady) return;
+
+        DebugLog("Removing bottom row due to normal cube escape");
+
+        // Make all tiles in row 0 fall
+        for (int x = 0; x < width; x++)
+        {
+            Tile tile = GetTileAt(x, bottom);
+            if (tile != null)
+            {
+                tile.MakeTileFall();
+            }
+        }
+
+        // Remove any cubes that were on row 0
+        RemoveCubesOnRow(bottom);
+
+        // Adjust player position if they were on row 0
+        AdjustPlayerPosition();
+        bottom++;
+        DebugLog("Bottom row removal complete");
+    }
+
+    private void RemoveCubesOnRow(int row)
+    {
+        var allCubes = FindObjectsOfType<CubeBehavior>();
+        foreach (var cube in allCubes)
+        {
+            if (cube != null && !cube.isDestroyed && cube.position.y == row)
+            {
+                DebugLog($"Removing cube at ({cube.position.x}, {cube.position.y}) - row fell");
+                Destroy(cube.gameObject);
+            }
+        }
+    }
+
+    private void AdjustPlayerPosition()
+    {
+        var playerManager = FindObjectOfType<PlayerManager>();
+        if (playerManager != null && playerManager.currentTilePosition.y == 0)
+        {
+            // Find the lowest available row
+            int safeRow = FindLowestPlayableRow();
+            if (safeRow > 0)
+            {
+                DebugLog($"Moving player from fallen row 0 to row {safeRow}");
+                playerManager.SetPosition(playerManager.currentTilePosition.x, safeRow);
+            }
+        }
+    }
+
+    private int FindLowestPlayableRow()
+    {
+        for (int y = 1; y < height; y++)
+        {
+            bool rowIsPlayable = false;
+            for (int x = 0; x < width; x++)
+            {
+                Tile tile = GetTileAt(x, y);
+                if (tile != null && tile.IsPlayable)
+                {
+                    rowIsPlayable = true;
+                    break;
+                }
+            }
+            if (rowIsPlayable) return y;
+        }
+        return height - 1; // Fallback to top row
+    }
+
+    public int GetPlayableRowCount()
+    {
+        int playableRows = 0;
+        for (int y = 0; y < height; y++)
+        {
+            bool hasPlayableTile = false;
+            for (int x = 0; x < width; x++)
+            {
+                Tile tile = GetTileAt(x, y);
+                if (tile != null && tile.IsPlayable)
+                {
+                    hasPlayableTile = true;
+                    break;
+                }
+            }
+            if (hasPlayableTile) playableRows++;
+        }
+        return playableRows;
+    }
+
+    public bool IsRowPlayable(int row)
+    {
+        if (!IsValidGridPosition(0, row)) return false;
+
+        for (int x = 0; x < width; x++)
+        {
+            Tile tile = GetTileAt(x, row);
+            if (tile != null && tile.IsPlayable)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
     #endregion
 }

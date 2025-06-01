@@ -25,7 +25,7 @@ public class CubeBehavior : MonoBehaviour
 
     private GridManager grid;
     private PlayerActionManager playerActionManager;
-    private bool isMoving = false;
+    public bool isMoving = false;
     public bool isDestroyed = false;
     public float rainSpeed = 3f;
     public float rainHeight = 5f;
@@ -136,12 +136,14 @@ public class CubeBehavior : MonoBehaviour
             }
         }
 
-        // Animate the forward movement
+        // Update logical position immediately (atomic movement)
         position.y -= 1;
         Debug.Log($"Cube {type} moved to ({position.x}, {position.y})");
+
+        // Start animation to catch up to the logical position
         StartCoroutine(AnimateMove(position));
 
-        // Process landing on tiles
+        // Process landing on tiles immediately (based on logical position)
         if (position.y >= 0 && position.x >= 0 && position.x < grid.Width)
         {
             Tile landingTile = grid.tiles[position.x, position.y];
@@ -156,6 +158,78 @@ public class CubeBehavior : MonoBehaviour
         }
 
         return true;
+    }
+
+    private IEnumerator AnimateMove(Vector2Int newPos)
+    {
+        isMoving = true;
+
+        // Calculate world positions using grid conversion
+        Vector3 start = transform.position;
+        Vector3 end = grid.GridToWorldPosition(newPos.x, newPos.y, 2f); // Keep cubes slightly above ground
+
+        Debug.Log($"Animating cube from {start} to {end} (grid pos {newPos})");
+
+        // Get the current move interval from WaveManager to sync animation speed
+        WaveManager waveManager = FindObjectOfType<WaveManager>();
+        float actualMoveDuration = moveDuration;
+
+        if (waveManager != null)
+        {
+            // Use the current move interval but cap it at our normal duration
+            float currentInterval = waveManager.isSpeedingUp ? waveManager.fastMoveInterval :
+                                   (waveManager.CurrentWave?.moveInterval ?? waveManager.normalMoveInterval);
+            actualMoveDuration = Mathf.Min(moveDuration, currentInterval * 0.8f); // Use 80% of interval for smooth movement
+        }
+
+        float elapsed = 0f;
+        Quaternion startRot = transform.rotation;
+        Quaternion endRot = startRot * Quaternion.Euler(-90f, 0f, 0f); // 90° roll forward
+
+        while (elapsed < actualMoveDuration)
+        {
+            if (isDestroyed) yield break;
+
+            elapsed += Time.deltaTime;
+            float t = Mathf.Clamp01(elapsed / actualMoveDuration);
+
+            transform.position = Vector3.Lerp(start, end, t);
+            transform.rotation = Quaternion.Slerp(startRot, Quaternion.Lerp(startRot, endRot, t), t);
+
+            yield return null;
+        }
+
+        // Ensure position is exactly at destination
+        if (!isDestroyed)
+        {
+            transform.position = end;
+            transform.rotation = Quaternion.identity; // Reset rotation to prevent drift
+        }
+
+        if (isDestroyed) yield break;
+
+        // Weighty visual squash - also speed this up proportionally
+        transform.localScale = new Vector3(tileSize * 1.05f, tileSize * 0.9f, tileSize * 1.05f);
+
+        float squashTime = Mathf.Min(squashDuration, actualMoveDuration * 0.3f); // Squash takes 30% of move time
+        yield return new WaitForSeconds(squashTime);
+
+        if (isDestroyed) yield break;
+
+        transform.localScale = new Vector3(tileSize, tileSize, tileSize);
+
+        // Check for marker interaction (guard against destroyed tiles)
+        if (grid != null && newPos.x >= 0 && newPos.x < grid.Width &&
+            newPos.y >= 0 && newPos.y < grid.Height)
+        {
+            Tile tile = grid.tiles[newPos.x, newPos.y];
+            if (tile != null && tile.HasMarker)
+            {
+                tile.ProcessCubeInteraction(this);
+            }
+        }
+
+        isMoving = false;
     }
 
     public void CheckForCollisionOnLanding()
@@ -184,64 +258,6 @@ public class CubeBehavior : MonoBehaviour
                 break;
             }
         }
-    }
-
-    private IEnumerator AnimateMove(Vector2Int newPos)
-    {
-        isMoving = true;
-
-        // Calculate world positions using grid conversion
-        Vector3 start = transform.position;
-        Vector3 end = grid.GridToWorldPosition(newPos.x, newPos.y, 2f); // Keep cubes slightly above ground
-
-        Debug.Log($"Animating cube from {start} to {end} (grid pos {newPos})");
-
-        float elapsed = 0f;
-        Quaternion startRot = transform.rotation;
-        Quaternion endRot = startRot * Quaternion.Euler(-90f, 0f, 0f); // 90° roll forward
-
-        while (elapsed < moveDuration)
-        {
-            if (isDestroyed) yield break;
-
-            elapsed += Time.deltaTime;
-            float t = Mathf.Clamp01(elapsed / moveDuration);
-
-            transform.position = Vector3.Lerp(start, end, t);
-            transform.rotation = Quaternion.Slerp(startRot, Quaternion.Lerp(startRot, endRot, t), t);
-
-            yield return null;
-        }
-
-        // Ensure position is exactly at destination
-        if (!isDestroyed)
-        {
-            transform.position = end;
-        }
-
-        if (isDestroyed) yield break;
-
-        // Weighty visual squash
-        transform.position = end;
-        transform.localScale = new Vector3(tileScale * 1.05f, tileScale * 0.9f, tileScale * 1.05f);
-        yield return new WaitForSeconds(squashDuration);
-
-        if (isDestroyed) yield break;
-
-        transform.localScale = new Vector3(tileScale, tileScale, tileScale);
-
-        // Check for marker interaction (guard against destroyed tiles)
-        if (grid != null && newPos.x >= 0 && newPos.x < grid.Width &&
-            newPos.y >= 0 && newPos.y < grid.Height)
-        {
-            Tile tile = grid.tiles[newPos.x, newPos.y];
-            if (tile != null && tile.HasMarker)
-            {
-                tile.ProcessCubeInteraction(this);
-            }
-        }
-
-        isMoving = false;
     }
 
     private IEnumerator BounceEffect()

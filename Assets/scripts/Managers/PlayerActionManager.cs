@@ -21,7 +21,7 @@ public class PlayerActionManager : MonoBehaviour
     [Header("Input Settings")]
     [SerializeField] private KeyCode placeMarkerKey = KeyCode.Space;
     [SerializeField] private KeyCode triggerMarkerKey = KeyCode.F;
-    [SerializeField] private KeyCode triggerCubeMarkerKey = KeyCode.D;
+    [SerializeField] private KeyCode triggerCubeMarkerKey = KeyCode.G;
     [SerializeField] private KeyCode previewKey = KeyCode.P;
 
     // Player Markers (placed by player manually)
@@ -100,7 +100,7 @@ public class PlayerActionManager : MonoBehaviour
 
     private void HandleMarkerPlacement()
     {
-        if (!Input.GetKeyDown(placeMarkerKey)) return;
+        if (!Input.GetKeyDown(placeMarkerKey) || markersPlaced >= waveManager.CurrentWave.maxMarkerCount || waveManager.CurrentWave.limitMarkers) return;
 
         Vector2Int playerPos = playerManager.currentTilePosition;
 

@@ -1,8 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
-#if UNITY_EDITOR
-using UnityEditor;
-#endif
+
 public class DebugSystem : MonoBehaviour
 {
     #region Inspector Configuration
@@ -41,7 +39,7 @@ public class DebugSystem : MonoBehaviour
     #region Unity Lifecycle
     private void Awake()
     {
-#if UnityEditor
+#if UNITY_EDITOR
         InitializeDebugPanels();
         windowRect = new Rect(windowPosition.x, windowPosition.y, windowSize.x, windowSize.y);
 #endif
