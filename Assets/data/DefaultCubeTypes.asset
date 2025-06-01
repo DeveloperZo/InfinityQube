@@ -13,13 +13,6 @@ MonoBehaviour:
   m_Name: DefaultCubeTypes
   m_EditorClassIdentifier: 
   definitions:
-  - name: Black
-    prefab: {fileID: 1728893673582764340, guid: 28923bfb13f3dde44b857f03a0188e95, type: 3}
-    material: {fileID: 2100000, guid: a85f9ed5dfb6ed64b89ade32ef958cc5, type: 2}
-    canBeMarked: 0
-    causesCorruption: 1
-    enablesDetonation: 0
-    detonationRadius: 0
   - name: Normal
     prefab: {fileID: 1728893673582764340, guid: f90c16e773c18f54eb1b70ddc1136373, type: 3}
     material: {fileID: 2100000, guid: be913c819811d334f8b9ab7ed8845641, type: 2}
@@ -34,3 +27,10 @@ MonoBehaviour:
     causesCorruption: 0
     enablesDetonation: 1
     detonationRadius: 3
+  - name: Black
+    prefab: {fileID: 1728893673582764340, guid: 28923bfb13f3dde44b857f03a0188e95, type: 3}
+    material: {fileID: 2100000, guid: a85f9ed5dfb6ed64b89ade32ef958cc5, type: 2}
+    canBeMarked: 0
+    causesCorruption: 1
+    enablesDetonation: 0
+    detonationRadius: 0

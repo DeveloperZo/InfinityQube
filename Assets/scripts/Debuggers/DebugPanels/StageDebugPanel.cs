@@ -27,7 +27,7 @@ public class StageDebugPanel : IDebugPanel
     private bool isCreatingNewStage = false;
     private string newStageName = "New Stage";
     private string searchFilter = "";
-    private int selectedStageIndex = -1;
+    private int selectedStageIndex = 0;
 
     // Stage Editor Fields
     private string stageName = "";
@@ -233,14 +233,10 @@ public class StageDebugPanel : IDebugPanel
         // Test specific stage IDs
         GUILayout.Label("Quick Load:");
         GUILayout.BeginHorizontal();
-        if (GUILayout.Button("Tutorial (-1)", GUILayout.Width(80)))
-            stageManager?.LoadStage(-1);
-        if (GUILayout.Button("Stage 1", GUILayout.Width(60)))
+        if (GUILayout.Button("Tutorial (1)", GUILayout.Width(80)))
+            stageManager?.LoadStage(0);
+        if (GUILayout.Button("Tutorial (2)", GUILayout.Width(60)))
             stageManager?.LoadStage(1);
-        if (GUILayout.Button("Stage 2", GUILayout.Width(60)))
-            stageManager?.LoadStage(2);
-        if (GUILayout.Button("Stage 3", GUILayout.Width(60)))
-            stageManager?.LoadStage(3);
         GUILayout.EndHorizontal();
 
         GUILayout.EndVertical();
