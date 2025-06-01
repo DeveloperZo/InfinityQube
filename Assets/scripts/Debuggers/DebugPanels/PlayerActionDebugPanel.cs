@@ -1,7 +1,6 @@
 ﻿using UnityEngine;
-using System.Collections.Generic;
 using static Enumerations;
-using static UnityEditor.PlayerSettings;
+
 
 public class PlayerActionDebugPanel : IDebugPanel
 {

@@ -1,79 +1,303 @@
 ﻿using UnityEngine;
-using System.Collections.Generic;
+using TMPro;
 
 public class GameUI : MonoBehaviour
 {
-    [Header("UI Settings")]
-    [SerializeField] private bool showControlsPanel = true;
-    [SerializeField] private Color panelBackgroundColor = new Color(0.1f, 0.1f, 0.1f, 0.8f);
-    [SerializeField] private Color headerColor = new Color(0.2f, 0.6f, 1f, 1f);
-    [SerializeField] private Color textColor = Color.white;
+    // No UI GameObject references needed - pure OnGUI implementation
 
-    // Rain cube controls
-    [SerializeField] private Enumerations.CubeType rainCubeType = Enumerations.CubeType.Normal;
-    [SerializeField] private int rainX = 2; // Default to middle of grid
-    [SerializeField] private int rainY = 2;
-    [SerializeField] private int rainMoveCount = 3;
+    [Header("UI Settings")]
+    [SerializeField] private bool showControlsAtStart = true;
+    [SerializeField] private bool showTips = true;
+    [SerializeField] private KeyCode toggleUIKey = KeyCode.Tab;
 
     // References
-    private GridManager grid;
+    private PlayerManager playerManager;
+    private WaveManager waveManager;
     private PlayerActionManager playerActionManager;
 
+    // UI state
+    private bool controlsVisible = true;
+    private bool tipsVisible = true;
 
-    // UI style caching
-    private GUIStyle panelStyle;
+    // Style caching
+    private GUIStyle boxStyle;
     private GUIStyle headerStyle;
     private GUIStyle textStyle;
     private GUIStyle buttonStyle;
-    private GUIStyle boxStyle;
-    private GUIStyle inputStyle;
 
     private void Start()
     {
-        // Find references
-        grid = FindObjectOfType<GridManager>();
-        playerActionManager = FindObjectOfType<PlayerActionManager>();
+        FindReferences();
+        InitializeUI();
+    }
 
-        // Initialize rain position to center of grid
-        if (grid != null)
+    private void Update()
+    {
+        HandleInput();
+        UpdateDynamicInfo();
+    }
+
+    private void FindReferences()
+    {
+        playerManager = FindObjectOfType<PlayerManager>();
+        waveManager = FindObjectOfType<WaveManager>();
+        playerActionManager = FindObjectOfType<PlayerActionManager>();
+    }
+
+    private void InitializeUI()
+    {
+        controlsVisible = showControlsAtStart;
+        tipsVisible = showTips;
+    }
+
+    private void HandleInput()
+    {
+        if (Input.GetKeyDown(toggleUIKey))
         {
-            rainX = grid.Width / 2;
-            rainY = grid.Height / 2;
+            ToggleUI();
         }
+
+        // Reset functionality
+        if (Input.GetKeyDown(KeyCode.R))
+        {
+            RestartLevel();
+        }
+
+        // Exit functionality
+        if (Input.GetKeyDown(KeyCode.Escape))
+        {
+            ExitGame();
+        }
+    }
+
+    private void RestartLevel()
+    {
+        var stageManager = FindObjectOfType<StageManager>();
+        if (stageManager != null)
+        {
+            stageManager.RestartCurrentStage();
+        }
+        else
+        {
+            // Fallback: reload current scene
+            UnityEngine.SceneManagement.SceneManager.LoadScene(
+                UnityEngine.SceneManagement.SceneManager.GetActiveScene().name
+            );
+        }
+    }
+
+    private void ExitGame()
+    {
+#if UNITY_EDITOR
+        UnityEditor.EditorApplication.isPlaying = false;
+#else
+        Application.Quit();
+#endif
+    }
+    private void ToggleUI()
+    {
+        controlsVisible = !controlsVisible;
+        tipsVisible = controlsVisible; // Link them together
+    }
+
+    private void UpdateDynamicInfo()
+    {
+        // This method can be used for any real-time calculations
+        // All display happens in OnGUI now
+    }
+
+    private void OnGUI()
+    {
+        InitializeStyles();
+
+        if (controlsVisible)
+        {
+            DrawControlsPanel();
+        }
+
+        if (tipsVisible)
+        {
+            DrawTipsPanel();
+        }
+
+        DrawStatusInfo();
+        DrawToggleHint();
     }
 
     private void InitializeStyles()
     {
-        // Panel style
-        panelStyle = new GUIStyle(GUI.skin.box);
-        panelStyle.normal.background = MakeTexture(2, 2, panelBackgroundColor);
-        panelStyle.padding = new RectOffset(10, 10, 10, 10);
+        if (boxStyle == null)
+        {
+            // Clean, modern box style
+            boxStyle = new GUIStyle(GUI.skin.box);
+            boxStyle.normal.background = MakeTexture(2, 2, new Color(0.1f, 0.1f, 0.1f, 0.85f));
+            boxStyle.padding = new RectOffset(15, 15, 15, 15);
+            boxStyle.margin = new RectOffset(10, 10, 10, 10);
 
-        // Header style
-        headerStyle = new GUIStyle(GUI.skin.label);
-        headerStyle.normal.textColor = headerColor;
-        headerStyle.fontSize = 16;
-        headerStyle.fontStyle = FontStyle.Bold;
-        headerStyle.alignment = TextAnchor.MiddleCenter;
+            // Header style
+            headerStyle = new GUIStyle(GUI.skin.label);
+            headerStyle.normal.textColor = new Color(0.2f, 0.8f, 1f);
+            headerStyle.fontSize = 16;
+            headerStyle.fontStyle = FontStyle.Bold;
+            headerStyle.alignment = TextAnchor.MiddleLeft;
 
-        // Text style
-        textStyle = new GUIStyle(GUI.skin.label);
-        textStyle.normal.textColor = textColor;
-        textStyle.fontSize = 14;
+            // Text style
+            textStyle = new GUIStyle(GUI.skin.label);
+            textStyle.normal.textColor = Color.white;
+            textStyle.fontSize = 13;
+            textStyle.wordWrap = true;
 
-        // Button style
-        buttonStyle = new GUIStyle(GUI.skin.button);
-        buttonStyle.fontSize = 14;
+            // Button style
+            buttonStyle = new GUIStyle(GUI.skin.button);
+            buttonStyle.fontSize = 12;
+            buttonStyle.padding = new RectOffset(10, 10, 5, 5);
+        }
+    }
 
-        // Box style
-        boxStyle = new GUIStyle(GUI.skin.box);
-        boxStyle.padding = new RectOffset(8, 8, 8, 8);
-        boxStyle.margin = new RectOffset(0, 0, 5, 5);
+    private void DrawControlsPanel()
+    {
+        // Position on bottom-left
+        Rect controlsRect = new Rect(20, Screen.height - 300, 300, 270);
+        GUILayout.BeginArea(controlsRect);
+        GUILayout.BeginVertical(boxStyle);
 
-        // Input style
-        inputStyle = new GUIStyle(GUI.skin.textField);
-        inputStyle.fontSize = 14;
-        inputStyle.alignment = TextAnchor.MiddleCenter;
+        // Header
+        GUILayout.Label("CONTROLS", headerStyle);
+        GUILayout.Space(8);
+
+        // Essential controls
+        GUILayout.Label("↑↓←→  Move Player", textStyle);
+        GUILayout.Label("SPACE  Place/Remove Marker", textStyle);
+        GUILayout.Label("F      Trigger Marker", textStyle);
+        GUILayout.Label("D      Trigger Detonation", textStyle);
+        GUILayout.Label("K      Close Dialog", textStyle);
+
+        GUILayout.Space(5);
+
+        // System controls
+        GUILayout.Label("R      Restart Level", textStyle);
+        GUILayout.Label("ESC    Quit Game", textStyle);
+
+        GUILayout.Space(5);
+
+        // Current marker count if available
+        if (playerActionManager != null)
+        {
+            int cubeMarkers = playerActionManager.CubeMarkerCount;
+            if (cubeMarkers > 0)
+            {
+                GUILayout.Label($"Detonations Ready: {cubeMarkers}", textStyle);
+            }
+        }
+
+        GUILayout.EndVertical();
+        GUILayout.EndArea();
+    }
+
+    private void DrawTipsPanel()
+    {
+        // Position on bottom-right
+        Rect tipsRect = new Rect(Screen.width - 320, Screen.height - 250, 300, 180);
+
+        GUILayout.BeginArea(tipsRect);
+        GUILayout.BeginVertical(boxStyle);
+
+        // Header
+        GUILayout.Label("QUICK TIPS", headerStyle);
+        GUILayout.Space(8);
+
+        // Helpful gameplay tips
+        GUILayout.Label("• Place markers in cube paths", textStyle);
+        GUILayout.Label("• Blue cubes create detonations", textStyle);
+        GUILayout.Label("• Avoid black cubes!", textStyle);
+
+        // Dynamic tip based on game state
+        string dynamicTip = GetDynamicTip();
+        if (!string.IsNullOrEmpty(dynamicTip))
+        {
+            GUILayout.Space(3);
+            GUI.color = Color.yellow;
+            GUILayout.Label($"💡 {dynamicTip}", textStyle);
+            GUI.color = Color.white;
+        }
+
+        GUILayout.EndVertical();
+        GUILayout.EndArea();
+    }
+
+    private void DrawStatusInfo()
+    {
+        // Top-left status display
+        Rect statusRect = new Rect(20, 20, 250, 80);
+
+        GUILayout.BeginArea(statusRect);
+        GUILayout.BeginVertical(boxStyle);
+
+        // Wave status
+        if (waveManager != null)
+        {
+            if (waveManager.waveActive)
+            {
+                GUILayout.Label($"Wave Active - Step {waveManager.MoveStep}", textStyle);
+            }
+            else
+            {
+                GUILayout.Label("Press ENTER to start wave", textStyle);
+            }
+        }
+
+        // Score
+        if (playerManager != null)
+        {
+            var stats = playerManager.GetCurrentStatistics();
+            GUILayout.Label($"Captured: {stats.TotalCubesCaptured} | Escaped: {stats.cubesEscaped}", textStyle);
+        }
+
+        GUILayout.EndVertical();
+        GUILayout.EndArea();
+    }
+
+    private void DrawToggleHint()
+    {
+        // Small toggle hint in top-right
+        Rect toggleRect = new Rect(Screen.width - 150, 10, 140, 30);
+
+        GUILayout.BeginArea(toggleRect);
+
+        // Semi-transparent background
+        GUI.color = new Color(1f, 1f, 1f, 0.7f);
+        GUILayout.Label($"TAB to {(controlsVisible ? "hide" : "show")} UI", textStyle);
+        GUI.color = Color.white;
+
+        GUILayout.EndArea();
+    }
+
+    private string GetDynamicTip()
+    {
+        if (playerManager == null) return "";
+
+        // Give contextual tips based on game state
+        if (waveManager != null && !waveManager.waveActive)
+        {
+            return "Press ENTER to start the wave";
+        }
+
+        if (playerActionManager != null)
+        {
+            int markers = playerActionManager.CubeMarkerCount;
+            if (markers > 0)
+            {
+                return "Press D to trigger detonation";
+            }
+        }
+
+        // Player position tips
+        if (playerManager.currentTilePosition.y < 3)
+        {
+            return "Stay near the bottom to avoid cubes";
+        }
+
+        return ""; // No tip needed
     }
 
     private Texture2D MakeTexture(int width, int height, Color color)
@@ -90,294 +314,28 @@ public class GameUI : MonoBehaviour
         return texture;
     }
 
-    private void OnGUI()
+    // Public methods for external control
+    public void ShowUI()
     {
-        // Initialize styles if needed
-        if (panelStyle == null)
-        {
-            InitializeStyles();
-        }
-
-        // Right panel (controls reference and charge tracker)
-        if (showControlsPanel)
-        {
-            DrawControlsPanel();
-            DrawDetonationTracker();
-            DrawPlayerStatus();
-            DrawPlayerStatistics();
-        }
+        controlsVisible = true;
+        tipsVisible = true;
     }
 
-    private void DrawControlsPanel()
+    public void HideUI()
     {
-        // Controls panel on the right side
-        GUILayout.BeginArea(new Rect(Screen.width - 300, 10, 290, 300));
-
-        // Panel background
-        GUILayout.BeginVertical(panelStyle);
-
-        // Header
-        GUILayout.Label("CONTROLS", headerStyle);
-
-        GUILayout.Space(5);
-
-        // Controls list
-        GUILayout.BeginVertical(boxStyle);
-
-        GUILayout.Label("F1: Static Debugger", textStyle);
-        GUILayout.Label("F2: Wave Debugger", textStyle);
-        GUILayout.Label("R: Rain Cube at Selected Position", textStyle);
-
-        GUILayout.Label("Space: Mark/Unmark Current Tile", textStyle);
-        GUILayout.Label("D: Trigger Next Detonation", textStyle);
-        GUILayout.Label("T: Trigger Time Distortion", textStyle);
-        
-        GUILayout.Label("Arrow Keys: Move Selector", textStyle);
-        GUILayout.Label("Shift: Speed Up (Hold)", textStyle);
-        GUILayout.Label("Enter: Start New Wave", textStyle);
-
-        GUILayout.EndVertical();
-
-        GUILayout.EndVertical();
-
-        GUILayout.EndArea();
-
+        controlsVisible = false;
+        tipsVisible = false;
     }
 
-    private void DrawDetonationTracker()
+    public void ShowControlsOnly()
     {
-        // Refresh references if needed
-        if (playerActionManager == null)
-        {
-            playerActionManager = FindObjectOfType<PlayerActionManager>();
-        }
-        if (grid == null)
-        {
-            grid = FindObjectOfType<GridManager>();
-        }
-
-        // Detonation tracker panel
-        GUILayout.BeginArea(new Rect(Screen.width - 300, 320, 290, 300));
-
-        // Panel background
-        GUILayout.BeginVertical(panelStyle);
-
-        // Header
-        GUILayout.Label("DETONATION TRACKER", headerStyle);
-
-        GUILayout.Space(5);
-
-        if (playerActionManager != null)
-        {
-            GUILayout.BeginVertical(boxStyle);
-
-            // Count of active detonation points
-            int count = playerActionManager.CubeMarkerCount;
-            GUILayout.Label($"Active Detonation Points: {count}", textStyle);
-
-            // Show next detonation position
-            Vector2Int nextPoint = playerActionManager.GetNextCubeMarker();
-            if (nextPoint.x >= 0)
-            {
-                GUILayout.Label($"Next Detonation: ({nextPoint.x}, {nextPoint.y})", textStyle);
-            }
-            else
-            {
-                GUILayout.Label("No pending detonations", textStyle);
-            }
-
-            // Button to trigger next detonation
-            if (count > 0)
-            {
-                nextPoint = playerActionManager.GetNextCubeMarker();
-                if (nextPoint.x >= 0)
-                {
-                    // Determine area size based on grid width
-                    string areaSize = "2x2"; // Default
-                    if (grid != null)
-                    {
-                        int width = grid.Width;
-                        if (width <= 3) areaSize = "2x2";
-                        else if (width <= 5) areaSize = "3x3";
-                        else areaSize = "5x5";
-                    }
-
-                    GUILayout.Label($"Next Detonation: ({nextPoint.x}, {nextPoint.y})", textStyle);
-                    GUILayout.Label($"Area: {areaSize}", textStyle);
-                    GUILayout.Label("Hold P to preview area", textStyle);
-                }
-                else
-                {
-                    GUILayout.Label("No pending detonations", textStyle);
-                }
-            }
-
-            GUILayout.EndVertical();
-
-            // Find charged tiles in the grid
-            if (grid != null)
-            {
-                GUILayout.Space(5);
-                GUILayout.Label("Charged Tiles:", headerStyle);
-                GUILayout.BeginVertical(boxStyle);
-
-                bool foundCharged = false;
-
-                // Create a scrollable area for many charged tiles
-                Vector2 scrollPosition = Vector2.zero;
-                GUILayout.BeginScrollView(scrollPosition, GUILayout.Height(150));
-
-                for (int x = 0; x < grid.Width; x++)
-                {
-                    for (int y = 0; y < grid.Height; y++)
-                    {
-                        Tile tile = grid.tiles[x, y];
-                        if (tile != null && (tile.HasCharges || playerActionManager.GetCubeMarker(new Vector2Int(tile.x, tile.y)) ))
-                        {
-                            foundCharged = true;
-                            int charges = tile.DetonationCharges;
-                            string chargeText = new string('★', charges);
-
-                            GUILayout.Label($"Tile ({x}, {y}): {chargeText} ({GetDetonationSize(charges)})", textStyle);
-                        }
-                    }
-                }
-
-                GUILayout.EndScrollView();
-
-                if (!foundCharged)
-                {
-                    GUILayout.Label("No charged tiles found", textStyle);
-                }
-
-                GUILayout.EndVertical();
-            }
-        }
-        else
-        {
-            GUILayout.Label("Detonation Manager not found!", textStyle);
-        }
-
-        GUILayout.EndVertical();
-        GUILayout.EndArea();
-    }
-    private void DrawPlayerStatus()
-    {
-        // Player status panel
-        GUILayout.BeginArea(new Rect(Screen.width - 300, 630, 290, 80));
-
-        // Panel background
-        GUILayout.BeginVertical(panelStyle);
-
-        // Header
-        GUILayout.Label("PLAYER STATUS", headerStyle);
-
-        GUILayout.Space(5);
-
-        if (FindObjectOfType<PlayerManager>() != null)
-        {
-            var player = FindObjectOfType<PlayerManager>();
-
-            GUILayout.BeginVertical(boxStyle);
-
-            if (player.IsAlive())
-            {
-                GUI.color = Color.green;
-                GUILayout.Label("ALIVE", textStyle);
-            }
-            else
-            {
-                GUI.color = Color.red;
-                GUILayout.Label("DEAD - Respawning...", textStyle);
-            }
-            GUI.color = Color.white;
-
-            GUILayout.EndVertical();
-        }
-        else
-        {
-            GUILayout.Label("Player not found!", textStyle);
-        }
-
-        GUILayout.EndVertical();
-        GUILayout.EndArea();
+        controlsVisible = true;
+        tipsVisible = false;
     }
 
-    private void DrawPlayerStatistics()
+    public void ShowTipsOnly()
     {
-        // Player statistics panel
-        GUILayout.BeginArea(new Rect(10, Screen.height - 250, 320, 240));
-
-        // Panel background
-        GUILayout.BeginVertical(panelStyle);
-
-        // Header
-        GUILayout.Label("PLAYER STATISTICS", headerStyle);
-
-        GUILayout.Space(5);
-
-        PlayerManager player = FindObjectOfType<PlayerManager>();
-        if (player != null)
-        {
-            PlayerStatistics stats = player.GetCurrentStatistics();
-
-            GUILayout.BeginVertical(boxStyle);
-
-            // Cube statistics
-            GUILayout.Label("CUBES:", GUI.skin.box);
-            GUILayout.Label($"Normal Captured: {stats.normalCubesCaptured}", textStyle);
-            GUILayout.Label($"Blue Captured: {stats.blueCubesCaptured}", textStyle);
-            GUILayout.Label($"Black Captured: {stats.blackCubesCaptured}", textStyle);
-            GUILayout.Label($"Escaped: {stats.cubesEscaped}", textStyle);
-            GUILayout.Label($"Capture Rate: {stats.captureRate:P1}", textStyle);
-
-            GUILayout.Space(3);
-
-            // Action statistics  
-            GUILayout.Label("ACTIONS:", GUI.skin.box);
-            GUILayout.Label($"Markers Placed: {stats.markersPlaced}", textStyle);
-            GUILayout.Label($"Markers Triggered: {stats.markersTriggered}", textStyle);
-            GUILayout.Label($"Detonations: {stats.detonationsUsed}", textStyle);
-            GUILayout.Label($"Moves: {stats.movesCount}", textStyle);
-
-            GUILayout.Space(3);
-
-            // Player statistics
-            GUILayout.Label("PLAYER:", GUI.skin.box);
-            GUILayout.Label($"Deaths: {stats.playerDeaths}", textStyle);
-            GUILayout.Label($"Time Alive: {stats.timeAlive:F1}s", textStyle);
-            GUILayout.Label($"Death Rate: {stats.deathRate:F2}/min", textStyle);
-
-            GUILayout.EndVertical();
-        }
-        else
-        {
-            GUILayout.Label("Player not found!", textStyle);
-        }
-
-        GUILayout.EndVertical();
-        GUILayout.EndArea();
+        controlsVisible = false;
+        tipsVisible = true;
     }
-
-    private string GetDetonationSize(int charges)
-    {
-        switch (charges)
-        {
-            case 3:
-                return "3x3 area";
-            case 2:
-                return "2x2 area";
-            case 1:
-                return "single tile";
-            default:
-                return "unknown";
-        }
-    }
-
-    // Public methods to control UI visibility
-    public void ToggleControlsPanel()
-    {
-        showControlsPanel = !showControlsPanel;
-    }
-
 }

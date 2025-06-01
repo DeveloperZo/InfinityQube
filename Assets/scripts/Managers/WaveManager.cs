@@ -22,6 +22,7 @@ public class WaveManager : MonoBehaviour
     public float normalMoveInterval = 1.75f;
     public float fastMoveInterval = 0.1f;
     public float waveStartDelay = 0.75f;
+    public KeyCode speedUpKey = KeyCode.LeftShift;
 
     [Header("Random Wave Settings")]
     public int waveSize = 3;
@@ -77,6 +78,7 @@ public class WaveManager : MonoBehaviour
     private void Update()
     {
         HandleInput();
+        HandleSpeedControl();
         HandleDebugCommands();
     }
 
@@ -504,6 +506,17 @@ public class WaveManager : MonoBehaviour
         if (isPaused && Input.GetKeyDown(KeyCode.K))
         {
             // Message confirmation handled in DisplayMessage
+        }
+    }
+ 
+    private void HandleSpeedControl()
+    {
+        bool wasSpeedingUp = isSpeedingUp;
+        isSpeedingUp = Input.GetKey(speedUpKey);
+
+        if (isSpeedingUp != wasSpeedingUp)
+        {
+            SetSpeedState(isSpeedingUp);
         }
     }
 

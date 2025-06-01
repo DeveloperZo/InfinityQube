@@ -139,7 +139,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!114 &150564767
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -152,14 +152,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: eb13b32e81d0bf940a464584188eaf5e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  showControlsPanel: 1
-  panelBackgroundColor: {r: 0.1, g: 0.1, b: 0.1, a: 0.8}
-  headerColor: {r: 0.2, g: 0.6, b: 1, a: 1}
-  textColor: {r: 1, g: 1, b: 1, a: 1}
-  rainCubeType: 0
-  rainX: 2
-  rainY: 2
-  rainMoveCount: 3
+  showControlsAtStart: 1
+  showTips: 1
+  toggleUIKey: 9
 --- !u!4 &150564768
 Transform:
   m_ObjectHideFlags: 0
@@ -6627,7 +6622,7 @@ MonoBehaviour:
   gridManager: {fileID: 1928190495848794802}
   waveManager: {fileID: 4327591077324849160}
   playerController: {fileID: 7665709929118310107}
-  detonationManager: {fileID: 6369877636643709599}
+  playerActionManager: {fileID: 0}
   stageDatabase: {fileID: 11400000, guid: 9e6fa5035be75db46be4cb9e31f45c17, type: 2}
   startingStageIndex: -1
   autoAdvanceStages: 1
@@ -7102,7 +7097,7 @@ MonoBehaviour:
   - {fileID: 2727342813801045048, guid: 28aedf15c99f1914991a9066ec8020e5, type: 3}
   - {fileID: 6551000342905767615, guid: 803e7cb2fd38540438990c9b40d27126, type: 3}
   player: {fileID: 7665709929118310107}
-  detonationManager: {fileID: 6369877636643709599}
+  playerActionManager: {fileID: 0}
   useWaveConfiguration: 0
   waveConfiguration: []
   currentWaveIndex: 0
@@ -7503,24 +7498,6 @@ Transform:
   - {fileID: 1986112192492535162}
   m_Father: {fileID: 1769052433348861256}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &6369877636643709599
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8656265648072650655}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: bab67e8e76fe502468f4b8cfc126d417, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  gridManager: {fileID: 1928190495848794802}
-  waveManager: {fileID: 4327591077324849160}
-  detonationPointMaterial: {fileID: 2100000, guid: e2ac5a6cae92b554e87d710d109627cc, type: 2}
-  flashMaterial: {fileID: 2100000, guid: 9242e7b87b272a24f9f34dec818778b2, type: 2}
-  flashDuration: 0.3
-  detonationPreviewColor: {r: 1, g: 0.5, b: 0, a: 0.7}
 --- !u!4 &6427810843586173654
 Transform:
   m_ObjectHideFlags: 0
@@ -7827,6 +7804,7 @@ MonoBehaviour:
   maxMarkerCount: 99
   respawnDelay: 2
   respawnInvulnerabilityTime: 2
+  debugDeathOverride: 0
   cubeLayer:
     serializedVersion: 2
     m_Bits: 4294967295
@@ -8042,14 +8020,37 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 5163049675350517299}
-  - component: {fileID: 6369877636643709599}
+  - component: {fileID: 8656265648072650656}
   m_Layer: 0
-  m_Name: DetonationManager
+  m_Name: PlayerActionManager
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
+--- !u!114 &8656265648072650656
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8656265648072650655}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 402cd1f5fc0665f418ab4b04045e46ee, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  gridManager: {fileID: 1928190495848794802}
+  playerManager: {fileID: 7665709929118310107}
+  waveManager: {fileID: 4327591077324849160}
+  cubeMarkerMaterial: {fileID: 0}
+  flashMaterial: {fileID: 0}
+  flashDuration: 0.3
+  areaPreviewColor: {r: 1, g: 0.5, b: 0, a: 0.7}
+  placeMarkerKey: 32
+  triggerMarkerKey: 102
+  triggerCubeMarkerKey: 100
+  previewKey: 112
 --- !u!1 &8707610068485983747
 GameObject:
   m_ObjectHideFlags: 0
@@ -8126,7 +8127,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   toggleKey: 291
-  showOnStart: 1
+  showOnStart: 0
   displayMode: 0
   windowSize: {x: 400, y: 600}
   windowPosition: {x: 10, y: 10}

@@ -1,6 +1,8 @@
 using UnityEngine;
 using System.Collections.Generic;
-
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 public class DebugSystem : MonoBehaviour
 {
     #region Inspector Configuration
@@ -39,8 +41,10 @@ public class DebugSystem : MonoBehaviour
     #region Unity Lifecycle
     private void Awake()
     {
+#if UnityEditor
         InitializeDebugPanels();
         windowRect = new Rect(windowPosition.x, windowPosition.y, windowSize.x, windowSize.y);
+#endif
     }
 
     private void Start()
@@ -87,6 +91,7 @@ public class DebugSystem : MonoBehaviour
     #region Initialization
     private void InitializeDebugPanels()
     {
+
         // Register all debug panels
         RegisterPanel(new GameControlPanel());
         RegisterPanel(new StageDebugPanel());

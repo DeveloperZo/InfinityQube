@@ -453,13 +453,7 @@ public class PlayerActionManager : MonoBehaviour
                 break;
 
             case CubeType.Black:
-                blackCubesCaptured++;
-                NotifyWaveManager(wm => wm.OnCubeCaptured(CubeType.Black));
-                Tile tile = gridManager.tiles[position.x, position.y];
-                if (tile != null)
-                {
-                    tile.BlackenTile();
-                }
+
                 break;
         }
 
@@ -512,7 +506,7 @@ public class PlayerActionManager : MonoBehaviour
 
     private void RemoveCubeFromWaveManager(CubeBehavior cube)
     {
-        if (waveManager != null)
+        if (waveManager != null && cube.type != CubeType.Black)
         {
             waveManager.activeCubes.Remove(cube);
         }
@@ -711,27 +705,8 @@ public class PlayerActionManager : MonoBehaviour
         Tile tile = gridManager.tiles[position.x, position.y];
         if (tile != null)
         {
-            Renderer renderer = tile.GetComponent<Renderer>();
-            if (renderer != null)
-            {
-                if (!originalTileMaterials.ContainsKey(tile))
-                {
-                    originalTileMaterials[tile] = renderer.material;
-                }
-
-                if (cubeMarkerMaterial != null)
-                {
-                    renderer.material = cubeMarkerMaterial;
-                }
-                else
-                {
-                    Material blueMaterial = new Material(Shader.Find("Standard"));
-                    blueMaterial.color = Color.blue;
-                    renderer.material = blueMaterial;
-                }
-
-                tile.SetDetonationPoint(true);
-            }
+            tile.SetDetonationPoint(true);
+            Debug.Log($"Marked tile at ({position.x}, {position.y}) as cube marker");
         }
     }
 
@@ -739,57 +714,10 @@ public class PlayerActionManager : MonoBehaviour
     {
         if (tile == null) return;
 
-        // Remove from our tracking
-        if (originalTileMaterials.ContainsKey(tile))
-        {
-            originalTileMaterials.Remove(tile);
-        }
-
         tile.SetDetonationPoint(false);
-
-        // Force the tile to reset its appearance based on current state
-        tile.ResetTileAppearance();
+        tile.ForceUpdateVisuals();
 
         Debug.Log($"Reset cube marker material for tile at ({tile.x}, {tile.y})");
-    }
-
-    private IEnumerator FlashTile(Tile tile)
-    {
-        if (tile == null) yield break;
-
-        Renderer renderer = tile.GetComponent<Renderer>();
-        if (renderer == null) yield break;
-
-        Material originalMaterial = renderer.material;
-
-        // Create a bright flash material
-        Material flashMat = new Material(Shader.Find("Standard"));
-        flashMat.color = Color.white;
-        flashMat.SetFloat("_Metallic", 0.5f);
-        flashMat.SetFloat("_Smoothness", 0.9f);
-
-        // Apply flash
-        renderer.material = flashMat;
-
-        yield return new WaitForSeconds(flashDuration * 0.3f);
-
-        // Quick fade to yellow
-        flashMat.color = Color.yellow;
-        renderer.material = flashMat;
-
-        yield return new WaitForSeconds(flashDuration * 0.4f);
-
-        // Fade back to original
-        if (tile != null && renderer != null)
-        {
-            renderer.material = originalMaterial;
-        }
-
-        // Clean up
-        if (flashMat != null)
-        {
-            Destroy(flashMat);
-        }
     }
 
     private void NotifyWaveManager(System.Action<WaveManager> action)

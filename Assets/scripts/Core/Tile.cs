@@ -41,7 +41,7 @@ public class Tile : MonoBehaviour
     public bool IsBlackened => isBlackened;
     public bool IsAdvantaged => isAdvantaged;
 
-    public bool IsPrimed => isPrimed;
+    public bool IsPrimed => hasDetonationPoint;
     public bool HasMarker => hasMarker;
     public TileState currentState = TileState.Normal;
 
@@ -53,7 +53,7 @@ public class Tile : MonoBehaviour
     private bool isInitialized = false;
     private bool isBlackened = false;
     private bool isAdvantaged = false;
-    private bool isPrimed = false;
+
     public bool isPhasedZone { get; private set; }
     private TextMesh countdownText;
 
@@ -129,14 +129,8 @@ public class Tile : MonoBehaviour
             }
         }
 
-        // Update tile appearance for marked state
-        if (tileRenderer != null && markedTileMaterial != null)
-        {
-            tileRenderer.material = markedTileMaterial;
-        }
-
-        // Raise the tile slightly for marked state
-        
+        // Update visuals through central system
+        UpdateTileVisuals();
 
         // Hide soft highlight when marked (marker takes precedence)
         if (softHighlightObject != null)
@@ -162,28 +156,8 @@ public class Tile : MonoBehaviour
             markerObj = null;
         }
 
-        // Reset tile appearance
-        if (tileRenderer != null)
-        {
-            if (IsBlackened)
-            {
-                tileRenderer.material = forbiddenMaterial;
-            }
-            else if (IsAdvantaged)
-            {
-                UpdateChargeVisuals();
-            }
-            else if (IsPrimed) 
-            {
-                tileRenderer.material = chargeMaterials[0];
-            } 
-            else
-            {
-                tileRenderer.material = originalMaterial;
-            }
-        }
-
-        // Reset tile height based on current state
+        // Update visuals through central system
+        UpdateTileVisuals();
 
         // Restore soft highlight if player is still on this tile
         if (isPlayerOnTile)
@@ -194,6 +168,74 @@ public class Tile : MonoBehaviour
 
         Debug.Log($"Tile ({x},{y}): Marker cleared successfully");
     }
+
+    public void SetDetonationPoint(bool hasPoint)
+    {
+        hasDetonationPoint = hasPoint;
+        UpdateTileVisuals();
+        Debug.Log($"Tile ({x},{y}): Detonation point set to {hasPoint}");
+    }
+
+    public void BlackenTile()
+    {
+        isBlackened = true;
+        isAdvantaged = false;
+        detonationCharges = 0;
+        ClearMarker(); // Remove any existing marker
+
+        UpdateTileVisuals();
+        HideSoftHighlight();
+    }
+
+    public void PrimeTile()
+    {
+        if (isBlackened) return;
+        hasDetonationPoint = true;
+
+        ClearMarker();
+        UpdateTileVisuals();
+
+        // Register with PlayerActionManager
+        PlayerActionManager playerActionManager = FindObjectOfType<PlayerActionManager>();
+        if (playerActionManager != null)
+        {
+            playerActionManager.CreateCubeMarker(new Vector2Int(x, y));
+        }
+
+        Debug.Log($"Tile ({x},{y}): Primed for detonation and registered with PlayerActionManager");
+    }
+
+    public void AdvantageTile(int charges = 3)
+    {
+        if (isBlackened) return;
+
+        isAdvantaged = true;
+        detonationCharges = charges > maxCharges ? maxCharges : charges;
+        ClearMarker();
+
+        UpdateTileVisuals();
+
+        Debug.Log($"Blue tile at ({x}, {y}) enhanced to charge level {detonationCharges}");
+    }
+
+    public void ResetTile()
+    {
+        currentState = TileState.Normal;
+        isBlackened = false;
+        isAdvantaged = false;
+        detonationCharges = 0;
+        hasDetonationPoint = false;
+        ClearMarker();
+
+        UpdateTileVisuals();
+    }
+
+    public void ResetTileAppearance()
+    {
+        // Public method for external systems to force a visual update
+        UpdateTileVisuals();
+    }
+
 
     public void ToggleMarker()
     {
@@ -274,8 +316,8 @@ public class Tile : MonoBehaviour
             Debug.Log($"Tile ({x},{y}): Marker object destroyed");
         }
 
-        // CRITICAL: Reset the tile appearance based on current state with proper priority
-        ResetTileAppearance();
+        // CRITICAL: Update visuals through central system
+        UpdateTileVisuals();
 
         // IMPORTANT: Restore soft highlight if player is still on this tile
         if (isPlayerOnTile)
@@ -289,35 +331,6 @@ public class Tile : MonoBehaviour
         }
     }
 
-    public void ResetTileAppearance()
-    {
-        if (tileRenderer == null) return;
-
-        // Reset based on current tile state in priority order
-        if (IsBlackened)
-        {
-            tileRenderer.material = forbiddenMaterial;
-            Debug.Log($"Tile ({x},{y}): Reset to blackened material");
-        }
-        else if (IsAdvantaged && HasCharges)
-        {
-            UpdateChargeVisuals();
-            Debug.Log($"Tile ({x},{y}): Reset to advantaged material with {DetonationCharges} charges");
-        }
-        else if (IsPrimed)
-        {
-            if (chargeMaterials != null && chargeMaterials.Length > 0)
-            {
-                tileRenderer.material = chargeMaterials[0];
-            }
-            Debug.Log($"Tile ({x},{y}): Reset to primed material");
-        }
-        else
-        {
-            tileRenderer.material = originalMaterial;
-            Debug.Log($"Tile ({x},{y}): Reset to original material");
-        }
-    }
 
     private void ActivateMarker()
     {
@@ -351,7 +364,7 @@ public class Tile : MonoBehaviour
         isPlayerOnTile = isHovering;
 
         // Only show highlight if not marked, not blackened, and not a detonation point
-        if (isHovering && !hasMarker && !isBlackened &&  !isPrimed && !hasDetonationPoint)
+        if (isHovering && !hasMarker && !isBlackened && !hasDetonationPoint)
         {
             ShowSoftHighlight();
         }
@@ -415,11 +428,6 @@ public class Tile : MonoBehaviour
         }
     }
 
-    public void SetDetonationPoint(bool hasPoint)
-    {
-        hasDetonationPoint = hasPoint;
-        Debug.Log($"Tile ({x},{y}): Detonation point set to {hasPoint}");
-    }
     // Tile state management methods
     public void TransformTile(Enumerations.CubeType cubeType)
     {
@@ -439,65 +447,6 @@ public class Tile : MonoBehaviour
         }
     }
 
-    public void BlackenTile()
-    {
-        isBlackened = true;
-        isAdvantaged = false;
-        ClearMarker(); // Remove any existing marker
-
-        // Visual indication
-        if (tileRenderer != null && forbiddenMaterial != null)
-        {
-            tileRenderer.material = forbiddenMaterial;
-        }
-
-
-        // Hide any highlights
-        HideSoftHighlight();
-
-       
-    }
-
-
-    public void PrimeTile()
-    {
-        if (isBlackened) return;
-        isPrimed = true;
-        hasDetonationPoint = true; // Set this flag for highlight prevention
-
-        ClearMarker();
-
-        // Notify player manager
-
-        // Register with PlayerActionManager - this was missing!
-        PlayerActionManager playerActionManager = FindObjectOfType<PlayerActionManager>();
-        if (playerActionManager != null)
-        {
-            playerActionManager.CreateCubeMarker(new Vector2Int(x, y));
-        }
-
-        // Set visual state
-        if (tileRenderer != null && chargeMaterials != null && chargeMaterials.Length > 0)
-        {
-            tileRenderer.material = chargeMaterials[0];
-        }
-
-        Debug.Log($"Tile ({x},{y}): Primed for detonation and registered with PlayerActionManager");
-    }
-    public void AdvantageTile(int charges = 3)
-    {
-        if (isBlackened) return;
-
-        isAdvantaged = true;
-        detonationCharges = charges > maxCharges ? maxCharges : charges;
-        ClearMarker();
-
-
-        UpdateChargeVisuals();
-
-        Debug.Log($"Blue tile at ({x}, {y}) enhanced to charge level {detonationCharges}");
-    }
-
     private void UpdateChargeVisuals()
     {
         if (tileRenderer != null && detonationCharges > 0 &&
@@ -510,32 +459,7 @@ public class Tile : MonoBehaviour
             tileRenderer.material = originalMaterial;
         }
     }
-    public void ResetPrimedState()
-    {
-        if (!isPrimed) return;
 
-        isPrimed = false;
-        hasDetonationPoint = false;
-
-        // Reset visual state
-        if (tileRenderer != null)
-        {
-            if (isBlackened)
-            {
-                tileRenderer.material = forbiddenMaterial;
-            }
-            else if (isAdvantaged)
-            {
-                UpdateChargeVisuals();
-            }
-            else
-            {
-                tileRenderer.material = originalMaterial;
-            }
-        }
-
-        Debug.Log($"Tile ({x},{y}): Reset from primed state");
-    }
     public void ReduceCharge()
     {
         if (detonationCharges <= 0)
@@ -569,22 +493,6 @@ public class Tile : MonoBehaviour
 
     }
 
-    public void ResetTile()
-    {
-        currentState = TileState.Normal;
-        isBlackened = false;
-        isAdvantaged = false;
-        isPrimed = false;
-        detonationCharges = 0;
-        hasDetonationPoint = false;
-        ClearMarker();
-
-        if (tileRenderer != null)
-        {
-            tileRenderer.material = originalMaterial;
-        }
-    }
-
     public void ProcessCubeInteraction(CubeBehavior cube)
     {
         if (cube != null)
@@ -614,4 +522,83 @@ public class Tile : MonoBehaviour
         }
 
     }
+
+    #region Material Management - Centralized System
+
+    private void UpdateTileVisuals()
+    {
+        if (tileRenderer == null) return;
+
+        Material targetMaterial = DetermineTileMaterial();
+
+        if (targetMaterial != null && tileRenderer.material != targetMaterial)
+        {
+            tileRenderer.material = targetMaterial;
+            Debug.Log($"Tile ({x},{y}): Material updated to {targetMaterial.name} - State: Blackened:{isBlackened},  Advantaged:{isAdvantaged}, HasMarker:{hasMarker}, HasDetonationPoint:{hasDetonationPoint}");
+        }
+    }
+
+    private Material DetermineTileMaterial()
+    {
+        // Priority order for material selection
+
+        // 1. Active marker state (highest priority - during trigger animation)
+        if (hasMarker && activateMarkerMaterial != null)
+        {
+            return activateMarkerMaterial;
+        }
+
+        // 2. Marked state (player placed marker)
+        if (hasMarker && markedTileMaterial != null)
+        {
+            return markedTileMaterial;
+        }
+
+        // 3. Blackened state
+        if (isBlackened && forbiddenMaterial != null)
+        {
+            return forbiddenMaterial;
+        }
+
+        // 4. Advantaged state with charges
+        if (isAdvantaged && detonationCharges > 0)
+        {
+            return GetChargeMaterial(detonationCharges);
+        }
+
+        // 5. Cube marker (detonation point)
+        if (hasDetonationPoint && !isBlackened && !isAdvantaged)
+        {
+            return GetCubeMarkerMaterial();
+        }
+
+        // 6. Default state
+        return originalMaterial;
+    }
+
+    private Material GetCubeMarkerMaterial()
+    {
+        // Create or return a blue material for cube markers
+        Material blueMaterial = new Material(Shader.Find("Standard"));
+        blueMaterial.color = Color.blue;
+        blueMaterial.SetFloat("_Metallic", 0.3f);
+        blueMaterial.SetFloat("_Smoothness", 0.7f);
+        return blueMaterial;
+    }
+
+    private Material GetChargeMaterial(int charges)
+    {
+        if (chargeMaterials != null && charges > 0 && charges <= chargeMaterials.Length)
+        {
+            return chargeMaterials[charges - 1];
+        }
+        return originalMaterial;
+    }
+
+    public void ForceUpdateVisuals()
+    {
+        UpdateTileVisuals();
+    }
+
+    #endregion
 }

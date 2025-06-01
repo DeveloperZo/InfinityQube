@@ -445,14 +445,17 @@ public class WaveDebugPanel : IDebugPanel
             CreateWaveFromTemplate(wave);
         }
         GUI.backgroundColor = Color.red;
+#if UnityEditor
         if (GUILayout.Button("Delete", GUILayout.Width(60)))
         {
+
             if (EditorUtility.DisplayDialog("Delete Wave",
                 $"Are you sure you want to delete {wave.name}?", "Delete", "Cancel"))
             {
                 DeleteWave(assetPath);
             }
         }
+#endif
         GUI.backgroundColor = Color.white;
         GUILayout.EndHorizontal();
 
@@ -1223,11 +1226,12 @@ public class WaveDebugPanel : IDebugPanel
             string assetPath = $"Assets/data/waves/{waveName}.asset";
             AssetDatabase.CreateAsset(waveToSave, assetPath);
         }
+#if UnityEditor
         else
         {
             EditorUtility.SetDirty(waveToSave);
         }
-
+#endif
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();
 

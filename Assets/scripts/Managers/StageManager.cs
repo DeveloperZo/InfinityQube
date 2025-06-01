@@ -60,7 +60,7 @@ public class StageManager : MonoBehaviour
     {
         if (startingStageIndex != 0)
         {
-            //LoadStage(startingStageIndex);
+            LoadStage(startingStageIndex);
         }
     }
 

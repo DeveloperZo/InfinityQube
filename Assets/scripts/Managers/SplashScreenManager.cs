@@ -1,9 +1,6 @@
 using UnityEngine;
-using UnityEngine.Video;
 using UnityEngine.SceneManagement;
-using UnityEngine.UI;
-using UnityEditor.SceneManagement;
-using System.IO;
+
 
 public class SplashScreenManager : MonoBehaviour
 {

@@ -100,7 +100,6 @@ public class PlayerManager : MonoBehaviour
 
         HandleMovement();
         HandleTileTracking();
-        HandleSpeedControl();
         TrackMovement();
         CheckForCollisions();
     }
@@ -406,18 +405,6 @@ public class PlayerManager : MonoBehaviour
     }
     #endregion
 
-    #region Speed Control
-    private void HandleSpeedControl()
-    {
-        bool wasSpeedingUp = isSpeedingUp;
-        isSpeedingUp = Input.GetKey(speedUpKey);
-
-        if (isSpeedingUp != wasSpeedingUp)
-        {
-            NotifyWaveManager(wm => wm.SetSpeedState(isSpeedingUp));
-        }
-    }
-    #endregion
 
     #region Death & Respawn System
     public void Die()

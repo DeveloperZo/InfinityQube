@@ -7,6 +7,7 @@ public class BuildInfo : MonoBehaviour
     public string buildVersion = "0.1.0-alpha";
     public string buildDate;
 
+    // Add to BuildInfo.cs around line 15
     private void Awake()
     {
         // Show build info in development builds
@@ -14,6 +15,9 @@ public class BuildInfo : MonoBehaviour
         {
             buildDate = System.DateTime.Now.ToString("yyyy-MM-dd HH:mm");
             DontDestroyOnLoad(gameObject);
+
+            // Add friend testing info
+            gameObject.name = "BUILD_INFO_" + buildVersion;
         }
     }
 
@@ -21,8 +25,8 @@ public class BuildInfo : MonoBehaviour
     {
         if (Debug.isDebugBuild)
         {
-            GUI.Label(new Rect(10, Screen.height - 40, 300, 20),
-                     $"Build: {buildVersion} | {buildDate}");
+            GUI.Label(new Rect(10, Screen.height - 60, 400, 40),
+                     $"Build: {buildVersion} | {buildDate}\nFriend Test Build - Send feedback to [your discord]");
         }
     }
 }

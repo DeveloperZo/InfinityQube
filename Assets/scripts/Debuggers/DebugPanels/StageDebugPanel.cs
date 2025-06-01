@@ -1,6 +1,6 @@
 using UnityEngine;
 using System.Linq;
-using System.Collections.Generic;
+
 
 #if UNITY_EDITOR
 using UnityEditor;
@@ -366,14 +366,17 @@ public class StageDebugPanel : IDebugPanel
                 CreateStageFromTemplate(stageData);
         }
         GUI.backgroundColor = Color.red;
+#if UnityEditor
         if (GUILayout.Button("Delete", GUILayout.Width(60)))
         {
+
             if (EditorUtility.DisplayDialog("Delete Stage",
                 $"Are you sure you want to delete Stage {stageId}?", "Delete", "Cancel"))
             {
                 DeleteStage(stageId);
             }
         }
+#endif
         GUI.backgroundColor = Color.white;
         GUILayout.EndHorizontal();
 
