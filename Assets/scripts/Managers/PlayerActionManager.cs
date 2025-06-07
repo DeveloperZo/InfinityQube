@@ -67,6 +67,7 @@ public class PlayerActionManager : MonoBehaviour
     public int areaMarkersPlaced = 0;
     private int cubeMarkersTriggered = 0;
     private int perfectTimingHits = 0;
+    private bool inputEnabled = false;
 
     #region Data Structures
 
@@ -133,6 +134,13 @@ public class PlayerActionManager : MonoBehaviour
     private void Awake()
     {
         FindReferences();
+        inputEnabled = true;
+
+        // Reset cooldowns and charges for debugging
+        lastIndividualMarkerTime = -individualMarkerCooldown; // Allow immediate use
+        lastAreaMarkerTime = -areaMarkerCooldown; // Allow immediate use
+        currentIndividualMarkers = 0;
+        currentAreaMarkers = 0;
     }
 
     private void Update()
@@ -351,31 +359,24 @@ public class PlayerActionManager : MonoBehaviour
         if (!CanPlaceAreaMarker() || !IsValidPosition(centerPosition))
             return false;
 
-        var affectedPositions = GetAreaPositions(centerPosition, size);
-
-        // Check if any position in the area can have a marker
-        bool canPlace = affectedPositions.Any(pos => CanPlaceMarkerAt(pos));
-        if (!canPlace) return false;
+        // Only check if the CENTER position can have a marker
+        if (!CanPlaceMarkerAt(centerPosition))
+            return false;
 
         var marker = new AreaMarker(centerPosition, size, Time.time);
-        marker.affectedPositions = affectedPositions;
 
-        // Create visuals for each valid position
-        foreach (var pos in affectedPositions)
-        {
-            if (CanPlaceMarkerAt(pos))
-            {
-                var visual = CreateAreaMarkerVisual(pos);
-                marker.visualObjects.Add(visual);
-            }
-        }
+        // Calculate affected positions for later use, but don't create visuals for them yet
+        marker.affectedPositions = GetAreaPositions(centerPosition, size);
+
+        // Only create visual for the CENTER tile (green highlight)
+        marker.visualObjects.Add(CreateAreaMarkerVisual(centerPosition));
 
         areaMarkers.Enqueue(marker);
         currentAreaMarkers++;
         lastAreaMarkerTime = Time.time;
         areaMarkersPlaced++;
 
-        Debug.Log($"Area marker placed at ({centerPosition.x}, {centerPosition.y}) with {size}x{size} area. Count: {currentAreaMarkers}/{maxAreaMarkers}");
+        Debug.Log($"Area marker placed at center ({centerPosition.x}, {centerPosition.y}) - will affect {marker.affectedPositions.Count} tiles when triggered");
         return true;
     }
 
@@ -425,14 +426,16 @@ public class PlayerActionManager : MonoBehaviour
     {
         bool anySuccess = false;
 
-        // Highlight all affected positions during trigger
+        Debug.Log($"Triggering area marker - expanding from center ({marker.centerPosition.x}, {marker.centerPosition.y}) to {marker.affectedPositions.Count} tiles");
+
+        // Process cubes in all affected positions
         foreach (var position in marker.affectedPositions)
         {
-            // Temporarily highlight the area being affected
+            // Temporarily highlight the expanded area during trigger
             Tile tile = gridManager.GetTileAt(position.x, position.y);
-            if (tile != null)
+            if (tile != null && position != marker.centerPosition) // Don't re-highlight center
             {
-                SetTileHighlight(tile, new Color(0f, 1f, 0f, 0.5f), "AreaTrigger"); // Semi-transparent green
+                SetTileHighlight(tile, new Color(0f, 1f, 0f, 0.7f), "AreaExpansion");
             }
 
             var cubes = FindAllCubesAt(position);
@@ -443,17 +446,30 @@ public class PlayerActionManager : MonoBehaviour
             StartCoroutine(ShowMarkerTriggerEffect(position));
         }
 
-        // Reset the center tile highlight
-        Tile centerTile = gridManager.GetTileAt(marker.centerPosition.x, marker.centerPosition.y);
-        if (centerTile != null)
-        {
-            centerTile.ForceUpdateVisuals();
-        }
+        // Clear the center tile highlight
+        DestroyMarkerVisual(marker.visualObjects[0]);
 
-        // Clear area highlights after a delay
-        StartCoroutine(ClearAreaHighlightsAfterDelay(marker.affectedPositions, 1f));
+        // Clear expansion highlights after a delay
+        StartCoroutine(ClearAreaExpansionAfterDelay(marker.affectedPositions, marker.centerPosition, 1f));
 
         return anySuccess;
+    }
+
+    private IEnumerator ClearAreaExpansionAfterDelay(List<Vector2Int> positions, Vector2Int centerPos, float delay)
+    {
+        yield return new WaitForSeconds(delay);
+
+        foreach (var pos in positions)
+        {
+            if (pos != centerPos) // Don't clear center (already cleared)
+            {
+                Tile tile = gridManager.GetTileAt(pos.x, pos.y);
+                if (tile != null)
+                {
+                    tile.ForceUpdateVisuals();
+                }
+            }
+        }
     }
     private IEnumerator ClearAreaHighlightsAfterDelay(List<Vector2Int> positions, float delay)
     {
