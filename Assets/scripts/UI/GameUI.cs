@@ -58,7 +58,7 @@ public class GameUI : MonoBehaviour
         }
 
         // Reset functionality
-        if (Input.GetKeyDown(KeyCode.R))
+        if (Input.GetKeyDown(KeyCode.P))
         {
             RestartLevel();
         }
@@ -167,15 +167,17 @@ public class GameUI : MonoBehaviour
 
         // Essential controls
         GUILayout.Label("WASD  Move Player", textStyle);
-        GUILayout.Label("SPACE  Place/Remove Marker", textStyle);
-        GUILayout.Label("F      Trigger Marker", textStyle);
-        GUILayout.Label("G      Trigger Detonation", textStyle);
+        GUILayout.Label("F  Individual Marker", textStyle);
+        GUILayout.Label("G  Area Marker", textStyle);
+        GUILayout.Label("R      Trigger Individual", textStyle);
+        GUILayout.Label("T      Trigger Area", textStyle);
+        GUILayout.Label("Q      Trigger Cube Marker", textStyle);
         GUILayout.Label("K      Close Dialog", textStyle);
 
         GUILayout.Space(5);
 
         // System controls
-        GUILayout.Label("R      Restart Level", textStyle);
+        GUILayout.Label("P      Restart Level", textStyle);
         GUILayout.Label("ESC    Quit Game", textStyle);
 
         GUILayout.Space(5);

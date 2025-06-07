@@ -19,7 +19,8 @@ MonoBehaviour:
   gridWidth: 5
   gridHeight: 20
   playerStartPosition: {x: 0, y: 1}
-  waveConfigurations: []
+  waveConfigurations:
+  - {fileID: 11400000, guid: 0692e15c717d7da41a100f51d3a2b1b7, type: 2}
   requireAllCubesDestroyed: 0
   requiredCaptureCount: 0
   maxAllowedEscapes: 0

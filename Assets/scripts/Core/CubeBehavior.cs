@@ -150,15 +150,13 @@ public class CubeBehavior : MonoBehaviour
             if (landingTile != null && !isDestroyed)
             {
                 landingTile.HandleCubeLanding(this);
-                if (landingTile.IsAdvantaged)
-                {
-                    playerActionManager.TriggerCubeMarkerAt(new Vector2Int(position.x, position.y));
-                }
+
             }
         }
 
         return true;
     }
+
 
     private IEnumerator AnimateMove(Vector2Int newPos)
     {
@@ -260,43 +258,4 @@ public class CubeBehavior : MonoBehaviour
         }
     }
 
-    private IEnumerator BounceEffect()
-    {
-        if (isDestroyed) yield break;
-
-        Vector3 originalScale = transform.localScale;
-        Vector3 squashedScale = new Vector3(tileScale * 1.2f, tileScale * 0.7f, tileScale * 1.2f);
-
-        // Squash on impact
-        float squashDuration = 0.1f;
-        float elapsed = 0f;
-
-        while (elapsed < squashDuration && !isDestroyed)
-        {
-            elapsed += Time.deltaTime;
-            float t = Mathf.Clamp01(elapsed / squashDuration);
-
-            transform.localScale = Vector3.Lerp(originalScale, squashedScale, t);
-
-            yield return null;
-        }
-
-        // Return to normal
-        elapsed = 0f;
-        while (elapsed < squashDuration && !isDestroyed)
-        {
-            elapsed += Time.deltaTime;
-            float t = Mathf.Clamp01(elapsed / squashDuration);
-
-            transform.localScale = Vector3.Lerp(squashedScale, originalScale, t);
-
-            yield return null;
-        }
-
-        // Ensure final scale
-        if (!isDestroyed)
-        {
-            transform.localScale = originalScale;
-        }
-    }
 }

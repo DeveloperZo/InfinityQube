@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 using static Enumerations;
-
+using static PlayerActionManager;
 
 public class PlayerActionDebugPanel : IDebugPanel
 {
@@ -30,8 +30,6 @@ public class PlayerActionDebugPanel : IDebugPanel
     private int enhancedTileCharges = 3;
 
     // Action Testing
-    private bool autoTriggerMarkers = false;
-    private float autoTriggerDelay = 2f;
     private bool showAreaPreviews = true;
     private Vector2Int testMarkerPosition = new Vector2Int(3, 5);
 
@@ -41,6 +39,7 @@ public class PlayerActionDebugPanel : IDebugPanel
     public void Initialize()
     {
         actionManager = Object.FindObjectOfType<PlayerActionManager>();
+        actionManager.SetInput(true);
         playerManager = Object.FindObjectOfType<PlayerManager>();
         gridManager = Object.FindObjectOfType<GridManager>();
         waveManager = Object.FindObjectOfType<WaveManager>();
@@ -51,18 +50,9 @@ public class PlayerActionDebugPanel : IDebugPanel
         }
     }
 
-    private static float lastTriggerTime = 0f;
-
     public void Update()
     {
-        if (autoTriggerMarkers && actionManager != null && actionManager.HasCubeMarkers())
-        {
-            if (Time.time - lastTriggerTime > autoTriggerDelay)
-            {
-                actionManager.TriggerNextCubeMarker();
-                lastTriggerTime = Time.time;
-            }
-        }
+        // Update logic if needed
     }
 
     public void DrawPanel()
@@ -114,29 +104,34 @@ public class PlayerActionDebugPanel : IDebugPanel
 
         if (actionManager != null)
         {
-            GUILayout.Label($"Active Cube Markers: {actionManager.CubeMarkerCount}");
+            // Individual Markers
+            GUILayout.Label($"Individual Markers: {actionManager.GetCurrentIndividualMarkers()}/3");
+            float individualCooldown = actionManager.GetIndividualMarkerCooldownRemaining();
+            if (individualCooldown > 0)
+                GUILayout.Label($"Individual Cooldown: {individualCooldown:F1}s");
 
+            // Area Markers
+            GUILayout.Label($"Area Markers: {actionManager.GetCurrentAreaMarkers()}/2");
+            float areaCooldown = actionManager.GetAreaMarkerCooldownRemaining();
+            if (areaCooldown > 0)
+                GUILayout.Label($"Area Cooldown: {areaCooldown:F1}s");
+
+            // Cube Markers
+            GUILayout.Label($"Cube Markers: {actionManager.GetCurrentCubeMarkers()}");
             Vector2Int nextMarker = actionManager.GetNextCubeMarker();
             if (nextMarker.x >= 0)
             {
-                GUILayout.Label($"Next Marker: ({nextMarker.x}, {nextMarker.y})");
-
-                if (GUILayout.Button("Preview Next Area") && showAreaPreviews)
-                {
-                    actionManager.ShowAreaPreview(nextMarker);
-                }
-            }
-            else
-            {
-                GUILayout.Label("No cube markers available");
+                GUILayout.Label($"Next Cube Marker: ({nextMarker.x}, {nextMarker.y})");
             }
 
-            int playerMarkers = 0;
-            if (gridManager != null)
-            {
-                playerMarkers = gridManager.GetMarkerCount();
-            }
-            GUILayout.Label($"Player Markers Placed: {playerMarkers}");
+            GUILayout.Space(5);
+
+            // Statistics
+            GUILayout.Label("STATISTICS", GUI.skin.box);
+            GUILayout.Label($"Individual Placed: {actionManager.GetIndividualMarkersPlaced()}");
+            GUILayout.Label($"Area Placed: {actionManager.GetAreaMarkersPlaced()}");
+            GUILayout.Label($"Cube Triggered: {actionManager.GetCubeMarkersTriggered()}");
+            GUILayout.Label($"Perfect Timing: {actionManager.GetPerfectTimingHits()}");
 
             if (playerManager != null)
             {
@@ -168,24 +163,75 @@ public class PlayerActionDebugPanel : IDebugPanel
         if (actionManager == null)
         {
             GUILayout.Label("PlayerActionManager not found");
+            if (GUILayout.Button("Find PlayerActionManager"))
+            {
+                actionManager = Object.FindObjectOfType<PlayerActionManager>();
+            }
             GUILayout.EndVertical();
             return;
         }
 
-        GUILayout.Label("Manual Controls:");
+        // Debug Override Controls
+        GUILayout.Label("DEBUG OVERRIDES", GUI.skin.box);
+
+        // Individual Marker Debug Controls
         GUILayout.BeginHorizontal();
-        if (GUILayout.Button("Trigger Next Cube Marker"))
+        GUILayout.Label("Individual:", GUILayout.Width(80));
+        if (GUILayout.Button("Reset Cooldown"))
         {
-            actionManager.TriggerNextCubeMarker();
+            actionManager.individualMarkerCooldown = 0;
         }
-        if (GUILayout.Button("Clear All Actions"))
+        if (GUILayout.Button("Max Charges"))
         {
-            actionManager.ClearAllActions();
+            actionManager.maxIndividualMarkers++;
         }
         GUILayout.EndHorizontal();
 
-        GUILayout.Label("Test Marker Placement:");
+        // Area Marker Debug Controls  
         GUILayout.BeginHorizontal();
+        GUILayout.Label("Area:", GUILayout.Width(80));
+        if (GUILayout.Button("Reset Cooldown"))
+        {
+            actionManager.areaMarkerCooldown = 0;
+        }
+        if (GUILayout.Button("Max Charges"))
+        {
+            actionManager.maxAreaMarkers = 0;
+        }
+        GUILayout.EndHorizontal();
+
+        GUILayout.Space(5);
+
+        // Enable/Disable Input
+        GUILayout.BeginHorizontal();
+        if (GUILayout.Button("Enable All Input"))
+        {
+            actionManager.SetInput(true);
+        }
+        if (GUILayout.Button("Disable Input"))
+        {
+            actionManager.SetInput(false);
+        }
+        GUILayout.EndHorizontal();
+
+        GUILayout.Space(10);
+
+        // Manual Marker Controls
+        DrawManualControls();
+
+
+
+
+        GUILayout.EndVertical();
+    }
+
+    private void DrawManualControls()
+    {
+        GUILayout.Label("MANUAL CONTROLS", GUI.skin.box);
+
+        // Manual Marker Controls
+        GUILayout.BeginHorizontal();
+        GUILayout.Label("Test Position:");
         GUILayout.Label("X:", GUILayout.Width(20));
         string xStr = GUILayout.TextField(testMarkerPosition.x.ToString(), GUILayout.Width(40));
         if (int.TryParse(xStr, out int newX))
@@ -195,48 +241,72 @@ public class PlayerActionDebugPanel : IDebugPanel
         string yStr = GUILayout.TextField(testMarkerPosition.y.ToString(), GUILayout.Width(40));
         if (int.TryParse(yStr, out int newY))
             testMarkerPosition.y = Mathf.Clamp(newY, 0, gridManager?.Height - 1 ?? 20);
-
-        if (GUILayout.Button("Place Player Marker"))
-        {
-            actionManager.PlacePlayerMarkerAt(testMarkerPosition);
-        }
         GUILayout.EndHorizontal();
 
+        // Individual Marker Controls
         GUILayout.BeginHorizontal();
-        if (GUILayout.Button("Trigger Player Marker"))
+        GUI.enabled = actionManager.CanPlaceIndividualMarkerCheck();
+        if (GUILayout.Button("Place Individual"))
         {
-            actionManager.TriggerPlayerMarkerAt(testMarkerPosition);
+            actionManager.PlaceIndividualMarker(testMarkerPosition);
         }
-        if (GUILayout.Button("Create Cube Marker"))
+        GUI.enabled = true;
+
+        if (GUILayout.Button("Trigger Individual"))
         {
-            actionManager.CreateCubeMarker(testMarkerPosition);
+            actionManager.TriggerNextIndividualMarker();
         }
         GUILayout.EndHorizontal();
 
-        GUILayout.Label("Automation:");
-        autoTriggerMarkers = GUILayout.Toggle(autoTriggerMarkers, "Auto-Trigger Cube Markers");
-
-        if (autoTriggerMarkers)
+        // Area Marker Controls
+        GUILayout.BeginHorizontal();
+        GUI.enabled = actionManager.CanPlaceAreaMarkerCheck();
+        if (GUILayout.Button("Place Area (2x2)"))
         {
-            GUILayout.BeginHorizontal();
-            GUILayout.Label("Delay:", GUILayout.Width(50));
-            string delayStr = GUILayout.TextField(autoTriggerDelay.ToString("F1"), GUILayout.Width(50));
-            if (float.TryParse(delayStr, out float newDelay))
-                autoTriggerDelay = Mathf.Clamp(newDelay, 0.5f, 10f);
-            GUILayout.Label("seconds");
-            GUILayout.EndHorizontal();
+            actionManager.PlaceAreaMarker(testMarkerPosition, 2);
         }
+        GUI.enabled = true;
 
-        showAreaPreviews = GUILayout.Toggle(showAreaPreviews, "Show Area Previews");
+        if (GUILayout.Button("Trigger Area"))
+        {
+            actionManager.TriggerNextAreaMarker();
+        }
+        GUILayout.EndHorizontal();
+
+        // Cube Marker Controls
+        GUILayout.BeginHorizontal();
+        if (GUILayout.Button("Trigger Cube Marker"))
+        {
+            actionManager.TriggerNextCubeMarker();
+        }
+        if (GUILayout.Button("Power Up Cube Marker"))
+        {
+            actionManager.PowerUpNextCubeMarker();
+        }
+        GUILayout.EndHorizontal();
+
+        GUILayout.Space(5);
+
+        // System Controls
+        GUILayout.Label("System Controls:");
+        GUILayout.BeginHorizontal();
+        if (GUILayout.Button("Clear All Actions"))
+        {
+            actionManager.ClearAllActions();
+        }
+        if (GUILayout.Button("Reset Statistics"))
+        {
+            actionManager.ResetStatistics();
+        }
+        GUILayout.EndHorizontal();
 
         showQuickScenarios = GUILayout.Toggle(showQuickScenarios, "Show Quick Scenarios");
         if (showQuickScenarios)
         {
             DrawQuickScenarios();
         }
-
-        GUILayout.EndVertical();
     }
+
 
     private void DrawCubeSpawnerSection()
     {
@@ -344,6 +414,307 @@ public class PlayerActionDebugPanel : IDebugPanel
         GUILayout.EndHorizontal();
 
         GUILayout.EndVertical();
+    }
+
+    private void DrawQuickScenarios()
+    {
+        GUILayout.Label("Quick Test Scenarios:");
+
+        if (GUILayout.Button("Individual Marker Test"))
+        {
+            if (playerManager != null && actionManager != null)
+            {
+                actionManager.PlaceIndividualMarker(playerManager.currentTilePosition);
+            }
+        }
+
+        if (GUILayout.Button("Area Marker Test"))
+        {
+            if (playerManager != null && actionManager != null)
+            {
+                actionManager.PlaceAreaMarker(playerManager.currentTilePosition, 3);
+            }
+        }
+
+        if (GUILayout.Button("Blue Cube + Individual Test"))
+        {
+            Vector2Int spawnPos = new Vector2Int(1, cubeSpawnRow);
+            SpawnCubeAt(spawnPos, CubeType.Blue);
+            actionManager.PlaceIndividualMarker(spawnPos);
+        }
+
+        if (GUILayout.Button("Blue Cube + Area Test"))
+        {
+            Vector2Int spawnPos = new Vector2Int(2, cubeSpawnRow);
+            SpawnCubeAt(spawnPos, CubeType.Blue);
+            actionManager.PlaceAreaMarker(spawnPos, 3);
+        }
+
+        if (GUILayout.Button("Resource Conversion Test"))
+        {
+            // Create blue cubes and different marker types to test conversion
+            Vector2Int pos1 = new Vector2Int(1, cubeSpawnRow);
+            Vector2Int pos2 = new Vector2Int(3, cubeSpawnRow);
+
+            SpawnCubeAt(pos1, CubeType.Blue);
+            SpawnCubeAt(pos2, CubeType.Blue);
+
+            actionManager.PlaceIndividualMarker(pos1); // Should create Area cube marker
+            actionManager.PlaceAreaMarker(pos2, 3);    // Should create Individual cube marker
+
+            Debug.Log("Resource conversion test setup complete");
+        }
+
+        if (GUILayout.Button("Perfect Timing Test"))
+        {
+            Vector2Int center = new Vector2Int(
+                playerManager.currentTilePosition.x,
+                playerManager.currentTilePosition.y + 4);
+
+            // Create a normal cube for timing practice
+            SpawnCubeAt(center, CubeType.Normal);
+            actionManager.PlaceIndividualMarker(center);
+
+            Debug.Log($"Perfect timing test at ({center.x}, {center.y}) - trigger quickly for perfect timing!");
+        }
+    }
+
+    // Helper Methods (keeping existing implementations)
+    #region Debug Methods
+
+    public void ForceDebugIndividualMarker(Vector2Int position)
+    {
+        if (!actionManager.IsValidPosition(position)) return;
+
+        var marker = new IndividualMarker(position, Time.time);
+        marker.visualObject = actionManager.CreateIndividualMarkerVisual(position);
+
+        actionManager.individualMarkers.Enqueue(marker);
+        actionManager.currentIndividualMarkers++; // Don't enforce limits in debug
+        actionManager.individualMarkersPlaced++;
+
+        Debug.Log($"[DEBUG] Force placed individual marker at ({position.x}, {position.y})");
+    }
+
+    public void ForceDebugAreaMarker(Vector2Int position)
+    {
+        if (!actionManager.IsValidPosition(position)) return;
+
+        var marker = new AreaMarker(position, actionManager.areaMarkerSize, Time.time);
+        marker.affectedPositions = actionManager.GetAreaPositions(position, actionManager.areaMarkerSize);
+        marker.visualObjects.Add(actionManager.CreateAreaMarkerVisual(position)); // Only center tile
+
+        actionManager.areaMarkers.Enqueue(marker);
+        actionManager.currentAreaMarkers++; // Don't enforce limits in debug
+        actionManager.areaMarkersPlaced++;
+
+        Debug.Log($"[DEBUG] Force placed area marker at ({position.x}, {position.y}) affecting {marker.affectedPositions.Count} tiles");
+    }
+
+    #endregion
+    private bool HasCubeAt(Vector2Int position)
+    {
+        foreach (CubeBehavior cube in Object.FindObjectsOfType<CubeBehavior>())
+        {
+            if (cube != null && !cube.isDestroyed &&
+                cube.position.x == position.x && cube.position.y == position.y)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private CubeType GetCubeTypeAt(Vector2Int position)
+    {
+        foreach (CubeBehavior cube in Object.FindObjectsOfType<CubeBehavior>())
+        {
+            if (cube != null && !cube.isDestroyed &&
+                cube.position.x == position.x && cube.position.y == position.y)
+            {
+                return cube.type;
+            }
+        }
+        return CubeType.Normal;
+    }
+
+    private void RemoveCubeAt(Vector2Int position)
+    {
+        foreach (CubeBehavior cube in Object.FindObjectsOfType<CubeBehavior>())
+        {
+            if (cube != null && !cube.isDestroyed &&
+                cube.position.x == position.x && cube.position.y == position.y)
+            {
+                Object.Destroy(cube.gameObject);
+                break;
+            }
+        }
+    }
+
+    private void SpawnCubeAt(Vector2Int position, CubeType cubeType)
+    {
+        if (waveManager?.cubePrefabs == null || (int)cubeType >= waveManager.cubePrefabs.Length)
+        {
+            Debug.LogWarning($"Cannot spawn {cubeType} cube - prefab not found");
+            return;
+        }
+
+        RemoveCubeAt(position);
+
+        Vector3 worldPos = gridManager.GridToWorldPosition(position.x, position.y, 2f);
+        GameObject cubeObj = Object.Instantiate(waveManager.cubePrefabs[(int)cubeType], worldPos, Quaternion.identity);
+
+        var cube = cubeObj.GetComponent<CubeBehavior>();
+        if (cube == null) cube = cubeObj.AddComponent<CubeBehavior>();
+
+        var cubeData = new CubeData
+        {
+            type = cubeType,
+            position = position,
+            level = 1
+        };
+
+        cube.Init(gridManager, cubeData, 2f);
+
+        if (gridManager.IsValidGridPosition(position))
+        {
+            Tile tile = gridManager.GetTileAt(position);
+            if (tile != null)
+            {
+                tile.ProcessCubeInteraction(cube);
+            }
+        }
+
+        if (waveManager != null)
+        {
+            waveManager.activeCubes.Add(cube);
+        }
+
+        Debug.Log($"Spawned {cubeType} cube at ({position.x}, {position.y})");
+    }
+
+    private void SpawnCubeRow(CubeType cubeType)
+    {
+        if (gridManager == null) return;
+
+        for (int x = 0; x < gridManager.Width; x++)
+        {
+            SpawnCubeAt(new Vector2Int(x, cubeSpawnRow), cubeType);
+        }
+    }
+
+    private void SpawnMixedCubeRow()
+    {
+        if (gridManager == null) return;
+
+        for (int x = 0; x < gridManager.Width; x++)
+        {
+            CubeType type = (x % 3) switch
+            {
+                0 => CubeType.Normal,
+                1 => CubeType.Blue,
+                _ => CubeType.Normal
+            };
+            SpawnCubeAt(new Vector2Int(x, cubeSpawnRow), type);
+        }
+    }
+
+    private void ClearCubeRow()
+    {
+        if (gridManager == null) return;
+
+        for (int x = 0; x < gridManager.Width; x++)
+        {
+            RemoveCubeAt(new Vector2Int(x, cubeSpawnRow));
+        }
+    }
+
+    private void ClearAllCubes()
+    {
+        foreach (CubeBehavior cube in Object.FindObjectsOfType<CubeBehavior>())
+        {
+            if (cube != null)
+            {
+                Object.Destroy(cube.gameObject);
+            }
+        }
+    }
+
+    private void SetTileState(Vector2Int position, int state)
+    {
+        if (!gridManager.IsValidGridPosition(position)) return;
+
+        Tile tile = gridManager.GetTileAt(position);
+        if (tile == null) return;
+
+        switch (state)
+        {
+            case 0:
+                tile.ResetTile();
+                break;
+            case 1:
+                tile.PrimeTile();
+                break;
+            case 2:
+                tile.BlackenTile();
+                break;
+            case 3:
+                tile.AdvantageTile(enhancedTileCharges);
+                break;
+        }
+
+        Debug.Log($"Set tile ({position.x}, {position.y}) to state {state}");
+    }
+
+    private void SetPlayerTileState(int state)
+    {
+        if (playerManager != null)
+        {
+            SetTileState(playerManager.currentTilePosition, state);
+        }
+    }
+
+    private void ResetAllTiles()
+    {
+        if (gridManager == null) return;
+
+        for (int x = 0; x < gridManager.Width; x++)
+        {
+            for (int y = 0; y < gridManager.Height; y++)
+            {
+                Tile tile = gridManager.GetTileAt(x, y);
+                if (tile != null)
+                {
+                    tile.ResetTile();
+                }
+            }
+        }
+
+        Debug.Log("Reset all tiles to normal state");
+    }
+
+    private void CreateTestTilePattern()
+    {
+        if (gridManager == null || playerManager == null) return;
+
+        Vector2Int center = playerManager.currentTilePosition;
+
+        SetTileState(new Vector2Int(center.x - 1, center.y + 1), 1);
+        SetTileState(new Vector2Int(center.x + 1, center.y + 1), 1);
+        SetTileState(new Vector2Int(center.x, center.y + 2), 3);
+        SetTileState(new Vector2Int(center.x - 1, center.y - 1), 2);
+        SetTileState(new Vector2Int(center.x + 1, center.y - 1), 2);
+
+        Debug.Log("Created test tile pattern around player");
+    }
+
+    private string GetTileStateDescription(Tile tile)
+    {
+        if (tile.IsBlackened) return "Corrupted";
+        if (tile.IsPrimed) return "Primed";
+        if (tile.HasCharges) return $"Enhanced ({tile.DetonationCharges})";
+        if (tile.HasMarker) return "Has Marker";
+        return "Normal";
     }
 
     private void DrawCubeTypeSelector()
@@ -502,289 +873,6 @@ public class PlayerActionDebugPanel : IDebugPanel
 
         GUI.backgroundColor = originalColor;
         GUILayout.EndScrollView();
-    }
-
-    private void DrawQuickScenarios()
-    {
-        GUILayout.Label("Quick Test Scenarios:");
-
-        if (GUILayout.Button("Mark Player Tile"))
-        {
-            if (playerManager != null && actionManager != null)
-            {
-                actionManager.PlacePlayerMarkerAt(playerManager.currentTilePosition);
-            }
-        }
-
-        if (GUILayout.Button("Blue Cube Capture Test"))
-        {
-            Vector2Int spawnPos = new Vector2Int(
-                1,
-                cubeSpawnRow);
-            SpawnCubeAt(spawnPos, CubeType.Blue);
-            actionManager.PlacePlayerMarkerAt(spawnPos);
-        }
-
-        if (GUILayout.Button("Chain Reaction Test"))
-        {
-            for (int i = 0; i < 3; i++)
-            {
-                Vector2Int pos = new Vector2Int(
-                    i,
-                    cubeSpawnRow);
-                SpawnCubeAt(pos, CubeType.Blue);
-            }
-            actionManager.PlacePlayerMarkerAt(new Vector2Int(0, cubeSpawnRow));
-        }
-
-        if (GUILayout.Button("Area Effect Test"))
-        {
-            Vector2Int center = new Vector2Int(
-                playerManager.currentTilePosition.x,
-                playerManager.currentTilePosition.y + 3);
-
-            // Create a 2x2 grid of cubes for testing area capture
-            for (int x = 0; x <= 1; x++)
-            {
-                for (int y = 0; y <= 1; y++)
-                {
-                    Vector2Int pos = new Vector2Int(center.x + x, center.y + y);
-                    CubeType type = (x == 0 && y == 0) ? CubeType.Blue : CubeType.Normal;
-                    SpawnCubeAt(pos, type);
-                }
-            }
-
-            // Create cube marker at center for 2x2 area effect
-            actionManager.CreateCubeMarker(center);
-            Debug.Log($"Created 2x2 test area with cube marker at ({center.x}, {center.y})");
-        }
-
-        if (GUILayout.Button("Cascading Blue Test"))
-        {
-            Vector2Int center = new Vector2Int(
-                playerManager.currentTilePosition.x,
-                playerManager.currentTilePosition.y + 4);
-
-            // Create a pattern where blue cubes will cascade
-            // First blue cube that will be captured and create a marker
-            SpawnCubeAt(center, CubeType.Blue);
-
-            // Second blue cube that should be captured by the first's marker
-            SpawnCubeAt(new Vector2Int(center.x + 1, center.y), CubeType.Blue);
-
-            // Some normal cubes in the area
-            SpawnCubeAt(new Vector2Int(center.x, center.y + 1), CubeType.Normal);
-            SpawnCubeAt(new Vector2Int(center.x + 1, center.y + 1), CubeType.Normal);
-
-            // Place initial player marker to start the cascade
-            actionManager.PlacePlayerMarkerAt(center);
-
-            Debug.Log($"Created cascading blue cube test at ({center.x}, {center.y})");
-        }
-    }
-
-    // Helper Methods
-    private bool HasCubeAt(Vector2Int position)
-    {
-        foreach (CubeBehavior cube in Object.FindObjectsOfType<CubeBehavior>())
-        {
-            if (cube != null && !cube.isDestroyed &&
-                cube.position.x == position.x && cube.position.y == position.y)
-            {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private CubeType GetCubeTypeAt(Vector2Int position)
-    {
-        foreach (CubeBehavior cube in Object.FindObjectsOfType<CubeBehavior>())
-        {
-            if (cube != null && !cube.isDestroyed &&
-                cube.position.x == position.x && cube.position.y == position.y)
-            {
-                return cube.type;
-            }
-        }
-        return CubeType.Normal;
-    }
-
-    private void RemoveCubeAt(Vector2Int position)
-    {
-        foreach (CubeBehavior cube in Object.FindObjectsOfType<CubeBehavior>())
-        {
-            if (cube != null && !cube.isDestroyed &&
-                cube.position.x == position.x && cube.position.y == position.y)
-            {
-                Object.Destroy(cube.gameObject);
-                break;
-            }
-        }
-    }
-
-    private void SpawnCubeAt(Vector2Int position, CubeType cubeType)
-    {
-        if (waveManager?.cubePrefabs == null || (int)cubeType >= waveManager.cubePrefabs.Length)
-        {
-            Debug.LogWarning($"Cannot spawn {cubeType} cube - prefab not found");
-            return;
-        }
-
-        RemoveCubeAt(position);
-
-        Vector3 worldPos = gridManager.GridToWorldPosition(position.x, position.y, 2f);
-        GameObject cubeObj = Object.Instantiate(waveManager.cubePrefabs[(int)cubeType], worldPos, Quaternion.identity);
-
-        var cube = cubeObj.GetComponent<CubeBehavior>();
-        if (cube == null) cube = cubeObj.AddComponent<CubeBehavior>();
-
-        var cubeData = new CubeData
-        {
-            type = cubeType,
-            position = position,
-            level = 1
-        };
-
-        cube.Init(gridManager, cubeData, 2f);
-        // IMPORTANT: Register the cube with the tile so it can be captured
-        if (gridManager.IsValidGridPosition(position))
-        {
-            Tile tile = gridManager.GetTileAt(position);
-            if (tile != null)
-            {
-                tile.ProcessCubeInteraction(cube);
-            }
-        }
-        if (waveManager != null)
-        {
-            waveManager.activeCubes.Add(cube);
-        }
-        Debug.Log($"Spawned {cubeType} cube at ({position.x}, {position.y})");
-    }
-
-    private void SpawnCubeRow(CubeType cubeType)
-    {
-        if (gridManager == null) return;
-
-        for (int x = 0; x < gridManager.Width; x++)
-        {
-            SpawnCubeAt(new Vector2Int(x, cubeSpawnRow), cubeType);
-        }
-    }
-
-    private void SpawnMixedCubeRow()
-    {
-        if (gridManager == null) return;
-
-        for (int x = 0; x < gridManager.Width; x++)
-        {
-            CubeType type = (x % 3) switch
-            {
-                0 => CubeType.Normal,
-                1 => CubeType.Blue,
-                _ => CubeType.Normal
-            };
-            SpawnCubeAt(new Vector2Int(x, cubeSpawnRow), type);
-        }
-    }
-
-    private void ClearCubeRow()
-    {
-        if (gridManager == null) return;
-
-        for (int x = 0; x < gridManager.Width; x++)
-        {
-            RemoveCubeAt(new Vector2Int(x, cubeSpawnRow));
-        }
-    }
-
-    private void ClearAllCubes()
-    {
-        foreach (CubeBehavior cube in Object.FindObjectsOfType<CubeBehavior>())
-        {
-            if (cube != null)
-            {
-                Object.Destroy(cube.gameObject);
-            }
-        }
-    }
-
-    private void SetTileState(Vector2Int position, int state)
-    {
-        if (!gridManager.IsValidGridPosition(position)) return;
-
-        Tile tile = gridManager.GetTileAt(position);
-        if (tile == null) return;
-
-        switch (state)
-        {
-            case 0:
-                tile.ResetTile();
-                break;
-            case 1:
-                tile.PrimeTile();
-                break;
-            case 2:
-                tile.BlackenTile();
-                break;
-            case 3:
-                tile.AdvantageTile(enhancedTileCharges);
-                break;
-        }
-
-        Debug.Log($"Set tile ({position.x}, {position.y}) to state {state}");
-    }
-
-    private void SetPlayerTileState(int state)
-    {
-        if (playerManager != null)
-        {
-            SetTileState(playerManager.currentTilePosition, state);
-        }
-    }
-
-    private void ResetAllTiles()
-    {
-        if (gridManager == null) return;
-
-        for (int x = 0; x < gridManager.Width; x++)
-        {
-            for (int y = 0; y < gridManager.Height; y++)
-            {
-                Tile tile = gridManager.GetTileAt(x, y);
-                if (tile != null)
-                {
-                    tile.ResetTile();
-                }
-            }
-        }
-
-        Debug.Log("Reset all tiles to normal state");
-    }
-
-    private void CreateTestTilePattern()
-    {
-        if (gridManager == null || playerManager == null) return;
-
-        Vector2Int center = playerManager.currentTilePosition;
-
-        SetTileState(new Vector2Int(center.x - 1, center.y + 1), 1);
-        SetTileState(new Vector2Int(center.x + 1, center.y + 1), 1);
-        SetTileState(new Vector2Int(center.x, center.y + 2), 3);
-        SetTileState(new Vector2Int(center.x - 1, center.y - 1), 2);
-        SetTileState(new Vector2Int(center.x + 1, center.y - 1), 2);
-
-        Debug.Log("Created test tile pattern around player");
-    }
-
-    private string GetTileStateDescription(Tile tile)
-    {
-        if (tile.IsBlackened) return "Corrupted";
-        if (tile.IsPrimed) return "Primed";
-        if (tile.HasCharges) return $"Enhanced ({tile.DetonationCharges})";
-        if (tile.HasMarker) return "Has Marker";
-        return "Normal";
     }
 
     private string GetTileButtonText(Tile tile, bool isPlayer)

@@ -383,6 +383,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 239699829}
+  - component: {fileID: 239699830}
   m_Layer: 0
   m_Name: GameWorld
   m_TagString: Untagged
@@ -411,6 +412,20 @@ Transform:
   - {fileID: 499458588}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &239699830
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 239699828}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ac359e300a123be4fb3b5c493d8c7845, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  buildVersion: 0.1.0-alpha
+  buildDate: 
 --- !u!1 &363589261
 GameObject:
   m_ObjectHideFlags: 0
@@ -6661,6 +6676,7 @@ MonoBehaviour:
   tilePrefab: {fileID: 6551000342905767615, guid: 1b3ce2c40720bac4f80c30da84c34fa1, type: 3}
   cubeTypeDefinitions: {fileID: 11400000, guid: 9b3d75336cd65f44382e0a54c8253136, type: 2}
   width: 5
+  bottom: 0
   height: 20
   tileSize: 3
   centerGridAtOrigin: 1
@@ -7023,7 +7039,6 @@ GameObject:
   - component: {fileID: 7665709929118310106}
   - component: {fileID: 7665709929118310107}
   - component: {fileID: 7665709929118310109}
-  - component: {fileID: 7665709929118310108}
   - component: {fileID: 7665709929118310110}
   m_Layer: 0
   m_Name: PlayerManager
@@ -7104,6 +7119,7 @@ MonoBehaviour:
   normalMoveInterval: 2
   fastMoveInterval: 0.15
   waveStartDelay: 0.75
+  speedUpKey: 304
   waveSize: 3
   normalCubeChance: 0.7
   blueCubeChance: 0.2
@@ -7827,20 +7843,6 @@ MonoBehaviour:
   movesCount: 0
   timeAlive: 0
   totalPlayTime: 0
---- !u!114 &7665709929118310108
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4020006825885015578}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ac359e300a123be4fb3b5c493d8c7845, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  buildVersion: 0.1.0-alpha
-  buildDate: 
 --- !u!114 &7665709929118310109
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -7853,7 +7855,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0339d7e0efd4f644faba24664752c954, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  feedbackKey: 293
+  feedbackKey: 282
   feedbackEmail: awilliams9293@gmail.com
 --- !u!143 &7665709929118310110
 CharacterController:

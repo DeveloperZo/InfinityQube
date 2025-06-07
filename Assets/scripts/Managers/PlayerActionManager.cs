@@ -14,15 +14,15 @@ public class PlayerActionManager : MonoBehaviour
     [SerializeField] private WaveManager waveManager;
 
     [Header("Individual Marker Settings")]
-    [SerializeField] private int maxIndividualMarkers = 3;
-    [SerializeField] private float individualMarkerCooldown = 2f;
+    [SerializeField] public int maxIndividualMarkers = 3;
+    [SerializeField] public float individualMarkerCooldown = 2f;
     [SerializeField] private Material individualMarkerMaterial;
 
     [Header("Area Marker Settings")]
-    [SerializeField] private int maxAreaMarkers = 2;
-    [SerializeField] private float areaMarkerCooldown = 4f;
+    [SerializeField] public int maxAreaMarkers = 2;
+    [SerializeField] public float areaMarkerCooldown = 4f;
     [SerializeField] private Material areaMarkerMaterial;
-    [SerializeField] private int areaMarkerSize = 3; // 3x3 by default
+    [SerializeField] public int areaMarkerSize = 2; // 3x3 by default
 
     [Header("Marker Settings")]
     [SerializeField] private float perfectTimingWindow = 0.2f;
@@ -33,10 +33,10 @@ public class PlayerActionManager : MonoBehaviour
     [SerializeField] private Material poweredCubeMarkerMaterial;
 
     [Header("Input Settings")]
-    [SerializeField] private KeyCode individualMarkerKey = KeyCode.Space;
-    [SerializeField] private KeyCode areaMarkerKey = KeyCode.LeftShift;
-    [SerializeField] private KeyCode triggerIndividualKey = KeyCode.F;
-    [SerializeField] private KeyCode triggerAreaKey = KeyCode.G;
+    [SerializeField] private KeyCode individualMarkerKey = KeyCode.F;
+    [SerializeField] private KeyCode areaMarkerKey = KeyCode.G;
+    [SerializeField] private KeyCode triggerIndividualKey = KeyCode.R;
+    [SerializeField] private KeyCode triggerAreaKey = KeyCode.T;
     [SerializeField] private KeyCode triggerCubeMarkerKey = KeyCode.Q;
     [SerializeField] private KeyCode powerUpCubeMarkerKey = KeyCode.E;
 
@@ -45,13 +45,13 @@ public class PlayerActionManager : MonoBehaviour
     [SerializeField] private Color areaPreviewColor = new Color(1f, 0.5f, 0f, 0.7f);
 
     // Individual Markers
-    private Queue<IndividualMarker> individualMarkers = new Queue<IndividualMarker>();
-    private int currentIndividualMarkers = 0;
+    public Queue<IndividualMarker> individualMarkers = new Queue<IndividualMarker>();
+    public int currentIndividualMarkers = 0;
     private float lastIndividualMarkerTime = 0f;
 
     // Area Markers
-    private Queue<AreaMarker> areaMarkers = new Queue<AreaMarker>();
-    private int currentAreaMarkers = 0;
+    public Queue<AreaMarker> areaMarkers = new Queue<AreaMarker>();
+    public int currentAreaMarkers = 0;
     private float lastAreaMarkerTime = 0f;
 
 
@@ -63,8 +63,8 @@ public class PlayerActionManager : MonoBehaviour
     private bool showingPreview = false;
 
     // Statistics
-    private int individualMarkersPlaced = 0;
-    private int areaMarkersPlaced = 0;
+    public int individualMarkersPlaced = 0;
+    public int areaMarkersPlaced = 0;
     private int cubeMarkersTriggered = 0;
     private int perfectTimingHits = 0;
 
@@ -170,6 +170,10 @@ public class PlayerActionManager : MonoBehaviour
 
     #region Input Handling
 
+    public void SetInput(bool condition)
+    {
+       playerManager.isDead = condition;
+    }
     private void HandleInput()
     {
         if (playerManager == null || !playerManager.IsAlive()) return;
@@ -421,8 +425,16 @@ public class PlayerActionManager : MonoBehaviour
     {
         bool anySuccess = false;
 
+        // Highlight all affected positions during trigger
         foreach (var position in marker.affectedPositions)
         {
+            // Temporarily highlight the area being affected
+            Tile tile = gridManager.GetTileAt(position.x, position.y);
+            if (tile != null)
+            {
+                SetTileHighlight(tile, new Color(0f, 1f, 0f, 0.5f), "AreaTrigger"); // Semi-transparent green
+            }
+
             var cubes = FindAllCubesAt(position);
             foreach (var cube in cubes)
             {
@@ -431,15 +443,31 @@ public class PlayerActionManager : MonoBehaviour
             StartCoroutine(ShowMarkerTriggerEffect(position));
         }
 
-        // Destroy visuals
-        foreach (var visual in marker.visualObjects)
+        // Reset the center tile highlight
+        Tile centerTile = gridManager.GetTileAt(marker.centerPosition.x, marker.centerPosition.y);
+        if (centerTile != null)
         {
-            DestroyMarkerVisual(visual);
+            centerTile.ForceUpdateVisuals();
         }
+
+        // Clear area highlights after a delay
+        StartCoroutine(ClearAreaHighlightsAfterDelay(marker.affectedPositions, 1f));
 
         return anySuccess;
     }
+    private IEnumerator ClearAreaHighlightsAfterDelay(List<Vector2Int> positions, float delay)
+    {
+        yield return new WaitForSeconds(delay);
 
+        foreach (var pos in positions)
+        {
+            Tile tile = gridManager.GetTileAt(pos.x, pos.y);
+            if (tile != null)
+            {
+                tile.ForceUpdateVisuals();
+            }
+        }
+    }
     #endregion
 
 
@@ -465,7 +493,7 @@ public class PlayerActionManager : MonoBehaviour
         return TriggerCubeMarkerAt(cubeMarker);
     }
 
-    private bool TriggerCubeMarkerAt(CubeMarker cubeMarker)
+     public bool TriggerCubeMarkerAt(CubeMarker cubeMarker)
     {
         cubeMarkersTriggered++;
         DestroyMarkerVisual(cubeMarker.visualObject);
@@ -609,23 +637,24 @@ public class PlayerActionManager : MonoBehaviour
         return tile != null && tile.CanBeMarked;
     }
 
-    private bool IsValidPosition(Vector2Int position)
+    public bool IsValidPosition(Vector2Int position)
     {
         return gridManager != null &&
                position.x >= 0 && position.x < gridManager.Width &&
                position.y >= 0 && position.y < gridManager.Height;
     }
 
-    private List<Vector2Int> GetAreaPositions(Vector2Int center, int size)
+    public List<Vector2Int> GetAreaPositions(Vector2Int center, int size)
     {
         List<Vector2Int> positions = new List<Vector2Int>();
-        int halfSize = size / 2;
 
-        for (int x = center.x - halfSize; x <= center.x + halfSize; x++)
+        // For 2x2: we want the center to be bottom-left of the 2x2 area
+        // So positions are: center, center+(1,0), center+(0,1), center+(1,1)
+        for (int x = 0; x < size; x++)
         {
-            for (int y = center.y - halfSize; y <= center.y + halfSize; y++)
+            for (int y = 0; y < size; y++)
             {
-                Vector2Int pos = new Vector2Int(x, y);
+                Vector2Int pos = new Vector2Int(center.x + x, center.y + y);
                 if (IsValidPosition(pos))
                 {
                     positions.Add(pos);
@@ -682,183 +711,115 @@ public class PlayerActionManager : MonoBehaviour
 
     #region Visual Creation Methods
 
-    private GameObject CreateIndividualMarkerVisual(Vector2Int position)
+    public GameObject CreateIndividualMarkerVisual(Vector2Int position)
     {
-        Vector3 worldPos = gridManager.GridToWorldPosition(position.x, position.y, 0.25f);
-
-        GameObject marker = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-        marker.name = $"IndividualMarker_{position.x}_{position.y}";
-        marker.transform.position = worldPos;
-        marker.transform.localScale = new Vector3(0.6f, 0.2f, 0.6f);
-
-        Destroy(marker.GetComponent<Collider>());
-
-        Renderer renderer = marker.GetComponent<Renderer>();
-        if (renderer != null && individualMarkerMaterial != null)
+        // Use tile highlighting instead of 3D objects
+        Tile tile = gridManager.GetTileAt(position.x, position.y);
+        if (tile != null)
         {
-            renderer.material = individualMarkerMaterial;
-        }
-        else
-        {
-            CreateDefaultMaterial(renderer, Color.red);
+            // Set tile to red highlight for individual marker
+            SetTileHighlight(tile, Color.red, "Individual");
         }
 
-        return marker;
+        // Return a dummy object for compatibility
+        GameObject dummy = new GameObject($"IndividualMarker_{position.x}_{position.y}");
+        dummy.transform.position = gridManager.GridToWorldPosition(position.x, position.y, 0f);
+        return dummy;
     }
 
-    private GameObject CreateAreaMarkerVisual(Vector2Int position)
+    public GameObject CreateAreaMarkerVisual(Vector2Int position)
     {
-        Vector3 worldPos = gridManager.GridToWorldPosition(position.x, position.y, 0.25f);
-
-        GameObject marker = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        marker.name = $"AreaMarker_{position.x}_{position.y}";
-        marker.transform.position = worldPos;
-        marker.transform.localScale = new Vector3(0.8f, 0.15f, 0.8f);
-
-        Destroy(marker.GetComponent<Collider>());
-
-        Renderer renderer = marker.GetComponent<Renderer>();
-        if (renderer != null && areaMarkerMaterial != null)
+        // Area marker only highlights the CENTER tile when placed
+        Tile tile = gridManager.GetTileAt(position.x, position.y);
+        if (tile != null)
         {
-            renderer.material = areaMarkerMaterial;
-        }
-        else
-        {
-            CreateDefaultMaterial(renderer, Color.blue);
+            // Set tile to green highlight for area marker (center only)
+            SetTileHighlight(tile, Color.green, "Area");
         }
 
-        return marker;
+        // Return a dummy object for compatibility
+        GameObject dummy = new GameObject($"AreaMarker_{position.x}_{position.y}");
+        dummy.transform.position = gridManager.GridToWorldPosition(position.x, position.y, 0f);
+        return dummy;
     }
 
     private GameObject CreateCubeMarkerVisual(Vector2Int position, CubeMarkerType type)
     {
-        Vector3 worldPos = gridManager.GridToWorldPosition(position.x, position.y, 0.35f);
-
-        GameObject marker = GameObject.CreatePrimitive(type == CubeMarkerType.Individual ? PrimitiveType.Cylinder : PrimitiveType.Cube);
-        marker.name = $"CubeMarker_{type}_{position.x}_{position.y}";
-        marker.transform.position = worldPos;
-        marker.transform.localScale = new Vector3(0.7f, 0.2f, 0.7f);
-
-        Destroy(marker.GetComponent<Collider>());
-
-        Renderer renderer = marker.GetComponent<Renderer>();
-        if (renderer != null && cubeMarkerMaterial != null)
+        Tile tile = gridManager.GetTileAt(position.x, position.y);
+        if (tile != null)
         {
-            renderer.material = cubeMarkerMaterial;
-        }
-        else
-        {
-            CreateDefaultMaterial(renderer, Color.green);
+            Color highlightColor = type == CubeMarkerType.Individual ? Color.magenta : Color.cyan;
+            string markerName = type == CubeMarkerType.Individual ? "CubeIndividual" : "CubeArea";
+            SetTileHighlight(tile, highlightColor, markerName);
         }
 
-        return marker;
+        // Return a dummy object for compatibility
+        GameObject dummy = new GameObject($"CubeMarker_{type}_{position.x}_{position.y}");
+        dummy.transform.position = gridManager.GridToWorldPosition(position.x, position.y, 0f);
+        return dummy;
     }
 
     private GameObject CreatePoweredCubeMarkerVisual(Vector2Int position, CubeMarkerType type)
     {
-        GameObject marker = CreateCubeMarkerVisual(position, type);
-
-        Renderer renderer = marker.GetComponent<Renderer>();
-        if (renderer != null && poweredCubeMarkerMaterial != null)
+        Tile tile = gridManager.GetTileAt(position.x, position.y);
+        if (tile != null)
         {
-            renderer.material = poweredCubeMarkerMaterial;
-        }
-        else
-        {
-            CreateDefaultMaterial(renderer, Color.magenta);
+            // Powered markers get brighter/more saturated colors
+            Color baseColor = type == CubeMarkerType.Individual ? Color.magenta : Color.cyan;
+            Color poweredColor = new Color(baseColor.r * 1.5f, baseColor.g * 1.5f, baseColor.b * 1.5f, 1f);
+            SetTileHighlight(tile, poweredColor, "Powered" + (type == CubeMarkerType.Individual ? "Individual" : "Area"));
         }
 
-        // Add glowing effect
-        StartCoroutine(GlowEffect(marker));
-
-        return marker;
+        GameObject dummy = new GameObject($"PoweredCubeMarker_{type}_{position.x}_{position.y}");
+        dummy.transform.position = gridManager.GridToWorldPosition(position.x, position.y, 0f);
+        return dummy;
     }
 
-    private void CreateDefaultMaterial(Renderer renderer, Color color)
+    private void SetTileHighlight(Tile tile, Color color, string markerType)
     {
-        if (renderer == null) return;
+        // Store the marker type on the tile for tracking
+        // You might need to add a markerType field to the Tile class
 
-        Material mat = new Material(Shader.Find("Standard"));
-        mat.color = color;
-        mat.SetFloat("_Metallic", 0.2f);
-        mat.SetFloat("_Smoothness", 0.8f);
-        renderer.material = mat;
+        // Create a material with the highlight color
+        Renderer renderer = tile.GetComponent<Renderer>();
+        if (renderer != null)
+        {
+            Material highlightMaterial = new Material(Shader.Find("Standard"));
+            highlightMaterial.color = color;
+            highlightMaterial.SetFloat("_Metallic", 0.3f);
+            highlightMaterial.SetFloat("_Smoothness", 0.7f);
+
+            // Enable emission for glow effect
+            highlightMaterial.EnableKeyword("_EMISSION");
+            highlightMaterial.SetColor("_EmissionColor", color * 0.3f);
+
+            renderer.material = highlightMaterial;
+        }
+
+        Debug.Log($"Set {markerType} marker highlight at ({tile.x}, {tile.y}) with color {color}");
     }
 
     private void DestroyMarkerVisual(GameObject visual)
     {
         if (visual != null)
         {
+            // Extract position from the visual object name or transform
+            string[] nameParts = visual.name.Split('_');
+            if (nameParts.Length >= 3)
+            {
+                if (int.TryParse(nameParts[nameParts.Length - 2], out int x) &&
+                    int.TryParse(nameParts[nameParts.Length - 1], out int y))
+                {
+                    // Reset tile highlight
+                    Tile tile = gridManager.GetTileAt(x, y);
+                    if (tile != null)
+                    {
+                        tile.ForceUpdateVisuals(); // Reset to original material
+                    }
+                }
+            }
+
             Destroy(visual);
-        }
-    }
-
-    private IEnumerator ShowMarkerTriggerEffect(Vector2Int position)
-    {
-        Vector3 worldPos = gridManager.GridToWorldPosition(position.x, position.y, 0.1f);
-
-        GameObject effect = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-        effect.name = $"TriggerEffect_{position.x}_{position.y}";
-        effect.transform.position = worldPos;
-        effect.transform.localScale = Vector3.zero;
-
-        Destroy(effect.GetComponent<Collider>());
-
-        Renderer renderer = effect.GetComponent<Renderer>();
-        CreateDefaultMaterial(renderer, Color.white);
-
-        // Expand and fade
-        float duration = 0.5f;
-        float elapsed = 0f;
-
-        while (elapsed < duration)
-        {
-            elapsed += Time.deltaTime;
-            float t = elapsed / duration;
-
-            effect.transform.localScale = Vector3.Lerp(Vector3.zero, Vector3.one * 2f, t);
-
-            Color color = Color.white;
-            color.a = 1f - t;
-            renderer.material.color = color;
-
-            yield return null;
-        }
-
-        Destroy(effect);
-    }
-
-    private IEnumerator GlowEffect(GameObject marker)
-    {
-        Renderer renderer = marker.GetComponent<Renderer>();
-        if (renderer == null) yield break;
-
-        Color originalColor = renderer.material.color;
-
-        while (marker != null)
-        {
-            // Glow brighter
-            yield return StartCoroutine(ColorOverTime(renderer, originalColor, originalColor * 1.5f, 0.8f));
-            // Fade back
-            yield return StartCoroutine(ColorOverTime(renderer, originalColor * 1.5f, originalColor, 0.8f));
-        }
-    }
-
-    private IEnumerator ColorOverTime(Renderer renderer, Color fromColor, Color toColor, float duration)
-    {
-        float elapsed = 0f;
-
-        while (elapsed < duration && renderer != null)
-        {
-            elapsed += Time.deltaTime;
-            float t = elapsed / duration;
-            renderer.material.color = Color.Lerp(fromColor, toColor, t);
-            yield return null;
-        }
-
-        if (renderer != null)
-        {
-            renderer.material.color = toColor;
         }
     }
 
@@ -1019,4 +980,41 @@ public class PlayerActionManager : MonoBehaviour
     }
 
     #endregion
+
+
+
+    private IEnumerator ShowMarkerTriggerEffect(Vector2Int position)
+    {
+        Vector3 worldPos = gridManager.GridToWorldPosition(position.x, position.y, 0.1f);
+
+        GameObject effect = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+        effect.name = $"TriggerEffect_{position.x}_{position.y}";
+        effect.transform.position = worldPos;
+        effect.transform.localScale = Vector3.zero;
+
+        Destroy(effect.GetComponent<Collider>());
+
+        Renderer renderer = effect.GetComponent<Renderer>();
+        
+
+        // Expand and fade
+        float duration = 0.5f;
+        float elapsed = 0f;
+
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            float t = elapsed / duration;
+
+            effect.transform.localScale = Vector3.Lerp(Vector3.zero, Vector3.one * 2f, t);
+
+            Color color = Color.white;
+            color.a = 1f - t;
+            renderer.material.color = color;
+
+            yield return null;
+        }
+
+        Destroy(effect);
+    }
 }
