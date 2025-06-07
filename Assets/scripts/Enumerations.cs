@@ -4,7 +4,7 @@ using UnityEngine;
 
 public static class Enumerations 
 {
-    public enum CubeType {Normal, Blue, Black }
+    public enum CubeType {Normal, Blue, Black, Reinforced }
 
     public enum TileState
     {

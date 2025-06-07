@@ -11,6 +11,9 @@ public class CubeBehavior : MonoBehaviour
     [SerializeField] public Material material;
     [SerializeField] public GameObject prefab;
     [SerializeField] public float spawnHeight;
+    [SerializeField] public int currentHitPoints = 1;
+    [SerializeField] public int maxHitPoints = 1;
+    [System.NonSerialized] private CubeData cubeData;
 
     [Header("Animation Settings")]
     [SerializeField] private float moveDuration = 0.25f;
@@ -48,6 +51,9 @@ public class CubeBehavior : MonoBehaviour
         level = cubeData.level;
         isRainingCube = cubeData.isRainingCube;
         moveCountRemaining = cubeData.moveCountRemaining;
+        currentHitPoints = cubeData.Definition.maxHitPoints;
+        maxHitPoints = cubeData.Definition.maxHitPoints;
+
 
         // Set references
         material = cubeData.Definition?.material;
@@ -60,13 +66,42 @@ public class CubeBehavior : MonoBehaviour
         Vector3 worldPos = grid.GridToWorldPosition(position.x, position.y, spawnHeight);
         transform.position = worldPos;
 
-        Debug.Log($"Cube {type} initialized at grid ({position.x}, {position.y}) -> world {worldPos}");
+        Debug.Log($"Cube {type} initialized at grid ({position.x}, {position.y}) -> world {worldPos}, HP: {currentHitPoints}/{maxHitPoints}");
 
         playerActionManager = FindAnyObjectByType<PlayerActionManager>();
         gameObject.name = name;
 
         // Setup physics
         SetupPhysics();
+
+        // Update visual based on current hit points
+        UpdateDamageVisual();
+    }
+    public bool TakeDamage(int damage = 1)
+    {
+        if (isDestroyed) return false;
+
+        // Get the cube data from the grid position or component
+
+        currentHitPoints -= damage;
+
+        Debug.Log($"{type} cube at ({position.x}, {position.y}) took {damage} damage. HP: {currentHitPoints}/{maxHitPoints}");
+
+        UpdateDamageVisual();
+
+        // Return true if cube is destroyed
+        if (currentHitPoints <= 0)
+        {
+            return true; // Cube should be destroyed
+        }
+
+        return false; // Cube still alive
+    }
+
+    private void UpdateDamageVisual()
+    {
+
+
     }
 
     private void SetupPhysics()

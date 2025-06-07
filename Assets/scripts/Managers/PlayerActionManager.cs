@@ -579,11 +579,15 @@ public class PlayerActionManager : MonoBehaviour
             case CubeType.Black:
                 return ProcessBlackCube(cube, position, markerType);
 
+            case CubeType.Reinforced:
+                return ProcessReinforcedCube(cube, position, markerType);
+
             default:
                 return false;
         }
     }
 
+    
     private bool ProcessNormalCube(CubeBehavior cube, Vector2Int position, MarkerType markerType)
     {
         // Normal cubes are consumed in 1 hit regardless of marker type
@@ -597,6 +601,26 @@ public class PlayerActionManager : MonoBehaviour
         return true;
     }
 
+    private bool ProcessReinforcedCube(CubeBehavior cube, Vector2Int position, MarkerType markerType)
+    {
+        // Reinforced cubes require multiple hits
+        bool isDestroyed = cube.TakeDamage(1);
+
+        if (isDestroyed)
+        {
+            NotifyWaveManager(wm => wm.OnCubeCaptured(CubeType.Reinforced));
+            NotifyWaveManager(wm => wm.OnNonBlackCubeProcessed(CubeType.Reinforced, true));
+            RemoveCubeFromWaveManager(cube);
+            Destroy(cube.gameObject);
+            Debug.Log($"Reinforced cube destroyed at ({position.x}, {position.y})");
+            return true;
+        }
+        else
+        {
+            Debug.Log($"Reinforced cube damaged at ({position.x}, {position.y}) - still alive");
+            return false; // Not destroyed yet
+        }
+    }
     private bool ProcessBlueCube(CubeBehavior cube, Vector2Int position, MarkerType markerType)
     {
         NotifyWaveManager(wm => wm.OnCubeCaptured(CubeType.Blue));

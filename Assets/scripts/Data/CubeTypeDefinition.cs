@@ -11,4 +11,5 @@ public class CubeTypeDefinition
     public bool causesCorruption = false;
     public bool enablesDetonation = false;
     public int detonationRadius = 0;
+    public int maxHitPoints = 1;
 }

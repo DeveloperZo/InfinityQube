@@ -12,6 +12,7 @@ public class CubeData
     [System.NonSerialized] public bool isRainingCube;
     [System.NonSerialized] public int moveCountRemaining;
 
+
     // This is a property, not a field - it gets the definition at runtime
     public CubeTypeDefinition Definition
     {

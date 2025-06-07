@@ -20,6 +20,7 @@ MonoBehaviour:
     causesCorruption: 0
     enablesDetonation: 0
     detonationRadius: 0
+    maxHitPoints: 1
   - name: Blue
     prefab: {fileID: 2727342813801045048, guid: 28aedf15c99f1914991a9066ec8020e5, type: 3}
     material: {fileID: 2100000, guid: 0d112ce4130a1714e9308a63cbec6265, type: 2}
@@ -27,6 +28,7 @@ MonoBehaviour:
     causesCorruption: 0
     enablesDetonation: 1
     detonationRadius: 3
+    maxHitPoints: 1
   - name: Black
     prefab: {fileID: 1728893673582764340, guid: 28923bfb13f3dde44b857f03a0188e95, type: 3}
     material: {fileID: 2100000, guid: a85f9ed5dfb6ed64b89ade32ef958cc5, type: 2}
@@ -34,6 +36,7 @@ MonoBehaviour:
     causesCorruption: 1
     enablesDetonation: 0
     detonationRadius: 0
+    maxHitPoints: 1
   - name: Reinforced
     prefab: {fileID: 1728893673582764340, guid: 28923bfb13f3dde44b857f03a0188e95, type: 3}
     material: {fileID: 2100000, guid: a85f9ed5dfb6ed64b89ade32ef958cc5, type: 2}
@@ -41,3 +44,4 @@ MonoBehaviour:
     causesCorruption: 0
     enablesDetonation: 0
     detonationRadius: 0
+    maxHitPoints: 3
