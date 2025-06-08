@@ -740,6 +740,10 @@ public class PlayerActionDebugPanel : IDebugPanel
         if (GUILayout.Button("Black"))
             selectedCubeType = 3;
 
+        GUI.backgroundColor = selectedCubeType == 4 ? Color.magenta : Color.white; // Add this
+        if (GUILayout.Button("Reinforced")) // Add this
+            selectedCubeType = 4; // Add this
+
         GUI.backgroundColor = originalColor;
         GUILayout.EndHorizontal();
     }
@@ -894,6 +898,7 @@ public class PlayerActionDebugPanel : IDebugPanel
             case 1: GUI.backgroundColor = Color.white; break;
             case 2: GUI.backgroundColor = Color.blue; break;
             case 3: GUI.backgroundColor = Color.black; break;
+            case 4: GUI.backgroundColor = Color.magenta; break; // Add this
             default: GUI.backgroundColor = Color.white; break;
         }
     }
@@ -906,6 +911,7 @@ public class PlayerActionDebugPanel : IDebugPanel
             case 1: return "N";
             case 2: return "B";
             case 3: return "X";
+            case 4: return "R"; // Add this
             default: return "?";
         }
     }

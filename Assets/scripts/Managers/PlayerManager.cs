@@ -58,6 +58,7 @@ public class PlayerManager : MonoBehaviour
     public int normalCubesCaptured = 0;
     public int blueCubesCaptured = 0;
     public int blackCubesCaptured = 0;
+    public int reinforcedCubesCaptured = 0;
     public int cubesEscaped = 0;
     public int markersPlaced = 0;
     public int markersTriggered = 0;
@@ -485,6 +486,7 @@ public class PlayerManager : MonoBehaviour
             normalCubesCaptured = this.normalCubesCaptured,
             blueCubesCaptured = this.blueCubesCaptured,
             blackCubesCaptured = this.blackCubesCaptured,
+            reinforcedCubesCaptured = this.reinforcedCubesCaptured,
             cubesEscaped = this.cubesEscaped,
             markersPlaced = this.markersPlaced,
             markersTriggered = this.markersTriggered,

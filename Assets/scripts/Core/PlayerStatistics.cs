@@ -7,6 +7,7 @@ public class PlayerStatistics
     public int normalCubesCaptured;
     public int blueCubesCaptured;
     public int blackCubesCaptured;
+    public int reinforcedCubesCaptured;
     public int cubesEscaped;
 
     [Header("Action Statistics")]
@@ -30,7 +31,7 @@ public class PlayerStatistics
     public float markersPerMove;
 
     // Helper properties
-    public int TotalCubesCaptured => normalCubesCaptured + blueCubesCaptured + blackCubesCaptured;
+    public int TotalCubesCaptured => normalCubesCaptured + blueCubesCaptured + blackCubesCaptured + reinforcedCubesCaptured;
     public int TotalCubesInteracted => TotalCubesCaptured + cubesEscaped;
     public float AverageTimeAlivePerLife => playerDeaths > 0 ? timeAlive / playerDeaths : timeAlive;
     public float MarkersTriggeredRate => markersPlaced > 0 ? (float)markersTriggered / markersPlaced : 0f;

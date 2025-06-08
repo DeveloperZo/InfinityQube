@@ -829,6 +829,10 @@ public class WaveDebugPanel : IDebugPanel
         if (GUILayout.Button("Black"))
             selectedCubeType = 3;
 
+        GUI.backgroundColor = selectedCubeType == 3 ? Color.yellow : Color.white;
+        if (GUILayout.Button("Reinforced"))
+            selectedCubeType = 4;
+
         GUI.backgroundColor = Color.white;
         GUILayout.EndHorizontal();
 
@@ -1318,10 +1322,11 @@ public class WaveDebugPanel : IDebugPanel
     {
         switch (cubeType)
         {
-            case 0: GUI.backgroundColor = new Color(0.8f, 0.8f, 0.8f, 0.3f); break; // Empty
-            case 1: GUI.backgroundColor = Color.white; break; // Normal
-            case 2: GUI.backgroundColor = Color.blue; break; // Blue
-            case 3: GUI.backgroundColor = Color.black; break; // Black
+            case 0: GUI.backgroundColor = new Color(0.8f, 0.8f, 0.8f, 0.3f); break;
+            case 1: GUI.backgroundColor = Color.white; break;
+            case 2: GUI.backgroundColor = Color.blue; break;
+            case 3: GUI.backgroundColor = Color.black; break;
+            case 4: GUI.backgroundColor = Color.magenta; break; // Add this
             default: GUI.backgroundColor = Color.white; break;
         }
     }
@@ -1334,6 +1339,7 @@ public class WaveDebugPanel : IDebugPanel
             case 1: return "N";
             case 2: return "B";
             case 3: return "X";
+            case 4: return "R"; // Add this
             default: return "?";
         }
     }
