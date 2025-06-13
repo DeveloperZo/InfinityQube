@@ -10,7 +10,7 @@ public class Tile : MonoBehaviour
     [SerializeField] private bool hasMarker = false;
     [SerializeField] private float markerHeight = 0.5f;
     [SerializeField] private float markerScale = 0.8f;
-    
+
     [Header("Tile State")]
     [SerializeField] private bool hasFallen = false;
     public bool HasFallen => hasFallen;
@@ -37,25 +37,32 @@ public class Tile : MonoBehaviour
     [SerializeField] private GameObject softHighlightObject;
     [SerializeField] private Material playerHoverMaterial;
 
-    [Header("Materials")]
-    [SerializeField] private Material markedTileMaterial;
-    [SerializeField] private Material forbiddenMaterial;
-    [SerializeField] private Material activateMarkerMaterial;
-    [SerializeField] private Material originalMaterial;
-    [SerializeField] private Material[] chargeMaterials;
+    [Header("State Overlay System")]
+    [SerializeField] private GameObject stateOverlay;
+    [SerializeField] private float overlayHeight = 0.51f;
+    [SerializeField] private Vector3 overlayScale = new Vector3(0.9f, 0.05f, 0.9f);
 
+    // Colors for different states
+    private readonly Color markerColor = Color.red;
+    private readonly Color corruptedColor = Color.black;
+    private readonly Color primedColor = Color.blue;
+    private readonly Color enhancedColor = Color.yellow;
 
     // Properties to access charge information
     public int DetonationCharges => detonationCharges;
     public bool HasCharges => detonationCharges > 0;
     public bool IsBlackened => isBlackened;
     public bool IsAdvantaged => isAdvantaged;
-
     public bool IsPrimed => hasDetonationPoint;
     public bool HasMarker => hasMarker;
     public TileState currentState = TileState.Normal;
-
     public bool CanBeMarked => currentState == TileState.Normal && !isBlackened;
+
+    // Face painting properties for external access
+    public bool CanPaintCubes => canPaintCubes;
+    public FaceStatus PaintStatus => paintStatus;
+    public Color PaintColor => paintColor;
+    public int PaintDuration => paintDuration;
 
     private GameObject markerObj;
     private Renderer tileRenderer;
@@ -70,10 +77,6 @@ public class Tile : MonoBehaviour
     private void Awake()
     {
         tileRenderer = GetComponent<Renderer>();
-        if (tileRenderer != null)
-        {
-            originalMaterial = tileRenderer.material;
-        }
     }
 
     public void Init(int xPos, int yPos)
@@ -103,6 +106,8 @@ public class Tile : MonoBehaviour
             Destroy(softHighlightObject);
             softHighlightObject = null;
         }
+
+        RemoveOverlay();
     }
 
     public void PlaceMarker()
@@ -139,7 +144,7 @@ public class Tile : MonoBehaviour
             }
         }
 
-        // Update visuals through central system
+        // Update visuals through overlay system
         UpdateTileVisuals();
 
         // Hide soft highlight when marked (marker takes precedence)
@@ -166,7 +171,7 @@ public class Tile : MonoBehaviour
             markerObj = null;
         }
 
-        // Update visuals through central system
+        // Update visuals through overlay system
         UpdateTileVisuals();
 
         // Restore soft highlight if player is still on this tile
@@ -185,6 +190,7 @@ public class Tile : MonoBehaviour
         UpdateTileVisuals();
         Debug.Log($"Tile ({x},{y}): Detonation point set to {hasPoint}");
     }
+
     public void MakeTileFall()
     {
         if (hasFallen) return;
@@ -205,18 +211,8 @@ public class Tile : MonoBehaviour
     {
         // Option 1: Hide the tile completely
         gameObject.SetActive(false);
-
-        // Option 2: Make it look destroyed (uncomment this instead if you prefer)
-        // if (tileRenderer != null)
-        // {
-        //     Material fallenMaterial = new Material(Shader.Find("Standard"));
-        //     fallenMaterial.color = new Color(0.2f, 0.2f, 0.2f, 0.3f); // Dark, transparent
-        //     tileRenderer.material = fallenMaterial;
-        // }
-        // 
-        // // Lower the tile visually
-        // transform.position += Vector3.down * 0.5f;
     }
+
     public void RestoreTile()
     {
         if (!hasFallen) return;
@@ -227,6 +223,7 @@ public class Tile : MonoBehaviour
 
         Debug.Log($"Tile ({x},{y}) has been restored");
     }
+
     public void BlackenTile()
     {
         isBlackened = true;
@@ -277,8 +274,9 @@ public class Tile : MonoBehaviour
         detonationCharges = 0;
         hasDetonationPoint = false;
         ClearMarker();
+        RemoveOverlay();
 
-        UpdateTileVisuals();
+        Debug.Log($"Tile ({x}, {y}) reset to normal state");
     }
 
     public void ResetTileAppearance()
@@ -286,7 +284,6 @@ public class Tile : MonoBehaviour
         // Public method for external systems to force a visual update
         UpdateTileVisuals();
     }
-
 
     public void ToggleMarker()
     {
@@ -368,7 +365,6 @@ public class Tile : MonoBehaviour
         currentCube = null;
     }
 
-
     private IEnumerator ResetMarkerAfterDelay(float delay)
     {
         Debug.Log($"Tile ({x},{y}): Starting marker reset delay of {delay} seconds");
@@ -387,10 +383,10 @@ public class Tile : MonoBehaviour
             Debug.Log($"Tile ({x},{y}): Marker object destroyed");
         }
 
-        // CRITICAL: Update visuals through central system
+        // Update visuals through overlay system
         UpdateTileVisuals();
 
-        // IMPORTANT: Restore soft highlight if player is still on this tile
+        // Restore soft highlight if player is still on this tile
         if (isPlayerOnTile)
         {
             Debug.Log($"Tile ({x},{y}): Player still on tile, restoring soft highlight");
@@ -401,7 +397,6 @@ public class Tile : MonoBehaviour
             Debug.Log($"Tile ({x},{y}): Player not on tile, no highlight needed");
         }
     }
-
 
     private void ActivateMarker()
     {
@@ -414,16 +409,42 @@ public class Tile : MonoBehaviour
             Debug.Log($"Tile ({x},{y}): Marker object hidden");
         }
 
-        if (tileRenderer != null && activateMarkerMaterial != null)
+        // Flash the overlay instead of changing tile material
+        StartCoroutine(FlashOverlay());
+    }
+
+    private IEnumerator FlashOverlay()
+    {
+        // Create a temporary flash overlay
+        GameObject flashOverlay = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        flashOverlay.name = $"FlashOverlay_{x}_{y}";
+        flashOverlay.transform.SetParent(transform);
+        flashOverlay.transform.localPosition = new Vector3(0, overlayHeight + 0.01f, 0);
+        flashOverlay.transform.localScale = new Vector3(0.95f, 0.02f, 0.95f);
+
+        // Remove collider
+        Destroy(flashOverlay.GetComponent<Collider>());
+
+        // Set flash material
+        Renderer flashRenderer = flashOverlay.GetComponent<Renderer>();
+        if (flashRenderer != null)
         {
-            tileRenderer.material = activateMarkerMaterial;
-            Debug.Log($"Tile ({x},{y}): Applied activation material");
+            Material flashMaterial = new Material(Shader.Find("Standard"));
+            flashMaterial.color = Color.white;
+            flashMaterial.EnableKeyword("_EMISSION");
+            flashMaterial.SetColor("_EmissionColor", Color.white * 2f);
+            flashRenderer.material = flashMaterial;
         }
+
+        // Flash for a brief moment
+        yield return new WaitForSeconds(0.1f);
+
+        Destroy(flashOverlay);
     }
 
     private void NotifyPlayerCubeCapture(Enumerations.CubeType cubeType)
     {
-
+        // Implementation for notifying capture events
     }
 
     public void SetPlayerHover(bool isHovering)
@@ -529,19 +550,6 @@ public class Tile : MonoBehaviour
         Debug.Log($"Tile ({x},{y}) transformed to paint cubes with {status} status");
     }
 
-    private void UpdateChargeVisuals()
-    {
-        if (tileRenderer != null && detonationCharges > 0 &&
-            chargeMaterials != null && detonationCharges <= chargeMaterials.Length)
-        {
-            tileRenderer.material = chargeMaterials[detonationCharges - 1];
-        }
-        else if (tileRenderer != null && detonationCharges == 0)
-        {
-            tileRenderer.material = originalMaterial;
-        }
-    }
-
     public void ReduceCharge()
     {
         if (detonationCharges <= 0)
@@ -554,7 +562,7 @@ public class Tile : MonoBehaviour
 
         if (detonationCharges > 0)
         {
-            UpdateChargeVisuals();
+            UpdateTileVisuals(); // Update overlay for new charge level
         }
         else
         {
@@ -567,12 +575,7 @@ public class Tile : MonoBehaviour
         currentState = TileState.Normal;
         isAdvantaged = false;
         detonationCharges = 0;
-
-        if (tileRenderer != null)
-        {
-            tileRenderer.material = originalMaterial;
-        }
-
+        RemoveOverlay();
     }
 
     public void ProcessCubeInteraction(CubeBehavior cube)
@@ -607,74 +610,104 @@ public class Tile : MonoBehaviour
         TryPaintCube(cube);
     }
 
-    #region Material Management - Centralized System
+    #region Overlay System - Replaces Material Management
 
     private void UpdateTileVisuals()
     {
-        if (tileRenderer == null) return;
+        UpdateStateOverlay();
+    }
 
-        Material targetMaterial = DetermineTileMaterial();
+    private void UpdateStateOverlay()
+    {
+        // Determine if we need an overlay and what color
+        (bool needsOverlay, Color overlayColor) = DetermineOverlayState();
 
-        if (targetMaterial != null && tileRenderer.material != targetMaterial)
+        if (needsOverlay)
         {
-            tileRenderer.material = targetMaterial;
-            Debug.Log($"Tile ({x},{y}): Material updated to {targetMaterial.name} - State: Blackened:{isBlackened},  Advantaged:{isAdvantaged}, HasMarker:{hasMarker}, HasDetonationPoint:{hasDetonationPoint}");
+            CreateOrUpdateOverlay(overlayColor);
+        }
+        else
+        {
+            RemoveOverlay();
         }
     }
 
-    private Material DetermineTileMaterial()
+    private (bool needsOverlay, Color color) DetermineOverlayState()
     {
-        // Priority order for material selection
+        // Priority order - return first match
+        if (hasMarker)
+            return (true, markerColor);
 
-        // 1. Active marker state (highest priority - during trigger animation)
-        if (hasMarker && activateMarkerMaterial != null)
+        if (isBlackened)
+            return (true, corruptedColor);
+
+        if (hasDetonationPoint)
+            return (true, primedColor);
+
+        if (isAdvantaged && detonationCharges > 0)
         {
-            return activateMarkerMaterial;
+            // Different shades of yellow based on charge level
+            float intensity = (float)detonationCharges / maxCharges;
+            Color chargedColor = Color.Lerp(new Color(1f, 1f, 0.3f), enhancedColor, intensity);
+            return (true, chargedColor);
         }
 
-        // 2. Marked state (player placed marker)
-        if (hasMarker && markedTileMaterial != null)
-        {
-            return markedTileMaterial;
-        }
-
-        // 3. Blackened state
-        if (isBlackened && forbiddenMaterial != null)
-        {
-            return forbiddenMaterial;
-        }
-        else if (isBlackened)
-        {
-            return GetCorruptedTileMaterial(); // Use black material
-        }
-
-        // 5. Cube marker (detonation point)
-        if (hasDetonationPoint && !isBlackened && !isAdvantaged)
-        {
-            return GetCubeMarkerMaterial();
-        }
-
-        // 6. Default state
-        return originalMaterial;
+        return (false, Color.white); // No overlay needed
     }
 
-    private Material GetCubeMarkerMaterial()
+    private void CreateOrUpdateOverlay(Color color)
     {
-        // Create or return a blue material for cube markers
-        Material blueMaterial = new Material(Shader.Find("Standard"));
-        blueMaterial.color = Color.blue;
-        blueMaterial.SetFloat("_Metallic", 0.3f);
-        blueMaterial.SetFloat("_Smoothness", 0.7f);
-        return blueMaterial;
+        if (stateOverlay == null)
+        {
+            // Create overlay object
+            stateOverlay = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            stateOverlay.name = $"StateOverlay_{x}_{y}";
+            stateOverlay.transform.SetParent(transform);
+
+            // Position on top of tile
+            stateOverlay.transform.localPosition = new Vector3(0, overlayHeight, 0);
+            stateOverlay.transform.localScale = overlayScale;
+
+            // Remove collider to avoid physics issues
+            Destroy(stateOverlay.GetComponent<Collider>());
+
+            Debug.Log($"Created state overlay for tile ({x}, {y})");
+        }
+
+        // Update overlay color
+        Renderer overlayRenderer = stateOverlay.GetComponent<Renderer>();
+        if (overlayRenderer != null)
+        {
+            // Create or update material
+            if (overlayRenderer.material.name.Contains("Default"))
+            {
+                Material overlayMaterial = new Material(Shader.Find("Standard"));
+                overlayMaterial.color = color;
+                overlayMaterial.SetFloat("_Metallic", 0.2f);
+                overlayMaterial.SetFloat("_Smoothness", 0.8f);
+
+                // Add slight emission for better visibility
+                overlayMaterial.EnableKeyword("_EMISSION");
+                overlayMaterial.SetColor("_EmissionColor", color * 0.2f);
+
+                overlayRenderer.material = overlayMaterial;
+            }
+            else
+            {
+                // Just update color
+                overlayRenderer.material.color = color;
+                overlayRenderer.material.SetColor("_EmissionColor", color * 0.2f);
+            }
+        }
     }
 
-    private Material GetChargeMaterial(int charges)
+    private void RemoveOverlay()
     {
-        if (chargeMaterials != null && charges > 0 && charges <= chargeMaterials.Length)
+        if (stateOverlay != null)
         {
-            return chargeMaterials[charges - 1];
+            Destroy(stateOverlay);
+            stateOverlay = null;
         }
-        return originalMaterial;
     }
 
     public void ForceUpdateVisuals()
@@ -801,16 +834,4 @@ public class Tile : MonoBehaviour
     }
 
     #endregion
-
-    private Material GetCorruptedTileMaterial()
-    {
-        if (forbiddenMaterial != null) return forbiddenMaterial;
-
-        // Create a black material for corrupted tiles
-        Material corruptedMaterial = new Material(Shader.Find("Standard"));
-        corruptedMaterial.color = Color.black;
-        corruptedMaterial.SetFloat("_Metallic", 0.3f);
-        corruptedMaterial.SetFloat("_Smoothness", 0.1f);
-        return corruptedMaterial;
-    }
 }
