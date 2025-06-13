@@ -12,17 +12,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: faaa491ad539cb444afed02f7554648d, type: 3}
   m_Name: stage_01
   m_EditorClassIdentifier: 
-  stageNumber: 0
-  stageName: Qube01
-  description: Learn how to move and place markers to capture cubes
-  objective: Destroy all gray cubes by placing markers in their path.
+  stageNumber: 1
+  stageName: Strategic Choice
+  description: Learn to prioritize targets when resources are limited.
+  objective: Not every cube needs a marker. Choose wisely
   gridWidth: 3
   gridHeight: 15
   playerStartPosition: {x: 0, y: 1}
   waveConfigurations:
-  - {fileID: 11400000, guid: 9351411930ad5ce4084db5e29248b3f4, type: 2}
-  - {fileID: 11400000, guid: 2e465d29e5e1def48b4c17c56dbc282d, type: 2}
-  - {fileID: 11400000, guid: 7870837b1b39cae4693b19c0e07ec41b, type: 2}
+  - {fileID: 0}
+  - {fileID: 0}
   requireAllCubesDestroyed: 0
   requiredCaptureCount: 0
   maxAllowedEscapes: 0

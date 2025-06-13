@@ -15,11 +15,14 @@ public class Tile : MonoBehaviour
     [SerializeField] private bool hasFallen = false;
     public bool HasFallen => hasFallen;
     public bool IsPlayable => !hasFallen;
-    
-    
-    private const float TRANSFORMED_HEIGHT = -0.25f;  // Lower by 0.25 for transformed tiles
-    private const float MARKED_HEIGHT = 0.25f;        // Raise by 0.25 for marked tiles
-    private const float NORMAL_HEIGHT = 0f;           // Normal baseline height
+
+    [Header("Face Painting")]
+    [SerializeField] private bool canPaintCubes = false;
+    [SerializeField] private FaceStatus paintStatus = FaceStatus.None;
+    [SerializeField] private Color paintColor = Color.red;
+    [SerializeField] private int paintDuration = 3; // -1 for permanent
+    [SerializeField] private bool paintOnLanding = true;
+    [SerializeField] private bool paintOnExit = false;
 
     [Header("Detonation Point")]
     [SerializeField] private bool hasDetonationPoint = false;
@@ -315,28 +318,47 @@ public class Tile : MonoBehaviour
             return;
         }
 
-        // Handle cube type-specific behavior
-        switch (cubeToProcess.type)
+        // Use effective type instead of base type
+        CubeType effectiveType = cubeToProcess.GetEffectiveType();
+        bool canCapture = cubeToProcess.CanBeCaptured();
+
+        Debug.Log($"Processing {cubeToProcess.type} cube (effective: {effectiveType}, can capture: {canCapture}) at ({x}, {y})");
+
+        if (!canCapture)
+        {
+            Debug.Log($"Cube with {cubeToProcess.GetActiveFaceStatus()} face status cannot be captured");
+            return;
+        }
+
+        // Handle cube type-specific behavior using effective type
+        switch (effectiveType)
         {
             case Enumerations.CubeType.Black:
-                // Black cube captured = immediate corruption
-                BlackenTile();
+                // Cube is acting as black due to corrupted face
+                Debug.Log($"Cube acting as black due to face status at ({x}, {y})");
                 NotifyPlayerCubeCapture(Enumerations.CubeType.Black);
-                // The black cube remains (not destroyed)
+                // Don't destroy the cube - black cubes can't be captured
                 break;
 
             case Enumerations.CubeType.Blue:
-                // Blue cube captured = create detonation point
-                Debug.Log($"Blue cube captured at ({x}, {y}) - Priming tile for detonation");
+                // Cube is acting as blue (enhanced face or naturally blue)
+                Debug.Log($"Cube acting as blue captured at ({x}, {y}) - Priming tile for detonation");
                 NotifyPlayerCubeCapture(Enumerations.CubeType.Blue);
-                PrimeTile(); // This will register with DetonationManager
-                             // Consume the blue cube
+                PrimeTile();
+
                 Destroy(cubeToProcess.gameObject);
                 break;
 
             case Enumerations.CubeType.Normal:
                 NotifyPlayerCubeCapture(Enumerations.CubeType.Normal);
-                // Normal cubes are simply consumed
+
+                // Check if it should create detonation despite being normal
+                if (cubeToProcess.ShouldCreateDetonation())
+                {
+                    Debug.Log("Normal cube creating detonation due to face status!");
+                    PrimeTile();
+                }
+
                 Destroy(cubeToProcess.gameObject);
                 break;
         }
@@ -344,6 +366,7 @@ public class Tile : MonoBehaviour
         // Clear cube reference after processing
         currentCube = null;
     }
+
 
     private IEnumerator ResetMarkerAfterDelay(float delay)
     {
@@ -494,6 +517,17 @@ public class Tile : MonoBehaviour
         }
     }
 
+    public void TransformToPaintingTile(FaceStatus status, Color color, int duration = -1)
+    {
+        // Transform the tile visually
+        TransformTile(Enumerations.CubeType.Blue); // Use blue transformation as base
+
+        // Set up face painting
+        SetupFacePainting(status, color, duration);
+
+        Debug.Log($"Tile ({x},{y}) transformed to paint cubes with {status} status");
+    }
+
     private void UpdateChargeVisuals()
     {
         if (tileRenderer != null && detonationCharges > 0 &&
@@ -568,6 +602,8 @@ public class Tile : MonoBehaviour
             ReduceCharge();
         }
 
+        // Try to paint the cube if this tile can paint
+        TryPaintCube(cube);
     }
 
     #region Material Management - Centralized System
@@ -645,6 +681,124 @@ public class Tile : MonoBehaviour
     public void ForceUpdateVisuals()
     {
         UpdateTileVisuals();
+    }
+
+    #endregion
+
+    #region Face Painting System
+
+    public void SetupFacePainting(FaceStatus status, Color color, int duration = -1, bool onLanding = true, bool onExit = false)
+    {
+        canPaintCubes = true;
+        paintStatus = status;
+        paintColor = color;
+        paintDuration = duration;
+        paintOnLanding = onLanding;
+        paintOnExit = onExit;
+
+        Debug.Log($"Tile ({x},{y}) set up to paint cubes with {status} status");
+    }
+
+    public void TryPaintCube(CubeBehavior cube)
+    {
+        if (!canPaintCubes || cube == null || paintStatus == FaceStatus.None) return;
+
+        if (paintOnLanding)
+        {
+            PaintCube(cube);
+        }
+    }
+
+    public void TryPaintCubeOnExit(CubeBehavior cube)
+    {
+        if (!canPaintCubes || cube == null || paintStatus == FaceStatus.None) return;
+
+        if (paintOnExit)
+        {
+            PaintCube(cube);
+        }
+    }
+
+    private void PaintCube(CubeBehavior cube)
+    {
+        // Paint the cube's currently down-facing face
+        cube.PaintCurrentDownFace(paintStatus, paintColor, paintDuration);
+
+        // Visual feedback effect
+        CreatePaintEffect(cube.transform.position);
+
+        Debug.Log($"Tile ({x},{y}) painted {cube.name} with {paintStatus} status");
+    }
+
+    private void CreatePaintEffect(Vector3 position)
+    {
+        // Create a simple particle effect or visual feedback
+        GameObject effect = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+        effect.name = "PaintEffect";
+        effect.transform.position = position + Vector3.up * 0.5f;
+        effect.transform.localScale = Vector3.one * 0.3f;
+
+        // Remove collider
+        Destroy(effect.GetComponent<Collider>());
+
+        // Set color and make it fade
+        Renderer renderer = effect.GetComponent<Renderer>();
+        Material mat = new Material(Shader.Find("Standard"));
+        mat.color = paintColor;
+        mat.EnableKeyword("_EMISSION");
+        mat.SetColor("_EmissionColor", paintColor * 0.5f);
+        renderer.material = mat;
+
+        // Animate and destroy
+        StartCoroutine(AnimatePaintEffect(effect));
+    }
+
+    private IEnumerator AnimatePaintEffect(GameObject effect)
+    {
+        float duration = 0.5f;
+        float elapsed = 0f;
+        Vector3 startScale = effect.transform.localScale;
+        Vector3 startPos = effect.transform.position;
+
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            float t = elapsed / duration;
+
+            // Scale up and fade out
+            effect.transform.localScale = Vector3.Lerp(startScale, startScale * 2f, t);
+            effect.transform.position = Vector3.Lerp(startPos, startPos + Vector3.up * 0.5f, t);
+
+            // Fade material
+            Renderer renderer = effect.GetComponent<Renderer>();
+            if (renderer != null)
+            {
+                Color color = renderer.material.color;
+                color.a = 1f - t;
+                renderer.material.color = color;
+            }
+
+            yield return null;
+        }
+
+        Destroy(effect);
+    }
+
+    // Quick setup methods for common painting scenarios
+    public void SetupCorruptionPainting(int duration = 3)
+    {
+        SetupFacePainting(FaceStatus.Corrupted, Color.red, duration);
+    }
+
+    public void SetupEnhancementPainting(int duration = 3)
+    {
+        SetupFacePainting(FaceStatus.Enhanced, Color.blue, duration);
+    }
+
+    public void DisableFacePainting()
+    {
+        canPaintCubes = false;
+        paintStatus = FaceStatus.None;
     }
 
     #endregion

@@ -4,6 +4,22 @@ using UnityEngine;
 
 public static class Enumerations 
 {
+    public enum FaceStatus
+    {
+        None,
+        Corrupted,      // Acts like black cube when active
+        Enhanced,       // Creates detonation when captured
+    }
+
+    public enum CubeFace
+    {
+        Bottom = 0, Top = 1, Front = 2, Back = 3
+    }
+
+    public enum FacePosition
+    {
+        Down, Up, Forward, Back
+    }
     public enum CubeType {Normal, Blue, Black, Reinforced }
 
     public enum TileState

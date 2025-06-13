@@ -25,6 +25,14 @@ public class CubeBehavior : MonoBehaviour
     [SerializeField] private Rigidbody cubeRigidbody;
     [SerializeField] private Collider cubeCollider;
 
+    [Header("Face Painting System")]
+    [SerializeField] private FaceStatus[] faceStatuses = new FaceStatus[6]; // 6 cube faces
+    [SerializeField] private Color[] faceColors = new Color[6]; // Visual colors for each face
+    [SerializeField] private int[] faceDurations = new int[6]; // Remaining duration for each face (-1 = permanent)
+    [SerializeField] private int moveCount = 0; // Track rotations
+    [SerializeField] private GameObject[] faceIndicators = new GameObject[6]; // Visual indicators
+    [SerializeField] private bool showFaceIndicators = true;
+
 
     private GridManager grid;
     private PlayerActionManager playerActionManager;
@@ -71,9 +79,11 @@ public class CubeBehavior : MonoBehaviour
         playerActionManager = FindAnyObjectByType<PlayerActionManager>();
         gameObject.name = name;
 
+        InitializeFaceSystem();
+
         // Setup physics
         SetupPhysics();
-
+        
         // Update visual based on current hit points
         UpdateDamageVisual();
     }
@@ -139,31 +149,30 @@ public class CubeBehavior : MonoBehaviour
     {
         if (isMoving || isDestroyed) return true;
 
-        Debug.Log($"Moving cube {type} from ({position.x}, {position.y}) forward");
+        Debug.Log($"Moving cube {GetEffectiveType()} from ({position.x}, {position.y}) forward");
 
-        // Check for off-grid conditions
+        // Check for off-grid conditions using effective type
         if (position.y < 0 || position.x < 0 || position.x >= grid.Width)
         {
-            Debug.Log($"Cube {type} at ({position.x}, {position.y}) is off-grid. Grid bounds: {grid.Width}x{grid.Height}");
+            Debug.Log($"Cube {GetEffectiveType()} at ({position.x}, {position.y}) is off-grid. Grid bounds: {grid.Width}x{grid.Height}");
 
-            // Should the cube escape?
             if (!isRainingCube || moveCountRemaining <= 0)
             {
-                // Handle black cubes that escape
-                if (type == Enumerations.CubeType.Black)
+                CubeType effectiveType = GetEffectiveType();
+
+                if (effectiveType == CubeType.Black)
                 {
-                    Debug.Log("Black cube escaped");
+                    Debug.Log("Cube with corrupted face escaped (acts as black)");
                 }
                 else
                 {
-                    // Non-black cube escaped - notify wave manager
                     WaveManager waveManager = FindObjectOfType<WaveManager>();
                     if (waveManager != null)
                     {
-                        waveManager.OnNonBlackCubeProcessed(type, false); // false = escaped
-                        waveManager.OnCubeEscaped(type);
+                        waveManager.OnNonBlackCubeProcessed(effectiveType, false);
+                        waveManager.OnCubeEscaped(effectiveType);
                     }
-                    Debug.Log($"Non-black cube {type} escaped");
+                    Debug.Log($"Cube with {effectiveType} behavior escaped");
                 }
 
                 Destroy(gameObject);
@@ -171,14 +180,19 @@ public class CubeBehavior : MonoBehaviour
             }
         }
 
-        // Update logical position immediately (atomic movement)
+        // Update position and rotation
         position.y -= 1;
-        Debug.Log($"Cube {type} moved to ({position.x}, {position.y})");
+        moveCount++; // This rotates the cube faces
 
-        // Start animation to catch up to the logical position
+        // Process face durations
+        ProcessFaceDurations();
+
+        Debug.Log($"Cube moved to ({position.x}, {position.y}), move count: {moveCount}");
+
+        // Start animation
         StartCoroutine(AnimateMove(position));
 
-        // Process landing on tiles immediately (based on logical position)
+        // Process landing on tiles
         if (position.y >= 0 && position.x >= 0 && position.x < grid.Width)
         {
             Tile landingTile = grid.tiles[position.x, position.y];
@@ -292,5 +306,205 @@ public class CubeBehavior : MonoBehaviour
             }
         }
     }
+
+
+    #region Face Painting System
+
+    public void PaintFace(CubeFace face, FaceStatus status, Color color, int duration = -1)
+    {
+        int faceIndex = (int)face;
+        faceStatuses[faceIndex] = status;
+        faceColors[faceIndex] = color;
+        faceDurations[faceIndex] = duration;
+
+        UpdateFaceVisuals();
+        Debug.Log($"Painted {face} of cube at ({position.x}, {position.y}) with {status} status");
+    }
+
+    public void PaintCurrentDownFace(FaceStatus status, Color color, int duration = -1)
+    {
+        CubeFace downFace = GetCurrentDownFace();
+        PaintFace(downFace, status, color, duration);
+    }
+
+    public FaceStatus GetActiveFaceStatus()
+    {
+        CubeFace downFace = GetCurrentDownFace();
+        return faceStatuses[(int)downFace];
+    }
+
+    public bool HasActiveFaceStatus(FaceStatus status)
+    {
+        return GetActiveFaceStatus() == status;
+    }
+
+    public CubeFace GetCurrentDownFace()
+    {
+        // Simple 4-step rotation cycle (bottom face rotates between faces 0,2,1,3)
+        int[] rotationMap = { 0, 2, 1, 3 }; // Bottom, Front, Top, Back
+        return (CubeFace)rotationMap[moveCount % 4];
+    }
+
+    public CubeType GetEffectiveType()
+    {
+        FaceStatus activeStatus = GetActiveFaceStatus();
+
+        switch (activeStatus)
+        {
+            case FaceStatus.Corrupted:
+                return CubeType.Black; // Behaves like black cube
+            case FaceStatus.Enhanced:
+                return type == CubeType.Normal ? CubeType.Blue : type; // Normal becomes blue
+            default:
+                return type; // No change
+        }
+    }
+
+    public bool CanBeCaptured()
+    {
+        // Check if current active face allows capture
+        FaceStatus activeStatus = GetActiveFaceStatus();
+
+        switch (activeStatus)
+        {
+            case FaceStatus.Corrupted:
+                return false; // Corrupted face = acts like black cube
+            default:
+                return type != CubeType.Black; // Normal capture rules
+        }
+    }
+
+    public bool ShouldCreateDetonation()
+    {
+        FaceStatus activeStatus = GetActiveFaceStatus();
+        return activeStatus == FaceStatus.Enhanced ||
+               type == CubeType.Blue;
+    }
+
+    private void ProcessFaceDurations()
+    {
+        for (int i = 0; i < 6; i++)
+        {
+            if (faceDurations[i] > 0)
+            {
+                faceDurations[i]--;
+                if (faceDurations[i] == 0)
+                {
+                    // Status expired
+                    faceStatuses[i] = FaceStatus.None;
+                    faceColors[i] = Color.white;
+                }
+            }
+        }
+        UpdateFaceVisuals();
+    }
+
+    private void InitializeFaceSystem()
+    {
+        // Initialize all faces to no status
+        for (int i = 0; i < 6; i++)
+        {
+            faceStatuses[i] = FaceStatus.None;
+            faceColors[i] = Color.white;
+            faceDurations[i] = 0;
+        }
+
+        if (showFaceIndicators)
+        {
+            CreateFaceIndicators();
+        }
+    }
+
+    private void CreateFaceIndicators()
+    {
+        for (int i = 0; i < 6; i++)
+        {
+            GameObject indicator = GameObject.CreatePrimitive(PrimitiveType.Quad);
+            indicator.name = $"FaceIndicator_{(CubeFace)i}";
+            indicator.transform.SetParent(transform);
+
+            // Position on cube surface
+            PositionFaceIndicator(indicator, (CubeFace)i);
+
+            // Make transparent
+            Renderer renderer = indicator.GetComponent<Renderer>();
+            Material mat = new Material(Shader.Find("Standard"));
+            mat.color = new Color(1, 1, 1, 0.8f);
+            renderer.material = mat;
+
+            // Remove collider
+            Destroy(indicator.GetComponent<Collider>());
+
+            indicator.SetActive(false); // Hidden by default
+            faceIndicators[i] = indicator;
+        }
+    }
+
+    private void PositionFaceIndicator(GameObject indicator, CubeFace face)
+    {
+        float offset = 0.51f; // Just outside cube surface
+        Vector3 scale = new Vector3(0.7f, 0.7f, 1f);
+
+        switch (face)
+        {
+            case CubeFace.Bottom:
+                indicator.transform.localPosition = new Vector3(0, -offset, 0);
+                indicator.transform.localRotation = Quaternion.Euler(90, 0, 0);
+                break;
+            case CubeFace.Top:
+                indicator.transform.localPosition = new Vector3(0, offset, 0);
+                indicator.transform.localRotation = Quaternion.Euler(-90, 0, 0);
+                break;
+            case CubeFace.Front:
+                indicator.transform.localPosition = new Vector3(0, 0, offset);
+                break;
+            case CubeFace.Back:
+                indicator.transform.localPosition = new Vector3(0, 0, -offset);
+                indicator.transform.localRotation = Quaternion.Euler(0, 180, 0);
+                break;
+        }
+
+        indicator.transform.localScale = scale;
+    }
+
+    private void UpdateFaceVisuals()
+    {
+        if (!showFaceIndicators || faceIndicators == null) return;
+
+        CubeFace currentDownFace = GetCurrentDownFace();
+
+        for (int i = 0; i < 6; i++)
+        {
+            if (faceIndicators[i] == null) continue;
+
+            bool hasStatus = faceStatuses[i] != FaceStatus.None;
+            faceIndicators[i].SetActive(hasStatus);
+
+            if (hasStatus)
+            {
+                Renderer renderer = faceIndicators[i].GetComponent<Renderer>();
+                Material mat = renderer.material;
+
+                // Set color
+                mat.color = faceColors[i];
+
+                // Highlight active (down-facing) status
+                if ((CubeFace)i == currentDownFace)
+                {
+                    mat.color = new Color(faceColors[i].r, faceColors[i].g, faceColors[i].b, 1f);
+                    // Add glow effect
+                    mat.EnableKeyword("_EMISSION");
+                    mat.SetColor("_EmissionColor", faceColors[i] * 0.3f);
+                }
+                else
+                {
+                    mat.color = new Color(faceColors[i].r, faceColors[i].g, faceColors[i].b, 0.6f);
+                    mat.DisableKeyword("_EMISSION");
+                }
+            }
+        }
+    }
+
+    #endregion
 
 }

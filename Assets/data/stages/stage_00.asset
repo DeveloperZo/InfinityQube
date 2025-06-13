@@ -13,13 +13,16 @@ MonoBehaviour:
   m_Name: stage_00
   m_EditorClassIdentifier: 
   stageNumber: 0
-  stageName: 
-  description: 
-  objective: 
-  gridWidth: 6
-  gridHeight: 20
+  stageName: First contact
+  description: Learn basic movement and marker placement. Use WASD to move and F/R
+    to place and trigger individual markers.
+  objective: Capture gray cubes using F to place markers, R to trigger them
+  gridWidth: 5
+  gridHeight: 12
   playerStartPosition: {x: 2, y: 0}
-  waveConfigurations: []
+  waveConfigurations:
+  - {fileID: 0}
+  - {fileID: 0}
   requireAllCubesDestroyed: 0
   requiredCaptureCount: 0
-  maxAllowedEscapes: 0
+  maxAllowedEscapes: 3

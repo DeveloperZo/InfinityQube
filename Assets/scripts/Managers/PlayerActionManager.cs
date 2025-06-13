@@ -736,7 +736,8 @@ public class PlayerActionManager : MonoBehaviour
 
     private void RemoveCubeFromWaveManager(CubeBehavior cube)
     {
-        if (waveManager != null && cube.type != CubeType.Black)
+        
+        if (cube.CanBeCaptured() && waveManager != null && cube.type != CubeType.Black)
         {
             waveManager.activeCubes.Remove(cube);
         }
