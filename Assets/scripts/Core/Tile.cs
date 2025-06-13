@@ -17,7 +17,7 @@ public class Tile : MonoBehaviour
     public bool IsPlayable => !hasFallen;
 
     [Header("Face Painting")]
-    [SerializeField] private bool canPaintCubes = false;
+    [SerializeField] public bool canPaintCubes = false;
     [SerializeField] private FaceStatus paintStatus = FaceStatus.None;
     [SerializeField] private Color paintColor = Color.red;
     [SerializeField] private int paintDuration = 3; // -1 for permanent
@@ -43,6 +43,7 @@ public class Tile : MonoBehaviour
     [SerializeField] private Material activateMarkerMaterial;
     [SerializeField] private Material originalMaterial;
     [SerializeField] private Material[] chargeMaterials;
+
 
     // Properties to access charge information
     public int DetonationCharges => detonationCharges;
@@ -642,11 +643,9 @@ public class Tile : MonoBehaviour
         {
             return forbiddenMaterial;
         }
-
-        // 4. Advantaged state with charges
-        if (isAdvantaged && detonationCharges > 0)
+        else if (isBlackened)
         {
-            return GetChargeMaterial(detonationCharges);
+            return GetCorruptedTileMaterial(); // Use black material
         }
 
         // 5. Cube marker (detonation point)
@@ -802,4 +801,16 @@ public class Tile : MonoBehaviour
     }
 
     #endregion
+
+    private Material GetCorruptedTileMaterial()
+    {
+        if (forbiddenMaterial != null) return forbiddenMaterial;
+
+        // Create a black material for corrupted tiles
+        Material corruptedMaterial = new Material(Shader.Find("Standard"));
+        corruptedMaterial.color = Color.black;
+        corruptedMaterial.SetFloat("_Metallic", 0.3f);
+        corruptedMaterial.SetFloat("_Smoothness", 0.1f);
+        return corruptedMaterial;
+    }
 }

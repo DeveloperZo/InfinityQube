@@ -566,9 +566,15 @@ public class PlayerActionManager : MonoBehaviour
     {
         if (cube == null || cube.isDestroyed) return false;
 
+        if (!cube.CanBeCaptured())
+        {
+            Debug.Log($"Cube at ({position.x}, {position.y}) cannot be captured due to face status: {cube.GetActiveFaceStatus()}");
+            return false;
+        }
+
         Debug.Log($"Processing {cube.type} cube capture at ({position.x}, {position.y}) with {markerType} marker");
 
-        switch (cube.type)
+        switch (cube.GetEffectiveType())
         {
             case CubeType.Normal:
                 return ProcessNormalCube(cube, position, markerType);
@@ -587,12 +593,22 @@ public class PlayerActionManager : MonoBehaviour
         }
     }
 
-    
+
     private bool ProcessNormalCube(CubeBehavior cube, Vector2Int position, MarkerType markerType)
     {
-        // Normal cubes are consumed in 1 hit regardless of marker type
+        // Check if cube should create detonation despite being normal (due to enhanced face)
+        bool shouldCreateDetonation = cube.ShouldCreateDetonation();
+
         NotifyWaveManager(wm => wm.OnCubeCaptured(CubeType.Normal));
         NotifyWaveManager(wm => wm.OnNonBlackCubeProcessed(CubeType.Normal, true));
+
+        // Create cube marker if the cube has detonation-enabling face
+        if (shouldCreateDetonation)
+        {
+            CubeMarkerType cubeMarkerType = DetermineCubeMarkerType(markerType);
+            CreateCubeMarker(position, cubeMarkerType);
+            Debug.Log($"Normal cube with enhanced face created {cubeMarkerType} cube marker");
+        }
 
         RemoveCubeFromWaveManager(cube);
         Destroy(cube.gameObject);
