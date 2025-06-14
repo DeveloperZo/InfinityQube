@@ -43,16 +43,14 @@ public class CubeBehavior : MonoBehaviour
     public int targetRow = -1;
     private bool isRainAnimating = false;
     public int moveCountRemaining = 0;
-    private float tileScale = 3f; // Default scale value
+    private float tileScale = 3f;
     private float tileSize = 1f;
 
     public void Init(GridManager gridManager, CubeData cubeData, float spawnHeight = 2f)
     {
-        // Store reference to grid manager and get the tile scale
         grid = gridManager;
         tileSize = grid.TileSize;
 
-        // Use the provided cube data
         name = cubeData.Definition?.name ?? cubeData.type.ToString();
         type = cubeData.type;
         position = cubeData.position;
@@ -62,15 +60,11 @@ public class CubeBehavior : MonoBehaviour
         currentHitPoints = cubeData.Definition.maxHitPoints;
         maxHitPoints = cubeData.Definition.maxHitPoints;
 
-
-        // Set references
         material = cubeData.Definition?.material;
         prefab = cubeData.Definition?.prefab;
 
-        // Scale the cube to match tile scale
         transform.localScale = new Vector3(tileSize, tileSize, tileSize);
 
-        // FIXED: Use grid's coordinate conversion instead of manual calculation
         Vector3 worldPos = grid.GridToWorldPosition(position.x, position.y, spawnHeight);
         transform.position = worldPos;
 
@@ -81,58 +75,46 @@ public class CubeBehavior : MonoBehaviour
 
         InitializeFaceSystem();
         InitializeFaceMapping();
-
-        // Setup physics
         SetupPhysics();
-        
-        // Update visual based on current hit points
         UpdateDamageVisual();
     }
+
     public bool TakeDamage(int damage = 1)
     {
         if (isDestroyed) return false;
 
-        // Get the cube data from the grid position or component
-
         currentHitPoints -= damage;
-
         Debug.Log($"{type} cube at ({position.x}, {position.y}) took {damage} damage. HP: {currentHitPoints}/{maxHitPoints}");
 
         UpdateDamageVisual();
 
-        // Return true if cube is destroyed
         if (currentHitPoints <= 0)
         {
-            return true; // Cube should be destroyed
+            return true;
         }
 
-        return false; // Cube still alive
+        return false;
     }
 
     private void UpdateDamageVisual()
     {
-
-
+        // Damage visual implementation
     }
 
     private void SetupPhysics()
     {
         if (!usePhysics) return;
 
-        // Add collider if not present
         cubeCollider = GetComponent<Collider>();
         if (cubeCollider == null)
         {
             cubeCollider = gameObject.AddComponent<BoxCollider>();
         }
 
-        // Make sure collider is NOT a trigger
         cubeCollider.isTrigger = false;
-
         Debug.Log($"Collider setup complete for {name} cube");
     }
 
-    // Add this method to reset movement state
     public void ResetMovementState()
     {
         isMoving = false;
@@ -140,19 +122,26 @@ public class CubeBehavior : MonoBehaviour
 
     private void OnDestroy()
     {
-        // Mark as destroyed to prevent issues during coroutines
         isDestroyed = true;
         StopAllCoroutines();
+
+        // Clean up face indicators
+        for (int i = 0; i < faceIndicators.Length; i++)
+        {
+            if (faceIndicators[i] != null)
+            {
+                Destroy(faceIndicators[i]);
+                faceIndicators[i] = null;
+            }
+        }
     }
 
-    // In CubeBehavior.cs
     public bool MoveForward()
     {
         if (isMoving || isDestroyed) return true;
 
         Debug.Log($"Moving cube {GetEffectiveType()} from ({position.x}, {position.y}) forward");
 
-        // Check for off-grid conditions
         if (position.y < 0 || position.x < 0 || position.x >= grid.Width)
         {
             Debug.Log($"Cube {GetEffectiveType()} at ({position.x}, {position.y}) is off-grid. Grid bounds: {grid.Width}x{grid.Height}");
@@ -181,22 +170,16 @@ public class CubeBehavior : MonoBehaviour
             }
         }
 
-        // Update position
         position.y -= 1;
         moveCount++;
 
-        // IMPORTANT: Rotate face mapping when cube moves
         RotateFaceMapping();
-
-        // Process face durations
         ProcessFaceDurations();
 
         Debug.Log($"Cube moved to ({position.x}, {position.y}), move count: {moveCount}");
 
-        // Start animation
         StartCoroutine(AnimateMove(position));
 
-        // Process landing on tiles
         if (position.y >= 0 && position.x >= 0 && position.x < grid.Width)
         {
             Tile landingTile = grid.tiles[position.x, position.y];
@@ -209,32 +192,28 @@ public class CubeBehavior : MonoBehaviour
         return true;
     }
 
-
     private IEnumerator AnimateMove(Vector2Int newPos)
     {
         isMoving = true;
 
-        // Calculate world positions using grid conversion
         Vector3 start = transform.position;
-        Vector3 end = grid.GridToWorldPosition(newPos.x, newPos.y, 2f); // Keep cubes slightly above ground
+        Vector3 end = grid.GridToWorldPosition(newPos.x, newPos.y, 2f);
 
         Debug.Log($"Animating cube from {start} to {end} (grid pos {newPos})");
 
-        // Get the current move interval from WaveManager to sync animation speed
         WaveManager waveManager = FindObjectOfType<WaveManager>();
         float actualMoveDuration = moveDuration;
 
         if (waveManager != null)
         {
-            // Use the current move interval but cap it at our normal duration
             float currentInterval = waveManager.isSpeedingUp ? waveManager.fastMoveInterval :
                                    (waveManager.CurrentWave?.moveInterval ?? waveManager.normalMoveInterval);
-            actualMoveDuration = Mathf.Min(moveDuration, currentInterval * 0.8f); // Use 80% of interval for smooth movement
+            actualMoveDuration = Mathf.Min(moveDuration, currentInterval * 0.8f);
         }
 
         float elapsed = 0f;
         Quaternion startRot = transform.rotation;
-        Quaternion endRot = startRot * Quaternion.Euler(-90f, 0f, 0f); // 90° roll forward
+        Quaternion endRot = startRot * Quaternion.Euler(-90f, 0f, 0f);
 
         while (elapsed < actualMoveDuration)
         {
@@ -244,31 +223,28 @@ public class CubeBehavior : MonoBehaviour
             float t = Mathf.Clamp01(elapsed / actualMoveDuration);
 
             transform.position = Vector3.Lerp(start, end, t);
-            transform.rotation = Quaternion.Slerp(startRot, Quaternion.Lerp(startRot, endRot, t), t);
+            transform.rotation = Quaternion.Slerp(startRot, endRot, t);
 
             yield return null;
         }
 
-        // Ensure position is exactly at destination
         if (!isDestroyed)
         {
             transform.position = end;
-            transform.rotation = Quaternion.identity; // Reset rotation to prevent drift
+            transform.rotation = Quaternion.identity;
         }
 
         if (isDestroyed) yield break;
 
-        // Weighty visual squash - also speed this up proportionally
         transform.localScale = new Vector3(tileSize * 1.05f, tileSize * 0.9f, tileSize * 1.05f);
 
-        float squashTime = Mathf.Min(squashDuration, actualMoveDuration * 0.3f); // Squash takes 30% of move time
+        float squashTime = Mathf.Min(squashDuration, actualMoveDuration * 0.3f);
         yield return new WaitForSeconds(squashTime);
 
         if (isDestroyed) yield break;
 
         transform.localScale = new Vector3(tileSize, tileSize, tileSize);
 
-        // Check for marker interaction (guard against destroyed tiles)
         if (grid != null && newPos.x >= 0 && newPos.x < grid.Width &&
             newPos.y >= 0 && newPos.y < grid.Height)
         {
@@ -286,14 +262,12 @@ public class CubeBehavior : MonoBehaviour
     {
         if (isDestroyed) return;
 
-        // Find any cubes at this position
         foreach (CubeBehavior otherCube in FindObjectsOfType<CubeBehavior>())
         {
             if (otherCube != this &&
                 otherCube.position.x == position.x &&
                 otherCube.position.y == position.y)
             {
-                // Found another cube at our position, trigger collision
                 CubeCollisionController collisionController = GetComponent<CubeCollisionController>();
                 if (collisionController == null)
                 {
@@ -303,21 +277,15 @@ public class CubeBehavior : MonoBehaviour
 
                 Debug.Log($"Triggering collision between raining {type} and static {otherCube.type} at ({position.x}, {position.y})");
                 collisionController.HandleCubeCollision(this, otherCube, position);
-
-                // No need to check further collisions
                 break;
             }
         }
     }
 
-
-    // Replace the face indicator methods in CubeBehavior.cs with these fixed versions
-
     #region Face Painting System - FIXED
 
     public CubeFace GetCurrentDownFace()
     {
-        // Return which original face is currently in the bottom (grid-touching) position
         return currentFaceMapping[0];
     }
 
@@ -339,11 +307,11 @@ public class CubeBehavior : MonoBehaviour
         switch (activeStatus)
         {
             case FaceStatus.Corrupted:
-                return CubeType.Black; // Behaves like black cube
+                return CubeType.Black;
             case FaceStatus.Enhanced:
-                return type == CubeType.Normal ? CubeType.Blue : type; // Normal becomes blue
+                return type == CubeType.Normal ? CubeType.Blue : type;
             default:
-                return type; // No change
+                return type;
         }
     }
 
@@ -354,9 +322,9 @@ public class CubeBehavior : MonoBehaviour
         switch (activeStatus)
         {
             case FaceStatus.Corrupted:
-                return false; // Corrupted face = acts like black cube
+                return false;
             default:
-                return type != CubeType.Black; // Normal capture rules
+                return type != CubeType.Black;
         }
     }
 
@@ -372,9 +340,9 @@ public class CubeBehavior : MonoBehaviour
         faceStatuses[faceIndex] = status;
         faceColors[faceIndex] = color;
         faceDurations[faceIndex] = duration;
-
+        faceIndicators[faceIndex].SetActive(true);
         UpdateFaceVisuals();
-        Debug.Log($"Painted {face} of cube at ({position.x}, {position.y}) with {status} status");
+        Debug.Log($"Painted {face} of cube at ({position.x}, {position.y}) with {status} status, duration: {duration}");
     }
 
     public void PaintCurrentDownFace(FaceStatus status, Color color, int duration = -1)
@@ -385,6 +353,7 @@ public class CubeBehavior : MonoBehaviour
 
     private void ProcessFaceDurations()
     {
+        bool anyChanged = false;
         for (int i = 0; i < 4; i++)
         {
             if (faceDurations[i] > 0)
@@ -392,19 +361,23 @@ public class CubeBehavior : MonoBehaviour
                 faceDurations[i]--;
                 if (faceDurations[i] == 0)
                 {
-                    // Status expired
                     faceStatuses[i] = FaceStatus.None;
                     faceColors[i] = Color.white;
+                    anyChanged = true;
+                    faceIndicators[i].SetActive(false);
                     Debug.Log($"Face {(CubeFace)i} paint status expired on cube at ({position.x}, {position.y})");
                 }
             }
         }
-        UpdateFaceVisuals();
+
+        if (anyChanged)
+        {
+            UpdateFaceVisuals();
+        }
     }
 
     private void InitializeFaceSystem()
     {
-        // Initialize all faces to no status
         for (int i = 0; i < 4; i++)
         {
             faceStatuses[i] = FaceStatus.None;
@@ -423,13 +396,13 @@ public class CubeBehavior : MonoBehaviour
         for (int i = 0; i < 4; i++)
         {
             GameObject indicator = GameObject.CreatePrimitive(PrimitiveType.Quad);
-            indicator.name = $"FaceIndicator_{(CubeFace)i}";
+            indicator.name = $"FaceIndicator_{(CubeFace)i}_{position.x}_{position.y}";
             indicator.transform.SetParent(transform);
 
-            // Position on cube surface - these positions are for the ORIGINAL faces
+            // Position and orient the face indicator correctly
             PositionFaceIndicator(indicator, (CubeFace)i);
 
-            // Set up renderer with transparent material
+            // Set up renderer with proper material
             Renderer renderer = indicator.GetComponent<Renderer>();
             Material mat = CreateFaceIndicatorMaterial();
             renderer.material = mat;
@@ -444,30 +417,30 @@ public class CubeBehavior : MonoBehaviour
 
     private void PositionFaceIndicator(GameObject indicator, CubeFace originalFace)
     {
-        float offset = 0.52f; // Just outside cube surface
-        Vector3 scale = new Vector3(0.8f, 0.8f, 1f);
+        float offset = (0.55f); // Very close to cube surface, just barely hovering
+        Vector3 scale = new Vector3( 1f, 1f, 1f); // Larger indicators for better visibility
 
         // Position based on the ORIGINAL face position on the cube
         switch (originalFace)
         {
-            case CubeFace.Bottom: // Original bottom face
+            case CubeFace.Bottom: // Original bottom face (Y-)
                 indicator.transform.localPosition = new Vector3(0, -offset, 0);
-                indicator.transform.localRotation = Quaternion.Euler(90, 0, 0);
+                indicator.transform.localRotation = Quaternion.Euler(90, 180, 0); // Face up (outward from bottom)
                 break;
 
-            case CubeFace.Top: // Original top face
+            case CubeFace.Top: // Original top face (Y+)
                 indicator.transform.localPosition = new Vector3(0, offset, 0);
-                indicator.transform.localRotation = Quaternion.Euler(-90, 0, 0);
+                indicator.transform.localRotation = Quaternion.Euler(-90, 180, 0); // Face down (outward from top)
                 break;
 
-            case CubeFace.Front: // Original front face
+            case CubeFace.Front: // Original front face (Z+)
                 indicator.transform.localPosition = new Vector3(0, 0, offset);
-                indicator.transform.localRotation = Quaternion.identity;
+                indicator.transform.localRotation = Quaternion.Euler(0, 180, 0); // Face toward camera (outward from front)
                 break;
 
-            case CubeFace.Back: // Original back face
+            case CubeFace.Back: // Original back face (Z-)
                 indicator.transform.localPosition = new Vector3(0, 0, -offset);
-                indicator.transform.localRotation = Quaternion.Euler(0, 180, 0);
+                indicator.transform.localRotation = Quaternion.Euler(0, 0, 0); // Face toward camera (outward from back)
                 break;
         }
 
@@ -494,89 +467,126 @@ public class CubeBehavior : MonoBehaviour
 
     private void UpdateFaceVisuals()
     {
+
+        UpdateFaceIndicatorPositions();
+        
+    }
+
+    private void UpdateFaceIndicatorPositions()
+    {
         if (!showFaceIndicators || faceIndicators == null) return;
 
-        CubeFace currentDownFace = GetCurrentDownFace();
+        float offset = (0.55f);
 
         for (int i = 0; i < 4; i++)
         {
             if (faceIndicators[i] == null) continue;
 
-            bool hasStatus = faceStatuses[i] != FaceStatus.None;
-            bool isActiveFace = (CubeFace)i == currentDownFace;
+            CubeFace originalFace = (CubeFace)i;
 
-            // Only show indicators that have a painted status
-            faceIndicators[i].SetActive(hasStatus);
+            // Find where this original face is currently positioned
+            FacePosition currentPosition = GetFacePosition(originalFace);
 
-            if (hasStatus)
+            // Position the indicator based on the current FacePosition
+            Vector3 newPosition = Vector3.one;
+            Quaternion newRotation = Quaternion.identity;
+
+            switch (currentPosition)
             {
-                UpdateFaceIndicatorAppearance(i, isActiveFace);
+                case FacePosition.Down:
+                    newPosition = new Vector3(0, -offset, 0);
+                    newRotation = Quaternion.Euler(90, 180, 0);
+                    break;
+                case FacePosition.Up:
+                    newPosition = new Vector3(0, offset, 0);
+                    newRotation = Quaternion.Euler(-270, 180, 0);
+                    break;
+                case FacePosition.Forward:
+                    newPosition = new Vector3(0, 0, offset);
+                    newRotation = Quaternion.Euler(0, 180, 0);
+                    break;
+                case FacePosition.Back:
+                    newPosition = new Vector3(0, 0, -offset);
+                    newRotation = Quaternion.Euler(0, 0, 0);
+                    break;
+            }
+
+            faceIndicators[i].transform.localPosition = newPosition;
+            faceIndicators[i].transform.localRotation = newRotation;
+            faceIndicators[i].GetComponent<Renderer>().material.color = faceColors[i];
+        }
+    }
+
+    private FacePosition GetFacePosition(CubeFace originalFace)
+    {
+        // Find where this original face is currently positioned
+        for (int i = 0; i < 4; i++)
+        {
+            if (currentFaceMapping[i] == originalFace)
+            {
+                switch (i)
+                {
+                    case 0: return FacePosition.Down;
+                    case 1: return FacePosition.Up;
+                    case 2: return FacePosition.Forward;
+                    case 3: return FacePosition.Back;
+                    default: return FacePosition.Down;
+                }
             }
         }
+        return FacePosition.Down; // Fallback
     }
-
-    private void UpdateFaceIndicatorAppearance(int faceIndex, bool isActiveFace)
+    private void EnsureFaceIndicatorOrientation(GameObject indicator, CubeFace originalFace)
     {
-        GameObject indicator = faceIndicators[faceIndex];
         if (indicator == null) return;
 
-        Renderer renderer = indicator.GetComponent<Renderer>();
-        if (renderer == null) return;
-
-        // Create new material instance
-        Material mat = new Material(renderer.material);
-
-        // Visual style based on face status
-        FaceStatus status = faceStatuses[faceIndex];
-        switch (status)
+        // Reset the indicator's rotation to always face outward from its assigned face
+        // This ensures that no matter how the cube has rotated, the painted surface is visible
+        switch (originalFace)
         {
-            case FaceStatus.Corrupted:
-                mat.color = new Color(0.2f, 0.2f, 0.2f, isActiveFace ? 0.9f : 0.6f); // Dark overlay
-                mat.EnableKeyword("_EMISSION");
-                mat.SetColor("_EmissionColor", Color.red * (isActiveFace ? 0.3f : 0.1f));
+            case CubeFace.Bottom:
+                // For bottom face, the quad should face upward (away from cube bottom)
+                indicator.transform.localRotation = Quaternion.Euler(90, 180, 0);
                 break;
 
-            case FaceStatus.Enhanced:
-                mat.color = new Color(0.3f, 0.6f, 1f, isActiveFace ? 0.8f : 0.5f); // Blue overlay
-                mat.EnableKeyword("_EMISSION");
-                mat.SetColor("_EmissionColor", Color.blue * (isActiveFace ? 0.4f : 0.2f));
+            case CubeFace.Top:
+                // For top face, the quad should face downward (away from cube top)
+                indicator.transform.localRotation = Quaternion.Euler(-90, 180, 0);
                 break;
 
-            default:
-                Color baseColor = faceColors[faceIndex];
-                mat.color = new Color(baseColor.r, baseColor.g, baseColor.b, isActiveFace ? 0.8f : 0.5f);
-                mat.DisableKeyword("_EMISSION");
+            case CubeFace.Front:
+                // For front face, the quad should face forward (away from cube front)
+                indicator.transform.localRotation = Quaternion.Euler(0, 180, 0);
+                break;
+
+            case CubeFace.Back:
+                // For back face, the quad should face backward (away from cube back)
+                indicator.transform.localRotation = Quaternion.Euler(0, 0, 0);
                 break;
         }
-
-        // Scale active face slightly larger and add pulsing
-        if (isActiveFace)
-        {
-            indicator.transform.localScale = new Vector3(0.9f, 0.9f, 1f);
-            StartCoroutine(PulseFaceIndicator(indicator));
-        }
-        else
-        {
-            indicator.transform.localScale = new Vector3(0.8f, 0.8f, 1f);
-        }
-
-        renderer.material = mat;
     }
 
-    private System.Collections.IEnumerator PulseFaceIndicator(GameObject indicator)
+    private System.Collections.IEnumerator PulseFaceIndicator(GameObject indicator, int faceIndex)
     {
-        if (indicator == null) yield break;
+        if (indicator == null || isDestroyed) yield break;
+
+        // Only pulse if this is still the active face
+        CubeFace activeFace = GetCurrentDownFace();
+        if ((int)activeFace != faceIndex) yield break;
 
         Vector3 originalScale = indicator.transform.localScale;
-        Vector3 pulseScale = originalScale * 1.15f;
+        Vector3 pulseScale = originalScale * 1.2f;
 
         float duration = 1f;
         float elapsed = 0f;
 
-        while (elapsed < duration && indicator != null && indicator.activeInHierarchy)
+        while (elapsed < duration && indicator != null && indicator.activeInHierarchy && !isDestroyed)
         {
+            // Check if still the active face
+            if ((int)GetCurrentDownFace() != faceIndex) break;
+
             elapsed += Time.deltaTime;
-            float t = Mathf.PingPong(elapsed * 3f, 1f); // Pulse 3 times per duration
+            float t = Mathf.PingPong(elapsed * 2f, 1f); // Pulse twice per duration
             if (indicator != null)
             {
                 indicator.transform.localScale = Vector3.Lerp(originalScale, pulseScale, t * 0.3f);
@@ -584,7 +594,7 @@ public class CubeBehavior : MonoBehaviour
             yield return null;
         }
 
-        if (indicator != null)
+        if (indicator != null && !isDestroyed)
         {
             indicator.transform.localScale = originalScale;
         }
@@ -593,7 +603,7 @@ public class CubeBehavior : MonoBehaviour
     // Debug and testing methods
     public void TestPaintFace(CubeFace face, FaceStatus status)
     {
-        Color color = status == FaceStatus.Corrupted ? Color.red : Color.blue;
+        Color color = status == FaceStatus.Corrupted ? Color.black : Color.blue;
         PaintFace(face, status, color, 5);
         Debug.Log($"Test painted {face} with {status} status");
     }
@@ -603,9 +613,11 @@ public class CubeBehavior : MonoBehaviour
         if (!showFaceIndicators) return;
 
         Color[] testColors = { Color.red, Color.green, Color.blue, Color.yellow };
+        FaceStatus[] testStatuses = { FaceStatus.Corrupted, FaceStatus.Enhanced, FaceStatus.Corrupted, FaceStatus.Enhanced };
+
         for (int i = 0; i < 4; i++)
         {
-            PaintFace((CubeFace)i, FaceStatus.Enhanced, testColors[i], -1);
+            PaintFace((CubeFace)i, testStatuses[i], testColors[i], -1);
         }
 
         Debug.Log($"Debug: All faces painted with different colors. Current down face: {GetCurrentDownFace()}");
@@ -643,8 +655,40 @@ public class CubeBehavior : MonoBehaviour
         currentFaceMapping[2] = temp;                  // Bottom moves to Front
 
         Debug.Log($"Face mapping rotated: Bottom={currentFaceMapping[0]}, Top={currentFaceMapping[1]}, Front={currentFaceMapping[2]}, Back={currentFaceMapping[3]}");
+
+        // Update visuals immediately after rotation to ensure proper orientation
+        UpdateFaceVisuals();
+    }
+
+    // Public methods for external testing
+    public void SetFaceStatus(CubeFace face, FaceStatus status, int duration = -1)
+    {
+        Color color = status == FaceStatus.Corrupted ? Color.red :
+                     status == FaceStatus.Enhanced ? Color.blue : Color.white;
+        PaintFace(face, status, color, duration);
+    }
+
+    public FaceStatus GetFaceStatus(CubeFace face)
+    {
+        return faceStatuses[(int)face];
+    }
+
+    public int GetFaceDuration(CubeFace face)
+    {
+        return faceDurations[(int)face];
+    }
+
+    public void ClearAllFaces()
+    {
+        for (int i = 0; i < 4; i++)
+        {
+            faceStatuses[i] = FaceStatus.None;
+            faceColors[i] = Color.white;
+            faceDurations[i] = 0;
+        }
+        UpdateFaceVisuals();
+        Debug.Log($"Cleared all face statuses on cube at ({position.x}, {position.y})");
     }
 
     #endregion
-
 }

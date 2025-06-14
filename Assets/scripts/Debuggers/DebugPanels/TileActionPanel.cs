@@ -536,14 +536,75 @@ public class TileActionPanel : IDebugPanel
 
         foreach (var cube in allCubes)
         {
-            if (cube != null && !cube.isDestroyed && shownCubes < 5) // Limit display
+            if (cube != null && !cube.isDestroyed && shownCubes < 3) // Show up to 3 cubes
             {
-                GUILayout.Label($"Cube at ({cube.position.x},{cube.position.y}):");
-                GUILayout.Label($"  Type: {cube.type} → Effective: {cube.GetEffectiveType()}");
-                GUILayout.Label($"  Current Face: {cube.GetCurrentDownFace()}");
-                GUILayout.Label($"  Face Status: {cube.GetActiveFaceStatus()}");
-                GUILayout.Label($"  Can Capture: {cube.CanBeCaptured()}");
-                GUILayout.Space(2);
+                GUILayout.BeginVertical(GUI.skin.box);
+                GUILayout.Label($"Cube at ({cube.position.x},{cube.position.y}) - {cube.type}:");
+
+                // Show all face statuses
+                for (int i = 0; i < 4; i++)
+                {
+                    CubeFace face = (CubeFace)i;
+                    FaceStatus status = cube.GetFaceStatus(face);
+                    int duration = cube.GetFaceDuration(face);
+                    bool isActiveFace = face == cube.GetCurrentDownFace();
+
+                    GUILayout.BeginHorizontal();
+
+                    // Color code the face based on status
+                    Color originalColor = GUI.backgroundColor;
+                    if (status == FaceStatus.Corrupted)
+                        GUI.backgroundColor = Color.red;
+                    else if (status == FaceStatus.Enhanced)
+                        GUI.backgroundColor = Color.blue;
+                    else if (isActiveFace)
+                        GUI.backgroundColor = Color.yellow;
+
+                    string faceText = $"{face}: {status}";
+                    if (duration > 0) faceText += $" ({duration})";
+                    if (isActiveFace) faceText += " [ACTIVE]";
+
+                    GUILayout.Label(faceText, GUILayout.Width(150));
+
+                    // Quick paint buttons
+                    if (GUILayout.Button("C", GUILayout.Width(25)))
+                    {
+                        cube.SetFaceStatus(face, FaceStatus.Corrupted, 5);
+                    }
+                    if (GUILayout.Button("E", GUILayout.Width(25)))
+                    {
+                        cube.SetFaceStatus(face, FaceStatus.Enhanced, 5);
+                    }
+                    if (GUILayout.Button("X", GUILayout.Width(25)))
+                    {
+                        cube.SetFaceStatus(face, FaceStatus.None, 0);
+                    }
+
+                    GUI.backgroundColor = originalColor;
+                    GUILayout.EndHorizontal();
+                }
+
+                GUILayout.Label($"Effective Type: {cube.GetEffectiveType()}");
+                GUILayout.Label($"Can Capture: {cube.CanBeCaptured()}");
+
+                // Cube control buttons
+                GUILayout.BeginHorizontal();
+                if (GUILayout.Button("Clear All Faces"))
+                {
+                    cube.ClearAllFaces();
+                }
+                if (GUILayout.Button("Debug All Faces"))
+                {
+                    cube.DebugShowAllFaces();
+                }
+                if (GUILayout.Button("Print Mapping"))
+                {
+                    cube.DebugPrintFaceMapping();
+                }
+                GUILayout.EndHorizontal();
+
+                GUILayout.EndVertical();
+                GUILayout.Space(3);
                 shownCubes++;
             }
         }
@@ -551,10 +612,11 @@ public class TileActionPanel : IDebugPanel
         if (shownCubes == 0)
         {
             GUILayout.Label("No active cubes found");
+            GUILayout.Label("Use the Cube Spawner section above to create test cubes");
         }
-        else if (allCubes.Length > 5)
+        else if (allCubes.Length > 3)
         {
-            GUILayout.Label($"... and {allCubes.Length - 5} more cubes");
+            GUILayout.Label($"... and {allCubes.Length - 3} more cubes");
         }
     }
 
