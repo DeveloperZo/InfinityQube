@@ -13,6 +13,7 @@ public class CubeBehavior : MonoBehaviour
     [SerializeField] public float spawnHeight;
     [SerializeField] public int currentHitPoints = 1;
     [SerializeField] public int maxHitPoints = 1;
+    [SerializeField] public int moveCount = 0;
     [System.NonSerialized] private CubeData cubeData;
 
     [Header("Animation Settings")]
@@ -26,13 +27,12 @@ public class CubeBehavior : MonoBehaviour
     [SerializeField] private Collider cubeCollider;
 
     [Header("Face Painting System")]
-    [SerializeField] private FaceStatus[] faceStatuses = new FaceStatus[6]; // 6 cube faces
-    [SerializeField] private Color[] faceColors = new Color[6]; // Visual colors for each face
-    [SerializeField] private int[] faceDurations = new int[6]; // Remaining duration for each face (-1 = permanent)
-    [SerializeField] private int moveCount = 0; // Track rotations
-    [SerializeField] private GameObject[] faceIndicators = new GameObject[6]; // Visual indicators
+    [SerializeField] private FaceStatus[] faceStatuses = new FaceStatus[4]; // 4 cube faces
+    [SerializeField] private Color[] faceColors = new Color[4]; // Visual colors for each face
+    [SerializeField] private int[] faceDurations = new int[4]; // Remaining duration for each face (-1 = permanent)
+    [SerializeField] private GameObject[] faceIndicators = new GameObject[4]; // Visual indicators
     [SerializeField] private bool showFaceIndicators = true;
-
+    private CubeFace[] currentFaceMapping = new CubeFace[4];
 
     private GridManager grid;
     private PlayerActionManager playerActionManager;
@@ -80,6 +80,7 @@ public class CubeBehavior : MonoBehaviour
         gameObject.name = name;
 
         InitializeFaceSystem();
+        InitializeFaceMapping();
 
         // Setup physics
         SetupPhysics();
@@ -151,7 +152,7 @@ public class CubeBehavior : MonoBehaviour
 
         Debug.Log($"Moving cube {GetEffectiveType()} from ({position.x}, {position.y}) forward");
 
-        // Check for off-grid conditions using effective type
+        // Check for off-grid conditions
         if (position.y < 0 || position.x < 0 || position.x >= grid.Width)
         {
             Debug.Log($"Cube {GetEffectiveType()} at ({position.x}, {position.y}) is off-grid. Grid bounds: {grid.Width}x{grid.Height}");
@@ -180,9 +181,12 @@ public class CubeBehavior : MonoBehaviour
             }
         }
 
-        // Update position and rotation
+        // Update position
         position.y -= 1;
-        moveCount++; // This rotates the cube faces
+        moveCount++;
+
+        // IMPORTANT: Rotate face mapping when cube moves
+        RotateFaceMapping();
 
         // Process face durations
         ProcessFaceDurations();
@@ -199,7 +203,6 @@ public class CubeBehavior : MonoBehaviour
             if (landingTile != null && !isDestroyed)
             {
                 landingTile.HandleCubeLanding(this);
-
             }
         }
 
@@ -308,23 +311,14 @@ public class CubeBehavior : MonoBehaviour
     }
 
 
-    #region Face Painting System
+    // Replace the face indicator methods in CubeBehavior.cs with these fixed versions
 
-    public void PaintFace(CubeFace face, FaceStatus status, Color color, int duration = -1)
+    #region Face Painting System - FIXED
+
+    public CubeFace GetCurrentDownFace()
     {
-        int faceIndex = (int)face;
-        faceStatuses[faceIndex] = status;
-        faceColors[faceIndex] = color;
-        faceDurations[faceIndex] = duration;
-
-        UpdateFaceVisuals();
-        Debug.Log($"Painted {face} of cube at ({position.x}, {position.y}) with {status} status");
-    }
-
-    public void PaintCurrentDownFace(FaceStatus status, Color color, int duration = -1)
-    {
-        CubeFace downFace = GetCurrentDownFace();
-        PaintFace(downFace, status, color, duration);
+        // Return which original face is currently in the bottom (grid-touching) position
+        return currentFaceMapping[0];
     }
 
     public FaceStatus GetActiveFaceStatus()
@@ -336,13 +330,6 @@ public class CubeBehavior : MonoBehaviour
     public bool HasActiveFaceStatus(FaceStatus status)
     {
         return GetActiveFaceStatus() == status;
-    }
-
-    public CubeFace GetCurrentDownFace()
-    {
-        // Simple 4-step rotation cycle (bottom face rotates between faces 0,2,1,3)
-        int[] rotationMap = { 0, 2, 1, 3 }; // Bottom, Front, Top, Back
-        return (CubeFace)rotationMap[moveCount % 4];
     }
 
     public CubeType GetEffectiveType()
@@ -362,7 +349,6 @@ public class CubeBehavior : MonoBehaviour
 
     public bool CanBeCaptured()
     {
-        // Check if current active face allows capture
         FaceStatus activeStatus = GetActiveFaceStatus();
 
         switch (activeStatus)
@@ -377,13 +363,29 @@ public class CubeBehavior : MonoBehaviour
     public bool ShouldCreateDetonation()
     {
         FaceStatus activeStatus = GetActiveFaceStatus();
-        return activeStatus == FaceStatus.Enhanced ||
-               type == CubeType.Blue;
+        return activeStatus == FaceStatus.Enhanced || type == CubeType.Blue;
+    }
+
+    public void PaintFace(CubeFace face, FaceStatus status, Color color, int duration = -1)
+    {
+        int faceIndex = (int)face;
+        faceStatuses[faceIndex] = status;
+        faceColors[faceIndex] = color;
+        faceDurations[faceIndex] = duration;
+
+        UpdateFaceVisuals();
+        Debug.Log($"Painted {face} of cube at ({position.x}, {position.y}) with {status} status");
+    }
+
+    public void PaintCurrentDownFace(FaceStatus status, Color color, int duration = -1)
+    {
+        CubeFace downFace = GetCurrentDownFace();
+        PaintFace(downFace, status, color, duration);
     }
 
     private void ProcessFaceDurations()
     {
-        for (int i = 0; i < 6; i++)
+        for (int i = 0; i < 4; i++)
         {
             if (faceDurations[i] > 0)
             {
@@ -393,6 +395,7 @@ public class CubeBehavior : MonoBehaviour
                     // Status expired
                     faceStatuses[i] = FaceStatus.None;
                     faceColors[i] = Color.white;
+                    Debug.Log($"Face {(CubeFace)i} paint status expired on cube at ({position.x}, {position.y})");
                 }
             }
         }
@@ -402,7 +405,7 @@ public class CubeBehavior : MonoBehaviour
     private void InitializeFaceSystem()
     {
         // Initialize all faces to no status
-        for (int i = 0; i < 6; i++)
+        for (int i = 0; i < 4; i++)
         {
             faceStatuses[i] = FaceStatus.None;
             faceColors[i] = Color.white;
@@ -417,19 +420,18 @@ public class CubeBehavior : MonoBehaviour
 
     private void CreateFaceIndicators()
     {
-        for (int i = 0; i < 6; i++)
+        for (int i = 0; i < 4; i++)
         {
             GameObject indicator = GameObject.CreatePrimitive(PrimitiveType.Quad);
             indicator.name = $"FaceIndicator_{(CubeFace)i}";
             indicator.transform.SetParent(transform);
 
-            // Position on cube surface
+            // Position on cube surface - these positions are for the ORIGINAL faces
             PositionFaceIndicator(indicator, (CubeFace)i);
 
-            // Make transparent
+            // Set up renderer with transparent material
             Renderer renderer = indicator.GetComponent<Renderer>();
-            Material mat = new Material(Shader.Find("Standard"));
-            mat.color = new Color(1, 1, 1, 0.8f);
+            Material mat = CreateFaceIndicatorMaterial();
             renderer.material = mat;
 
             // Remove collider
@@ -440,25 +442,30 @@ public class CubeBehavior : MonoBehaviour
         }
     }
 
-    private void PositionFaceIndicator(GameObject indicator, CubeFace face)
+    private void PositionFaceIndicator(GameObject indicator, CubeFace originalFace)
     {
-        float offset = 0.51f; // Just outside cube surface
-        Vector3 scale = new Vector3(0.7f, 0.7f, 1f);
+        float offset = 0.52f; // Just outside cube surface
+        Vector3 scale = new Vector3(0.8f, 0.8f, 1f);
 
-        switch (face)
+        // Position based on the ORIGINAL face position on the cube
+        switch (originalFace)
         {
-            case CubeFace.Bottom:
+            case CubeFace.Bottom: // Original bottom face
                 indicator.transform.localPosition = new Vector3(0, -offset, 0);
                 indicator.transform.localRotation = Quaternion.Euler(90, 0, 0);
                 break;
-            case CubeFace.Top:
+
+            case CubeFace.Top: // Original top face
                 indicator.transform.localPosition = new Vector3(0, offset, 0);
                 indicator.transform.localRotation = Quaternion.Euler(-90, 0, 0);
                 break;
-            case CubeFace.Front:
+
+            case CubeFace.Front: // Original front face
                 indicator.transform.localPosition = new Vector3(0, 0, offset);
+                indicator.transform.localRotation = Quaternion.identity;
                 break;
-            case CubeFace.Back:
+
+            case CubeFace.Back: // Original back face
                 indicator.transform.localPosition = new Vector3(0, 0, -offset);
                 indicator.transform.localRotation = Quaternion.Euler(0, 180, 0);
                 break;
@@ -467,42 +474,175 @@ public class CubeBehavior : MonoBehaviour
         indicator.transform.localScale = scale;
     }
 
+    private Material CreateFaceIndicatorMaterial()
+    {
+        Material mat = new Material(Shader.Find("Standard"));
+        mat.color = new Color(1, 1, 1, 0.8f);
+
+        // Set up for transparency
+        mat.SetFloat("_Mode", 3); // Transparent mode
+        mat.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
+        mat.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+        mat.SetInt("_ZWrite", 0);
+        mat.DisableKeyword("_ALPHATEST_ON");
+        mat.EnableKeyword("_ALPHABLEND_ON");
+        mat.DisableKeyword("_ALPHAPREMULTIPLY_ON");
+        mat.renderQueue = 3000;
+
+        return mat;
+    }
+
     private void UpdateFaceVisuals()
     {
         if (!showFaceIndicators || faceIndicators == null) return;
 
         CubeFace currentDownFace = GetCurrentDownFace();
 
-        for (int i = 0; i < 6; i++)
+        for (int i = 0; i < 4; i++)
         {
             if (faceIndicators[i] == null) continue;
 
             bool hasStatus = faceStatuses[i] != FaceStatus.None;
+            bool isActiveFace = (CubeFace)i == currentDownFace;
+
+            // Only show indicators that have a painted status
             faceIndicators[i].SetActive(hasStatus);
 
             if (hasStatus)
             {
-                Renderer renderer = faceIndicators[i].GetComponent<Renderer>();
-                Material mat = renderer.material;
-
-                // Set color
-                mat.color = faceColors[i];
-
-                // Highlight active (down-facing) status
-                if ((CubeFace)i == currentDownFace)
-                {
-                    mat.color = new Color(faceColors[i].r, faceColors[i].g, faceColors[i].b, 1f);
-                    // Add glow effect
-                    mat.EnableKeyword("_EMISSION");
-                    mat.SetColor("_EmissionColor", faceColors[i] * 0.3f);
-                }
-                else
-                {
-                    mat.color = new Color(faceColors[i].r, faceColors[i].g, faceColors[i].b, 0.6f);
-                    mat.DisableKeyword("_EMISSION");
-                }
+                UpdateFaceIndicatorAppearance(i, isActiveFace);
             }
         }
+    }
+
+    private void UpdateFaceIndicatorAppearance(int faceIndex, bool isActiveFace)
+    {
+        GameObject indicator = faceIndicators[faceIndex];
+        if (indicator == null) return;
+
+        Renderer renderer = indicator.GetComponent<Renderer>();
+        if (renderer == null) return;
+
+        // Create new material instance
+        Material mat = new Material(renderer.material);
+
+        // Visual style based on face status
+        FaceStatus status = faceStatuses[faceIndex];
+        switch (status)
+        {
+            case FaceStatus.Corrupted:
+                mat.color = new Color(0.2f, 0.2f, 0.2f, isActiveFace ? 0.9f : 0.6f); // Dark overlay
+                mat.EnableKeyword("_EMISSION");
+                mat.SetColor("_EmissionColor", Color.red * (isActiveFace ? 0.3f : 0.1f));
+                break;
+
+            case FaceStatus.Enhanced:
+                mat.color = new Color(0.3f, 0.6f, 1f, isActiveFace ? 0.8f : 0.5f); // Blue overlay
+                mat.EnableKeyword("_EMISSION");
+                mat.SetColor("_EmissionColor", Color.blue * (isActiveFace ? 0.4f : 0.2f));
+                break;
+
+            default:
+                Color baseColor = faceColors[faceIndex];
+                mat.color = new Color(baseColor.r, baseColor.g, baseColor.b, isActiveFace ? 0.8f : 0.5f);
+                mat.DisableKeyword("_EMISSION");
+                break;
+        }
+
+        // Scale active face slightly larger and add pulsing
+        if (isActiveFace)
+        {
+            indicator.transform.localScale = new Vector3(0.9f, 0.9f, 1f);
+            StartCoroutine(PulseFaceIndicator(indicator));
+        }
+        else
+        {
+            indicator.transform.localScale = new Vector3(0.8f, 0.8f, 1f);
+        }
+
+        renderer.material = mat;
+    }
+
+    private System.Collections.IEnumerator PulseFaceIndicator(GameObject indicator)
+    {
+        if (indicator == null) yield break;
+
+        Vector3 originalScale = indicator.transform.localScale;
+        Vector3 pulseScale = originalScale * 1.15f;
+
+        float duration = 1f;
+        float elapsed = 0f;
+
+        while (elapsed < duration && indicator != null && indicator.activeInHierarchy)
+        {
+            elapsed += Time.deltaTime;
+            float t = Mathf.PingPong(elapsed * 3f, 1f); // Pulse 3 times per duration
+            if (indicator != null)
+            {
+                indicator.transform.localScale = Vector3.Lerp(originalScale, pulseScale, t * 0.3f);
+            }
+            yield return null;
+        }
+
+        if (indicator != null)
+        {
+            indicator.transform.localScale = originalScale;
+        }
+    }
+
+    // Debug and testing methods
+    public void TestPaintFace(CubeFace face, FaceStatus status)
+    {
+        Color color = status == FaceStatus.Corrupted ? Color.red : Color.blue;
+        PaintFace(face, status, color, 5);
+        Debug.Log($"Test painted {face} with {status} status");
+    }
+
+    public void DebugShowAllFaces()
+    {
+        if (!showFaceIndicators) return;
+
+        Color[] testColors = { Color.red, Color.green, Color.blue, Color.yellow };
+        for (int i = 0; i < 4; i++)
+        {
+            PaintFace((CubeFace)i, FaceStatus.Enhanced, testColors[i], -1);
+        }
+
+        Debug.Log($"Debug: All faces painted with different colors. Current down face: {GetCurrentDownFace()}");
+    }
+
+    public void DebugPrintFaceMapping()
+    {
+        Debug.Log($"Face Mapping for cube at ({position.x}, {position.y}):");
+        Debug.Log($"  Bottom position: {currentFaceMapping[0]}");
+        Debug.Log($"  Top position: {currentFaceMapping[1]}");
+        Debug.Log($"  Front position: {currentFaceMapping[2]}");
+        Debug.Log($"  Back position: {currentFaceMapping[3]}");
+        Debug.Log($"  Current down face: {GetCurrentDownFace()}");
+        Debug.Log($"  Active face status: {GetActiveFaceStatus()}");
+    }
+
+    private void InitializeFaceMapping()
+    {
+        // Initially, faces are in their original positions
+        currentFaceMapping[0] = CubeFace.Bottom;  // Bottom position has original bottom face
+        currentFaceMapping[1] = CubeFace.Top;     // Top position has original top face  
+        currentFaceMapping[2] = CubeFace.Front;   // Front position has original front face
+        currentFaceMapping[3] = CubeFace.Back;    // Back position has original back face
+
+        Debug.Log($"Face mapping initialized for cube at ({position.x}, {position.y})");
+    }
+
+    private void RotateFaceMapping()
+    {
+        // Forward roll rotation: Bottom->Front, Front->Top, Top->Back, Back->Bottom
+        CubeFace temp = currentFaceMapping[0]; // Store current bottom
+        currentFaceMapping[0] = currentFaceMapping[3]; // Back moves to Bottom
+        currentFaceMapping[3] = currentFaceMapping[1]; // Top moves to Back  
+        currentFaceMapping[1] = currentFaceMapping[2]; // Front moves to Top
+        currentFaceMapping[2] = temp;                  // Bottom moves to Front
+
+        Debug.Log($"Face mapping rotated: Bottom={currentFaceMapping[0]}, Top={currentFaceMapping[1]}, Front={currentFaceMapping[2]}, Back={currentFaceMapping[3]}");
     }
 
     #endregion

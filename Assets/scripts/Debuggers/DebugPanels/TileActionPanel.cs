@@ -103,7 +103,10 @@ public class TileActionPanel : IDebugPanel
     {
         GUILayout.BeginVertical(GUI.skin.box);
         GUILayout.Label("TILE EDITOR", GUI.skin.box);
-
+        if (GUILayout.Button("Test: Face Mapping & Rotation"))
+        {
+            TestFaceMappingRotation();
+        }
         DrawTileStateSelector();
 
         if (selectedTileState == 3)
@@ -842,6 +845,27 @@ public class TileActionPanel : IDebugPanel
         }
 
         Debug.Log($"Spawned {cubeType} cube at ({position.x}, {position.y}) for testing");
+    }
+
+    private void TestFaceMappingRotation()
+    {
+        Vector2Int testPos = new Vector2Int(2, 10);
+        SpawnCubeAt(testPos, CubeType.Normal);
+
+        var cubes = FindCubesAt(testPos);
+        if (cubes.Count > 0)
+        {
+            var cube = cubes[0];
+
+            // Paint the original bottom face red
+            cube.TestPaintFace(CubeFace.Bottom, FaceStatus.Corrupted);
+            // Paint the original front face blue  
+            cube.TestPaintFace(CubeFace.Front, FaceStatus.Enhanced);
+
+            cube.DebugPrintFaceMapping();
+
+            Debug.Log("Watch the cube roll - red face (corrupted) and blue face (enhanced) will rotate around the cube!");
+        }
     }
 
     #endregion
