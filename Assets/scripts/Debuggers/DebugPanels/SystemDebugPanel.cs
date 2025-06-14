@@ -1,8 +1,8 @@
 using UnityEngine;
 
-public class SystemDebugPanel : IDebugPanel
+public class SystemDebugPanel : DebugPanelBase
 {
-    public string PanelName => "System";
+    public override string PanelName => "System";
 
     private GridManager gridManager;
     private PlayerActionManager playerActionManager;
@@ -12,13 +12,13 @@ public class SystemDebugPanel : IDebugPanel
     private float frameRateUpdateTimer = 0f;
     private const float FRAMERATE_UPDATE_INTERVAL = 0.5f;
 
-    public void Initialize()
+    public override void Initialize()
     {
         gridManager = GridManager.Instance;
         playerActionManager = Object.FindObjectOfType<PlayerActionManager>();
     }
 
-    public void Update()
+    public override void Update()
     {
         // Update frame rate periodically
         frameRateUpdateTimer += Time.unscaledDeltaTime;
@@ -29,7 +29,7 @@ public class SystemDebugPanel : IDebugPanel
         }
     }
 
-    public void DrawPanel()
+    public override void DrawPanel()
     {
         DrawSystemInfo();
         GUILayout.Space(10);

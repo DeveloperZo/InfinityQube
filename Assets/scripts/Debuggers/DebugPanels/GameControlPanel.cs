@@ -1,9 +1,9 @@
 using UnityEngine;
 using System.Linq;
 
-public class GameControlPanel : IDebugPanel
+public class GameControlPanel : DebugPanelBase
 {
-    public string PanelName => "Game Control";
+    public override string PanelName => "Game Control";
 
     private StageManager stageManager;
     private WaveManager waveManager;
@@ -16,7 +16,7 @@ public class GameControlPanel : IDebugPanel
     private bool lastWaveActive = false;
     private Vector2Int lastPlayerPos = new Vector2Int(-1, -1);
 
-    public void Initialize()
+    public override void Initialize()
     {
         stageManager = Object.FindObjectOfType<StageManager>();
         waveManager = Object.FindObjectOfType<WaveManager>();
@@ -25,7 +25,7 @@ public class GameControlPanel : IDebugPanel
         playerActionManager = Object.FindObjectOfType<PlayerActionManager>();
     }
 
-    public void Update()
+    public override void Update()
     {
         // Track changes for live updates
         if (waveManager != null)
@@ -50,7 +50,7 @@ public class GameControlPanel : IDebugPanel
         }
     }
 
-    public void DrawPanel()
+    public override void DrawPanel()
     {
         DrawGameStatus();
         GUILayout.Space(10);

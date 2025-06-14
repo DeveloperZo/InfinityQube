@@ -6,9 +6,9 @@ using System.Linq;
 using UnityEditor;
 #endif
 
-public class StageDebugPanel : IDebugPanel
+public class StageDebugPanel : DebugPanelBase
 {
-    public string PanelName => "Stage Editor";
+    public override string PanelName => "Stage Editor";
 
     private StageManager stageManager;
     private WaveManager waveManager;
@@ -41,7 +41,7 @@ public class StageDebugPanel : IDebugPanel
     private int requiredCaptureCount = 0;
     private int maxAllowedEscapes = 0;
 
-    public void Initialize()
+    public override void Initialize()
     {
         stageManager = Object.FindObjectOfType<StageManager>();
         waveManager = Object.FindObjectOfType<WaveManager>();
@@ -61,12 +61,12 @@ public class StageDebugPanel : IDebugPanel
         }
     }
 
-    public void Update()
+    public override void Update()
     {
         // No specific update logic needed
     }
 
-    public void DrawPanel()
+    public override void DrawPanel()
     {
         scrollPosition = GUILayout.BeginScrollView(scrollPosition);
 

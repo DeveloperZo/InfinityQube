@@ -1,22 +1,22 @@
 using UnityEngine;
 
-public class GridDebugPanel : IDebugPanel
+public class GridDebugPanel : DebugPanelBase
 {
-    public string PanelName => "Grid";
+    public override string PanelName => "Grid";
 
     private GridManager gridManager;
 
-    public void Initialize()
+    public override void Initialize()
     {
         gridManager = GridManager.Instance;
     }
 
-    public void Update()
+    public override void Update()
     {
         // Update logic if needed
     }
 
-    public void DrawPanel()
+    public override void DrawPanel()
     {
         DrawGridInfo();
         GUILayout.Space(10);

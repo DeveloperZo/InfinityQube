@@ -3,9 +3,9 @@ using static Enumerations;
 using System.Collections.Generic;
 using System.Linq;
 
-public class TileActionPanel : IDebugPanel
+public class TileActionPanel : DebugPanelBase
 {
-    public string PanelName => "Tile Actions";
+    public override string PanelName => "Tile Actions";
 
     private GridManager gridManager;
     private PlayerManager playerManager;
@@ -35,7 +35,7 @@ public class TileActionPanel : IDebugPanel
     private Vector2Int inspectorPosition = new Vector2Int(0, 0);
     private bool autoTrackPlayer = true;
 
-    public void Initialize()
+    public override void Initialize()
     {
         gridManager = GridManager.Instance ?? Object.FindObjectOfType<GridManager>();
         playerManager = Object.FindObjectOfType<PlayerManager>();
@@ -47,7 +47,7 @@ public class TileActionPanel : IDebugPanel
         }
     }
 
-    public void Update()
+    public override void Update()
     {
         if (autoTrackPlayer && playerManager != null)
         {
@@ -55,7 +55,7 @@ public class TileActionPanel : IDebugPanel
         }
     }
 
-    public void DrawPanel()
+    public override void DrawPanel()
     {
         DrawPanelTabs();
         GUILayout.Space(5);

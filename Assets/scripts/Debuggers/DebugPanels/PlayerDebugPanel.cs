@@ -1,8 +1,8 @@
 using UnityEngine;
 
-public class PlayerDebugPanel : IDebugPanel
+public class PlayerDebugPanel : DebugPanelBase
 {
-    public string PanelName => "Player Editor";
+    public override string PanelName => "Player Editor";
 
     private PlayerManager playerManager;
     private GridManager gridManager;
@@ -41,7 +41,7 @@ public class PlayerDebugPanel : IDebugPanel
     private int addEscapedCubes = 0;
     private int addDeaths = 0;
 
-    public void Initialize()
+    public override void Initialize()
     {
         playerManager = Object.FindObjectOfType<PlayerManager>();
         gridManager = GridManager.Instance;
@@ -54,13 +54,13 @@ public class PlayerDebugPanel : IDebugPanel
         }
     }
 
-    public void Update()
+    public override void Update()
     {
         // Apply overrides continuously
         ApplyActiveOverrides();
     }
 
-    public void DrawPanel()
+    public override void DrawPanel()
     {
         scrollPosition = GUILayout.BeginScrollView(scrollPosition);
 

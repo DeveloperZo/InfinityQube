@@ -2,9 +2,9 @@
 using static Enumerations;
 using static PlayerActionManager;
 
-public class PlayerActionDebugPanel : IDebugPanel
+public class PlayerActionDebugPanel : DebugPanelBase
 {
-    public string PanelName => "Player Actions";
+    public override string PanelName => "Player Actions";
 
     private PlayerActionManager actionManager;
     private PlayerManager playerManager;
@@ -36,7 +36,7 @@ public class PlayerActionDebugPanel : IDebugPanel
     // Quick Test Scenarios
     private bool showQuickScenarios = false;
 
-    public void Initialize()
+    public override void Initialize()
     {
         actionManager = Object.FindObjectOfType<PlayerActionManager>();
         actionManager.SetInput(true);
@@ -50,12 +50,12 @@ public class PlayerActionDebugPanel : IDebugPanel
         }
     }
 
-    public void Update()
+    public override void Update()
     {
         // Update logic if needed
     }
 
-    public void DrawPanel()
+    public override void DrawPanel()
     {
         DrawPanelTabs();
         GUILayout.Space(5);

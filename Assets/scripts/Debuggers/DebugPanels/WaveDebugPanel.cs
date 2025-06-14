@@ -7,9 +7,9 @@ using static Enumerations;
 using UnityEditor;
 #endif
 
-public class WaveDebugPanel : IDebugPanel
+public class WaveDebugPanel : DebugPanelBase
 {
-    public string PanelName => "Wave Editor";
+    public override string PanelName => "Wave Editor";
 
     private WaveManager waveManager;
     private GridManager gridManager;
@@ -66,7 +66,7 @@ public class WaveDebugPanel : IDebugPanel
     // Live cube tracking
     private Dictionary<Vector2Int, CubeBehavior> liveCubeMap = new Dictionary<Vector2Int, CubeBehavior>();
 
-    public void Initialize()
+    public override void Initialize()
     {
         waveManager = Object.FindObjectOfType<WaveManager>();
         gridManager = Object.FindObjectOfType<GridManager>();
@@ -75,7 +75,7 @@ public class WaveDebugPanel : IDebugPanel
         InitializeCubeGrid();
     }
 
-    public void Update()
+    public override void Update()
     {
         // Update state tracking
         if (waveManager != null)
@@ -102,7 +102,7 @@ public class WaveDebugPanel : IDebugPanel
         }
     }
 
-    public void DrawPanel()
+    public override void DrawPanel()
     {
         scrollPosition = GUILayout.BeginScrollView(scrollPosition);
 
