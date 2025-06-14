@@ -19,10 +19,13 @@ public class DebugSystem : MonoBehaviour
     private Rect windowRect;
     private Vector2 scrollPosition;
     private int selectedTab = 0;
+    private int selectedGroup = 0;
 
     // Debug Panels
     private List<IDebugPanel> debugPanels = new List<IDebugPanel>();
     private Dictionary<string, IDebugPanel> panelsByName = new Dictionary<string, IDebugPanel>();
+    private Dictionary<DebugPanelGroup, List<IDebugPanel>> panelsByGroup = new Dictionary<DebugPanelGroup, List<IDebugPanel>>();
+    private List<DebugPanelGroup> groupOrder = new List<DebugPanelGroup>();
 
     // Window management for windowed mode
     private Dictionary<IDebugPanel, Rect> windowRects = new Dictionary<IDebugPanel, Rect>();
@@ -106,6 +109,14 @@ public class DebugSystem : MonoBehaviour
         debugPanels.Add(panel);
         panelsByName[panel.PanelName] = panel;
 
+        if (!panelsByGroup.TryGetValue(panel.PanelGroup, out var list))
+        {
+            list = new List<IDebugPanel>();
+            panelsByGroup[panel.PanelGroup] = list;
+            groupOrder.Add(panel.PanelGroup);
+        }
+        list.Add(panel);
+
         // Initialize window rect for windowed mode
         Vector2 pos = new Vector2(50 + (debugPanels.Count * 30), 50 + (debugPanels.Count * 30));
         windowRects[panel] = new Rect(pos.x, pos.y, 350, 400);
@@ -127,14 +138,31 @@ public class DebugSystem : MonoBehaviour
 
     private void DrawTabbedWindow(int windowID)
     {
+        // Group buttons
+        GUILayout.BeginHorizontal();
+        for (int i = 0; i < groupOrder.Count; i++)
+        {
+            bool gSelected = selectedGroup == i;
+            GUI.backgroundColor = gSelected ? Color.cyan : Color.white;
+
+            if (GUILayout.Button(groupOrder[i].ToString(), GUILayout.Height(25)))
+            {
+                selectedGroup = i;
+                selectedTab = 0;
+            }
+        }
+        GUI.backgroundColor = Color.white;
+        GUILayout.EndHorizontal();
+
         // Tab buttons
         GUILayout.BeginHorizontal();
-        for (int i = 0; i < debugPanels.Count; i++)
+        var groupPanels = panelsByGroup[groupOrder[selectedGroup]];
+        for (int i = 0; i < groupPanels.Count; i++)
         {
             bool isSelected = selectedTab == i;
             GUI.backgroundColor = isSelected ? Color.yellow : Color.white;
 
-            if (GUILayout.Button(debugPanels[i].PanelName, GUILayout.Height(25)))
+            if (GUILayout.Button(groupPanels[i].PanelName, GUILayout.Height(25)))
             {
                 selectedTab = i;
             }
@@ -145,12 +173,13 @@ public class DebugSystem : MonoBehaviour
         GUILayout.Space(5);
 
         // Selected panel content
-        if (selectedTab >= 0 && selectedTab < debugPanels.Count)
+        if (groupPanels.Count > 0)
         {
+            selectedTab = Mathf.Clamp(selectedTab, 0, groupPanels.Count - 1);
             scrollPosition = GUILayout.BeginScrollView(scrollPosition, GUILayout.Height(windowSize.y - 100));
             try
             {
-                debugPanels[selectedTab].DrawPanel();
+                groupPanels[selectedTab].DrawPanel();
             }
             catch (System.Exception e)
             {
@@ -183,13 +212,17 @@ public class DebugSystem : MonoBehaviour
     {
         scrollPosition = GUILayout.BeginScrollView(scrollPosition);
 
-        foreach (var panel in debugPanels)
+        foreach (var group in groupOrder)
         {
-            GUILayout.BeginVertical(GUI.skin.box);
-            GUILayout.Label(panel.PanelName, GUI.skin.box);
-            panel.DrawPanel();
-            GUILayout.EndVertical();
-            GUILayout.Space(5);
+            GUILayout.Label(group.ToString(), GUI.skin.box);
+            foreach (var panel in panelsByGroup[group])
+            {
+                GUILayout.BeginVertical(GUI.skin.box);
+                GUILayout.Label(panel.PanelName, GUI.skin.box);
+                panel.DrawPanel();
+                GUILayout.EndVertical();
+                GUILayout.Space(5);
+            }
         }
 
         GUILayout.EndScrollView();

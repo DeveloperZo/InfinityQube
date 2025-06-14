@@ -1,8 +1,9 @@
 using UnityEngine;
 
-public class GridDebugPanel : IDebugPanel
+public class GridDebugPanel : DebugPanelBase
 {
     public string PanelName => "Grid";
+    public override DebugPanelGroup PanelGroup => DebugPanelGroup.Grid;
 
     private GridManager gridManager;
 

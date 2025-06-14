@@ -7,9 +7,10 @@ using static Enumerations;
 using UnityEditor;
 #endif
 
-public class WaveDebugPanel : IDebugPanel
+public class WaveDebugPanel : DebugPanelBase
 {
     public string PanelName => "Wave Editor";
+    public override DebugPanelGroup PanelGroup => DebugPanelGroup.Stage;
 
     private WaveManager waveManager;
     private GridManager gridManager;
@@ -215,9 +216,9 @@ public class WaveDebugPanel : IDebugPanel
             {
                 GUILayout.Label("Success Criteria:");
                 if (wave.requiredCaptureCount > 0)
-                    GUILayout.Label($"  • Capture {wave.requiredCaptureCount} cubes");
+                    GUILayout.Label($"   Capture {wave.requiredCaptureCount} cubes");
                 if (wave.maxAllowedEscapes >= 0)
-                    GUILayout.Label($"  • Max {wave.maxAllowedEscapes} escapes allowed");
+                    GUILayout.Label($"   Max {wave.maxAllowedEscapes} escapes allowed");
             }
 
             // Wave statistics
@@ -766,7 +767,7 @@ public class WaveDebugPanel : IDebugPanel
                 else
                 {
                     GUI.backgroundColor = new Color(0.3f, 0.3f, 0.3f, 0.5f);
-                    GUILayout.Button("·", GUILayout.Width(25), GUILayout.Height(25));
+                    GUILayout.Button("", GUILayout.Width(25), GUILayout.Height(25));
                 }
             }
             GUILayout.EndHorizontal();
@@ -1335,7 +1336,7 @@ public class WaveDebugPanel : IDebugPanel
     {
         switch (cubeType)
         {
-            case 0: return "·";
+            case 0: return "";
             case 1: return "N";
             case 2: return "B";
             case 3: return "X";

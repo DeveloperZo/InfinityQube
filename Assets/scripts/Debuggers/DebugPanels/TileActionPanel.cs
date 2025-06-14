@@ -3,9 +3,10 @@ using static Enumerations;
 using System.Collections.Generic;
 using System.Linq;
 
-public class TileActionPanel : IDebugPanel
+public class TileActionPanel : DebugPanelBase
 {
     public string PanelName => "Tile Actions";
+    public override DebugPanelGroup PanelGroup => DebugPanelGroup.Grid;
 
     private GridManager gridManager;
     private PlayerManager playerManager;

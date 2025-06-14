@@ -6,9 +6,10 @@ using System.Linq;
 using UnityEditor;
 #endif
 
-public class StageDebugPanel : IDebugPanel
+public class StageDebugPanel : DebugPanelBase
 {
     public string PanelName => "Stage Editor";
+    public override DebugPanelGroup PanelGroup => DebugPanelGroup.Stage;
 
     private StageManager stageManager;
     private WaveManager waveManager;
@@ -155,11 +156,11 @@ public class StageDebugPanel : IDebugPanel
             {
                 GUILayout.Label("Success Criteria:");
                 if (stage.requireAllCubesDestroyed)
-                    GUILayout.Label("  • All cubes must be destroyed");
+                    GUILayout.Label("   All cubes must be destroyed");
                 if (stage.requiredCaptureCount > 0)
-                    GUILayout.Label($"  • Capture {stage.requiredCaptureCount} cubes");
+                    GUILayout.Label($"   Capture {stage.requiredCaptureCount} cubes");
                 if (stage.maxAllowedEscapes >= 0)
-                    GUILayout.Label($"  • Max {stage.maxAllowedEscapes} cube escapes allowed");
+                    GUILayout.Label($"   Max {stage.maxAllowedEscapes} cube escapes allowed");
             }
 
             // Current wave info

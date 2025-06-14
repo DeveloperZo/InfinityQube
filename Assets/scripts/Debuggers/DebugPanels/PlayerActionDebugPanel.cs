@@ -2,9 +2,10 @@
 using static Enumerations;
 using static PlayerActionManager;
 
-public class PlayerActionDebugPanel : IDebugPanel
+public class PlayerActionDebugPanel : DebugPanelBase
 {
     public string PanelName => "Player Actions";
+    public override DebugPanelGroup PanelGroup => DebugPanelGroup.Player;
 
     private PlayerActionManager actionManager;
     private PlayerManager playerManager;

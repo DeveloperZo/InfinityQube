@@ -1,8 +1,9 @@
 using UnityEngine;
 
-public class PlayerDebugPanel : IDebugPanel
+public class PlayerDebugPanel : DebugPanelBase
 {
     public string PanelName => "Player Editor";
+    public override DebugPanelGroup PanelGroup => DebugPanelGroup.Player;
 
     private PlayerManager playerManager;
     private GridManager gridManager;
@@ -365,10 +366,10 @@ public class PlayerDebugPanel : IDebugPanel
             GUILayout.Space(5);
             GUI.backgroundColor = Color.yellow;
             GUILayout.Label("ACTIVE OVERRIDES:", GUI.skin.box);
-            if (overridePlayerDeath) GUILayout.Label("• Death Protection");
-            if (overrideMarkerLimits) GUILayout.Label($"• Marker Limits ({overriddenMaxMarkers})");
-            if (overrideMovement) GUILayout.Label($"• Movement Speed ({overriddenMoveSpeed:F1})");
-            if (overrideInvulnerability) GUILayout.Label($"• Invulnerability ({invulnerabilityTimeOverride:F1}s)");
+            if (overridePlayerDeath) GUILayout.Label(" Death Protection");
+            if (overrideMarkerLimits) GUILayout.Label($" Marker Limits ({overriddenMaxMarkers})");
+            if (overrideMovement) GUILayout.Label($" Movement Speed ({overriddenMoveSpeed:F1})");
+            if (overrideInvulnerability) GUILayout.Label($" Invulnerability ({invulnerabilityTimeOverride:F1}s)");
             GUI.backgroundColor = Color.white;
         }
 

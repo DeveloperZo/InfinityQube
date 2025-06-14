@@ -1,9 +1,10 @@
 using UnityEngine;
 using System.Linq;
 
-public class GameControlPanel : IDebugPanel
+public class GameControlPanel : DebugPanelBase
 {
     public string PanelName => "Game Control";
+    public override DebugPanelGroup PanelGroup => DebugPanelGroup.Gameplay;
 
     private StageManager stageManager;
     private WaveManager waveManager;
