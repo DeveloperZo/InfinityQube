@@ -13,13 +13,14 @@ namespace WaveDebugSystem
         // UI State
         private int selectedCubeType = 0; // Normal
         private bool isPlacementMode = false;
-        private bool showActiveCubes = true;
-        private bool liveEditMode = true;
-        private Vector2 cubeListScroll;
-        private Vector2 activeCubeScroll;
+        private bool showGridView = true;
+        private bool showCubeInspector = true;
+        private Vector2 gridScroll;
+        private Vector2 inspectorScroll;
 
         // Selection state
         private CubeManager selectedCube = null;
+        private Vector2Int selectedGridPosition = new Vector2Int(-1, -1);
 
         public void Initialize(WaveManager waveManager, GridManager gridManager)
         {
@@ -30,344 +31,389 @@ namespace WaveDebugSystem
         public void DrawPanel(WaveData currentEditingWave, System.Action onSyncToGrid = null)
         {
             GUILayout.BeginVertical(GUI.skin.box);
-            GUILayout.Label("CUBE TOOLS", GUI.skin.box);
+            GUILayout.Label("WAVE EDITOR", GUI.skin.box);
 
-            if (currentEditingWave != null)
+            DrawModeControls();
+            DrawCubeTypeSelector();
+
+            if (showGridView)
             {
-                DrawCubeTypeSelector();
-                DrawPlacementControls(currentEditingWave, onSyncToGrid);
-                DrawCubeGrid(currentEditingWave, onSyncToGrid);
-                GUILayout.Space(5);
-                DrawCubeList(currentEditingWave, onSyncToGrid);
+                DrawLiveGridEditor(currentEditingWave, onSyncToGrid);
             }
-            else
+
+            if (showCubeInspector && selectedCube != null)
             {
-                GUILayout.Label("Create or load a wave to edit cubes");
-                if (GUILayout.Button("Quick New Wave"))
-                {
-                    // This would need to be handled by the parent panel
-                    Debug.Log("Quick new wave requested");
-                }
+                DrawCubeInspector();
             }
 
             GUILayout.EndVertical();
         }
 
-        private void DrawEditModeControls()
+        private void DrawModeControls()
         {
             GUILayout.BeginHorizontal();
-            liveEditMode = GUILayout.Toggle(liveEditMode, "Live Edit Mode");
-            showActiveCubes = GUILayout.Toggle(showActiveCubes, "Show Active Cubes");
+
+            GUI.backgroundColor = isPlacementMode ? Color.green : Color.white;
+            if (GUILayout.Button("Placement Mode"))
+            {
+                isPlacementMode = !isPlacementMode;
+                if (isPlacementMode) selectedCube = null; // Clear selection in placement mode
+            }
+
+            GUI.backgroundColor = !isPlacementMode ? Color.cyan : Color.white;
+            if (GUILayout.Button("Selection Mode"))
+            {
+                isPlacementMode = false;
+            }
+
+            GUI.backgroundColor = Color.white;
+
+            showGridView = GUILayout.Toggle(showGridView, "Grid");
+            showCubeInspector = GUILayout.Toggle(showCubeInspector, "Inspector");
+
             GUILayout.EndHorizontal();
 
-            if (liveEditMode)
+            if (isPlacementMode)
             {
-                GUILayout.Label("Live Mode: Changes apply immediately to active cubes");
+                GUILayout.Label("Click grid to place/remove cubes", GUI.skin.box);
+            }
+            else
+            {
+                GUILayout.Label("Click cubes to select and edit", GUI.skin.box);
             }
         }
 
-
-        private void DrawCombinedGrid(WaveData currentEditingWave, System.Action onSyncToGrid)
+        private void DrawCubeTypeSelector()
         {
-            // Get both wave cubes and active cubes
-            var waveCubes = currentEditingWave.CubesData;
-            var activeCubes = GetActiveCubesAsData();
-
-            GUILayout.Label($"Wave Grid ({currentEditingWave.GridWidth}x{currentEditingWave.GridHeight}) - Active Cubes: {activeCubes.Count}");
-
-            // Show grid coordinates header
             GUILayout.BeginHorizontal();
-            GUILayout.Label("", GUILayout.Width(25)); // Space for row labels
-            for (int x = 0; x < currentEditingWave.GridWidth; x++)
+            GUILayout.Label("Type:", GUILayout.Width(35));
+
+            if (DrawCubeTypeButton("Normal", 0, Color.gray)) selectedCubeType = 0;
+            if (DrawCubeTypeButton("Blue", 1, new Color(0.3f, 0.6f, 1f))) selectedCubeType = 1;
+            if (DrawCubeTypeButton("Black", 2, new Color(0.2f, 0.2f, 0.2f))) selectedCubeType = 2;
+            if (DrawCubeTypeButton("Reinforced", 3, new Color(0.8f, 0.3f, 0.8f))) selectedCubeType = 3;
+
+            GUILayout.EndHorizontal();
+        }
+
+        private void DrawLiveGridEditor(WaveData currentEditingWave, System.Action onSyncToGrid)
+        {
+            GUILayout.BeginVertical(GUI.skin.box);
+
+            // Get all active cubes from the scene
+            var activeCubes = GetActiveCubesDict();
+
+            // Show grid info
+            GUILayout.Label($"Live Grid Editor ({gridManager.Width}x{gridManager.Height}) - Active Cubes: {activeCubes.Count}");
+
+            // Grid controls
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button("Clear All", GUILayout.Width(70)))
             {
-                GUILayout.Label($"{x}", GUILayout.Width(25));
+                waveManager?.ClearAllCubes();
+                selectedCube = null;
+            }
+            if (GUILayout.Button("Spawn Test", GUILayout.Width(80)))
+            {
+                SpawnTestPattern();
+            }
+            if (GUILayout.Button("Fill Top Row", GUILayout.Width(90)))
+            {
+                FillTopRow();
             }
             GUILayout.EndHorizontal();
 
-            // Grid representation (top to bottom) - Show actual grid layout
-            for (int y = currentEditingWave.GridHeight - 1; y >= 0; y--)
+            // Draw the grid
+            gridScroll = GUILayout.BeginScrollView(gridScroll, GUILayout.MinHeight(400), GUILayout.MaxHeight(600));
+            DrawInteractiveGrid(activeCubes, currentEditingWave, onSyncToGrid);
+            GUILayout.EndScrollView();
+
+            GUILayout.EndVertical();
+        }
+
+        private void DrawInteractiveGrid(Dictionary<Vector2Int, CubeManager> activeCubes,
+                                       WaveData currentEditingWave, System.Action onSyncToGrid)
+        {
+            // Column headers
+            GUILayout.BeginHorizontal();
+            GUILayout.Label("Y\\X", GUILayout.Width(30));
+            for (int x = 0; x < gridManager.Width; x++)
+            {
+                GUILayout.Label($"{x}", GUILayout.Width(30));
+            }
+            GUILayout.EndHorizontal();
+
+            // Draw grid from top to bottom
+            for (int y = gridManager.Height - 1; y >= 0; y--)
             {
                 GUILayout.BeginHorizontal();
-                GUILayout.Label($"{y}:", GUILayout.Width(25));
+                GUILayout.Label($"{y}:", GUILayout.Width(30));
 
-                for (int x = 0; x < currentEditingWave.GridWidth; x++)
+                for (int x = 0; x < gridManager.Width; x++)
                 {
-                    DrawGridCell(x, y, waveCubes, activeCubes, currentEditingWave, onSyncToGrid);
+                    Vector2Int gridPos = new Vector2Int(x, y);
+                    DrawGridCell(gridPos, activeCubes, currentEditingWave, onSyncToGrid);
                 }
 
                 GUILayout.EndHorizontal();
             }
 
-            // Show combined summary
-            if (waveCubes.Count > 0 || activeCubes.Count > 0)
+            // Show selection info
+            if (selectedCube != null && !selectedCube.isDestroyed)
             {
-                GUILayout.Space(3);
-                GUILayout.Label($"Wave Cubes: {waveCubes.Count} | Active Cubes: {activeCubes.Count}");
-
-                if (selectedCube != null)
-                {
-                    GUILayout.Label($"Selected: {selectedCube.type} at ({selectedCube.position.x}, {selectedCube.position.y})");
-                }
+                GUILayout.Space(5);
+                GUI.color = Color.yellow;
+                GUILayout.Label($"Selected: {selectedCube.type} at ({selectedCube.position.x}, {selectedCube.position.y})");
+                GUI.color = Color.white;
             }
         }
 
-        private void DrawGridCell(int x, int y, List<CubeData> waveCubes, List<CubeData> activeCubes,
-                                 WaveData currentEditingWave, System.Action onSyncToGrid)
+        private void DrawGridCell(Vector2Int gridPos, Dictionary<Vector2Int, CubeManager> activeCubes,
+                                WaveData currentEditingWave, System.Action onSyncToGrid)
         {
-            var waveCube = waveCubes.FirstOrDefault(c => c.position.x == x && c.position.y == y);
-            var activeCube = activeCubes.FirstOrDefault(c => c.position.x == x && c.position.y == y);
+            bool hasCube = activeCubes.ContainsKey(gridPos);
+            CubeManager cube = hasCube ? activeCubes[gridPos] : null;
 
+            // Determine button appearance
             Color buttonColor = Color.white;
             string buttonText = "·";
 
-            // Prioritize active cubes over wave cubes
-            if (activeCube != null)
+            if (cube != null)
             {
-                buttonColor = GetCubeColor(activeCube.type);
-                buttonText = GetCubeSymbol(activeCube.type);
+                buttonColor = GetCubeColor(cube.type);
+                buttonText = GetCubeSymbol(cube.type);
 
-                // Add border for active cubes
-                if (showActiveCubes)
+                // Highlight selected cube
+                if (cube == selectedCube)
                 {
-                    buttonColor = Color.Lerp(buttonColor, Color.yellow, 0.3f);
+                    buttonColor = Color.Lerp(buttonColor, Color.yellow, 0.5f);
+                    buttonText = "[" + buttonText + "]";
+                }
+
+                // Show effective type if different
+                var effectiveType = cube.GetEffectiveType();
+                if (effectiveType != cube.type)
+                {
+                    buttonText += "*";
                 }
             }
-            else if (waveCube != null)
-            {
-                buttonColor = GetCubeColor(waveCube.type);
-                buttonText = GetCubeSymbol(waveCube.type);
 
-                // Slightly faded for wave-only cubes
-                buttonColor = Color.Lerp(buttonColor, Color.white, 0.4f);
-            }
-
+            // Draw the button
             GUI.backgroundColor = buttonColor;
-            if (GUILayout.Button(buttonText, GUILayout.Width(25), GUILayout.Height(25)))
+            if (GUILayout.Button(buttonText, GUILayout.Width(30), GUILayout.Height(30)))
             {
-                HandleGridClick(x, y, waveCube, activeCube, currentEditingWave, onSyncToGrid);
+                HandleCellClick(gridPos, cube, currentEditingWave, onSyncToGrid);
             }
             GUI.backgroundColor = Color.white;
         }
 
-        private void HandleGridClick(int x, int y, CubeData waveCube, CubeData activeCube,
+        private void HandleCellClick(Vector2Int gridPos, CubeManager existingCube,
                                    WaveData currentEditingWave, System.Action onSyncToGrid)
         {
             if (isPlacementMode)
             {
-                // Placement mode - add/remove cubes
-                if (waveCube != null)
+                if (existingCube != null)
                 {
-                    // Remove from wave
-                    currentEditingWave.CubesData.Remove(waveCube);
+                    // Remove cube
+                    waveManager.activeCubes.Remove(existingCube);
+                    Object.Destroy(existingCube.gameObject);
+                    if (selectedCube == existingCube) selectedCube = null;
                 }
                 else
                 {
-                    // Add to wave
-                    var newCube = new CubeData
-                    {
-                        type = (CubeType)selectedCubeType,
-                        position = new Vector2Int(x, y),
-                        level = 1
-                    };
-                    currentEditingWave.CubesData.Add(newCube);
+                    // Place new cube
+                    SpawnCubeAt(gridPos, (CubeType)selectedCubeType);
                 }
-                onSyncToGrid?.Invoke();
             }
             else
             {
-                // Selection mode - select active cube for editing
-                if (activeCube != null)
-                {
-                    var activeCubeManager = FindActiveCubeAt(x, y);
-                    if (activeCubeManager != null)
-                    {
-                        selectedCube = activeCubeManager;
-                        Debug.Log($"Selected {activeCubeManager.type} cube at ({x}, {y})");
-                    }
-                }
+                // Selection mode
+                selectedCube = existingCube;
+                selectedGridPosition = gridPos;
             }
         }
 
-        private void DrawCubeInspector(WaveData currentEditingWave, System.Action onSyncToGrid)
+        private void DrawCubeInspector()
         {
             GUILayout.BeginVertical(GUI.skin.box);
             GUILayout.Label("CUBE INSPECTOR", GUI.skin.box);
 
-            if (selectedCube != null && !selectedCube.isDestroyed)
+            if (selectedCube == null || selectedCube.isDestroyed)
             {
-                DrawSelectedCubeInspector();
-            }
-            else
-            {
+                GUILayout.Label("No cube selected");
                 selectedCube = null;
-                GUILayout.Label("No cube selected. Click on an active cube to inspect/edit.");
+                GUILayout.EndVertical();
+                return;
             }
 
-            GUILayout.Space(5);
-            DrawCubeLists(currentEditingWave, onSyncToGrid);
+            inspectorScroll = GUILayout.BeginScrollView(inspectorScroll, GUILayout.MaxHeight(300));
 
-            GUILayout.EndVertical();
-        }
+            // Basic info
+            GUILayout.Label($"Type: {selectedCube.type}", GUI.skin.box);
+            GUILayout.Label($"Position: ({selectedCube.position.x}, {selectedCube.position.y})");
+            GUILayout.Label($"HP: {selectedCube.currentHitPoints}/{selectedCube.maxHitPoints}");
 
-        private void DrawSelectedCubeInspector()
-        {
-            GUILayout.Label($"Selected: {selectedCube.type} at ({selectedCube.position.x}, {selectedCube.position.y})");
-
-            // Cube type changer
-            GUILayout.BeginHorizontal();
+            // Type changer
             GUILayout.Label("Change Type:");
+            GUILayout.BeginHorizontal();
             if (GUILayout.Button("Normal")) ChangeCubeType(selectedCube, CubeType.Normal);
             if (GUILayout.Button("Blue")) ChangeCubeType(selectedCube, CubeType.Blue);
             if (GUILayout.Button("Black")) ChangeCubeType(selectedCube, CubeType.Black);
-            if (GUILayout.Button("Reinforced")) ChangeCubeType(selectedCube, CubeType.Reinforced);
+            if (GUILayout.Button("Reinf.")) ChangeCubeType(selectedCube, CubeType.Reinforced);
             GUILayout.EndHorizontal();
 
             // Position controls
+            GUILayout.Label("Move:");
             GUILayout.BeginHorizontal();
-            GUILayout.Label("Position:");
-            if (GUILayout.Button("↑") && selectedCube.position.y < gridManager.Height - 1)
-                MoveCube(selectedCube, 0, 1);
-            if (GUILayout.Button("↓") && selectedCube.position.y > 0)
-                MoveCube(selectedCube, 0, -1);
-            if (GUILayout.Button("←") && selectedCube.position.x > 0)
-                MoveCube(selectedCube, -1, 0);
-            if (GUILayout.Button("→") && selectedCube.position.x < gridManager.Width - 1)
-                MoveCube(selectedCube, 1, 0);
+            if (GUILayout.Button("↑", GUILayout.Width(30))) MoveCube(selectedCube, 0, 1);
+            if (GUILayout.Button("↓", GUILayout.Width(30))) MoveCube(selectedCube, 0, -1);
+            if (GUILayout.Button("←", GUILayout.Width(30))) MoveCube(selectedCube, -1, 0);
+            if (GUILayout.Button("→", GUILayout.Width(30))) MoveCube(selectedCube, 1, 0);
+            if (GUILayout.Button("Top", GUILayout.Width(40)))
+                MoveCube(selectedCube, 0, gridManager.Height - 1 - selectedCube.position.y);
             GUILayout.EndHorizontal();
 
-            // Face painting controls
-            GUILayout.Label("Face Status:");
-            var activeFaceStatus = selectedCube.GetActiveFaceStatus();
-            GUILayout.Label($"Current Down Face: {selectedCube.GetCurrentDownFace()} ({activeFaceStatus})");
+            // Face status info
+            GUILayout.Space(5);
+            GUILayout.Label("Face Status:", GUI.skin.box);
+            var downFace = selectedCube.GetCurrentDownFace();
+            var faceStatus = selectedCube.GetActiveFaceStatus();
+            var effectiveType = selectedCube.GetEffectiveType();
 
+            GUILayout.Label($"Down Face: {downFace}");
+            GUILayout.Label($"Status: {faceStatus}");
+            GUILayout.Label($"Effective Type: {effectiveType}");
+            GUILayout.Label($"Can Capture: {selectedCube.CanBeCaptured()}");
+
+            // Face painting
+            GUILayout.Label("Paint Face:");
             GUILayout.BeginHorizontal();
-            if (GUILayout.Button("Paint Corrupt"))
+            if (GUILayout.Button("Corrupt", GUILayout.Width(60)))
                 selectedCube.PaintCurrentDownFace(FaceStatus.Corrupted, Color.red, 5);
-            if (GUILayout.Button("Paint Enhance"))
+            if (GUILayout.Button("Enhance", GUILayout.Width(60)))
                 selectedCube.PaintCurrentDownFace(FaceStatus.Enhanced, Color.blue, 5);
-            if (GUILayout.Button("Clear Paint"))
-                selectedCube.PaintCurrentDownFace(FaceStatus.None, Color.white, 0);
+            if (GUILayout.Button("Clear", GUILayout.Width(50)))
+                selectedCube.ClearAllFaces();
             GUILayout.EndHorizontal();
 
-            // Debug buttons
+            // Actions
+            GUILayout.Space(5);
             GUILayout.BeginHorizontal();
-            if (GUILayout.Button("Show All Faces")) selectedCube.DebugShowAllFaces();
-            if (GUILayout.Button("Print Mapping")) selectedCube.DebugPrintFaceMapping();
-            if (GUILayout.Button("Destroy")) DestroyCube(selectedCube);
+            if (GUILayout.Button("Damage"))
+            {
+                bool destroyed = selectedCube.TakeDamage(1);
+                if (destroyed)
+                {
+                    waveManager.activeCubes.Remove(selectedCube);
+                    selectedCube = null;
+                }
+            }
+            if (GUILayout.Button("Destroy"))
+            {
+                waveManager.activeCubes.Remove(selectedCube);
+                Object.Destroy(selectedCube.gameObject);
+                selectedCube = null;
+            }
             GUILayout.EndHorizontal();
-        }
 
-        private void DrawCubeLists(WaveData currentEditingWave, System.Action onSyncToGrid)
-        {
-            GUILayout.BeginHorizontal();
+            // Debug
+            GUILayout.Space(5);
+            if (GUILayout.Button("Debug Face Mapping"))
+                selectedCube.DebugPrintFaceMapping();
 
-            // Wave cubes list
-            GUILayout.BeginVertical(GUILayout.Width(200));
-            GUILayout.Label($"Wave Cubes ({currentEditingWave.CubesData.Count}):");
-            cubeListScroll = GUILayout.BeginScrollView(cubeListScroll, GUILayout.Height(120));
-            DrawWaveCubesList(currentEditingWave, onSyncToGrid);
             GUILayout.EndScrollView();
             GUILayout.EndVertical();
-
-            // Active cubes list
-            GUILayout.BeginVertical(GUILayout.Width(200));
-            var activeCubes = GetActiveCubes();
-            GUILayout.Label($"Active Cubes ({activeCubes.Count}):");
-            activeCubeScroll = GUILayout.BeginScrollView(activeCubeScroll, GUILayout.Height(120));
-            DrawActiveCubesList(activeCubes);
-            GUILayout.EndScrollView();
-            GUILayout.EndVertical();
-
-            GUILayout.EndHorizontal();
         }
 
-        private void DrawWaveCubesList(WaveData currentEditingWave, System.Action onSyncToGrid)
+        // Helper methods
+        private Dictionary<Vector2Int, CubeManager> GetActiveCubesDict()
         {
-            for (int i = currentEditingWave.CubesData.Count - 1; i >= 0; i--)
+            var dict = new Dictionary<Vector2Int, CubeManager>();
+
+            // Get all cubes from scene (not just wave manager)
+            var allCubes = Object.FindObjectsOfType<CubeManager>();
+            foreach (var cube in allCubes)
             {
-                var cube = currentEditingWave.CubesData[i];
-                GUILayout.BeginHorizontal();
-
-                GUI.backgroundColor = GetCubeColor(cube.type);
-                GUILayout.Label(GetCubeSymbol(cube.type), GUILayout.Width(20));
-                GUI.backgroundColor = Color.white;
-
-                GUILayout.Label($"{cube.type} ({cube.position.x},{cube.position.y})", GUILayout.Width(100));
-
-                if (GUILayout.Button("Del", GUILayout.Width(30)))
+                if (cube != null && !cube.isDestroyed)
                 {
-                    currentEditingWave.CubesData.RemoveAt(i);
-                    onSyncToGrid?.Invoke();
+                    dict[cube.position] = cube;
                 }
-
-                GUILayout.EndHorizontal();
             }
+
+            return dict;
         }
 
-        private void DrawActiveCubesList(List<CubeManager> activeCubes)
+        private void SpawnCubeAt(Vector2Int gridPos, CubeType type)
         {
-            foreach (var cube in activeCubes.Take(10)) // Limit display
+            if (waveManager?.cubePrefabs == null || (int)type >= waveManager.cubePrefabs.Length)
             {
-                if (cube == null || cube.isDestroyed) continue;
-
-                GUILayout.BeginHorizontal();
-
-                GUI.backgroundColor = cube == selectedCube ? Color.yellow : GetCubeColor(cube.type);
-                if (GUILayout.Button(GetCubeSymbol(cube.type), GUILayout.Width(20)))
-                {
-                    selectedCube = cube;
-                }
-                GUI.backgroundColor = Color.white;
-
-                string effectiveType = cube.GetEffectiveType().ToString();
-                if (effectiveType != cube.type.ToString())
-                {
-                    effectiveType = $"{cube.type}→{effectiveType}";
-                }
-
-                GUILayout.Label($"{effectiveType} ({cube.position.x},{cube.position.y})", GUILayout.Width(120));
-
-                GUILayout.EndHorizontal();
+                Debug.LogWarning($"Cannot spawn cube type {type}");
+                return;
             }
+
+            if (!gridManager.IsValidGridPosition(gridPos))
+            {
+                Debug.LogWarning($"Invalid position ({gridPos.x}, {gridPos.y})");
+                return;
+            }
+
+            Vector3 worldPos = gridManager.GridToWorldPosition(gridPos.x, gridPos.y, 2f);
+            GameObject cubeObj = Object.Instantiate(waveManager.cubePrefabs[(int)type], worldPos, Quaternion.identity);
+
+            var cube = cubeObj.GetComponent<CubeManager>();
+            if (cube == null) cube = cubeObj.AddComponent<CubeManager>();
+
+            var cubeData = new CubeData
+            {
+                type = type,
+                position = gridPos,
+                level = 1
+            };
+
+            cube.Init(gridManager, cubeData, 2f);
+            waveManager.activeCubes.Add(cube);
+
+            Debug.Log($"Spawned {type} at ({gridPos.x}, {gridPos.y})");
         }
 
-        // Cube manipulation methods
         private void ChangeCubeType(CubeManager cube, CubeType newType)
         {
             if (cube == null || cube.isDestroyed) return;
 
-            // Store position and other data
             var position = cube.position;
             var level = cube.level;
 
-            // Destroy old cube
+            // Remove old cube
             waveManager.activeCubes.Remove(cube);
             Object.Destroy(cube.gameObject);
 
-            // Create new cube of different type
-            if (waveManager.cubePrefabs != null && (int)newType < waveManager.cubePrefabs.Length)
+            // Spawn new cube of different type
+            SpawnCubeAt(position, newType);
+
+            // Select the new cube
+            System.Threading.Tasks.Task.Delay(100).ContinueWith(_ =>
             {
-                Vector3 worldPos = gridManager.GridToWorldPosition(position.x, position.y, 2f);
-                GameObject newCubeObj = Object.Instantiate(waveManager.cubePrefabs[(int)newType], worldPos, Quaternion.identity);
-
-                var newCube = newCubeObj.GetComponent<CubeManager>();
-                if (newCube == null) newCube = newCubeObj.AddComponent<CubeManager>();
-
-                var cubeData = new CubeData { type = newType, position = position, level = level };
-                newCube.Init(gridManager, cubeData, 2f);
-                waveManager.activeCubes.Add(newCube);
-
-                selectedCube = newCube;
-                Debug.Log($"Changed cube at ({position.x}, {position.y}) to {newType}");
-            }
+                var newCube = GetActiveCubesDict().GetValueOrDefault(position);
+                if (newCube != null) selectedCube = newCube;
+            });
         }
 
         private void MoveCube(CubeManager cube, int deltaX, int deltaY)
         {
             if (cube == null || cube.isDestroyed) return;
 
-            Vector2Int newPos = new Vector2Int(cube.position.x + deltaX, cube.position.y + deltaY);
-            if (!gridManager.IsValidGridPosition(newPos)) return;
+            Vector2Int newPos = new Vector2Int(
+                Mathf.Clamp(cube.position.x + deltaX, 0, gridManager.Width - 1),
+                Mathf.Clamp(cube.position.y + deltaY, 0, gridManager.Height - 1)
+            );
+
+            // Check if position is occupied
+            var cubesDict = GetActiveCubesDict();
+            if (cubesDict.ContainsKey(newPos) && cubesDict[newPos] != cube)
+            {
+                Debug.LogWarning($"Position ({newPos.x}, {newPos.y}) is occupied");
+                return;
+            }
 
             cube.position = newPos;
             Vector3 worldPos = gridManager.GridToWorldPosition(newPos.x, newPos.y, 2f);
@@ -376,335 +422,51 @@ namespace WaveDebugSystem
             Debug.Log($"Moved cube to ({newPos.x}, {newPos.y})");
         }
 
-        private void DestroyCube(CubeManager cube)
+        private void SpawnTestPattern()
         {
-            if (cube == null || cube.isDestroyed) return;
-
-            waveManager.activeCubes.Remove(cube);
-            Object.Destroy(cube.gameObject);
-            selectedCube = null;
-
-            Debug.Log("Destroyed selected cube");
-        }
-
-        // Helper methods
-        private List<CubeManager> GetActiveCubes()
-        {
-            return waveManager?.activeCubes?.Where(c => c != null && !c.isDestroyed).ToList() ?? new List<CubeManager>();
-        }
-
-        private List<CubeData> GetActiveCubesAsData()
-        {
-            var activeCubes = new List<CubeData>();
-            if (waveManager != null)
-            {
-                foreach (var cube in waveManager.activeCubes)
-                {
-                    if (cube != null && !cube.isDestroyed)
-                    {
-                        activeCubes.Add(new CubeData
-                        {
-                            type = cube.type,
-                            position = cube.position,
-                            level = cube.level
-                        });
-                    }
-                }
-            }
-            return activeCubes;
-        }
-
-        private CubeManager FindActiveCubeAt(int x, int y)
-        {
-            return GetActiveCubes().FirstOrDefault(c => c.position.x == x && c.position.y == y);
-        }
-
-        private void ClearAllCubes(WaveData currentEditingWave, System.Action onSyncToGrid)
-        {
-            currentEditingWave.CubesData.Clear();
+            // Clear existing cubes
             waveManager?.ClearAllCubes();
-            selectedCube = null;
-            onSyncToGrid?.Invoke();
-        }
 
-        private void DrawCubeTypeSelector()
-        {
-            GUILayout.Label("Cube Type:");
-            GUILayout.BeginHorizontal();
-            if (DrawCubeTypeButton("Normal", 0, Color.gray)) selectedCubeType = 0;
-            if (DrawCubeTypeButton("Blue", 1, Color.blue)) selectedCubeType = 1;
-            if (DrawCubeTypeButton("Black", 2, Color.black)) selectedCubeType = 2;
-            if (DrawCubeTypeButton("Reinforced", 3, Color.magenta)) selectedCubeType = 3;
-            GUILayout.EndHorizontal();
-        }
+            // Spawn a test pattern at top of grid
+            int topRow = gridManager.Height - 1;
 
-        private void DrawPlacementControls(WaveData currentEditingWave, System.Action onSyncToGrid)
-        {
-            GUILayout.BeginHorizontal();
-            isPlacementMode = GUILayout.Toggle(isPlacementMode, "Placement Mode");
-            if (GUILayout.Button("Fill Random")) FillWaveRandom(currentEditingWave, onSyncToGrid);
-            if (GUILayout.Button("Fill Top Row")) FillTopRow(currentEditingWave, onSyncToGrid);
-            GUILayout.EndHorizontal();
+            SpawnCubeAt(new Vector2Int(0, topRow), CubeType.Normal);
+            SpawnCubeAt(new Vector2Int(1, topRow), CubeType.Blue);
+            SpawnCubeAt(new Vector2Int(2, topRow), CubeType.Black);
+            SpawnCubeAt(new Vector2Int(3, topRow), CubeType.Normal);
+            SpawnCubeAt(new Vector2Int(4, topRow), CubeType.Reinforced);
 
-            if (isPlacementMode)
+            if (gridManager.Height > 1)
             {
-                GUILayout.Label("Click grid below to place/remove cubes");
-            }
-
-            if (waveManager != null && waveManager.activeCubes.Count > 0)
-            {
-                var bounds = GetCubeBounds(GetDisplayCubes(currentEditingWave));
-                GUILayout.Label($"Active cube bounds: ({bounds.min.x},{bounds.min.y}) to ({bounds.max.x},{bounds.max.y})");
+                SpawnCubeAt(new Vector2Int(1, topRow - 1), CubeType.Normal);
+                SpawnCubeAt(new Vector2Int(2, topRow - 1), CubeType.Blue);
+                SpawnCubeAt(new Vector2Int(3, topRow - 1), CubeType.Normal);
             }
         }
 
-        private void DrawCubeGrid(WaveData currentEditingWave, System.Action onSyncToGrid)
+        private void FillTopRow()
         {
-            var cubesToShow = GetDisplayCubes(currentEditingWave);
+            int topRow = gridManager.Height - 1;
 
-            // Determine grid dimensions to show
-            int gridWidth, gridHeight;
-            int startY = 0;
-            gridWidth = currentEditingWave.GridWidth;
-            gridHeight = currentEditingWave.GridHeight;
-            startY = 0;
-
-            GUILayout.Label($"Grid Editor ({gridWidth}x{gridHeight}):");
-
-
-            // Show grid coordinates header
-            GUILayout.BeginHorizontal();
-            GUILayout.Label("", GUILayout.Width(25)); // Space for row labels
-            for (int x = 0; x < gridWidth; x++)
+            for (int x = 0; x < gridManager.Width; x++)
             {
-                GUILayout.Label($"{x}", GUILayout.Width(25));
-            }
-            GUILayout.EndHorizontal();
+                var pos = new Vector2Int(x, topRow);
 
-            // Grid representation (top to bottom)
-            for (int y = startY + gridHeight - 1; y >= startY; y--)
-            {
-                GUILayout.BeginHorizontal();
-                GUILayout.Label($"{y}:", GUILayout.Width(25));
-
-                for (int x = 0; x < gridWidth; x++)
+                // Skip if position is occupied
+                var cubesDict = GetActiveCubesDict();
+                if (!cubesDict.ContainsKey(pos))
                 {
-                    var cubeAtPos = cubesToShow.FirstOrDefault(c => c.position.x == x && c.position.y == y);
-
-                    Color buttonColor = Color.white;
-                    string buttonText = "·";
-
-                    if (cubeAtPos != null)
-                    {
-                        switch (cubeAtPos.type)
-                        {
-                            case CubeType.Normal: buttonColor = Color.gray; buttonText = "N"; break;
-                            case CubeType.Blue: buttonColor = Color.blue; buttonText = "B"; break;
-                            case CubeType.Black: buttonColor = Color.black; buttonText = "X"; break;
-                            case CubeType.Reinforced: buttonColor = Color.magenta; buttonText = "R"; break;
-                        }
-                    }
-
-                    // Highlight out-of-bounds positions when tracking
-                    if ((x >= currentEditingWave.GridWidth || y >= currentEditingWave.GridHeight))
-                    {
-                        buttonColor = Color.red;
-                        buttonText = "!";
-                    }
-
-                    GUI.backgroundColor = buttonColor;
-                    if (GUILayout.Button(buttonText, GUILayout.Width(25), GUILayout.Height(25)))
-                    {
-                        if (isPlacementMode && x < currentEditingWave.GridWidth && y < currentEditingWave.GridHeight)
-                        {
-                            HandleGridClick(x, y, currentEditingWave, onSyncToGrid);
-                        }
-                    }
-                }
-                GUI.backgroundColor = Color.white;
-                GUILayout.EndHorizontal();
-            }
-
-            // Show cube positions summary
-            if (cubesToShow.Count > 0)
-            {
-                GUILayout.Space(3);
-                var cubesByRow = cubesToShow.GroupBy(c => c.position.y).OrderByDescending(g => g.Key);
-                GUILayout.Label($"Cubes by row:");
-                foreach (var rowGroup in cubesByRow.Take(3)) // Show only top 3 rows to save space
-                {
-                    string cubeTypes = string.Join(", ", rowGroup.Select(c => $"{GetCubeSymbol(c.type)}@{c.position.x}"));
-                    GUILayout.Label($"  Row {rowGroup.Key}: {cubeTypes}");
-                }
-                if (cubesByRow.Count() > 3)
-                {
-                    GUILayout.Label($"  ... and {cubesByRow.Count() - 3} more rows");
+                    SpawnCubeAt(pos, (CubeType)selectedCubeType);
                 }
             }
-        }
-
-        private void DrawCubeList(WaveData currentEditingWave, System.Action onSyncToGrid)
-        {
-            GUILayout.Label($"Cubes ({currentEditingWave.CubesData.Count}):");
-
-            cubeListScroll = GUILayout.BeginScrollView(cubeListScroll, GUILayout.Height(100));
-
-            for (int i = currentEditingWave.CubesData.Count - 1; i >= 0; i--)
-            {
-                var cube = currentEditingWave.CubesData[i];
-                GUILayout.BeginHorizontal();
-
-                // Type indicator
-                GUI.backgroundColor = GetCubeColor(cube.type);
-                GUILayout.Label(GetCubeSymbol(cube.type), GUILayout.Width(20));
-                GUI.backgroundColor = Color.white;
-
-                GUILayout.Label($"{cube.type} at ({cube.position.x},{cube.position.y})", GUILayout.Width(120));
-
-                // Quick type change buttons
-                if (GUILayout.Button("N", GUILayout.Width(20))) cube.type = CubeType.Normal;
-                if (GUILayout.Button("B", GUILayout.Width(20))) cube.type = CubeType.Blue;
-                if (GUILayout.Button("X", GUILayout.Width(20))) cube.type = CubeType.Black;
-
-                if (GUILayout.Button("Del", GUILayout.Width(30)))
-                {
-                    currentEditingWave.CubesData.RemoveAt(i);
-                    onSyncToGrid?.Invoke();
-                }
-
-                GUILayout.EndHorizontal();
-            }
-
-            GUILayout.EndScrollView();
         }
 
         private bool DrawCubeTypeButton(string label, int type, Color color)
         {
             GUI.backgroundColor = selectedCubeType == type ? color : Color.white;
-            bool result = GUILayout.Button(label);
+            bool clicked = GUILayout.Button(label, GUILayout.Width(60));
             GUI.backgroundColor = Color.white;
-            return result;
-        }
-
-        private void HandleGridClick(int x, int y, WaveData currentEditingWave, System.Action onSyncToGrid)
-        {
-            var existingCube = currentEditingWave.CubesData.FirstOrDefault(c => c.position.x == x && c.position.y == y);
-
-            if (existingCube != null)
-            {
-                // Remove existing cube
-                currentEditingWave.CubesData.Remove(existingCube);
-            }
-            else
-            {
-                // Add new cube
-                var newCube = new CubeData
-                {
-                    type = (CubeType)selectedCubeType,
-                    position = new Vector2Int(x, y),
-                    level = 1
-                };
-                currentEditingWave.CubesData.Add(newCube);
-            }
-
-            onSyncToGrid?.Invoke();
-        }
-
-        private void FillWaveRandom(WaveData currentEditingWave, System.Action onSyncToGrid)
-        {
-            if (currentEditingWave == null) return;
-
-            currentEditingWave.CubesData.Clear();
-
-            for (int x = 0; x < currentEditingWave.GridWidth; x++)
-            {
-                for (int y = 0; y < currentEditingWave.GridHeight; y++)
-                {
-                    if (Random.value < 0.6f) // 60% chance to place a cube
-                    {
-                        var cubeData = new CubeData
-                        {
-                            type = (CubeType)Random.Range(0, 3), // Normal, Blue, Black only
-                            position = new Vector2Int(x, y),
-                            level = 1
-                        };
-                        currentEditingWave.CubesData.Add(cubeData);
-                    }
-                }
-            }
-
-            onSyncToGrid?.Invoke();
-        }
-
-        private void FillTopRow(WaveData currentEditingWave, System.Action onSyncToGrid)
-        {
-            if (currentEditingWave == null) return;
-
-            // Use the top of the grid (gridHeight - 1) instead of 0
-            int topRow = currentEditingWave.GridHeight - 1;
-
-            // Remove existing cubes in top row
-            currentEditingWave.CubesData.RemoveAll(c => c.position.y == topRow);
-
-            // Add cubes across top row
-            for (int x = 0; x < currentEditingWave.GridWidth; x++)
-            {
-                var cubeData = new CubeData
-                {
-                    type = (CubeType)selectedCubeType,
-                    position = new Vector2Int(x, topRow),
-                    level = 1
-                };
-                currentEditingWave.CubesData.Add(cubeData);
-            }
-
-            onSyncToGrid?.Invoke();
-        }
-
-        private List<CubeData> GetDisplayCubes(WaveData currentEditingWave)
-        {
-            if (currentEditingWave != null)
-            {
-                return currentEditingWave.CubesData;
-            }
-
-            // Fallback: Show active cubes from manager, but adjust positions to wave coordinates
-            var activeCubes = new List<CubeData>();
-            if (waveManager != null && waveManager.activeCubes.Count > 0)
-            {
-                foreach (var cube in waveManager.activeCubes)
-                {
-                    if (cube != null && !cube.isDestroyed)
-                    {
-                        activeCubes.Add(new CubeData
-                        {
-                            type = cube.type,
-                            position = cube.position,
-                            level = cube.level
-                        });
-                    }
-                }
-            }
-            return activeCubes;
-        }
-
-        // Helper method to get the bounds of cubes in a wave
-        private (Vector2Int min, Vector2Int max) GetCubeBounds(List<CubeData> cubes)
-        {
-            if (cubes.Count == 0) return (Vector2Int.zero, Vector2Int.zero);
-
-            Vector2Int min = new Vector2Int(int.MaxValue, int.MaxValue);
-            Vector2Int max = new Vector2Int(int.MinValue, int.MinValue);
-
-            foreach (var cube in cubes)
-            {
-                if (cube.position.x < min.x) min.x = cube.position.x;
-                if (cube.position.y < min.y) min.y = cube.position.y;
-                if (cube.position.x > max.x) max.x = cube.position.x;
-                if (cube.position.y > max.y) max.y = cube.position.y;
-            }
-
-            return (min, max);
+            return clicked;
         }
 
         private Color GetCubeColor(CubeType type)
@@ -712,9 +474,9 @@ namespace WaveDebugSystem
             switch (type)
             {
                 case CubeType.Normal: return Color.gray;
-                case CubeType.Blue: return Color.blue;
-                case CubeType.Black: return Color.black;
-                case CubeType.Reinforced: return Color.magenta;
+                case CubeType.Blue: return new Color(0.3f, 0.6f, 1f);
+                case CubeType.Black: return new Color(0.2f, 0.2f, 0.2f);
+                case CubeType.Reinforced: return new Color(0.8f, 0.3f, 0.8f);
                 default: return Color.white;
             }
         }
@@ -730,10 +492,5 @@ namespace WaveDebugSystem
                 default: return "?";
             }
         }
-
-        public int GetSelectedCubeType() => selectedCubeType;
-        public void SetSelectedCubeType(int type) => selectedCubeType = type;
-        public bool GetPlacementMode() => isPlacementMode;
-        public void SetPlacementMode(bool mode) => isPlacementMode = mode;
     }
 }

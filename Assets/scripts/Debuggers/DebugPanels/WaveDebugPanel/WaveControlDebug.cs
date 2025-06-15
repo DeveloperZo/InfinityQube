@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace WaveDebugSystem
@@ -8,12 +9,15 @@ namespace WaveDebugSystem
         private WaveManager waveManager;
         private GridManager gridManager;
         private bool autoSyncToGrid;
+        private List<WaveData> cachedLibraryWaves = new List<WaveData>();
+        private int currentLibraryIndex = -1;
 
         public void Initialize(WaveManager waveManager, GridManager gridManager)
         {
             this.waveManager = waveManager;
             this.gridManager = gridManager;
             this.autoSyncToGrid = true;
+            RefreshLibraryCache();
         }
 
         public void DrawPanel(System.Action<WaveData> onWaveChanged = null)
@@ -39,7 +43,9 @@ namespace WaveDebugSystem
 
         private void DrawWaveStatus()
         {
-            GUILayout.Label($"Wave: {waveManager.CurrentWaveIndex + 1}/{waveManager.waveConfiguration.Count}");
+            string waveName = waveManager.CurrentWave != null ? waveManager.CurrentWave.name : "None";
+            GUILayout.Label($"Current Wave: {waveName}");
+            GUILayout.Label($"Library Index: {currentLibraryIndex + 1}/{cachedLibraryWaves.Count}");
             GUILayout.Label($"Step: {waveManager.MoveStep} | Active: {waveManager.waveActive}");
             GUILayout.Label($"Cubes: {waveManager.activeCubes.Count} | Speed: {(waveManager.isSpeedingUp ? "FAST" : "NORMAL")}");
         }
@@ -63,10 +69,6 @@ namespace WaveDebugSystem
             if (GUILayout.Button("Step ▶"))
                 waveManager.ManualMoveWaveForward();
 
-            GUI.backgroundColor = Color.magenta;
-            if (GUILayout.Button("◀ Step Back"))
-                StepWaveBackward();
-
             GUI.backgroundColor = Color.red;
             if (GUILayout.Button("Clear"))
             {
@@ -80,94 +82,197 @@ namespace WaveDebugSystem
 
         private void DrawNavigationControls(System.Action<WaveData> onWaveChanged)
         {
-            // Get available waves from library for navigation
-            var availableWaves = GetAvailableWavesFromLibrary();
-
             GUILayout.BeginHorizontal();
 
-            if (GUILayout.Button("◀◀ Prev") && availableWaves.Count > 0)
+            // Previous button
+            if (GUILayout.Button("◀◀ Prev", GUILayout.Width(60)))
             {
-                NavigateToPreviousWave(availableWaves, onWaveChanged);
+                NavigateToPreviousWave(onWaveChanged);
             }
 
-            // Show current wave info
-            string currentInfo = waveManager.CurrentWave != null ?
-                $"{waveManager.CurrentWave.name}" :
-                $"Wave {waveManager.currentWaveIndex + 1}/{waveManager.waveConfiguration.Count}";
-            GUILayout.Label(currentInfo, GUILayout.ExpandWidth(true));
-
-            if (GUILayout.Button("Next ▶▶") && availableWaves.Count > 0)
+            // Current wave info
+            string currentInfo = "No Wave";
+            if (currentLibraryIndex >= 0 && currentLibraryIndex < cachedLibraryWaves.Count)
             {
-                NavigateToNextWave(availableWaves, onWaveChanged);
+                currentInfo = cachedLibraryWaves[currentLibraryIndex].name;
+            }
+
+            GUILayout.Label(currentInfo, GUI.skin.box, GUILayout.ExpandWidth(true));
+
+            // Next button
+            if (GUILayout.Button("Next ▶▶", GUILayout.Width(60)))
+            {
+                NavigateToNextWave(onWaveChanged);
+            }
+
+            // Refresh library
+            if (GUILayout.Button("↻", GUILayout.Width(25)))
+            {
+                RefreshLibraryCache();
             }
 
             GUILayout.EndHorizontal();
         }
 
-        private List<WaveData> GetAvailableWavesFromLibrary()
+        private void RefreshLibraryCache()
         {
-            var waves = new List<WaveData>();
+            cachedLibraryWaves.Clear();
+
 #if UNITY_EDITOR
             string[] guids = UnityEditor.AssetDatabase.FindAssets("t:WaveData", new[] { "Assets/data/waves" });
             foreach (string guid in guids)
             {
                 string path = UnityEditor.AssetDatabase.GUIDToAssetPath(guid);
                 WaveData wave = UnityEditor.AssetDatabase.LoadAssetAtPath<WaveData>(path);
-                if (wave != null) waves.Add(wave);
+                if (wave != null)
+                {
+                    cachedLibraryWaves.Add(wave);
+                }
             }
 #endif
-            return waves;
-        }
 
-        private void NavigateToPreviousWave(List<WaveData> availableWaves, System.Action<WaveData> onWaveChanged)
-        {
-            if (availableWaves.Count == 0) return;
+            // Sort by name for consistent ordering
+            cachedLibraryWaves.Sort((a, b) => string.Compare(a.name, b.name));
 
             // Find current wave in library
-            int currentIndex = -1;
-            if (waveManager.CurrentWave != null)
+            if (waveManager?.CurrentWave != null)
             {
-                currentIndex = availableWaves.FindIndex(w => w.name == waveManager.CurrentWave.name);
+                currentLibraryIndex = cachedLibraryWaves.FindIndex(w => w.name == waveManager.CurrentWave.name);
             }
 
-            // Move to previous (wrap around if needed)
-            int prevIndex = currentIndex <= 0 ? availableWaves.Count - 1 : currentIndex - 1;
-            LoadWaveToManager(availableWaves[prevIndex]);
-            onWaveChanged?.Invoke(availableWaves[prevIndex]);
+            if (currentLibraryIndex < 0 && cachedLibraryWaves.Count > 0)
+            {
+                currentLibraryIndex = 0;
+            }
+
+            Debug.Log($"Library refreshed: {cachedLibraryWaves.Count} waves found");
         }
 
-        private void NavigateToNextWave(List<WaveData> availableWaves, System.Action<WaveData> onWaveChanged)
+        private void NavigateToPreviousWave(System.Action<WaveData> onWaveChanged)
         {
-            if (availableWaves.Count == 0) return;
-
-            // Find current wave in library
-            int currentIndex = -1;
-            if (waveManager.CurrentWave != null)
+            if (cachedLibraryWaves.Count == 0)
             {
-                currentIndex = availableWaves.FindIndex(w => w.name == waveManager.CurrentWave.name);
+                RefreshLibraryCache();
+                if (cachedLibraryWaves.Count == 0) return;
             }
 
-            // Move to next (wrap around if needed)
-            int nextIndex = currentIndex >= availableWaves.Count - 1 ? 0 : currentIndex + 1;
-            LoadWaveToManager(availableWaves[nextIndex]);
-            onWaveChanged?.Invoke(availableWaves[nextIndex]);
+            // Move to previous with wrap-around
+            currentLibraryIndex--;
+            if (currentLibraryIndex < 0)
+            {
+                currentLibraryIndex = cachedLibraryWaves.Count - 1;
+            }
+
+            LoadWaveAtIndex(currentLibraryIndex, onWaveChanged);
+        }
+
+        private void NavigateToNextWave(System.Action<WaveData> onWaveChanged)
+        {
+            if (cachedLibraryWaves.Count == 0)
+            {
+                RefreshLibraryCache();
+                if (cachedLibraryWaves.Count == 0) return;
+            }
+
+            // Move to next with wrap-around
+            currentLibraryIndex++;
+            if (currentLibraryIndex >= cachedLibraryWaves.Count)
+            {
+                currentLibraryIndex = 0;
+            }
+
+            LoadWaveAtIndex(currentLibraryIndex, onWaveChanged);
+        }
+
+        private void LoadWaveAtIndex(int index, System.Action<WaveData> onWaveChanged)
+        {
+            if (index < 0 || index >= cachedLibraryWaves.Count) return;
+
+            var wave = cachedLibraryWaves[index];
+            LoadWaveToManager(wave);
+            onWaveChanged?.Invoke(wave);
+
+            if (autoSyncToGrid)
+            {
+                SyncWaveToGrid(wave);
+            }
         }
 
         private void LoadWaveToManager(WaveData wave)
         {
             if (waveManager == null || wave == null) return;
 
+            // Clear existing configuration
+            waveManager.waveConfiguration.Clear();
             waveManager.useWaveConfiguration = true;
 
-            // Add to wave manager configuration if not already there
-            if (!waveManager.waveConfiguration.Contains(wave))
+            // Create a copy of the wave to avoid modifying the asset
+            var waveCopy = Object.Instantiate(wave);
+            waveCopy.name = wave.name; // Keep original name
+
+            // Add the copy to wave manager
+            waveManager.waveConfiguration.Add(waveCopy);
+            waveManager.currentWaveIndex = 0;
+
+            Debug.Log($"Loaded wave '{wave.name}' to wave manager");
+        }
+
+        public void SyncWaveToGrid(WaveData wave, int rowOverride = -1)
+        {
+            if (wave == null || waveManager == null || gridManager == null) return;
+
+            // Clear current cubes
+            waveManager.ClearAllCubes();
+
+            // Spawn cubes from wave configuration at top of grid
+            foreach (var cubeData in wave.CubesData)
             {
-                waveManager.waveConfiguration.Add(wave);
+                cubeData.position.x = rowOverride > 0 ? rowOverride : cubeData.position.x;
+                SpawnCubeAtGridTop(cubeData);
             }
 
-            // Set as current wave
-            waveManager.currentWaveIndex = waveManager.waveConfiguration.IndexOf(wave);
-            Debug.Log($"Navigated to wave '{wave.name}'");
+            Debug.Log($"Synced wave '{wave.name}' to grid - spawned {wave.CubesData.Count} cubes at grid height");
+        }
+
+        private void SpawnCubeAtGridTop(CubeData cubeData)
+        {
+            if (waveManager?.cubePrefabs == null || (int)cubeData.type >= waveManager.cubePrefabs.Length)
+            {
+                Debug.LogWarning($"Cannot spawn cube type {cubeData.type} - prefab not available");
+                return;
+            }
+
+            // Calculate spawn position at top of grid
+            Vector2Int spawnPosition = new Vector2Int(
+                cubeData.position.x,
+                gridManager.Height - 1 - (cubeData.position.y % gridManager.Height)
+            );
+
+            if (!gridManager.IsValidGridPosition(spawnPosition))
+            {
+                Debug.LogWarning($"Cannot spawn cube at invalid position ({spawnPosition.x}, {spawnPosition.y})");
+                return;
+            }
+
+            // Spawn at the calculated grid position
+            Vector3 worldPos = gridManager.GridToWorldPosition(spawnPosition.x, spawnPosition.y, 2f);
+            GameObject cubeObj = Object.Instantiate(waveManager.cubePrefabs[(int)cubeData.type], worldPos, Quaternion.identity);
+
+            var cube = cubeObj.GetComponent<CubeManager>();
+            if (cube == null) cube = cubeObj.AddComponent<CubeManager>();
+
+            // Initialize with adjusted position
+            var adjustedCubeData = new CubeData
+            {
+                type = cubeData.type,
+                position = spawnPosition,
+                level = cubeData.level
+            };
+
+            cube.Init(gridManager, adjustedCubeData, 2f);
+            waveManager.activeCubes.Add(cube);
+
+            Debug.Log($"Spawned {cubeData.type} cube at grid ({spawnPosition.x}, {spawnPosition.y})");
         }
 
         private void DrawDebugControls()
@@ -193,72 +298,17 @@ namespace WaveDebugSystem
             if (waveManager.CurrentWave != null)
             {
                 var wave = waveManager.CurrentWave;
-                GUILayout.Label($"Current: {wave.name} | {wave.GridWidth}x{wave.GridHeight} | {wave.CubesData.Count} cubes");
+                GUILayout.Label($"Grid: {wave.GridWidth}x{wave.GridHeight} | Cubes: {wave.CubesData.Count}");
                 GUILayout.Label($"Timing: {wave.moveInterval:F1}s / {wave.fastMoveInterval:F1}s");
-            }
-        }
 
-        private void StepWaveBackward()
-        {
-            if (waveManager == null || waveManager.activeCubes.Count == 0) return;
-
-            Debug.Log("Stepping wave backward - moving all cubes up one position");
-
-            // Move all active cubes backward (up) one position
-            for (int i = waveManager.activeCubes.Count - 1; i >= 0; i--)
-            {
-                var cube = waveManager.activeCubes[i];
-                if (cube == null || cube.isDestroyed)
+                if (wave.limitMarkers)
                 {
-                    waveManager.activeCubes.RemoveAt(i);
-                    continue;
+                    GUILayout.Label($"Marker Limit: {wave.maxMarkerCount} (charge: {wave.maxMarkerCharge})");
                 }
-
-                // Move cube up one position (reverse of MoveForward)
-                cube.position.y += 1;
-
-                // Check if cube moved off the top of the grid
-                if (cube.position.y >= gridManager.Height)
-                {
-                    // Remove cube that went off the top
-                    waveManager.activeCubes.RemoveAt(i);
-                    Object.Destroy(cube.gameObject);
-                    continue;
-                }
-
-                // Update cube's world position
-                Vector3 newWorldPos = gridManager.GridToWorldPosition(cube.position.x, cube.position.y, 2f);
-                cube.transform.position = newWorldPos;
-
-                // Reverse face rotation (opposite of RotateFaceMapping)
-                ReverseFaceRotation(cube);
-            }
-
-            // Decrease move step if possible
-            if (waveManager.MoveStep > 0)
-            {
-                waveManager.MoveStep--;
-            }
-
-            Debug.Log($"Step backward complete. Move step: {waveManager.MoveStep}, Active cubes: {waveManager.activeCubes.Count}");
-        }
-
-        private void ReverseFaceRotation(CubeManager cube)
-        {
-            // This reverses the face mapping rotation that happens in MoveForward
-            // Original rotation: Bottom->Front, Front->Top, Top->Back, Back->Bottom
-            // Reverse: Front->Bottom, Top->Front, Back->Top, Bottom->Back
-
-            // Access the private currentFaceMapping field via reflection or make it public
-            // For now, we'll call a public method if available
-            if (cube.GetType().GetMethod("ReverseFaceRotation") != null)
-            {
-                cube.GetType().GetMethod("ReverseFaceRotation").Invoke(cube, null);
             }
         }
 
         public bool GetAutoSyncToGrid() => autoSyncToGrid;
         public void SetAutoSyncToGrid(bool value) => autoSyncToGrid = value;
     }
-
 }
