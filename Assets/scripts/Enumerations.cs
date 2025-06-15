@@ -46,6 +46,8 @@ public static class Enumerations
     public enum DebugPanelGroup
     {
         Core,           // Grid, Game Control, System
+        Wave,
+        Cube,
         Gameplay,       // Wave, Stage, Player
         Content,        // Tiles, Cubes, Actions
         Testing         // Face Painting, Scenarios

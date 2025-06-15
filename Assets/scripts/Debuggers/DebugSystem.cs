@@ -91,10 +91,9 @@ public class DebugSystem : MonoBehaviour
     {
 
         // Register all debug panels
-        RegisterPanel(new CoreDebugPanel());
-        RegisterPanel(new ContentDebugPanel());
-        RegisterPanel(new GameplayDebugPanel());
-        RegisterPanel(new TestingDebugPanel());
+        RegisterPanel(new WaveDebugPanel());
+        RegisterPanel(new CubeDebugPanel());
+
 
     }
 
