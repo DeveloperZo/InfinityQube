@@ -1,10 +1,7 @@
 ﻿using UnityEngine;
-using System.Collections.Generic;
-using System.Linq;
-using System.IO;
 using static Enumerations;
-using WaveDebugSystem.WaveDebugSystem;
 using WaveDebugSystem;
+using WaveDebugSystem.WaveDebugSystem;
 
 public class WaveDebugPanel : DebugPanelBase
 {
@@ -102,6 +99,8 @@ public class WaveDebugPanel : DebugPanelBase
             {
                 OnSyncToGrid();
             }
+
+            Debug.Log($"Wave changed to: {newWave.name} with {newWave.CubesData.Count} cubes");
         }
     }
 
@@ -120,17 +119,19 @@ public class WaveDebugPanel : DebugPanelBase
         // Clear current cubes
         waveManager.ClearAllCubes();
 
-        // Spawn cubes from wave configuration - Fixed to spawn at top of grid
+        // Enable wave configuration mode
         waveManager.useWaveConfiguration = true;
+
+        // Spawn cubes from wave configuration - Always spawn at top of grid
         foreach (var cubeData in wave.CubesData)
         {
-            SpawnCubeFromData(cubeData);
+            SpawnCubeFromData(cubeData, true);
         }
 
-        Debug.Log($"Synced wave '{wave.name}' to grid - spawned {wave.CubesData.Count} cubes");
+        Debug.Log($"Synced wave '{wave.name}' to grid - spawned {wave.CubesData.Count} cubes at top of grid");
     }
 
-    private void SpawnCubeFromData(CubeData cubeData)
+    private void SpawnCubeFromData(CubeData cubeData, bool forceTopSpawn = true)
     {
         if (waveManager?.cubePrefabs == null || (int)cubeData.type >= waveManager.cubePrefabs.Length)
         {
@@ -138,23 +139,39 @@ public class WaveDebugPanel : DebugPanelBase
             return;
         }
 
-        if (!gridManager.IsValidGridPosition(cubeData.position))
+        // Calculate spawn position - always at top of grid
+        Vector2Int spawnPosition = cubeData.position;
+        if (forceTopSpawn)
         {
-            Debug.LogWarning($"Cannot spawn cube at invalid position ({cubeData.position.x}, {cubeData.position.y})");
+            // Spawn at the top of the grid, preserving the relative position within the wave
+            spawnPosition.y = gridManager.Height - 1 - cubeData.position.y;
+        }
+
+        if (!gridManager.IsValidGridPosition(spawnPosition))
+        {
+            Debug.LogWarning($"Cannot spawn cube at invalid position ({spawnPosition.x}, {spawnPosition.y})");
             return;
         }
 
-        // Spawn at the specified grid position with height offset
-        Vector3 worldPos = gridManager.GridToWorldPosition(cubeData.position.x, cubeData.position.y, 2f);
+        // Spawn at the calculated grid position with height offset
+        Vector3 worldPos = gridManager.GridToWorldPosition(spawnPosition.x, spawnPosition.y, 2f);
         GameObject cubeObj = Object.Instantiate(waveManager.cubePrefabs[(int)cubeData.type], worldPos, Quaternion.identity);
 
         var cube = cubeObj.GetComponent<CubeManager>();
         if (cube == null) cube = cubeObj.AddComponent<CubeManager>();
 
-        cube.Init(gridManager, cubeData, 2f);
+        // Update the cube data position to reflect where it actually spawned
+        var adjustedCubeData = new CubeData
+        {
+            type = cubeData.type,
+            position = spawnPosition,
+            level = cubeData.level
+        };
+
+        cube.Init(gridManager, adjustedCubeData, 2f);
         waveManager.activeCubes.Add(cube);
 
-        Debug.Log($"Spawned {cubeData.type} cube at grid ({cubeData.position.x}, {cubeData.position.y}) -> world {worldPos}");
+        Debug.Log($"Spawned {cubeData.type} cube at grid ({spawnPosition.x}, {spawnPosition.y}) -> world {worldPos}");
     }
 
     // Public methods for external access (if needed)

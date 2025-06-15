@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System.Collections.Generic;
+using UnityEngine;
 
 namespace WaveDebugSystem
 {
@@ -71,7 +72,6 @@ namespace WaveDebugSystem
             {
                 waveManager.StopWave();
                 waveManager.ClearAllCubes();
-                waveManager.useWaveConfiguration = false;
             }
 
             GUI.backgroundColor = Color.white;
@@ -80,23 +80,94 @@ namespace WaveDebugSystem
 
         private void DrawNavigationControls(System.Action<WaveData> onWaveChanged)
         {
+            // Get available waves from library for navigation
+            var availableWaves = GetAvailableWavesFromLibrary();
+
             GUILayout.BeginHorizontal();
 
-            if (GUILayout.Button("◀◀ Prev") && waveManager.currentWaveIndex > 0)
+            if (GUILayout.Button("◀◀ Prev") && availableWaves.Count > 0)
             {
-                waveManager.currentWaveIndex--;
-                onWaveChanged?.Invoke(waveManager.CurrentWave);
+                NavigateToPreviousWave(availableWaves, onWaveChanged);
             }
 
-            GUILayout.Label($"Wave {waveManager.currentWaveIndex + 1}", GUILayout.ExpandWidth(true));
+            // Show current wave info
+            string currentInfo = waveManager.CurrentWave != null ?
+                $"{waveManager.CurrentWave.name}" :
+                $"Wave {waveManager.currentWaveIndex + 1}/{waveManager.waveConfiguration.Count}";
+            GUILayout.Label(currentInfo, GUILayout.ExpandWidth(true));
 
-            if (GUILayout.Button("Next ▶▶") && waveManager.currentWaveIndex < waveManager.waveConfiguration.Count - 1)
+            if (GUILayout.Button("Next ▶▶") && availableWaves.Count > 0)
             {
-                waveManager.currentWaveIndex++;
-                onWaveChanged?.Invoke(waveManager.CurrentWave);
+                NavigateToNextWave(availableWaves, onWaveChanged);
             }
 
             GUILayout.EndHorizontal();
+        }
+
+        private List<WaveData> GetAvailableWavesFromLibrary()
+        {
+            var waves = new List<WaveData>();
+#if UNITY_EDITOR
+            string[] guids = UnityEditor.AssetDatabase.FindAssets("t:WaveData", new[] { "Assets/data/waves" });
+            foreach (string guid in guids)
+            {
+                string path = UnityEditor.AssetDatabase.GUIDToAssetPath(guid);
+                WaveData wave = UnityEditor.AssetDatabase.LoadAssetAtPath<WaveData>(path);
+                if (wave != null) waves.Add(wave);
+            }
+#endif
+            return waves;
+        }
+
+        private void NavigateToPreviousWave(List<WaveData> availableWaves, System.Action<WaveData> onWaveChanged)
+        {
+            if (availableWaves.Count == 0) return;
+
+            // Find current wave in library
+            int currentIndex = -1;
+            if (waveManager.CurrentWave != null)
+            {
+                currentIndex = availableWaves.FindIndex(w => w.name == waveManager.CurrentWave.name);
+            }
+
+            // Move to previous (wrap around if needed)
+            int prevIndex = currentIndex <= 0 ? availableWaves.Count - 1 : currentIndex - 1;
+            LoadWaveToManager(availableWaves[prevIndex]);
+            onWaveChanged?.Invoke(availableWaves[prevIndex]);
+        }
+
+        private void NavigateToNextWave(List<WaveData> availableWaves, System.Action<WaveData> onWaveChanged)
+        {
+            if (availableWaves.Count == 0) return;
+
+            // Find current wave in library
+            int currentIndex = -1;
+            if (waveManager.CurrentWave != null)
+            {
+                currentIndex = availableWaves.FindIndex(w => w.name == waveManager.CurrentWave.name);
+            }
+
+            // Move to next (wrap around if needed)
+            int nextIndex = currentIndex >= availableWaves.Count - 1 ? 0 : currentIndex + 1;
+            LoadWaveToManager(availableWaves[nextIndex]);
+            onWaveChanged?.Invoke(availableWaves[nextIndex]);
+        }
+
+        private void LoadWaveToManager(WaveData wave)
+        {
+            if (waveManager == null || wave == null) return;
+
+            waveManager.useWaveConfiguration = true;
+
+            // Add to wave manager configuration if not already there
+            if (!waveManager.waveConfiguration.Contains(wave))
+            {
+                waveManager.waveConfiguration.Add(wave);
+            }
+
+            // Set as current wave
+            waveManager.currentWaveIndex = waveManager.waveConfiguration.IndexOf(wave);
+            Debug.Log($"Navigated to wave '{wave.name}'");
         }
 
         private void DrawDebugControls()

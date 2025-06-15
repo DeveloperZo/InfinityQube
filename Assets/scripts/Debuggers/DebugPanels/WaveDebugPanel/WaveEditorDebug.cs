@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace WaveDebugSystem
@@ -190,13 +191,46 @@ namespace WaveDebugSystem
                 if (GUILayout.Button("Sync to Grid"))
                     onSyncToGrid?.Invoke();
 
+                if (GUILayout.Button("Capture Active"))
+                {
+                    var activeCubes = Object.FindObjectsOfType<CubeManager>()
+                        .Where(c => c != null && !c.isDestroyed).ToList();
+                    CaptureActiveCubesToWave(activeCubes);
+                }
+
+                GUILayout.EndHorizontal();
+
+                GUILayout.BeginHorizontal();
+
                 if (GUILayout.Button("Clear All Cubes"))
                 {
                     currentEditingWave.CubesData.Clear();
                     onSyncToGrid?.Invoke();
                 }
 
+                if (GUILayout.Button("Reset Positions"))
+                {
+                    ResetCubePositionsToTop();
+                }
+
                 GUILayout.EndHorizontal();
+            }
+
+            // Add method to reset cube positions to top of wave
+            private void ResetCubePositionsToTop()
+            {
+                if (currentEditingWave == null) return;
+
+                foreach (var cube in currentEditingWave.CubesData)
+                {
+                    // Move all cubes to the top rows of the wave
+                    if (cube.position.y < currentEditingWave.GridHeight - 1)
+                    {
+                        cube.position.y = currentEditingWave.GridHeight - 1;
+                    }
+                }
+
+                Debug.Log($"Reset {currentEditingWave.CubesData.Count} cubes to top of wave");
             }
 
             public void CreateNewWave()
@@ -248,14 +282,16 @@ namespace WaveDebugSystem
                 var existingAsset = UnityEditor.AssetDatabase.LoadAssetAtPath<WaveData>(assetPath);
                 if (existingAsset != null)
                 {
-                    // Update existing asset
+                    // Update existing asset - preserve cube configuration
                     UnityEditor.EditorUtility.CopySerialized(currentEditingWave, existingAsset);
                     UnityEditor.EditorUtility.SetDirty(existingAsset);
+                    Debug.Log($"Updated existing wave '{currentEditingWave.name}' with {currentEditingWave.CubesData.Count} cubes");
                 }
                 else
                 {
                     // Create new asset
                     UnityEditor.AssetDatabase.CreateAsset(currentEditingWave, assetPath);
+                    Debug.Log($"Created new wave '{currentEditingWave.name}' with {currentEditingWave.CubesData.Count} cubes");
                 }
 
                 UnityEditor.AssetDatabase.SaveAssets();
@@ -269,15 +305,50 @@ namespace WaveDebugSystem
             {
                 if (currentEditingWave == null || waveManager == null) return;
 
+                // Ensure wave configuration is properly stored
+                if (currentEditingWave.CubesData.Count == 0)
+                {
+                    Debug.LogWarning("Wave has no cubes configured!");
+                    return;
+                }
+
                 // Add to wave manager configuration if not already there
                 if (!waveManager.waveConfiguration.Contains(currentEditingWave))
                 {
                     waveManager.waveConfiguration.Add(currentEditingWave);
                 }
 
-                // Set as current wave
+                // Set as current wave and enable wave configuration mode
+                waveManager.useWaveConfiguration = true;
                 waveManager.currentWaveIndex = waveManager.waveConfiguration.IndexOf(currentEditingWave);
                 waveManager.StartWave();
+
+                Debug.Log($"Testing wave '{currentEditingWave.name}' with {currentEditingWave.CubesData.Count} cubes");
+            }
+
+            // Add method to capture current active cubes into wave
+            public void CaptureActiveCubesToWave(List<CubeManager> activeCubes)
+            {
+                if (currentEditingWave == null || activeCubes == null) return;
+
+                currentEditingWave.CubesData.Clear();
+
+                foreach (var cube in activeCubes)
+                {
+                    if (cube != null && !cube.isDestroyed)
+                    {
+                        // Convert world position back to wave-relative position
+                        var cubeData = new CubeData
+                        {
+                            type = cube.type,
+                            position = new Vector2Int(cube.position.x, currentEditingWave.GridHeight - 1 - cube.position.y),
+                            level = cube.level
+                        };
+                        currentEditingWave.CubesData.Add(cubeData);
+                    }
+                }
+
+                Debug.Log($"Captured {currentEditingWave.CubesData.Count} active cubes to wave '{currentEditingWave.name}'");
             }
 
             private void ClampCubesToWaveBounds()
@@ -290,5 +361,4 @@ namespace WaveDebugSystem
             }
         }
     }
-
-    }
+}
