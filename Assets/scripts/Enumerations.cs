@@ -43,4 +43,11 @@ public static class Enumerations
         Challenge,   // Difficult stages with special conditions
         Bonus        // Special stages with unique rules
     }
+    public enum DebugPanelGroup
+    {
+        Core,           // Grid, Game Control, System
+        Gameplay,       // Wave, Stage, Player
+        Content,        // Tiles, Cubes, Actions
+        Testing         // Face Painting, Scenarios
+    }
 }
