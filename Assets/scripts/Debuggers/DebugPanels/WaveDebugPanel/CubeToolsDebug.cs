@@ -13,6 +13,7 @@ namespace WaveDebugSystem
         // UI State
         private int selectedCubeType = 0; // Normal
         private bool isPlacementMode = false;
+        private bool trackActiveCubes = false;
         private Vector2 cubeListScroll;
 
         public void Initialize(WaveManager waveManager, GridManager gridManager)
@@ -62,6 +63,7 @@ namespace WaveDebugSystem
         {
             GUILayout.BeginHorizontal();
             isPlacementMode = GUILayout.Toggle(isPlacementMode, "Placement Mode");
+            trackActiveCubes = GUILayout.Toggle(trackActiveCubes, "Track Active");
             if (GUILayout.Button("Fill Random")) FillWaveRandom(currentEditingWave, onSyncToGrid);
             if (GUILayout.Button("Fill Top Row")) FillTopRow(currentEditingWave, onSyncToGrid);
             GUILayout.EndHorizontal();
@@ -70,21 +72,58 @@ namespace WaveDebugSystem
             {
                 GUILayout.Label("Click grid below to place/remove cubes");
             }
+
+            if (trackActiveCubes && waveManager != null && waveManager.activeCubes.Count > 0)
+            {
+                var bounds = GetCubeBounds(GetDisplayCubes(currentEditingWave));
+                GUILayout.Label($"Active cube bounds: ({bounds.min.x},{bounds.min.y}) to ({bounds.max.x},{bounds.max.y})");
+            }
         }
 
         private void DrawCubeGrid(WaveData currentEditingWave, System.Action onSyncToGrid)
         {
-            GUILayout.Label("Grid Editor:");
-
             var cubesToShow = GetDisplayCubes(currentEditingWave);
 
-            // Grid representation (top to bottom) - Fixed to show from top of grid
-            for (int y = currentEditingWave.GridHeight - 1; y >= 0; y--)
+            // Determine grid dimensions to show
+            int gridWidth, gridHeight;
+            int startY = 0;
+
+            if (trackActiveCubes && cubesToShow.Count > 0)
+            {
+                // Show a view focused on where the cubes actually are
+                var bounds = GetCubeBounds(cubesToShow);
+                gridWidth = Mathf.Max(bounds.max.x - bounds.min.x + 3, currentEditingWave.GridWidth); // Add padding
+                gridHeight = Mathf.Max(bounds.max.y - bounds.min.y + 3, 5); // Show at least 5 rows
+                startY = Mathf.Max(0, bounds.min.y - 1); // Start a bit above the lowest cube
+
+                GUILayout.Label($"Grid View (Tracking) - Showing rows {startY} to {startY + gridHeight - 1}:");
+            }
+            else
+            {
+                // Show the full wave dimensions
+                gridWidth = currentEditingWave.GridWidth;
+                gridHeight = currentEditingWave.GridHeight;
+                startY = 0;
+
+                GUILayout.Label($"Grid Editor ({gridWidth}x{gridHeight}):");
+            }
+
+            // Show grid coordinates header
+            GUILayout.BeginHorizontal();
+            GUILayout.Label("", GUILayout.Width(25)); // Space for row labels
+            for (int x = 0; x < gridWidth; x++)
+            {
+                GUILayout.Label($"{x}", GUILayout.Width(25));
+            }
+            GUILayout.EndHorizontal();
+
+            // Grid representation (top to bottom)
+            for (int y = startY + gridHeight - 1; y >= startY; y--)
             {
                 GUILayout.BeginHorizontal();
-                GUILayout.Label($"{y}:", GUILayout.Width(15));
+                GUILayout.Label($"{y}:", GUILayout.Width(25));
 
-                for (int x = 0; x < currentEditingWave.GridWidth; x++)
+                for (int x = 0; x < gridWidth; x++)
                 {
                     var cubeAtPos = cubesToShow.FirstOrDefault(c => c.position.x == x && c.position.y == y);
 
@@ -102,10 +141,17 @@ namespace WaveDebugSystem
                         }
                     }
 
+                    // Highlight out-of-bounds positions when tracking
+                    if (trackActiveCubes && (x >= currentEditingWave.GridWidth || y >= currentEditingWave.GridHeight))
+                    {
+                        buttonColor = Color.red;
+                        buttonText = "!";
+                    }
+
                     GUI.backgroundColor = buttonColor;
                     if (GUILayout.Button(buttonText, GUILayout.Width(25), GUILayout.Height(25)))
                     {
-                        if (isPlacementMode)
+                        if (isPlacementMode && x < currentEditingWave.GridWidth && y < currentEditingWave.GridHeight)
                         {
                             HandleGridClick(x, y, currentEditingWave, onSyncToGrid);
                         }
@@ -113,6 +159,23 @@ namespace WaveDebugSystem
                 }
                 GUI.backgroundColor = Color.white;
                 GUILayout.EndHorizontal();
+            }
+
+            // Show cube positions summary
+            if (cubesToShow.Count > 0)
+            {
+                GUILayout.Space(3);
+                var cubesByRow = cubesToShow.GroupBy(c => c.position.y).OrderByDescending(g => g.Key);
+                GUILayout.Label($"Cubes by row:");
+                foreach (var rowGroup in cubesByRow.Take(3)) // Show only top 3 rows to save space
+                {
+                    string cubeTypes = string.Join(", ", rowGroup.Select(c => $"{GetCubeSymbol(c.type)}@{c.position.x}"));
+                    GUILayout.Label($"  Row {rowGroup.Key}: {cubeTypes}");
+                }
+                if (cubesByRow.Count() > 3)
+                {
+                    GUILayout.Label($"  ... and {cubesByRow.Count() - 3} more rows");
+                }
             }
         }
 
@@ -236,15 +299,14 @@ namespace WaveDebugSystem
 
         private List<CubeData> GetDisplayCubes(WaveData currentEditingWave)
         {
-            // Show wave cubes if editing, or current active cubes if synced
             if (currentEditingWave != null)
             {
                 return currentEditingWave.CubesData;
             }
 
-            // Fallback to showing active cubes from manager
+            // Fallback: Show active cubes from manager, but adjust positions to wave coordinates
             var activeCubes = new List<CubeData>();
-            if (waveManager != null)
+            if (waveManager != null && waveManager.activeCubes.Count > 0)
             {
                 foreach (var cube in waveManager.activeCubes)
                 {
@@ -260,6 +322,25 @@ namespace WaveDebugSystem
                 }
             }
             return activeCubes;
+        }
+
+        // Helper method to get the bounds of cubes in a wave
+        private (Vector2Int min, Vector2Int max) GetCubeBounds(List<CubeData> cubes)
+        {
+            if (cubes.Count == 0) return (Vector2Int.zero, Vector2Int.zero);
+
+            Vector2Int min = new Vector2Int(int.MaxValue, int.MaxValue);
+            Vector2Int max = new Vector2Int(int.MinValue, int.MinValue);
+
+            foreach (var cube in cubes)
+            {
+                if (cube.position.x < min.x) min.x = cube.position.x;
+                if (cube.position.y < min.y) min.y = cube.position.y;
+                if (cube.position.x > max.x) max.x = cube.position.x;
+                if (cube.position.y > max.y) max.y = cube.position.y;
+            }
+
+            return (min, max);
         }
 
         private Color GetCubeColor(CubeType type)

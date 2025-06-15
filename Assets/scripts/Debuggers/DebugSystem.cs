@@ -10,7 +10,7 @@ public class DebugSystem : MonoBehaviour
     [SerializeField] private DebugDisplayMode displayMode = DebugDisplayMode.Tabbed;
 
     [Header("Window Settings")]
-    [SerializeField] private Vector2 windowSize = new Vector2(400, 600);
+    [SerializeField] private Vector2 windowSize = new Vector2(600, 1200);
     [SerializeField] private Vector2 windowPosition = new Vector2(10, 10);
     #endregion
 
@@ -105,7 +105,7 @@ public class DebugSystem : MonoBehaviour
 
         // Initialize window rect for windowed mode
         Vector2 pos = new Vector2(50 + (debugPanels.Count * 30), 50 + (debugPanels.Count * 30));
-        windowRects[panel] = new Rect(pos.x, pos.y, 350, 400);
+        windowRects[panel] = new Rect(pos.x, pos.y, 400, 400);
         scrollPositions[panel] = Vector2.zero;
     }
 

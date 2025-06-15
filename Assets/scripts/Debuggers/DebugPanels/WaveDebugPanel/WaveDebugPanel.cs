@@ -121,6 +121,7 @@ public class WaveDebugPanel : DebugPanelBase
         waveManager.ClearAllCubes();
 
         // Spawn cubes from wave configuration - Fixed to spawn at top of grid
+        waveManager.useWaveConfiguration = true;
         foreach (var cubeData in wave.CubesData)
         {
             SpawnCubeFromData(cubeData);
