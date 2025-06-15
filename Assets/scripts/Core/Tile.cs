@@ -66,7 +66,7 @@ public class Tile : MonoBehaviour
 
     private GameObject markerObj;
     private Renderer tileRenderer;
-    public CubeBehavior currentCube;
+    public CubeManager currentCube;
     private bool isInitialized = false;
     private bool isBlackened = false;
     private bool isAdvantaged = false;
@@ -302,7 +302,7 @@ public class Tile : MonoBehaviour
         if (!hasMarker) return;
 
         // Store reference to cube before changing marker state
-        CubeBehavior cubeToProcess = currentCube;
+        CubeManager cubeToProcess = currentCube;
 
         // Change visual state to "activated"
         ActivateMarker();
@@ -578,7 +578,7 @@ public class Tile : MonoBehaviour
         RemoveOverlay();
     }
 
-    public void ProcessCubeInteraction(CubeBehavior cube)
+    public void ProcessCubeInteraction(CubeManager cube)
     {
         if (cube != null)
         {
@@ -586,7 +586,7 @@ public class Tile : MonoBehaviour
         }
     }
 
-    public void HandleCubeLanding(CubeBehavior cube)
+    public void HandleCubeLanding(CubeManager cube)
     {
         if (cube == null || currentState != Enumerations.TileState.Transformed)
             return;
@@ -731,7 +731,7 @@ public class Tile : MonoBehaviour
         Debug.Log($"Tile ({x},{y}) set up to paint cubes with {status} status");
     }
 
-    public void TryPaintCube(CubeBehavior cube)
+    public void TryPaintCube(CubeManager cube)
     {
         if (!canPaintCubes || cube == null || paintStatus == FaceStatus.None) return;
 
@@ -741,7 +741,7 @@ public class Tile : MonoBehaviour
         }
     }
 
-    public void TryPaintCubeOnExit(CubeBehavior cube)
+    public void TryPaintCubeOnExit(CubeManager cube)
     {
         if (!canPaintCubes || cube == null || paintStatus == FaceStatus.None) return;
 
@@ -751,7 +751,7 @@ public class Tile : MonoBehaviour
         }
     }
 
-    private void PaintCube(CubeBehavior cube)
+    private void PaintCube(CubeManager cube)
     {
         // Paint the cube's currently down-facing face
         cube.PaintCurrentDownFace(paintStatus, paintColor, paintDuration);

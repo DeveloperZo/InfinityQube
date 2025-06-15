@@ -182,7 +182,7 @@ public class TestingDebugPanel : DebugPanelBase
     {
         GUILayout.Label("ACTIVE CUBES FACE STATUS", GUI.skin.box);
 
-        var allCubes = Object.FindObjectsOfType<CubeBehavior>();
+        var allCubes = Object.FindObjectsOfType<CubeManager>();
         int shownCubes = 0;
 
         foreach (var cube in allCubes)
@@ -387,7 +387,7 @@ public class TestingDebugPanel : DebugPanelBase
         }
 
         // Cube states
-        var cubes = Object.FindObjectsOfType<CubeBehavior>();
+        var cubes = Object.FindObjectsOfType<CubeManager>();
         Debug.Log($"Active Cubes: {cubes.Length}");
         foreach (var cube in cubes)
         {
@@ -455,8 +455,8 @@ public class TestingDebugPanel : DebugPanelBase
         Vector3 worldPos = gridManager.GridToWorldPosition(position.x, position.y, 2f);
         GameObject cubeObj = Object.Instantiate(waveManager.cubePrefabs[(int)cubeType], worldPos, Quaternion.identity);
 
-        var cube = cubeObj.GetComponent<CubeBehavior>();
-        if (cube == null) cube = cubeObj.AddComponent<CubeBehavior>();
+        var cube = cubeObj.GetComponent<CubeManager>();
+        if (cube == null) cube = cubeObj.AddComponent<CubeManager>();
 
         var cubeData = new CubeData { type = cubeType, position = position, level = 1 };
         cube.Init(gridManager, cubeData, 2f);

@@ -258,7 +258,7 @@ public class PlayerManager : MonoBehaviour
         if (tile == null || !tile.IsPlayable) return true;
 
         // Check for cubes at this position
-        var allCubes = FindObjectsOfType<CubeBehavior>();
+        var allCubes = FindObjectsOfType<CubeManager>();
         foreach (var cube in allCubes)
         {
             if (cube == null || cube.isDestroyed) continue;
@@ -450,7 +450,7 @@ public class PlayerManager : MonoBehaviour
     {
         if (isDead || respawnInvulnerabilityTimer > 0f) return;
 
-        var allCubes = FindObjectsOfType<CubeBehavior>();
+        var allCubes = FindObjectsOfType<CubeManager>();
         foreach (var cube in allCubes)
         {
             if (cube == null || cube.isDestroyed) continue;

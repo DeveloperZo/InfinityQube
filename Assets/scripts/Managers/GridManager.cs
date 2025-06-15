@@ -645,7 +645,7 @@ public class GridManager : MonoBehaviour
 
     private void RemoveCubesOnRow(int row)
     {
-        var allCubes = FindObjectsOfType<CubeBehavior>();
+        var allCubes = FindObjectsOfType<CubeManager>();
         foreach (var cube in allCubes)
         {
             if (cube != null && !cube.isDestroyed && cube.position.y == row)

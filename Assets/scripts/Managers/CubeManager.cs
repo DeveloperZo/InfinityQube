@@ -2,7 +2,7 @@ using UnityEngine;
 using System.Collections;
 using static Enumerations;
 
-public class CubeBehavior : MonoBehaviour
+public class CubeManager : MonoBehaviour
 {
     [Header("Cube Properties")]
     [SerializeField] public int level = 1;
@@ -262,7 +262,7 @@ public class CubeBehavior : MonoBehaviour
     {
         if (isDestroyed) return;
 
-        foreach (CubeBehavior otherCube in FindObjectsOfType<CubeBehavior>())
+        foreach (CubeManager otherCube in FindObjectsOfType<CubeManager>())
         {
             if (otherCube != this &&
                 otherCube.position.x == position.x &&

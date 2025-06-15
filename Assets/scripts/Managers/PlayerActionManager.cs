@@ -562,7 +562,7 @@ public class PlayerActionManager : MonoBehaviour
         // Main cube processing happens in ProcessCubeCapture
     }
 
-    private bool ProcessCubeCapture(CubeBehavior cube, Vector2Int position, MarkerType markerType, IndividualMarker individualMarker = null)
+    private bool ProcessCubeCapture(CubeManager cube, Vector2Int position, MarkerType markerType, IndividualMarker individualMarker = null)
     {
         if (cube == null || cube.isDestroyed) return false;
 
@@ -594,7 +594,7 @@ public class PlayerActionManager : MonoBehaviour
     }
 
 
-    private bool ProcessNormalCube(CubeBehavior cube, Vector2Int position, MarkerType markerType)
+    private bool ProcessNormalCube(CubeManager cube, Vector2Int position, MarkerType markerType)
     {
         // Check if cube should create detonation despite being normal (due to enhanced face)
         bool shouldCreateDetonation = cube.ShouldCreateDetonation();
@@ -617,7 +617,7 @@ public class PlayerActionManager : MonoBehaviour
         return true;
     }
 
-    private bool ProcessReinforcedCube(CubeBehavior cube, Vector2Int position, MarkerType markerType)
+    private bool ProcessReinforcedCube(CubeManager cube, Vector2Int position, MarkerType markerType)
     {
         // Reinforced cubes require multiple hits
         bool isDestroyed = cube.TakeDamage(1);
@@ -637,7 +637,7 @@ public class PlayerActionManager : MonoBehaviour
             return false; // Not destroyed yet
         }
     }
-    private bool ProcessBlueCube(CubeBehavior cube, Vector2Int position, MarkerType markerType)
+    private bool ProcessBlueCube(CubeManager cube, Vector2Int position, MarkerType markerType)
     {
         NotifyWaveManager(wm => wm.OnCubeCaptured(CubeType.Blue));
         NotifyWaveManager(wm => wm.OnNonBlackCubeProcessed(CubeType.Blue, true));
@@ -653,7 +653,7 @@ public class PlayerActionManager : MonoBehaviour
         return true;
     }
 
-    private bool ProcessBlackCube(CubeBehavior cube, Vector2Int position, MarkerType markerType)
+    private bool ProcessBlackCube(CubeManager cube, Vector2Int position, MarkerType markerType)
     {
         // Black cubes cannot be captured
         Debug.Log($"Black cube at ({position.x}, {position.y}) cannot be captured");
@@ -721,13 +721,13 @@ public class PlayerActionManager : MonoBehaviour
         return positions;
     }
 
-    private List<CubeBehavior> FindAllCubesAt(Vector2Int position)
+    private List<CubeManager> FindAllCubesAt(Vector2Int position)
     {
-        List<CubeBehavior> cubes = new List<CubeBehavior>();
+        List<CubeManager> cubes = new List<CubeManager>();
 
         if (waveManager != null)
         {
-            foreach (CubeBehavior cube in waveManager.activeCubes)
+            foreach (CubeManager cube in waveManager.activeCubes)
             {
                 if (cube != null && !cube.isDestroyed &&
                     cube.position.x == position.x && cube.position.y == position.y)
@@ -737,7 +737,7 @@ public class PlayerActionManager : MonoBehaviour
             }
         }
 
-        foreach (CubeBehavior cube in FindObjectsOfType<CubeBehavior>())
+        foreach (CubeManager cube in FindObjectsOfType<CubeManager>())
         {
             if (cube != null && !cube.isDestroyed &&
                 cube.position.x == position.x && cube.position.y == position.y &&
@@ -750,7 +750,7 @@ public class PlayerActionManager : MonoBehaviour
         return cubes;
     }
 
-    private void RemoveCubeFromWaveManager(CubeBehavior cube)
+    private void RemoveCubeFromWaveManager(CubeManager cube)
     {
         
         if (cube.CanBeCaptured() && waveManager != null && cube.type != CubeType.Black)

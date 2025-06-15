@@ -45,7 +45,7 @@ public class WaveManager : MonoBehaviour
 
     #region Runtime State
     // Wave State
-    public List<CubeBehavior> activeCubes = new List<CubeBehavior>();
+    public List<CubeManager> activeCubes = new List<CubeManager>();
     public bool waveActive = false;
     public int MoveStep = 0;
     public WaveData CurrentWave => useWaveConfiguration && currentWaveIndex < waveConfiguration.Count ? waveConfiguration[currentWaveIndex] : null;
@@ -276,8 +276,8 @@ public class WaveManager : MonoBehaviour
 
         GameObject cubeObj = Instantiate(cubePrefabs[prefabIndex], spawnPos, Quaternion.identity);
 
-        var cube = cubeObj.GetComponent<CubeBehavior>();
-        if (cube == null) cube = cubeObj.AddComponent<CubeBehavior>();
+        var cube = cubeObj.GetComponent<CubeManager>();
+        if (cube == null) cube = cubeObj.AddComponent<CubeManager>();
 
         cube.Init(grid, cubeData, 2f);
         activeCubes.Add(cube);

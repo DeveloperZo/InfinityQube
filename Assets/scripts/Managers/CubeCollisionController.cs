@@ -15,7 +15,7 @@ public class CubeCollisionController : MonoBehaviour
         grid = gridManager;
         playerActionManager = FindObjectOfType<PlayerActionManager>();
     }
-    public void HandleCubeCollision(CubeBehavior sourceCube, CubeBehavior targetCube, Vector2Int position)
+    public void HandleCubeCollision(CubeManager sourceCube, CubeManager targetCube, Vector2Int position)
     {
         if (sourceCube == null || targetCube == null) return;
 
@@ -67,7 +67,7 @@ public class CubeCollisionController : MonoBehaviour
         }
     }
 
-    private void HandleBlackCubeCollision(CubeBehavior sourceCube, CubeBehavior targetCube, Vector2Int position)
+    private void HandleBlackCubeCollision(CubeManager sourceCube, CubeManager targetCube, Vector2Int position)
     {
         switch (targetCube.type)
         {
@@ -101,7 +101,7 @@ public class CubeCollisionController : MonoBehaviour
         }
     }
 
-    private void HandleBlueCubeCollision(CubeBehavior sourceCube, CubeBehavior targetCube, Vector2Int position)
+    private void HandleBlueCubeCollision(CubeManager sourceCube, CubeManager targetCube, Vector2Int position)
     {
         switch (targetCube.type)
         {
@@ -139,7 +139,7 @@ public class CubeCollisionController : MonoBehaviour
         }
     }
 
-    private void HandleNormalCubeCollision(CubeBehavior sourceCube, CubeBehavior targetCube, Vector2Int position)
+    private void HandleNormalCubeCollision(CubeManager sourceCube, CubeManager targetCube, Vector2Int position)
     {
         switch (targetCube.type)
         {

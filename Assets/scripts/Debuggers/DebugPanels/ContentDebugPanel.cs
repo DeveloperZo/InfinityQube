@@ -269,8 +269,8 @@ public class ContentDebugPanel : DebugPanelBase
         Vector3 worldPos = gridManager.GridToWorldPosition(position.x, position.y, 2f);
         GameObject cubeObj = Object.Instantiate(waveManager.cubePrefabs[(int)cubeType], worldPos, Quaternion.identity);
 
-        var cube = cubeObj.GetComponent<CubeBehavior>();
-        if (cube == null) cube = cubeObj.AddComponent<CubeBehavior>();
+        var cube = cubeObj.GetComponent<CubeManager>();
+        if (cube == null) cube = cubeObj.AddComponent<CubeManager>();
 
         var cubeData = new CubeData { type = cubeType, position = position, level = 1 };
         cube.Init(gridManager, cubeData, 2f);
@@ -288,7 +288,7 @@ public class ContentDebugPanel : DebugPanelBase
 
     private void RemoveCubeAt(Vector2Int position)
     {
-        foreach (CubeBehavior cube in Object.FindObjectsOfType<CubeBehavior>())
+        foreach (CubeManager cube in Object.FindObjectsOfType<CubeManager>())
         {
             if (cube != null && !cube.isDestroyed &&
                 cube.position.x == position.x && cube.position.y == position.y)
@@ -301,16 +301,16 @@ public class ContentDebugPanel : DebugPanelBase
 
     private void ClearAllCubes()
     {
-        foreach (CubeBehavior cube in Object.FindObjectsOfType<CubeBehavior>())
+        foreach (CubeManager cube in Object.FindObjectsOfType<CubeManager>())
         {
             if (cube != null) Object.Destroy(cube.gameObject);
         }
     }
 
-    private List<CubeBehavior> FindCubesAt(Vector2Int position)
+    private List<CubeManager> FindCubesAt(Vector2Int position)
     {
-        List<CubeBehavior> cubes = new List<CubeBehavior>();
-        foreach (CubeBehavior cube in Object.FindObjectsOfType<CubeBehavior>())
+        List<CubeManager> cubes = new List<CubeManager>();
+        foreach (CubeManager cube in Object.FindObjectsOfType<CubeManager>())
         {
             if (cube != null && !cube.isDestroyed &&
                 cube.position.x == position.x && cube.position.y == position.y)
