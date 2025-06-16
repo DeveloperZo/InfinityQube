@@ -163,6 +163,7 @@ namespace WaveDebugSystem
             GUILayout.EndVertical();
         }
 
+
         private GridViewArea CalculateDynamicViewArea(Dictionary<Vector2Int, CubeManager> activeCubes)
         {
             if (activeCubes.Count == 0 && !showEmptyRows)

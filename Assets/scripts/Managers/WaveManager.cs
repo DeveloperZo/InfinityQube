@@ -37,6 +37,7 @@ public class WaveManager : MonoBehaviour
     public bool debugMode = false;
     public bool manualControl = false;
     public bool showDebugInfo = false;
+    public bool showMessages = true;
 
     [Header("UI References")]
     public GameObject messagePanel;
@@ -373,7 +374,7 @@ public class WaveManager : MonoBehaviour
     #region Message System
     private void ShowInitialMessages()
     {
-        if (CurrentWave?.messages == null) return;
+        if (CurrentWave?.messages == null || !showMessages) return;
 
         var initialMessages = CurrentWave.messages.Where(m => m.DisplayMoveStep == 0);
         foreach (var message in initialMessages)
@@ -384,7 +385,7 @@ public class WaveManager : MonoBehaviour
 
     private void ProcessStepMessages()
     {
-        if (CurrentWave?.messages == null) return;
+        if (CurrentWave?.messages == null || !showMessages) return;
 
         var stepMessages = CurrentWave.messages.Where(m => m.DisplayMoveStep == MoveStep);
         foreach (var message in stepMessages)
@@ -395,7 +396,7 @@ public class WaveManager : MonoBehaviour
 
     private void ProcessEndMessages()
     {
-        if (CurrentWave?.messages == null) return;
+        if (CurrentWave?.messages == null || !showMessages) return;
 
         var endMessages = CurrentWave.messages.Where(m => m.DisplayMoveStep == -1);
         foreach (var message in endMessages)
@@ -407,7 +408,7 @@ public class WaveManager : MonoBehaviour
     public void ShowMessage(WaveMessage message)
     {
         pendingMessages.Enqueue(message);
-        if (!isProcessingMessageQueue)
+        if (!isProcessingMessageQueue && showMessages)
         {
             StartCoroutine(ProcessMessageQueue());
         }
@@ -417,7 +418,7 @@ public class WaveManager : MonoBehaviour
     {
         isProcessingMessageQueue = true;
 
-        while (pendingMessages.Count > 0)
+        while (pendingMessages.Count > 0 && showMessages)
         {
             var message = pendingMessages.Dequeue();
             yield return DisplayMessage(message);
@@ -428,7 +429,7 @@ public class WaveManager : MonoBehaviour
 
     private IEnumerator DisplayMessage(WaveMessage message)
     {
-        if (messagePanel != null && messageText != null)
+        if (messagePanel != null && messageText != null && showMessages)
         {
             messagePanel.SetActive(true);
             messageText.text = message.Message;

@@ -37,6 +37,7 @@ namespace WaveDebugSystem
                     DrawWaveNameEditor();
                     DrawDimensionControls();
                     DrawWavePropertiesEditor();
+                    DrawMessageToggle();
                     DrawWaveManagementControls(onSyncToGrid);
                     DrawCurrentWaveStats();
                 }
@@ -306,6 +307,20 @@ namespace WaveDebugSystem
                 }
 
                 GUILayout.EndVertical();
+            }
+
+            private void DrawMessageToggle()
+            {
+                GUILayout.BeginHorizontal();
+
+                bool newShowMessages = GUILayout.Toggle(waveManager.showMessages, "Show Wave Messages");
+                if (newShowMessages != waveManager.showMessages)
+                {
+                    waveManager.showMessages = newShowMessages;
+                    Debug.Log($"Wave messages {(newShowMessages ? "enabled" : "disabled")}");
+                }
+
+                GUILayout.EndHorizontal();
             }
 
             // Public methods for external systems (like CubeToolsDebug)
