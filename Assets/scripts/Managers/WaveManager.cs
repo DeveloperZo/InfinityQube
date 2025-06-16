@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using System.Linq;
+using static Enumerations;
 
 public class WaveManager : MonoBehaviour
 {
@@ -666,5 +667,42 @@ public class WaveManager : MonoBehaviour
     public int MarkerChargeLimit() => CurrentWave?.limitMarkers == true ? CurrentWave.maxMarkerCharge : -1;
     public int MarkerCountLimit() => CurrentWave?.limitMarkers == true ? CurrentWave.maxMarkerCount : -1;
     public int CurrentWaveIndex => currentWaveIndex;
+    #endregion
+
+    #region Public Methods
+    public void AddCube(Vector2Int wavePosition, CubeType type)
+    {
+        if (CurrentWave == null)
+        {
+            Debug.LogError("No active wave configuration to add a cube.");
+            return;
+        }
+
+        // Add cube to wave configuration
+        var cubeData = new CubeData { position = wavePosition, type = type };
+        CurrentWave.CubesData.Add(cubeData);
+
+        // Spawn cube in the grid
+        SpawnCube(cubeData);
+    }
+
+    public void RemoveCube(CubeManager cube)
+    {
+        if (CurrentWave == null)
+        {
+            Debug.LogError("No active wave configuration to remove a cube.");
+            return;
+        }
+
+        // Remove cube from wave configuration
+        CurrentWave.CubesData.RemoveAll(cd => cd.position == cube.position);
+
+        // Remove cube from the grid
+        activeCubes.Remove(cube);
+        if (cube != null && cube.gameObject != null)
+        {
+            Destroy(cube.gameObject);
+        }
+    }
     #endregion
 }

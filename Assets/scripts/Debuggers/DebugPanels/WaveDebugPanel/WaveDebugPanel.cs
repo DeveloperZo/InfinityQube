@@ -139,12 +139,11 @@ public class WaveDebugPanel : DebugPanelBase
             return;
         }
 
-        // Calculate spawn position - always at top of grid
+        // Always spawn at the top of the grid, ignoring wave Y
         Vector2Int spawnPosition = cubeData.position;
         if (forceTopSpawn)
         {
-            // Spawn at the top of the grid, preserving the relative position within the wave
-            spawnPosition.y = gridManager.Height - 1 - cubeData.position.y;
+            spawnPosition.y = gridManager.Height - 1;
         }
 
         if (!gridManager.IsValidGridPosition(spawnPosition))
@@ -153,14 +152,12 @@ public class WaveDebugPanel : DebugPanelBase
             return;
         }
 
-        // Spawn at the calculated grid position with height offset
         Vector3 worldPos = gridManager.GridToWorldPosition(spawnPosition.x, spawnPosition.y, 2f);
         GameObject cubeObj = Object.Instantiate(waveManager.cubePrefabs[(int)cubeData.type], worldPos, Quaternion.identity);
 
         var cube = cubeObj.GetComponent<CubeManager>();
         if (cube == null) cube = cubeObj.AddComponent<CubeManager>();
 
-        // Update the cube data position to reflect where it actually spawned
         var adjustedCubeData = new CubeData
         {
             type = cubeData.type,
