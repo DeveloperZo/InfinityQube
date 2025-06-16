@@ -1,5 +1,6 @@
 ﻿using static Enumerations;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 public class CubeDebugPanel : DebugPanelBase
@@ -13,12 +14,19 @@ public class CubeDebugPanel : DebugPanelBase
     // UI State
     private bool showFacePainter = true;
     private bool showActiveCubes = true;
+    private bool showCubeInspector = false;
+    private Vector2 activeCubesScroll;
+    private Vector2 inspectorScroll;
 
     // Face painting controls
     private int selectedFaceStatus = 1; // 1=Corrupted, 2=Enhanced
     private int paintDuration = 3;
-    private Vector2Int inspectorPosition = new Vector2Int(0, 0);
+    private Vector2Int targetPosition = new Vector2Int(0, 0);
     private bool autoTrackPlayer = true;
+
+    // Selection
+    private CubeManager selectedCube = null;
+    private int maxCubesToShow = 8;
 
     public override void Initialize()
     {
@@ -27,7 +35,7 @@ public class CubeDebugPanel : DebugPanelBase
 
         if (playerManager != null)
         {
-            inspectorPosition = playerManager.currentTilePosition;
+            targetPosition = playerManager.currentTilePosition;
         }
     }
 
@@ -35,7 +43,13 @@ public class CubeDebugPanel : DebugPanelBase
     {
         if (autoTrackPlayer && playerManager != null)
         {
-            inspectorPosition = playerManager.currentTilePosition;
+            targetPosition = playerManager.currentTilePosition;
+        }
+
+        // Auto-clear destroyed cube selection
+        if (selectedCube != null && (selectedCube.isDestroyed || selectedCube == null))
+        {
+            selectedCube = null;
         }
     }
 
@@ -46,6 +60,7 @@ public class CubeDebugPanel : DebugPanelBase
 
         if (showFacePainter) DrawFacePainterSection();
         if (showActiveCubes) DrawActiveCubesSection();
+        if (showCubeInspector && selectedCube != null) DrawCubeInspectorSection();
     }
 
     private void DrawSectionToggles()
@@ -53,8 +68,10 @@ public class CubeDebugPanel : DebugPanelBase
         GUILayout.BeginHorizontal();
         showFacePainter = DrawToggleButton("Face Painter", showFacePainter);
         showActiveCubes = DrawToggleButton("Active Cubes", showActiveCubes);
+        showCubeInspector = DrawToggleButton("Inspector", showCubeInspector);
         GUILayout.EndHorizontal();
     }
+
     private bool DrawToggleButton(string label, bool current)
     {
         GUI.backgroundColor = current ? Color.cyan : Color.white;
@@ -62,28 +79,50 @@ public class CubeDebugPanel : DebugPanelBase
         GUI.backgroundColor = Color.white;
         return result ? !current : current;
     }
+
     private void DrawFacePainterSection()
     {
         GUILayout.BeginVertical(GUI.skin.box);
         GUILayout.Label("FACE PAINTER", GUI.skin.box);
 
-        // Inspector position
+        // Target position controls
+        DrawTargetPositionControls();
+
+        // Face painting settings
+        DrawFacePaintingSettings();
+
+        // Quick actions
+        DrawFacePaintingActions();
+
+        GUILayout.EndVertical();
+    }
+
+    private void DrawTargetPositionControls()
+    {
         GUILayout.BeginHorizontal();
         autoTrackPlayer = GUILayout.Toggle(autoTrackPlayer, "Track Player");
+
         if (!autoTrackPlayer)
         {
             GUILayout.Label("X:", GUILayout.Width(15));
-            string xStr = GUILayout.TextField(inspectorPosition.x.ToString(), GUILayout.Width(30));
+            string xStr = GUILayout.TextField(targetPosition.x.ToString(), GUILayout.Width(30));
             if (int.TryParse(xStr, out int newX))
-                inspectorPosition.x = Mathf.Clamp(newX, 0, gridManager?.Width - 1 ?? 10);
+                targetPosition.x = Mathf.Clamp(newX, 0, gridManager?.Width - 1 ?? 10);
 
             GUILayout.Label("Y:", GUILayout.Width(15));
-            string yStr = GUILayout.TextField(inspectorPosition.y.ToString(), GUILayout.Width(30));
+            string yStr = GUILayout.TextField(targetPosition.y.ToString(), GUILayout.Width(30));
             if (int.TryParse(yStr, out int newY))
-                inspectorPosition.y = Mathf.Clamp(newY, 0, gridManager?.Height - 1 ?? 20);
+                targetPosition.y = Mathf.Clamp(newY, 0, gridManager?.Height - 1 ?? 20);
+        }
+        else
+        {
+            GUILayout.Label($"Following: ({targetPosition.x}, {targetPosition.y})");
         }
         GUILayout.EndHorizontal();
+    }
 
+    private void DrawFacePaintingSettings()
+    {
         // Face status selector
         GUILayout.BeginHorizontal();
         GUI.backgroundColor = selectedFaceStatus == 1 ? Color.red : Color.white;
@@ -98,44 +137,79 @@ public class CubeDebugPanel : DebugPanelBase
         GUILayout.Label("Duration:", GUILayout.Width(60));
         string durationStr = GUILayout.TextField(paintDuration.ToString(), GUILayout.Width(40));
         if (int.TryParse(durationStr, out int newDuration))
-            paintDuration = Mathf.Clamp(newDuration, -1, 10);
+            paintDuration = Mathf.Clamp(newDuration, -1, 20);
         GUILayout.Label("(-1 = permanent)");
         GUILayout.EndHorizontal();
+    }
 
+    private void DrawFacePaintingActions()
+    {
         // Tile painting setup
         GUILayout.BeginHorizontal();
         if (GUILayout.Button("Setup Tile Painting"))
         {
-            SetupTilePainting(inspectorPosition);
+            SetupTilePainting(targetPosition);
         }
         if (GUILayout.Button("Clear Tile Painting"))
         {
-            ClearTilePainting(inspectorPosition);
+            ClearTilePainting(targetPosition);
         }
         GUILayout.EndHorizontal();
 
         // Cube face painting (direct)
-        var cubesAtPosition = FindCubesAt(inspectorPosition);
+        var cubesAtPosition = FindCubesAt(targetPosition);
         if (cubesAtPosition.Count > 0)
         {
-            GUILayout.Label($"Cubes at ({inspectorPosition.x}, {inspectorPosition.y}):");
-            foreach (var cube in cubesAtPosition)
+            GUILayout.Label($"Cubes at ({targetPosition.x}, {targetPosition.y}):");
+
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button("Paint All Faces"))
             {
-                GUILayout.BeginHorizontal();
-                GUILayout.Label($"{cube.type}", GUILayout.Width(80));
-                if (GUILayout.Button("Paint Face", GUILayout.Width(70)))
+                foreach (var cube in cubesAtPosition)
                 {
                     PaintCubeFace(cube);
                 }
-                if (GUILayout.Button("Clear Faces", GUILayout.Width(70)))
+            }
+            if (GUILayout.Button("Clear All Faces"))
+            {
+                foreach (var cube in cubesAtPosition)
                 {
                     cube.ClearAllFaces();
                 }
+            }
+            GUILayout.EndHorizontal();
+
+            // Individual cube controls
+            foreach (var cube in cubesAtPosition.Take(3)) // Show max 3 cubes
+            {
+                GUILayout.BeginHorizontal();
+                GUILayout.Label($"{cube.type}:", GUILayout.Width(60));
+
+                if (GUILayout.Button("Paint", GUILayout.Width(50)))
+                {
+                    PaintCubeFace(cube);
+                }
+                if (GUILayout.Button("Clear", GUILayout.Width(50)))
+                {
+                    cube.ClearAllFaces();
+                }
+                if (GUILayout.Button("Select", GUILayout.Width(50)))
+                {
+                    selectedCube = cube;
+                    showCubeInspector = true;
+                }
                 GUILayout.EndHorizontal();
             }
-        }
 
-        GUILayout.EndVertical();
+            if (cubesAtPosition.Count > 3)
+            {
+                GUILayout.Label($"... and {cubesAtPosition.Count - 3} more");
+            }
+        }
+        else
+        {
+            GUILayout.Label($"No cubes at ({targetPosition.x}, {targetPosition.y})");
+        }
     }
 
     private void DrawActiveCubesSection()
@@ -143,66 +217,388 @@ public class CubeDebugPanel : DebugPanelBase
         GUILayout.BeginVertical(GUI.skin.box);
         GUILayout.Label("ACTIVE CUBES", GUI.skin.box);
 
-        var allCubes = Object.FindObjectsOfType<CubeManager>();
-        int shownCubes = 0;
+        var allCubes = Object.FindObjectsOfType<CubeManager>()
+            .Where(c => c != null && !c.isDestroyed)
+            .OrderBy(c => c.position.y)
+            .ThenBy(c => c.position.x)
+            .ToList();
 
-        foreach (var cube in allCubes)
-        {
-            if (cube != null && !cube.isDestroyed && shownCubes < 5) // Show max 5 cubes
-            {
-                GUILayout.BeginVertical(GUI.skin.box);
-                GUILayout.Label($"{cube.type} at ({cube.position.x},{cube.position.y}):");
-
-                // Show face status
-                CubeFace activeFace = cube.GetCurrentDownFace();
-                FaceStatus activeStatus = cube.GetActiveFaceStatus();
-                GUILayout.Label($"Down Face: {activeFace} ({activeStatus})");
-                GUILayout.Label($"Effective Type: {cube.GetEffectiveType()}");
-                GUILayout.Label($"Can Capture: {cube.CanBeCaptured()}");
-
-                // Face control buttons
-                GUILayout.BeginHorizontal();
-                if (GUILayout.Button("Corrupt", GUILayout.Width(60)))
-                {
-                    cube.SetFaceStatus(activeFace, FaceStatus.Corrupted, paintDuration);
-                }
-                if (GUILayout.Button("Enhance", GUILayout.Width(60)))
-                {
-                    cube.SetFaceStatus(activeFace, FaceStatus.Enhanced, paintDuration);
-                }
-                if (GUILayout.Button("Clear", GUILayout.Width(50)))
-                {
-                    cube.SetFaceStatus(activeFace, FaceStatus.None, 0);
-                }
-                GUILayout.EndHorizontal();
-
-                // Debug buttons
-                GUILayout.BeginHorizontal();
-                if (GUILayout.Button("Show All Faces", GUILayout.Width(100)))
-                {
-                    cube.DebugShowAllFaces();
-                }
-                if (GUILayout.Button("Print Mapping", GUILayout.Width(100)))
-                {
-                    cube.DebugPrintFaceMapping();
-                }
-                GUILayout.EndHorizontal();
-
-                GUILayout.EndVertical();
-                shownCubes++;
-            }
-        }
-
-        if (shownCubes == 0)
+        if (allCubes.Count == 0)
         {
             GUILayout.Label("No active cubes found");
-        }
-        else if (allCubes.Length > 5)
-        {
-            GUILayout.Label($"Showing 5 of {allCubes.Length} cubes");
+            GUILayout.EndVertical();
+            return;
         }
 
+        // Controls
+        GUILayout.BeginHorizontal();
+        GUILayout.Label($"Found: {allCubes.Count} cubes");
+
+        string maxStr = GUILayout.TextField(maxCubesToShow.ToString(), GUILayout.Width(40));
+        if (int.TryParse(maxStr, out int newMax))
+            maxCubesToShow = Mathf.Clamp(newMax, 1, 20);
+        GUILayout.Label("shown");
+
+        if (GUILayout.Button("Clear All Faces"))
+        {
+            foreach (var cube in allCubes)
+            {
+                cube.ClearAllFaces();
+            }
+        }
+        GUILayout.EndHorizontal();
+
+        // Cube list
+        activeCubesScroll = GUILayout.BeginScrollView(activeCubesScroll, GUILayout.MaxHeight(300));
+
+        int shown = 0;
+        foreach (var cube in allCubes)
+        {
+            if (shown >= maxCubesToShow) break;
+
+            DrawCubeListItem(cube);
+            shown++;
+        }
+
+        if (allCubes.Count > maxCubesToShow)
+        {
+            GUILayout.Label($"... and {allCubes.Count - maxCubesToShow} more (increase limit to show)");
+        }
+
+        GUILayout.EndScrollView();
         GUILayout.EndVertical();
+    }
+
+    private void DrawCubeListItem(CubeManager cube)
+    {
+        bool isSelected = cube == selectedCube;
+        GUI.backgroundColor = isSelected ? Color.yellow : GetCubeColor(cube.type);
+
+        GUILayout.BeginVertical(GUI.skin.box);
+
+        // Header line
+        GUILayout.BeginHorizontal();
+        GUILayout.Label($"{cube.type} at ({cube.position.x},{cube.position.y})", GUILayout.Width(140));
+
+        if (GUILayout.Button("Select", GUILayout.Width(50)))
+        {
+            selectedCube = cube;
+            showCubeInspector = true;
+        }
+        GUILayout.EndHorizontal();
+
+        // Status line
+        var activeFace = cube.GetCurrentDownFace();
+        var activeStatus = cube.GetActiveFaceStatus();
+        var effectiveType = cube.GetEffectiveType();
+
+        GUILayout.BeginHorizontal();
+        GUILayout.Label($"Face: {activeFace} ({activeStatus})", GUILayout.Width(120));
+
+        if (effectiveType != cube.type)
+        {
+            GUI.color = Color.yellow;
+            GUILayout.Label($"→ {effectiveType}");
+            GUI.color = Color.white;
+        }
+        GUILayout.EndHorizontal();
+
+        // Quick actions
+        GUILayout.BeginHorizontal();
+        if (GUILayout.Button("C", GUILayout.Width(25)))
+        {
+            cube.SetFaceStatus(activeFace, FaceStatus.Corrupted, paintDuration);
+        }
+        if (GUILayout.Button("E", GUILayout.Width(25)))
+        {
+            cube.SetFaceStatus(activeFace, FaceStatus.Enhanced, paintDuration);
+        }
+        if (GUILayout.Button("X", GUILayout.Width(25)))
+        {
+            cube.SetFaceStatus(activeFace, FaceStatus.None, 0);
+        }
+        if (GUILayout.Button("Debug", GUILayout.Width(50)))
+        {
+            cube.DebugPrintFaceMapping();
+        }
+        GUILayout.EndHorizontal();
+
+        GUILayout.EndVertical();
+        GUI.backgroundColor = Color.white;
+        GUILayout.Space(2);
+    }
+
+    private void DrawCubeInspectorSection()
+    {
+        GUILayout.BeginVertical(GUI.skin.box);
+        GUILayout.Label("CUBE INSPECTOR", GUI.skin.box);
+
+        if (selectedCube == null || selectedCube.isDestroyed)
+        {
+            GUILayout.Label("No cube selected or cube destroyed");
+            selectedCube = null;
+            GUILayout.EndVertical();
+            return;
+        }
+
+        inspectorScroll = GUILayout.BeginScrollView(inspectorScroll, GUILayout.MinHeight(400));
+
+        // Basic info
+        GUILayout.Label($"Type: {selectedCube.type} | HP: {selectedCube.currentHitPoints}/{selectedCube.maxHitPoints}");
+        GUILayout.Label($"Position: ({selectedCube.position.x}, {selectedCube.position.y})");
+        GUILayout.Label($"Move Count: {selectedCube.moveCount}");
+
+        GUILayout.Space(5);
+
+        // Face status details
+        DrawDetailedFaceInfo();
+
+        GUILayout.Space(5);
+
+        // Face manipulation
+        DrawFaceManipulation();
+
+        GUILayout.Space(5);
+
+        // Testing functions
+        DrawTestingFunctions();
+
+        GUILayout.EndScrollView();
+        GUILayout.EndVertical();
+    }
+
+    private void DrawDetailedFaceInfo()
+    {
+        GUILayout.Label("Face Status Details:", GUI.skin.box);
+
+        var downFace = selectedCube.GetCurrentDownFace();
+        var activeStatus = selectedCube.GetActiveFaceStatus();
+        var effectiveType = selectedCube.GetEffectiveType();
+
+        GUILayout.Label($"Current Down Face: {downFace}");
+        GUILayout.Label($"Active Status: {activeStatus}");
+        GUILayout.Label($"Effective Type: {effectiveType}");
+        GUILayout.Label($"Can Be Captured: {selectedCube.CanBeCaptured()}");
+        GUILayout.Label($"Should Create Detonation: {selectedCube.ShouldCreateDetonation()}");
+
+        GUILayout.Space(3);
+
+        // Show ALL face statuses in a clear table format
+        GUILayout.Label("All Face Statuses:", GUI.skin.box);
+
+        // Table header
+        GUILayout.BeginHorizontal();
+        GUILayout.Label("Face", GUILayout.Width(60));
+        GUILayout.Label("Status", GUILayout.Width(80));
+        GUILayout.Label("Duration", GUILayout.Width(60));
+        GUILayout.Label("Active", GUILayout.Width(50));
+        GUILayout.EndHorizontal();
+
+        // Draw each face with full details
+        for (int i = 0; i < 4; i++)
+        {
+            var face = (CubeFace)i;
+            var status = selectedCube.GetFaceStatus(face);
+            var duration = selectedCube.GetFaceDuration(face);
+            bool isCurrentDown = face == downFace;
+
+            // Highlight the current down face
+            if (isCurrentDown)
+            {
+                GUI.backgroundColor = Color.yellow;
+            }
+            else if (status != FaceStatus.None)
+            {
+                GUI.backgroundColor = status == FaceStatus.Corrupted ? new Color(1f, 0.5f, 0.5f) : new Color(0.5f, 0.5f, 1f);
+            }
+
+            GUILayout.BeginHorizontal(GUI.skin.box);
+
+            GUILayout.Label($"{face}", GUILayout.Width(60));
+
+            string statusText = status == FaceStatus.None ? "None" : status.ToString();
+            GUILayout.Label(statusText, GUILayout.Width(80));
+
+            string durationText = status == FaceStatus.None ? "-" : (duration == -1 ? "∞" : duration.ToString());
+            GUILayout.Label(durationText, GUILayout.Width(60));
+
+            GUILayout.Label(isCurrentDown ? "YES" : "", GUILayout.Width(50));
+
+            GUILayout.EndHorizontal();
+            GUI.backgroundColor = Color.white;
+        }
+    }
+
+    private void DrawFaceManipulation()
+    {
+        GUILayout.Label("Face Manipulation:", GUI.skin.box);
+
+        // Paint current down face
+        GUILayout.Label("Paint Current Down Face:");
+        GUILayout.BeginHorizontal();
+        if (GUILayout.Button("Corrupt", GUILayout.Width(60)))
+            selectedCube.PaintCurrentDownFace(FaceStatus.Corrupted, Color.red, paintDuration);
+        if (GUILayout.Button("Enhance", GUILayout.Width(60)))
+            selectedCube.PaintCurrentDownFace(FaceStatus.Enhanced, Color.blue, paintDuration);
+        if (GUILayout.Button("Clear", GUILayout.Width(50)))
+            selectedCube.PaintCurrentDownFace(FaceStatus.None, Color.white, 0);
+        GUILayout.EndHorizontal();
+
+        GUILayout.Space(5);
+
+        // Paint ALL faces - Multiple face painting
+        GUILayout.Label("Paint Multiple Faces:", GUI.skin.box);
+
+        GUILayout.BeginHorizontal();
+        if (GUILayout.Button("All Corrupt"))
+        {
+            for (int i = 0; i < 4; i++)
+            {
+                selectedCube.SetFaceStatus((CubeFace)i, FaceStatus.Corrupted, paintDuration);
+            }
+        }
+        if (GUILayout.Button("All Enhance"))
+        {
+            for (int i = 0; i < 4; i++)
+            {
+                selectedCube.SetFaceStatus((CubeFace)i, FaceStatus.Enhanced, paintDuration);
+            }
+        }
+        if (GUILayout.Button("Clear All"))
+        {
+            selectedCube.ClearAllFaces();
+        }
+        GUILayout.EndHorizontal();
+
+        GUILayout.BeginHorizontal();
+        if (GUILayout.Button("Alternating Pattern"))
+        {
+            for (int i = 0; i < 4; i++)
+            {
+                var status = i % 2 == 0 ? FaceStatus.Corrupted : FaceStatus.Enhanced;
+                selectedCube.SetFaceStatus((CubeFace)i, status, paintDuration);
+            }
+        }
+        if (GUILayout.Button("Test All Faces"))
+        {
+            selectedCube.DebugShowAllFaces();
+        }
+        GUILayout.EndHorizontal();
+
+        GUILayout.Space(5);
+
+        // Paint specific faces - Individual face control
+        GUILayout.Label("Individual Face Control:", GUI.skin.box);
+
+        for (int i = 0; i < 4; i++)
+        {
+            var face = (CubeFace)i;
+            var currentStatus = selectedCube.GetFaceStatus(face);
+            var currentDuration = selectedCube.GetFaceDuration(face);
+            bool isCurrentDown = face == selectedCube.GetCurrentDownFace();
+
+            // Highlight current down face
+            if (isCurrentDown)
+            {
+                GUI.backgroundColor = Color.yellow;
+            }
+
+            GUILayout.BeginVertical(GUI.skin.box);
+
+            GUILayout.BeginHorizontal();
+            GUILayout.Label($"{face}:", GUILayout.Width(60));
+
+            if (GUILayout.Button("C", GUILayout.Width(25)))
+                selectedCube.SetFaceStatus(face, FaceStatus.Corrupted, paintDuration);
+            if (GUILayout.Button("E", GUILayout.Width(25)))
+                selectedCube.SetFaceStatus(face, FaceStatus.Enhanced, paintDuration);
+            if (GUILayout.Button("X", GUILayout.Width(25)))
+                selectedCube.SetFaceStatus(face, FaceStatus.None, 0);
+
+            // Show current status with color coding
+            if (currentStatus != FaceStatus.None)
+            {
+                GUI.color = currentStatus == FaceStatus.Corrupted ? Color.red : Color.cyan;
+                string durationText = currentDuration == -1 ? "∞" : currentDuration.ToString();
+                GUILayout.Label($"{currentStatus} ({durationText})");
+                GUI.color = Color.white;
+            }
+            else
+            {
+                GUILayout.Label("None");
+            }
+
+            if (isCurrentDown)
+            {
+                GUI.color = Color.yellow;
+                GUILayout.Label("ACTIVE");
+                GUI.color = Color.white;
+            }
+
+            GUILayout.EndHorizontal();
+            GUILayout.EndVertical();
+            GUI.backgroundColor = Color.white;
+        }
+
+        GUILayout.Space(5);
+
+        // Duration controls for batch operations
+        GUILayout.Label("Batch Duration Control:");
+        GUILayout.BeginHorizontal();
+        GUILayout.Label("Duration:", GUILayout.Width(60));
+        string durationStr = GUILayout.TextField(paintDuration.ToString(), GUILayout.Width(40));
+        if (int.TryParse(durationStr, out int newDuration))
+            paintDuration = Mathf.Clamp(newDuration, -1, 50);
+
+        if (GUILayout.Button("Set All Durations"))
+        {
+            for (int i = 0; i < 4; i++)
+            {
+                var face = (CubeFace)i;
+                var status = selectedCube.GetFaceStatus(face);
+                if (status != FaceStatus.None)
+                {
+                    selectedCube.SetFaceStatus(face, status, paintDuration);
+                }
+            }
+        }
+        GUILayout.EndHorizontal();
+    }
+
+    private void DrawTestingFunctions()
+    {
+        GUILayout.Label("Testing Functions:", GUI.skin.box);
+
+        GUILayout.BeginHorizontal();
+        if (GUILayout.Button("Force Move"))
+        {
+            selectedCube.MoveForward();
+        }
+        if (GUILayout.Button("Take Damage"))
+        {
+            bool destroyed = selectedCube.TakeDamage(1);
+            if (destroyed)
+            {
+                selectedCube = null;
+            }
+        }
+        GUILayout.EndHorizontal();
+
+        GUILayout.BeginHorizontal();
+        if (GUILayout.Button("Print Face Mapping"))
+        {
+            selectedCube.DebugPrintFaceMapping();
+        }
+        if (GUILayout.Button("Test All Face Paints"))
+        {
+            for (int i = 0; i < 4; i++)
+            {
+                var face = (CubeFace)i;
+                var status = i % 2 == 0 ? FaceStatus.Corrupted : FaceStatus.Enhanced;
+                selectedCube.TestPaintFace(face, status);
+            }
+        }
+        GUILayout.EndHorizontal();
     }
 
     // Helper methods
@@ -257,5 +653,17 @@ public class CubeDebugPanel : DebugPanelBase
             }
         }
         return cubes;
+    }
+
+    private Color GetCubeColor(CubeType type)
+    {
+        switch (type)
+        {
+            case CubeType.Normal: return new Color(0.8f, 0.8f, 0.8f);
+            case CubeType.Blue: return new Color(0.3f, 0.6f, 1f);
+            case CubeType.Black: return new Color(0.3f, 0.3f, 0.3f);
+            case CubeType.Reinforced: return new Color(0.8f, 0.4f, 0.8f);
+            default: return Color.white;
+        }
     }
 }
