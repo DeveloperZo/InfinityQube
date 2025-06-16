@@ -63,12 +63,24 @@ public class WaveDebugPanel : DebugPanelBase
             waveEditorPanel?.DrawPanel(OnWaveChanged, OnSyncToGrid);
 
         if (showCubeTools)
-            cubeToolsPanel?.DrawPanel(waveEditorPanel?.CurrentEditingWave, OnSyncToGrid);
+            cubeToolsPanel?.DrawPanel(waveEditorPanel?.CurrentEditingWave, OnSyncToGrid, OnCubeAdded, OnCubeRemoved);
 
         if (showWaveLibrary)
             waveLibraryPanel?.DrawPanel(waveEditorPanel?.CurrentEditingWave, OnWaveChanged);
     }
+    private void OnCubeAdded(Vector2Int gridPosition, CubeType cubeType)
+    {
+        // Notify wave editor that a cube was added
+        waveEditorPanel?.AddCubeToWave(gridPosition, cubeType);
+        Debug.Log($"Added {cubeType} cube to wave at grid ({gridPosition.x}, {gridPosition.y})");
+    }
 
+    private void OnCubeRemoved(Vector2Int gridPosition)
+    {
+        // Notify wave editor that a cube was removed
+        waveEditorPanel?.RemoveCubeFromWave(gridPosition);
+        Debug.Log($"Removed cube from wave at grid ({gridPosition.x}, {gridPosition.y})");
+    }
     private void DrawSectionToggles()
     {
         GUILayout.BeginHorizontal();
@@ -109,7 +121,17 @@ public class WaveDebugPanel : DebugPanelBase
         var currentWave = waveEditorPanel?.CurrentEditingWave;
         if (currentWave == null || waveManager == null) return;
 
-        SyncWaveToGrid(currentWave);
+        // Sync grid to wave data OR capture grid state to wave
+        if (waveManager.activeCubes.Count > 0)
+        {
+            // Grid has cubes - capture them to wave
+            waveEditorPanel?.SyncWaveDataToGrid();
+        }
+        else
+        {
+            // Grid is empty - sync wave data to grid
+            SyncWaveToGrid(currentWave);
+        }
     }
 
     private void SyncWaveToGrid(WaveData wave)

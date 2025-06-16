@@ -363,21 +363,37 @@ MonoBehaviour:
   m_GameObject: {fileID: 9015426373669967719}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2edaef2e509af074d8462d7440467daa, type: 3}
+  m_Script: {fileID: 11500000, guid: f111d3017f44abd4592145bac9aeeb58, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   level: 1
   position: {x: 0, y: 0}
-  type: 0
-  material: {fileID: 2100000, guid: 4b123f0ccf0ca2349970846f0d3a8b32, type: 2}
+  type: 3
+  material: {fileID: 0}
   prefab: {fileID: 9015426373669967719}
   spawnHeight: 0
+  currentHitPoints: 1
+  maxHitPoints: 1
+  moveCount: 0
   moveDuration: 0.25
   squashDuration: 0.25
   isRainingCube: 0
   usePhysics: 1
   cubeRigidbody: {fileID: 0}
   cubeCollider: {fileID: 0}
+  faceStatuses: 00000000000000000000000000000000
+  faceColors:
+  - {r: 0, g: 0, b: 0, a: 0}
+  - {r: 0, g: 0, b: 0, a: 0}
+  - {r: 0, g: 0, b: 0, a: 0}
+  - {r: 0, g: 0, b: 0, a: 0}
+  faceDurations: 00000000000000000000000000000000
+  faceIndicators:
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  showFaceIndicators: 1
   isMoving: 0
   isDestroyed: 0
   rainSpeed: 3

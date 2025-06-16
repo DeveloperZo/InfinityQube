@@ -17,12 +17,12 @@ MonoBehaviour:
   GridWidth: 3
   CubesData:
   - type: 2
-    position: {x: 1, y: 1}
+    position: {x: 1, y: 0}
     level: 1
   limitMarkers: 1
   maxMarkerCharge: 0
   maxMarkerCount: 0
-  waveStartDelay: 0.75
+  waveStartDelay: 0.8
   moveInterval: 2
   fastMoveInterval: 0.1
   hasOwnSuccessCriteria: 0

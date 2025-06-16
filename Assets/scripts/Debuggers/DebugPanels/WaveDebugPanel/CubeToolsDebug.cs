@@ -15,7 +15,7 @@ namespace WaveDebugSystem
         private bool isPlacementMode = false;
         private bool showGridView = true;
         private bool showCubeInspector = true;
-        private bool followCubes = true; // New: follow cubes as they move
+        private bool showEmptyRows = false; // New: option to show empty rows for placement
         private Vector2 gridScroll;
         private Vector2 inspectorScroll;
 
@@ -30,22 +30,22 @@ namespace WaveDebugSystem
             this.gridManager = gridManager;
         }
 
-        public void DrawPanel(WaveData currentEditingWave, System.Action onSyncToGrid = null)
+        public void DrawPanel(WaveData currentEditingWave, System.Action onSyncToGrid = null, System.Action<Vector2Int, CubeType> onCubeAdded = null, System.Action<Vector2Int> onCubeRemoved = null)
         {
             GUILayout.BeginVertical(GUI.skin.box);
-            GUILayout.Label("WAVE EDITOR", GUI.skin.box);
+            GUILayout.Label("CUBE TOOLS", GUI.skin.box);
 
             DrawModeControls();
             DrawCubeTypeSelector();
 
             if (showGridView)
             {
-                DrawCompactWaveEditor(currentEditingWave, onSyncToGrid);
+                DrawDynamicCubeGrid(currentEditingWave, onSyncToGrid, onCubeAdded, onCubeRemoved);
             }
 
             if (showCubeInspector && selectedCube != null)
             {
-                DrawCubeInspector();
+                DrawCubeInspector(onCubeAdded, onCubeRemoved);
             }
 
             GUILayout.EndVertical();
@@ -72,6 +72,7 @@ namespace WaveDebugSystem
 
             showGridView = GUILayout.Toggle(showGridView, "Grid");
             showCubeInspector = GUILayout.Toggle(showCubeInspector, "Inspector");
+            showEmptyRows = GUILayout.Toggle(showEmptyRows, "Empty Rows");
 
             GUILayout.EndHorizontal();
 
@@ -98,26 +99,28 @@ namespace WaveDebugSystem
             GUILayout.EndHorizontal();
         }
 
-        private void DrawCompactWaveEditor(WaveData currentEditingWave, System.Action onSyncToGrid)
+        private void DrawDynamicCubeGrid(WaveData currentEditingWave, System.Action onSyncToGrid, System.Action<Vector2Int, CubeType> onCubeAdded, System.Action<Vector2Int> onCubeRemoved)
         {
             GUILayout.BeginVertical(GUI.skin.box);
 
             // Get all active cubes from the scene
             var activeCubes = GetActiveCubesDict();
 
-            // Determine the wave dimensions to show
-            int waveWidth = currentEditingWave?.GridWidth ?? 5;
-            int waveHeight = currentEditingWave?.GridHeight ?? 3;
+            // Calculate the dynamic view area based on cube positions
+            var viewArea = CalculateDynamicViewArea(activeCubes);
 
             // Show grid info
-            GUILayout.Label($"Wave Grid ({waveWidth}x{waveHeight}) - Active Cubes: {activeCubes.Count}");
+            GUILayout.Label($"Active Cubes: {activeCubes.Count} | View Area: {viewArea.width}x{viewArea.height}");
+
+            if (viewArea.width > 0 && viewArea.height > 0)
+            {
+                GUILayout.Label($"Grid Range: X({viewArea.xMin}-{viewArea.xMax}) Y({viewArea.yMin}-{viewArea.yMax})");
+            }
 
             // Show hovered position if any
             if (hoveredGridPosition.x >= 0)
             {
-                // Calculate actual grid position (at top of grid)
-                int actualY = gridManager.Height - 1 - hoveredGridPosition.y;
-                GUILayout.Label($"Hover: Wave({hoveredGridPosition.x},{hoveredGridPosition.y}) → Grid({hoveredGridPosition.x},{actualY})", GUI.skin.box);
+                GUILayout.Label($"Hover: Grid({hoveredGridPosition.x},{hoveredGridPosition.y})", GUI.skin.box);
             }
 
             // Grid controls
@@ -126,175 +129,146 @@ namespace WaveDebugSystem
             {
                 waveManager?.ClearAllCubes();
                 selectedCube = null;
+                onSyncToGrid?.Invoke(); // Notify wave editor
             }
             if (GUILayout.Button("Spawn Test", GUILayout.Width(80)))
             {
                 SpawnTestPattern();
+                onSyncToGrid?.Invoke(); // Notify wave editor
             }
             if (GUILayout.Button("Fill Top Row", GUILayout.Width(90)))
             {
-                FillTopRow(waveWidth);
+                FillTopRow();
+                onSyncToGrid?.Invoke(); // Notify wave editor
+            }
+            if (GUILayout.Button("Compact View", GUILayout.Width(90)))
+            {
+                // Force recalculation of view area
+                hoveredGridPosition = new Vector2Int(-1, -1);
             }
             GUILayout.EndHorizontal();
 
-            // View mode toggle
-            GUILayout.BeginHorizontal();
-            GUI.backgroundColor = followCubes ? Color.green : Color.white;
-            if (GUILayout.Button("Follow Cubes"))
+            // Draw the dynamic grid only if there are cubes or empty rows are enabled
+            if (activeCubes.Count > 0 || showEmptyRows)
             {
-                followCubes = true;
-            }
-            GUI.backgroundColor = !followCubes ? Color.cyan : Color.white;
-            if (GUILayout.Button("Fixed Wave View"))
-            {
-                followCubes = false;
-            }
-            GUI.backgroundColor = Color.white;
-            GUILayout.EndHorizontal();
-
-            // Draw the compact grid
-            gridScroll = GUILayout.BeginScrollView(gridScroll, GUILayout.MinHeight(400));
-
-            if (followCubes)
-            {
-                DrawCompactWaveGrid(activeCubes, waveWidth, waveHeight, currentEditingWave, onSyncToGrid);
+                gridScroll = GUILayout.BeginScrollView(gridScroll, GUILayout.MinHeight(300), GUILayout.MaxHeight(500));
+                DrawCompactGrid(activeCubes, viewArea, currentEditingWave, onSyncToGrid, onCubeAdded, onCubeRemoved);
+                GUILayout.EndScrollView();
             }
             else
             {
-                DrawFixedWaveGrid(activeCubes, waveWidth, waveHeight, currentEditingWave, onSyncToGrid);
+                GUILayout.Label("No cubes on grid. Use placement mode or 'Spawn Test' to add cubes.", GUI.skin.box);
             }
-
-            GUILayout.EndScrollView();
 
             GUILayout.EndVertical();
         }
 
-        private void DrawCompactWaveGrid(Dictionary<Vector2Int, CubeManager> activeCubes,
-                                        int waveWidth, int waveHeight,
-                                        WaveData currentEditingWave, System.Action onSyncToGrid)
+        private GridViewArea CalculateDynamicViewArea(Dictionary<Vector2Int, CubeManager> activeCubes)
         {
-            // Find the actual range of Y positions that contain cubes
-            int minY = gridManager.Height - 1; // Start at top
-            int maxY = gridManager.Height - 1; // Start at top
+            if (activeCubes.Count == 0 && !showEmptyRows)
+            {
+                return new GridViewArea(); // Empty area
+            }
+
+            if (showEmptyRows || activeCubes.Count == 0)
+            {
+                // Show a reasonable default area when showing empty rows
+                return new GridViewArea
+                {
+                    xMin = 0,
+                    xMax = gridManager.Width - 1,
+                    yMin = gridManager.Height - 5, // Show top 5 rows
+                    yMax = gridManager.Height - 1
+                };
+            }
+
+            // Calculate bounds based on actual cube positions
+            int minX = int.MaxValue, maxX = int.MinValue;
+            int minY = int.MaxValue, maxY = int.MinValue;
 
             foreach (var kvp in activeCubes)
             {
                 if (kvp.Value != null && !kvp.Value.isDestroyed)
                 {
-                    minY = Mathf.Min(minY, kvp.Key.y);
-                    maxY = Mathf.Max(maxY, kvp.Key.y);
+                    var pos = kvp.Key;
+                    minX = Mathf.Min(minX, pos.x);
+                    maxX = Mathf.Max(maxX, pos.x);
+                    minY = Mathf.Min(minY, pos.y);
+                    maxY = Mathf.Max(maxY, pos.y);
                 }
             }
 
-            // Ensure we show at least the wave height from the top
-            int topRow = gridManager.Height - 1;
-            maxY = topRow; // Always show the top
-            minY = Mathf.Min(minY, topRow - waveHeight + 1);
+            // Add a small buffer around the cube area for easier placement
+            int bufferX = 1;
+            int bufferY = 2; // More Y buffer for typical gameplay
 
-            // Calculate the display range
-            int displayStartY = maxY;
-            int displayEndY = minY;
-            int displayHeight = displayStartY - displayEndY + 1;
-
-            // Column headers
-            GUILayout.BeginHorizontal();
-            GUILayout.Label("Y\\X", GUILayout.Width(40));
-            for (int x = 0; x < waveWidth; x++)
+            return new GridViewArea
             {
-                GUILayout.Label($"{x}", GUILayout.Width(40));
-            }
-            GUILayout.EndHorizontal();
-
-            // Draw the grid rows that contain cubes or are in the wave area
-            for (int gridY = displayStartY; gridY >= displayEndY; gridY--)
-            {
-                GUILayout.BeginHorizontal();
-
-                // Calculate wave Y (distance from top)
-                int waveY = topRow - gridY;
-
-                // Show both grid and wave Y coordinates
-                GUI.color = (gridY >= topRow - waveHeight + 1) ? Color.white : Color.gray;
-                GUILayout.Label($"G{gridY}/W{waveY}:", GUILayout.Width(40));
-                GUI.color = Color.white;
-
-                for (int x = 0; x < waveWidth; x++)
-                {
-                    Vector2Int gridPos = new Vector2Int(x, gridY);
-                    Vector2Int wavePos = new Vector2Int(x, waveY);
-                    DrawWaveGridCell(gridPos, wavePos, activeCubes, currentEditingWave, onSyncToGrid);
-                }
-
-                GUILayout.EndHorizontal();
-            }
-
-            // Show info about the view
-            if (displayHeight > waveHeight)
-            {
-                GUILayout.Label($"Showing rows {displayEndY}-{displayStartY} (Wave area: top {waveHeight} rows)", GUI.skin.box);
-            }
-
-            // Show selection info with both coordinate systems
-            if (selectedCube != null && !selectedCube.isDestroyed)
-            {
-                GUILayout.Space(5);
-                GUI.color = Color.yellow;
-                int waveY = gridManager.Height - 1 - selectedCube.position.y;
-                GUILayout.Label($"Selected: {selectedCube.type} at Grid({selectedCube.position.x},{selectedCube.position.y}) = Wave({selectedCube.position.x},{waveY})");
-                GUI.color = Color.white;
-            }
+                xMin = Mathf.Max(0, minX - bufferX),
+                xMax = Mathf.Min(gridManager.Width - 1, maxX + bufferX),
+                yMin = Mathf.Max(0, minY - bufferY),
+                yMax = Mathf.Min(gridManager.Height - 1, maxY + bufferY)
+            };
         }
 
-        private void DrawFixedWaveGrid(Dictionary<Vector2Int, CubeManager> activeCubes,
-                                      int waveWidth, int waveHeight,
-                                      WaveData currentEditingWave, System.Action onSyncToGrid)
+        private void DrawCompactGrid(Dictionary<Vector2Int, CubeManager> activeCubes,
+                                   GridViewArea viewArea,
+                                   WaveData currentEditingWave,
+                                   System.Action onSyncToGrid,
+                                   System.Action<Vector2Int, CubeType> onCubeAdded,
+                                   System.Action<Vector2Int> onCubeRemoved)
         {
-            // Column headers
+            if (viewArea.width <= 0 || viewArea.height <= 0) return;
+
+            // Column headers with actual grid X coordinates
             GUILayout.BeginHorizontal();
-            GUILayout.Label("Y\\X", GUILayout.Width(40));
-            for (int x = 0; x < waveWidth; x++)
+            GUILayout.Label("Y\\X", GUILayout.Width(50));
+            for (int x = viewArea.xMin; x <= viewArea.xMax; x++)
             {
                 GUILayout.Label($"{x}", GUILayout.Width(40));
             }
             GUILayout.EndHorizontal();
 
-            // Draw only the wave height rows from the top
-            int topRow = gridManager.Height - 1;
-
-            for (int waveY = 0; waveY < waveHeight; waveY++)
+            // Draw rows from top to bottom (highest Y to lowest Y)
+            for (int y = viewArea.yMax; y >= viewArea.yMin; y--)
             {
                 GUILayout.BeginHorizontal();
 
-                // Calculate actual grid Y position
-                int gridY = topRow - waveY;
+                // Row header with actual grid Y coordinate
+                GUI.color = (y >= gridManager.Height - 3) ? Color.cyan : Color.white; // Highlight top rows
+                GUILayout.Label($"{y}", GUILayout.Width(50));
+                GUI.color = Color.white;
 
-                // Show wave Y coordinate
-                GUILayout.Label($"W{waveY}:", GUILayout.Width(40));
-
-                for (int x = 0; x < waveWidth; x++)
+                // Draw cells for this row
+                for (int x = viewArea.xMin; x <= viewArea.xMax; x++)
                 {
-                    Vector2Int gridPos = new Vector2Int(x, gridY);
-                    Vector2Int wavePos = new Vector2Int(x, waveY);
-                    DrawWaveGridCell(gridPos, wavePos, activeCubes, currentEditingWave, onSyncToGrid);
+                    Vector2Int gridPos = new Vector2Int(x, y);
+                    DrawGridCell(gridPos, activeCubes, currentEditingWave, onSyncToGrid, onCubeAdded, onCubeRemoved);
                 }
 
                 GUILayout.EndHorizontal();
             }
 
-            // Show selection info with both coordinate systems
+            // Show selection info with actual grid coordinates
             if (selectedCube != null && !selectedCube.isDestroyed)
             {
                 GUILayout.Space(5);
                 GUI.color = Color.yellow;
-                int waveY = gridManager.Height - 1 - selectedCube.position.y;
-                GUILayout.Label($"Selected: {selectedCube.type} at Grid({selectedCube.position.x},{selectedCube.position.y}) = Wave({selectedCube.position.x},{waveY})");
+                GUILayout.Label($"Selected: {selectedCube.type} at Grid({selectedCube.position.x},{selectedCube.position.y})");
                 GUI.color = Color.white;
             }
+
+            // Show view area info
+            GUILayout.Space(3);
+            GUILayout.Label($"Viewing: {viewArea.width}x{viewArea.height} area of {gridManager.Width}x{gridManager.Height} grid", GUI.skin.box);
         }
 
-        private void DrawWaveGridCell(Vector2Int gridPos, Vector2Int wavePos,
-                                     Dictionary<Vector2Int, CubeManager> activeCubes,
-                                     WaveData currentEditingWave, System.Action onSyncToGrid)
+        private void DrawGridCell(Vector2Int gridPos,
+                                Dictionary<Vector2Int, CubeManager> activeCubes,
+                                WaveData currentEditingWave,
+                                System.Action onSyncToGrid,
+                                System.Action<Vector2Int, CubeType> onCubeAdded,
+                                System.Action<Vector2Int> onCubeRemoved)
         {
             bool hasCube = activeCubes.ContainsKey(gridPos);
             CubeManager cube = hasCube ? activeCubes[gridPos] : null;
@@ -302,7 +276,7 @@ namespace WaveDebugSystem
             // Determine button appearance
             Color buttonColor = Color.white;
             string buttonText = "·";
-            string tooltip = $"Wave({wavePos.x},{wavePos.y}) = Grid({gridPos.x},{gridPos.y})";
+            string tooltip = $"Grid({gridPos.x},{gridPos.y})";
 
             if (cube != null)
             {
@@ -322,16 +296,33 @@ namespace WaveDebugSystem
                 if (effectiveType != cube.type)
                 {
                     buttonText += "*";
+                    tooltip += $" (acts as {effectiveType})";
+                }
+
+                // Show damage
+                if (cube.currentHitPoints < cube.maxHitPoints)
+                {
+                    buttonText += $"{cube.currentHitPoints}";
+                }
+            }
+            else
+            {
+                // Empty cell - show placement hint
+                if (isPlacementMode)
+                {
+                    buttonColor = new Color(0.9f, 0.9f, 0.9f);
+                    buttonText = "+";
+                    tooltip += " (click to place)";
                 }
             }
 
             // Handle hover
-            Rect buttonRect = GUILayoutUtility.GetRect(40, 40, GUILayout.Width(40), GUILayout.Height(40));
+            Rect buttonRect = GUILayoutUtility.GetRect(40, 30, GUILayout.Width(40), GUILayout.Height(30));
             bool isHovered = buttonRect.Contains(Event.current.mousePosition);
 
             if (isHovered)
             {
-                hoveredGridPosition = wavePos;
+                hoveredGridPosition = gridPos;
                 buttonColor = Color.Lerp(buttonColor, Color.white, 0.3f);
             }
 
@@ -340,13 +331,16 @@ namespace WaveDebugSystem
             GUIContent buttonContent = new GUIContent(buttonText, tooltip);
             if (GUI.Button(buttonRect, buttonContent))
             {
-                HandleCellClick(gridPos, cube, currentEditingWave, onSyncToGrid);
+                HandleCellClick(gridPos, cube, currentEditingWave, onSyncToGrid, onCubeAdded, onCubeRemoved);
             }
             GUI.backgroundColor = Color.white;
         }
 
         private void HandleCellClick(Vector2Int gridPos, CubeManager existingCube,
-                                   WaveData currentEditingWave, System.Action onSyncToGrid)
+                                   WaveData currentEditingWave,
+                                   System.Action onSyncToGrid,
+                                   System.Action<Vector2Int, CubeType> onCubeAdded,
+                                   System.Action<Vector2Int> onCubeRemoved)
         {
             if (isPlacementMode)
             {
@@ -356,11 +350,20 @@ namespace WaveDebugSystem
                     waveManager.activeCubes.Remove(existingCube);
                     Object.Destroy(existingCube.gameObject);
                     if (selectedCube == existingCube) selectedCube = null;
+
+                    // Notify wave editor
+                    onCubeRemoved?.Invoke(gridPos);
+
+                    Debug.Log($"Removed cube from Grid({gridPos.x}, {gridPos.y})");
                 }
                 else
                 {
                     // Place new cube at the grid position
-                    SpawnCubeAt(gridPos, (CubeType)selectedCubeType);
+                    var cubeType = (CubeType)selectedCubeType;
+                    SpawnCubeAt(gridPos, cubeType);
+
+                    // Notify wave editor
+                    onCubeAdded?.Invoke(gridPos, cubeType);
                 }
             }
             else
@@ -368,10 +371,14 @@ namespace WaveDebugSystem
                 // Selection mode
                 selectedCube = existingCube;
                 selectedGridPosition = gridPos;
+                if (existingCube != null)
+                {
+                    Debug.Log($"Selected {existingCube.type} cube at Grid({gridPos.x}, {gridPos.y})");
+                }
             }
         }
 
-        private void DrawCubeInspector()
+        private void DrawCubeInspector(System.Action<Vector2Int, CubeType> onCubeAdded = null, System.Action<Vector2Int> onCubeRemoved = null)
         {
             GUILayout.BeginVertical(GUI.skin.box);
             GUILayout.Label("CUBE INSPECTOR", GUI.skin.box);
@@ -386,33 +393,29 @@ namespace WaveDebugSystem
 
             inspectorScroll = GUILayout.BeginScrollView(inspectorScroll, GUILayout.MaxHeight(300));
 
-            // Basic info with both coordinate systems
+            // Basic info with actual grid coordinates
             GUILayout.Label($"Type: {selectedCube.type}", GUI.skin.box);
-
-            // Calculate wave Y position
-            int waveY = gridManager.Height - 1 - selectedCube.position.y;
             GUILayout.Label($"Grid Position: ({selectedCube.position.x}, {selectedCube.position.y})");
-            GUILayout.Label($"Wave Position: ({selectedCube.position.x}, {waveY})");
             GUILayout.Label($"HP: {selectedCube.currentHitPoints}/{selectedCube.maxHitPoints}");
 
             // Type changer
             GUILayout.Label("Change Type:");
             GUILayout.BeginHorizontal();
-            if (GUILayout.Button("Normal")) ChangeCubeType(selectedCube, CubeType.Normal);
-            if (GUILayout.Button("Blue")) ChangeCubeType(selectedCube, CubeType.Blue);
-            if (GUILayout.Button("Black")) ChangeCubeType(selectedCube, CubeType.Black);
-            if (GUILayout.Button("Reinf.")) ChangeCubeType(selectedCube, CubeType.Reinforced);
+            if (GUILayout.Button("Normal")) ChangeCubeType(selectedCube, CubeType.Normal, onCubeAdded, onCubeRemoved);
+            if (GUILayout.Button("Blue")) ChangeCubeType(selectedCube, CubeType.Blue, onCubeAdded, onCubeRemoved);
+            if (GUILayout.Button("Black")) ChangeCubeType(selectedCube, CubeType.Black, onCubeAdded, onCubeRemoved);
+            if (GUILayout.Button("Reinf.")) ChangeCubeType(selectedCube, CubeType.Reinforced, onCubeAdded, onCubeRemoved);
             GUILayout.EndHorizontal();
 
             // Position controls
             GUILayout.Label("Move:");
             GUILayout.BeginHorizontal();
-            if (GUILayout.Button("↑", GUILayout.Width(30))) MoveCube(selectedCube, 0, 1);
-            if (GUILayout.Button("↓", GUILayout.Width(30))) MoveCube(selectedCube, 0, -1);
-            if (GUILayout.Button("←", GUILayout.Width(30))) MoveCube(selectedCube, -1, 0);
-            if (GUILayout.Button("→", GUILayout.Width(30))) MoveCube(selectedCube, 1, 0);
+            if (GUILayout.Button("↑", GUILayout.Width(30))) MoveCube(selectedCube, 0, 1, onCubeAdded, onCubeRemoved);
+            if (GUILayout.Button("↓", GUILayout.Width(30))) MoveCube(selectedCube, 0, -1, onCubeAdded, onCubeRemoved);
+            if (GUILayout.Button("←", GUILayout.Width(30))) MoveCube(selectedCube, -1, 0, onCubeAdded, onCubeRemoved);
+            if (GUILayout.Button("→", GUILayout.Width(30))) MoveCube(selectedCube, 1, 0, onCubeAdded, onCubeRemoved);
             if (GUILayout.Button("Top", GUILayout.Width(40)))
-                MoveCube(selectedCube, 0, gridManager.Height - 1 - selectedCube.position.y);
+                MoveCube(selectedCube, 0, gridManager.Height - 1 - selectedCube.position.y, onCubeAdded, onCubeRemoved);
             GUILayout.EndHorizontal();
 
             // Face status info
@@ -446,14 +449,18 @@ namespace WaveDebugSystem
                 bool destroyed = selectedCube.TakeDamage(1);
                 if (destroyed)
                 {
+                    var pos = selectedCube.position;
                     waveManager.activeCubes.Remove(selectedCube);
+                    onCubeRemoved?.Invoke(pos);
                     selectedCube = null;
                 }
             }
             if (GUILayout.Button("Destroy"))
             {
+                var pos = selectedCube.position;
                 waveManager.activeCubes.Remove(selectedCube);
                 Object.Destroy(selectedCube.gameObject);
+                onCubeRemoved?.Invoke(pos);
                 selectedCube = null;
             }
             GUILayout.EndHorizontal();
@@ -465,6 +472,14 @@ namespace WaveDebugSystem
 
             GUILayout.EndScrollView();
             GUILayout.EndVertical();
+        }
+
+        // Helper classes
+        private struct GridViewArea
+        {
+            public int xMin, xMax, yMin, yMax;
+            public int width => xMax - xMin + 1;
+            public int height => yMax - yMin + 1;
         }
 
         // Helper methods
@@ -518,7 +533,7 @@ namespace WaveDebugSystem
             Debug.Log($"Spawned {type} at Grid({gridPos.x}, {gridPos.y})");
         }
 
-        private void ChangeCubeType(CubeManager cube, CubeType newType)
+        private void ChangeCubeType(CubeManager cube, CubeType newType, System.Action<Vector2Int, CubeType> onCubeAdded = null, System.Action<Vector2Int> onCubeRemoved = null)
         {
             if (cube == null || cube.isDestroyed) return;
 
@@ -528,9 +543,11 @@ namespace WaveDebugSystem
             // Remove old cube
             waveManager.activeCubes.Remove(cube);
             Object.Destroy(cube.gameObject);
+            onCubeRemoved?.Invoke(position);
 
             // Spawn new cube of different type
             SpawnCubeAt(position, newType);
+            onCubeAdded?.Invoke(position, newType);
 
             // Select the new cube
             System.Threading.Tasks.Task.Delay(100).ContinueWith(_ =>
@@ -540,10 +557,11 @@ namespace WaveDebugSystem
             });
         }
 
-        private void MoveCube(CubeManager cube, int deltaX, int deltaY)
+        private void MoveCube(CubeManager cube, int deltaX, int deltaY, System.Action<Vector2Int, CubeType> onCubeAdded = null, System.Action<Vector2Int> onCubeRemoved = null)
         {
             if (cube == null || cube.isDestroyed) return;
 
+            Vector2Int oldPos = cube.position;
             Vector2Int newPos = new Vector2Int(
                 Mathf.Clamp(cube.position.x + deltaX, 0, gridManager.Width - 1),
                 Mathf.Clamp(cube.position.y + deltaY, 0, gridManager.Height - 1)
@@ -557,11 +575,16 @@ namespace WaveDebugSystem
                 return;
             }
 
+            // Update position
             cube.position = newPos;
             Vector3 worldPos = gridManager.GridToWorldPosition(newPos.x, newPos.y, 2f);
             cube.transform.position = worldPos;
 
-            Debug.Log($"Moved cube to Grid({newPos.x}, {newPos.y})");
+            // Notify wave editor about the position change
+            onCubeRemoved?.Invoke(oldPos);
+            onCubeAdded?.Invoke(newPos, cube.type);
+
+            Debug.Log($"Moved cube from Grid({oldPos.x}, {oldPos.y}) to Grid({newPos.x}, {newPos.y})");
         }
 
         private void SpawnTestPattern()
@@ -586,12 +609,12 @@ namespace WaveDebugSystem
             }
         }
 
-        private void FillTopRow(int waveWidth)
+        private void FillTopRow()
         {
             int topRow = gridManager.Height - 1;
 
-            // Only fill up to the wave width, not the entire grid width
-            for (int x = 0; x < waveWidth && x < gridManager.Width; x++)
+            // Fill the top row across the grid width
+            for (int x = 0; x < gridManager.Width; x++)
             {
                 var pos = new Vector2Int(x, topRow);
 
@@ -635,7 +658,5 @@ namespace WaveDebugSystem
                 default: return "?";
             }
         }
-
-
     }
 }

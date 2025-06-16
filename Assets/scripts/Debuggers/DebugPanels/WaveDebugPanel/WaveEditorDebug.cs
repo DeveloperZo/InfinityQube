@@ -1,10 +1,10 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using static Enumerations;
 
 namespace WaveDebugSystem
 {
-
     namespace WaveDebugSystem
     {
         public class WaveEditorDebug
@@ -12,8 +12,10 @@ namespace WaveDebugSystem
             private WaveManager waveManager;
             private GridManager gridManager;
             private WaveData currentEditingWave;
+            private bool hasUnsavedChanges = false;
 
             public WaveData CurrentEditingWave => currentEditingWave;
+            public bool HasUnsavedChanges => hasUnsavedChanges;
 
             public void Initialize(WaveManager waveManager, GridManager gridManager)
             {
@@ -30,11 +32,13 @@ namespace WaveDebugSystem
 
                 if (currentEditingWave != null)
                 {
+                    DrawUnsavedChangesWarning();
                     GUILayout.Space(3);
                     DrawWaveNameEditor();
                     DrawDimensionControls();
                     DrawWavePropertiesEditor();
-                    DrawTestAndSyncControls(onSyncToGrid);
+                    DrawWaveManagementControls(onSyncToGrid);
+                    DrawCurrentWaveStats();
                 }
 
                 GUILayout.EndVertical();
@@ -45,15 +49,38 @@ namespace WaveDebugSystem
                 GUILayout.BeginHorizontal();
 
                 if (GUILayout.Button("New Wave"))
-                    CreateNewWave();
+                {
+                    if (ConfirmUnsavedChanges())
+                    {
+                        CreateNewWave();
+                        onWaveChanged?.Invoke(currentEditingWave);
+                    }
+                }
 
                 if (GUILayout.Button("Load Current"))
-                    LoadCurrentWaveForEditing(onWaveChanged);
+                {
+                    if (ConfirmUnsavedChanges())
+                    {
+                        LoadCurrentWaveForEditing(onWaveChanged);
+                    }
+                }
 
+                GUI.backgroundColor = hasUnsavedChanges ? Color.yellow : Color.white;
                 if (GUILayout.Button("Save Wave") && currentEditingWave != null)
                     SaveCurrentWave();
 
+                GUI.backgroundColor = Color.white;
                 GUILayout.EndHorizontal();
+            }
+
+            private void DrawUnsavedChangesWarning()
+            {
+                if (hasUnsavedChanges)
+                {
+                    GUI.color = Color.yellow;
+                    GUILayout.Label("⚠ Unsaved Changes", GUI.skin.box);
+                    GUI.color = Color.white;
+                }
             }
 
             private void DrawWaveNameEditor()
@@ -64,6 +91,7 @@ namespace WaveDebugSystem
                 if (newName != currentEditingWave.name)
                 {
                     currentEditingWave.name = newName;
+                    MarkAsChanged();
                 }
                 GUILayout.EndHorizontal();
             }
@@ -106,11 +134,13 @@ namespace WaveDebugSystem
                 {
                     currentEditingWave.GridWidth--;
                     ClampCubesToWaveBounds();
+                    MarkAsChanged();
                 }
                 GUILayout.Label($"{currentEditingWave.GridWidth}", GUILayout.Width(25));
                 if (GUILayout.Button("+", GUILayout.Width(20)) && currentEditingWave.GridWidth < gridManager.Width)
                 {
                     currentEditingWave.GridWidth++;
+                    MarkAsChanged();
                 }
 
                 GUILayout.Label("x", GUILayout.Width(10));
@@ -119,11 +149,13 @@ namespace WaveDebugSystem
                 {
                     currentEditingWave.GridHeight--;
                     ClampCubesToWaveBounds();
+                    MarkAsChanged();
                 }
                 GUILayout.Label($"{currentEditingWave.GridHeight}", GUILayout.Width(25));
                 if (GUILayout.Button("+", GUILayout.Width(20)))
                 {
                     currentEditingWave.GridHeight++;
+                    MarkAsChanged();
                 }
                 GUILayout.EndHorizontal();
 
@@ -147,92 +179,180 @@ namespace WaveDebugSystem
                 GUILayout.BeginHorizontal();
                 GUILayout.Label("Move:", GUILayout.Width(40));
                 string intervalStr = GUILayout.TextField(currentEditingWave.moveInterval.ToString("F1"), GUILayout.Width(40));
-                if (float.TryParse(intervalStr, out float newInterval))
+                if (float.TryParse(intervalStr, out float newInterval) && newInterval != currentEditingWave.moveInterval)
+                {
                     currentEditingWave.moveInterval = Mathf.Max(0.1f, newInterval);
+                    MarkAsChanged();
+                }
 
                 GUILayout.Label("Fast:", GUILayout.Width(30));
                 string fastStr = GUILayout.TextField(currentEditingWave.fastMoveInterval.ToString("F1"), GUILayout.Width(40));
-                if (float.TryParse(fastStr, out float newFast))
+                if (float.TryParse(fastStr, out float newFast) && newFast != currentEditingWave.fastMoveInterval)
+                {
                     currentEditingWave.fastMoveInterval = Mathf.Max(0.05f, newFast);
+                    MarkAsChanged();
+                }
 
                 GUILayout.Label("Delay:", GUILayout.Width(35));
                 string delayStr = GUILayout.TextField(currentEditingWave.waveStartDelay.ToString("F1"), GUILayout.Width(40));
-                if (float.TryParse(delayStr, out float newDelay))
+                if (float.TryParse(delayStr, out float newDelay) && newDelay != currentEditingWave.waveStartDelay)
+                {
                     currentEditingWave.waveStartDelay = Mathf.Max(0f, newDelay);
+                    MarkAsChanged();
+                }
                 GUILayout.EndHorizontal();
 
                 // Marker limits
                 GUILayout.BeginHorizontal();
-                currentEditingWave.limitMarkers = GUILayout.Toggle(currentEditingWave.limitMarkers, "Limit Markers");
+                bool newLimitMarkers = GUILayout.Toggle(currentEditingWave.limitMarkers, "Limit Markers");
+                if (newLimitMarkers != currentEditingWave.limitMarkers)
+                {
+                    currentEditingWave.limitMarkers = newLimitMarkers;
+                    MarkAsChanged();
+                }
+
                 if (currentEditingWave.limitMarkers)
                 {
                     GUILayout.Label("Max:", GUILayout.Width(30));
                     string maxStr = GUILayout.TextField(currentEditingWave.maxMarkerCount.ToString(), GUILayout.Width(30));
-                    if (int.TryParse(maxStr, out int newMax))
+                    if (int.TryParse(maxStr, out int newMax) && newMax != currentEditingWave.maxMarkerCount)
+                    {
                         currentEditingWave.maxMarkerCount = Mathf.Max(1, newMax);
+                        MarkAsChanged();
+                    }
 
                     GUILayout.Label("Charge:", GUILayout.Width(45));
                     string chargeStr = GUILayout.TextField(currentEditingWave.maxMarkerCharge.ToString(), GUILayout.Width(30));
-                    if (int.TryParse(chargeStr, out int newCharge))
+                    if (int.TryParse(chargeStr, out int newCharge) && newCharge != currentEditingWave.maxMarkerCharge)
+                    {
                         currentEditingWave.maxMarkerCharge = Mathf.Max(1, newCharge);
+                        MarkAsChanged();
+                    }
                 }
                 GUILayout.EndHorizontal();
 
                 GUILayout.EndVertical();
             }
 
-            private void DrawTestAndSyncControls(System.Action onSyncToGrid)
+            private void DrawWaveManagementControls(System.Action onSyncToGrid)
             {
+                GUILayout.BeginVertical(GUI.skin.box);
+                GUILayout.Label("Wave Management:");
+
                 GUILayout.BeginHorizontal();
-
-                if (GUILayout.Button("Test Wave"))
-                    TestCurrentWave();
-
                 if (GUILayout.Button("Sync to Grid"))
-                    onSyncToGrid?.Invoke();
-
-                if (GUILayout.Button("Capture Active"))
                 {
-                    var activeCubes = Object.FindObjectsOfType<CubeManager>()
-                        .Where(c => c != null && !c.isDestroyed).ToList();
-                    CaptureActiveCubesToWave(activeCubes);
+                    onSyncToGrid?.Invoke();
                 }
 
+                if (GUILayout.Button("Capture from Grid"))
+                {
+                    CaptureCurrentGridState();
+                }
+
+                if (GUILayout.Button("Test Wave"))
+                {
+                    TestCurrentWave();
+                }
                 GUILayout.EndHorizontal();
 
                 GUILayout.BeginHorizontal();
-
-                if (GUILayout.Button("Clear All Cubes"))
+                if (GUILayout.Button("Clear Wave Data"))
                 {
-                    currentEditingWave.CubesData.Clear();
-                    onSyncToGrid?.Invoke();
+                    if (UnityEditor.EditorUtility.DisplayDialog("Clear Wave",
+                        "Remove all cubes from this wave?", "Clear", "Cancel"))
+                    {
+                        currentEditingWave.CubesData.Clear();
+                        MarkAsChanged();
+                        onSyncToGrid?.Invoke();
+                    }
                 }
 
                 if (GUILayout.Button("Reset Positions"))
                 {
                     ResetCubePositionsToTop();
+                    MarkAsChanged();
                 }
 
+                if (GUILayout.Button("Duplicate Wave"))
+                {
+                    DuplicateCurrentWave();
+                }
                 GUILayout.EndHorizontal();
+
+                GUILayout.EndVertical();
             }
 
-            // Add method to reset cube positions to top of wave
-            private void ResetCubePositionsToTop()
+            private void DrawCurrentWaveStats()
+            {
+                GUILayout.BeginVertical(GUI.skin.box);
+                GUILayout.Label("Current Wave Stats:");
+
+                if (currentEditingWave.CubesData.Count > 0)
+                {
+                    var stats = AnalyzeWaveComposition();
+                    GUILayout.Label($"Total Cubes: {currentEditingWave.CubesData.Count}");
+                    GUILayout.Label($"Normal: {stats.normalCount} | Blue: {stats.blueCount} | Black: {stats.blackCount} | Reinforced: {stats.reinforcedCount}");
+
+                    if (stats.minY >= 0)
+                    {
+                        GUILayout.Label($"Y Range: {stats.minY} to {stats.maxY} (Height: {stats.maxY - stats.minY + 1})");
+                        GUILayout.Label($"X Range: {stats.minX} to {stats.maxX} (Width: {stats.maxX - stats.minX + 1})");
+                    }
+                }
+                else
+                {
+                    GUILayout.Label("No cubes configured");
+                }
+
+                GUILayout.EndVertical();
+            }
+
+            // Public methods for external systems (like CubeToolsDebug)
+            public void AddCubeToWave(Vector2Int gridPosition, CubeType type)
             {
                 if (currentEditingWave == null) return;
 
-                foreach (var cube in currentEditingWave.CubesData)
-                {
-                    // Move all cubes to the top rows of the wave
-                    if (cube.position.y < currentEditingWave.GridHeight - 1)
-                    {
-                        cube.position.y = currentEditingWave.GridHeight - 1;
-                    }
-                }
+                // Convert grid position to wave-relative position
+                Vector2Int wavePosition = ConvertGridToWavePosition(gridPosition);
 
-                Debug.Log($"Reset {currentEditingWave.CubesData.Count} cubes to top of wave");
+                // Remove any existing cube at this wave position
+                currentEditingWave.CubesData.RemoveAll(c => c.position == wavePosition);
+
+                // Add new cube
+                var cubeData = new CubeData
+                {
+                    type = type,
+                    position = wavePosition,
+                    level = 1
+                };
+                currentEditingWave.CubesData.Add(cubeData);
+                MarkAsChanged();
+
+                Debug.Log($"Added {type} cube to wave at wave position ({wavePosition.x}, {wavePosition.y}) from grid ({gridPosition.x}, {gridPosition.y})");
             }
 
+            public void RemoveCubeFromWave(Vector2Int gridPosition)
+            {
+                if (currentEditingWave == null) return;
+
+                Vector2Int wavePosition = ConvertGridToWavePosition(gridPosition);
+                int removed = currentEditingWave.CubesData.RemoveAll(c => c.position == wavePosition);
+
+                if (removed > 0)
+                {
+                    MarkAsChanged();
+                    Debug.Log($"Removed cube from wave at wave position ({wavePosition.x}, {wavePosition.y})");
+                }
+            }
+
+            public void SyncWaveDataToGrid()
+            {
+                // Called when grid state changes - capture current grid state
+                CaptureCurrentGridState();
+            }
+
+            // Core wave management methods
             public void CreateNewWave()
             {
                 currentEditingWave = ScriptableObject.CreateInstance<WaveData>();
@@ -246,6 +366,9 @@ namespace WaveDebugSystem
                 currentEditingWave.limitMarkers = false;
                 currentEditingWave.maxMarkerCount = 3;
                 currentEditingWave.maxMarkerCharge = 2;
+                hasUnsavedChanges = false;
+
+                Debug.Log($"Created new wave: {currentEditingWave.name}");
             }
 
             public void LoadCurrentWaveForEditing(System.Action<WaveData> onWaveChanged = null)
@@ -255,12 +378,19 @@ namespace WaveDebugSystem
                     LoadWaveForEditing(waveManager.CurrentWave);
                     onWaveChanged?.Invoke(currentEditingWave);
                 }
+                else
+                {
+                    Debug.LogWarning("No current wave to load");
+                }
             }
 
             public void LoadWaveForEditing(WaveData wave)
             {
                 if (wave == null) return;
                 currentEditingWave = Object.Instantiate(wave);
+                currentEditingWave.name = wave.name; // Preserve original name
+                hasUnsavedChanges = false;
+                Debug.Log($"Loaded wave for editing: {currentEditingWave.name} with {currentEditingWave.CubesData.Count} cubes");
             }
 
             public void SaveCurrentWave()
@@ -282,7 +412,7 @@ namespace WaveDebugSystem
                 var existingAsset = UnityEditor.AssetDatabase.LoadAssetAtPath<WaveData>(assetPath);
                 if (existingAsset != null)
                 {
-                    // Update existing asset - preserve cube configuration
+                    // Update existing asset
                     UnityEditor.EditorUtility.CopySerialized(currentEditingWave, existingAsset);
                     UnityEditor.EditorUtility.SetDirty(existingAsset);
                     Debug.Log($"Updated existing wave '{currentEditingWave.name}' with {currentEditingWave.CubesData.Count} cubes");
@@ -290,74 +420,174 @@ namespace WaveDebugSystem
                 else
                 {
                     // Create new asset
-                    UnityEditor.AssetDatabase.CreateAsset(currentEditingWave, assetPath);
+                    var saveWave = Object.Instantiate(currentEditingWave);
+                    UnityEditor.AssetDatabase.CreateAsset(saveWave, assetPath);
                     Debug.Log($"Created new wave '{currentEditingWave.name}' with {currentEditingWave.CubesData.Count} cubes");
                 }
 
                 UnityEditor.AssetDatabase.SaveAssets();
                 UnityEditor.AssetDatabase.Refresh();
+                hasUnsavedChanges = false;
 
                 Debug.Log($"Wave '{currentEditingWave.name}' saved to {assetPath}");
 #endif
+            }
+
+            // Helper methods
+            private void MarkAsChanged()
+            {
+                hasUnsavedChanges = true;
+            }
+
+            private bool ConfirmUnsavedChanges()
+            {
+                if (!hasUnsavedChanges) return true;
+
+#if UNITY_EDITOR
+                return UnityEditor.EditorUtility.DisplayDialog("Unsaved Changes",
+                    "You have unsaved changes. Continue without saving?", "Continue", "Cancel");
+#else
+                return true;
+#endif
+            }
+
+            private Vector2Int ConvertGridToWavePosition(Vector2Int gridPosition)
+            {
+                // Convert from absolute grid coordinates to wave-relative coordinates
+                // Wave Y=0 should be at the top of the wave area (grid height - 1)
+                int waveY = (gridManager.Height - 1) - gridPosition.y;
+                return new Vector2Int(gridPosition.x, waveY);
+            }
+
+            private Vector2Int ConvertWaveToGridPosition(Vector2Int wavePosition)
+            {
+                // Convert from wave-relative coordinates to absolute grid coordinates
+                int gridY = (gridManager.Height - 1) - wavePosition.y;
+                return new Vector2Int(wavePosition.x, gridY);
+            }
+
+            private void CaptureCurrentGridState()
+            {
+                if (currentEditingWave == null) return;
+
+                // Get all active cubes from the scene
+                var activeCubes = Object.FindObjectsOfType<CubeManager>()
+                    .Where(c => c != null && !c.isDestroyed).ToList();
+
+                // Clear current wave data
+                currentEditingWave.CubesData.Clear();
+
+                // Convert each cube to wave data
+                foreach (var cube in activeCubes)
+                {
+                    Vector2Int wavePosition = ConvertGridToWavePosition(cube.position);
+
+                    var cubeData = new CubeData
+                    {
+                        type = cube.type,
+                        position = wavePosition,
+                        level = cube.level
+                    };
+                    currentEditingWave.CubesData.Add(cubeData);
+                }
+
+                MarkAsChanged();
+                Debug.Log($"Captured {currentEditingWave.CubesData.Count} cubes from grid to wave '{currentEditingWave.name}'");
             }
 
             private void TestCurrentWave()
             {
                 if (currentEditingWave == null || waveManager == null) return;
 
-                // Ensure wave configuration is properly stored
                 if (currentEditingWave.CubesData.Count == 0)
                 {
                     Debug.LogWarning("Wave has no cubes configured!");
                     return;
                 }
 
-                // Add to wave manager configuration if not already there
-                if (!waveManager.waveConfiguration.Contains(currentEditingWave))
-                {
-                    waveManager.waveConfiguration.Add(currentEditingWave);
-                }
+                // Clear existing wave configuration
+                waveManager.waveConfiguration.Clear();
 
-                // Set as current wave and enable wave configuration mode
+                // Add current wave (make a copy to avoid modifying the editing wave)
+                var testWave = Object.Instantiate(currentEditingWave);
+                waveManager.waveConfiguration.Add(testWave);
+
+                // Set up wave manager
                 waveManager.useWaveConfiguration = true;
-                waveManager.currentWaveIndex = waveManager.waveConfiguration.IndexOf(currentEditingWave);
+                waveManager.currentWaveIndex = 0;
                 waveManager.StartWave();
 
                 Debug.Log($"Testing wave '{currentEditingWave.name}' with {currentEditingWave.CubesData.Count} cubes");
             }
 
-            // Add method to capture current active cubes into wave
-            public void CaptureActiveCubesToWave(List<CubeManager> activeCubes)
+            private void DuplicateCurrentWave()
             {
-                if (currentEditingWave == null || activeCubes == null) return;
+                if (currentEditingWave == null) return;
 
-                currentEditingWave.CubesData.Clear();
+                var duplicate = Object.Instantiate(currentEditingWave);
+                duplicate.name = currentEditingWave.name + "_Copy";
+                currentEditingWave = duplicate;
+                hasUnsavedChanges = true;
 
-                foreach (var cube in activeCubes)
+                Debug.Log($"Duplicated wave as '{currentEditingWave.name}'");
+            }
+
+            private void ResetCubePositionsToTop()
+            {
+                if (currentEditingWave == null) return;
+
+                foreach (var cube in currentEditingWave.CubesData)
                 {
-                    if (cube != null && !cube.isDestroyed)
-                    {
-                        // Convert world position back to wave-relative position
-                        var cubeData = new CubeData
-                        {
-                            type = cube.type,
-                            position = new Vector2Int(cube.position.x, currentEditingWave.GridHeight - 1 - cube.position.y),
-                            level = cube.level
-                        };
-                        currentEditingWave.CubesData.Add(cubeData);
-                    }
+                    // Move all cubes to the top row of the wave (Y=0 in wave space)
+                    cube.position.y = 0;
                 }
 
-                Debug.Log($"Captured {currentEditingWave.CubesData.Count} active cubes to wave '{currentEditingWave.name}'");
+                Debug.Log($"Reset {currentEditingWave.CubesData.Count} cubes to top of wave");
             }
 
             private void ClampCubesToWaveBounds()
             {
                 if (currentEditingWave == null) return;
 
-                currentEditingWave.CubesData.RemoveAll(c =>
+                int removed = currentEditingWave.CubesData.RemoveAll(c =>
                     c.position.x >= currentEditingWave.GridWidth ||
                     c.position.y >= currentEditingWave.GridHeight);
+
+                if (removed > 0)
+                {
+                    Debug.Log($"Removed {removed} cubes that were outside wave bounds");
+                }
+            }
+
+            private WaveComposition AnalyzeWaveComposition()
+            {
+                var stats = new WaveComposition();
+
+                if (currentEditingWave.CubesData.Count == 0) return stats;
+
+                stats.minX = currentEditingWave.CubesData.Min(c => c.position.x);
+                stats.maxX = currentEditingWave.CubesData.Max(c => c.position.x);
+                stats.minY = currentEditingWave.CubesData.Min(c => c.position.y);
+                stats.maxY = currentEditingWave.CubesData.Max(c => c.position.y);
+
+                foreach (var cube in currentEditingWave.CubesData)
+                {
+                    switch (cube.type)
+                    {
+                        case CubeType.Normal: stats.normalCount++; break;
+                        case CubeType.Blue: stats.blueCount++; break;
+                        case CubeType.Black: stats.blackCount++; break;
+                        case CubeType.Reinforced: stats.reinforcedCount++; break;
+                    }
+                }
+
+                return stats;
+            }
+
+            private struct WaveComposition
+            {
+                public int normalCount, blueCount, blackCount, reinforcedCount;
+                public int minX, maxX, minY, maxY;
             }
         }
     }

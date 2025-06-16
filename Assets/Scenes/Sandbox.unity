@@ -7833,6 +7833,7 @@ MonoBehaviour:
   normalCubesCaptured: 0
   blueCubesCaptured: 0
   blackCubesCaptured: 0
+  reinforcedCubesCaptured: 0
   cubesEscaped: 0
   markersPlaced: 0
   markersTriggered: 0
@@ -8146,7 +8147,7 @@ MonoBehaviour:
   toggleKey: 291
   showOnStart: 0
   displayMode: 0
-  windowSize: {x: 400, y: 600}
+  windowSize: {x: 500, y: 600}
   windowPosition: {x: 10, y: 10}
 --- !u!1 &9199122214164297751
 GameObject:
