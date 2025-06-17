@@ -675,7 +675,7 @@ public class PlayerActionDebugPanel : DebugPanelBase
                 break;
             case 2: // Cube
                 var cubeMarkerType = (PlayerActionManager.CubeMarkerType)this.cubeMarkerType;
-                actionManager.CreateCubeMarker(targetPosition);
+                actionManager.CreateCubeMarker(targetPosition, cubeMarkerType);
                 break;
         }
     }

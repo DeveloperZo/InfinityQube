@@ -5,6 +5,7 @@ using System.Linq;
 using static Enumerations;
 using System;
 using static PlayerActionManager;
+using static UnityEditor.PlayerSettings;
 
 public class PlayerActionManager : MonoBehaviour
 {
@@ -44,6 +45,7 @@ public class PlayerActionManager : MonoBehaviour
     [SerializeField] private float flashDuration = 0.3f;
     [SerializeField] private Color areaPreviewColor = new Color(1f, 0.5f, 0f, 0.7f);
 
+    private Dictionary<Vector2Int, GameObject> temporaryMarkerOverlays = new Dictionary<Vector2Int, GameObject>();
     // Individual Markers
     public Queue<IndividualMarker> individualMarkers = new Queue<IndividualMarker>();
     public int currentIndividualMarkers = 0;
@@ -151,7 +153,12 @@ public class PlayerActionManager : MonoBehaviour
 
     private void OnDestroy()
     {
-        ClearAllMarkers();
+        // Clean up all temporary overlays
+        var overlaysToRemove = temporaryMarkerOverlays.Keys.ToList();
+        foreach (var pos in overlaysToRemove)
+        {
+            ClearTileHighlight(pos);
+        }
     }
 
     #endregion
@@ -282,6 +289,7 @@ public class PlayerActionManager : MonoBehaviour
         return true;
     }
 
+
     public bool RemoveIndividualMarkerAt(Vector2Int position)
     {
         var markersArray = individualMarkers.ToArray();
@@ -292,10 +300,10 @@ public class PlayerActionManager : MonoBehaviour
         {
             if (marker.position == position && !removed)
             {
-                DestroyMarkerVisual(marker.visualObject); // This will reset the tile material
+                DestroyMarkerVisual(marker.visualObject); // This will clear the highlight overlay
                 currentIndividualMarkers--;
                 removed = true;
-                Debug.Log($"Removed individual marker at ({position.x}, {position.y}) and reset tile material");
+                Debug.Log($"Removed individual marker at ({position.x}, {position.y}) and cleared highlight overlay");
             }
             else
             {
@@ -321,6 +329,7 @@ public class PlayerActionManager : MonoBehaviour
 
         return TriggerIndividualMarkerAt(marker.position, marker);
     }
+    
     private bool TriggerIndividualMarkerAt(Vector2Int position, IndividualMarker marker)
     {
         var cubes = FindAllCubesAt(position);
@@ -338,7 +347,7 @@ public class PlayerActionManager : MonoBehaviour
             marker.isPerfectTiming = true;
         }
 
-        // Properly destroy the marker visual and reset tile material
+        // Properly destroy the marker visual and clear highlight overlay
         DestroyMarkerVisual(marker.visualObject);
         StartCoroutine(ShowMarkerTriggerEffect(position));
 
@@ -360,24 +369,22 @@ public class PlayerActionManager : MonoBehaviour
         if (!CanPlaceAreaMarker() || !IsValidPosition(centerPosition))
             return false;
 
-        // Only check if the CENTER position can have a marker
         if (!CanPlaceMarkerAt(centerPosition))
             return false;
 
-        var marker = new AreaMarker(centerPosition, size, Time.time);
+        AreaMarker newMarker = new AreaMarker(centerPosition, size, Time.time);
 
-        // Calculate affected positions for later use, but don't create visuals for them yet
-        marker.affectedPositions = GetAreaPositions(centerPosition, size);
+        // Ensure the 3x3 area is centered on the marked tile
+        newMarker.affectedPositions = GetAreaPositions(centerPosition, size);
+        GameObject visual = CreateAreaMarkerVisual(centerPosition);
+        newMarker.visualObjects.Add(visual);
 
-        // Only create visual for the CENTER tile (green highlight)
-        marker.visualObjects.Add(CreateAreaMarkerVisual(centerPosition));
 
-        areaMarkers.Enqueue(marker);
+        areaMarkers.Enqueue(newMarker);
         currentAreaMarkers++;
-        lastAreaMarkerTime = Time.time;
         areaMarkersPlaced++;
+        lastAreaMarkerTime = Time.time;
 
-        Debug.Log($"Area marker placed at center ({centerPosition.x}, {centerPosition.y}) - will affect {marker.affectedPositions.Count} tiles when triggered");
         return true;
     }
 
@@ -393,11 +400,11 @@ public class PlayerActionManager : MonoBehaviour
             {
                 foreach (var visual in marker.visualObjects)
                 {
-                    DestroyMarkerVisual(visual); // This will reset the tile material
+                    DestroyMarkerVisual(visual); // This will clear the highlight overlay
                 }
                 currentAreaMarkers--;
                 removed = true;
-                Debug.Log($"Removed area marker at ({centerPosition.x}, {centerPosition.y}) and reset tile material");
+                Debug.Log($"Removed area marker at ({centerPosition.x}, {centerPosition.y}) and cleared highlight overlays");
             }
             else
             {
@@ -433,7 +440,7 @@ public class PlayerActionManager : MonoBehaviour
         // Clear the center tile highlight first
         foreach (var visual in marker.visualObjects)
         {
-            DestroyMarkerVisual(visual);
+            DestroyMarkerVisual(visual); // This clears the highlight overlay
         }
 
         // Process cubes in all affected positions
@@ -466,25 +473,20 @@ public class PlayerActionManager : MonoBehaviour
 
         foreach (var pos in positions)
         {
-            Tile tile = gridManager.GetTileAt(pos.x, pos.y);
-            if (tile != null)
-            {
-                tile.ForceUpdateVisuals(); // Ensure material reset
-                Debug.Log($"Reset area expansion material at ({pos.x}, {pos.y})");
-            }
+            ClearTileHighlight(pos);
+            Debug.Log($"Cleared area expansion highlight at ({pos.x}, {pos.y})");
         }
     }
+
+    // Update ClearAreaHighlightsAfterDelay similarly
     private IEnumerator ClearAreaHighlightsAfterDelay(List<Vector2Int> positions, float delay)
     {
         yield return new WaitForSeconds(delay);
 
         foreach (var pos in positions)
         {
-            Tile tile = gridManager.GetTileAt(pos.x, pos.y);
-            if (tile != null)
-            {
-                tile.ForceUpdateVisuals();
-            }
+            ClearTileHighlight(pos);
+            Debug.Log($"Cleared area highlight at ({pos.x}, {pos.y})");
         }
     }
     #endregion
@@ -492,7 +494,7 @@ public class PlayerActionManager : MonoBehaviour
 
     #region Cube Markers
 
-    private void CreateCubeMarker(Vector2Int position, CubeMarkerType type)
+    public void CreateCubeMarker(Vector2Int position, CubeMarkerType type = CubeMarkerType.Area)
     {
         var cubeMarker = new CubeMarker(position, type);
         cubeMarker.visualObject = CreateCubeMarkerVisual(position, type);
@@ -720,11 +722,44 @@ public class PlayerActionManager : MonoBehaviour
     {
         List<Vector2Int> positions = new List<Vector2Int>();
 
-        // For 2x2: we want the center to be bottom-left of the 2x2 area
-        // So positions are: center, center+(1,0), center+(0,1), center+(1,1)
-        for (int x = 0; x < size; x++)
+        if (size == 2)
         {
-            for (int y = 0; y < size; y++)
+            positions = Get2x2Positions(center);
+        }
+        else if (size == 3)
+        {
+            positions = Get3x3Positions(center);
+        }
+
+        return positions;
+    }
+
+    private List<Vector2Int> Get2x2Positions(Vector2Int center)
+    {
+        List<Vector2Int> positions = new List<Vector2Int>();
+
+        for (int x = -1; x <= 0; x++)
+        {
+            for (int y = -1; y <= 0; y++)
+            {
+                Vector2Int pos = new Vector2Int(center.x + x, center.y + y);
+                if (IsValidPosition(pos))
+                {
+                    positions.Add(pos);
+                }
+            }
+        }
+
+        return positions;
+    }
+
+    private List<Vector2Int> Get3x3Positions(Vector2Int center)
+    {
+        List<Vector2Int> positions = new List<Vector2Int>();
+
+        for (int x = -1; x <= 1; x++)
+        {
+            for (int y = -1; y <= 1; y++)
             {
                 Vector2Int pos = new Vector2Int(center.x + x, center.y + y);
                 if (IsValidPosition(pos))
@@ -850,12 +885,24 @@ public class PlayerActionManager : MonoBehaviour
 
     private void SetTileHighlight(Tile tile, Color color, string markerType)
     {
-        // Store the marker type on the tile for tracking
-        // You might need to add a markerType field to the Tile class
+        Vector2Int pos = new Vector2Int(tile.x, tile.y);
 
-        // Create a material with the highlight color
-        Renderer renderer = tile.GetComponent<Renderer>();
-        if (renderer != null)
+        // Remove existing overlay if present
+        ClearTileHighlight(tile);
+
+        // Create temporary overlay object (similar to tile's state overlay system)
+        GameObject overlay = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        overlay.name = $"ActionMarker_{markerType}_{tile.x}_{tile.y}";
+        overlay.transform.SetParent(tile.transform);
+        overlay.transform.localPosition = new Vector3(0, 0.52f, 0); // Slightly above tile overlay
+        overlay.transform.localScale = new Vector3(0.95f, 0.08f, 0.95f);
+
+        // Remove collider to avoid physics issues
+        Destroy(overlay.GetComponent<Collider>());
+
+        // Create material with highlight color
+        Renderer overlayRenderer = overlay.GetComponent<Renderer>();
+        if (overlayRenderer != null)
         {
             Material highlightMaterial = new Material(Shader.Find("Standard"));
             highlightMaterial.color = color;
@@ -866,12 +913,40 @@ public class PlayerActionManager : MonoBehaviour
             highlightMaterial.EnableKeyword("_EMISSION");
             highlightMaterial.SetColor("_EmissionColor", color * 0.3f);
 
-            renderer.material = highlightMaterial;
+            overlayRenderer.material = highlightMaterial;
         }
 
-        Debug.Log($"Set {markerType} marker highlight at ({tile.x}, {tile.y}) with color {color}");
+        // Store overlay for cleanup
+        temporaryMarkerOverlays[pos] = overlay;
+
+        Debug.Log($"Created {markerType} highlight overlay at ({tile.x}, {tile.y}) with color {color}");
     }
 
+    private void ClearTileHighlight(Tile tile)
+    {
+        Vector2Int pos = new Vector2Int(tile.x, tile.y);
+
+        if (temporaryMarkerOverlays.TryGetValue(pos, out GameObject overlay))
+        {
+            if (overlay != null)
+            {
+                Destroy(overlay);
+            }
+            temporaryMarkerOverlays.Remove(pos);
+            Debug.Log($"Cleared highlight overlay at ({tile.x}, {tile.y})");
+        }
+    }
+
+    private void ClearTileHighlight(Vector2Int position)
+    {
+        Tile tile = gridManager.GetTileAt(position.x, position.y);
+        if (tile != null)
+        {
+            ClearTileHighlight(tile);
+        }
+    }
+
+    // Update the DestroyMarkerVisual method to use the new system
     private void DestroyMarkerVisual(GameObject visual)
     {
         if (visual != null)
@@ -883,13 +958,9 @@ public class PlayerActionManager : MonoBehaviour
                 if (int.TryParse(nameParts[nameParts.Length - 2], out int x) &&
                     int.TryParse(nameParts[nameParts.Length - 1], out int y))
                 {
-                    // Reset tile highlight
-                    Tile tile = gridManager.GetTileAt(x, y);
-                    if (tile != null)
-                    {
-                        tile.ForceUpdateVisuals(); // Reset to original material
-                        Debug.Log($"Reset tile material at ({x}, {y}) after marker removal");
-                    }
+                    // Clear the temporary highlight overlay
+                    ClearTileHighlight(new Vector2Int(x, y));
+                    Debug.Log($"Cleared tile highlight at ({x}, {y}) after marker removal");
                 }
             }
 
@@ -901,6 +972,7 @@ public class PlayerActionManager : MonoBehaviour
 
     #region Public Interface
 
+    // Update the ClearAllMarkers method to clean up overlays
     public void ClearAllMarkers()
     {
         // Clear individual markers
@@ -922,7 +994,6 @@ public class PlayerActionManager : MonoBehaviour
         }
         currentAreaMarkers = 0;
 
-
         // Clear cube markers
         foreach (var cubeMarker in cubeMarkers)
         {
@@ -930,12 +1001,21 @@ public class PlayerActionManager : MonoBehaviour
         }
         cubeMarkers.Clear();
 
+        // Clear any remaining temporary overlays
+        var overlaysToRemove = temporaryMarkerOverlays.Keys.ToList();
+        foreach (var pos in overlaysToRemove)
+        {
+            ClearTileHighlight(pos);
+        }
+
         // Clear preview objects
         foreach (var preview in previewObjects)
         {
             if (preview != null) Destroy(preview);
         }
         previewObjects.Clear();
+
+        Debug.Log("All action markers and highlights cleared");
     }
 
     // Resource availability checks
@@ -976,19 +1056,6 @@ public class PlayerActionManager : MonoBehaviour
     public Vector2Int GetNextCubeMarker() => cubeMarkers.Count > 0 ? cubeMarkers[0].position : new Vector2Int(-1, -1);
 
     // Legacy placement methods
-    public bool PlacePlayerMarkerAt(Vector2Int position) => PlaceIndividualMarker(position);
-    public bool TriggerPlayerMarkerAt(Vector2Int position) => TriggerIndividualMarkerAt(position, new IndividualMarker(position, Time.time));
-    public void CreateCubeMarker(Vector2Int position, DetonationType type = DetonationType.Standard)
-    {
-        CreateCubeMarker(position, CubeMarkerType.Area);
-    }
-
-    public void ShowAreaPreview(Vector2Int center)
-    {
-        // Legacy preview method - simplified
-        Debug.Log($"Area preview at {center} (legacy method)");
-    }
-
     public void ClearAllActions()
     {
         HideAreaPreview();

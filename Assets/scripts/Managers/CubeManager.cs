@@ -258,29 +258,6 @@ public class CubeManager : MonoBehaviour
         isMoving = false;
     }
 
-    public void CheckForCollisionOnLanding()
-    {
-        if (isDestroyed) return;
-
-        foreach (CubeManager otherCube in FindObjectsOfType<CubeManager>())
-        {
-            if (otherCube != this &&
-                otherCube.position.x == position.x &&
-                otherCube.position.y == position.y)
-            {
-                CubeCollisionController collisionController = GetComponent<CubeCollisionController>();
-                if (collisionController == null)
-                {
-                    collisionController = gameObject.AddComponent<CubeCollisionController>();
-                    collisionController.Initialize(FindObjectOfType<GridManager>());
-                }
-
-                Debug.Log($"Triggering collision between raining {type} and static {otherCube.type} at ({position.x}, {position.y})");
-                collisionController.HandleCubeCollision(this, otherCube, position);
-                break;
-            }
-        }
-    }
 
     #region Face Painting System - FIXED
 
