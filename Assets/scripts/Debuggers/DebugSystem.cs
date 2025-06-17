@@ -93,6 +93,7 @@ public class DebugSystem : MonoBehaviour
         // Register all debug panels
         RegisterPanel(new WaveDebugPanel());
         RegisterPanel(new CubeDebugPanel());
+        RegisterPanel(new GridDebugPanel());
 
 
     }

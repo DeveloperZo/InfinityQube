@@ -22,7 +22,7 @@ public class WaveDebugPanel : DebugPanelBase
     private bool showWaveControls = true;
     private bool showWaveEditor = true;
     private bool showCubeTools = true;
-    private bool showWaveLibrary = false;
+    private bool showWaveLibrary = true;
 
     public override void Initialize()
     {
@@ -31,6 +31,10 @@ public class WaveDebugPanel : DebugPanelBase
         gridManager = GridManager.Instance ?? Object.FindObjectOfType<GridManager>();
 
         // Initialize sub-panels
+
+        waveLibraryPanel = new WaveLibraryDebug();
+        waveLibraryPanel.Initialize(waveManager, gridManager);
+
         waveControlPanel = new WaveControlDebug();
         waveControlPanel.Initialize(waveManager, gridManager);
 
@@ -40,8 +44,6 @@ public class WaveDebugPanel : DebugPanelBase
         cubeToolsPanel = new CubeToolsDebug();
         cubeToolsPanel.Initialize(waveManager, gridManager);
 
-        waveLibraryPanel = new WaveLibraryDebug();
-        waveLibraryPanel.Initialize(waveManager, gridManager);
     }
 
     public override void Update()
@@ -56,6 +58,9 @@ public class WaveDebugPanel : DebugPanelBase
         GUILayout.Space(5);
 
         // Draw active panels
+        if (showWaveLibrary)
+            waveLibraryPanel?.DrawPanel(waveEditorPanel?.CurrentEditingWave, OnWaveChanged);
+
         if (showWaveControls)
             waveControlPanel?.DrawPanel(OnWaveChanged);
 
@@ -65,8 +70,7 @@ public class WaveDebugPanel : DebugPanelBase
         if (showCubeTools)
             cubeToolsPanel?.DrawPanel(waveEditorPanel?.CurrentEditingWave, OnSyncToGrid, OnCubeAdded, OnCubeRemoved);
 
-        if (showWaveLibrary)
-            waveLibraryPanel?.DrawPanel(waveEditorPanel?.CurrentEditingWave, OnWaveChanged);
+
     }
     private void OnCubeAdded(Vector2Int gridPosition, CubeType cubeType)
     {
@@ -84,10 +88,11 @@ public class WaveDebugPanel : DebugPanelBase
     private void DrawSectionToggles()
     {
         GUILayout.BeginHorizontal();
+        showWaveLibrary = DrawToggleButton("Library", showWaveLibrary);
         showWaveControls = DrawToggleButton("Controls", showWaveControls);
         showWaveEditor = DrawToggleButton("Editor", showWaveEditor);
         showCubeTools = DrawToggleButton("Cubes", showCubeTools);
-        showWaveLibrary = DrawToggleButton("Library", showWaveLibrary);
+        
         GUILayout.EndHorizontal();
     }
 
@@ -211,3 +216,4 @@ public class WaveDebugPanel : DebugPanelBase
         waveLibraryPanel?.ForceRefresh();
     }
 }
+
