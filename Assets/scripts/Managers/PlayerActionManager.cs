@@ -292,9 +292,10 @@ public class PlayerActionManager : MonoBehaviour
         {
             if (marker.position == position && !removed)
             {
-                DestroyMarkerVisual(marker.visualObject);
+                DestroyMarkerVisual(marker.visualObject); // This will reset the tile material
                 currentIndividualMarkers--;
                 removed = true;
+                Debug.Log($"Removed individual marker at ({position.x}, {position.y}) and reset tile material");
             }
             else
             {
@@ -320,7 +321,6 @@ public class PlayerActionManager : MonoBehaviour
 
         return TriggerIndividualMarkerAt(marker.position, marker);
     }
-
     private bool TriggerIndividualMarkerAt(Vector2Int position, IndividualMarker marker)
     {
         var cubes = FindAllCubesAt(position);
@@ -338,6 +338,7 @@ public class PlayerActionManager : MonoBehaviour
             marker.isPerfectTiming = true;
         }
 
+        // Properly destroy the marker visual and reset tile material
         DestroyMarkerVisual(marker.visualObject);
         StartCoroutine(ShowMarkerTriggerEffect(position));
 
@@ -392,10 +393,11 @@ public class PlayerActionManager : MonoBehaviour
             {
                 foreach (var visual in marker.visualObjects)
                 {
-                    DestroyMarkerVisual(visual);
+                    DestroyMarkerVisual(visual); // This will reset the tile material
                 }
                 currentAreaMarkers--;
                 removed = true;
+                Debug.Log($"Removed area marker at ({centerPosition.x}, {centerPosition.y}) and reset tile material");
             }
             else
             {
@@ -428,6 +430,12 @@ public class PlayerActionManager : MonoBehaviour
 
         Debug.Log($"Triggering area marker - expanding from center ({marker.centerPosition.x}, {marker.centerPosition.y}) to {marker.affectedPositions.Count} tiles");
 
+        // Clear the center tile highlight first
+        foreach (var visual in marker.visualObjects)
+        {
+            DestroyMarkerVisual(visual);
+        }
+
         // Process cubes in all affected positions
         foreach (var position in marker.affectedPositions)
         {
@@ -446,9 +454,6 @@ public class PlayerActionManager : MonoBehaviour
             StartCoroutine(ShowMarkerTriggerEffect(position));
         }
 
-        // Clear the center tile highlight
-        DestroyMarkerVisual(marker.visualObjects[0]);
-
         // Clear expansion highlights after a delay
         StartCoroutine(ClearAreaExpansionAfterDelay(marker.affectedPositions, marker.centerPosition, 1f));
 
@@ -461,13 +466,11 @@ public class PlayerActionManager : MonoBehaviour
 
         foreach (var pos in positions)
         {
-            if (pos != centerPos) // Don't clear center (already cleared)
+            Tile tile = gridManager.GetTileAt(pos.x, pos.y);
+            if (tile != null)
             {
-                Tile tile = gridManager.GetTileAt(pos.x, pos.y);
-                if (tile != null)
-                {
-                    tile.ForceUpdateVisuals();
-                }
+                tile.ForceUpdateVisuals(); // Ensure material reset
+                Debug.Log($"Reset area expansion material at ({pos.x}, {pos.y})");
             }
         }
     }
@@ -509,25 +512,37 @@ public class PlayerActionManager : MonoBehaviour
         return TriggerCubeMarkerAt(cubeMarker);
     }
 
-     public bool TriggerCubeMarkerAt(CubeMarker cubeMarker)
+    public bool TriggerCubeMarkerAt(CubeMarker cubeMarker)
     {
         cubeMarkersTriggered++;
         DestroyMarkerVisual(cubeMarker.visualObject);
 
         if (cubeMarker.type == CubeMarkerType.Individual)
         {
-            // Trigger as individual marker
-            return TriggerIndividualMarkerAt(cubeMarker.position, new IndividualMarker(cubeMarker.position, Time.time));
+            // Trigger as single-tile marker (like individual marker but no queue)
+            return TriggerSingleTileMarker(cubeMarker.position);
         }
         else
         {
-            // Trigger as area marker
-            var tempAreaMarker = new AreaMarker(cubeMarker.position, areaMarkerSize, Time.time);
-            tempAreaMarker.affectedPositions = GetAreaPositions(cubeMarker.position, areaMarkerSize);
+            // Trigger as 3x3 area marker
+            var tempAreaMarker = new AreaMarker(cubeMarker.position, 3, Time.time); // 3x3 instead of areaMarkerSize
+            tempAreaMarker.affectedPositions = GetAreaPositions(cubeMarker.position, 3);
             return TriggerAreaMarkerAt(tempAreaMarker);
         }
     }
+    private bool TriggerSingleTileMarker(Vector2Int position)
+    {
+        var cubes = FindAllCubesAt(position);
+        bool success = false;
 
+        foreach (var cube in cubes)
+        {
+            success |= ProcessCubeCapture(cube, position, MarkerType.Individual);
+        }
+
+        StartCoroutine(ShowMarkerTriggerEffect(position));
+        return success;
+    }
     public bool PowerUpNextCubeMarker()
     {
         if (cubeMarkers.Count == 0) return false;
@@ -660,15 +675,16 @@ public class PlayerActionManager : MonoBehaviour
         return false;
     }
 
+
     private CubeMarkerType DetermineCubeMarkerType(MarkerType markerType)
     {
         switch (markerType)
         {
             case MarkerType.Individual:
-                return CubeMarkerType.Area; // Individual + Blue = Area cube marker
+                return CubeMarkerType.Individual; // Individual + Blue = Individual cube marker (single tile)
 
             case MarkerType.Area:
-                return CubeMarkerType.Individual; // Area + Blue = Individual cube marker
+                return CubeMarkerType.Area; // Area + Blue = Area cube marker (3x3)
 
             default:
                 return CubeMarkerType.Individual;
@@ -872,6 +888,7 @@ public class PlayerActionManager : MonoBehaviour
                     if (tile != null)
                     {
                         tile.ForceUpdateVisuals(); // Reset to original material
+                        Debug.Log($"Reset tile material at ({x}, {y}) after marker removal");
                     }
                 }
             }

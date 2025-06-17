@@ -573,6 +573,9 @@ public class Tile : MonoBehaviour
     private void ResetToNormalState()
     {
         currentState = TileState.Normal;
+        canPaintCubes = false;
+        paintColor = Color.clear;
+        paintStatus = FaceStatus.None;
         isAdvantaged = false;
         detonationCharges = 0;
         RemoveOverlay();
@@ -590,11 +593,14 @@ public class Tile : MonoBehaviour
     {
         if (cube == null || currentState != Enumerations.TileState.Transformed)
             return;
+        
 
         if (IsBlackened)
         {
             // Black tiles have no effect
-            return;
+            paintColor = Color.black;
+            paintStatus = FaceStatus.Corrupted;
+            ReduceCharge();
         }
 
         if (IsAdvantaged)
@@ -606,8 +612,8 @@ public class Tile : MonoBehaviour
             ReduceCharge();
         }
 
-        // Try to paint the cube if this tile can paint
         TryPaintCube(cube);
+
     }
 
     #region Overlay System - Replaces Material Management
@@ -819,7 +825,7 @@ public class Tile : MonoBehaviour
     // Quick setup methods for common painting scenarios
     public void SetupCorruptionPainting(int duration = 3)
     {
-        SetupFacePainting(FaceStatus.Corrupted, Color.red, duration);
+        SetupFacePainting(FaceStatus.Corrupted, Color.black, duration);
     }
 
     public void SetupEnhancementPainting(int duration = 3)
