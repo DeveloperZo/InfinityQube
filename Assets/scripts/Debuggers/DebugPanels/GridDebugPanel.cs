@@ -1,7 +1,7 @@
-﻿using UnityEngine;
-using static Enumerations;
+﻿using static Enumerations;
 using System.Collections.Generic;
 using System.Linq;
+using UnityEngine;
 
 public class GridDebugPanel : DebugPanelBase
 {
@@ -17,10 +17,9 @@ public class GridDebugPanel : DebugPanelBase
     private bool showGridInspection = true;
     private bool showGridOperations = false;
     private Vector2 tileListScroll;
-    private Vector2 gridViewScroll;
 
     // Tile manipulation controls
-    private int selectedTileState = 0; // 0=Normal, 1=Primed, 2=Corrupted, 3=Enhanced
+    private int selectedTileState = 0; // 0=Normal, 1=Primed, 2=Blackened, 3=Enhanced
     private Vector2Int targetTilePosition = new Vector2Int(0, 0);
     private bool autoTrackPlayer = true;
     private int enhancementCharges = 3;
@@ -30,20 +29,10 @@ public class GridDebugPanel : DebugPanelBase
     private bool showOnlySpecialTiles = false;
     private int maxTilesToShow = 20;
 
-    // Grid manipulation
-    private int newGridWidth = 5;
-    private int newGridHeight = 20;
-
     public override void Initialize()
     {
         gridManager = GridManager.Instance;
         playerManager = Object.FindObjectOfType<PlayerManager>();
-
-        if (gridManager != null)
-        {
-            newGridWidth = gridManager.Width;
-            newGridHeight = gridManager.Height;
-        }
 
         if (playerManager != null)
         {
@@ -103,22 +92,34 @@ public class GridDebugPanel : DebugPanelBase
 
             GUILayout.Space(5);
 
-            // Grid resize controls
+            // Grid resize controls with increment/decrement
             GUILayout.Label("Resize Grid:", GUI.skin.box);
+
+            // Width controls
             GUILayout.BeginHorizontal();
-            GUILayout.Label("W:", GUILayout.Width(20));
-            string widthStr = GUILayout.TextField(newGridWidth.ToString(), GUILayout.Width(40));
-            if (int.TryParse(widthStr, out int width))
-                newGridWidth = Mathf.Clamp(width, 3, 20);
-
-            GUILayout.Label("H:", GUILayout.Width(20));
-            string heightStr = GUILayout.TextField(newGridHeight.ToString(), GUILayout.Width(40));
-            if (int.TryParse(heightStr, out int height))
-                newGridHeight = Mathf.Clamp(height, 10, 50);
-
-            if (GUILayout.Button("Resize"))
+            GUILayout.Label("Width:", GUILayout.Width(50));
+            if (GUILayout.Button("-", GUILayout.Width(30)) && gridManager.Width > 3)
             {
-                gridManager.ResizeGrid(newGridWidth, newGridHeight);
+                gridManager.ResizeGrid(gridManager.Width - 1, gridManager.Height);
+            }
+            GUILayout.Label($"{gridManager.Width}", GUILayout.Width(30));
+            if (GUILayout.Button("+", GUILayout.Width(30)) && gridManager.Width < 20)
+            {
+                gridManager.ResizeGrid(gridManager.Width + 1, gridManager.Height);
+            }
+            GUILayout.EndHorizontal();
+
+            // Height controls
+            GUILayout.BeginHorizontal();
+            GUILayout.Label("Height:", GUILayout.Width(50));
+            if (GUILayout.Button("-", GUILayout.Width(30)) && gridManager.Height > 10)
+            {
+                gridManager.ResizeGrid(gridManager.Width, gridManager.Height - 1);
+            }
+            GUILayout.Label($"{gridManager.Height}", GUILayout.Width(30));
+            if (GUILayout.Button("+", GUILayout.Width(30)) && gridManager.Height < 50)
+            {
+                gridManager.ResizeGrid(gridManager.Width, gridManager.Height + 1);
             }
             GUILayout.EndHorizontal();
 
@@ -182,14 +183,18 @@ public class GridDebugPanel : DebugPanelBase
         if (!autoTrackPlayer)
         {
             GUILayout.Label("X:", GUILayout.Width(15));
-            string xStr = GUILayout.TextField(targetTilePosition.x.ToString(), GUILayout.Width(30));
-            if (int.TryParse(xStr, out int newX))
-                targetTilePosition.x = Mathf.Clamp(newX, 0, gridManager?.Width - 1 ?? 10);
+            if (GUILayout.Button("-", GUILayout.Width(20)) && targetTilePosition.x > 0)
+                targetTilePosition.x--;
+            GUILayout.Label($"{targetTilePosition.x}", GUILayout.Width(20));
+            if (GUILayout.Button("+", GUILayout.Width(20)) && targetTilePosition.x < (gridManager?.Width - 1 ?? 10))
+                targetTilePosition.x++;
 
             GUILayout.Label("Y:", GUILayout.Width(15));
-            string yStr = GUILayout.TextField(targetTilePosition.y.ToString(), GUILayout.Width(30));
-            if (int.TryParse(yStr, out int newY))
-                targetTilePosition.y = Mathf.Clamp(newY, 0, gridManager?.Height - 1 ?? 20);
+            if (GUILayout.Button("-", GUILayout.Width(20)) && targetTilePosition.y > 0)
+                targetTilePosition.y--;
+            GUILayout.Label($"{targetTilePosition.y}", GUILayout.Width(20));
+            if (GUILayout.Button("+", GUILayout.Width(20)) && targetTilePosition.y < (gridManager?.Height - 1 ?? 20))
+                targetTilePosition.y++;
         }
         else
         {
@@ -203,15 +208,8 @@ public class GridDebugPanel : DebugPanelBase
             Tile targetTile = gridManager.GetTileAt(targetTilePosition);
             if (targetTile != null)
             {
-                string tileInfo = $"Tile State: ";
-                if (targetTile.HasMarker) tileInfo += "Marked ";
-                if (targetTile.IsBlackened) tileInfo += "Blackened ";
-                if (targetTile.IsAdvantaged) tileInfo += $"Enhanced({targetTile.DetonationCharges}) ";
-                if (targetTile.IsPrimed) tileInfo += "Primed ";
-                if (targetTile.CanPaintCubes) tileInfo += $"Painter({targetTile.PaintStatus}) ";
-                if (!targetTile.IsPlayable) tileInfo += "FALLEN ";
-
-                GUILayout.Label(tileInfo.Length > 12 ? tileInfo : "Normal");
+                string tileInfo = GetTileStateText(targetTile);
+                GUILayout.Label($"Current State: {tileInfo}");
             }
         }
     }
@@ -221,7 +219,7 @@ public class GridDebugPanel : DebugPanelBase
         GUILayout.Label("Set Tile State:");
         GUILayout.BeginHorizontal();
 
-        GUI.backgroundColor = selectedTileState == 0 ? Color.white : Color.gray;
+        GUI.backgroundColor = selectedTileState == 0 ? Color.gray : Color.white;
         if (GUILayout.Button("Normal")) selectedTileState = 0;
 
         GUI.backgroundColor = selectedTileState == 1 ? Color.blue : Color.white;
@@ -241,9 +239,11 @@ public class GridDebugPanel : DebugPanelBase
         {
             GUILayout.BeginHorizontal();
             GUILayout.Label("Charges:", GUILayout.Width(60));
-            string chargesStr = GUILayout.TextField(enhancementCharges.ToString(), GUILayout.Width(30));
-            if (int.TryParse(chargesStr, out int newCharges))
-                enhancementCharges = Mathf.Clamp(newCharges, 1, 10);
+            if (GUILayout.Button("-", GUILayout.Width(20)) && enhancementCharges > 1)
+                enhancementCharges--;
+            GUILayout.Label($"{enhancementCharges}", GUILayout.Width(20));
+            if (GUILayout.Button("+", GUILayout.Width(20)) && enhancementCharges < 10)
+                enhancementCharges++;
             GUILayout.EndHorizontal();
         }
     }
@@ -277,24 +277,6 @@ public class GridDebugPanel : DebugPanelBase
             ApplyToArea(targetTilePosition, 1);
         }
         GUILayout.EndHorizontal();
-
-        // Face painting setup
-        GUILayout.Space(3);
-        GUILayout.Label("Face Painting Setup:");
-        GUILayout.BeginHorizontal();
-        if (GUILayout.Button("Corruption Painter"))
-        {
-            SetupFacePainting(targetTilePosition, FaceStatus.Corrupted);
-        }
-        if (GUILayout.Button("Enhancement Painter"))
-        {
-            SetupFacePainting(targetTilePosition, FaceStatus.Enhanced);
-        }
-        if (GUILayout.Button("Clear Painter"))
-        {
-            ClearFacePainting(targetTilePosition);
-        }
-        GUILayout.EndHorizontal();
     }
 
     private void DrawGridInspectionSection()
@@ -306,11 +288,15 @@ public class GridDebugPanel : DebugPanelBase
         GUILayout.BeginHorizontal();
         showEmptyTiles = GUILayout.Toggle(showEmptyTiles, "Show Empty");
         showOnlySpecialTiles = GUILayout.Toggle(showOnlySpecialTiles, "Special Only");
+        GUILayout.EndHorizontal();
 
+        GUILayout.BeginHorizontal();
         GUILayout.Label("Max:", GUILayout.Width(30));
-        string maxStr = GUILayout.TextField(maxTilesToShow.ToString(), GUILayout.Width(30));
-        if (int.TryParse(maxStr, out int newMax))
-            maxTilesToShow = Mathf.Clamp(newMax, 5, 100);
+        if (GUILayout.Button("-", GUILayout.Width(20)) && maxTilesToShow > 5)
+            maxTilesToShow -= 5;
+        GUILayout.Label($"{maxTilesToShow}", GUILayout.Width(30));
+        if (GUILayout.Button("+", GUILayout.Width(20)) && maxTilesToShow < 100)
+            maxTilesToShow += 5;
         GUILayout.EndHorizontal();
 
         // Tile statistics
@@ -340,7 +326,7 @@ public class GridDebugPanel : DebugPanelBase
         {
             gridManager?.ClearAllMarkers();
         }
-        if (GUILayout.Button("Place Test Pattern"))
+        if (GUILayout.Button("Test Diagonal Pattern"))
         {
             PlaceTestMarkerPattern();
         }
@@ -359,31 +345,20 @@ public class GridDebugPanel : DebugPanelBase
         }
         GUILayout.EndHorizontal();
 
+        // Pattern operations - simplified to one type each
+        GUILayout.Label("Patterns:", GUI.skin.box);
         GUILayout.BeginHorizontal();
+        if (GUILayout.Button("Prime Cross"))
+        {
+            CreateCrossPattern(TileState.Transformed); // Will use PrimeTile
+        }
+        if (GUILayout.Button("Blacken Checkerboard"))
+        {
+            CreateCheckerboardPattern(TileState.Transformed); // Will use BlackenTile  
+        }
         if (GUILayout.Button("Enhance Top Row"))
         {
             EnhanceTopRow();
-        }
-        if (GUILayout.Button("Prime Bottom Row"))
-        {
-            PrimeBottomRow();
-        }
-        GUILayout.EndHorizontal();
-
-        // Pattern operations
-        GUILayout.Label("Patterns:", GUI.skin.box);
-        GUILayout.BeginHorizontal();
-        if (GUILayout.Button("Checkerboard"))
-        {
-            CreateCheckerboardPattern();
-        }
-        if (GUILayout.Button("Cross Pattern"))
-        {
-            CreateCrossPattern();
-        }
-        if (GUILayout.Button("Random Special"))
-        {
-            CreateRandomSpecialTiles();
         }
         GUILayout.EndHorizontal();
 
@@ -410,11 +385,11 @@ public class GridDebugPanel : DebugPanelBase
         var tiles = GetFilteredTiles();
         int shown = 0;
 
-        foreach (var tileInfo in tiles)
+        foreach (var tile in tiles)
         {
             if (shown >= maxTilesToShow) break;
 
-            DrawTileListItem(tileInfo);
+            DrawTileListItem(tile);
             shown++;
         }
 
@@ -426,7 +401,8 @@ public class GridDebugPanel : DebugPanelBase
 
     private void DrawTileListItem(Tile tile)
     {
-        bool isTarget = new Vector2Int(tile.x,tile.y) == targetTilePosition;
+        Vector2Int position = new Vector2Int(tile.x, tile.y);
+        bool isTarget = position == targetTilePosition;
         GUI.backgroundColor = isTarget ? Color.yellow : GetTileStateColor(tile);
 
         GUILayout.BeginVertical(GUI.skin.box);
@@ -440,29 +416,16 @@ public class GridDebugPanel : DebugPanelBase
 
         if (GUILayout.Button("Select", GUILayout.Width(50)))
         {
-            targetTilePosition = new Vector2Int(tile.x,tile.y);
+            targetTilePosition = position;
             autoTrackPlayer = false;
         }
         GUILayout.EndHorizontal();
-
-        // Status details
-        if (tile.HasMarker || tile.IsBlackened || tile.IsAdvantaged || tile.IsPrimed || tile.CanPaintCubes || !tile.IsPlayable)
-        {
-            GUILayout.BeginHorizontal();
-            if (tile.HasMarker) GUILayout.Label("Marker", GUILayout.Width(50));
-            if (tile.IsBlackened) GUILayout.Label("Black", GUILayout.Width(50));
-            if (tile.IsAdvantaged) GUILayout.Label($"Enh({tile.DetonationCharges})", GUILayout.Width(50));
-            if (tile.IsPrimed) GUILayout.Label("Prime", GUILayout.Width(50));
-            if (tile.CanPaintCubes) GUILayout.Label($"Paint({tile.PaintStatus})", GUILayout.Width(80));
-            if (!tile.IsPlayable) GUILayout.Label("FALLEN", GUILayout.Width(50));
-            GUILayout.EndHorizontal();
-        }
 
         // Quick actions
         GUILayout.BeginHorizontal();
         if (GUILayout.Button("R", GUILayout.Width(25))) // Reset
         {
-            ResetTile(new Vector2Int(tile.x, tile.y));
+            ResetTile(position);
         }
         if (GUILayout.Button("M", GUILayout.Width(25))) // Mark
         {
@@ -566,30 +529,6 @@ public class GridDebugPanel : DebugPanelBase
         Debug.Log($"Applied tile state to 3x3 area around ({center.x}, {center.y})");
     }
 
-    private void SetupFacePainting(Vector2Int position, FaceStatus status)
-    {
-        if (!gridManager.IsValidGridPosition(position)) return;
-
-        Tile tile = gridManager.GetTileAt(position);
-        if (tile != null)
-        {
-            Color color = status == FaceStatus.Corrupted ? Color.red : Color.blue;
-            tile.SetupFacePainting(status, color, 5, true, false);
-            Debug.Log($"Setup face painting on tile ({position.x}, {position.y}) with {status} status");
-        }
-    }
-
-    private void ClearFacePainting(Vector2Int position)
-    {
-        if (!gridManager.IsValidGridPosition(position)) return;
-
-        Tile tile = gridManager.GetTileAt(position);
-        if (tile != null)
-        {
-            tile.DisableFacePainting();
-        }
-    }
-
     // Grid operations
     private void TestRowFall()
     {
@@ -669,24 +608,7 @@ public class GridDebugPanel : DebugPanelBase
         Debug.Log($"Enhanced {enhancedCount} tiles in top row with {enhancementCharges} charges");
     }
 
-    private void PrimeBottomRow()
-    {
-        if (gridManager == null) return;
-
-        int primedCount = 0;
-        for (int x = 0; x < gridManager.Width; x++)
-        {
-            Tile tile = gridManager.GetTileAt(x, 0);
-            if (tile != null)
-            {
-                tile.PrimeTile();
-                primedCount++;
-            }
-        }
-        Debug.Log($"Primed {primedCount} tiles in bottom row");
-    }
-
-    private void CreateCheckerboardPattern()
+    private void CreateCheckerboardPattern(TileState stateType)
     {
         if (gridManager == null) return;
 
@@ -695,25 +617,21 @@ public class GridDebugPanel : DebugPanelBase
         {
             for (int y = 0; y < gridManager.Height; y++)
             {
-                Tile tile = gridManager.GetTileAt(x, y);
-                if (tile != null)
+                if ((x + y) % 2 == 0)
                 {
-                    if ((x + y) % 2 == 0)
+                    Tile tile = gridManager.GetTileAt(x, y);
+                    if (tile != null)
                     {
-                        tile.BlackenTile();
+                        tile.BlackenTile(); // Only blacken tiles in checkerboard pattern
+                        patternCount++;
                     }
-                    else
-                    {
-                        tile.AdvantageTile(2);
-                    }
-                    patternCount++;
                 }
             }
         }
         Debug.Log($"Created checkerboard pattern on {patternCount} tiles");
     }
 
-    private void CreateCrossPattern()
+    private void CreateCrossPattern(TileState stateType)
     {
         if (gridManager == null) return;
 
@@ -721,6 +639,7 @@ public class GridDebugPanel : DebugPanelBase
         int centerY = gridManager.Height / 2;
         int patternCount = 0;
 
+        // Horizontal line
         for (int x = 0; x < gridManager.Width; x++)
         {
             Tile tile = gridManager.GetTileAt(x, centerY);
@@ -731,6 +650,7 @@ public class GridDebugPanel : DebugPanelBase
             }
         }
 
+        // Vertical line
         for (int y = 0; y < gridManager.Height; y++)
         {
             Tile tile = gridManager.GetTileAt(centerX, y);
@@ -741,35 +661,6 @@ public class GridDebugPanel : DebugPanelBase
             }
         }
         Debug.Log($"Created cross pattern with {patternCount} primed tiles");
-    }
-
-    private void CreateRandomSpecialTiles()
-    {
-        if (gridManager == null) return;
-
-        int specialCount = 0;
-        for (int x = 0; x < gridManager.Width; x++)
-        {
-            for (int y = 0; y < gridManager.Height; y++)
-            {
-                if (Random.value < 0.2f) // 20% chance
-                {
-                    Tile tile = gridManager.GetTileAt(x, y);
-                    if (tile != null)
-                    {
-                        int randomState = Random.Range(1, 4);
-                        switch (randomState)
-                        {
-                            case 1: tile.PrimeTile(); break;
-                            case 2: tile.BlackenTile(); break;
-                            case 3: tile.AdvantageTile(Random.Range(1, 4)); break;
-                        }
-                        specialCount++;
-                    }
-                }
-            }
-        }
-        Debug.Log($"Created {specialCount} random special tiles");
     }
 
     private void RestoreAllFallenTiles()
@@ -851,8 +742,6 @@ public class GridDebugPanel : DebugPanelBase
             {
                 Tile tile = gridManager.GetTileAt(x, y);
                 if (tile == null) continue;
-
-                Vector2Int pos = new Vector2Int(x, y);
 
                 // Apply filters
                 bool isSpecial = tile.HasMarker || tile.IsBlackened || tile.IsAdvantaged ||

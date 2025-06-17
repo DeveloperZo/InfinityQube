@@ -278,20 +278,175 @@ public class GridManager : MonoBehaviour
         int oldWidth = width;
         int oldHeight = height;
 
-        // Update dimensions
-        width = Mathf.Max(3, newWidth);
-        height = Mathf.Max(9, newHeight);
+        // Update dimensions with validation
+        newWidth = Mathf.Max(3, newWidth);
+        newHeight = Mathf.Max(9, newHeight);
 
-        // Only regenerate if dimensions actually changed
-        if (width != oldWidth || height != oldHeight)
+        // Only proceed if dimensions actually changed
+        if (width == newWidth && height == newHeight)
         {
-            CalculateGridMetrics();
-            RegenerateGrid();
-            DebugLog($"Grid successfully resized to {width}x{height}");
+            DebugLog("Grid dimensions unchanged, skipping resize");
+            return;
+        }
+
+        // Store existing tile data before resize
+        Tile[,] oldTiles = tiles;
+        bool hadExistingGrid = tiles != null && isGridGenerated;
+
+        // Update dimensions
+        width = newWidth;
+        height = newHeight;
+
+        // Recalculate grid metrics
+        CalculateGridMetrics();
+
+        // If we had an existing grid, preserve what we can
+        if (hadExistingGrid)
+        {
+            ResizeExistingGrid(oldTiles, oldWidth, oldHeight);
         }
         else
         {
-            DebugLog("Grid dimensions unchanged, skipping regeneration");
+            // Generate fresh grid
+            RegenerateGrid();
+        }
+
+        DebugLog($"Grid successfully resized to {width}x{height}");
+    }
+
+    private void ResizeExistingGrid(Tile[,] oldTiles, int oldWidth, int oldHeight)
+    {
+        DebugLog($"Preserving existing grid data during resize");
+
+        // Create new tiles array
+        tiles = new Tile[width, height];
+
+        // Copy existing tiles that fit in new dimensions
+        int preservedCount = 0;
+        for (int x = 0; x < Mathf.Min(oldWidth, width); x++)
+        {
+            for (int y = 0; y < Mathf.Min(oldHeight, height); y++)
+            {
+                if (oldTiles[x, y] != null)
+                {
+                    tiles[x, y] = oldTiles[x, y];
+                    preservedCount++;
+                }
+            }
+        }
+
+        // Destroy tiles that no longer fit
+        int destroyedCount = 0;
+        for (int x = 0; x < oldWidth; x++)
+        {
+            for (int y = 0; y < oldHeight; y++)
+            {
+                // Destroy tiles outside new bounds
+                if ((x >= width || y >= height) && oldTiles[x, y] != null)
+                {
+                    DestroyTileObject(oldTiles[x, y].gameObject);
+                    destroyedCount++;
+                }
+            }
+        }
+
+        // Create new tiles for expanded areas
+        int createdCount = 0;
+        for (int x = 0; x < width; x++)
+        {
+            for (int y = 0; y < height; y++)
+            {
+                if (tiles[x, y] == null)
+                {
+                    CreateTileAtPosition(x, y);
+                    createdCount++;
+                }
+            }
+        }
+
+        // Update grid state
+        isGridGenerated = true;
+        isGridReady = true;
+
+        // Update any systems that depend on grid size
+        NotifyGridResized();
+
+        DebugLog($"Grid resize complete: {preservedCount} preserved, {destroyedCount} destroyed, {createdCount} created");
+    }
+
+    private void NotifyGridResized()
+    {
+        // Clamp player position to new grid bounds
+        var playerManager = FindObjectOfType<PlayerManager>();
+        if (playerManager != null)
+        {
+            Vector2Int playerPos = playerManager.currentTilePosition;
+            Vector2Int clampedPos = new Vector2Int(
+                Mathf.Clamp(playerPos.x, 0, width - 1),
+                Mathf.Clamp(playerPos.y, 0, height - 1)
+            );
+
+            if (playerPos != clampedPos)
+            {
+                playerManager.SetPosition(clampedPos.x, clampedPos.y);
+                DebugLog($"Player position clamped from ({playerPos.x}, {playerPos.y}) to ({clampedPos.x}, {clampedPos.y})");
+            }
+        }
+
+        // Update camera if it exists
+        var cameraFollow = FindObjectOfType<CameraFollow>();
+        if (cameraFollow != null)
+        {
+            cameraFollow.ForceUpdatePosition();
+        }
+
+        // Clear any wave cubes that are now outside bounds
+        var waveManager = FindObjectOfType<WaveManager>();
+        if (waveManager != null)
+        {
+            CleanupOutOfBoundsCubes(waveManager);
+        }
+    }
+
+    private void CleanupOutOfBoundsCubes(WaveManager waveManager)
+    {
+        var cubesToRemove = new List<CubeManager>();
+
+        foreach (var cube in waveManager.activeCubes)
+        {
+            if (cube != null && !IsValidGridPosition(cube.position))
+            {
+                cubesToRemove.Add(cube);
+            }
+        }
+
+        foreach (var cube in cubesToRemove)
+        {
+            waveManager.activeCubes.Remove(cube);
+            if (cube.gameObject != null)
+            {
+                Destroy(cube.gameObject);
+            }
+        }
+
+        if (cubesToRemove.Count > 0)
+        {
+            DebugLog($"Removed {cubesToRemove.Count} cubes that were outside new grid bounds");
+        }
+    }
+
+    // Helper method to ensure DestroyTileObject works with both pooled and non-pooled tiles
+    private void DestroyTileObject(GameObject tileObj)
+    {
+        if (tileObj == null) return;
+
+        if (useObjectPooling)
+        {
+            ReturnTileToPool(tileObj);
+        }
+        else
+        {
+            Destroy(tileObj);
         }
     }
 
@@ -324,18 +479,6 @@ public class GridManager : MonoBehaviour
                     DestroyTileObject(tiles[x, y].gameObject);
                 }
             }
-        }
-    }
-
-    private void DestroyTileObject(GameObject tileObj)
-    {
-        if (useObjectPooling)
-        {
-            ReturnTileToPool(tileObj);
-        }
-        else
-        {
-            Destroy(tileObj);
         }
     }
 
