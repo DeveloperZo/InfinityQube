@@ -602,6 +602,12 @@ public class WaveManager : MonoBehaviour
         if (player != null && !debugMode)
         {
             player.enabled = true;
+            playerActionManager.maxIndividualMarkers = waveConfiguration[currentWaveIndex].maxIndividualMarkerCount;
+            playerActionManager.maxIndividualMarkerCharges = waveConfiguration[currentWaveIndex].maxIndividualMarkerCharge;
+
+            playerActionManager.maxAreaMarkers = waveConfiguration[currentWaveIndex].maxAreaMarkerCount;
+            playerActionManager.maxAreaMarkerCharges = waveConfiguration[currentWaveIndex].maxAreaMarkerCharge;
+
         }
     }
 
@@ -665,8 +671,7 @@ public class WaveManager : MonoBehaviour
     #endregion
 
     #region Public Properties (for Debuggers)
-    public int MarkerChargeLimit() => CurrentWave?.limitMarkers == true ? CurrentWave.maxMarkerCharge : -1;
-    public int MarkerCountLimit() => CurrentWave?.limitMarkers == true ? CurrentWave.maxMarkerCount : -1;
+
     public int CurrentWaveIndex => currentWaveIndex;
     #endregion
 

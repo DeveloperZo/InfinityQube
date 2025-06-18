@@ -214,21 +214,38 @@ namespace WaveDebugSystem
 
                 if (currentEditingWave.limitMarkers)
                 {
-                    GUILayout.Label("Max:", GUILayout.Width(30));
-                    string maxStr = GUILayout.TextField(currentEditingWave.maxMarkerCount.ToString(), GUILayout.Width(30));
-                    if (int.TryParse(maxStr, out int newMax) && newMax != currentEditingWave.maxMarkerCount)
+                    GUILayout.Label("Individual Max:", GUILayout.Width(30));
+                    string maxIndividualStr = GUILayout.TextField(currentEditingWave.maxIndividualMarkerCount.ToString(), GUILayout.Width(30));
+                    if (int.TryParse(maxIndividualStr, out int newIndividualMax) && newIndividualMax != currentEditingWave.maxIndividualMarkerCount)
                     {
-                        currentEditingWave.maxMarkerCount = Mathf.Max(1, newMax);
+                        currentEditingWave.maxIndividualMarkerCount = Mathf.Max(1, newIndividualMax);
                         MarkAsChanged();
                     }
 
-                    GUILayout.Label("Charge:", GUILayout.Width(45));
-                    string chargeStr = GUILayout.TextField(currentEditingWave.maxMarkerCharge.ToString(), GUILayout.Width(30));
-                    if (int.TryParse(chargeStr, out int newCharge) && newCharge != currentEditingWave.maxMarkerCharge)
+                    GUILayout.Label("Individual Charge:", GUILayout.Width(45));
+                    string chargeIndividualStr = GUILayout.TextField(currentEditingWave.maxIndividualMarkerCharge.ToString(), GUILayout.Width(30));
+                    if (int.TryParse(chargeIndividualStr, out int newIndividualCharge) && newIndividualCharge != currentEditingWave.maxIndividualMarkerCharge)
                     {
-                        currentEditingWave.maxMarkerCharge = Mathf.Max(1, newCharge);
+                        currentEditingWave.maxIndividualMarkerCharge = Mathf.Max(1, newIndividualCharge);
                         MarkAsChanged();
                     }
+
+                    GUILayout.Label("Max Area:", GUILayout.Width(30));
+                    string maxAreaStr = GUILayout.TextField(currentEditingWave.maxAreaMarkerCount.ToString(), GUILayout.Width(30));
+                    if (int.TryParse(maxAreaStr, out int newAreaMax) && newAreaMax != currentEditingWave.maxAreaMarkerCount)
+                    {
+                        currentEditingWave.maxAreaMarkerCount = Mathf.Max(1, newAreaMax);
+                        MarkAsChanged();
+                    }
+                    GUILayout.Label("Area Charge:", GUILayout.Width(45));
+                    string chargeAreaStr = GUILayout.TextField(currentEditingWave.maxIndividualMarkerCharge.ToString(), GUILayout.Width(30));
+                    if (int.TryParse(chargeAreaStr, out int newAreaCharge) && newAreaCharge != currentEditingWave.maxAreaMarkerCharge)
+                    {
+                        currentEditingWave.maxAreaMarkerCharge = Mathf.Max(1, newAreaCharge);
+                        MarkAsChanged();
+                    }
+
+
                 }
                 GUILayout.EndHorizontal();
 
@@ -379,8 +396,11 @@ namespace WaveDebugSystem
                 currentEditingWave.waveStartDelay = 0.75f;
                 currentEditingWave.CubesData = new List<CubeData>();
                 currentEditingWave.limitMarkers = false;
-                currentEditingWave.maxMarkerCount = 3;
-                currentEditingWave.maxMarkerCharge = 2;
+                currentEditingWave.maxIndividualMarkerCount = 3;
+                currentEditingWave.maxIndividualMarkerCharge = 1;
+                currentEditingWave.maxAreaMarkerCount = 5;
+                currentEditingWave.maxAreaMarkerCharge = 1;
+                
                 hasUnsavedChanges = false;
 
                 Debug.Log($"Created new wave: {currentEditingWave.name}");

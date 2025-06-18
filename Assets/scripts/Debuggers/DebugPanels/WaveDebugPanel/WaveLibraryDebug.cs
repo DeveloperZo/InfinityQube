@@ -128,7 +128,7 @@ namespace WaveDebugSystem
             {
                 foreach(var cube in wave.CubesData)
                 {
-                    cube.position = new Vector2Int(cube.position.x, gridManager.Height -  cube.position.y);
+                    cube.position = new Vector2Int(cube.position.x, cube.position.y);
                 }
                 waveManager.waveConfiguration.Add(wave);
             }
@@ -215,8 +215,10 @@ namespace WaveDebugSystem
             advancedWave.fastMoveInterval = 0.1f;
             advancedWave.waveStartDelay = 0.75f;
             advancedWave.limitMarkers = true;
-            advancedWave.maxMarkerCount = 3;
-            advancedWave.maxMarkerCharge = 2;
+            advancedWave.maxIndividualMarkerCount = 3;
+            advancedWave.maxIndividualMarkerCharge = 2;
+            advancedWave.maxAreaMarkerCount = 3;
+            advancedWave.maxAreaMarkerCharge = 2;
             advancedWave.CubesData = new List<CubeData>();
 
             // Add mixed cube types

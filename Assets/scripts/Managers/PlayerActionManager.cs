@@ -16,14 +16,22 @@ public class PlayerActionManager : MonoBehaviour
 
     [Header("Individual Marker Settings")]
     [SerializeField] public int maxIndividualMarkers = 3;
+    [SerializeField] public int maxIndividualMarkerCharges = 2;
     [SerializeField] public float individualMarkerCooldown = 2f;
-    [SerializeField] private Material individualMarkerMaterial;
+    [SerializeField] public Material individualMarkerMaterial;
+    [SerializeField] public Queue<IndividualMarker> individualMarkers = new Queue<IndividualMarker>();
+    [SerializeField] public int currentIndividualMarkers = 0;
+    [SerializeField] public float lastIndividualMarkerTime = 0f;
 
     [Header("Area Marker Settings")]
     [SerializeField] public int maxAreaMarkers = 2;
+    [SerializeField] public int maxAreaMarkerCharges = 1;
     [SerializeField] public float areaMarkerCooldown = 4f;
-    [SerializeField] private Material areaMarkerMaterial;
-    [SerializeField] public int areaMarkerSize = 2; // 3x3 by default
+    [SerializeField] public Material areaMarkerMaterial;
+    [SerializeField] public int areaMarkerSize = 2;
+    [SerializeField] public Queue<AreaMarker> areaMarkers = new Queue<AreaMarker>();
+    [SerializeField] public int currentAreaMarkers = 0;
+    [SerializeField] public float lastAreaMarkerTime = 0f;
 
     [Header("Marker Settings")]
     [SerializeField] private float perfectTimingWindow = 0.2f;
@@ -46,15 +54,8 @@ public class PlayerActionManager : MonoBehaviour
     [SerializeField] private Color areaPreviewColor = new Color(1f, 0.5f, 0f, 0.7f);
 
     private Dictionary<Vector2Int, GameObject> temporaryMarkerOverlays = new Dictionary<Vector2Int, GameObject>();
-    // Individual Markers
-    public Queue<IndividualMarker> individualMarkers = new Queue<IndividualMarker>();
-    public int currentIndividualMarkers = 0;
-    private float lastIndividualMarkerTime = 0f;
 
-    // Area Markers
-    public Queue<AreaMarker> areaMarkers = new Queue<AreaMarker>();
-    public int currentAreaMarkers = 0;
-    private float lastAreaMarkerTime = 0f;
+
 
 
     // Cube Markers (from blue cube captures)
