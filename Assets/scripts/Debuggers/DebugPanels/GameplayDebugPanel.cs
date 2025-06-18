@@ -124,7 +124,8 @@ public class GameplayDebugPanel : DebugPanelBase
                 GUILayout.Label($"Cubes: {wave.CubesData.Count} | Interval: {wave.moveInterval}s");
                 if (wave.limitMarkers)
                 {
-                    GUILayout.Label($"Marker Limit: {wave.maxMarkerCount} (charge: {wave.maxMarkerCharge})");
+                    GUILayout.Label($"Marker Indiv Limit: {wave.maxIndividualMarkerCount} (charge: {wave.maxIndividualMarkerCharge})");
+                    GUILayout.Label($"Marker Area Limit: {wave.maxAreaMarkerCount} (charge: {wave.maxAreaMarkerCharge})");
                 }
             }
         }

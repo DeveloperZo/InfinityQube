@@ -17,18 +17,62 @@ MonoBehaviour:
   GridWidth: 3
   CubesData:
   - type: 0
-    position: {x: 2, y: 2}
+    position: {x: 0, y: 18}
+    level: 1
+  - type: 2
+    position: {x: 1, y: 18}
     level: 1
   - type: 0
-    position: {x: 0, y: 1}
+    position: {x: 2, y: 18}
+    level: 1
+  - type: 2
+    position: {x: 3, y: 18}
     level: 1
   - type: 0
-    position: {x: 1, y: 0}
+    position: {x: 4, y: 18}
+    level: 1
+  - type: 2
+    position: {x: 0, y: 19}
+    level: 1
+  - type: 0
+    position: {x: 1, y: 19}
+    level: 1
+  - type: 2
+    position: {x: 2, y: 19}
+    level: 1
+  - type: 0
+    position: {x: 3, y: 19}
+    level: 1
+  - type: 0
+    position: {x: 4, y: 19}
+    level: 1
+  - type: 0
+    position: {x: 0, y: 20}
+    level: 1
+  - type: 0
+    position: {x: 1, y: 20}
+    level: 1
+  - type: 0
+    position: {x: 2, y: 20}
+    level: 1
+  - type: 2
+    position: {x: 3, y: 20}
+    level: 1
+  - type: 2
+    position: {x: 4, y: 20}
+    level: 1
+  - type: 2
+    position: {x: 2, y: 4}
+    level: 1
+  - type: 0
+    position: {x: 2, y: 3}
     level: 1
   limitMarkers: 0
-  maxMarkerCharge: 2
-  maxMarkerCount: 99
-  waveStartDelay: 0.75
+  maxIndividualMarkerCharge: 2
+  maxIndividualMarkerCount: 10
+  maxAreaMarkerCharge: 1
+  maxAreaMarkerCount: 5
+  waveStartDelay: 0.8
   moveInterval: 3
   fastMoveInterval: 0.1
   hasOwnSuccessCriteria: 0
