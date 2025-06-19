@@ -13,14 +13,16 @@ MonoBehaviour:
   m_Name: stage_02
   m_EditorClassIdentifier: 
   stageNumber: 1
-  stageName: Qube02
-  description: "**Learning Goals:**\r\n  - Blue cube mechanics\r\n"
-  objective: Destroy all gray cubes by placing markers in their path.
-  gridWidth: 5
-  gridHeight: 20
+  stageName: Strategic Choice
+  description: Learn to prioritize targets when resources are limited.
+  objective: Not every cube needs a marker. Choose wisely
+  gridWidth: 3
+  gridHeight: 15
   playerStartPosition: {x: 0, y: 1}
   waveConfigurations:
-  - {fileID: 11400000, guid: 0692e15c717d7da41a100f51d3a2b1b7, type: 2}
+  - {fileID: 11400000, guid: 17d72c1cb53a2e64db0dd043a4e376bb, type: 2}
+  - {fileID: 11400000, guid: 2e465d29e5e1def48b4c17c56dbc282d, type: 2}
+  - {fileID: 11400000, guid: b06a90d80aba1be4eab2e7d65ed85ee0, type: 2}
   requireAllCubesDestroyed: 0
   requiredCaptureCount: 0
   maxAllowedEscapes: 0

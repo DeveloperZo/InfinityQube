@@ -10,19 +10,17 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: faaa491ad539cb444afed02f7554648d, type: 3}
-  m_Name: stage_00
+  m_Name: stage_03
   m_EditorClassIdentifier: 
-  stageNumber: 0
-  stageName: First contact
-  description: Learn basic movement and marker placement. Use WASD to move and F/R
-    to place and trigger individual markers.
-  objective: Capture gray cubes using F to place markers, R to trigger them
+  stageNumber: 1
+  stageName: Qube02
+  description: "**Learning Goals:**\r\n  - Blue cube mechanics\r\n"
+  objective: Destroy all gray cubes by placing markers in their path.
   gridWidth: 5
-  gridHeight: 12
-  playerStartPosition: {x: 2, y: 0}
+  gridHeight: 20
+  playerStartPosition: {x: 0, y: 1}
   waveConfigurations:
-  - {fileID: 0}
-  - {fileID: 0}
+  - {fileID: 11400000, guid: 0692e15c717d7da41a100f51d3a2b1b7, type: 2}
   requireAllCubesDestroyed: 0
   requiredCaptureCount: 0
-  maxAllowedEscapes: 3
+  maxAllowedEscapes: 0

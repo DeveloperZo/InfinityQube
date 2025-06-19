@@ -12,16 +12,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: faaa491ad539cb444afed02f7554648d, type: 3}
   m_Name: stage_01
   m_EditorClassIdentifier: 
-  stageNumber: 1
-  stageName: Strategic Choice
-  description: Learn to prioritize targets when resources are limited.
-  objective: Not every cube needs a marker. Choose wisely
-  gridWidth: 3
+  stageNumber: 0
+  stageName: First contact
+  description: Learn basic movement and marker placement. Use WASD to move and F/R
+    to place and trigger individual markers.
+  objective: Capture gray cubes using F to place markers, R to trigger them
+  gridWidth: 5
   gridHeight: 15
-  playerStartPosition: {x: 0, y: 1}
+  playerStartPosition: {x: 2, y: 0}
   waveConfigurations:
-  - {fileID: 0}
-  - {fileID: 0}
+  - {fileID: 11400000, guid: 52039f55bbc24df458bee29ef04e1a6e, type: 2}
+  - {fileID: 11400000, guid: 26a86d8b588967f45b04cdf43bc15c49, type: 2}
+  - {fileID: 11400000, guid: 5650d342772b2074e8001895b067c673, type: 2}
   requireAllCubesDestroyed: 0
   requiredCaptureCount: 0
-  maxAllowedEscapes: 0
+  maxAllowedEscapes: 3

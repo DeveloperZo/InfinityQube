@@ -16,18 +16,6 @@ MonoBehaviour:
   GridHeight: 5
   GridWidth: 5
   CubesData:
-  - type: 2
-    position: {x: 4, y: 4}
-    level: 1
-  - type: 0
-    position: {x: 2, y: 4}
-    level: 1
-  - type: 0
-    position: {x: 0, y: 4}
-    level: 1
-  - type: 0
-    position: {x: 0, y: 2}
-    level: 1
   - type: 0
     position: {x: 0, y: 0}
     level: 1
@@ -35,7 +23,58 @@ MonoBehaviour:
     position: {x: 0, y: 1}
     level: 1
   - type: 0
+    position: {x: 0, y: 2}
+    level: 1
+  - type: 1
+    position: {x: 0, y: 3}
+    level: 1
+  - type: 0
+    position: {x: 0, y: 4}
+    level: 1
+  - type: 2
+    position: {x: 1, y: 0}
+    level: 1
+  - type: 0
+    position: {x: 1, y: 1}
+    level: 1
+  - type: 0
+    position: {x: 1, y: 2}
+    level: 1
+  - type: 2
+    position: {x: 1, y: 3}
+    level: 1
+  - type: 2
+    position: {x: 1, y: 4}
+    level: 1
+  - type: 2
+    position: {x: 2, y: 0}
+    level: 1
+  - type: 0
+    position: {x: 2, y: 1}
+    level: 1
+  - type: 0
+    position: {x: 2, y: 2}
+    level: 1
+  - type: 0
+    position: {x: 2, y: 3}
+    level: 1
+  - type: 0
+    position: {x: 2, y: 4}
+    level: 1
+  - type: 0
     position: {x: 3, y: 0}
+    level: 1
+  - type: 1
+    position: {x: 3, y: 1}
+    level: 1
+  - type: 0
+    position: {x: 3, y: 2}
+    level: 1
+  - type: 2
+    position: {x: 3, y: 3}
+    level: 1
+  - type: 1
+    position: {x: 3, y: 4}
     level: 1
   - type: 0
     position: {x: 4, y: 0}
@@ -49,47 +88,8 @@ MonoBehaviour:
   - type: 0
     position: {x: 4, y: 3}
     level: 1
-  - type: 0
-    position: {x: 2, y: 3}
-    level: 1
-  - type: 0
-    position: {x: 1, y: 2}
-    level: 1
-  - type: 0
-    position: {x: 1, y: 1}
-    level: 1
-  - type: 0
-    position: {x: 2, y: 1}
-    level: 1
-  - type: 0
-    position: {x: 2, y: 2}
-    level: 1
-  - type: 0
-    position: {x: 3, y: 2}
-    level: 1
-  - type: 1
-    position: {x: 0, y: 3}
-    level: 1
-  - type: 1
-    position: {x: 3, y: 1}
-    level: 1
   - type: 2
-    position: {x: 1, y: 4}
-    level: 1
-  - type: 2
-    position: {x: 1, y: 3}
-    level: 1
-  - type: 2
-    position: {x: 1, y: 0}
-    level: 1
-  - type: 2
-    position: {x: 2, y: 0}
-    level: 1
-  - type: 2
-    position: {x: 3, y: 3}
-    level: 1
-  - type: 1
-    position: {x: 3, y: 4}
+    position: {x: 4, y: 4}
     level: 1
   limitMarkers: 0
   maxIndividualMarkerCharge: 1
@@ -97,7 +97,7 @@ MonoBehaviour:
   maxAreaMarkerCharge: 1
   maxAreaMarkerCount: 5
   waveStartDelay: 0.8
-  moveInterval: 1.5
+  moveInterval: 2
   fastMoveInterval: 0.1
   hasOwnSuccessCriteria: 0
   requiredCaptureCount: 0

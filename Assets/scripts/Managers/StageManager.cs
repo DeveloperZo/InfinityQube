@@ -58,7 +58,7 @@ public class StageManager : MonoBehaviour
 
     private void Start()
     {
-        if (startingStageIndex != 0)
+        if (startingStageIndex != -1)
         {
             LoadStage(startingStageIndex);
         }
@@ -241,9 +241,8 @@ public class StageManager : MonoBehaviour
 
         DebugLog($"Configuring {stage.waveConfigurations.Count} waves");
 
-        List<WaveData> adjustedWaves = AdjustWavePositionsForGrid(stage.waveConfigurations);
 
-        waveManager.waveConfiguration = adjustedWaves;
+        waveManager.waveConfiguration = stage.waveConfigurations;
         waveManager.useWaveConfiguration = true;
         waveManager.currentWaveIndex = 0; // Reset to first wave
     }
@@ -264,24 +263,6 @@ public class StageManager : MonoBehaviour
         playerActionManager.ClearAllActions();
     }
 
-    private List<WaveData> AdjustWavePositionsForGrid(List<WaveData> waves)
-    {
-        List<WaveData> adjustedWaves = new List<WaveData>();
-
-        foreach (var wave in waves)
-        {
-            WaveData adjustedWave = Instantiate(wave);
-
-            foreach (var cube in adjustedWave.CubesData)
-            {
-                cube.position.y = gridManager.Height - (wave.GridHeight - cube.position.y);
-            }
-
-            adjustedWaves.Add(adjustedWave);
-        }
-
-        return adjustedWaves;
-    }
 
     private void CleanupCurrentStage()
     {

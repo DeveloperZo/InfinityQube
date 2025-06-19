@@ -6302,18 +6302,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &316945254990386903
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 538239122518861217}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1a32b1f57cf1c6c44a612e156af35f45, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!1 &390060601846672007
 GameObject:
   m_ObjectHideFlags: 0
@@ -6356,7 +6344,6 @@ GameObject:
   m_Component:
   - component: {fileID: 6114488222459403130}
   - component: {fileID: 4327591077324849160}
-  - component: {fileID: 316945254990386903}
   m_Layer: 0
   m_Name: WaveManager
   m_TagString: Untagged
@@ -6639,7 +6626,7 @@ MonoBehaviour:
   playerController: {fileID: 7665709929118310107}
   playerActionManager: {fileID: 8656265648072650656}
   stageDatabase: {fileID: 11400000, guid: 9e6fa5035be75db46be4cb9e31f45c17, type: 2}
-  startingStageIndex: -1
+  startingStageIndex: 0
   autoAdvanceStages: 1
   stageTransitionDelay: 2
   restartOnFailure: 1
@@ -7127,6 +7114,7 @@ MonoBehaviour:
   debugMode: 0
   manualControl: 0
   showDebugInfo: 0
+  showMessages: 1
   messagePanel: {fileID: 810359472}
   messageText: {fileID: 1883002200}
   continuePrompt: {fileID: 0}
@@ -8048,12 +8036,18 @@ MonoBehaviour:
   playerManager: {fileID: 7665709929118310107}
   waveManager: {fileID: 4327591077324849160}
   maxIndividualMarkers: 3
+  maxIndividualMarkerCharges: 2
   individualMarkerCooldown: 2
   individualMarkerMaterial: {fileID: 0}
+  currentIndividualMarkers: 0
+  lastIndividualMarkerTime: 0
   maxAreaMarkers: 2
+  maxAreaMarkerCharges: 1
   areaMarkerCooldown: 4
   areaMarkerMaterial: {fileID: 0}
   areaMarkerSize: 2
+  currentAreaMarkers: 0
+  lastAreaMarkerTime: 0
   perfectTimingWindow: 0.2
   cubeMarkerMaterial: {fileID: 0}
   poweredCubeMarkerMaterial: {fileID: 0}
@@ -8065,8 +8059,6 @@ MonoBehaviour:
   powerUpCubeMarkerKey: 284
   flashDuration: 0.3
   areaPreviewColor: {r: 1, g: 0.5, b: 0, a: 0.7}
-  currentIndividualMarkers: 0
-  currentAreaMarkers: 0
   individualMarkersPlaced: 0
   areaMarkersPlaced: 0
 --- !u!1 &8707610068485983747

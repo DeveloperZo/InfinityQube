@@ -301,10 +301,11 @@ public class WaveManager : MonoBehaviour
 
     private void MoveCubesForward()
     {
+        
         for (int i = activeCubes.Count - 1; i >= 0; i--)
         {
             if (i >= activeCubes.Count) continue;
-            MoveStep++;
+            
             var cube = activeCubes[i];
             if (cube == null)
             {
@@ -324,6 +325,7 @@ public class WaveManager : MonoBehaviour
                 }
             }
         }
+        MoveStep++;
     } 
 
     public void ClearAllCubes()
