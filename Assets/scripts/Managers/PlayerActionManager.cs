@@ -739,9 +739,9 @@ public class PlayerActionManager : MonoBehaviour
     {
         List<Vector2Int> positions = new List<Vector2Int>();
 
-        for (int x = 0; x <= 2; x++)
+        for (int x = 0; x < 2; x++)
         {
-            for (int y = 0; y <= 2; y++)
+            for (int y = 0; y < 2; y++)
             {
                 Vector2Int pos = new Vector2Int(center.x + x, center.y + y);
                 if (IsValidPosition(pos))

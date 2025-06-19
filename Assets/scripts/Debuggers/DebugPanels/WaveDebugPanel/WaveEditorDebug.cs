@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using Unity.VisualScripting;
 using UnityEngine;
 using static Enumerations;
 
@@ -422,10 +423,40 @@ namespace WaveDebugSystem
             public void LoadWaveForEditing(WaveData wave)
             {
                 if (wave == null) return;
-                currentEditingWave = Object.Instantiate(wave);
-                currentEditingWave.name = wave.name; // Preserve original name
+                // Deep copy: create a new instance and copy all fields, including a new list for CubesData
+                currentEditingWave = ScriptableObject.CreateInstance<WaveData>();
+                currentEditingWave.name = wave.name;
+                currentEditingWave.GridWidth = wave.GridWidth;
+                currentEditingWave.GridHeight = wave.GridHeight;
+                currentEditingWave.moveInterval = wave.moveInterval;
+                currentEditingWave.fastMoveInterval = wave.fastMoveInterval;
+                currentEditingWave.waveStartDelay = wave.waveStartDelay;
+                currentEditingWave.limitMarkers = wave.limitMarkers;
+                currentEditingWave.maxIndividualMarkerCount = wave.maxIndividualMarkerCount;
+                currentEditingWave.maxIndividualMarkerCharge = wave.maxIndividualMarkerCharge;
+                currentEditingWave.maxAreaMarkerCount = wave.maxAreaMarkerCount;
+                currentEditingWave.maxAreaMarkerCharge = wave.maxAreaMarkerCharge;
+
+                // Deep copy CubesData
+                currentEditingWave.CubesData = new List<CubeData>();
+                if (wave.CubesData != null)
+                {
+                    foreach (var cube in wave.CubesData)
+                    {
+                        var cubeCopy = new CubeData
+                        {
+                            type = cube.type,
+                            position = new Vector2Int(cube.position.x, cube.position.y),
+                            level = cube.level
+                        };
+                        currentEditingWave.CubesData.Add(cubeCopy);
+                    }
+                }
+
                 hasUnsavedChanges = false;
                 Debug.Log($"Loaded wave for editing: {currentEditingWave.name} with {currentEditingWave.CubesData.Count} cubes");
+                waveManager.waveConfiguration.Clear();
+                waveManager.waveConfiguration.Add( currentEditingWave );
             }
 
             public void SaveCurrentWave()

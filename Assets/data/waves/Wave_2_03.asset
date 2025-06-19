@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 78c3fb7cc917307469018838241693f1, type: 3}
-  m_Name: Wave_2_01
+  m_Name: Wave_2_03
   m_EditorClassIdentifier: 
   Index: 0
   GridHeight: 3
@@ -22,10 +22,10 @@ MonoBehaviour:
   - type: 2
     position: {x: 1, y: 18}
     level: 1
-  - type: 0
+  - type: 2
     position: {x: 2, y: 18}
     level: 1
-  - type: 0
+  - type: 2
     position: {x: 3, y: 18}
     level: 1
   - type: 0
@@ -55,7 +55,7 @@ MonoBehaviour:
   - type: 0
     position: {x: 2, y: 20}
     level: 1
-  - type: 0
+  - type: 2
     position: {x: 3, y: 20}
     level: 1
   - type: 2
@@ -72,7 +72,21 @@ MonoBehaviour:
   hasOwnSuccessCriteria: 0
   requiredCaptureCount: 0
   maxAllowedEscapes: 0
-  messages: []
+  messages:
+  - Message: 'DEV: Introducing marker placement and normal cube capture.'
+    DisplayMoveStep: 0
+    RequirePause: 1
+    AutoHideDelay: 0
+    HighlightTile: 0
+    highlightTiles: []
+    highlightColor: {r: 0, g: 0, b: 0, a: 0}
+  - Message: 'DEV: Normal cube escape penalties - grid loses a row.'
+    DisplayMoveStep: -1
+    RequirePause: 0
+    AutoHideDelay: 0
+    HighlightTile: 0
+    highlightTiles: []
+    highlightColor: {r: 0, g: 0, b: 0, a: 0}
   normalCubesCaptured: 0
   blueCubesCaptured: 0
   cubesEscaped: 0

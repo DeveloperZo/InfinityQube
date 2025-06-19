@@ -46,37 +46,61 @@ namespace WaveDebugSystem
             foreach (var wave in availableWaves)
             {
                 if (wave == null) continue;
+                
+                var waveCopy = ScriptableObject.CreateInstance<WaveData>();
+                waveCopy.name = wave.name;
+                waveCopy.GridWidth = wave.GridWidth;
+                waveCopy.GridHeight = wave.GridHeight;
+                waveCopy.moveInterval = wave.moveInterval;
+                waveCopy.fastMoveInterval = wave.fastMoveInterval;
+                waveCopy.waveStartDelay = wave.waveStartDelay;
+                waveCopy.limitMarkers = wave.limitMarkers;
+                waveCopy.maxIndividualMarkerCount = wave.maxIndividualMarkerCount;
+                waveCopy.maxIndividualMarkerCharge = wave.maxIndividualMarkerCharge;
+                waveCopy.maxAreaMarkerCount = wave.maxAreaMarkerCount;
+                waveCopy.maxAreaMarkerCharge = wave.maxAreaMarkerCharge;
 
-                bool isCurrent = currentEditingWave == wave;
+                foreach (var cube in wave.CubesData)
+                {
+                    var cubeCopy = new CubeData
+                    {
+                        type = cube.type,
+                        position = new Vector2Int(cube.position.x, cube.position.y),
+                        level = cube.level
+                    };
+                    waveCopy.CubesData.Add(cubeCopy);
+                }
+
+                bool isCurrent = currentEditingWave == waveCopy;
                 bool isActive = waveManager != null && waveManager.CurrentWave != null &&
-                               waveManager.CurrentWave.name == wave.name;
+                               waveManager.CurrentWave.name == waveCopy.name;
 
                 GUI.backgroundColor = isCurrent ? Color.yellow : (isActive ? Color.green : Color.white);
                 GUILayout.BeginHorizontal(GUI.skin.box);
 
-                GUILayout.Label(wave.name, GUILayout.Width(120));
-                GUILayout.Label($"{wave.CubesData.Count}c", GUILayout.Width(30));
-                GUILayout.Label($"{wave.GridWidth}x{wave.GridHeight}", GUILayout.Width(40));
+                GUILayout.Label(waveCopy.name, GUILayout.Width(120));
+                GUILayout.Label($"{waveCopy.CubesData.Count}c", GUILayout.Width(30));
+                GUILayout.Label($"{waveCopy.GridWidth}x{waveCopy.GridHeight}", GUILayout.Width(40));
 
                 if (GUILayout.Button("Edit", GUILayout.Width(35)))
                 {
-                    onWaveChanged?.Invoke(wave);
+                    onWaveChanged?.Invoke(waveCopy);
                 }
 
                 if (GUILayout.Button("Load", GUILayout.Width(35)))
                 {
-                    LoadWaveToManager(wave);
+                    LoadWaveToManager(waveCopy);
                 }
 
                 if (GUILayout.Button("Copy", GUILayout.Width(35)))
                 {
-                    var copiedWave = CopyWave(wave);
+                    var copiedWave = CopyWave(waveCopy);
                     onWaveChanged?.Invoke(copiedWave);
                 }
 
                 if (GUILayout.Button("X", GUILayout.Width(20)))
                 {
-                    DeleteWaveAsset(wave);
+                    DeleteWaveAsset(waveCopy);
                 }
 
                 GUILayout.EndHorizontal();

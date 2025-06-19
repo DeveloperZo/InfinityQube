@@ -272,7 +272,9 @@ public class WaveManager : MonoBehaviour
             Debug.LogError($"Invalid prefab index {prefabIndex} for cube type {cubeData.type}");
             return;
         }
-
+        var waveHeight = waveConfiguration.Count > 0 ? waveConfiguration[currentWaveIndex].GridHeight : waveSize;
+        var gridLocalHeight = grid.Height - (waveHeight - cubeData.position.y);
+        cubeData.position.y = gridLocalHeight;
         Vector3 spawnPos = grid.GridToWorldPosition(cubeData.position.x, cubeData.position.y, 2f);
         Debug.Log($"Spawning {cubeData.type} cube at grid ({cubeData.position.x}, {cubeData.position.y}) -> world {spawnPos}");
 

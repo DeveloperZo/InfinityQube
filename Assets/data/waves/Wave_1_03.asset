@@ -13,46 +13,65 @@ MonoBehaviour:
   m_Name: Wave_1_03
   m_EditorClassIdentifier: 
   Index: 0
-  GridHeight: 3
-  GridWidth: 3
+  GridHeight: 2
+  GridWidth: 5
   CubesData:
+  - type: 2
+    position: {x: 0, y: 19}
+    level: 1
   - type: 0
-    position: {x: 1, y: 0}
+    position: {x: 1, y: 19}
     level: 1
   - type: 2
-    position: {x: 2, y: 0}
+    position: {x: 2, y: 19}
+    level: 1
+  - type: 0
+    position: {x: 3, y: 19}
     level: 1
   - type: 2
-    position: {x: 1, y: 1}
-    level: 1
-  - type: 0
-    position: {x: 2, y: 2}
-    level: 1
-  - type: 0
-    position: {x: 0, y: 2}
+    position: {x: 4, y: 19}
     level: 1
   - type: 2
-    position: {x: 1, y: 2}
+    position: {x: 0, y: 20}
     level: 1
   - type: 0
-    position: {x: 0, y: 0}
+    position: {x: 1, y: 20}
     level: 1
   - type: 0
-    position: {x: 0, y: 1}
+    position: {x: 2, y: 20}
     level: 1
-  - type: 0
-    position: {x: 2, y: 1}
+  - type: 2
+    position: {x: 3, y: 20}
     level: 1
-  limitMarkers: 0
-  maxMarkerCharge: 2
-  maxMarkerCount: 99
-  waveStartDelay: 0.75
-  moveInterval: 3
+  - type: 2
+    position: {x: 4, y: 20}
+    level: 1
+  limitMarkers: 1
+  maxIndividualMarkerCharge: 2
+  maxIndividualMarkerCount: 10
+  maxAreaMarkerCharge: 1
+  maxAreaMarkerCount: 5
+  waveStartDelay: 0.8
+  moveInterval: 2
   fastMoveInterval: 0.1
   hasOwnSuccessCriteria: 0
   requiredCaptureCount: 0
   maxAllowedEscapes: 0
-  messages: []
+  messages:
+  - Message: 'DEV: Black cubes cannot be captured. Player should move to avoid collision.'
+    DisplayMoveStep: 2
+    RequirePause: 1
+    AutoHideDelay: 0
+    HighlightTile: 0
+    highlightTiles: []
+    highlightColor: {r: 0, g: 0, b: 0, a: 0}
+  - Message: 'DEV: Black cube escape event'
+    DisplayMoveStep: -1
+    RequirePause: 1
+    AutoHideDelay: 0
+    HighlightTile: 0
+    highlightTiles: []
+    highlightColor: {r: 0, g: 0, b: 0, a: 0}
   normalCubesCaptured: 0
   blueCubesCaptured: 0
   cubesEscaped: 0

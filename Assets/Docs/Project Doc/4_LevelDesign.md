@@ -2,10 +2,9 @@ Act 1: Learn the Rules (Stages 0-2)
 Establishing the core loop and primary danger
 Stage 0: Pure Fundamentals
 
-Grid: 5x15
-Tools: Movement + Individual Markers (unlimited)
+Grid: 5x20
+Tools: Movement + Individual Markers (two charges, standard cooldown)
 Cubes: Normal only  + Black
-The Foundation: Learn timing, prediction, and the satisfaction of capture. Simple patterns build confidence. No danger yet - just pure execution.
 
 Wave 0_01 - 2 rows with 1 black cube on each row
 Wave 0_02 - 2 rows with 2 black cubes on each row
@@ -13,10 +12,9 @@ Wave 0_03 - 2 rows with 3 black cubes on each row
 
 Stage 1: The First Rule - Death Exists
 
-Grid: 5x18
-Tools: Individual Markers (unlimited)
+Grid: 5x20
+Tools: Movement + Individual Markers (two charges, standard cooldown)
 Cubes: Normal + Black
-The Lesson: Black cubes introduced in the simplest possible way - single black cube in center lane while player learns to dodge. Then mixed patterns where black cubes create "no-go" lanes. The message is crystal clear: Black = Death.
 
 Wave 1_02 - 3 rows with 1 black cubes on each row
 Wave 1_02 - 3 rows with 2 black cubes on each row
@@ -25,33 +23,47 @@ Wave 1_03 - 3 rows with 3 black cubes on each row
 Stage 2: Dancing with Danger
 
 Grid: 5x20
-Tools: Individual Markers (5 charges)
-Cubes: Normal + Black
-The Skill: Black cubes now weave through normal patterns. Players learn to read the board holistically - planning safe movement while setting up captures. Resource limit adds pressure to make every marker count.
+Tools: Movement + Individual Markers (two charges, standard cooldown)
+Cubes: Normal + Black + Introduce Blue Cube
 
+Wave 2_02 - 5 rows with 1 black cubes on each row (3 blue cubes)
+Wave 2_02 - 5 rows with 2 black cubes on each row (2 blue cubes)
+Wave 2_03 - 5 rows with 3 black cubes on each row (1 blue cubes)
 
 Act 2: Efficiency Under Pressure (Stages 3-5)
 Learning to handle density while avoiding death
 Stage 3: The Squeeze
 
-Grid: 7x22 (wider but more dangerous)
-Tools: Individual Markers (3 charges only)
-Cubes: Normal + Black
-The Problem: Dense formations with black cubes mixed in. Individual markers can't handle the volume. Players feel the walls closing in - they NEED something more efficient.
+Grid: 7x25 (wider but more dangerous)
+Tools: Movement + Individual Markers (two charges, standard cooldown)
+Cubes: Normal + Black + Blue
+ 
+
+Wave 3_02 - 5 rows with 1 black cubes on each row (3 blue cubes)
+Wave 3_02 - 5 rows with 2 black cubes on each row (2 blue cubes)
+Wave 3_03 - 5 rows with 3 black cubes on each row (1 blue cubes)
 
 Stage 4: Area Control Revolution
 
-Grid: 7x24
-Tools: Individual (3) + Area Markers (2)
-Cubes: Normal + Black
+Grid: 7x25
+Tools: Movement + Individual Markers (two charges, standard cooldown) + Area Marker (three charges, standard cooldown)
+Cubes: Normal + Black + Blue
 The Relief: Area markers transform impossible situations into manageable ones. But black cubes in formations mean careful positioning - one wrong area marker could waste resources on uncapturable cubes.
+
+Wave 4_02 - 7 rows with 1 black cubes on each row (3 blue cubes)
+Wave 4_02 - 7 rows with 2 black cubes on each row (2 blue cubes)
+Wave 4_03 - 7 rows with 3 black cubes on each row (1 blue cubes)
 
 Stage 5: The Blue Solution
 
-Grid: 7x26
+Grid: 7x25
 Tools: Individual (2) + Area (2)
 Cubes: Normal + Black + Blue
 The Power-Up: Blue cubes introduced as the "anti-black" - they're valuable and create detonations. First waves show blue cubes clearing paths through normal clusters. Players learn: Black = avoid, Blue = pursue.
+
+Wave 5_02 - 7 rows with 1 black cubes on each row (3 blue cubes)
+Wave 5_02 - 7 rows with 2 black cubes on each row (2 blue cubes)
+Wave 5_03 - 7 rows with 3 black cubes on each row (1 blue cubes)
 
 
 Act 3: Advanced Tactics (Stages 6-8)

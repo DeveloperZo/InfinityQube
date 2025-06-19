@@ -11,8 +11,8 @@ public class CubeManager : MonoBehaviour
     [SerializeField] public Material material;
     [SerializeField] public GameObject prefab;
     [SerializeField] public float spawnHeight;
-    [SerializeField] public int currentHitPoints = 1;
-    [SerializeField] public int maxHitPoints = 1;
+    [SerializeField] public int currentHitPoints = 3;
+    [SerializeField] public int maxHitPoints = 3;
     [SerializeField] public int moveCount = 0;
     [System.NonSerialized] private CubeData cubeData;
 
