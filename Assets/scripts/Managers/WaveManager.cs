@@ -9,10 +9,11 @@ public class WaveManager : MonoBehaviour
 {
     #region Inspector Configuration
     [Header("Core References")]
-    public GridManager grid;
-    public GameObject[] cubePrefabs;
-    public PlayerManager player;
-    public PlayerActionManager playerActionManager;
+    [SerializeField] public GridManager grid;
+    [SerializeField] public GameObject[] cubePrefabs;
+    [SerializeField] public PlayerManager player;
+    [SerializeField] public PlayerActionManager playerActionManager;
+
 
     [Header("Wave Configuration")]
     public bool useWaveConfiguration = false;
@@ -613,6 +614,8 @@ public class WaveManager : MonoBehaviour
             playerActionManager.maxAreaMarkerCharges = waveConfiguration[currentWaveIndex].maxAreaMarkerCharge;
 
         }
+
+        //playerActionManager.ConfigureUI();
     }
 
     private void NotifyStepComplete()

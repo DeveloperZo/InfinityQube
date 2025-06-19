@@ -13,8 +13,9 @@ public class PlayerActionManager : MonoBehaviour
     [SerializeField] private GridManager gridManager;
     [SerializeField] private PlayerManager playerManager;
     [SerializeField] private WaveManager waveManager;
+    [SerializeField] private PlayerActionUI actionUI;
 
-    [Header("Individual Marker Settings")]
+        [Header("Individual Marker Settings")]
     [SerializeField] public int maxIndividualMarkers = 3;
     [SerializeField] public int maxIndividualMarkerCharges = 2;
     [SerializeField] public float individualMarkerCooldown = 2f;
@@ -150,8 +151,19 @@ public class PlayerActionManager : MonoBehaviour
     {
         HandleInput();
         CheckCubeInteractions();
+        actionUI.UpdateCharges(currentIndividualMarkers, currentAreaMarkers);
+        actionUI.UpdateCooldowns( individualMarkerCooldown, areaMarkerCooldown);
+
     }
 
+    public void ConfigureUI()
+    {
+        actionUI.areaMarkerCooldownTime = areaMarkerCooldown;
+        actionUI.lightMarkerCooldownTime = individualMarkerCooldown;
+
+        actionUI.UpdateCharges(currentIndividualMarkers, currentAreaMarkers);
+        actionUI.UpdateCooldowns( individualMarkerCooldown, areaMarkerCooldown);
+    }
     private void OnDestroy()
     {
         // Clean up all temporary overlays
@@ -175,11 +187,6 @@ public class PlayerActionManager : MonoBehaviour
         if (waveManager == null)
             waveManager = FindObjectOfType<WaveManager>();
 
-        if (gridManager == null)
-        {
-            Debug.LogError("PlayerActionManager requires GridManager!");
-            enabled = false;
-        }
     }
 
     #endregion
@@ -815,6 +822,7 @@ public class PlayerActionManager : MonoBehaviour
     {
         if (waveManager != null) action(waveManager);
     }
+
 
     #endregion
 
