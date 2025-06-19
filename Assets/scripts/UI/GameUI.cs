@@ -230,7 +230,7 @@ public class GameUI : MonoBehaviour
     private void DrawStatusInfo()
     {
         // Top-left status display
-        Rect statusRect = new Rect(20, 20, 250, 80);
+        Rect statusRect = new Rect(20, 220, 250, 80);
 
         GUILayout.BeginArea(statusRect);
         GUILayout.BeginVertical(boxStyle);
