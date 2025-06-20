@@ -41,37 +41,6 @@ public class PlayerMarkerSystem : MonoBehaviour
 
     #region Data Structures
 
-    [System.Serializable]
-    public class IndividualMarker
-    {
-        public Vector2Int position;
-        public float placementTime;
-        public GameObject visualObject;
-        public bool isPerfectTiming = false;
-
-        public IndividualMarker(Vector2Int pos, float time)
-        {
-            position = pos;
-            placementTime = time;
-        }
-    }
-
-    [System.Serializable]
-    public class AreaMarker
-    {
-        public Vector2Int centerPosition;
-        public int size;
-        public float placementTime;
-        public List<GameObject> visualObjects = new List<GameObject>();
-        public List<Vector2Int> affectedPositions = new List<Vector2Int>();
-
-        public AreaMarker(Vector2Int center, int markerSize, float time)
-        {
-            centerPosition = center;
-            size = markerSize;
-            placementTime = time;
-        }
-    }
 
     [System.Serializable]
     public class CubeMarker
@@ -105,6 +74,10 @@ public class PlayerMarkerSystem : MonoBehaviour
 
     #endregion
 
+    void Awake()
+    {
+        actionManager = FindFirstObjectByType<PlayerActionManager>();
+    }
     public void Initialize(PlayerActionManager parent)
     {
         actionManager = parent;

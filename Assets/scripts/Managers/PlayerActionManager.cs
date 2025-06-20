@@ -4,6 +4,37 @@ using System;
 using static PlayerActionManager;
 using static UnityEditor.PlayerSettings;
 
+[System.Serializable]
+public class IndividualMarker
+{
+    public Vector2Int position;
+    public float placementTime;
+    public GameObject visualObject;
+    public bool isPerfectTiming = false;
+
+    public IndividualMarker(Vector2Int pos, float time)
+    {
+        position = pos;
+        placementTime = time;
+    }
+}
+
+[System.Serializable]
+public class AreaMarker
+{
+    public Vector2Int centerPosition;
+    public int size;
+    public float placementTime;
+    public List<GameObject> visualObjects = new List<GameObject>();
+    public List<Vector2Int> affectedPositions = new List<Vector2Int>();
+
+    public AreaMarker(Vector2Int center, int markerSize, float time)
+    {
+        centerPosition = center;
+        size = markerSize;
+        placementTime = time;
+    }
+}
 public class PlayerActionManager : MonoBehaviour
 {
     [Header("References")]
@@ -11,6 +42,7 @@ public class PlayerActionManager : MonoBehaviour
     [SerializeField] private PlayerManager playerManager;
     [SerializeField] private WaveManager waveManager;
     [SerializeField] private PlayerActionUI actionUI;
+    [SerializeField] private PlayerMarkerSystem markerSystem;
 
     [Header("Individual Marker Settings")]
     [SerializeField] public int maxIndividualMarkers = 3;
@@ -47,7 +79,7 @@ public class PlayerActionManager : MonoBehaviour
     private bool inputEnabled = false;
 
     // References to child system
-    private PlayerMarkerSystem markerSystem;
+   
 
     public GridManager GridManager => gridManager;
     public PlayerManager PlayerManager => playerManager;
@@ -265,6 +297,14 @@ public class PlayerActionManager : MonoBehaviour
 
     #region Public API (Delegates to MarkerSystem)
 
+    // Next charge time for UI system
+    public float GetNextIndividualChargeTime() =>
+        currentIndividualMarkerCharges < maxIndividualMarkerCharges ?
+        lastIndividualMarkerTime + individualMarkerCooldown : Time.time;
+    public float GetNextAreaChargeTime() =>
+        currentAreaMarkerCharges < maxAreaMarkerCharges ?
+        lastAreaMarkerTime + areaMarkerCooldown : Time.time;
+
     public bool PlaceIndividualMarker(Vector2Int position) => markerSystem.PlaceIndividualMarker(position);
     public bool RemoveIndividualMarkerAt(Vector2Int position) => markerSystem.RemoveIndividualMarkerAt(position);
     public bool HasIndividualMarkerAt(Vector2Int position) => markerSystem.HasIndividualMarkerAt(position);
@@ -282,8 +322,8 @@ public class PlayerActionManager : MonoBehaviour
     public void ClearAllActions() => markerSystem.ClearAllActions();
 
     // Direct queue access for debugging
-    public Queue<PlayerMarkerSystem.IndividualMarker> individualMarkers => markerSystem.IndividualMarkers;
-    public Queue<PlayerMarkerSystem.AreaMarker> areaMarkers => markerSystem.AreaMarkers;
+    public Queue<IndividualMarker> individualMarkers => markerSystem.IndividualMarkers;
+    public Queue<AreaMarker> areaMarkers => markerSystem.AreaMarkers;
 
     #endregion
 

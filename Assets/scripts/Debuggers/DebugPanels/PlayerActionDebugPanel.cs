@@ -398,7 +398,7 @@ public class PlayerActionDebugPanel : DebugPanelBase
         GUILayout.EndVertical();
     }
 
-    private void DrawIndividualMarkerItem(PlayerActionManager.IndividualMarker marker)
+    private void DrawIndividualMarkerItem(IndividualMarker marker)
     {
         GUILayout.BeginHorizontal(GUI.skin.box);
         GUILayout.Label($"({marker.position.x},{marker.position.y})", GUILayout.Width(60));
@@ -421,7 +421,7 @@ public class PlayerActionDebugPanel : DebugPanelBase
         GUILayout.EndHorizontal();
     }
 
-    private void DrawAreaMarkerItem(PlayerActionManager.AreaMarker marker)
+    private void DrawAreaMarkerItem(AreaMarker marker)
     {
         GUILayout.BeginHorizontal(GUI.skin.box);
         GUILayout.Label($"Center: ({marker.centerPosition.x},{marker.centerPosition.y})", GUILayout.Width(100));
@@ -674,7 +674,7 @@ public class PlayerActionDebugPanel : DebugPanelBase
                 actionManager.PlaceAreaMarker(targetPosition, areaMarkerSize);
                 break;
             case 2: // Cube
-                var cubeMarkerType = (PlayerActionManager.CubeMarkerType)this.cubeMarkerType;
+                var cubeMarkerType = (PlayerMarkerSystem.CubeMarkerType)this.cubeMarkerType;
                 actionManager.CreateCubeMarker(targetPosition, cubeMarkerType);
                 break;
         }
