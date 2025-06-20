@@ -1243,8 +1243,6 @@ public class PlayerActionManager : MonoBehaviour
 
     #endregion
 
-
-
     private IEnumerator ShowMarkerTriggerEffect(Vector2Int position)
     {
         Vector3 worldPos = gridManager.GridToWorldPosition(position.x, position.y, 0.1f);
@@ -1280,38 +1278,4 @@ public class PlayerActionManager : MonoBehaviour
         Destroy(effect);
     }
 
-    private void UpdateChargeRegeneration()
-    {
-        bool chargesChanged = false;
-
-        // Regenerate individual marker charges
-        if (currentIndividualMarkerCharges < maxIndividualMarkerCharges)
-        {
-            if (Time.time >= lastIndividualMarkerTime + individualMarkerCooldown)
-            {
-                currentIndividualMarkerCharges++;
-                lastIndividualMarkerTime = Time.time; // Reset for next charge
-                chargesChanged = true;
-                Debug.Log($"Individual charge regenerated: {currentIndividualMarkerCharges}/{maxIndividualMarkerCharges}");
-            }
-        }
-
-        // Regenerate area marker charges  
-        if (currentAreaMarkerCharges < maxAreaMarkerCharges)
-        {
-            if (Time.time >= lastAreaMarkerTime + areaMarkerCooldown)
-            {
-                currentAreaMarkerCharges++;
-                lastAreaMarkerTime = Time.time; // Reset for next charge
-                chargesChanged = true;
-                Debug.Log($"Area charge regenerated: {currentAreaMarkerCharges}/{maxAreaMarkerCharges}");
-            }
-        }
-
-        // Update UI if charges changed
-        if (chargesChanged)
-        {
-            UpdateCharges();
-        }
-    }
 }
