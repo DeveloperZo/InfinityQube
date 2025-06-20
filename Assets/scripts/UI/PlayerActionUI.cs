@@ -12,7 +12,8 @@ public class PlayerActionUI : MonoBehaviour
 
     [Header("UI Colors")]
     [SerializeField] private Color segmentFullColor = new Color(1f, 0.7f, 0.2f, 1f);     // Orange when charged
-    [SerializeField] private Color segmentChargingColor = new Color(0.5f, 0.5f, 1f, 0.8f); // Blue when charging
+    [SerializeField] private Color segmentChargingColor = new Color(0.5f, 0.5f, 1f, 0.8f); // Blue when charging (has charges)
+    [SerializeField] private Color segmentFirstChargeColor = new Color(0.7f, 0.7f, 1f, 0.6f); // Light blue when charging toward first charge
     [SerializeField] private Color segmentEmptyColor = new Color(0.3f, 0.3f, 0.3f, 0.3f);  // Gray when empty
 
     [Header("Cooldown Settings")]
@@ -37,12 +38,17 @@ public class PlayerActionUI : MonoBehaviour
         UpdateDisplay();
     }
 
-    private void Update()
+    void Update()
     {
+        // Increment cooldown timers for visual feedback
         if (lightCharges < lightMaxCharges)
         {
             lightMarkerCooldownTimer += Time.deltaTime;
             lightMarkerCooldownTimer = Mathf.Min(lightMarkerCooldownTimer, lightMarkerCooldownTime);
+        }
+        else
+        {
+            lightMarkerCooldownTimer = 0f; // Ready to use immediately
         }
 
         if (areaCharges < areaMaxCharges)
@@ -50,6 +56,12 @@ public class PlayerActionUI : MonoBehaviour
             areaMarkerCooldownTimer += Time.deltaTime;
             areaMarkerCooldownTimer = Mathf.Min(areaMarkerCooldownTimer, areaMarkerCooldownTime);
         }
+        else
+        {
+            areaMarkerCooldownTimer = 0f; // Ready to use immediately
+        }
+
+        // Update display every frame for smooth animations
         UpdateDisplay();
     }
     public void UpdateCharges(int currentLightCharges, int currentAreaCharges)
@@ -72,7 +84,10 @@ public class PlayerActionUI : MonoBehaviour
             lightMarkerCooldownTimer = 0f;
         if (areaCharges >= areaMaxCharges)
             areaMarkerCooldownTimer = 0f;
+
+        Debug.Log($"Charges updated - Light: {lightCharges}/{lightMaxCharges}, Area: {areaCharges}/{areaMaxCharges}");
     }
+
     public void SetMaxCharges(int maxLight, int maxArea)
     {
         lightMaxCharges = maxLight;
@@ -141,11 +156,10 @@ public class PlayerActionUI : MonoBehaviour
     private void UpdateMarkerUI(int charges, int maxCharges, float cooldownTimer,
                            float cooldownTime, Image[] segments, TextMeshProUGUI chargeText)
     {
-        // Update charge text - show available charges
+        // Update charge text
         if (chargeText != null)
-            chargeText.text = $"{charges}";
+            chargeText.text = charges.ToString();
 
-        // Handle visual states
         if (charges >= maxCharges)
         {
             // Full charges - all segments bright orange
@@ -172,9 +186,12 @@ public class PlayerActionUI : MonoBehaviour
         }
         else
         {
-            // Charging state - show progress
+            // Charging state - show progress with appropriate colors
             float progress = Mathf.Clamp01(cooldownTimer / cooldownTime);
             int activeSegments = Mathf.FloorToInt(progress * segments.Length);
+
+            // Determine charging color based on current charges
+            Color chargingColor = charges == 0 ? segmentFirstChargeColor : segmentChargingColor;
 
             for (int i = 0; i < segments.Length; i++)
             {
@@ -182,14 +199,14 @@ public class PlayerActionUI : MonoBehaviour
 
                 if (i < activeSegments)
                 {
-                    // Filled segments - blue charging color
-                    segments[i].color = segmentChargingColor;
+                    // Filled segments - use appropriate charging color
+                    segments[i].color = chargingColor;
                 }
                 else if (i == activeSegments && progress < 1.0f)
                 {
-                    // Currently filling segment - lerp from empty to charging
+                    // Currently filling segment - lerp from empty to charging color
                     float segmentProgress = (progress * segments.Length) % 1;
-                    segments[i].color = Color.Lerp(segmentEmptyColor, segmentChargingColor, segmentProgress);
+                    segments[i].color = Color.Lerp(segmentEmptyColor, chargingColor, segmentProgress);
                 }
                 else
                 {
@@ -206,20 +223,17 @@ public class PlayerActionUI : MonoBehaviour
     {
         if (isLightMarker)
         {
-            // Start cooldown timer when charge is consumed
-            if (lightCharges < lightMaxCharges)
-            {
-                lightMarkerCooldownTimer = 0f;
-            }
+            // Start cooldown timer for individual marker
+            lightMarkerCooldownTimer = 0f; // Reset timer to start counting
+            Debug.Log($"Individual marker placed - cooldown timer reset");
         }
         else
         {
-            // Start cooldown timer when charge is consumed  
-            if (areaCharges < areaMaxCharges)
-            {
-                areaMarkerCooldownTimer = 0f;
-            }
+            // Start cooldown timer for area marker
+            areaMarkerCooldownTimer = 0f; // Reset timer to start counting
+            Debug.Log($"Area marker placed - cooldown timer reset");
         }
     }
+
 
 }
