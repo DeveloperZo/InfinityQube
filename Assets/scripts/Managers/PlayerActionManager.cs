@@ -15,7 +15,7 @@ public class PlayerActionManager : MonoBehaviour
     [SerializeField] private WaveManager waveManager;
     [SerializeField] private PlayerActionUI actionUI;
 
-        [Header("Individual Marker Settings")]
+    [Header("Individual Marker Settings")]
     [SerializeField] public int maxIndividualMarkers = 3;
     [SerializeField] public int individualMarkersPlaced = 0;
 
@@ -228,31 +228,32 @@ public class PlayerActionManager : MonoBehaviour
     {
         bool chargesChanged = false;
 
-        // Regenerate individual marker charges
-        if (currentIndividualMarkerCharges < maxIndividualMarkerCharges)
+        // Regenerate individual charges by looking at existing markers in queue
+        if (currentIndividualMarkerCharges < maxIndividualMarkerCharges && individualMarkers.Count > 0)
         {
-            if (Time.time >= lastIndividualMarkerTime + individualMarkerCooldown)
+            // Find the oldest marker that should have regenerated a charge
+            var oldestMarker = GetOldestReadyIndividualMarker();
+            if (oldestMarker != null)
             {
                 currentIndividualMarkerCharges++;
-                lastIndividualMarkerTime = Time.time; // Reset for next charge
                 chargesChanged = true;
                 Debug.Log($"Individual charge regenerated: {currentIndividualMarkerCharges}/{maxIndividualMarkerCharges}");
             }
         }
 
-        // Regenerate area marker charges  
-        if (currentAreaMarkerCharges < maxAreaMarkerCharges)
+        // Regenerate area charges by looking at existing markers in queue
+        if (currentAreaMarkerCharges < maxAreaMarkerCharges && areaMarkers.Count > 0)
         {
-            if (Time.time >= lastAreaMarkerTime + areaMarkerCooldown)
+            // Find the oldest marker that should have regenerated a charge
+            var oldestMarker = GetOldestReadyAreaMarker();
+            if (oldestMarker != null)
             {
                 currentAreaMarkerCharges++;
-                lastAreaMarkerTime = Time.time; // Reset for next charge
                 chargesChanged = true;
                 Debug.Log($"Area charge regenerated: {currentAreaMarkerCharges}/{maxAreaMarkerCharges}");
             }
         }
 
-        // Update UI if charges changed
         if (chargesChanged)
         {
             UpdateCharges();
@@ -466,6 +467,50 @@ public class PlayerActionManager : MonoBehaviour
         return success;
     }
 
+    private IndividualMarker GetOldestReadyIndividualMarker()
+    {
+        // Get markers sorted by placement time (oldest first)
+        var markersByAge = individualMarkers.OrderBy(m => m.placementTime).ToArray();
+
+        // Count how many charges should have regenerated based on oldest markers
+        int chargesEarned = 0;
+        foreach (var marker in markersByAge)
+        {
+            if (Time.time >= marker.placementTime + individualMarkerCooldown)
+            {
+                chargesEarned++;
+            }
+            else
+            {
+                break; // Stop at first marker that hasn't finished cooldown
+            }
+        }
+
+        // If we've earned more charges than we currently have, return the relevant marker
+        int totalChargesShouldHave = chargesEarned + currentIndividualMarkerCharges;
+        if (totalChargesShouldHave > currentIndividualMarkerCharges && chargesEarned > 0)
+        {
+            return markersByAge[currentIndividualMarkerCharges]; // Return marker for next charge
+        }
+
+        return null;
+    }
+
+    public float GetNextIndividualChargeTime()
+    {
+        if (currentIndividualMarkerCharges >= maxIndividualMarkerCharges)
+            return 0f; // Already at max
+
+        // Find the marker that will provide the next charge
+        var markersByAge = individualMarkers.OrderBy(m => m.placementTime).ToArray();
+        if (markersByAge.Length > currentIndividualMarkerCharges)
+        {
+            return markersByAge[currentIndividualMarkerCharges].placementTime;
+        }
+
+        return lastIndividualMarkerTime; // Fallback
+    }
+
     #endregion
 
     #region Area Markers
@@ -608,6 +653,50 @@ public class PlayerActionManager : MonoBehaviour
             ClearTileHighlight(pos);
             Debug.Log($"Cleared area highlight at ({pos.x}, {pos.y})");
         }
+    }
+
+    private AreaMarker GetOldestReadyAreaMarker()
+    {
+        // Get markers sorted by placement time (oldest first)
+        var markersByAge = areaMarkers.OrderBy(m => m.placementTime).ToArray();
+
+        // Count how many charges should have regenerated based on oldest markers
+        int chargesEarned = 0;
+        foreach (var marker in markersByAge)
+        {
+            if (Time.time >= marker.placementTime + areaMarkerCooldown)
+            {
+                chargesEarned++;
+            }
+            else
+            {
+                break; // Stop at first marker that hasn't finished cooldown
+            }
+        }
+
+        // If we've earned more charges than we currently have, return the relevant marker
+        int totalChargesShouldHave = chargesEarned + currentAreaMarkerCharges;
+        if (totalChargesShouldHave > currentAreaMarkerCharges && chargesEarned > 0)
+        {
+            return markersByAge[currentAreaMarkerCharges]; // Return marker for next charge
+        }
+
+        return null;
+    }
+
+    public float GetNextAreaChargeTime()
+    {
+        if (currentAreaMarkerCharges >= maxAreaMarkerCharges)
+            return 0f; // Already at max
+
+        // Find the marker that will provide the next charge
+        var markersByAge = areaMarkers.OrderBy(m => m.placementTime).ToArray();
+        if (markersByAge.Length > currentAreaMarkerCharges)
+        {
+            return markersByAge[currentAreaMarkerCharges].placementTime;
+        }
+
+        return lastAreaMarkerTime; // Fallback
     }
     #endregion
 
