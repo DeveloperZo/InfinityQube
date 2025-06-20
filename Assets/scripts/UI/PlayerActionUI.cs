@@ -39,6 +39,17 @@ public class PlayerActionUI : MonoBehaviour
 
     private void Update()
     {
+        if (lightCharges < lightMaxCharges)
+        {
+            lightMarkerCooldownTimer += Time.deltaTime;
+            lightMarkerCooldownTimer = Mathf.Min(lightMarkerCooldownTimer, lightMarkerCooldownTime);
+        }
+
+        if (areaCharges < areaMaxCharges)
+        {
+            areaMarkerCooldownTimer += Time.deltaTime;
+            areaMarkerCooldownTimer = Mathf.Min(areaMarkerCooldownTimer, areaMarkerCooldownTime);
+        }
         UpdateDisplay();
     }
     public void UpdateCharges(int currentLightCharges, int currentAreaCharges)

@@ -172,9 +172,9 @@ public class PlayerActionManager : MonoBehaviour
     {
         HandleInput();
         CheckCubeInteractions();
-        UpdateChargeRegeneration();
         UpdateCooldowns();
         UpdateCharges();
+        RegenerateCharges();
     }
 
     public void UpdateCharges()
@@ -196,31 +196,12 @@ public class PlayerActionManager : MonoBehaviour
 
     public void UpdateCooldowns()
     {
-        RegenerateCharges();
+        
 
         if (actionUI != null)
         {
             // Update cooldown time settings
             actionUI.UpdateCooldowns(individualMarkerCooldown, areaMarkerCooldown);
-
-            // Update cooldown timers - calculate time since last use if regenerating
-            if (currentIndividualMarkerCharges < maxIndividualMarkerCharges)
-            {
-                actionUI.lightMarkerCooldownTimer = Time.time - lastIndividualMarkerTime;
-            }
-            else
-            {
-                actionUI.lightMarkerCooldownTimer = 0f; // Ready to use
-            }
-
-            if (currentAreaMarkerCharges < maxAreaMarkerCharges)
-            {
-                actionUI.areaMarkerCooldownTimer = Time.time - lastAreaMarkerTime;
-            }
-            else
-            {
-                actionUI.areaMarkerCooldownTimer = 0f; // Ready to use
-            }
         }
     }
     public void ConfigureUI()
@@ -231,13 +212,15 @@ public class PlayerActionManager : MonoBehaviour
             actionUI.lightMarkerCooldownTime = individualMarkerCooldown;
             actionUI.areaMarkerCooldownTime = areaMarkerCooldown;
 
-            // Set max charges
+            // Set max charges (this is now the real limit)
             actionUI.lightMaxCharges = maxIndividualMarkerCharges;
             actionUI.areaMaxCharges = maxAreaMarkerCharges;
 
             // Initialize current values
             UpdateCharges();
             UpdateCooldowns();
+
+            Debug.Log($"UI Configured - Individual: {maxIndividualMarkerCharges} charges, Area: {maxAreaMarkerCharges} charges");
         }
     }
 
@@ -264,13 +247,17 @@ public class PlayerActionManager : MonoBehaviour
                 currentAreaMarkerCharges++;
                 lastAreaMarkerTime = Time.time;
                 chargesChanged = true;
+                if (actionUI != null && currentAreaMarkerCharges >= maxAreaMarkerCharges)
+                {
+                    actionUI.areaMarkerCooldownTimer = 0f;
+                }
             }
         }
 
         // Notify UI if charges changed
-        if (chargesChanged && actionUI != null)
+        if (chargesChanged)
         {
-            actionUI.UpdateCharges(currentIndividualMarkerCharges, currentAreaMarkerCharges);
+            UpdateCharges();
         }
     }
 
@@ -384,7 +371,7 @@ public class PlayerActionManager : MonoBehaviour
     public bool CanPlaceIndividualMarker()
     {
         return currentIndividualMarkerCharges > 0 &&
-           currentIndividualMarkers < maxIndividualMarkers;
+           currentIndividualMarkers < maxIndividualMarkerCharges && individualMarkersPlaced <= maxIndividualMarkers;
     }
 
     public bool PlaceIndividualMarker(Vector2Int position)
@@ -488,7 +475,7 @@ public class PlayerActionManager : MonoBehaviour
     public bool CanPlaceAreaMarker()
     {
         return currentAreaMarkerCharges > 0 &&
-           currentAreaMarkers < maxAreaMarkers;
+           currentAreaMarkers < maxAreaMarkerCharges && areaMarkersPlaced <= maxAreaMarkers;
     }
 
     public bool PlaceAreaMarker(Vector2Int centerPosition, int size)
