@@ -184,15 +184,20 @@ public class PlayerActionManager : MonoBehaviour
             // Pass available charges, not currently placed markers
             actionUI.UpdateCharges(currentIndividualMarkerCharges, currentAreaMarkerCharges);
 
-            actionUI.lightMaxCharges = maxIndividualMarkerCharges;
-            actionUI.areaMaxCharges = maxAreaMarkerCharges;
+            // Set max charges if needed (defensive)
+            if (actionUI.lightMaxCharges == 0)
+            {
+                actionUI.lightMaxCharges = maxIndividualMarkerCharges;
+                actionUI.areaMaxCharges = maxAreaMarkerCharges;
+            }
             
-            actionUI.UpdateDisplay();
         }
     }
 
     public void UpdateCooldowns()
     {
+        RegenerateCharges();
+
         if (actionUI != null)
         {
             // Update cooldown time settings
@@ -378,7 +383,8 @@ public class PlayerActionManager : MonoBehaviour
 
     public bool CanPlaceIndividualMarker()
     {
-        return currentIndividualMarkers > 0 && currentIndividualMarkerCharges < maxIndividualMarkerCharges;
+        return currentIndividualMarkerCharges > 0 &&
+           currentIndividualMarkers < maxIndividualMarkers;
     }
 
     public bool PlaceIndividualMarker(Vector2Int position)
@@ -400,6 +406,12 @@ public class PlayerActionManager : MonoBehaviour
         currentIndividualMarkerCharges--;
         lastIndividualMarkerTime = Time.time;
 
+        // Notify UI immediately
+        if (actionUI != null)
+        {
+            actionUI.OnMarkerPlaced(true); // true for individual/light marker
+        }
+
         Debug.Log($"Individual marker placed at ({position.x}, {position.y}). Charges: {currentIndividualMarkerCharges}/{maxIndividualMarkerCharges}");
         return true;
     }
@@ -415,8 +427,8 @@ public class PlayerActionManager : MonoBehaviour
         {
             if (marker.position == position && !removed)
             {
-                DestroyMarkerVisual(marker.visualObject); // This will clear the highlight overlay
-                currentIndividualMarkers--;
+                DestroyMarkerVisual(marker.visualObject);
+                currentIndividualMarkers--; // FIX: was ++, should be --
                 removed = true;
                 Debug.Log($"Removed individual marker at ({position.x}, {position.y}) and cleared highlight overlay");
             }
@@ -475,7 +487,8 @@ public class PlayerActionManager : MonoBehaviour
 
     public bool CanPlaceAreaMarker()
     {
-        return currentAreaMarkers > 0 && currentAreaMarkerCharges < maxAreaMarkerCharges;
+        return currentAreaMarkerCharges > 0 &&
+           currentAreaMarkers < maxAreaMarkers;
     }
 
     public bool PlaceAreaMarker(Vector2Int centerPosition, int size)
@@ -507,6 +520,12 @@ public class PlayerActionManager : MonoBehaviour
         // Consume a charge and start cooldown for this charge
         currentAreaMarkerCharges--;
         lastAreaMarkerTime = Time.time;
+
+        // Notify UI immediately
+        if (actionUI != null)
+        {
+            actionUI.OnMarkerPlaced(false); // false for area marker
+        }
 
         Debug.Log($"Area marker placed at ({centerPosition.x}, {centerPosition.y}). Charges: {currentAreaMarkerCharges}/{maxAreaMarkerCharges}");
         return true;
