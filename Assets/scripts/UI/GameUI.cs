@@ -185,7 +185,7 @@ public class GameUI : MonoBehaviour
         // Current marker count if available
         if (playerActionManager != null)
         {
-            int cubeMarkers = playerActionManager.CubeMarkerCount;
+            int cubeMarkers = playerActionManager.GetCurrentCubeMarkers();
             if (cubeMarkers > 0)
             {
                 GUILayout.Label($"Detonations Ready: {cubeMarkers}", textStyle);
@@ -286,7 +286,7 @@ public class GameUI : MonoBehaviour
 
         if (playerActionManager != null)
         {
-            int markers = playerActionManager.CubeMarkerCount;
+            int markers = playerActionManager.GetCurrentCubeMarkers();
             if (markers > 0)
             {
                 return "Press D to trigger detonation";

@@ -18,12 +18,8 @@ public class PlayerActionUI : MonoBehaviour
 
     [Header("Cooldown Settings")]
     [SerializeField] private PlayerActionManager playerActionManager;
-    [SerializeField] public float lightMarkerCooldownTime = 2f;
-    [SerializeField] public float areaMarkerCooldownTime = 4f;
-
-    // Cooldown timers
-    public float lightMarkerCooldownTimer = 0f;
-    public float areaMarkerCooldownTimer = 0f;
+    public float lightMarkerCooldownTime = 2f;
+    public float areaMarkerCooldownTime = 4f;
 
     // Cached references
     public int lightCharges;
@@ -34,38 +30,21 @@ public class PlayerActionUI : MonoBehaviour
     void Start()
     {
         playerActionManager = FindAnyObjectByType<PlayerActionManager>();
+
+        // Initialize max charges from PlayerActionManager
+        if (playerActionManager != null)
+        {
+            lightMaxCharges = playerActionManager.maxIndividualMarkerCharges;
+            areaMaxCharges = playerActionManager.maxAreaMarkerCharges;
+            lightMarkerCooldownTime = playerActionManager.individualMarkerCooldown;
+            areaMarkerCooldownTime = playerActionManager.areaMarkerCooldown;
+        }
+
         UpdateDisplay();
     }
 
     private void Update()
     {
-        // Sync timers with PlayerActionManager's stacked charge system
-        if (playerActionManager != null)
-        {
-            // Get the time for the next charge to regenerate
-            float nextIndividualChargeTime = playerActionManager.GetNextIndividualChargeTime();
-            float nextAreaChargeTime = playerActionManager.GetNextAreaChargeTime();
-
-            // Calculate progress for next charge
-            if (lightCharges < lightMaxCharges)
-            {
-                lightMarkerCooldownTimer = Time.time - nextIndividualChargeTime;
-            }
-            else
-            {
-                lightMarkerCooldownTimer = 0f; // Ready to use
-            }
-
-            if (areaCharges < areaMaxCharges)
-            {
-                areaMarkerCooldownTimer = Time.time - nextAreaChargeTime;
-            }
-            else
-            {
-                areaMarkerCooldownTimer = 0f; // Ready to use
-            }
-        }
-
         UpdateDisplay();
     }
 
@@ -83,12 +62,6 @@ public class PlayerActionUI : MonoBehaviour
         {
             areaMaxCharges = playerActionManager.maxAreaMarkerCharges;
         }
-
-        // Reset cooldown timer if charges are at max
-        if (lightCharges >= lightMaxCharges)
-            lightMarkerCooldownTimer = 0f;
-        if (areaCharges >= areaMaxCharges)
-            areaMarkerCooldownTimer = 0f;
     }
 
     public void UpdateCooldowns(float individualCooldown, float areaCooldown)
@@ -105,12 +78,28 @@ public class PlayerActionUI : MonoBehaviour
 
     private void UpdateDisplay()
     {
+        if (playerActionManager == null) return;
+
+        // Calculate cooldown progress for UI segments
+        float lightCooldownProgress = CalculateCooldownProgress(
+            lightCharges,
+            lightMaxCharges,
+            playerActionManager.GetIndividualMarkerCooldownRemaining(),
+            lightMarkerCooldownTime
+        );
+
+        float areaCooldownProgress = CalculateCooldownProgress(
+            areaCharges,
+            areaMaxCharges,
+            playerActionManager.GetAreaMarkerCooldownRemaining(),
+            areaMarkerCooldownTime
+        );
+
         // Update Light Marker UI
         UpdateMarkerUI(
             lightCharges,
             lightMaxCharges,
-            lightMarkerCooldownTimer,
-            lightMarkerCooldownTime,
+            lightCooldownProgress,
             lightMarkerSegments,
             lightChargeText
         );
@@ -119,15 +108,37 @@ public class PlayerActionUI : MonoBehaviour
         UpdateMarkerUI(
             areaCharges,
             areaMaxCharges,
-            areaMarkerCooldownTimer,
-            areaMarkerCooldownTime,
+            areaCooldownProgress,
             areaMarkerSegments,
             areaChargeText
         );
     }
 
-    private void UpdateMarkerUI(int charges, int maxCharges, float cooldownTimer,
-                               float cooldownTime, Image[] segments, TextMeshProUGUI chargeText)
+    private float CalculateCooldownProgress(int charges, int maxCharges, float cooldownRemaining, float cooldownTime)
+    {
+        // If at max charges, show as fully charged
+        if (charges >= maxCharges)
+        {
+            return 1f;
+        }
+
+        // If no cooldown time, show as ready
+        if (cooldownTime <= 0f)
+        {
+            return 1f;
+        }
+
+        // Calculate progress (inverted because cooldownRemaining counts down)
+        float progress = 1f - (cooldownRemaining / cooldownTime);
+
+        // Clamp progress between 0 and 1
+        progress = Mathf.Clamp01(progress);
+
+        return progress;
+    }
+
+    private void UpdateMarkerUI(int charges, int maxCharges, float cooldownProgress,
+                               Image[] segments, TextMeshProUGUI chargeText)
     {
         // Update charge text
         if (chargeText != null)
@@ -147,9 +158,8 @@ public class PlayerActionUI : MonoBehaviour
         }
         else
         {
-            // Charging state - show progress
-            float progress = Mathf.Clamp01(cooldownTimer / cooldownTime);
-            int activeSegments = Mathf.FloorToInt(progress * segments.Length);
+            // Charging state - show progress based on cooldown
+            int activeSegments = Mathf.FloorToInt(cooldownProgress * segments.Length);
 
             // Determine charging color based on current charges
             Color chargingColor = charges == 0 ? segmentFirstChargeColor : segmentChargingColor;
@@ -163,10 +173,10 @@ public class PlayerActionUI : MonoBehaviour
                     // Filled segments - use appropriate charging color
                     segments[i].color = chargingColor;
                 }
-                else if (i == activeSegments && progress < 1.0f)
+                else if (i == activeSegments && cooldownProgress < 1.0f)
                 {
                     // Currently filling segment - lerp from empty to charging color
-                    float segmentProgress = (progress * segments.Length) % 1;
+                    float segmentProgress = (cooldownProgress * segments.Length) % 1;
                     segments[i].color = Color.Lerp(segmentEmptyColor, chargingColor, segmentProgress);
                 }
                 else
@@ -181,8 +191,28 @@ public class PlayerActionUI : MonoBehaviour
     }
 
     // Public getters for UI state
-    public float GetLightCooldownProgress() => lightMarkerCooldownTimer / lightMarkerCooldownTime;
-    public float GetAreaCooldownProgress() => areaMarkerCooldownTimer / areaMarkerCooldownTime;
+    public float GetLightCooldownProgress()
+    {
+        if (playerActionManager == null) return 0f;
+        return CalculateCooldownProgress(
+            lightCharges,
+            lightMaxCharges,
+            playerActionManager.GetIndividualMarkerCooldownRemaining(),
+            lightMarkerCooldownTime
+        );
+    }
+
+    public float GetAreaCooldownProgress()
+    {
+        if (playerActionManager == null) return 0f;
+        return CalculateCooldownProgress(
+            areaCharges,
+            areaMaxCharges,
+            playerActionManager.GetAreaMarkerCooldownRemaining(),
+            areaMarkerCooldownTime
+        );
+    }
+
     public bool IsLightCharging() => lightCharges < lightMaxCharges;
     public bool IsAreaCharging() => areaCharges < areaMaxCharges;
 

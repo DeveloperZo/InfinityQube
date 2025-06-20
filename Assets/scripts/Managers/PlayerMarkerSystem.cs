@@ -23,7 +23,7 @@ public class PlayerMarkerSystem : MonoBehaviour
     // Marker Collections
     [SerializeField] public Queue<IndividualMarker> individualMarkers = new Queue<IndividualMarker>();
     [SerializeField] public Queue<AreaMarker> areaMarkers = new Queue<AreaMarker>();
-    private List<CubeMarker> cubeMarkers = new List<CubeMarker>();
+    public List<CubeMarker> cubeMarkers = new List<CubeMarker>();
 
     // Preview system
     private List<GameObject> previewObjects = new List<GameObject>();

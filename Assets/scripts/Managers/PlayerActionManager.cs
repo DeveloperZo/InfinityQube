@@ -35,6 +35,7 @@ public class AreaMarker
         placementTime = time;
     }
 }
+
 public class PlayerActionManager : MonoBehaviour
 {
     [Header("References")]
@@ -79,8 +80,6 @@ public class PlayerActionManager : MonoBehaviour
     private bool inputEnabled = false;
 
     // References to child system
-   
-
     public GridManager GridManager => gridManager;
     public PlayerManager PlayerManager => playerManager;
     public WaveManager WaveManager => waveManager;
@@ -98,6 +97,9 @@ public class PlayerActionManager : MonoBehaviour
             markerSystem = gameObject.AddComponent<PlayerMarkerSystem>();
         }
         markerSystem.Initialize(this);
+        
+        // Initialize UI with current values
+        UpdateUI();
     }
 
     private void Update()
@@ -117,6 +119,8 @@ public class PlayerActionManager : MonoBehaviour
             playerManager = FindObjectOfType<PlayerManager>();
         if (waveManager == null)
             waveManager = FindObjectOfType<WaveManager>();
+        if (actionUI == null)
+            actionUI = FindObjectOfType<PlayerActionUI>();
     }
 
     private void InitializeCharges()
@@ -230,6 +234,9 @@ public class PlayerActionManager : MonoBehaviour
         currentIndividualMarkers++;
         individualMarkersPlaced++;
 
+        // Update UI immediately when charge is consumed
+        UpdateUI();
+
         if (actionUI != null)
         {
             actionUI.OnMarkerPlaced(true);
@@ -242,6 +249,9 @@ public class PlayerActionManager : MonoBehaviour
         lastAreaMarkerTime = Time.time;
         currentAreaMarkers++;
         areaMarkersPlaced++;
+
+        // Update UI immediately when charge is consumed
+        UpdateUI();
 
         if (actionUI != null)
         {
@@ -261,11 +271,19 @@ public class PlayerActionManager : MonoBehaviour
 
     private void RegenerateCharges()
     {
-        RegenerateIndividualCharges();
-        RegenerateAreaCharges();
+        bool chargesChanged = false;
+        
+        chargesChanged |= RegenerateIndividualCharges();
+        chargesChanged |= RegenerateAreaCharges();
+        
+        // Only update UI when charges actually change
+        if (chargesChanged)
+        {
+            UpdateUI();
+        }
     }
 
-    private void RegenerateIndividualCharges()
+    private bool RegenerateIndividualCharges()
     {
         if (currentIndividualMarkerCharges < maxIndividualMarkerCharges)
         {
@@ -275,11 +293,13 @@ public class PlayerActionManager : MonoBehaviour
                 currentIndividualMarkerCharges++;
                 lastIndividualMarkerTime = Time.time;
                 Debug.Log($"Individual marker charge regenerated. Charges: {currentIndividualMarkerCharges}/{maxIndividualMarkerCharges}");
+                return true;
             }
         }
+        return false;
     }
 
-    private void RegenerateAreaCharges()
+    private bool RegenerateAreaCharges()
     {
         if (currentAreaMarkerCharges < maxAreaMarkerCharges)
         {
@@ -289,7 +309,18 @@ public class PlayerActionManager : MonoBehaviour
                 currentAreaMarkerCharges++;
                 lastAreaMarkerTime = Time.time;
                 Debug.Log($"Area marker charge regenerated. Charges: {currentAreaMarkerCharges}/{maxAreaMarkerCharges}");
+                return true;
             }
+        }
+        return false;
+    }
+
+    private void UpdateUI()
+    {
+        if (actionUI != null)
+        {
+            actionUI.UpdateCharges(currentIndividualMarkerCharges, currentAreaMarkerCharges);
+            actionUI.UpdateCooldowns(individualMarkerCooldown, areaMarkerCooldown);
         }
     }
 
@@ -334,51 +365,34 @@ public class PlayerActionManager : MonoBehaviour
     public bool CanPlaceAreaMarkerCheck() => CanPlaceAreaMarker();
 
     // Cooldown information
-    public float GetIndividualMarkerCooldownRemaining() =>
-        Mathf.Max(0f, individualMarkerCooldown - (Time.time - lastIndividualMarkerTime));
-    public float GetAreaMarkerCooldownRemaining() =>
-        Mathf.Max(0f, areaMarkerCooldown - (Time.time - lastAreaMarkerTime));
+    public float GetIndividualMarkerCooldownRemaining()
+    {
+        if (currentIndividualMarkerCharges >= maxIndividualMarkerCharges)
+            return 0f; // Fully charged
+        
+        return Mathf.Max(0f, individualMarkerCooldown - (Time.time - lastIndividualMarkerTime));
+    }
+    
+    public float GetAreaMarkerCooldownRemaining()
+    {
+        if (currentAreaMarkerCharges >= maxAreaMarkerCharges)
+            return 0f; // Fully charged
+        
+        return Mathf.Max(0f, areaMarkerCooldown - (Time.time - lastAreaMarkerTime));
+    }
 
     // Statistics
     public int GetIndividualMarkersPlaced() => individualMarkersPlaced;
     public int GetAreaMarkersPlaced() => areaMarkersPlaced;
-    public int GetCubeMarkersTriggered() => markerSystem.GetCubeMarkersTriggered();
-    public int GetPerfectTimingHits() => markerSystem.GetPerfectTimingHits();
+    public int GetCubeMarkersTriggered() => cubeMarkersTriggered;
+    public int GetPerfectTimingHits() => perfectTimingHits;
 
+    // Current state information
     public int GetCurrentIndividualMarkers() => currentIndividualMarkers;
     public int GetCurrentAreaMarkers() => currentAreaMarkers;
-    public int GetCurrentCubeMarkers() => markerSystem.GetCurrentCubeMarkers();
-
-    public void ResetStatistics()
-    {
-        individualMarkersPlaced = 0;
-        areaMarkersPlaced = 0;
-        markerSystem.ResetStatistics();
-    }
-
-    #endregion
-
-    #region Legacy Support Methods (for debugging)
-
-    // Keep some legacy methods for compatibility with existing debug panels
-    public int CubeMarkerCount => markerSystem.GetCurrentCubeMarkers();
-    public bool HasCubeMarkers() => markerSystem.GetCurrentCubeMarkers() > 0;
-    public Vector2Int GetNextCubeMarker() => markerSystem.GetNextCubeMarker();
-
-    #endregion
-
-    #region Perfect Timing
-
-    public void IncrementPerfectTimingHits()
-    {
-        perfectTimingHits++;
-    }
-
-    public void IncrementCubeMarkersTriggered()
-    {
-        cubeMarkersTriggered++;
-    }
+    public int GetCurrentCubeMarkers() => markerSystem?.cubeMarkers?.Count ?? 0;
+    public int GetCurrentIndividualCharges() => currentIndividualMarkerCharges;
+    public int GetCurrentAreaCharges() => currentAreaMarkerCharges;
 
     #endregion
 }
-

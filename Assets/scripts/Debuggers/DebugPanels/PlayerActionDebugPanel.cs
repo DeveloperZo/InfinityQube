@@ -346,7 +346,7 @@ public class PlayerActionDebugPanel : DebugPanelBase
         GUILayout.Label($"Perfect Timing: {actionManager.GetPerfectTimingHits()}", GUILayout.Width(120));
         if (GUILayout.Button("Reset Stats", GUILayout.Width(80)))
         {
-            actionManager.ResetStatistics();
+            //actionManager.ResetStatistics();
         }
         GUILayout.EndHorizontal();
 
@@ -387,11 +387,11 @@ public class PlayerActionDebugPanel : DebugPanelBase
         if (cubeMarkerCount > 0)
         {
             GUILayout.Label($"Cube Markers: {cubeMarkerCount} active", GUI.skin.box);
-            var nextCubeMarker = actionManager.GetNextCubeMarker();
-            if (nextCubeMarker.x >= 0)
-            {
-                GUILayout.Label($"Next: ({nextCubeMarker.x}, {nextCubeMarker.y})");
-            }
+            //var nextCubeMarker = actionManager.GetNextCubeMarker();
+            //if (nextCubeMarker.x >= 0)
+            //{
+            //    GUILayout.Label($"Next: ({nextCubeMarker.x}, {nextCubeMarker.y})");
+            //}
         }
 
         GUILayout.EndScrollView();
