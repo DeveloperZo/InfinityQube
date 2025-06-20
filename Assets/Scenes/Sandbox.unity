@@ -10808,7 +10808,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "\u221E"
+  m_text: 0
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: d70f485aa27dc43f79a8fd168f58435c, type: 2}
   m_sharedMaterial: {fileID: 5416806443266638455, guid: d70f485aa27dc43f79a8fd168f58435c, type: 2}
@@ -14938,7 +14938,7 @@ MonoBehaviour:
   individualMarkerCooldown: 2
   individualMarkerMaterial: {fileID: 2100000, guid: 1649820e4ae6e1047ae9cf8c9dd796f5, type: 2}
   lastIndividualMarkerTime: 0
-  maxAreaMarkers: 2
+  maxAreaMarkers: 1
   areaMarkersPlaced: 0
   currentAreaMarkers: 0
   maxAreaMarkerCharges: 2
@@ -14946,6 +14946,7 @@ MonoBehaviour:
   areaMarkerCooldown: 4
   lastAreaMarkerTime: 0
   areaMarkerSize: 2
+  areaMarkerOnGridLimit: 1
   areaMarkerMaterial: {fileID: 2100000, guid: 9242e7b87b272a24f9f34dec818778b2, type: 2}
   individualMarkerKey: 102
   areaMarkerKey: 103
