@@ -172,28 +172,103 @@ public class PlayerActionManager : MonoBehaviour
     {
         HandleInput();
         CheckCubeInteractions();
+        UpdateChargeRegeneration();
         UpdateCooldowns();
         UpdateCharges();
     }
+
     public void UpdateCharges()
     {
-        actionUI.UpdateCharges(currentIndividualMarkers, currentAreaMarkers);
+        if (actionUI != null)
+        {
+            // Pass available charges, not currently placed markers
+            actionUI.UpdateCharges(currentIndividualMarkerCharges, currentAreaMarkerCharges);
 
+            actionUI.lightMaxCharges = maxIndividualMarkerCharges;
+            actionUI.areaMaxCharges = maxAreaMarkerCharges;
+            
+            actionUI.UpdateDisplay();
+        }
     }
 
     public void UpdateCooldowns()
     {
-        actionUI.UpdateCooldowns(individualMarkerCooldown, areaMarkerCooldown);
+        if (actionUI != null)
+        {
+            // Update cooldown time settings
+            actionUI.UpdateCooldowns(individualMarkerCooldown, areaMarkerCooldown);
 
+            // Update cooldown timers - calculate time since last use if regenerating
+            if (currentIndividualMarkerCharges < maxIndividualMarkerCharges)
+            {
+                actionUI.lightMarkerCooldownTimer = Time.time - lastIndividualMarkerTime;
+            }
+            else
+            {
+                actionUI.lightMarkerCooldownTimer = 0f; // Ready to use
+            }
+
+            if (currentAreaMarkerCharges < maxAreaMarkerCharges)
+            {
+                actionUI.areaMarkerCooldownTimer = Time.time - lastAreaMarkerTime;
+            }
+            else
+            {
+                actionUI.areaMarkerCooldownTimer = 0f; // Ready to use
+            }
+        }
     }
     public void ConfigureUI()
     {
-        actionUI.areaMarkerCooldownTime = areaMarkerCooldown;
-        actionUI.lightMarkerCooldownTime = individualMarkerCooldown;
+        if (actionUI != null)
+        {
+            // Set cooldown times
+            actionUI.lightMarkerCooldownTime = individualMarkerCooldown;
+            actionUI.areaMarkerCooldownTime = areaMarkerCooldown;
 
-        actionUI.UpdateCharges(currentIndividualMarkers, currentAreaMarkers);
-        actionUI.UpdateCooldowns( individualMarkerCooldown, areaMarkerCooldown);
+            // Set max charges
+            actionUI.lightMaxCharges = maxIndividualMarkerCharges;
+            actionUI.areaMaxCharges = maxAreaMarkerCharges;
+
+            // Initialize current values
+            UpdateCharges();
+            UpdateCooldowns();
+        }
     }
+
+    private void RegenerateCharges()
+    {
+        bool chargesChanged = false;
+
+        // Regenerate individual marker charges
+        if (currentIndividualMarkerCharges < maxIndividualMarkerCharges)
+        {
+            if (Time.time >= lastIndividualMarkerTime + individualMarkerCooldown)
+            {
+                currentIndividualMarkerCharges++;
+                lastIndividualMarkerTime = Time.time;
+                chargesChanged = true;
+            }
+        }
+
+        // Regenerate area marker charges
+        if (currentAreaMarkerCharges < maxAreaMarkerCharges)
+        {
+            if (Time.time >= lastAreaMarkerTime + areaMarkerCooldown)
+            {
+                currentAreaMarkerCharges++;
+                lastAreaMarkerTime = Time.time;
+                chargesChanged = true;
+            }
+        }
+
+        // Notify UI if charges changed
+        if (chargesChanged && actionUI != null)
+        {
+            actionUI.UpdateCharges(currentIndividualMarkerCharges, currentAreaMarkerCharges);
+        }
+    }
+
     private void OnDestroy()
     {
         // Clean up all temporary overlays
@@ -303,8 +378,7 @@ public class PlayerActionManager : MonoBehaviour
 
     public bool CanPlaceIndividualMarker()
     {
-        return currentIndividualMarkers < maxIndividualMarkers &&
-               Time.time - lastIndividualMarkerTime >= individualMarkerCooldown;
+        return currentIndividualMarkers > 0 && currentIndividualMarkerCharges < maxIndividualMarkerCharges;
     }
 
     public bool PlaceIndividualMarker(Vector2Int position)
@@ -320,10 +394,13 @@ public class PlayerActionManager : MonoBehaviour
 
         individualMarkers.Enqueue(marker);
         currentIndividualMarkers++;
-        lastIndividualMarkerTime = Time.time;
         individualMarkersPlaced++;
 
-        Debug.Log($"Individual marker placed at ({position.x}, {position.y}). Count: {currentIndividualMarkers}/{maxIndividualMarkers}");
+        // Consume a charge and start cooldown for this charge
+        currentIndividualMarkerCharges--;
+        lastIndividualMarkerTime = Time.time;
+
+        Debug.Log($"Individual marker placed at ({position.x}, {position.y}). Charges: {currentIndividualMarkerCharges}/{maxIndividualMarkerCharges}");
         return true;
     }
 
@@ -398,8 +475,7 @@ public class PlayerActionManager : MonoBehaviour
 
     public bool CanPlaceAreaMarker()
     {
-        return currentAreaMarkers < maxAreaMarkers &&
-               Time.time - lastAreaMarkerTime >= areaMarkerCooldown;
+        return currentAreaMarkers > 0 && currentAreaMarkerCharges < maxAreaMarkerCharges;
     }
 
     public bool PlaceAreaMarker(Vector2Int centerPosition, int size)
@@ -407,25 +483,34 @@ public class PlayerActionManager : MonoBehaviour
         if (!CanPlaceAreaMarker() || !IsValidPosition(centerPosition))
             return false;
 
-        if (!CanPlaceMarkerAt(centerPosition))
-            return false;
+        var affectedPositions = GetAreaPositions(centerPosition, size);
 
-        AreaMarker newMarker = new AreaMarker(centerPosition, size, Time.time);
+        // Check if all positions can accept markers
+        foreach (var pos in affectedPositions)
+        {
+            if (!CanPlaceMarkerAt(pos))
+            {
+                Debug.Log($"Cannot place area marker: position ({pos.x}, {pos.y}) is blocked");
+                return false;
+            }
+        }
 
-        // Ensure the 3x3 area is centered on the marked tile
-        newMarker.affectedPositions = GetAreaPositions(centerPosition, size);
-        GameObject visual = CreateAreaMarkerVisual(centerPosition);
-        newMarker.visualObjects.Add(visual);
+        var visual = CreateAreaMarkerVisual(centerPosition);
+        var marker = new AreaMarker(centerPosition, size, Time.time);
+        marker.affectedPositions = affectedPositions;
+        marker.visualObjects.Add(visual);
 
-
-        areaMarkers.Enqueue(newMarker);
+        areaMarkers.Enqueue(marker);
         currentAreaMarkers++;
         areaMarkersPlaced++;
+
+        // Consume a charge and start cooldown for this charge
+        currentAreaMarkerCharges--;
         lastAreaMarkerTime = Time.time;
 
+        Debug.Log($"Area marker placed at ({centerPosition.x}, {centerPosition.y}). Charges: {currentAreaMarkerCharges}/{maxAreaMarkerCharges}");
         return true;
     }
-
     public bool RemoveAreaMarkerAt(Vector2Int centerPosition)
     {
         var markersArray = areaMarkers.ToArray();
@@ -1196,5 +1281,40 @@ public class PlayerActionManager : MonoBehaviour
         }
 
         Destroy(effect);
+    }
+
+    private void UpdateChargeRegeneration()
+    {
+        bool chargesChanged = false;
+
+        // Regenerate individual marker charges
+        if (currentIndividualMarkerCharges < maxIndividualMarkerCharges)
+        {
+            if (Time.time >= lastIndividualMarkerTime + individualMarkerCooldown)
+            {
+                currentIndividualMarkerCharges++;
+                lastIndividualMarkerTime = Time.time; // Reset for next charge
+                chargesChanged = true;
+                Debug.Log($"Individual charge regenerated: {currentIndividualMarkerCharges}/{maxIndividualMarkerCharges}");
+            }
+        }
+
+        // Regenerate area marker charges  
+        if (currentAreaMarkerCharges < maxAreaMarkerCharges)
+        {
+            if (Time.time >= lastAreaMarkerTime + areaMarkerCooldown)
+            {
+                currentAreaMarkerCharges++;
+                lastAreaMarkerTime = Time.time; // Reset for next charge
+                chargesChanged = true;
+                Debug.Log($"Area charge regenerated: {currentAreaMarkerCharges}/{maxAreaMarkerCharges}");
+            }
+        }
+
+        // Update UI if charges changed
+        if (chargesChanged)
+        {
+            UpdateCharges();
+        }
     }
 }

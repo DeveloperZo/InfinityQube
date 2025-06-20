@@ -73,7 +73,7 @@ public class PlayerActionUI : MonoBehaviour
         }
     }
 
-    private void UpdateDisplay()
+    public void UpdateDisplay()
     {
         // Update Light Marker UI
         UpdateMarkerUI(
