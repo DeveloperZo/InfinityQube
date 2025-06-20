@@ -17,22 +17,38 @@ public class PlayerActionManager : MonoBehaviour
 
         [Header("Individual Marker Settings")]
     [SerializeField] public int maxIndividualMarkers = 3;
+    [SerializeField] public int individualMarkersPlaced = 0;
+
+    [SerializeField] public int currentIndividualMarkers = 0;
+    
     [SerializeField] public int maxIndividualMarkerCharges = 2;
+    [SerializeField] private int currentIndividualMarkerCharges;
+    
     [SerializeField] public float individualMarkerCooldown = 2f;
+    
     [SerializeField] public Material individualMarkerMaterial;
     [SerializeField] public Queue<IndividualMarker> individualMarkers = new Queue<IndividualMarker>();
-    [SerializeField] public int currentIndividualMarkers = 0;
+    
+    
     [SerializeField] public float lastIndividualMarkerTime = 0f;
 
     [Header("Area Marker Settings")]
     [SerializeField] public int maxAreaMarkers = 2;
-    [SerializeField] public int maxAreaMarkerCharges = 1;
-    [SerializeField] public float areaMarkerCooldown = 4f;
-    [SerializeField] public Material areaMarkerMaterial;
-    [SerializeField] public int areaMarkerSize = 2;
-    [SerializeField] public Queue<AreaMarker> areaMarkers = new Queue<AreaMarker>();
+    [SerializeField] public int areaMarkersPlaced = 0;
+
     [SerializeField] public int currentAreaMarkers = 0;
+
+    [SerializeField] public int maxAreaMarkerCharges = 1;
+    [SerializeField] private int currentAreaMarkerCharges;
+
+    [SerializeField] public float areaMarkerCooldown = 4f;
     [SerializeField] public float lastAreaMarkerTime = 0f;
+
+    [SerializeField] public int areaMarkerSize = 2;
+    [SerializeField] public Material areaMarkerMaterial;
+    [SerializeField] public Queue<AreaMarker> areaMarkers = new Queue<AreaMarker>();
+    
+    
 
     [Header("Marker Settings")]
     [SerializeField] private float perfectTimingWindow = 0.2f;
@@ -67,8 +83,6 @@ public class PlayerActionManager : MonoBehaviour
     private bool showingPreview = false;
 
     // Statistics
-    public int individualMarkersPlaced = 0;
-    public int areaMarkersPlaced = 0;
     private int cubeMarkersTriggered = 0;
     private int perfectTimingHits = 0;
     private bool inputEnabled = false;
@@ -143,19 +157,35 @@ public class PlayerActionManager : MonoBehaviour
         // Reset cooldowns and charges for debugging
         lastIndividualMarkerTime = -individualMarkerCooldown; // Allow immediate use
         lastAreaMarkerTime = -areaMarkerCooldown; // Allow immediate use
-        currentIndividualMarkers = 0;
-        currentAreaMarkers = 0;
+        currentIndividualMarkerCharges = maxIndividualMarkerCharges;
+        currentAreaMarkerCharges = maxAreaMarkerCharges;
+
+        // Initialize UI if present
+        if (actionUI != null)
+        {
+            actionUI.UpdateCharges(maxIndividualMarkerCharges, maxAreaMarkerCharges);
+            actionUI.UpdateCooldowns(individualMarkerCooldown, areaMarkerCooldown);
+        }
     }
 
     private void Update()
     {
         HandleInput();
         CheckCubeInteractions();
+        UpdateCooldowns();
+        UpdateCharges();
+    }
+    public void UpdateCharges()
+    {
         actionUI.UpdateCharges(currentIndividualMarkers, currentAreaMarkers);
-        actionUI.UpdateCooldowns( individualMarkerCooldown, areaMarkerCooldown);
 
     }
 
+    public void UpdateCooldowns()
+    {
+        actionUI.UpdateCooldowns(individualMarkerCooldown, areaMarkerCooldown);
+
+    }
     public void ConfigureUI()
     {
         actionUI.areaMarkerCooldownTime = areaMarkerCooldown;
