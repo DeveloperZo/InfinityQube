@@ -31,7 +31,6 @@ public class PlayerActionUI : MonoBehaviour
     {
         playerActionManager = FindAnyObjectByType<PlayerActionManager>();
 
-        // Initialize max charges from PlayerActionManager
         if (playerActionManager != null)
         {
             lightMaxCharges = playerActionManager.maxIndividualMarkerCharges;
@@ -72,7 +71,6 @@ public class PlayerActionUI : MonoBehaviour
 
     public void OnMarkerPlaced(bool isLightMarker)
     {
-        // Update method will handle timer synchronization with stacked charges
         Debug.Log($"Marker placed - {(isLightMarker ? "Individual" : "Area")}");
     }
 
@@ -130,11 +128,7 @@ public class PlayerActionUI : MonoBehaviour
 
         // Calculate progress (inverted because cooldownRemaining counts down)
         float progress = 1f - (cooldownRemaining / cooldownTime);
-
-        // Clamp progress between 0 and 1
-        progress = Mathf.Clamp01(progress);
-
-        return progress;
+        return Mathf.Clamp01(progress);
     }
 
     private void UpdateMarkerUI(int charges, int maxCharges, float cooldownProgress,

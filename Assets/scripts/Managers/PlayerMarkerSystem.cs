@@ -379,7 +379,7 @@ public class PlayerMarkerSystem : MonoBehaviour
         
         
         NotifyWaveManager(wm => wm.OnCubeCaptured(cube.type));
-        Destroy(cube);
+        Destroy(cube.gameObject);
         return true;
     }
 
@@ -489,24 +489,61 @@ public class PlayerMarkerSystem : MonoBehaviour
         return !HasIndividualMarkerAt(position) && !HasAreaMarkerAt(position);
     }
 
-    private List<Vector2Int> GetAreaPositions(Vector2Int centerPosition, int size)
-    {
-        var positions = new List<Vector2Int>();
-        int halfSize = size / 2;
 
-        for (int x = centerPosition.x - halfSize; x <= centerPosition.x + halfSize; x++)
+    public List<Vector2Int> GetAreaPositions(Vector2Int center, int size)
+    {
+        List<Vector2Int> positions = new List<Vector2Int>();
+
+        if (size == 2)
         {
-            for (int y = centerPosition.y - halfSize; y <= centerPosition.y + halfSize; y++)
+            positions = Get2x2Positions(center);
+        }
+        else if (size == 3)
+        {
+            positions = Get3x3Positions(center);
+        }
+
+        return positions;
+    }
+
+    private List<Vector2Int> Get2x2Positions(Vector2Int center)
+    {
+        List<Vector2Int> positions = new List<Vector2Int>();
+
+        for (int x = 0; x < 2; x++)
+        {
+            for (int y = 0; y < 2; y++)
             {
-                if (IsValidPosition(new Vector2Int(x, y)))
+                Vector2Int pos = new Vector2Int(center.x + x, center.y + y);
+                if (IsValidPosition(pos))
                 {
-                    positions.Add(new Vector2Int(x, y));
+                    positions.Add(pos);
                 }
             }
         }
 
         return positions;
     }
+
+    private List<Vector2Int> Get3x3Positions(Vector2Int center)
+    {
+        List<Vector2Int> positions = new List<Vector2Int>();
+
+        for (int x = -1; x <= 1; x++)
+        {
+            for (int y = -1; y <= 1; y++)
+            {
+                Vector2Int pos = new Vector2Int(center.x + x, center.y + y);
+                if (IsValidPosition(pos))
+                {
+                    positions.Add(pos);
+                }
+            }
+        }
+
+        return positions;
+    }
+
 
     private bool IsWithinPerfectTimingWindow(float placementTime)
     {

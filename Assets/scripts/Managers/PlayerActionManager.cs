@@ -59,11 +59,12 @@ public class PlayerActionManager : MonoBehaviour
     [SerializeField] public int maxAreaMarkers = 2;
     [SerializeField] public int areaMarkersPlaced = 0;
     [SerializeField] public int currentAreaMarkers = 0;
-    [SerializeField] public int maxAreaMarkerCharges = 1;
+    [SerializeField] public int maxAreaMarkerCharges = 2;
     [SerializeField] private int currentAreaMarkerCharges;
     [SerializeField] public float areaMarkerCooldown = 4f;
     [SerializeField] public float lastAreaMarkerTime = 0f;
     [SerializeField] public int areaMarkerSize = 2;
+    [SerializeField] public int areaMarkerOnGridLimit = 1;
     [SerializeField] public Material areaMarkerMaterial;
 
     [Header("Input Settings")]
@@ -79,7 +80,6 @@ public class PlayerActionManager : MonoBehaviour
     private int perfectTimingHits = 0;
     private bool inputEnabled = false;
 
-    // References to child system
     public GridManager GridManager => gridManager;
     public PlayerManager PlayerManager => playerManager;
     public WaveManager WaveManager => waveManager;
@@ -97,8 +97,8 @@ public class PlayerActionManager : MonoBehaviour
             markerSystem = gameObject.AddComponent<PlayerMarkerSystem>();
         }
         markerSystem.Initialize(this);
-        
-        // Initialize UI with current values
+
+        // Update UI with initial values
         UpdateUI();
     }
 
@@ -223,7 +223,7 @@ public class PlayerActionManager : MonoBehaviour
     public bool CanPlaceAreaMarker()
     {
         return currentAreaMarkerCharges > 0 &&
-               currentAreaMarkers < maxAreaMarkerCharges &&
+               currentAreaMarkers < areaMarkerOnGridLimit &&
                areaMarkersPlaced <= maxAreaMarkers;
     }
 
@@ -234,7 +234,6 @@ public class PlayerActionManager : MonoBehaviour
         currentIndividualMarkers++;
         individualMarkersPlaced++;
 
-        // Update UI immediately when charge is consumed
         UpdateUI();
 
         if (actionUI != null)
@@ -250,7 +249,6 @@ public class PlayerActionManager : MonoBehaviour
         currentAreaMarkers++;
         areaMarkersPlaced++;
 
-        // Update UI immediately when charge is consumed
         UpdateUI();
 
         if (actionUI != null)
@@ -272,11 +270,9 @@ public class PlayerActionManager : MonoBehaviour
     private void RegenerateCharges()
     {
         bool chargesChanged = false;
-        
         chargesChanged |= RegenerateIndividualCharges();
         chargesChanged |= RegenerateAreaCharges();
-        
-        // Only update UI when charges actually change
+
         if (chargesChanged)
         {
             UpdateUI();
@@ -364,20 +360,18 @@ public class PlayerActionManager : MonoBehaviour
     public bool CanPlaceIndividualMarkerCheck() => CanPlaceIndividualMarker();
     public bool CanPlaceAreaMarkerCheck() => CanPlaceAreaMarker();
 
-    // Cooldown information
+    // Cooldown information - FIXED
     public float GetIndividualMarkerCooldownRemaining()
     {
         if (currentIndividualMarkerCharges >= maxIndividualMarkerCharges)
-            return 0f; // Fully charged
-        
+            return 0f;
         return Mathf.Max(0f, individualMarkerCooldown - (Time.time - lastIndividualMarkerTime));
     }
-    
+
     public float GetAreaMarkerCooldownRemaining()
     {
         if (currentAreaMarkerCharges >= maxAreaMarkerCharges)
-            return 0f; // Fully charged
-        
+            return 0f;
         return Mathf.Max(0f, areaMarkerCooldown - (Time.time - lastAreaMarkerTime));
     }
 

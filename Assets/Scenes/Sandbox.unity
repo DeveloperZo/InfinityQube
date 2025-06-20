@@ -13916,7 +13916,6 @@ GameObject:
   - component: {fileID: 4360115852523455648}
   - component: {fileID: 7665709929118310106}
   - component: {fileID: 7665709929118310107}
-  - component: {fileID: 7665709929118310111}
   - component: {fileID: 7665709929118310109}
   - component: {fileID: 7665709929118310110}
   m_Layer: 0
@@ -14765,47 +14764,6 @@ CharacterController:
   m_SkinWidth: 0.08
   m_MinMoveDistance: 0.001
   m_Center: {x: 0, y: 1, z: 0}
---- !u!114 &7665709929118310111
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4020006825885015578}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7f6f8018c7fc50349a90a75c1febe4d7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  lightMarkerSegments:
-  - {fileID: 1020758102}
-  - {fileID: 1839016793}
-  - {fileID: 1672014119}
-  - {fileID: 1385391351}
-  - {fileID: 1232276759}
-  - {fileID: 697628132}
-  areaMarkerSegments:
-  - {fileID: 1799705721}
-  - {fileID: 35727126}
-  - {fileID: 1922694879}
-  - {fileID: 880057722}
-  - {fileID: 884713163}
-  - {fileID: 1442097047}
-  lightChargeText: {fileID: 585395268}
-  areaChargeText: {fileID: 622622456}
-  segmentFullColor: {r: 1, g: 0.7, b: 0.2, a: 1}
-  segmentChargingColor: {r: 0.5, g: 0.5, b: 1, a: 0.8}
-  segmentFirstChargeColor: {r: 0.7, g: 0.7, b: 1, a: 0.6}
-  segmentEmptyColor: {r: 0.3, g: 0.3, b: 0.3, a: 0.3}
-  playerActionManager: {fileID: 8656265648072650656}
-  lightMarkerCooldownTime: 3
-  areaMarkerCooldownTime: 5
-  lightMarkerCooldownTimer: 0
-  areaMarkerCooldownTimer: 0
-  lightCharges: 0
-  lightMaxCharges: 0
-  areaCharges: 0
-  areaMaxCharges: 0
 --- !u!4 &7705285898521335331
 Transform:
   m_ObjectHideFlags: 0
@@ -14946,6 +14904,8 @@ GameObject:
   m_Component:
   - component: {fileID: 5163049675350517299}
   - component: {fileID: 8656265648072650656}
+  - component: {fileID: 8656265648072650658}
+  - component: {fileID: 8656265648072650657}
   m_Layer: 0
   m_Name: PlayerActionManager
   m_TagString: Untagged
@@ -14968,35 +14928,88 @@ MonoBehaviour:
   gridManager: {fileID: 1928190495848794802}
   playerManager: {fileID: 7665709929118310107}
   waveManager: {fileID: 4327591077324849160}
-  actionUI: {fileID: 7665709929118310111}
+  actionUI: {fileID: 0}
+  markerSystem: {fileID: 8656265648072650657}
   maxIndividualMarkers: 3
   individualMarkersPlaced: 0
   currentIndividualMarkers: 0
   maxIndividualMarkerCharges: 2
   currentIndividualMarkerCharges: 0
   individualMarkerCooldown: 2
-  individualMarkerMaterial: {fileID: 0}
+  individualMarkerMaterial: {fileID: 2100000, guid: 1649820e4ae6e1047ae9cf8c9dd796f5, type: 2}
   lastIndividualMarkerTime: 0
   maxAreaMarkers: 2
   areaMarkersPlaced: 0
   currentAreaMarkers: 0
-  maxAreaMarkerCharges: 1
+  maxAreaMarkerCharges: 2
   currentAreaMarkerCharges: 0
   areaMarkerCooldown: 4
   lastAreaMarkerTime: 0
   areaMarkerSize: 2
-  areaMarkerMaterial: {fileID: 0}
-  perfectTimingWindow: 0.2
-  cubeMarkerMaterial: {fileID: 0}
-  poweredCubeMarkerMaterial: {fileID: 0}
+  areaMarkerMaterial: {fileID: 2100000, guid: 9242e7b87b272a24f9f34dec818778b2, type: 2}
   individualMarkerKey: 102
   areaMarkerKey: 103
   triggerIndividualKey: 114
   triggerAreaKey: 116
   triggerCubeMarkerKey: 113
   powerUpCubeMarkerKey: 284
+--- !u!114 &8656265648072650657
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8656265648072650655}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 38771877d17c11f45ac208f3c4b537a7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  perfectTimingWindow: 0.2
+  cubeMarkerMaterial: {fileID: 0}
+  poweredCubeMarkerMaterial: {fileID: 0}
   flashDuration: 0.3
   areaPreviewColor: {r: 1, g: 0.5, b: 0, a: 0.7}
+  cubeMarkers: []
+--- !u!114 &8656265648072650658
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8656265648072650655}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7f6f8018c7fc50349a90a75c1febe4d7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  lightMarkerSegments:
+  - {fileID: 1020758102}
+  - {fileID: 1839016793}
+  - {fileID: 1672014119}
+  - {fileID: 1385391351}
+  - {fileID: 1232276759}
+  - {fileID: 697628132}
+  areaMarkerSegments:
+  - {fileID: 1799705721}
+  - {fileID: 35727126}
+  - {fileID: 1922694879}
+  - {fileID: 880057722}
+  - {fileID: 884713163}
+  - {fileID: 1442097047}
+  lightChargeText: {fileID: 585395268}
+  areaChargeText: {fileID: 622622456}
+  segmentFullColor: {r: 1, g: 0.7, b: 0.2, a: 1}
+  segmentChargingColor: {r: 0.5, g: 0.5, b: 1, a: 0.8}
+  segmentFirstChargeColor: {r: 0.7, g: 0.7, b: 1, a: 0.6}
+  segmentEmptyColor: {r: 0.3, g: 0.3, b: 0.3, a: 0.3}
+  playerActionManager: {fileID: 8656265648072650656}
+  lightMarkerCooldownTime: 3
+  areaMarkerCooldownTime: 5
+  lightCharges: 0
+  lightMaxCharges: 0
+  areaCharges: 0
+  areaMaxCharges: 0
 --- !u!1 &8707610068485983747
 GameObject:
   m_ObjectHideFlags: 0
