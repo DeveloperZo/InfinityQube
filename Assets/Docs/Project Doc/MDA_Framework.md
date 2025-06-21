@@ -13,321 +13,238 @@
 
 ## 🔧 MECHANICS (What Players Can Do)
 
-### Core Action Mechanics
+### Core Rhythm Mechanics
 ```
-Movement System:
-- Analog WASD navigation with smooth collision
-- Grid-constrained positioning
-- Real-time spatial decision making
+Cube Movement System (The Universal Rhythm):
+- Step-based advancement creating cosmic metronome
+- Predictable, synchronized cube progression
+- Manual wave control (ENTER) to start the rhythm
+- Speed modulation (Shift) to alter tempo
 
-Marker Placement Systems:
-- Individual Markers (F): Precision single-tile targeting
-- Area Markers (G): 2x2 zone coverage with cooldown
-- Cube Markers (Q): Direct cube elimination from Blue captures
+Marker Placement (Conducting the Orchestra):
+- Individual Markers (F): Precision beats in the rhythm
+- Area Markers (G): Harmonic coverage zones
+- Cube Markers (Q): Crescendo moments from Blue captures
+- Timing windows align with cube rhythm
 
-Resource Management:
-- Charge-based individual marker limits (typically 2-3)
-- Cooldown-based area marker restrictions  
-- Cube marker generation through Blue cube captures
-- Charge regeneration over time
-```
-
-### Advanced Mechanical Layers
-```
-Face Painting System:
-- Tiles can paint cube faces with Corrupted/Enhanced status
-- Painted faces modify cube behavior when oriented downward
-- Duration system (temporary vs permanent effects)
-
-Tile State Transformation:
-- Normal → Marked → Corrupted/Advantaged → Specialized states
-- Black cubes corrupt tiles (dangerous terrain)
-- Blue cubes create advantaged tiles (charge storage)
-- Enhanced tiles can paint passing cubes
-
-Wave Progression:
-- Manual wave initiation (ENTER key control)
-- Step-based cube movement (discrete, predictable)
-- Speed variants (normal/fast) for pressure modulation
+Face Painting System (Cosmic Disruption):
+- Tiles paint cube faces with cosmic liquids
+- Corruption (Dark Matter): Breaks rhythm, creates discord
+- Enhancement (Stellar Plasma): Amplifies rhythm, creates harmony
+- Paint duration adds temporal complexity
 ```
 
-### Information & Feedback Mechanics  
+### Resource & Timing Mechanics
 ```
-Statistics Tracking:
-- Real-time performance metrics
-- Capture efficiency by cube type
-- Resource utilization analysis
-- Movement and timing optimization data
+Resource Rhythm:
+- Charge regeneration follows predictable tempo
+- Cooldowns create rhythmic availability windows
+- Blue cube captures generate resource crescendos
 
-Debug & Analysis Tools:
-- Real-time system state inspection
-- Manual control overrides
-- Scenario testing capabilities
-- Performance stress testing
+Information Flow:
+- Statistics track rhythmic precision
+- Performance metrics reveal timing optimization
+- Debug tools expose the underlying beat structure
 ```
 
 ---
 
 ## ⚡ DYNAMICS (What Emerges from Play)
 
-### Emergent Strategic Patterns
+### The Dance Between Order and Chaos
 
-#### **Temporal Strategy Layers**
-- **Immediate Decisions**: Marker placement for current threats
-- **Medium-term Planning**: Face painting for future cube behavior modification
-- **Long-term Optimization**: Tile state management and resource banking
+#### **Rhythmic Mastery Patterns**
+- **Learning the Beat**: Players internalize cube movement patterns
+- **Anticipating the Measure**: Predicting exact arrival times
+- **Conducting Multiple Voices**: Managing various cube types simultaneously
+- **Syncopation Through Paint**: Using cosmic liquids to create off-beats
 
-#### **Resource Conversion Chains**
+#### **Cosmic Disruption Dynamics**
 ```
-Strategic Value Flow:
-Blue Cubes → Cube Markers → Direct Elimination Power
-Marker Placement → Cube Capture → Tile Advantage → Future Efficiency
-Face Painting → Behavior Modification → Risk Mitigation → Strategic Opportunity
+Paint as Jazz Improvisation:
+- Corruption transforms predictable Normal cubes into chaotic Black behavior
+- Enhancement elevates simple rhythms into complex Blue patterns
+- Multiple painted faces create polyrhythmic cube behaviors
+- Paint duration creates temporary vs permanent rhythm changes
 ```
 
-#### **Risk/Reward Optimization**
-- **Conservative Play**: Focus on survival and gradual resource accumulation
-- **Aggressive Efficiency**: Pursue Blue cubes despite Black cube proximity
-- **Territorial Control**: Protect advantaged tiles while forcing suboptimal positioning
+#### **Emergent Musical Structures**
+- **Wave Compositions**: Each wave becomes a unique musical phrase
+- **Strategic Melodies**: Marker placement creates capture sequences
+- **Harmonic Chains**: Blue cube captures cascade into detonation symphonies
+- **Dissonant Passages**: Black cube threats create tension sections
 
-### Emergent Behavioral Patterns
+### Temporal Strategy Layers
 
-#### **The "Blue Cube Hunt"**
-Players develop aggressive pursuit patterns for Blue cubes, treating them as strategic multipliers rather than simple score sources.
+#### **Immediate Rhythm** (The Beat)
+- Marker placement synchronized with cube steps
+- Split-second decisions within the cosmic tempo
+- Reactive adjustments to rhythm breaks
 
-#### **"Face Paint Timing"**
-Advanced players learn to paint cube faces strategically, creating delayed benefits that activate at optimal moments.
+#### **Phrase Planning** (The Measure)
+- Face painting for future rhythm modifications
+- Resource allocation across multiple beats
+- Anticipating pattern completions
 
-#### **"Grid Territory Management"**  
-Players begin treating tiles as persistent strategic assets, protecting advantaged areas while accepting sacrificial zones.
-
-#### **"Resource Banking vs Spending"**
-Tension between immediate marker usage for safety vs saving for optimal efficiency moments.
-
-### Skill Development Arcs
-
-#### **Novice → Intermediate**
-- Learning Black cube avoidance → Understanding Blue cube value
-- Random marker placement → Predictive path planning  
-- Reactive play → Proactive resource management
-
-#### **Intermediate → Advanced**
-- Basic resource management → Multi-layer resource conversion
-- Single-wave thinking → Cross-wave strategic planning
-- Tile ignorance → Territorial control awareness
-
-#### **Advanced → Expert**
-- Individual optimization → Pattern recognition across stages
-- Manual analysis → Intuitive efficiency assessment
-- Mechanical execution → Creative strategic innovation
+#### **Movement Composition** (The Symphony)
+- Cross-wave strategic planning
+- Tile state management as instrument tuning
+- Building toward efficiency crescendos
 
 ---
 
 ## 🎨 AESTHETICS (What Players Feel)
 
+### Core Aesthetic Identity
+**"Intelligent Mastery of Cube Rhythms with Cosmic Wanderlust"**
+
+The dual experience of conducting a cosmic orchestra with mathematical precision while being awed by the chaotic beauty of universal forces that transform certainty into wonder.
+
 ### Primary Aesthetic Experiences
 
-#### **🧩 Challenge/Problem-Solving** (Mastery Foundation)
-**"The satisfaction of finding the optimal solution"**
-- Pure mechanical puzzles with clear right/wrong answers
-- Multiple valid approaches with measurable efficiency differences
-- Escalating complexity that rewards mastery of previous concepts
+#### **🎵 Rhythmic Mastery** (Core Mastery)
+**"The satisfaction of perfect cosmic timing"**
+- Internalizing the universal beat of cube progression
+- Achieving flow state through rhythmic prediction
+- Optimization as musical perfection
 
-**Player Quote Archetype**: *"I know there's a perfect way to solve this wave, and I'm going to find it."*
+**Player Experience Arc:**
+1. Hearing the rhythm (recognizing patterns)
+2. Feeling the rhythm (internalizing timing)
+3. Conducting the rhythm (perfect execution)
+4. Transcending the rhythm (creative mastery)
 
-#### **⚙️ Discovery/Learning** (Mastery + Wanderlust Bridge)
-**"The joy of understanding how systems interconnect"**
-- Face painting mechanics reveal deeper strategic possibilities
-- Statistics tracking shows improvement and optimization opportunities
-- Debug tools enable experimentation and "what if" exploration
-- **Cosmic Layer**: Each discovery feels like uncovering universal laws
+#### **🌌 Cosmic Disruption** (Core Wanderlust)
+**"The awe of chaos transforming order"**
+- Paint as liquid cosmos disrupting geometric certainty
+- Corruption as dark matter warping spacetime
+- Enhancement as stellar fusion creating new possibilities
+- Each painted cube tells a story of cosmic transformation
 
-**Player Quote Archetype**: *"Wait, if I paint this cube's face, then when it rotates... oh wow, it's like discovering how galaxies form!"*
+**Player Experience Arc:**
+1. Discovering paint effects (surprise)
+2. Understanding cosmic forces (learning)
+3. Wielding chaos strategically (control)
+4. Dancing with uncertainty (transcendence)
 
-#### **🎯 Mastery/Optimization** (Pure Mastery)
-**"The drive to achieve perfect efficiency"**
-- Statistics tracking enables competitive self-improvement
-- Multiple optimization goals (speed, efficiency, resource conservation)
-- Clear performance feedback enables measurable skill development
+#### **🎭 The Synthesis: Cosmic Jazz**
+**"Where rhythm meets improvisation"**
+- Using paint to create controlled chaos within the rhythm
+- Finding harmony between predictability and surprise
+- The joy of conducting cosmic forces
+- Moments where perfect strategy meets beautiful chaos
 
-**Player Quote Archetype**: *"My capture efficiency last time was 87%, I know I can hit 95% if I optimize my marker timing."*
+### Supporting Aesthetic Experiences
 
-#### **🌌 Wonder/Scale Appreciation** (Pure Wanderlust) 
-**"The awe of infinite possibility and cosmic beauty"**
-- Grid patterns suggest vast stellar formations and cosmic phenomena
-- Mathematical elegance evokes universal harmony and order
-- Each stage feels like exploring a new region of infinite space
-- Success feels like mastering cosmic forces rather than simple mechanics
+#### **📊 Analytical Rhythm** (Mastery Support)
+- Statistics reveal rhythmic precision percentages
+- Optimization metrics as performance scores
+- Debug tools as musical analysis instruments
 
-**Player Quote Archetype**: *"Each grid feels like its own universe, and I'm learning to conduct cosmic orchestras."*
+#### **✨ Visual Poetry** (Wanderlust Support)
+- Liquid paint effects disrupting geometric perfection
+- Cube transformations as cosmic metamorphosis
+- Grid as stellar canvas for strategic art
 
-#### **🎲 Control/Predictability** (Mastery Foundation)
-**"The confidence that comes from perfect information"**
-- Step-based movement eliminates execution barriers
-- Predictable cube behavior enables pure strategic focus
-- Manual wave control allows careful analysis and planning
+#### **🌊 Flow State Meditation** (Synthesis)
+- The zen of perfect rhythmic execution
+- Cosmic forces in harmonious balance
+- Mathematical beauty meeting universal chaos
 
-**Player Quote Archetype**: *"I love that I can think through every possibility before committing to a move."*
+### Aesthetic Conflicts & Resolutions
 
-#### **♾️ Exploration/Discovery** (Wanderlust Foundation)
-**"The pull toward uncharted mathematical territories"**
-- Each new stage represents unexplored cosmic regions
-- Advanced mechanics feel like discovering new physical laws
-- Optimization challenges suggest infinite depth to explore
-- Pattern recognition becomes cosmic cartography
+#### **Predictability vs Surprise**
+- **Tension**: Rhythmic certainty vs chaotic transformation
+- **Resolution**: Paint creates controlled unpredictability
 
-**Player Quote Archetype**: *"Every stage is a new star system to explore and understand."*
+#### **Mastery vs Wonder**
+- **Tension**: Optimization focus vs cosmic awe
+- **Resolution**: Perfect play creates beautiful moments
 
-### Secondary Aesthetic Experiences
-
-#### **🔬 Experimentation/Creativity** (Mastery + Wanderlust)
-**"The playground feeling of testing new approaches in cosmic laboratories"**
-- Debug infrastructure enables creative scenario testing
-- Face painting system rewards innovative thinking
-- Multiple marker types encourage creative solution approaches
-- **Cosmic Layer**: Experimentation feels like cosmic research and discovery
-
-#### **📊 Analysis/Understanding** (Pure Mastery)
-**"The satisfaction of deep system comprehension"**
-- Comprehensive statistics reveal optimization opportunities
-- Debug panels expose underlying mechanical relationships
-- Performance tracking enables pattern recognition and improvement
-
-#### **🌊 Flow/Meditation** (Wanderlust Foundation)
-**"The zen of cosmic harmony and perfect mechanical execution"**
-- Predictable systems enable entering flow states
-- Clear visual feedback reduces cognitive load
-- Minimal interface keeps focus on strategic decisions
-- **Cosmic Layer**: Flow state feels like communion with universal order
-
-#### **🎭 Sublime/Transcendence** (Pure Wanderlust)
-**"Moments of awe when complexity resolves into elegant simplicity"**
-- Perfect strategic solutions feel like glimpsing cosmic truth
-- Pattern recognition moments evoke mathematical beauty
-- Scale shifts from personal optimization to cosmic appreciation
-- Success feels like temporary mastery over infinite forces
-
-**Player Quote Archetype**: *"When I finally solved that stage perfectly, it felt like I'd discovered a new law of physics."*
-
-### Aesthetic Tensions & Conflicts
-
-#### **Prediction vs Adaptation**
-- **Tension**: Desire for perfect planning vs need to adapt to changing conditions
-- **Resolution**: Step-based movement provides prediction, tile states require adaptation
-
-#### **Efficiency vs Safety**  
-- **Tension**: Optimal play requires risk-taking, but death resets progress
-- **Resolution**: Multiple valid approaches accommodate different risk tolerances
-
-#### **Complexity vs Clarity**
-- **Tension**: Deep systems can overwhelm, but simplicity can bore
-- **Resolution**: Layered complexity introduction through structured stage progression
+#### **Control vs Chaos**
+- **Tension**: Strategic planning vs cosmic disruption
+- **Resolution**: Mastery includes chaos management
 
 ---
 
-## 🔄 PLAYER JOURNEY THROUGH MDA
+## 🔄 PLAYER JOURNEY THROUGH RHYTHM & CHAOS
 
-### Stage 1: Mechanical Discovery
-**Dominant Aesthetic**: Challenge/Problem-Solving
-- Players learn basic movement and marker placement
-- Focus on Black cube avoidance and basic survival
-- Simple cause-and-effect understanding
+### Act 1: Learning the Cosmic Beat
+**Dominant Experience**: Pure rhythm recognition
+- Cubes move in perfect synchronization
+- Players learn the universal tempo
+- Success through pattern recognition
 
-### Stage 2: System Integration  
-**Dominant Aesthetic**: Discovery/Learning
-- Blue cube value becomes apparent
-- Face painting system reveals strategic depth
-- Resource management patterns emerge
+### Act 2: Discovering Cosmic Forces
+**Dominant Experience**: Chaos introduction
+- Paint mechanics reveal transformative power
+- Rhythms can be broken and reshaped
+- Wonder at emergent possibilities
 
-### Stage 3: Optimization Focus
-**Dominant Aesthetic**: Mastery/Optimization  
-- Statistics tracking motivates efficiency improvement
-- Multiple valid strategies become apparent
-- Personal improvement becomes primary motivator
+### Act 3: Conducting the Cosmic Orchestra
+**Dominant Experience**: Synthesis mastery
+- Using paint strategically within rhythm
+- Creating beautiful chaos purposefully
+- Transcendent moments of perfect imperfection
 
-### Stage 4: Creative Expression
-**Dominant Aesthetic**: Experimentation/Creativity
-- Players develop personal strategic styles
-- Debug tools enable creative scenario exploration
-- System mastery enables innovative approaches
-
----
-
-## 🎯 AESTHETIC ALIGNMENT ANALYSIS
-
-### Successful Aesthetic Reinforcement
-
-#### **Challenge/Problem-Solving ← Predictable Mechanics**
-- Step-based movement supports perfect strategic planning
-- Clear rules enable focus on optimal solutions
-- Multiple approaches reward creative problem-solving
-
-#### **Mastery/Optimization ← Statistics Systems**
-- Comprehensive tracking provides improvement targets
-- Performance feedback enables skill development measurement
-- Multiple optimization dimensions maintain long-term engagement
-
-#### **Discovery/Learning ← Layered Complexity**
-- Face painting system rewards deep exploration
-- Tile state interactions create "aha!" moments
-- Debug tools support experimental learning
-
-### Potential Aesthetic Conflicts
-
-#### **Control vs Challenge**
-- **Risk**: Too much predictability could reduce excitement
-- **Mitigation**: Time pressure variants and complex scenario combinations
-
-#### **Analysis vs Flow**
-- **Risk**: Heavy statistics focus could break immersion
-- **Mitigation**: Optional depth - core experience remains clean
-
-#### **Complexity vs Accessibility**
-- **Risk**: Advanced mechanics could overwhelm new players
-- **Mitigation**: Structured learning progression isolates complexity introduction
+### Act 4: Cosmic Jazz Master
+**Dominant Experience**: Creative expression
+- Personal style emerges from mechanics
+- Rhythm and chaos in perfect balance
+- Each playthrough a unique composition
 
 ---
 
-## 📋 MDA SYNTHESIS & INSIGHTS
+## 📋 MDA SYNTHESIS: THE COSMIC RHYTHM
 
-### Core Aesthetic Identity
-**Infinity Cube delivers "Intelligent Mastery with Cosmic Wanderlust"** - the satisfaction of understanding complex systems deeply enough to optimize them creatively, while experiencing the awe and mystery of exploring infinite mathematical spaces.
+### Unique Design Achievement
+Infinity Cube successfully merges two seemingly opposed aesthetics:
+- **Rhythmic Certainty**: The mathematical precision of cube movement
+- **Cosmic Chaos**: The transformative power of paint mechanics
 
-### Dual Aesthetic Foundation
-1. **Intelligent Mastery**: Mechanical understanding and optimization satisfaction
-2. **Cosmic Wanderlust**: The emotional pull of infinite possibility and mathematical beauty
-
-### Unique MDA Signature
-1. **Mechanics**: Layered systems with clear rules but emergent complexity (Mastery)
-2. **Dynamics**: Temporal strategy across multiple time scales (Mastery) + Exploration of infinite pattern space (Wanderlust)  
-3. **Aesthetics**: Technical mastery through understanding + Awe at cosmic scale and mathematical elegance
-
-### Player Motivation Engine
+### The Core Loop Reimagined
 ```
-Challenge Recognition → System Understanding → Strategic Innovation → 
-Performance Measurement → Optimization Drive → Mastery Satisfaction →
-↕️ (Constant interplay)
-Cosmic Curiosity → Pattern Recognition → Scale Appreciation → 
-Mathematical Beauty → Infinite Possibility → Wonder & Wanderlust →
-Seek Greater Challenge & Deeper Exploration
+Recognize Rhythm → Master the Beat → Discover Paint → 
+Break the Rhythm → Control the Chaos → Find New Harmony →
+Create Cosmic Jazz → Seek Greater Complexity
 ```
 
-### Design Strengths Revealed
-- **Mechanical Clarity**: Rules are learnable and predictable (supports mastery)
-- **Emergent Depth**: Simple mechanics combine for complex strategy (supports both)
-- **Feedback Loops**: Statistics and debug tools support learning and improvement (mastery)
-- **Progressive Disclosure**: Complexity introduction respects learning curves (mastery)
-- **Cosmic Theming**: Background and naming suggest infinite scale (wanderlust)
-- **Mathematical Elegance**: Grid systems and pattern recognition (both)
+### Thematic Statement
+*"In the cosmic dance of Infinity Cube, perfect geometric forms follow the universal rhythm - predictable, masterable, certain. But flowing through space are cosmic liquids that transform this certainty into something new. Master the rhythm, embrace the chaos, conduct the cosmic symphony."*
 
-### Wanderlust Integration Opportunities
-- **Atmospheric Enhancement**: Deepen cosmic background and stellar environments
-- **Scale Narrative**: Suggest each grid represents vast cosmic phenomena
-- **Pattern Poetry**: Present mechanical interactions as cosmic dance/harmony
-- **Infinite Suggestion**: Convey sense of endless exploration and discovery
+### Design Implications
+
+#### **What's Working**
+- Step-based movement creates perfect rhythm
+- Paint system provides meaningful disruption
+- Statistics track rhythmic mastery
+- Multiple solutions enable creative expression
+
+#### **What Needs Enhancement**
+- **Audio**: Rhythmic soundtrack following cube movement
+- **Visual**: Liquid paint effects showing cosmic flow
+- **Feedback**: Musical tones for captures creating melodies
+- **Polish**: Rhythm break effects when paint activates
+
+### Future Development Priorities
+
+**Phase 1: Rhythmic Foundation**
+- Audio system with cube-synced beats
+- Musical feedback for player actions
+- Visual rhythm indicators
+
+**Phase 2: Cosmic Enhancement**
+- Liquid flow animations for paint
+- Particle effects suggesting cosmic forces
+- Visual disruption when rhythm breaks
+
+**Phase 3: Full Synthesis**
+- Dynamic music responding to gameplay
+- Visual/audio harmony in all systems
+- Cosmic narrative integration
 
 ---
 
 **Last Updated:** December 20, 2024  
-**Analysis Framework:** MDA (Mechanics-Dynamics-Aesthetics)  
-**Next Steps:** Refine analysis based on design vision and identify development priorities
+**Core Aesthetic:** Intelligent Mastery of Cube Rhythms with Cosmic Wanderlust  
+**Design Philosophy:** Where Mathematical Precision Meets Cosmic Chaos
