@@ -31,6 +31,8 @@ public class GridDebugPanel : DebugPanelBase
 
     public override void Initialize()
     {
+        base.Initialize(); // Initialize theme and performance systems
+        
         gridManager = GridManager.Instance;
         playerManager = Object.FindObjectOfType<PlayerManager>();
 
@@ -48,7 +50,7 @@ public class GridDebugPanel : DebugPanelBase
         }
     }
 
-    public override void DrawPanel()
+    protected override void DrawPanelContent()
     {
         DrawSectionToggles();
         GUILayout.Space(5);

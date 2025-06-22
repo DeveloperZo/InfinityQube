@@ -17,10 +17,12 @@ public class GameplayDebugPanel : DebugPanelBase
 
     public override void Initialize()
     {
+        base.Initialize(); // Initialize theme and performance systems
+        
         stageManager = Object.FindObjectOfType<StageManager>();
     }
 
-    public override void DrawPanel()
+    protected override void DrawPanelContent()
     {
         DrawSectionToggles();
         DebugUIHelpers.Space();
@@ -50,7 +52,7 @@ public class GameplayDebugPanel : DebugPanelBase
                 
                 // Current stage information
                 GUILayout.Label($"Stage #{stageManager.CurrentStageIndex}: {stage.stageName}");
-                GUILayout.Label($"Type: {stage.stageType}");
+                GUILayout.Label($"Description: {stage.description}");
                 GUILayout.Label($"Grid: {stage.gridWidth}x{stage.gridHeight}");
                 GUILayout.Label($"Waves: {stage.waveConfigurations.Count}");
                 
@@ -72,7 +74,7 @@ public class GameplayDebugPanel : DebugPanelBase
                 }
                 
                 // Quick stage controls
-                DebugUIHelpers.DrawButtonGrid(new[] {
+                DebugUIHelpers.DrawButtonGrid(new(string, System.Action)[] {
                     ("Restart", () => stageManager.RestartCurrentStage()),
                     ("Force Win", () => stageManager.ForceCompleteStage(true)),
                     ("Force Fail", () => stageManager.ForceCompleteStage(false))
@@ -95,7 +97,7 @@ public class GameplayDebugPanel : DebugPanelBase
                 GUILayout.Label($"Available Stages: {availableStages.Count}");
                 
                 // Navigation controls
-                DebugUIHelpers.DrawButtonGrid(new[] {
+                DebugUIHelpers.DrawButtonGrid(new (string, System.Action)[] {
                     ("Previous", () => stageManager.LoadPreviousStage()),
                     ("Next", () => stageManager.LoadNextStage()),
                     ("Reset to First", () => stageManager.ResetToFirstStage())
@@ -142,7 +144,7 @@ public class GameplayDebugPanel : DebugPanelBase
                 var attempts = stageManager.GetStageAttempts();
                 if (attempts.Count > 0)
                 {
-                    GUILayout.Label($"Current Stage Attempts: {attempts.GetValueOrDefault(stageManager.CurrentStageIndex, 0)}");
+                    GUILayout.Label($"Current Stage Attempts: {attempts[stageManager.CurrentStageIndex] }");
                     GUILayout.Label($"Total Attempts Tracked: {attempts.Count} stages");
                 }
                 
@@ -186,7 +188,7 @@ public class GameplayDebugPanel : DebugPanelBase
             var debugSystem = Object.FindObjectOfType<DebugSystem>();
             if (debugSystem != null)
             {
-                DebugUIHelpers.DrawButtonGrid(new[] {
+                DebugUIHelpers.DrawButtonGrid(new (string, System.Action)[] {
                     ("Wave Panel", () => Debug.Log("Switch to Wave Panel (F12 + Tab)")),
                     ("Grid Panel", () => Debug.Log("Switch to Grid Panel (F12 + Tab)")),
                     ("Testing Panel", () => Debug.Log("Switch to Testing Panel (F12 + Tab)"))

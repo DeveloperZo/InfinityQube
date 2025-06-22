@@ -39,21 +39,46 @@ public class DebugSystem : MonoBehaviour
     #region Unity Lifecycle
     private void Awake()
     {
-#if UNITY_EDITOR
-        InitializeDebugPanels();
-        windowRect = new Rect(windowPosition.x, windowPosition.y, windowSize.x, windowSize.y);
-#endif
+        // Debug system should work in both editor and builds for testing
+        Debug.Log("DebugSystem: Awake() called");
+        
+        try
+        {
+            InitializeDebugPanels();
+            windowRect = new Rect(windowPosition.x, windowPosition.y, windowSize.x, windowSize.y);
+            Debug.Log($"DebugSystem: Initialized with {debugPanels.Count} panels");
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogError($"DebugSystem: Failed to initialize - {e.Message}\n{e.StackTrace}");
+        }
     }
 
     private void Start()
     {
         isVisible = showOnStart;
+        
+        // If starting visible, show all panels
+        if (isVisible)
+        {
+            foreach (var panel in debugPanels)
+            {
+                panel.OnShow();
+            }
+        }
+        
+        // Show first panel in tabbed mode
+        if (debugPanels.Count > 0 && displayMode == DebugDisplayMode.Tabbed)
+        {
+            debugPanels[0].OnShow();
+        }
     }
 
     private void Update()
     {
         if (Input.GetKeyDown(toggleKey))
         {
+            Debug.Log($"DebugSystem: F12 pressed, current visible: {isVisible}");
             ToggleDebugSystem();
         }
 
@@ -62,26 +87,47 @@ public class DebugSystem : MonoBehaviour
         {
             foreach (var panel in debugPanels)
             {
-                panel.Update();
+                try
+                {
+                    panel.Update();
+                }
+                catch (System.Exception e)
+                {
+                    Debug.LogError($"DebugSystem: Error updating panel {panel.PanelName}: {e.Message}");
+                }
             }
         }
     }
 
     private void OnGUI()
     {
+        // Always show a simple indicator if debug system exists
+        GUI.Label(new Rect(10, 10, 200, 20), $"Debug System Active (F12): {isVisible}");
+        
         if (!isVisible) return;
 
-        switch (displayMode)
+        try
         {
-            case DebugDisplayMode.Tabbed:
-                DrawTabbedInterface();
-                break;
-            case DebugDisplayMode.Stacked:
-                DrawStackedInterface();
-                break;
-            case DebugDisplayMode.Windowed:
-                DrawWindowedInterface();
-                break;
+            switch (displayMode)
+            {
+                case DebugDisplayMode.Tabbed:
+                    DrawTabbedInterface();
+                    break;
+                case DebugDisplayMode.Stacked:
+                    DrawStackedInterface();
+                    break;
+                case DebugDisplayMode.Windowed:
+                    DrawWindowedInterface();
+                    break;
+            }
+        }
+        catch (System.Exception e)
+        {
+            // Fallback simple error display
+            Rect errorRect = new Rect(50, 50, 500, 200);
+            GUI.Box(errorRect, "");
+            GUI.Label(new Rect(60, 60, 480, 180), $"DebugSystem Error:\n{e.Message}\n\nPanels: {debugPanels?.Count ?? 0}\nStack: {e.StackTrace}");
+            Debug.LogError($"DebugSystem: OnGUI error - {e.Message}\n{e.StackTrace}");
         }
     }
     #endregion
@@ -89,41 +135,86 @@ public class DebugSystem : MonoBehaviour
     #region Initialization
     private void InitializeDebugPanels()
     {
-        // Register debug panels in gameplay-focused order:
-        // 1. Overall game state and progression
-        RegisterPanel(new GameplayDebugPanel());  // StageManager + overall game state
+        Debug.Log("DebugSystem: InitializeDebugPanels() called");
         
-        // 2. Wave system - core gameplay loop
-        RegisterPanel(new WaveDebugPanel());      // WaveManager - wave control, cube spawning
-        
-        // 3. Grid and environment
-        RegisterPanel(new GridDebugPanel());      // GridManager - grid state, tiles, markers
-        
-        // 4. Player and actions coordination
-        RegisterPanel(new PlayerActionDebugPanel()); // PlayerActionManager + PlayerManager
-        
-        // 5. Cube behavior and interactions
-        RegisterPanel(new CubeDebugPanel());      // CubeManager - cube behavior, face painting
-        
-        // 6. Cross-system testing and scenarios
-        RegisterPanel(new TestingDebugPanel());   // Integration testing, scenarios
+        try
+        {
+            // Initialize theme system
+            DebugUIHelpers.InitializeTheme();
+            Debug.Log("DebugSystem: Theme initialized");
+            
+            // Register debug panels in gameplay-focused order:
+            // 1. Overall game state and progression
+            RegisterPanel(new GameplayDebugPanel());  // StageManager + overall game state
+            
+            // 2. Wave system - core gameplay loop
+            RegisterPanel(new WaveDebugPanel());      // WaveManager - wave control, cube spawning
+            
+            // 3. Grid and environment
+            RegisterPanel(new GridDebugPanel());      // GridManager - grid state, tiles, markers
+            
+            // 4. Player and actions coordination
+            RegisterPanel(new PlayerActionDebugPanel()); // PlayerActionManager + PlayerManager
+            
+            // 5. Cube behavior and interactions
+            RegisterPanel(new CubeDebugPanel());      // CubeManager - cube behavior, face painting
+            
+            // 6. Cross-system testing and scenarios
+            RegisterPanel(new TestingDebugPanel());   // Integration testing, scenarios
+            
+            Debug.Log($"DebugSystem: Successfully registered {debugPanels.Count} panels");
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogError($"DebugSystem: Error in InitializeDebugPanels - {e.Message}\n{e.StackTrace}");
+        }
     }
 
     private void RegisterPanel(IDebugPanel panel)
     {
-        panel.Initialize();
-        debugPanels.Add(panel);
-        panelsByName[panel.PanelName] = panel;
+        try
+        {
+            Debug.Log($"DebugSystem: Registering panel {panel.PanelName}");
+            panel.Initialize();
+            debugPanels.Add(panel);
+            panelsByName[panel.PanelName] = panel;
 
-        // Initialize window rect for windowed mode
-        Vector2 pos = new Vector2(50 + (debugPanels.Count * 30), 50 + (debugPanels.Count * 30));
-        windowRects[panel] = new Rect(pos.x, pos.y, 400, 400);
-        scrollPositions[panel] = Vector2.zero;
+            // Initialize window rect for windowed mode
+            Vector2 pos = new Vector2(50 + (debugPanels.Count * 30), 50 + (debugPanels.Count * 30));
+            windowRects[panel] = new Rect(pos.x, pos.y, 400, 400);
+            scrollPositions[panel] = Vector2.zero;
+            
+            Debug.Log($"DebugSystem: Successfully registered panel {panel.PanelName}");
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogError($"DebugSystem: Failed to register panel {panel?.PanelName ?? "unknown"}: {e.Message}\n{e.StackTrace}");
+        }
     }
 
     public void ToggleDebugSystem()
     {
+        bool wasVisible = isVisible;
         isVisible = !isVisible;
+        
+        // Manage panel visibility states
+        if (isVisible && !wasVisible)
+        {
+            // Show all panels when opening debug system
+            foreach (var panel in debugPanels)
+            {
+                panel.OnShow();
+            }
+        }
+        else if (!isVisible && wasVisible)
+        {
+            // Hide all panels when closing debug system
+            foreach (var panel in debugPanels)
+            {
+                panel.OnHide();
+            }
+        }
+        
         Debug.Log($"Debug System: {(isVisible ? "Opened" : "Closed")}");
     }
     #endregion
@@ -136,49 +227,83 @@ public class DebugSystem : MonoBehaviour
 
     private void DrawTabbedWindow(int windowID)
     {
-        // Tab buttons
-        GUILayout.BeginHorizontal();
-        for (int i = 0; i < debugPanels.Count; i++)
+        try
         {
-            bool isSelected = selectedTab == i;
-            GUI.backgroundColor = isSelected ? Color.yellow : Color.white;
-
-            if (GUILayout.Button(debugPanels[i].PanelName, GUILayout.Height(25)))
+            // Tab buttons
+            GUILayout.BeginHorizontal();
+            for (int i = 0; i < debugPanels.Count; i++)
             {
-                selectedTab = i;
+                bool isSelected = selectedTab == i;
+                
+                // Simplified tab button without theme initially
+                GUI.backgroundColor = isSelected ? Color.yellow : Color.white;
+                if (GUILayout.Button(debugPanels[i].PanelName, GUILayout.Height(25)))
+                {
+                    // Hide previously selected panel
+                    if (selectedTab >= 0 && selectedTab < debugPanels.Count)
+                    {
+                        debugPanels[selectedTab].OnHide();
+                    }
+                    
+                    selectedTab = i;
+                    
+                    // Show newly selected panel
+                    debugPanels[selectedTab].OnShow();
+                }
             }
+            GUI.backgroundColor = Color.white;
+            GUILayout.EndHorizontal();
+
+            GUILayout.Space(5);
+
+            // Selected panel content
+            if (selectedTab >= 0 && selectedTab < debugPanels.Count)
+            {
+                scrollPosition = GUILayout.BeginScrollView(scrollPosition, GUILayout.Height(windowSize.y - 100));
+                try
+                {
+                    debugPanels[selectedTab].DrawPanel();
+                }
+                catch (System.Exception e)
+                {
+                    GUILayout.Label($"Error in panel {debugPanels[selectedTab].PanelName}: {e.Message}");
+                    Debug.LogError($"Panel {debugPanels[selectedTab].PanelName} error: {e.Message}");
+                }
+                GUILayout.EndScrollView();
+            }
+            else
+            {
+                GUILayout.Label($"Invalid tab selection: {selectedTab}/{debugPanels.Count}");
+            }
+
+            // Bottom controls (simplified)
+            GUILayout.BeginHorizontal();
+            
+            // Display mode switcher
+            if (GUILayout.Button("Tabbed", GUILayout.Width(60)))
+                displayMode = DebugDisplayMode.Tabbed;
+            if (GUILayout.Button("Stacked", GUILayout.Width(60)))
+                displayMode = DebugDisplayMode.Stacked;
+            if (GUILayout.Button("Windows", GUILayout.Width(60)))
+                displayMode = DebugDisplayMode.Windowed;
+                
+            GUILayout.FlexibleSpace();
+            
+            // Simple theme toggle
+            if (GUILayout.Button("Toggle Theme", GUILayout.Width(100)))
+            {
+                DebugTheme.ToggleTheme();
+            }
+            
+            GUILayout.EndHorizontal();
+
+            GUI.DragWindow();
         }
-        GUI.backgroundColor = Color.white;
-        GUILayout.EndHorizontal();
-
-        GUILayout.Space(5);
-
-        // Selected panel content
-        if (selectedTab >= 0 && selectedTab < debugPanels.Count)
+        catch (System.Exception e)
         {
-            scrollPosition = GUILayout.BeginScrollView(scrollPosition, GUILayout.Height(windowSize.y - 100));
-            try
-            {
-                debugPanels[selectedTab].DrawPanel();
-            }
-            catch (System.Exception e)
-            {
-                GUILayout.Label($"Error in panel: {e.Message}");
-            }
-            GUILayout.EndScrollView();
+            GUILayout.Label($"DrawTabbedWindow Error: {e.Message}");
+            Debug.LogError($"DrawTabbedWindow error: {e.Message}\n{e.StackTrace}");
         }
-
-        // Display mode switcher
-        GUILayout.BeginHorizontal();
-        if (GUILayout.Button("Tabbed", GUILayout.Width(60)))
-            displayMode = DebugDisplayMode.Tabbed;
-        if (GUILayout.Button("Stacked", GUILayout.Width(60)))
-            displayMode = DebugDisplayMode.Stacked;
-        if (GUILayout.Button("Windows", GUILayout.Width(60)))
-            displayMode = DebugDisplayMode.Windowed;
-        GUILayout.EndHorizontal();
-
-        GUI.DragWindow();
     }
 
     private void DrawStackedInterface()
@@ -194,23 +319,30 @@ public class DebugSystem : MonoBehaviour
 
         foreach (var panel in debugPanels)
         {
-            GUILayout.BeginVertical(GUI.skin.box);
-            GUILayout.Label(panel.PanelName, GUI.skin.box);
-            panel.DrawPanel();
-            GUILayout.EndVertical();
-            GUILayout.Space(5);
+            DebugUIHelpers.DrawSection(panel.PanelName, () => {
+                panel.DrawPanel();
+            });
+            DebugUIHelpers.Space(5);
         }
 
         GUILayout.EndScrollView();
 
-        // Display mode switcher
+        // Bottom controls with theme toggle
         GUILayout.BeginHorizontal();
-        if (GUILayout.Button("Tabbed", GUILayout.Width(60)))
+        
+        // Display mode switcher
+        if (GUILayout.Button("Tabbed", DebugTheme.GetSmallButtonStyle(), GUILayout.Width(60)))
             displayMode = DebugDisplayMode.Tabbed;
-        if (GUILayout.Button("Stacked", GUILayout.Width(60)))
+        if (GUILayout.Button("Stacked", DebugTheme.GetSmallButtonStyle(), GUILayout.Width(60)))
             displayMode = DebugDisplayMode.Stacked;
-        if (GUILayout.Button("Windows", GUILayout.Width(60)))
+        if (GUILayout.Button("Windows", DebugTheme.GetSmallButtonStyle(), GUILayout.Width(60)))
             displayMode = DebugDisplayMode.Windowed;
+            
+        GUILayout.FlexibleSpace();
+        
+        // Theme toggle
+        DebugUIHelpers.DrawThemeToggle();
+        
         GUILayout.EndHorizontal();
 
         GUI.DragWindow();
@@ -230,18 +362,21 @@ public class DebugSystem : MonoBehaviour
             }, $"{panel.PanelName} - F12 to toggle");
         }
 
-        // Control panel
-        Rect controlRect = new Rect(10, Screen.height - 100, 220, 80);
+        // Control panel with theme integration
+        Rect controlRect = new Rect(10, Screen.height - 120, 250, 100);
         GUILayout.Window(1100, controlRect, (windowID) => {
-            GUILayout.Label("Debug System Control");
+            GUILayout.Label("Debug System Control", DebugTheme.GetHeaderStyle());
+            
             GUILayout.BeginHorizontal();
-            if (GUILayout.Button("Tabbed"))
+            if (GUILayout.Button("Tabbed", DebugTheme.GetSmallButtonStyle()))
                 displayMode = DebugDisplayMode.Tabbed;
-            if (GUILayout.Button("Stacked"))
+            if (GUILayout.Button("Stacked", DebugTheme.GetSmallButtonStyle()))
                 displayMode = DebugDisplayMode.Stacked;
-            if (GUILayout.Button("Windows"))
+            if (GUILayout.Button("Windows", DebugTheme.GetSmallButtonStyle()))
                 displayMode = DebugDisplayMode.Windowed;
             GUILayout.EndHorizontal();
+            
+            DebugUIHelpers.DrawThemeToggle();
         }, "Display Mode");
     }
     #endregion

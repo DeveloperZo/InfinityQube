@@ -75,3 +75,6 @@ crashlytics-build.properties
 
 
 /Assets/Layer Lab
+
+# Code Index MCP cache directory
+.code_indexer/

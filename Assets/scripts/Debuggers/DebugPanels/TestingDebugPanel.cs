@@ -24,12 +24,14 @@ public class TestingDebugPanel : DebugPanelBase
 
     public override void Initialize()
     {
+        base.Initialize(); // Initialize theme and performance systems
+        
         gridManager = GridManager.Instance ?? Object.FindObjectOfType<GridManager>();
         playerManager = Object.FindObjectOfType<PlayerManager>();
         waveManager = Object.FindObjectOfType<WaveManager>();
     }
 
-    public override void DrawPanel()
+    protected override void DrawPanelContent()
     {
         DrawSectionToggles();
         DebugUIHelpers.Space();
@@ -459,7 +461,7 @@ public class TestingDebugPanel : DebugPanelBase
             GUILayout.Label("Cross-Manager Testing Scenarios:");
             
             // Manager coordination tests
-            DebugUIHelpers.DrawButtonGrid(new[] {
+            DebugUIHelpers.DrawButtonGrid(new (string, System.Action)[] {
                 ("Stage + Wave Test", () => TestStageWaveCoordination()),
                 ("Player + Grid Test", () => TestPlayerGridInteraction()),
                 ("All Systems Test", () => TestAllSystemsIntegration())
@@ -483,7 +485,7 @@ public class TestingDebugPanel : DebugPanelBase
             
             // Quick system resets
             GUILayout.Label("System Resets:");
-            DebugUIHelpers.DrawButtonGrid(new[] {
+            DebugUIHelpers.DrawButtonGrid(new (string, System.Action)[] {
                 ("Reset All Stats", () => ResetAllSystemStats()),
                 ("Clear All Markers", () => ClearAllSystemMarkers()),
                 ("Reset to Clean State", () => ResetToCleanGameState())

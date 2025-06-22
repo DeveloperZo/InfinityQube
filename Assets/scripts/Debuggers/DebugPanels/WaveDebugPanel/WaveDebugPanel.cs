@@ -26,12 +26,13 @@ public class WaveDebugPanel : DebugPanelBase
 
     public override void Initialize()
     {
+        base.Initialize(); // Initialize theme and performance systems
+        
         // Find references
         waveManager = Object.FindObjectOfType<WaveManager>();
         gridManager = GridManager.Instance ?? Object.FindObjectOfType<GridManager>();
 
         // Initialize sub-panels
-
         waveLibraryPanel = new WaveLibraryDebug();
         waveLibraryPanel.Initialize(waveManager, gridManager);
 
@@ -43,7 +44,6 @@ public class WaveDebugPanel : DebugPanelBase
 
         cubeToolsPanel = new CubeToolsDebug();
         cubeToolsPanel.Initialize(waveManager, gridManager);
-
     }
 
     public override void Update()
@@ -52,10 +52,10 @@ public class WaveDebugPanel : DebugPanelBase
         waveLibraryPanel?.Update();
     }
 
-    public override void DrawPanel()
+    protected override void DrawPanelContent()
     {
         DrawSectionToggles();
-        GUILayout.Space(5);
+        DebugUIHelpers.Space(5);
 
         // Draw active panels
         if (showWaveLibrary)
@@ -69,8 +69,6 @@ public class WaveDebugPanel : DebugPanelBase
 
         if (showCubeTools)
             cubeToolsPanel?.DrawPanel(waveEditorPanel?.CurrentEditingWave, OnSyncToGrid, OnCubeAdded, OnCubeRemoved);
-
-
     }
     private void OnCubeAdded(Vector2Int gridPosition, CubeType cubeType)
     {
@@ -88,10 +86,23 @@ public class WaveDebugPanel : DebugPanelBase
     private void DrawSectionToggles()
     {
         GUILayout.BeginHorizontal();
-        showWaveLibrary = DebugUIHelpers.DrawToggleButton("Library", showWaveLibrary);
-        showWaveControls = DebugUIHelpers.DrawToggleButton("Controls", showWaveControls);
-        showWaveEditor = DebugUIHelpers.DrawToggleButton("Editor", showWaveEditor);
-        showCubeTools = DebugUIHelpers.DrawToggleButton("Cubes", showCubeTools);
+        
+        bool oldLibrary = showWaveLibrary;
+        bool oldControls = showWaveControls;
+        bool oldEditor = showWaveEditor;
+        bool oldCubes = showCubeTools;
+        
+        showWaveLibrary = DrawThemedToggle("Library", showWaveLibrary);
+        showWaveControls = DrawThemedToggle("Controls", showWaveControls);
+        showWaveEditor = DrawThemedToggle("Editor", showWaveEditor);
+        showCubeTools = DrawThemedToggle("Cubes", showCubeTools);
+        
+        // Mark dirty if any toggle changed
+        if (oldLibrary != showWaveLibrary || oldControls != showWaveControls ||
+            oldEditor != showWaveEditor || oldCubes != showCubeTools)
+        {
+            MarkDirty();
+        }
         
         GUILayout.EndHorizontal();
     }

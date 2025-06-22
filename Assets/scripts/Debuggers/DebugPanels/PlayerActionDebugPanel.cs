@@ -33,6 +33,8 @@ public class PlayerActionDebugPanel : DebugPanelBase
 
     public override void Initialize()
     {
+        base.Initialize(); // Initialize theme and performance systems
+        
         actionManager = Object.FindObjectOfType<PlayerActionManager>();
         playerManager = Object.FindObjectOfType<PlayerManager>();
         gridManager = GridManager.Instance;
@@ -51,7 +53,7 @@ public class PlayerActionDebugPanel : DebugPanelBase
         }
     }
 
-    public override void DrawPanel()
+    protected override void DrawPanelContent()
     {
         DrawSectionToggles();
         GUILayout.Space(5);
