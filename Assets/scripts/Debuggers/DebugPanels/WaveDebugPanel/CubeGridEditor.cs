@@ -483,7 +483,7 @@ namespace WaveDebugSystem
             {
                 type = type,
                 position = gridPos,
-                level = 1
+                level = 1,
             };
 
             cube.Init(gridManager, cubeData, 2f);

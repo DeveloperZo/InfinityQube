@@ -88,20 +88,12 @@ public class WaveDebugPanel : DebugPanelBase
     private void DrawSectionToggles()
     {
         GUILayout.BeginHorizontal();
-        showWaveLibrary = DrawToggleButton("Library", showWaveLibrary);
-        showWaveControls = DrawToggleButton("Controls", showWaveControls);
-        showWaveEditor = DrawToggleButton("Editor", showWaveEditor);
-        showCubeTools = DrawToggleButton("Cubes", showCubeTools);
+        showWaveLibrary = DebugUIHelpers.DrawToggleButton("Library", showWaveLibrary);
+        showWaveControls = DebugUIHelpers.DrawToggleButton("Controls", showWaveControls);
+        showWaveEditor = DebugUIHelpers.DrawToggleButton("Editor", showWaveEditor);
+        showCubeTools = DebugUIHelpers.DrawToggleButton("Cubes", showCubeTools);
         
         GUILayout.EndHorizontal();
-    }
-
-    private bool DrawToggleButton(string label, bool current)
-    {
-        GUI.backgroundColor = current ? Color.cyan : Color.white;
-        bool result = GUILayout.Button(label, GUILayout.Height(25));
-        GUI.backgroundColor = Color.white;
-        return result ? !current : current;
     }
 
     // Callback handlers for inter-panel communication

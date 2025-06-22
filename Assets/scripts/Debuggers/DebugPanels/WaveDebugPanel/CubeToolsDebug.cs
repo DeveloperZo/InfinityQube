@@ -79,8 +79,8 @@ namespace WaveDebugSystem
         {
             GUILayout.BeginHorizontal();
 
-            showGridEditor = DrawToggleButton("Grid Editor", showGridEditor);
-            showCubeInspector = DrawToggleButton("Inspector", showCubeInspector);
+            showGridEditor = DebugUIHelpers.DrawToggleButton("Grid Editor", showGridEditor);
+            showCubeInspector = DebugUIHelpers.DrawToggleButton("Inspector", showCubeInspector);
 
             // Quick access buttons
             if (GUILayout.Button("Focus Grid", GUILayout.Width(80)))
@@ -104,13 +104,7 @@ namespace WaveDebugSystem
             GUILayout.EndHorizontal();
         }
 
-        private bool DrawToggleButton(string label, bool current)
-        {
-            GUI.backgroundColor = current ? Color.cyan : Color.white;
-            bool result = GUILayout.Button(label, GUILayout.Height(25));
-            GUI.backgroundColor = Color.white;
-            return result ? !current : current;
-        }
+
 
         private void DrawStatusSummary()
         {

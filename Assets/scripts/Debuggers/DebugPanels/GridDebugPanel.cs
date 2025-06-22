@@ -62,19 +62,11 @@ public class GridDebugPanel : DebugPanelBase
     private void DrawSectionToggles()
     {
         GUILayout.BeginHorizontal();
-        showGridManagement = DrawToggleButton("Grid Mgmt", showGridManagement);
-        showTileManipulation = DrawToggleButton("Tile Edit", showTileManipulation);
-        showGridInspection = DrawToggleButton("Inspection", showGridInspection);
-        showGridOperations = DrawToggleButton("Operations", showGridOperations);
+        showGridManagement = DebugUIHelpers.DrawToggleButton("Grid Mgmt", showGridManagement);
+        showTileManipulation = DebugUIHelpers.DrawToggleButton("Tile Edit", showTileManipulation);
+        showGridInspection = DebugUIHelpers.DrawToggleButton("Inspection", showGridInspection);
+        showGridOperations = DebugUIHelpers.DrawToggleButton("Operations", showGridOperations);
         GUILayout.EndHorizontal();
-    }
-
-    private bool DrawToggleButton(string label, bool current)
-    {
-        GUI.backgroundColor = current ? Color.cyan : Color.white;
-        bool result = GUILayout.Button(label, GUILayout.Height(25));
-        GUI.backgroundColor = Color.white;
-        return result ? !current : current;
     }
 
     private void DrawGridManagementSection()

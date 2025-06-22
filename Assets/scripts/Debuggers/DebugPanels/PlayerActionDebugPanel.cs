@@ -65,19 +65,11 @@ public class PlayerActionDebugPanel : DebugPanelBase
     private void DrawSectionToggles()
     {
         GUILayout.BeginHorizontal();
-        showMarkerManagement = DrawToggleButton("Markers", showMarkerManagement);
-        showActionInspection = DrawToggleButton("Inspection", showActionInspection);
-        showMarkerTesting = DrawToggleButton("Testing", showMarkerTesting);
-        showActionOperations = DrawToggleButton("Operations", showActionOperations);
+        showMarkerManagement = DebugUIHelpers.DrawToggleButton("Markers", showMarkerManagement);
+        showActionInspection = DebugUIHelpers.DrawToggleButton("Inspection", showActionInspection);
+        showMarkerTesting = DebugUIHelpers.DrawToggleButton("Testing", showMarkerTesting);
+        showActionOperations = DebugUIHelpers.DrawToggleButton("Operations", showActionOperations);
         GUILayout.EndHorizontal();
-    }
-
-    private bool DrawToggleButton(string label, bool current)
-    {
-        GUI.backgroundColor = current ? Color.cyan : Color.white;
-        bool result = GUILayout.Button(label, GUILayout.Height(25));
-        GUI.backgroundColor = Color.white;
-        return result ? !current : current;
     }
 
     private void DrawMarkerManagementSection()

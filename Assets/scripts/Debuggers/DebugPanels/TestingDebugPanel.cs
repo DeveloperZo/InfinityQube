@@ -14,6 +14,7 @@ public class TestingDebugPanel : DebugPanelBase
     private bool showFacePainting = true;
     private bool showTestScenarios = true;
     private bool showAdvancedTests = false;
+    private bool showIntegrationTests = true;
 
     // Face Painting Controls
     private int selectedFaceStatus = 1; // 1 = Corrupted, 2 = Enhanced
@@ -31,28 +32,22 @@ public class TestingDebugPanel : DebugPanelBase
     public override void DrawPanel()
     {
         DrawSectionToggles();
-        GUILayout.Space(5);
+        DebugUIHelpers.Space();
 
         if (showFacePainting) DrawFacePaintingSection();
         if (showTestScenarios) DrawTestScenariosSection();
         if (showAdvancedTests) DrawAdvancedTestsSection();
+        if (showIntegrationTests) DrawIntegrationTestsSection();
     }
 
     private void DrawSectionToggles()
     {
         GUILayout.BeginHorizontal();
-        showFacePainting = DrawToggleButton("Face Paint", showFacePainting);
-        showTestScenarios = DrawToggleButton("Scenarios", showTestScenarios);
-        showAdvancedTests = DrawToggleButton("Advanced", showAdvancedTests);
+        showFacePainting = DebugUIHelpers.DrawToggleButton("Face Paint", showFacePainting);
+        showTestScenarios = DebugUIHelpers.DrawToggleButton("Scenarios", showTestScenarios);
+        showAdvancedTests = DebugUIHelpers.DrawToggleButton("Advanced", showAdvancedTests);
+        showIntegrationTests = DebugUIHelpers.DrawToggleButton("Integration", showIntegrationTests);
         GUILayout.EndHorizontal();
-    }
-
-    private bool DrawToggleButton(string label, bool current)
-    {
-        GUI.backgroundColor = current ? Color.cyan : Color.white;
-        bool result = GUILayout.Button(label, GUILayout.Height(25));
-        GUI.backgroundColor = Color.white;
-        return result ? !current : current;
     }
 
     private void DrawFacePaintingSection()
@@ -70,13 +65,8 @@ public class TestingDebugPanel : DebugPanelBase
         GUILayout.EndHorizontal();
 
         // Duration and trigger controls
-        GUILayout.BeginHorizontal();
-        GUILayout.Label("Duration:", GUILayout.Width(60));
-        string durationStr = GUILayout.TextField(facePaintDuration.ToString(), GUILayout.Width(40));
-        if (int.TryParse(durationStr, out int newDuration))
-            facePaintDuration = Mathf.Clamp(newDuration, -1, 10);
+        facePaintDuration = DebugUIHelpers.DrawIntField("Duration:", facePaintDuration, -1, 10);
         GUILayout.Label("(-1 = permanent)");
-        GUILayout.EndHorizontal();
 
         paintOnLanding = GUILayout.Toggle(paintOnLanding, "Paint on Landing");
         paintOnExit = GUILayout.Toggle(paintOnExit, "Paint on Exit");
@@ -461,5 +451,116 @@ public class TestingDebugPanel : DebugPanelBase
         var cubeData = new CubeData { type = cubeType, position = position, level = 1 };
         cube.Init(gridManager, cubeData, 2f);
         waveManager?.activeCubes.Add(cube);
+    }
+    
+    private void DrawIntegrationTestsSection()
+    {
+        DebugUIHelpers.DrawSection("INTEGRATION TESTS", () => {
+            GUILayout.Label("Cross-Manager Testing Scenarios:");
+            
+            // Manager coordination tests
+            DebugUIHelpers.DrawButtonGrid(new[] {
+                ("Stage + Wave Test", () => TestStageWaveCoordination()),
+                ("Player + Grid Test", () => TestPlayerGridInteraction()),
+                ("All Systems Test", () => TestAllSystemsIntegration())
+            });
+            
+            DebugUIHelpers.Space();
+            
+            // System health check
+            GUILayout.Label("System Health Check:");
+            var stageManager = Object.FindObjectOfType<StageManager>();
+            var waveManager = Object.FindObjectOfType<WaveManager>();
+            var playerManager = Object.FindObjectOfType<PlayerManager>();
+            var gridManager = GridManager.Instance;
+            
+            DebugUIHelpers.DrawStatusIndicator("Stage Manager", stageManager != null && stageManager.CurrentStage != null);
+            DebugUIHelpers.DrawStatusIndicator("Wave Manager", waveManager != null);
+            DebugUIHelpers.DrawStatusIndicator("Player Manager", playerManager != null && playerManager.IsAlive());
+            DebugUIHelpers.DrawStatusIndicator("Grid Manager", gridManager != null && gridManager.IsGridReady);
+            
+            DebugUIHelpers.Space();
+            
+            // Quick system resets
+            GUILayout.Label("System Resets:");
+            DebugUIHelpers.DrawButtonGrid(new[] {
+                ("Reset All Stats", () => ResetAllSystemStats()),
+                ("Clear All Markers", () => ClearAllSystemMarkers()),
+                ("Reset to Clean State", () => ResetToCleanGameState())
+            });
+        });
+    }
+    
+    private void TestStageWaveCoordination()
+    {
+        var stageManager = Object.FindObjectOfType<StageManager>();
+        
+        if (stageManager != null && waveManager != null)
+        {
+            Debug.Log("Testing Stage-Wave coordination...");
+            Debug.Log($"Current Stage: {stageManager.CurrentStageIndex}, Wave: {waveManager.CurrentWaveIndex}");
+            Debug.Log($"Stage in progress: {stageManager.IsStageInProgress}, Wave active: {waveManager.waveActive}");
+        }
+    }
+    
+    private void TestPlayerGridInteraction()
+    {
+        if (playerManager != null && gridManager != null)
+        {
+            Debug.Log("Testing Player-Grid interaction...");
+            var playerPos = playerManager.currentTilePosition;
+            var tile = gridManager.GetTileAt(playerPos.x, playerPos.y);
+            Debug.Log($"Player at ({playerPos.x}, {playerPos.y}), Tile playable: {tile?.IsPlayable}");
+        }
+    }
+    
+    private void TestAllSystemsIntegration()
+    {
+        Debug.Log("=== FULL SYSTEM INTEGRATION TEST ===");
+        
+        // Test all manager availability
+        var stageManager = Object.FindObjectOfType<StageManager>();
+        var actionManager = Object.FindObjectOfType<PlayerActionManager>();
+        
+        Debug.Log($"Managers Found: Stage={stageManager != null}, Wave={waveManager != null}, Player={playerManager != null}, Grid={gridManager != null}, Actions={actionManager != null}");
+        
+        if (stageManager?.CurrentStage != null)
+        {
+            Debug.Log($"Current gameplay state: Stage {stageManager.CurrentStageIndex} ({stageManager.CurrentStage.stageName})");
+        }
+        
+        // Test cross-system communication
+        IntegrationTestFullGameplay();
+    }
+    
+    private void ResetAllSystemStats()
+    {
+        playerManager?.ResetStatistics();
+        Debug.Log("Reset all player statistics");
+    }
+    
+    private void ClearAllSystemMarkers()
+    {
+        var actionManager = Object.FindObjectOfType<PlayerActionManager>();
+        
+        gridManager?.ClearAllMarkers();
+        actionManager?.ClearAllActions();
+        Debug.Log("Cleared all markers and actions");
+    }
+    
+    private void ResetToCleanGameState()
+    {
+        var stageManager = Object.FindObjectOfType<StageManager>();
+        
+        // Clear cubes
+        waveManager?.ClearAllCubes();
+        
+        // Reset markers and actions
+        ClearAllSystemMarkers();
+        
+        // Reset player stats
+        ResetAllSystemStats();
+        
+        Debug.Log("Reset to clean game state");
     }
 }

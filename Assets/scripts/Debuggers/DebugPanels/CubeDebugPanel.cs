@@ -68,19 +68,11 @@ public class CubeDebugPanel : DebugPanelBase
     private void DrawSectionToggles()
     {
         GUILayout.BeginHorizontal();
-        showFacePainter = DrawToggleButton("Face Painter", showFacePainter);
-        showActiveCubes = DrawToggleButton("Active Cubes", showActiveCubes);
-        showCubeInspector = DrawToggleButton("Inspector", showCubeInspector);
-        showReinforcedTests = DrawToggleButton("Reinforced", showReinforcedTests);
+        showFacePainter = DebugUIHelpers.DrawToggleButton("Face Painter", showFacePainter);
+        showActiveCubes = DebugUIHelpers.DrawToggleButton("Active Cubes", showActiveCubes);
+        showCubeInspector = DebugUIHelpers.DrawToggleButton("Inspector", showCubeInspector);
+        showReinforcedTests = DebugUIHelpers.DrawToggleButton("Reinforced", showReinforcedTests);
         GUILayout.EndHorizontal();
-    }
-
-    private bool DrawToggleButton(string label, bool current)
-    {
-        GUI.backgroundColor = current ? Color.cyan : Color.white;
-        bool result = GUILayout.Button(label, GUILayout.Height(25));
-        GUI.backgroundColor = Color.white;
-        return result ? !current : current;
     }
 
     private void DrawFacePainterSection()
@@ -104,24 +96,17 @@ public class CubeDebugPanel : DebugPanelBase
     {
         GUILayout.BeginHorizontal();
         autoTrackPlayer = GUILayout.Toggle(autoTrackPlayer, "Track Player");
+        GUILayout.EndHorizontal();
 
         if (!autoTrackPlayer)
         {
-            GUILayout.Label("X:", GUILayout.Width(15));
-            string xStr = GUILayout.TextField(targetPosition.x.ToString(), GUILayout.Width(30));
-            if (int.TryParse(xStr, out int newX))
-                targetPosition.x = Mathf.Clamp(newX, 0, gridManager?.Width - 1 ?? 10);
-
-            GUILayout.Label("Y:", GUILayout.Width(15));
-            string yStr = GUILayout.TextField(targetPosition.y.ToString(), GUILayout.Width(30));
-            if (int.TryParse(yStr, out int newY))
-                targetPosition.y = Mathf.Clamp(newY, 0, gridManager?.Height - 1 ?? 20);
+            targetPosition = DebugUIHelpers.DrawVector2IntField("Position:", targetPosition, 
+                0, gridManager?.Width - 1 ?? 10, 0, gridManager?.Height - 1 ?? 20);
         }
         else
         {
             GUILayout.Label($"Following: ({targetPosition.x}, {targetPosition.y})");
         }
-        GUILayout.EndHorizontal();
     }
 
     private void DrawFacePaintingSettings()
@@ -136,13 +121,8 @@ public class CubeDebugPanel : DebugPanelBase
         GUILayout.EndHorizontal();
 
         // Duration control
-        GUILayout.BeginHorizontal();
-        GUILayout.Label("Duration:", GUILayout.Width(60));
-        string durationStr = GUILayout.TextField(paintDuration.ToString(), GUILayout.Width(40));
-        if (int.TryParse(durationStr, out int newDuration))
-            paintDuration = Mathf.Clamp(newDuration, -1, 20);
+        paintDuration = DebugUIHelpers.DrawIntField("Duration:", paintDuration, -1, 20);
         GUILayout.Label("(-1 = permanent)");
-        GUILayout.EndHorizontal();
     }
 
     private void DrawFacePaintingActions()
@@ -234,14 +214,9 @@ public class CubeDebugPanel : DebugPanelBase
         }
 
         // Controls
-        GUILayout.BeginHorizontal();
         GUILayout.Label($"Found: {allCubes.Count} cubes");
-
-        string maxStr = GUILayout.TextField(maxCubesToShow.ToString(), GUILayout.Width(40));
-        if (int.TryParse(maxStr, out int newMax))
-            maxCubesToShow = Mathf.Clamp(newMax, 1, 20);
-        GUILayout.Label("shown");
-
+        maxCubesToShow = DebugUIHelpers.DrawIntField("Show:", maxCubesToShow, 1, 20);
+        
         if (GUILayout.Button("Clear All Faces"))
         {
             foreach (var cube in allCubes)
@@ -249,7 +224,6 @@ public class CubeDebugPanel : DebugPanelBase
                 cube.ClearAllFaces();
             }
         }
-        GUILayout.EndHorizontal();
 
         // Cube list
         activeCubesScroll = GUILayout.BeginScrollView(activeCubesScroll, GUILayout.MaxHeight(300));

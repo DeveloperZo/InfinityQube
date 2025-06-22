@@ -89,14 +89,24 @@ public class DebugSystem : MonoBehaviour
     #region Initialization
     private void InitializeDebugPanels()
     {
-
-        // Register all debug panels
-        RegisterPanel(new WaveDebugPanel());
-        RegisterPanel(new CubeDebugPanel());
-        RegisterPanel(new GridDebugPanel());
-        RegisterPanel(new PlayerActionDebugPanel());
-
-
+        // Register debug panels in gameplay-focused order:
+        // 1. Overall game state and progression
+        RegisterPanel(new GameplayDebugPanel());  // StageManager + overall game state
+        
+        // 2. Wave system - core gameplay loop
+        RegisterPanel(new WaveDebugPanel());      // WaveManager - wave control, cube spawning
+        
+        // 3. Grid and environment
+        RegisterPanel(new GridDebugPanel());      // GridManager - grid state, tiles, markers
+        
+        // 4. Player and actions coordination
+        RegisterPanel(new PlayerActionDebugPanel()); // PlayerActionManager + PlayerManager
+        
+        // 5. Cube behavior and interactions
+        RegisterPanel(new CubeDebugPanel());      // CubeManager - cube behavior, face painting
+        
+        // 6. Cross-system testing and scenarios
+        RegisterPanel(new TestingDebugPanel());   // Integration testing, scenarios
     }
 
     private void RegisterPanel(IDebugPanel panel)
