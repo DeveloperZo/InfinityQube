@@ -55,8 +55,8 @@ A grid-based tactical puzzle game where players strategically place markers to i
 |------|------------|-----------------|
 | **Normal** | Capturable, basic scoring | Safe interaction, foundational gameplay |
 | **Blue** | Capturable, generates cube markers | High value, creates detonation resources |
-| **Black** | Uncapturable, lethal to player | Absolute threat, forces repositioning |
-| **Reinforced** | Multi-hit requirement | High durability, resource optimization challenge |
+| **Black** | Uncapturable | Absolute threat, forces repositioning |
+| **Reinforced** | Capturable, Multi-hit requirement | High durability, resource optimization challenge |
 
 #### **Wave Management (WaveManager)**
 - Manual wave initiation with step-based cube advancement

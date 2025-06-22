@@ -98,7 +98,54 @@ public class CubeManager : MonoBehaviour
 
     private void UpdateDamageVisual()
     {
-        // Damage visual implementation
+        // Only apply damage visuals to reinforced cubes
+        if (type != CubeType.Reinforced) return;
+
+        // Calculate damage ratio (1.0 = full health, 0.0 = destroyed)
+        float damageRatio = maxHitPoints > 0 ? (float)currentHitPoints / maxHitPoints : 1.0f;
+
+        // Apply scale effect - cube shrinks as it takes damage
+        float scaleMultiplier = Mathf.Lerp(0.85f, 1.0f, damageRatio);
+        Vector3 targetScale = Vector3.one * tileSize * scaleMultiplier;
+        
+        // Only modify scale if not currently animating movement
+        if (!isMoving)
+        {
+            transform.localScale = targetScale;
+        }
+
+        // Apply damage material effect only when damaged
+        if (damageRatio < 1.0f)
+        {
+            Renderer cubeRenderer = GetComponent<Renderer>();
+            if (cubeRenderer != null)
+            {
+                // Create new material based on original
+                Material damagedMaterial = new Material(material != null ? material : cubeRenderer.material);
+                
+                // Lerp between gray (damaged) and original color based on damage ratio
+                Color originalColor = material != null ? material.color : Color.white;
+                Color damagedColor = Color.Lerp(Color.gray, originalColor, damageRatio);
+                damagedMaterial.color = damagedColor;
+                
+                // Slightly reduce metallic and smoothness to show wear
+                damagedMaterial.SetFloat("_Metallic", Mathf.Lerp(0.1f, 0.5f, damageRatio));
+                damagedMaterial.SetFloat("_Smoothness", Mathf.Lerp(0.2f, 0.8f, damageRatio));
+                
+                cubeRenderer.material = damagedMaterial;
+                
+                Debug.Log($"Reinforced cube at ({position.x}, {position.y}) visual damage updated: {damageRatio:F2} health ratio");
+            }
+        }
+        else if (material != null)
+        {
+            // Restore original material when at full health
+            Renderer cubeRenderer = GetComponent<Renderer>();
+            if (cubeRenderer != null)
+            {
+                cubeRenderer.material = material;
+            }
+        }
     }
 
     private void SetupPhysics()

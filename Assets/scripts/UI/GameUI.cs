@@ -120,7 +120,7 @@ public class GameUI : MonoBehaviour
             DrawTipsPanel();
         }
 
-        DrawStatusInfo();
+        //DrawStatusInfo();
         DrawToggleHint();
     }
 

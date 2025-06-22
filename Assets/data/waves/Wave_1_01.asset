@@ -51,8 +51,8 @@ MonoBehaviour:
   maxIndividualMarkerCount: 10
   maxAreaMarkerCharge: 2
   maxAreaMarkerCount: 5
-  waveStartDelay: 0.8
-  moveInterval: 2
+  waveStartDelay: 1.5
+  moveInterval: 2.5
   fastMoveInterval: 0.1
   hasOwnSuccessCriteria: 0
   requiredCaptureCount: 0

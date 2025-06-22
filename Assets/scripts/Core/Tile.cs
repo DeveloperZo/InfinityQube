@@ -359,10 +359,43 @@ public class Tile : MonoBehaviour
 
                 Destroy(cubeToProcess.gameObject);
                 break;
+
+            case Enumerations.CubeType.Reinforced:
+                HandleReinforcedCube(cubeToProcess);
+                break;
         }
 
         // Clear cube reference after processing
         currentCube = null;
+    }
+
+    private void HandleReinforcedCube(CubeManager cube)
+    {
+        if (cube == null) return;
+
+        // Apply damage to the reinforced cube
+        bool wasDestroyed = cube.TakeDamage();
+        
+        if (wasDestroyed)
+        {
+            // Cube was destroyed - handle like a successful capture
+            Debug.Log($"Reinforced cube destroyed at ({x}, {y}) after taking damage");
+            NotifyPlayerCubeCapture(Enumerations.CubeType.Reinforced);
+            
+            // Notify WaveManager for statistics and wave completion tracking
+            WaveManager waveManager = FindObjectOfType<WaveManager>();
+            if (waveManager != null)
+            {
+                waveManager.OnNonBlackCubeProcessed(Enumerations.CubeType.Reinforced, true);
+            }
+            
+            Destroy(cube.gameObject);
+        }
+        else
+        {
+            // Cube survived the damage - log current status
+            Debug.Log($"Reinforced cube damaged at ({x}, {y}), HP: {cube.currentHitPoints}/{cube.maxHitPoints}");
+        }
     }
 
     private IEnumerator ResetMarkerAfterDelay(float delay)
