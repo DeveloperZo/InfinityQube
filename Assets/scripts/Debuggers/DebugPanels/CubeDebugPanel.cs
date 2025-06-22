@@ -15,6 +15,7 @@ public class CubeDebugPanel : DebugPanelBase
     private bool showFacePainter = true;
     private bool showActiveCubes = true;
     private bool showCubeInspector = false;
+    private bool showReinforcedTests = false;
     private Vector2 activeCubesScroll;
     private Vector2 inspectorScroll;
 
@@ -61,6 +62,7 @@ public class CubeDebugPanel : DebugPanelBase
         if (showFacePainter) DrawFacePainterSection();
         if (showActiveCubes) DrawActiveCubesSection();
         if (showCubeInspector && selectedCube != null) DrawCubeInspectorSection();
+        if (showReinforcedTests) DrawReinforcedTestsSection();
     }
 
     private void DrawSectionToggles()
@@ -69,6 +71,7 @@ public class CubeDebugPanel : DebugPanelBase
         showFacePainter = DrawToggleButton("Face Painter", showFacePainter);
         showActiveCubes = DrawToggleButton("Active Cubes", showActiveCubes);
         showCubeInspector = DrawToggleButton("Inspector", showCubeInspector);
+        showReinforcedTests = DrawToggleButton("Reinforced", showReinforcedTests);
         GUILayout.EndHorizontal();
     }
 
@@ -599,6 +602,12 @@ public class CubeDebugPanel : DebugPanelBase
             }
         }
         GUILayout.EndHorizontal();
+
+        // Reinforced cube specific controls
+        if (selectedCube.type == CubeType.Reinforced)
+        {
+            DrawReinforcedCubeControls();
+        }
     }
 
     // Helper methods
@@ -653,6 +662,309 @@ public class CubeDebugPanel : DebugPanelBase
             }
         }
         return cubes;
+    }
+
+    private void DrawReinforcedTestsSection()
+    {
+        GUILayout.BeginVertical(GUI.skin.box);
+        GUILayout.Label("REINFORCED CUBE TESTING", GUI.skin.box);
+
+        // Quick spawning controls
+        GUILayout.Label("Quick Spawn Controls:", GUI.skin.box);
+        GUILayout.BeginHorizontal();
+        if (GUILayout.Button("Spawn at Player"))
+        {
+            SpawnReinforcedCubeAtPlayer();
+        }
+        if (GUILayout.Button("Spawn Multiple"))
+        {
+            SpawnMultipleReinforcedCubes();
+        }
+        GUILayout.EndHorizontal();
+
+        GUILayout.Space(5);
+
+        // Multi-hit simulation
+        GUILayout.Label("Multi-Hit Simulation:", GUI.skin.box);
+        GUILayout.BeginHorizontal();
+        if (GUILayout.Button("1 Hit Test"))
+        {
+            SimulateMultiHitSequence(1);
+        }
+        if (GUILayout.Button("2 Hit Test"))
+        {
+            SimulateMultiHitSequence(2);
+        }
+        if (GUILayout.Button("3 Hit Test"))
+        {
+            SimulateMultiHitSequence(3);
+        }
+        GUILayout.EndHorizontal();
+
+        GUILayout.Space(5);
+
+        // Visual feedback testing
+        GUILayout.Label("Visual Feedback Testing:", GUI.skin.box);
+        GUILayout.BeginHorizontal();
+        if (GUILayout.Button("Test All Damage States"))
+        {
+            TestAllDamageStates();
+        }
+        if (GUILayout.Button("Force Visual Update"))
+        {
+            ForceVisualUpdateOnAll();
+        }
+        GUILayout.EndHorizontal();
+
+        GUILayout.Space(5);
+
+        // Show current reinforced cubes
+        DrawCurrentReinforcedCubes();
+
+        GUILayout.EndVertical();
+    }
+
+    private void DrawReinforcedCubeControls()
+    {
+        GUILayout.Space(5);
+        GUILayout.Label("Reinforced Cube Controls:", GUI.skin.box);
+
+        // Display current HP with color coding
+        float hpRatio = (float)selectedCube.currentHitPoints / selectedCube.maxHitPoints;
+        Color hpColor = Color.green;
+        if (hpRatio <= 0.33f) hpColor = Color.red;
+        else if (hpRatio <= 0.66f) hpColor = Color.yellow;
+
+        GUI.color = hpColor;
+        GUILayout.Label($"HP: {selectedCube.currentHitPoints}/{selectedCube.maxHitPoints}");
+        GUI.color = Color.white;
+
+        // Direct HP manipulation
+        GUILayout.Label("Set HP Directly:");
+        GUILayout.BeginHorizontal();
+        if (GUILayout.Button("1 HP", GUILayout.Width(50)))
+        {
+            SetCubeHP(selectedCube, 1);
+        }
+        if (GUILayout.Button("2 HP", GUILayout.Width(50)))
+        {
+            SetCubeHP(selectedCube, 2);
+        }
+        if (GUILayout.Button("3 HP", GUILayout.Width(50)))
+        {
+            SetCubeHP(selectedCube, 3);
+        }
+        if (GUILayout.Button("Full", GUILayout.Width(50)))
+        {
+            SetCubeHP(selectedCube, selectedCube.maxHitPoints);
+        }
+        GUILayout.EndHorizontal();
+
+        // Force visual update
+        if (GUILayout.Button("Force Visual Update"))
+        {
+            ForceVisualUpdate(selectedCube);
+        }
+    }
+
+    private void DrawCurrentReinforcedCubes()
+    {
+        GUILayout.Label("Current Reinforced Cubes:", GUI.skin.box);
+
+        var reinforcedCubes = Object.FindObjectsOfType<CubeManager>()
+            .Where(c => c != null && !c.isDestroyed && c.type == CubeType.Reinforced)
+            .OrderBy(c => c.position.y)
+            .ThenBy(c => c.position.x)
+            .ToList();
+
+        if (reinforcedCubes.Count == 0)
+        {
+            GUILayout.Label("No reinforced cubes found");
+            return;
+        }
+
+        foreach (var cube in reinforcedCubes.Take(3)) // Show max 3 for UI space
+        {
+            GUILayout.BeginVertical(GUI.skin.box);
+
+            // HP display with color coding
+            float hpRatio = (float)cube.currentHitPoints / cube.maxHitPoints;
+            Color hpColor = Color.green;
+            if (hpRatio <= 0.33f) hpColor = Color.red;
+            else if (hpRatio <= 0.66f) hpColor = Color.yellow;
+
+            GUILayout.BeginHorizontal();
+            GUILayout.Label($"({cube.position.x},{cube.position.y})", GUILayout.Width(60));
+            
+            GUI.color = hpColor;
+            GUILayout.Label($"HP: {cube.currentHitPoints}/{cube.maxHitPoints}", GUILayout.Width(70));
+            GUI.color = Color.white;
+
+            if (GUILayout.Button("Select", GUILayout.Width(50)))
+            {
+                selectedCube = cube;
+                showCubeInspector = true;
+            }
+            GUILayout.EndHorizontal();
+
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button("-1", GUILayout.Width(30)))
+            {
+                cube.TakeDamage(1);
+            }
+            if (GUILayout.Button("1HP", GUILayout.Width(35)))
+            {
+                SetCubeHP(cube, 1);
+            }
+            if (GUILayout.Button("2HP", GUILayout.Width(35)))
+            {
+                SetCubeHP(cube, 2);
+            }
+            if (GUILayout.Button("3HP", GUILayout.Width(35)))
+            {
+                SetCubeHP(cube, 3);
+            }
+            GUILayout.EndHorizontal();
+
+            GUILayout.EndVertical();
+        }
+
+        if (reinforcedCubes.Count > 3)
+        {
+            GUILayout.Label($"... and {reinforcedCubes.Count - 3} more");
+        }
+    }
+
+    private void SpawnReinforcedCubeAtPlayer()
+    {
+        if (playerManager == null) return;
+
+        Vector2Int playerPos = playerManager.currentTilePosition;
+        Vector2Int spawnPos = new Vector2Int(playerPos.x, playerPos.y + 2); // Spawn slightly ahead
+        
+        SpawnCubeAt(spawnPos, CubeType.Reinforced);
+        Debug.Log($"Spawned reinforced cube at ({spawnPos.x}, {spawnPos.y})");
+    }
+
+    private void SpawnMultipleReinforcedCubes()
+    {
+        if (playerManager == null) return;
+
+        Vector2Int playerPos = playerManager.currentTilePosition;
+        
+        // Spawn 3 reinforced cubes in a line
+        for (int i = 0; i < 3; i++)
+        {
+            Vector2Int spawnPos = new Vector2Int(playerPos.x + i - 1, playerPos.y + 3);
+            SpawnCubeAt(spawnPos, CubeType.Reinforced);
+        }
+        
+        Debug.Log($"Spawned 3 reinforced cubes near player position");
+    }
+
+    private void SimulateMultiHitSequence(int hitCount)
+    {
+        var reinforcedCubes = Object.FindObjectsOfType<CubeManager>()
+            .Where(c => c != null && !c.isDestroyed && c.type == CubeType.Reinforced)
+            .ToList();
+
+        if (reinforcedCubes.Count == 0)
+        {
+            Debug.Log("No reinforced cubes found for multi-hit simulation");
+            return;
+        }
+
+        foreach (var cube in reinforcedCubes)
+        {
+            // Reset to full HP first
+            SetCubeHP(cube, cube.maxHitPoints);
+            
+            // Apply specified number of hits
+            for (int i = 0; i < hitCount; i++)
+            {
+                bool destroyed = cube.TakeDamage(1);
+                if (destroyed) break;
+            }
+            
+            Debug.Log($"Applied {hitCount} hits to reinforced cube at ({cube.position.x},{cube.position.y})");
+        }
+    }
+
+    private void TestAllDamageStates()
+    {
+        var reinforcedCubes = Object.FindObjectsOfType<CubeManager>()
+            .Where(c => c != null && !c.isDestroyed && c.type == CubeType.Reinforced)
+            .ToList();
+
+        if (reinforcedCubes.Count == 0)
+        {
+            Debug.Log("No reinforced cubes found for damage state testing");
+            return;
+        }
+
+        // Test different damage states
+        for (int i = 0; i < reinforcedCubes.Count && i < 3; i++)
+        {
+            var cube = reinforcedCubes[i];
+            int targetHP = 3 - i; // 3, 2, 1 HP respectively
+            SetCubeHP(cube, targetHP);
+            ForceVisualUpdate(cube);
+        }
+        
+        Debug.Log("Set reinforced cubes to different damage states for visual testing");
+    }
+
+    private void ForceVisualUpdateOnAll()
+    {
+        var reinforcedCubes = Object.FindObjectsOfType<CubeManager>()
+            .Where(c => c != null && !c.isDestroyed && c.type == CubeType.Reinforced)
+            .ToList();
+
+        foreach (var cube in reinforcedCubes)
+        {
+            ForceVisualUpdate(cube);
+        }
+        
+        Debug.Log($"Forced visual update on {reinforcedCubes.Count} reinforced cubes");
+    }
+
+    private void SetCubeHP(CubeManager cube, int hp)
+    {
+        if (cube == null || cube.type != CubeType.Reinforced) return;
+        
+        cube.currentHitPoints = Mathf.Clamp(hp, 1, cube.maxHitPoints);
+        ForceVisualUpdate(cube);
+        Debug.Log($"Set reinforced cube HP to {cube.currentHitPoints}/{cube.maxHitPoints}");
+    }
+
+    private void ForceVisualUpdate(CubeManager cube)
+    {
+        if (cube == null || cube.type != CubeType.Reinforced) return;
+        
+        // Force call to UpdateDamageVisual
+        cube.UpdateDamageVisual();
+    }
+
+    private void SpawnCubeAt(Vector2Int position, CubeType cubeType)
+    {
+        var waveManager = Object.FindObjectOfType<WaveManager>();
+        if (waveManager?.cubePrefabs == null || (int)cubeType >= waveManager.cubePrefabs.Length) 
+        {
+            Debug.LogError("Cannot spawn cube: WaveManager or prefabs not found");
+            return;
+        }
+
+        Vector3 worldPos = gridManager.GridToWorldPosition(position.x, position.y, 2f);
+        GameObject cubeObj = Object.Instantiate(waveManager.cubePrefabs[(int)cubeType], worldPos, Quaternion.identity);
+
+        var cube = cubeObj.GetComponent<CubeManager>();
+        if (cube == null) cube = cubeObj.AddComponent<CubeManager>();
+
+        var cubeData = new CubeData { type = cubeType, position = position, level = 1 };
+        cube.Init(gridManager, cubeData, 2f);
+        waveManager.activeCubes.Add(cube);
+        
+        Debug.Log($"Spawned {cubeType} cube at ({position.x}, {position.y})");
     }
 
     private Color GetCubeColor(CubeType type)

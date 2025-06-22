@@ -63,6 +63,19 @@ public class CubeManager : MonoBehaviour
         material = cubeData.Definition?.material;
         prefab = cubeData.Definition?.prefab;
 
+        // Add fallback material assignment for debug-spawned cubes
+        if (material == null && grid != null)
+        {
+            material = grid.GetCubeTypeMaterial(type);
+            Debug.Log($"Used fallback material for {type} cube from GridManager");
+        }
+        
+        // Final check and warning if material is still null
+        if (material == null)
+        {
+            Debug.LogWarning($"No material found for {type} cube - visual effects may not work correctly");
+        }
+
         transform.localScale = new Vector3(tileSize, tileSize, tileSize);
 
         Vector3 worldPos = grid.GridToWorldPosition(position.x, position.y, spawnHeight);
@@ -96,7 +109,7 @@ public class CubeManager : MonoBehaviour
         return false;
     }
 
-    private void UpdateDamageVisual()
+    public void UpdateDamageVisual()
     {
         // Only apply damage visuals to reinforced cubes
         if (type != CubeType.Reinforced) return;

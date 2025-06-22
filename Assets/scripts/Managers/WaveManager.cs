@@ -59,6 +59,7 @@ public class WaveManager : MonoBehaviour
     // Statistics
     private int normalCubesCaptured = 0;
     private int blueCubesCaptured = 0;
+    private int reinforcedCubesCaptured = 0;
     private int cubesEscaped = 0;
     private int markersPlaced = 0;
     private int detonationsUsed = 0;
@@ -464,6 +465,7 @@ public class WaveManager : MonoBehaviour
         {
             case Enumerations.CubeType.Normal: normalCubesCaptured++; break;
             case Enumerations.CubeType.Blue: blueCubesCaptured++; break;
+            case Enumerations.CubeType.Reinforced: reinforcedCubesCaptured++; break;
         }
 
         NotifyStageManager(sm => sm.OnCubeCaptured(cubeType));
@@ -586,6 +588,7 @@ public class WaveManager : MonoBehaviour
     {
         normalCubesCaptured = 0;
         blueCubesCaptured = 0;
+        reinforcedCubesCaptured = 0;
         cubesEscaped = 0;
         markersPlaced = 0;
         detonationsUsed = 0;

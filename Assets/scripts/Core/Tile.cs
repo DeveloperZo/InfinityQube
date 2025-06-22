@@ -477,7 +477,17 @@ public class Tile : MonoBehaviour
 
     private void NotifyPlayerCubeCapture(Enumerations.CubeType cubeType)
     {
-        // Implementation for notifying capture events
+        // Find WaveManager and notify of cube capture
+        WaveManager waveManager = FindObjectOfType<WaveManager>();
+        if (waveManager != null)
+        {
+            waveManager.OnCubeCaptured(cubeType);
+            Debug.Log($"Tile ({x},{y}): Notified cube capture of type {cubeType}");
+        }
+        else
+        {
+            Debug.LogWarning($"Tile ({x},{y}): WaveManager not found for cube capture notification");
+        }
     }
 
     public void SetPlayerHover(bool isHovering)
