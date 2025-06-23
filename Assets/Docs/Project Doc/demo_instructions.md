@@ -16,6 +16,7 @@
 
 **Wave Control:**
 - **ENTER**: Start the next wave when you're ready to face new challenges
+- **K**: Skip dialogue and tutorial messages
 
 ## Your Mission
 
