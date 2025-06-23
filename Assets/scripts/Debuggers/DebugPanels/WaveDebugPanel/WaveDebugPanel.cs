@@ -23,6 +23,10 @@ public class WaveDebugPanel : DebugPanelBase
     private bool showWaveEditor = true;
     private bool showCubeTools = true;
     private bool showWaveLibrary = true;
+    
+    // Fast Testing Mode
+    private bool fastTestingMode = false;
+    private bool previousMessageState = true;
 
     public override void Initialize()
     {
@@ -54,6 +58,7 @@ public class WaveDebugPanel : DebugPanelBase
 
     protected override void DrawPanelContent()
     {
+        DrawFastTestingControls();
         DrawSectionToggles();
         DebugUIHelpers.Space(5);
 
@@ -69,6 +74,36 @@ public class WaveDebugPanel : DebugPanelBase
 
         if (showCubeTools)
             cubeToolsPanel?.DrawPanel(waveEditorPanel?.CurrentEditingWave, OnSyncToGrid, OnCubeAdded, OnCubeRemoved);
+    }
+
+    private void DrawFastTestingControls()
+    {
+        GUILayout.BeginHorizontal(GUI.skin.box);
+        GUILayout.Label("🚀 FAST TESTING MODE", GUILayout.Width(140));
+        
+        bool newFastTestingMode = DebugUIHelpers.DrawToggleButton("Fast Testing", fastTestingMode, Color.yellow);
+        if (newFastTestingMode != fastTestingMode)
+        {
+            SetFastTestingMode(newFastTestingMode);
+        }
+        
+        if (fastTestingMode)
+        {
+            GUILayout.Label("(Messages Disabled)", GUILayout.Width(100));
+            
+            if (GUILayout.Button("Batch Test All", GUILayout.Width(100)))
+            {
+                BatchTestAllWaves();
+            }
+            
+            if (GUILayout.Button("Quick Validate", GUILayout.Width(100)))
+            {
+                QuickValidateCurrentWave();
+            }
+        }
+        
+        GUILayout.EndHorizontal();
+        DebugUIHelpers.Space(3);
     }
     private void OnCubeAdded(Vector2Int gridPosition, CubeType cubeType)
     {
@@ -217,6 +252,125 @@ public class WaveDebugPanel : DebugPanelBase
     public void RefreshWaveLibrary()
     {
         waveLibraryPanel?.ForceRefresh();
+    }
+
+    // Fast Testing Mode Methods
+    private void SetFastTestingMode(bool enabled)
+    {
+        fastTestingMode = enabled;
+        
+        if (waveManager != null)
+        {
+            if (enabled)
+            {
+                // Store current message state and disable messages
+                previousMessageState = waveManager.showMessages;
+                waveManager.showMessages = false;
+                Debug.Log("🚀 Fast Testing Mode ENABLED - Messages disabled for rapid testing");
+            }
+            else
+            {
+                // Restore previous message state
+                waveManager.showMessages = previousMessageState;
+                Debug.Log("🚀 Fast Testing Mode DISABLED - Messages restored");
+            }
+        }
+    }
+
+    private void BatchTestAllWaves()
+    {
+        if (waveLibraryPanel == null)
+        {
+            Debug.LogWarning("Wave library not available for batch testing");
+            return;
+        }
+
+        var availableWaves = waveLibraryPanel.GetAvailableWaves();
+        if (availableWaves == null || availableWaves.Count == 0)
+        {
+            Debug.LogWarning("No waves available for batch testing");
+            return;
+        }
+
+        Debug.Log($"🧪 Starting batch test of {availableWaves.Count} waves...");
+        
+        int validWaves = 0;
+        int invalidWaves = 0;
+        
+        foreach (var wave in availableWaves)
+        {
+            if (ValidateWave(wave))
+            {
+                validWaves++;
+                Debug.Log($"✅ Wave '{wave.name}' is valid");
+            }
+            else
+            {
+                invalidWaves++;
+                Debug.LogWarning($"❌ Wave '{wave.name}' has issues");
+            }
+        }
+        
+        Debug.Log($"🧪 Batch test complete: {validWaves} valid, {invalidWaves} invalid waves");
+    }
+
+    private void QuickValidateCurrentWave()
+    {
+        var currentWave = waveEditorPanel?.CurrentEditingWave;
+        if (currentWave == null)
+        {
+            Debug.LogWarning("No current wave to validate");
+            return;
+        }
+
+        if (ValidateWave(currentWave))
+        {
+            Debug.Log($"✅ Wave '{currentWave.name}' validation passed");
+        }
+        else
+        {
+            Debug.LogWarning($"❌ Wave '{currentWave.name}' validation failed");
+        }
+    }
+
+    private bool ValidateWave(WaveData wave)
+    {
+        if (wave == null) return false;
+        
+        // Check basic properties
+        if (string.IsNullOrEmpty(wave.name))
+        {
+            Debug.LogError($"Wave has no name");
+            return false;
+        }
+        
+        if (wave.GridWidth <= 0 || wave.GridHeight <= 0)
+        {
+            Debug.LogError($"Wave '{wave.name}' has invalid dimensions: {wave.GridWidth}x{wave.GridHeight}");
+            return false;
+        }
+        
+        if (wave.moveInterval <= 0 || wave.fastMoveInterval <= 0)
+        {
+            Debug.LogError($"Wave '{wave.name}' has invalid timing intervals");
+            return false;
+        }
+        
+        // Check cube data validity
+        if (wave.CubesData != null)
+        {
+            foreach (var cube in wave.CubesData)
+            {
+                if (cube.position.x < 0 || cube.position.x >= wave.GridWidth ||
+                    cube.position.y < 0 || cube.position.y >= wave.GridHeight)
+                {
+                    Debug.LogError($"Wave '{wave.name}' has cube at invalid position: ({cube.position.x}, {cube.position.y})");
+                    return false;
+                }
+            }
+        }
+        
+        return true;
     }
 }
 

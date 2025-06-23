@@ -120,6 +120,16 @@ namespace WaveDebugSystem
             if (GUILayout.Button("Create Template"))
                 CreateTemplateWaves();
             GUILayout.EndHorizontal();
+            
+            // Fast Testing Mode enhancements
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button("Load All to Manager", GUILayout.Width(120)))
+                LoadAllWavesToManager();
+            if (GUILayout.Button("Quick Save All", GUILayout.Width(100)))
+                QuickSaveCurrentConfiguration();
+            if (GUILayout.Button("Test Sequence", GUILayout.Width(100)))
+                TestWaveSequence();
+            GUILayout.EndHorizontal();
         }
 
         private void RefreshAvailableWaves()
@@ -280,5 +290,89 @@ namespace WaveDebugSystem
         }
 
         public List<WaveData> GetAvailableWaves() => availableWaves;
+
+        // Fast Testing Mode enhancements
+        private void LoadAllWavesToManager()
+        {
+            if (waveManager == null || availableWaves.Count == 0)
+            {
+                Debug.LogWarning("Cannot load waves - missing manager or no waves available");
+                return;
+            }
+
+            waveManager.waveConfiguration.Clear();
+            
+            foreach (var wave in availableWaves)
+            {
+                if (wave != null)
+                {
+                    var waveCopy = Object.Instantiate(wave);
+                    waveManager.waveConfiguration.Add(waveCopy);
+                }
+            }
+
+            waveManager.useWaveConfiguration = true;
+            waveManager.currentWaveIndex = 0;
+            
+            Debug.Log($"🚀 Loaded {availableWaves.Count} waves to manager for batch testing");
+        }
+
+        private void QuickSaveCurrentConfiguration()
+        {
+            if (waveManager?.waveConfiguration == null || waveManager.waveConfiguration.Count == 0)
+            {
+                Debug.LogWarning("No wave configuration to save");
+                return;
+            }
+
+#if UNITY_EDITOR
+            string configPath = "Assets/data/waves/QuickSave_Config";
+            
+            // Ensure directory exists
+            if (!UnityEditor.AssetDatabase.IsValidFolder("Assets/data/waves"))
+            {
+                UnityEditor.AssetDatabase.CreateFolder("Assets/data", "waves");
+            }
+
+            int savedCount = 0;
+            for (int i = 0; i < waveManager.waveConfiguration.Count; i++)
+            {
+                var wave = waveManager.waveConfiguration[i];
+                if (wave != null)
+                {
+                    string assetPath = $"{configPath}_{i:D2}_{wave.name}.asset";
+                    var saveWave = Object.Instantiate(wave);
+                    saveWave.name = $"QuickSave_{i:D2}_{wave.name}";
+                    
+                    UnityEditor.AssetDatabase.CreateAsset(saveWave, assetPath);
+                    savedCount++;
+                }
+            }
+
+            UnityEditor.AssetDatabase.SaveAssets();
+            UnityEditor.AssetDatabase.Refresh();
+            needsWaveRefresh = true;
+            
+            Debug.Log($"💾 Quick saved {savedCount} waves from current configuration");
+#endif
+        }
+
+        private void TestWaveSequence()
+        {
+            if (waveManager == null || availableWaves.Count == 0)
+            {
+                Debug.LogWarning("Cannot test sequence - missing manager or no waves available");
+                return;
+            }
+
+            // Load all waves and start sequence testing
+            LoadAllWavesToManager();
+            
+            // Start the first wave
+            waveManager.currentWaveIndex = 0;
+            waveManager.StartWave();
+            
+            Debug.Log($"🏁 Started sequence test with {availableWaves.Count} waves. Use wave controls to navigate.");
+        }
     }
 }

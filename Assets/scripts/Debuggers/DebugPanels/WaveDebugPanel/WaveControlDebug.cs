@@ -289,6 +289,12 @@ namespace WaveDebugSystem
             }
 
             autoSyncToGrid = GUILayout.Toggle(autoSyncToGrid, "Auto Sync Grid");
+            
+            // Fast testing shortcuts
+            if (GUILayout.Button("Speed Test", GUILayout.Width(80)))
+            {
+                SpeedTestCurrentWave();
+            }
 
             GUILayout.EndHorizontal();
         }
@@ -311,5 +317,43 @@ namespace WaveDebugSystem
 
         public bool GetAutoSyncToGrid() => autoSyncToGrid;
         public void SetAutoSyncToGrid(bool value) => autoSyncToGrid = value;
+        
+        // Fast Testing Mode enhancements
+        private void SpeedTestCurrentWave()
+        {
+            if (waveManager?.CurrentWave == null)
+            {
+                Debug.LogWarning("No current wave to speed test");
+                return;
+            }
+
+            // Store original values
+            bool originalShowMessages = waveManager.showMessages;
+            float originalMoveInterval = waveManager.CurrentWave.moveInterval;
+            float originalFastInterval = waveManager.CurrentWave.fastMoveInterval;
+
+            try
+            {
+                // Set up for speed testing
+                waveManager.showMessages = false;
+                waveManager.CurrentWave.moveInterval = 0.1f;
+                waveManager.CurrentWave.fastMoveInterval = 0.05f;
+                
+                // Start the test
+                waveManager.StopWave();
+                waveManager.StartWave();
+                
+                Debug.Log($"🏁 Speed test started for wave '{waveManager.CurrentWave.name}' (intervals: 0.1s/0.05s, messages off)");
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError($"Speed test failed: {e.Message}");
+                
+                // Restore original values on error
+                waveManager.showMessages = originalShowMessages;
+                waveManager.CurrentWave.moveInterval = originalMoveInterval;
+                waveManager.CurrentWave.fastMoveInterval = originalFastInterval;
+            }
+        }
     }
 }

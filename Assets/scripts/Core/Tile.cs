@@ -18,11 +18,11 @@ public class Tile : MonoBehaviour
 
     [Header("Face Painting")]
     [SerializeField] public bool canPaintCubes = false;
-    [SerializeField] private FaceStatus paintStatus = FaceStatus.None;
+    [SerializeField] public FaceStatus paintStatus = FaceStatus.None;
     [SerializeField] private Color paintColor = Color.red;
-    [SerializeField] private int paintDuration = 3; // -1 for permanent
-    [SerializeField] private bool paintOnLanding = true;
-    [SerializeField] private bool paintOnExit = false;
+    [SerializeField] public int paintDuration = 3; // -1 for permanent
+    [SerializeField] public bool paintOnLanding = true;
+    [SerializeField] public bool paintOnExit = false;
 
     [Header("Detonation Point")]
     [SerializeField] private bool hasDetonationPoint = false;

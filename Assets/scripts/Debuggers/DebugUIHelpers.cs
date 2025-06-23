@@ -1,5 +1,6 @@
 using UnityEngine;
 using System;
+using static Enumerations;
 
 /// <summary>
 /// Simple utility class for basic debug UI components using Unity's built-in GUI styling.
@@ -331,6 +332,182 @@ public static class DebugUIHelpers
             Mathf.Clamp(targetPosition.x, minWidth, maxWidth),
             Mathf.Clamp(targetPosition.y, minHeight, maxHeight)
         );
+    }
+
+    #endregion
+
+    #region Common Debug UI Patterns
+
+    /// <summary>
+    /// Draws target position controls with auto-track player functionality.
+    /// This is a common pattern used across multiple debug panels.
+    /// </summary>
+    /// <param name="label">Label for the controls</param>
+    /// <param name="targetPosition">Current target position</param>
+    /// <param name="autoTrackPlayer">Whether auto-tracking player is enabled</param>
+    /// <param name="playerManager">PlayerManager for auto-tracking</param>
+    /// <param name="gridManager">GridManager for bounds checking</param>
+    /// <returns>Updated (targetPosition, autoTrackPlayer) values</returns>
+    public static (Vector2Int targetPosition, bool autoTrackPlayer) DrawTargetPositionControls(
+        string label, Vector2Int targetPosition, bool autoTrackPlayer, 
+        PlayerManager playerManager, GridManager gridManager)
+    {
+        GUILayout.BeginHorizontal();
+        bool newAutoTrack = GUILayout.Toggle(autoTrackPlayer, "Track Player");
+        GUILayout.EndHorizontal();
+
+        Vector2Int newTargetPosition = targetPosition;
+
+        if (!newAutoTrack)
+        {
+            // Manual position controls
+            newTargetPosition = DrawVector2IntField(label, targetPosition, 
+                0, gridManager?.Width - 1 ?? 10, 0, gridManager?.Height - 1 ?? 20);
+        }
+        else
+        {
+            // Show following position
+            if (playerManager != null)
+            {
+                newTargetPosition = playerManager.currentTilePosition;
+            }
+            GUILayout.Label($"Following: ({newTargetPosition.x}, {newTargetPosition.y})");
+        }
+
+        return (newTargetPosition, newAutoTrack);
+    }
+
+    /// <summary>
+    /// Draws a face status selector (Corrupted/Enhanced) commonly used in debug panels.
+    /// </summary>
+    /// <param name="selectedFaceStatus">Current selection (1=Corrupted, 2=Enhanced)</param>
+    /// <returns>Updated face status selection</returns>
+    public static int DrawFaceStatusSelector(int selectedFaceStatus)
+    {
+        GUILayout.BeginHorizontal();
+        
+        GUI.backgroundColor = selectedFaceStatus == 1 ? Color.red : Color.white;
+        bool corruptedClicked = GUILayout.Button("Corrupted");
+        
+        GUI.backgroundColor = selectedFaceStatus == 2 ? Color.blue : Color.white;
+        bool enhancedClicked = GUILayout.Button("Enhanced");
+        
+        GUI.backgroundColor = Color.white;
+        GUILayout.EndHorizontal();
+
+        if (corruptedClicked) return 1;
+        if (enhancedClicked) return 2;
+        return selectedFaceStatus;
+    }
+
+    /// <summary>
+    /// Draws cube selection UI with common action buttons.
+    /// </summary>
+    /// <param name="cube">Cube to display</param>
+    /// <param name="isSelected">Whether this cube is currently selected</param>
+    /// <param name="onSelect">Action to call when Select button is clicked</param>
+    /// <param name="paintDuration">Duration for face painting operations</param>
+    /// <returns>True if any action was performed on the cube</returns>
+    public static bool DrawCubeSelectionUI(CubeManager cube, bool isSelected, System.Action onSelect, int paintDuration = 3)
+    {
+        if (cube == null) return false;
+
+        bool actionPerformed = false;
+        Color originalBgColor = GUI.backgroundColor;
+        GUI.backgroundColor = isSelected ? SelectedItemColor : GetCubeDisplayColor(cube.type);
+
+        GUILayout.BeginVertical(GUI.skin.box);
+
+        // Header line
+        GUILayout.BeginHorizontal();
+        GUILayout.Label($"{cube.type} at ({cube.position.x},{cube.position.y})", GUILayout.Width(140));
+
+        if (GUILayout.Button("Select", GUILayout.Width(50)))
+        {
+            onSelect?.Invoke();
+            actionPerformed = true;
+        }
+        GUILayout.EndHorizontal();
+
+        // Status line
+        var activeFace = cube.GetCurrentDownFace();
+        var activeStatus = cube.GetActiveFaceStatus();
+        var effectiveType = cube.GetEffectiveType();
+
+        GUILayout.BeginHorizontal();
+        GUILayout.Label($"Face: {activeFace} ({activeStatus})", GUILayout.Width(120));
+
+        if (effectiveType != cube.type)
+        {
+            GUI.color = Color.yellow;
+            GUILayout.Label($"→ {effectiveType}");
+            GUI.color = Color.white;
+        }
+        GUILayout.EndHorizontal();
+
+        // Quick actions
+        GUILayout.BeginHorizontal();
+        if (GUILayout.Button("C", GUILayout.Width(25)))
+        {
+            cube.SetFaceStatus(activeFace, FaceStatus.Corrupted, paintDuration);
+            actionPerformed = true;
+        }
+        if (GUILayout.Button("E", GUILayout.Width(25)))
+        {
+            cube.SetFaceStatus(activeFace, FaceStatus.Enhanced, paintDuration);
+            actionPerformed = true;
+        }
+        if (GUILayout.Button("X", GUILayout.Width(25)))
+        {
+            cube.SetFaceStatus(activeFace, FaceStatus.None, 0);
+            actionPerformed = true;
+        }
+        if (GUILayout.Button("Debug", GUILayout.Width(50)))
+        {
+            cube.DebugPrintFaceMapping();
+            actionPerformed = true;
+        }
+        GUILayout.EndHorizontal();
+
+        GUILayout.EndVertical();
+        GUI.backgroundColor = originalBgColor;
+        Space(2);
+
+        return actionPerformed;
+    }
+
+    /// <summary>
+    /// Gets a display color for cube types - moved from individual panels.
+    /// </summary>
+    /// <param name="type">Cube type</param>
+    /// <returns>Color for UI display</returns>
+    public static Color GetCubeDisplayColor(CubeType type)
+    {
+        switch (type)
+        {
+            case CubeType.Normal: return new Color(0.8f, 0.8f, 0.8f);
+            case CubeType.Blue: return new Color(0.3f, 0.6f, 1f);
+            case CubeType.Black: return new Color(0.3f, 0.3f, 0.3f);
+            case CubeType.Reinforced: return new Color(0.8f, 0.4f, 0.8f);
+            default: return Color.white;
+        }
+    }
+
+    /// <summary>
+    /// Draws a duration control field with common settings used in face painting.
+    /// </summary>
+    /// <param name="label">Label for the control</param>
+    /// <param name="duration">Current duration value</param>
+    /// <param name="showPermanentNote">Whether to show the permanent duration note</param>
+    /// <returns>Updated duration value</returns>
+    public static int DrawDurationControl(string label, int duration, bool showPermanentNote = true)
+    {
+        int newDuration = DrawIntField(label, duration, -1, 20);
+        if (showPermanentNote)
+        {
+            GUILayout.Label("(-1 = permanent)");
+        }
+        return newDuration;
     }
 
     #endregion

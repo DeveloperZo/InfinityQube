@@ -589,28 +589,14 @@ public class CubeDebugPanel : DebugPanelBase
     // Helper methods
     private void SetupTilePainting(Vector2Int position)
     {
-        if (!gridManager.IsValidGridPosition(position)) return;
-
-        Tile tile = gridManager.GetTileAt(position);
-        if (tile == null) return;
-
         FaceStatus status = selectedFaceStatus == 1 ? FaceStatus.Corrupted : FaceStatus.Enhanced;
         Color color = selectedFaceStatus == 1 ? Color.red : Color.blue;
-
-        tile.SetupFacePainting(status, color, paintDuration, true, false);
-        Debug.Log($"Setup tile at ({position.x}, {position.y}) to paint cubes with {status} status");
+        DebugTileHelper.SetupTilePainting(position, status, color, paintDuration, gridManager, true, false);
     }
 
     private void ClearTilePainting(Vector2Int position)
     {
-        if (!gridManager.IsValidGridPosition(position)) return;
-
-        Tile tile = gridManager.GetTileAt(position);
-        if (tile != null)
-        {
-            tile.DisableFacePainting();
-            Debug.Log($"Cleared face painting from tile at ({position.x}, {position.y})");
-        }
+        DebugTileHelper.ClearTilePainting(position, gridManager);
     }
 
     private void PaintCubeFace(CubeManager cube)
@@ -628,16 +614,7 @@ public class CubeDebugPanel : DebugPanelBase
 
     private List<CubeManager> FindCubesAt(Vector2Int position)
     {
-        List<CubeManager> cubes = new List<CubeManager>();
-        foreach (CubeManager cube in Object.FindObjectsOfType<CubeManager>())
-        {
-            if (cube != null && !cube.isDestroyed &&
-                cube.position.x == position.x && cube.position.y == position.y)
-            {
-                cubes.Add(cube);
-            }
-        }
-        return cubes;
+        return DebugCubeSpawnHelper.FindCubesAt(position);
     }
 
     private void DrawReinforcedTestsSection()
@@ -924,34 +901,11 @@ public class CubeDebugPanel : DebugPanelBase
     private void SpawnCubeAt(Vector2Int position, CubeType cubeType)
     {
         var waveManager = Object.FindObjectOfType<WaveManager>();
-        if (waveManager?.cubePrefabs == null || (int)cubeType >= waveManager.cubePrefabs.Length) 
-        {
-            Debug.LogError("Cannot spawn cube: WaveManager or prefabs not found");
-            return;
-        }
-
-        Vector3 worldPos = gridManager.GridToWorldPosition(position.x, position.y, 2f);
-        GameObject cubeObj = Object.Instantiate(waveManager.cubePrefabs[(int)cubeType], worldPos, Quaternion.identity);
-
-        var cube = cubeObj.GetComponent<CubeManager>();
-        if (cube == null) cube = cubeObj.AddComponent<CubeManager>();
-
-        var cubeData = new CubeData { type = cubeType, position = position, level = 1 };
-        cube.Init(gridManager, cubeData, 2f);
-        waveManager.activeCubes.Add(cube);
-        
-        Debug.Log($"Spawned {cubeType} cube at ({position.x}, {position.y})");
+        DebugCubeSpawnHelper.SpawnCubeAt(position, cubeType, gridManager, waveManager);
     }
 
     private Color GetCubeColor(CubeType type)
     {
-        switch (type)
-        {
-            case CubeType.Normal: return new Color(0.8f, 0.8f, 0.8f);
-            case CubeType.Blue: return new Color(0.3f, 0.6f, 1f);
-            case CubeType.Black: return new Color(0.3f, 0.3f, 0.3f);
-            case CubeType.Reinforced: return new Color(0.8f, 0.4f, 0.8f);
-            default: return Color.white;
-        }
+        return DebugUIHelpers.GetCubeDisplayColor(type);
     }
 }

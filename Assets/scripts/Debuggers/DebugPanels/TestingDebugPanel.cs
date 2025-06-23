@@ -491,57 +491,28 @@ public class TestingDebugPanel : DebugPanelBase
     // Helper methods
     private void SetupTilePainting(Vector2Int position, FaceStatus status, Color color, int duration)
     {
-        if (!gridManager.IsValidGridPosition(position)) return;
-        Tile tile = gridManager.GetTileAt(position);
-        tile?.SetupFacePainting(status, color, duration, paintOnLanding, paintOnExit);
+        DebugTileHelper.SetupTilePainting(position, status, color, duration, gridManager, paintOnLanding, paintOnExit);
     }
 
     private void ClearTilePainting(Vector2Int position)
     {
-        if (!gridManager.IsValidGridPosition(position)) return;
-        Tile tile = gridManager.GetTileAt(position);
-        tile?.DisableFacePainting();
+        DebugTileHelper.ClearTilePainting(position, gridManager);
     }
 
     private void ClearAllTilePainting()
     {
-        if (gridManager == null) return;
-        for (int x = 0; x < gridManager.Width; x++)
-        {
-            for (int y = 0; y < gridManager.Height; y++)
-            {
-                Tile tile = gridManager.GetTileAt(x, y);
-                if (tile != null && tile.CanPaintCubes)
-                {
-                    tile.DisableFacePainting();
-                }
-            }
-        }
+        DebugTileHelper.ClearAllTilePainting(gridManager);
     }
 
     private void CreateFacePaintPattern()
     {
-        if (playerManager == null) return;
-        Vector2Int center = playerManager.currentTilePosition;
-
-        SetupTilePainting(new Vector2Int(center.x - 2, center.y), FaceStatus.Corrupted, Color.red, 3);
-        SetupTilePainting(new Vector2Int(center.x + 2, center.y), FaceStatus.Enhanced, Color.blue, 3);
-        SetupTilePainting(new Vector2Int(center.x, center.y + 2), FaceStatus.Corrupted, Color.red, 5);
+        Vector2Int center = playerManager?.currentTilePosition ?? Vector2Int.zero;
+        DebugTileHelper.CreateFacePaintPattern(center, gridManager, playerManager);
     }
 
     private void SpawnCubeAt(Vector2Int position, CubeType cubeType)
     {
-        if (waveManager?.cubePrefabs == null || (int)cubeType >= waveManager.cubePrefabs.Length) return;
-
-        Vector3 worldPos = gridManager.GridToWorldPosition(position.x, position.y, 2f);
-        GameObject cubeObj = Object.Instantiate(waveManager.cubePrefabs[(int)cubeType], worldPos, Quaternion.identity);
-
-        var cube = cubeObj.GetComponent<CubeManager>();
-        if (cube == null) cube = cubeObj.AddComponent<CubeManager>();
-
-        var cubeData = new CubeData { type = cubeType, position = position, level = 1 };
-        cube.Init(gridManager, cubeData, 2f);
-        waveManager?.activeCubes.Add(cube);
+        DebugCubeSpawnHelper.SpawnCubeAt(position, cubeType, gridManager, waveManager);
     }
     
     private void DrawIntegrationTestsSection()

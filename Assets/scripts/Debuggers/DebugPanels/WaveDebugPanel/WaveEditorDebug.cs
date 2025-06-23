@@ -273,6 +273,11 @@ namespace WaveDebugSystem
                 {
                     TestCurrentWave();
                 }
+                
+                if (GUILayout.Button("Quick Test"))
+                {
+                    QuickTestCurrentWave();
+                }
                 GUILayout.EndHorizontal();
 
                 GUILayout.BeginHorizontal();
@@ -296,6 +301,26 @@ namespace WaveDebugSystem
                 if (GUILayout.Button("Duplicate Wave"))
                 {
                     DuplicateCurrentWave();
+                }
+                GUILayout.EndHorizontal();
+                
+                // Quick modification shortcuts
+                GUILayout.BeginHorizontal();
+                if (GUILayout.Button("Fill Grid", GUILayout.Width(60)))
+                {
+                    FillGridWithCubes();
+                }
+                if (GUILayout.Button("Pattern", GUILayout.Width(60)))
+                {
+                    GenerateTestPattern();
+                }
+                if (GUILayout.Button("Random", GUILayout.Width(60)))
+                {
+                    GenerateRandomWave();
+                }
+                if (GUILayout.Button("Optimize", GUILayout.Width(60)))
+                {
+                    OptimizeWave();
                 }
                 GUILayout.EndHorizontal();
 
@@ -654,6 +679,172 @@ namespace WaveDebugSystem
             {
                 public int normalCount, blueCount, blackCount, reinforcedCount;
                 public int minX, maxX, minY, maxY;
+            }
+
+            // Fast Testing Mode enhancements
+            private void QuickTestCurrentWave()
+            {
+                if (currentEditingWave == null || waveManager == null) return;
+
+                // Store current message state
+                bool originalShowMessages = waveManager.showMessages;
+                
+                try
+                {
+                    // Disable messages for quick test
+                    waveManager.showMessages = false;
+                    
+                    // Test the wave
+                    TestCurrentWave();
+                    
+                    Debug.Log($"🚀 Quick test started for wave '{currentEditingWave.name}' (messages disabled)");
+                }
+                finally
+                {
+                    // Restore message state
+                    waveManager.showMessages = originalShowMessages;
+                }
+            }
+
+            private void FillGridWithCubes()
+            {
+                if (currentEditingWave == null) return;
+
+                currentEditingWave.CubesData.Clear();
+                
+                // Fill the entire wave grid with normal cubes
+                for (int x = 0; x < currentEditingWave.GridWidth; x++)
+                {
+                    for (int y = 0; y < currentEditingWave.GridHeight; y++)
+                    {
+                        currentEditingWave.CubesData.Add(new CubeData
+                        {
+                            type = Enumerations.CubeType.Normal,
+                            position = new Vector2Int(x, y),
+                            level = 1
+                        });
+                    }
+                }
+                
+                MarkAsChanged();
+                Debug.Log($"🧩 Filled wave '{currentEditingWave.name}' with {currentEditingWave.CubesData.Count} normal cubes");
+            }
+
+            private void GenerateTestPattern()
+            {
+                if (currentEditingWave == null) return;
+
+                currentEditingWave.CubesData.Clear();
+                
+                // Create a checkerboard pattern in the top rows
+                int patternHeight = Mathf.Min(3, currentEditingWave.GridHeight);
+                
+                for (int y = currentEditingWave.GridHeight - patternHeight; y < currentEditingWave.GridHeight; y++)
+                {
+                    for (int x = 0; x < currentEditingWave.GridWidth; x++)
+                    {
+                        if ((x + y) % 2 == 0)
+                        {
+                            Enumerations.CubeType cubeType = Enumerations.CubeType.Normal;
+                            if (x % 3 == 1) cubeType = Enumerations.CubeType.Blue;
+                            else if (x % 3 == 2) cubeType = Enumerations.CubeType.Black;
+                            
+                            currentEditingWave.CubesData.Add(new CubeData
+                            {
+                                type = cubeType,
+                                position = new Vector2Int(x, y - (currentEditingWave.GridHeight - patternHeight)),
+                                level = 1
+                            });
+                        }
+                    }
+                }
+                
+                MarkAsChanged();
+                Debug.Log($"🎨 Generated test pattern for wave '{currentEditingWave.name}' with {currentEditingWave.CubesData.Count} cubes");
+            }
+
+            private void GenerateRandomWave()
+            {
+                if (currentEditingWave == null) return;
+
+                currentEditingWave.CubesData.Clear();
+                
+                // Generate random cubes (about 30-60% coverage)
+                int targetCubes = Random.Range(
+                    (currentEditingWave.GridWidth * currentEditingWave.GridHeight) / 3,
+                    (currentEditingWave.GridWidth * currentEditingWave.GridHeight) * 2 / 3
+                );
+                
+                var occupiedPositions = new HashSet<Vector2Int>();
+                
+                for (int i = 0; i < targetCubes; i++)
+                {
+                    Vector2Int position;
+                    int attempts = 0;
+                    do
+                    {
+                        position = new Vector2Int(
+                            Random.Range(0, currentEditingWave.GridWidth),
+                            Random.Range(0, currentEditingWave.GridHeight)
+                        );
+                        attempts++;
+                    } while (occupiedPositions.Contains(position) && attempts < 100);
+                    
+                    if (!occupiedPositions.Contains(position))
+                    {
+                        occupiedPositions.Add(position);
+                        
+                        // Random cube type with weighted distribution
+                        Enumerations.CubeType cubeType = Enumerations.CubeType.Normal;
+                        float random = Random.value;
+                        if (random < 0.7f) cubeType = Enumerations.CubeType.Normal;
+                        else if (random < 0.9f) cubeType = Enumerations.CubeType.Blue;
+                        else cubeType = Enumerations.CubeType.Black;
+                        
+                        currentEditingWave.CubesData.Add(new CubeData
+                        {
+                            type = cubeType,
+                            position = position,
+                            level = 1
+                        });
+                    }
+                }
+                
+                MarkAsChanged();
+                Debug.Log($"🎲 Generated random wave '{currentEditingWave.name}' with {currentEditingWave.CubesData.Count} cubes");
+            }
+
+            private void OptimizeWave()
+            {
+                if (currentEditingWave == null || currentEditingWave.CubesData.Count == 0) return;
+
+                int originalCount = currentEditingWave.CubesData.Count;
+                
+                // Remove duplicate cubes at same position
+                var uniqueCubes = new Dictionary<Vector2Int, CubeData>();
+                foreach (var cube in currentEditingWave.CubesData)
+                {
+                    uniqueCubes[cube.position] = cube;
+                }
+                
+                currentEditingWave.CubesData.Clear();
+                currentEditingWave.CubesData.AddRange(uniqueCubes.Values);
+                
+                // Sort cubes by position for consistent ordering
+                currentEditingWave.CubesData.Sort((a, b) => 
+                {
+                    int yCompare = a.position.y.CompareTo(b.position.y);
+                    return yCompare != 0 ? yCompare : a.position.x.CompareTo(b.position.x);
+                });
+                
+                // Optimize timing values to reasonable ranges
+                currentEditingWave.moveInterval = Mathf.Clamp(currentEditingWave.moveInterval, 0.5f, 5.0f);
+                currentEditingWave.fastMoveInterval = Mathf.Clamp(currentEditingWave.fastMoveInterval, 0.05f, 1.0f);
+                currentEditingWave.waveStartDelay = Mathf.Clamp(currentEditingWave.waveStartDelay, 0f, 3.0f);
+                
+                MarkAsChanged();
+                int removedDuplicates = originalCount - currentEditingWave.CubesData.Count;
+                Debug.Log($"⚙️ Optimized wave '{currentEditingWave.name}' - removed {removedDuplicates} duplicates, sorted {currentEditingWave.CubesData.Count} cubes");
             }
         }
     }
