@@ -255,6 +255,7 @@ namespace WaveDebugSystem
 
             private void DrawWaveManagementControls(System.Action onSyncToGrid)
             {
+#if UNITY_EDITOR
                 GUILayout.BeginVertical(GUI.skin.box);
                 GUILayout.Label("Wave Management:");
 
@@ -325,6 +326,7 @@ namespace WaveDebugSystem
                 GUILayout.EndHorizontal();
 
                 GUILayout.EndVertical();
+#endif
             }
 
             private void DrawCurrentWaveStats()

@@ -48,7 +48,7 @@ public class SplashScreenManager : MonoBehaviour
     private void Update()
     {
         // Keep existing keyboard skip functionality
-        if (Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.Escape) ||
+        if (Input.GetKeyDown(KeyCode.Space)  ||
             Input.GetKeyDown(KeyCode.Return) || Input.GetMouseButtonDown(0) && title.activeSelf)
         {
             title.SetActive(false);

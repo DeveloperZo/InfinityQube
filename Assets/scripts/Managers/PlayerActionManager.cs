@@ -1,8 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
 using System;
-using static PlayerActionManager;
-using static UnityEditor.PlayerSettings;
+
 
 [System.Serializable]
 public class LightMarker

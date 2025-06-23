@@ -88,10 +88,19 @@ public class GameUI : MonoBehaviour
 
     private void ExitGame()
     {
+        Debug.Log("GameUI: Exit game requested");
+        
 #if UNITY_EDITOR
         UnityEditor.EditorApplication.isPlaying = false;
 #else
         Application.Quit();
+        
+        // Force quit if Application.Quit() fails (backup)
+        if (Application.isPlaying)
+        {
+            Debug.LogWarning("GameUI: Force quitting application");
+            System.Diagnostics.Process.GetCurrentProcess().Kill();
+        }
 #endif
     }
     private void ToggleUI()
@@ -133,6 +142,7 @@ public class GameUI : MonoBehaviour
             boxStyle.normal.background = MakeTexture(2, 2, new Color(0.1f, 0.1f, 0.1f, 0.85f));
             boxStyle.padding = new RectOffset(15, 15, 15, 15);
             boxStyle.margin = new RectOffset(10, 10, 10, 10);
+            boxStyle.alignment = TextAnchor.UpperLeft;
 
             // Header style
             headerStyle = new GUIStyle(GUI.skin.label);
@@ -140,24 +150,37 @@ public class GameUI : MonoBehaviour
             headerStyle.fontSize = 16;
             headerStyle.fontStyle = FontStyle.Bold;
             headerStyle.alignment = TextAnchor.MiddleLeft;
+            headerStyle.clipping = TextClipping.Overflow;
+            headerStyle.wordWrap = false;
 
             // Text style
             textStyle = new GUIStyle(GUI.skin.label);
             textStyle.normal.textColor = Color.white;
             textStyle.fontSize = 13;
             textStyle.wordWrap = true;
+            textStyle.alignment = TextAnchor.MiddleLeft;
+            textStyle.clipping = TextClipping.Overflow;
+            textStyle.padding = new RectOffset(0, 0, 2, 2);
 
             // Button style
             buttonStyle = new GUIStyle(GUI.skin.button);
             buttonStyle.fontSize = 12;
             buttonStyle.padding = new RectOffset(10, 10, 5, 5);
+            buttonStyle.alignment = TextAnchor.MiddleCenter;
         }
     }
 
     private void DrawControlsPanel()
     {
-        // Position on bottom-left
-        Rect controlsRect = new Rect(20, Screen.height - 300, 300, 270);
+        // Position on bottom-left with proper scaling
+        float scaleFactor = Screen.width / 1920f; // Normalize to 1920p
+        scaleFactor = Mathf.Clamp(scaleFactor, 0.5f, 2f); // Reasonable limits
+        
+        int width = Mathf.RoundToInt(300 * scaleFactor);
+        int height = Mathf.RoundToInt(270 * scaleFactor);
+        int margin = Mathf.RoundToInt(20 * scaleFactor);
+        
+        Rect controlsRect = new Rect(margin, Screen.height - height - margin, width, height);
         GUILayout.BeginArea(controlsRect);
         GUILayout.BeginVertical(boxStyle);
 
@@ -166,16 +189,20 @@ public class GameUI : MonoBehaviour
         GUILayout.Space(8);
 
         // Essential controls
+        GUILayout.Label("K      Skip/Close Dialog", textStyle);
         GUILayout.Label("WASD  Move Player", textStyle);
         GUILayout.Label("F      Light Marker", textStyle);
-        GUILayout.Label("V      Heavy Marker", textStyle);
-        GUILayout.Label("G      Prime Marker", textStyle);
         GUILayout.Label("R      Trigger Light", textStyle);
-        GUILayout.Label("Y      Trigger Heavy", textStyle);
+
+        //GUILayout.Label("V      Heavy Marker", textStyle);
+        //GUILayout.Label("Y      Trigger Heavy", textStyle);
+
+        GUILayout.Label("G      Prime Marker", textStyle);
         GUILayout.Label("T      Trigger Prime", textStyle);
-        GUILayout.Label("Q      Trigger Cube Marker", textStyle);
-        GUILayout.Label("E      Power Up Cube Marker", textStyle);
-        GUILayout.Label("K      Close Dialog", textStyle);
+        
+        //GUILayout.Label("Q      Trigger Cube Marker", textStyle);
+        //GUILayout.Label("E      Power Up Cube Marker", textStyle);
+
 
         GUILayout.Space(5);
 
@@ -201,8 +228,15 @@ public class GameUI : MonoBehaviour
 
     private void DrawTipsPanel()
     {
-        // Position on bottom-right
-        Rect tipsRect = new Rect(Screen.width - 320, Screen.height - 250, 300, 180);
+        // Position on bottom-right with proper scaling
+        float scaleFactor = Screen.width / 1920f; // Normalize to 1920p
+        scaleFactor = Mathf.Clamp(scaleFactor, 0.5f, 2f); // Reasonable limits
+        
+        int width = Mathf.RoundToInt(300 * scaleFactor);
+        int height = Mathf.RoundToInt(180 * scaleFactor);
+        int margin = Mathf.RoundToInt(20 * scaleFactor);
+        
+        Rect tipsRect = new Rect(Screen.width - width - margin, Screen.height - height - margin, width, height);
 
         GUILayout.BeginArea(tipsRect);
         GUILayout.BeginVertical(boxStyle);
@@ -265,8 +299,14 @@ public class GameUI : MonoBehaviour
 
     private void DrawToggleHint()
     {
-        // Small toggle hint in top-right
-        Rect toggleRect = new Rect(Screen.width - 150, 10, 140, 30);
+        // Small toggle hint in top-right with proper scaling
+        float scaleFactor = Screen.width / 1920f; // Normalize to 1920p
+        scaleFactor = Mathf.Clamp(scaleFactor, 0.5f, 2f); // Reasonable limits
+        
+        int width = Mathf.RoundToInt(140 * scaleFactor);
+        int height = Mathf.RoundToInt(30 * scaleFactor);
+        
+        Rect toggleRect = new Rect(Screen.width - width - 10, 10, width, height);
 
         GUILayout.BeginArea(toggleRect);
 
