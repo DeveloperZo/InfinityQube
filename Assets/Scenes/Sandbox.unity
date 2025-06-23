@@ -9022,7 +9022,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &1753889800
 RectTransform:
   m_ObjectHideFlags: 0
@@ -9254,10 +9254,10 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 
+  m_text: ok
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
-  m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: d67edce7cf9164e1293042f9d9da494d, type: 2}
+  m_sharedMaterial: {fileID: -4171563015097924827, guid: d67edce7cf9164e1293042f9d9da494d, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -11252,7 +11252,7 @@ MonoBehaviour:
   manualControl: 0
   showDebugInfo: 0
   showMessages: 1
-  messagePanel: {fileID: 0}
+  messagePanel: {fileID: 1753889799}
   messageText: {fileID: 1883002200}
   continuePrompt: {fileID: 0}
   activeCubes: []
@@ -12205,7 +12205,7 @@ MonoBehaviour:
   gridManager: {fileID: 1928190495848794802}
   playerManager: {fileID: 7665709929118310107}
   waveManager: {fileID: 4327591077324849160}
-  actionUI: {fileID: 0}
+  actionUI: {fileID: 8656265648072650658}
   markerSystem: {fileID: 8656265648072650657}
   maxLightMarkers: 3
   lightMarkersPlaced: 0

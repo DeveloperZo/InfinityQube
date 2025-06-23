@@ -57,7 +57,49 @@ MonoBehaviour:
   hasOwnSuccessCriteria: 0
   requiredCaptureCount: 0
   maxAllowedEscapes: 0
-  messages: []
+  messages:
+  - Message: "Welcome to InfinityQube! Use WASD keys to move around\nObserve the cubes and prepare for action"
+    DisplayMoveStep: 0
+    RequirePause: 0
+    AutoHideDelay: 3
+    HighlightTile: 0
+    highlightTiles: []
+    highlightColor: {r: 1, g: 1, b: 0, a: 1}
+  - Message: "Press F to place Light Markers\nThese help you track cube movements"
+    DisplayMoveStep: 0
+    RequirePause: 0
+    AutoHideDelay: 3
+    HighlightTile: 0
+    highlightTiles: []
+    highlightColor: {r: 1, g: 1, b: 0, a: 1}
+  - Message: "Press R to trigger Light Markers\nThis captures cubes within marker range!"
+    DisplayMoveStep: 1
+    RequirePause: 1
+    AutoHideDelay: 5
+    HighlightTile: 0
+    highlightTiles: []
+    highlightColor: {r: 1, g: 1, b: 0, a: 1}
+  - Message: "Press G to place Prime Markers\nPrime markers have enhanced capture abilities"
+    DisplayMoveStep: 2
+    RequirePause: 0
+    AutoHideDelay: 3
+    HighlightTile: 0
+    highlightTiles: []
+    highlightColor: {r: 1, g: 1, b: 0, a: 1}
+  - Message: "Press T to trigger Prime Markers\nUse them strategically for maximum captures!"
+    DisplayMoveStep: 2
+    RequirePause: 1
+    AutoHideDelay: 5
+    HighlightTile: 0
+    highlightTiles: []
+    highlightColor: {r: 1, g: 1, b: 0, a: 1}
+  - Message: "Excellent work! You've mastered the basics\nReady for the next challenge?"
+    DisplayMoveStep: -1
+    RequirePause: 0
+    AutoHideDelay: 3
+    HighlightTile: 0
+    highlightTiles: []
+    highlightColor: {r: 1, g: 1, b: 0, a: 1}
   normalCubesCaptured: 0
   blueCubesCaptured: 0
   cubesEscaped: 0

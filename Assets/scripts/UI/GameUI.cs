@@ -282,23 +282,78 @@ public class GameUI : MonoBehaviour
     {
         if (playerManager == null) return "";
 
-        // Give contextual tips based on game state
+        // 1. Marker availability checks (highest priority)
+        if (playerActionManager != null)
+        {
+            // Check if light markers are recharging
+            if (playerActionManager.GetCurrentLightCharges() == 0)
+            {
+                return "Light markers recharging...";
+            }
+
+            // Suggest placing light markers if available
+            if (playerActionManager.CanPlaceLightMarker())
+            {
+                return "Press F to place light marker";
+            }
+        }
+
+        // 2. Cube proximity detection
+        var gridManager = GridManager.Instance;
+        if (gridManager != null && waveManager != null)
+        {
+            Vector2Int playerPos = playerManager.currentTilePosition;
+            
+            // Check for cubes within 2 tiles of player
+            foreach (var cube in waveManager.activeCubes)
+            {
+                if (cube != null && !cube.isDestroyed)
+                {
+                    Vector2Int cubePos = cube.position;
+                    float distance = Vector2Int.Distance(playerPos, cubePos);
+                    
+                    if (distance <= 2f)
+                    {
+                        return "Cubes approaching! Place markers ahead";
+                    }
+                }
+            }
+        }
+
+        // 3. Wave status guidance
+        if (waveManager != null)
+        {
+            // If wave is not active but markers are placed, suggest starting
+            if (!waveManager.waveActive)
+            {
+                // Check if any markers are placed
+                if (playerActionManager != null && 
+                    (playerActionManager.GetCurrentLightMarkers() > 0 || 
+                     playerActionManager.GetCurrentHeavyMarkers() > 0 || 
+                     playerActionManager.GetCurrentPrimeMarkers() > 0))
+                {
+                    return "Press ENTER to start wave";
+                }
+            }
+
+            // Check for cube markers (from captured prime cubes)
+            if (playerActionManager != null)
+            {
+                int cubeMarkers = playerActionManager.GetCurrentCubeMarkers();
+                if (cubeMarkers > 0)
+                {
+                    return "Prime cubes give cube markers - press Q to detonate";
+                }
+            }
+        }
+
+        // 4. Wave start prompt (lower priority)
         if (waveManager != null && !waveManager.waveActive)
         {
             return "Press ENTER to start the wave";
         }
 
-        if (playerActionManager != null)
-        {
-            int markers = playerActionManager.GetCurrentCubeMarkers();
-            if (markers > 0)
-            {
-                return "Press Q to trigger detonation";
-            }
-        }
-
-        // Check for fallen rows
-        var gridManager = GridManager.Instance;
+        // 5. Grid state warnings (lowest priority)
         if (gridManager != null)
         {
             int playableRows = gridManager.GetPlayableRowCount();
