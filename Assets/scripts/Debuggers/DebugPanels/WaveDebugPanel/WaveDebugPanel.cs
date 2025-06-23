@@ -92,10 +92,10 @@ public class WaveDebugPanel : DebugPanelBase
         bool oldEditor = showWaveEditor;
         bool oldCubes = showCubeTools;
         
-        showWaveLibrary = DrawThemedToggle("Library", showWaveLibrary);
-        showWaveControls = DrawThemedToggle("Controls", showWaveControls);
-        showWaveEditor = DrawThemedToggle("Editor", showWaveEditor);
-        showCubeTools = DrawThemedToggle("Cubes", showCubeTools);
+        showWaveLibrary = DrawSimpleToggle("Library", showWaveLibrary);
+        showWaveControls = DrawSimpleToggle("Controls", showWaveControls);
+        showWaveEditor = DrawSimpleToggle("Editor", showWaveEditor);
+        showCubeTools = DrawSimpleToggle("Cubes", showCubeTools);
         
         // Mark dirty if any toggle changed
         if (oldLibrary != showWaveLibrary || oldControls != showWaveControls ||

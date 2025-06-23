@@ -28,10 +28,10 @@ public abstract class DebugPanelBase : IDebugPanel
     protected int LastUpdateFrame { get; private set; } = -1;
     
     /// <summary>
-    /// How many frames to wait between automatic updates when not dirty.
-    /// Default is 30 frames (approximately 0.5 seconds at 60 FPS).
+    /// Update interval not used - debug panels always update for live data.
+    /// Kept for interface compatibility.
     /// </summary>
-    protected virtual int UpdateInterval => 30;
+    protected virtual int UpdateInterval => 1;
     
     #endregion
     
@@ -42,8 +42,8 @@ public abstract class DebugPanelBase : IDebugPanel
     /// </summary>
     public virtual void Initialize() 
     {
-        DebugTheme.RefreshStyles();
         MarkDirty();
+        // Panel initialized and ready
     }
     
     /// <summary>
@@ -58,6 +58,7 @@ public abstract class DebugPanelBase : IDebugPanel
     {
         IsVisible = true;
         MarkDirty();
+        // Panel is now visible and needs update
     }
     
     /// <summary>
@@ -67,45 +68,35 @@ public abstract class DebugPanelBase : IDebugPanel
     {
         IsVisible = false;
     }
-    
+
     #endregion
-    
+
     #region Performance Management
-    
+
     /// <summary>
-    /// Marks this panel as needing a redraw on the next OnGUI call.
-    /// Call this whenever the panel's state changes.
+    /// Marks this panel as needing a redraw.
+    /// For debug panels, this is mainly for interface compatibility.
     /// </summary>
-    protected void MarkDirty()
+    public void MarkDirty()
     {
         IsDirty = true;
     }
     
     /// <summary>
-    /// Determines if the panel should update this frame based on dirty state and update interval.
+    /// For debug panels, always update to show current data.
+    /// Debug interfaces should prioritize data accuracy over micro-optimizations.
     /// </summary>
-    /// <returns>True if the panel should update this frame</returns>
+    /// <returns>True - debug panels should always update</returns>
     protected bool ShouldUpdate()
     {
-        int currentFrame = Time.frameCount;
-        
-        // Always update if dirty
-        if (IsDirty)
-        {
-            return true;
-        }
-        
-        // Update at specified intervals even when not dirty (for live data)
-        if (currentFrame - LastUpdateFrame >= UpdateInterval)
-        {
-            return true;
-        }
-        
-        return false;
+        // Debug panels should always show current data
+        // Any "optimization" that prevents showing current debug info defeats the purpose
+        return true;
     }
     
     /// <summary>
-    /// Marks the panel as updated and clears the dirty flag.
+    /// Tracks that the panel was updated.
+    /// Kept for interface compatibility and potential future optimizations.
     /// </summary>
     protected void MarkUpdated()
     {
@@ -118,27 +109,29 @@ public abstract class DebugPanelBase : IDebugPanel
     #region Drawing Methods
     
     /// <summary>
-    /// Main drawing method with performance optimization.
-    /// Only calls DrawPanelContent() when necessary.
+    /// Main drawing method for debug panels.
+    /// Always draws current content - debug panels need to show live data.
     /// </summary>
     public void DrawPanel()
     {
-        if (!IsVisible)
+        // Debug panels should always show current data
+        try
         {
-            return;
-        }
-        
-        // Only update if necessary
-        if (ShouldUpdate())
-        {
-            // Ensure theme styles are initialized
-            DebugTheme.RefreshStyles();
-            
-            // Draw the panel content
+            // Draw the panel content with simple Unity GUI
             DrawPanelContent();
             
-            // Mark as updated
+            // Track that we updated (for potential future optimizations)
             MarkUpdated();
+        }
+        catch (System.Exception e)
+        {
+            // Fallback content when panel fails
+            GUILayout.Label($"Panel Error: {e.Message}");
+            GUILayout.Label("This panel failed to load properly.");
+            GUILayout.Label("Check console for details.");
+            
+            // Log the error for debugging
+            Debug.LogError($"Debug panel {PanelName} error: {e.Message}\n{e.StackTrace}");
         }
     }
     
@@ -150,24 +143,24 @@ public abstract class DebugPanelBase : IDebugPanel
     
     #endregion
     
-    #region Theme Integration
+    #region Simple Helper Methods
     
     /// <summary>
-    /// Draws a themed section with consistent styling.
+    /// Draws a simple section with basic Unity styling.
     /// </summary>
     /// <param name="title">Section title</param>
     /// <param name="content">Content drawing action</param>
     /// <param name="isExpanded">Whether section is expanded</param>
-    protected void DrawThemedSection(string title, System.Action content, bool isExpanded = true)
+    protected void DrawSimpleSection(string title, System.Action content, bool isExpanded = true)
     {
         if (!isExpanded) return;
         
-        GUILayout.BeginVertical(DebugTheme.GetBoxStyle());
+        GUILayout.BeginVertical(GUI.skin.box);
         
         if (!string.IsNullOrEmpty(title))
         {
-            GUILayout.Label(title, DebugTheme.GetHeaderStyle());
-            DebugUIHelpers.Space(3);
+            GUILayout.Label(title, GUI.skin.label);
+            GUILayout.Space(3);
         }
         
         content?.Invoke();
@@ -176,23 +169,24 @@ public abstract class DebugPanelBase : IDebugPanel
     }
     
     /// <summary>
-    /// Draws a themed toggle button using the current theme.
+    /// Draws a simple toggle button with basic Unity styling.
+    /// Ensures immediate UI responsiveness to user interactions.
     /// </summary>
     /// <param name="label">Button label</param>
     /// <param name="current">Current state</param>
     /// <returns>New state</returns>
-    protected bool DrawThemedToggle(string label, bool current)
+    protected bool DrawSimpleToggle(string label, bool current)
     {
         Color originalBgColor = GUI.backgroundColor;
-        GUI.backgroundColor = current ? DebugTheme.Active : DebugTheme.Inactive;
+        GUI.backgroundColor = current ? Color.cyan : Color.white;
         
-        bool clicked = GUILayout.Button(label, DebugTheme.GetToggleStyle(), GUILayout.Height(25));
+        bool clicked = GUILayout.Button(label, GUILayout.Height(25));
         
         GUI.backgroundColor = originalBgColor;
         
         if (clicked)
         {
-            MarkDirty(); // Mark dirty when state changes
+            MarkDirty(); // Ensure immediate update on user interaction
             return !current;
         }
         
@@ -200,28 +194,20 @@ public abstract class DebugPanelBase : IDebugPanel
     }
     
     /// <summary>
-    /// Draws themed text with the standard text style.
-    /// </summary>
-    /// <param name="text">Text to display</param>
-    protected void DrawThemedText(string text)
-    {
-        GUILayout.Label(text, DebugTheme.GetTextStyle());
-    }
-    
-    /// <summary>
-    /// Draws a themed button that automatically marks dirty on click.
+    /// Draws a simple button that automatically marks dirty on click.
+    /// Ensures immediate UI responsiveness to user interactions.
     /// </summary>
     /// <param name="label">Button label</param>
     /// <param name="action">Action to execute on click</param>
     /// <param name="width">Optional width</param>
-    protected void DrawThemedButton(string label, System.Action action, float width = 0)
+    protected void DrawSimpleButton(string label, System.Action action, float width = 0)
     {
         GUILayoutOption[] options = width > 0 ? new[] { GUILayout.Width(width) } : new GUILayoutOption[0];
         
-        if (GUILayout.Button(label, DebugTheme.GetButtonStyle(), options))
+        if (GUILayout.Button(label, options))
         {
             action?.Invoke();
-            MarkDirty();
+            MarkDirty(); // Ensure immediate update on user interaction
         }
     }
     

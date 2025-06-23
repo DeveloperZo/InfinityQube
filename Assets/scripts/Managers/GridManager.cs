@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using static Enumerations;
 
-public class GridManager : MonoBehaviour
+public class GridManager : MonoBehaviour, IManagerDebugInterface
 {
     #region Inspector Configuration
     [Header("Grid Setup")]
@@ -760,6 +760,276 @@ public class GridManager : MonoBehaviour
     public float TileScale => tileSize;
     #endregion
 
+    #region Batch Tile Operations
+    /// <summary>
+    /// Applies tile states to multiple tiles in batch
+    /// </summary>
+    public void BatchSetTileStates(Dictionary<Vector2Int, TileState> stateMap)
+    {
+        if (tiles == null || stateMap == null) return;
+
+        int appliedCount = 0;
+        foreach (var kvp in stateMap)
+        {
+            Vector2Int pos = kvp.Key;
+            TileState state = kvp.Value;
+            
+            Tile tile = GetTileAt(pos);
+            if (tile != null && tile.IsPlayable)
+            {
+                ApplyTileState(tile, state);
+                appliedCount++;
+            }
+        }
+
+        DebugLog($"Batch applied tile states to {appliedCount}/{stateMap.Count} tiles");
+    }
+
+    /// <summary>
+    /// Applies a tile state pattern to the grid
+    /// </summary>
+    public void ApplyTileStatePattern(TileStatePattern pattern)
+    {
+        if (pattern == null || tiles == null) return;
+
+        Dictionary<Vector2Int, TileState> stateMap = new Dictionary<Vector2Int, TileState>();
+        
+        foreach (var entry in pattern.entries)
+        {
+            Vector2Int pos = pattern.basePosition + entry.offset;
+            if (IsValidGridPosition(pos))
+            {
+                stateMap[pos] = entry.state;
+            }
+        }
+
+        BatchSetTileStates(stateMap);
+        DebugLog($"Applied tile state pattern '{pattern.name}' with {pattern.entries.Count} entries");
+    }
+
+    /// <summary>
+    /// Creates a tile state preset from current grid state
+    /// </summary>
+    public TileStatePreset CreateTileStatePreset(string presetName, List<Vector2Int> positions)
+    {
+        TileStatePreset preset = new TileStatePreset
+        {
+            name = presetName,
+            entries = new List<TileStateEntry>()
+        };
+
+        foreach (var pos in positions)
+        {
+            Tile tile = GetTileAt(pos);
+            if (tile != null)
+            {
+                preset.entries.Add(new TileStateEntry
+                {
+                    position = pos,
+                    state = tile.currentState,
+                    hasMarker = tile.HasMarker,
+                    isBlackened = tile.IsBlackened,
+                    isPrimed = tile.IsPrimed,
+                    charges = tile.DetonationCharges
+                });
+            }
+        }
+
+        DebugLog($"Created tile state preset '{presetName}' with {preset.entries.Count} entries");
+        return preset;
+    }
+
+    /// <summary>
+    /// Restores grid state from a preset
+    /// </summary>
+    public void RestoreFromPreset(TileStatePreset preset)
+    {
+        if (preset == null || tiles == null) return;
+
+        int restoredCount = 0;
+        foreach (var entry in preset.entries)
+        {
+            Tile tile = GetTileAt(entry.position);
+            if (tile != null && tile.IsPlayable)
+            {
+                RestoreTileFromEntry(tile, entry);
+                restoredCount++;
+            }
+        }
+
+        DebugLog($"Restored {restoredCount}/{preset.entries.Count} tiles from preset '{preset.name}'");
+    }
+
+    /// <summary>
+    /// Batch operations for markers
+    /// </summary>
+    public void BatchSetMarkers(List<Vector2Int> positions, bool placeMarkers)
+    {
+        if (tiles == null || positions == null) return;
+
+        int processedCount = 0;
+        foreach (var pos in positions)
+        {
+            bool success = placeMarkers ? PlaceMarker(pos.x, pos.y) : RemoveMarker(pos.x, pos.y);
+            if (success) processedCount++;
+        }
+
+        string action = placeMarkers ? "placed" : "removed";
+        DebugLog($"Batch {action} markers: {processedCount}/{positions.Count} successful");
+    }
+
+    /// <summary>
+    /// Batch tile transformation operations
+    /// </summary>
+    public void BatchTransformTiles(List<Vector2Int> positions, CubeType transformType)
+    {
+        if (tiles == null || positions == null) return;
+
+        int transformedCount = 0;
+        foreach (var pos in positions)
+        {
+            Tile tile = GetTileAt(pos);
+            if (tile != null && tile.IsPlayable)
+            {
+                tile.TransformTile(transformType);
+                transformedCount++;
+            }
+        }
+
+        DebugLog($"Batch transformed {transformedCount}/{positions.Count} tiles to {transformType} type");
+    }
+
+    /// <summary>
+    /// Get tiles in a rectangular area
+    /// </summary>
+    public List<Tile> GetTilesInArea(Vector2Int topLeft, Vector2Int bottomRight)
+    {
+        List<Tile> tilesInArea = new List<Tile>();
+        
+        for (int x = topLeft.x; x <= bottomRight.x; x++)
+        {
+            for (int y = topLeft.y; y <= bottomRight.y; y++)
+            {
+                Tile tile = GetTileAt(x, y);
+                if (tile != null)
+                {
+                    tilesInArea.Add(tile);
+                }
+            }
+        }
+
+        return tilesInArea;
+    }
+
+    /// <summary>
+    /// Get tiles matching specific criteria
+    /// </summary>
+    public List<Tile> GetTilesWithState(TileState state)
+    {
+        List<Tile> matchingTiles = new List<Tile>();
+        
+        if (tiles == null) return matchingTiles;
+
+        for (int x = 0; x < width; x++)
+        {
+            for (int y = 0; y < height; y++)
+            {
+                Tile tile = GetTileAt(x, y);
+                if (tile != null && tile.currentState == state)
+                {
+                    matchingTiles.Add(tile);
+                }
+            }
+        }
+
+        return matchingTiles;
+    }
+
+    /// <summary>
+    /// Get all tiles with markers
+    /// </summary>
+    public List<Tile> GetMarkedTiles()
+    {
+        List<Tile> markedTiles = new List<Tile>();
+        
+        if (tiles == null) return markedTiles;
+
+        for (int x = 0; x < width; x++)
+        {
+            for (int y = 0; y < height; y++)
+            {
+                Tile tile = GetTileAt(x, y);
+                if (tile != null && tile.HasMarker)
+                {
+                    markedTiles.Add(tile);
+                }
+            }
+        }
+
+        return markedTiles;
+    }
+
+    /// <summary>
+    /// Reset multiple tiles to normal state
+    /// </summary>
+    public void BatchResetTiles(List<Vector2Int> positions)
+    {
+        if (tiles == null || positions == null) return;
+
+        int resetCount = 0;
+        foreach (var pos in positions)
+        {
+            Tile tile = GetTileAt(pos);
+            if (tile != null)
+            {
+                tile.ResetTile();
+                resetCount++;
+            }
+        }
+
+        DebugLog($"Batch reset {resetCount}/{positions.Count} tiles to normal state");
+    }
+
+    private void ApplyTileState(Tile tile, TileState state)
+    {
+        switch (state)
+        {
+            case TileState.Normal:
+                tile.ResetTile();
+                break;
+            case TileState.Transformed:
+                // Keep existing transformation
+                break;
+        }
+    }
+
+    private void RestoreTileFromEntry(Tile tile, TileStateEntry entry)
+    {
+        // Reset tile first
+        tile.ResetTile();
+        
+        // Apply saved state
+        if (entry.isBlackened)
+        {
+            tile.BlackenTile();
+        }
+        else if (entry.isPrimed)
+        {
+            tile.PrimeTile();
+        }
+        else if (entry.charges > 0)
+        {
+            tile.AdvantageTile(entry.charges);
+        }
+        
+        // Apply marker if needed
+        if (entry.hasMarker && tile.CanBeMarked)
+        {
+            tile.PlaceMarker();
+        }
+    }
+    #endregion
+
     #region Row Management
     public void RemoveBottomRow()
     {
@@ -868,4 +1138,147 @@ public class GridManager : MonoBehaviour
         return false;
     }
     #endregion
+
+    #region IManagerDebugInterface Implementation
+
+    public bool EnableDebugLogs 
+    { 
+        get => enableDebugLogs; 
+        set => enableDebugLogs = value; 
+    }
+
+    public string GetDebugStatus()
+    {
+        string status = isGridReady ? "READY" : "NOT_READY";
+        return $"Grid: {width}x{height} ({status}) Tiles:{width * height} Markers:{GetMarkerCount()} Playable:{GetPlayableRowCount()}rows";
+    }
+
+    public Dictionary<string, object> GetDebugData()
+    {
+        return new Dictionary<string, object>
+        {
+            ["Grid Dimensions"] = $"{width}x{height}",
+            ["Tile Size"] = tileSize,
+            ["Total Tiles"] = width * height,
+            ["Grid Ready"] = isGridReady,
+            ["Grid Generated"] = isGridGenerated,
+            ["Center At Origin"] = centerGridAtOrigin,
+            ["Grid Offset"] = calculatedGridOffset,
+            ["Min World Bounds"] = minWorldBounds,
+            ["Max World Bounds"] = maxWorldBounds,
+            ["Marker Count"] = GetMarkerCount(),
+            ["Playable Row Count"] = GetPlayableRowCount(),
+            ["Bottom Row"] = bottom,
+            ["Use Object Pooling"] = useObjectPooling,
+            ["Pool Size"] = useObjectPooling ? pooledTileCount : 0,
+            ["Active Tiles"] = useObjectPooling ? activeTiles.Count : 0,
+            ["Available Pool Tiles"] = useObjectPooling ? tilePool.Count : 0,
+            ["Show Grid Gizmos"] = showGridGizmos,
+            ["Tile Prefab Assigned"] = tilePrefab != null,
+            ["Cube Definitions Assigned"] = cubeTypeDefinitions != null
+        };
+    }
+
+    public void ResetToDefaults()
+    {
+        // Store original settings to restore later
+        int originalWidth = width;
+        int originalHeight = height;
+        float originalTileSize = tileSize;
+        bool originalCenterAtOrigin = centerGridAtOrigin;
+        Vector3 originalGridOffset = gridOffset;
+        
+        // Destroy current grid
+        DestroyGrid();
+        
+        // Reset grid state
+        bottom = 0;
+        isGridGenerated = false;
+        isGridReady = false;
+        
+        // Clear any cached data
+        if (useObjectPooling)
+        {
+            ResetPoolingSystem();
+        }
+        
+        // Restore original dimensions and settings
+        width = originalWidth;
+        height = originalHeight;
+        tileSize = originalTileSize;
+        centerGridAtOrigin = originalCenterAtOrigin;
+        gridOffset = originalGridOffset;
+        
+        // Recalculate grid metrics
+        CalculateGridMetrics();
+        
+        // Regenerate grid
+        GenerateGrid();
+        
+        if (EnableDebugLogs)
+            Debug.Log("[GridManager] Reset to defaults completed");
+    }
+
+    public void LoadConfiguration(string configName)
+    {
+        // TODO: Implement configuration loading for grid settings
+        if (EnableDebugLogs)
+            Debug.Log($"[GridManager] Loading configuration: {configName} (not yet implemented)");
+    }
+
+    public void SaveConfiguration(string configName)
+    {
+        // TODO: Implement configuration saving for grid settings
+        if (EnableDebugLogs)
+            Debug.Log($"[GridManager] Saving configuration: {configName} (not yet implemented)");
+    }
+
+    #endregion
 }
+
+#region Data Structures for Batch Operations
+/// <summary>
+/// Represents a pattern of tile states that can be applied to the grid
+/// </summary>
+[System.Serializable]
+public class TileStatePattern
+{
+    public string name;
+    public Vector2Int basePosition;
+    public List<TileStatePatternEntry> entries = new List<TileStatePatternEntry>();
+}
+
+/// <summary>
+/// Single entry in a tile state pattern
+/// </summary>
+[System.Serializable]
+public class TileStatePatternEntry
+{
+    public Vector2Int offset;
+    public TileState state;
+}
+
+/// <summary>
+/// Preset that stores complete tile states for restoration
+/// </summary>
+[System.Serializable]
+public class TileStatePreset
+{
+    public string name;
+    public List<TileStateEntry> entries = new List<TileStateEntry>();
+}
+
+/// <summary>
+/// Complete state information for a single tile
+/// </summary>
+[System.Serializable]
+public class TileStateEntry
+{
+    public Vector2Int position;
+    public TileState state;
+    public bool hasMarker;
+    public bool isBlackened;
+    public bool isPrimed;
+    public int charges;
+}
+#endregion

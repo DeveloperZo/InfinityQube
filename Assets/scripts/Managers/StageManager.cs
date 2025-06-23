@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System;
 using System.Linq;
 
-public class StageManager : MonoBehaviour
+public class StageManager : MonoBehaviour, IManagerDebugInterface
 {
     #region Inspector Configuration
     [Header("References")]
@@ -401,5 +401,92 @@ public class StageManager : MonoBehaviour
         if (enableDebugLogs)
             Debug.Log($"[StageManager] {message}");
     }
+    #endregion
+
+    #region IManagerDebugInterface Implementation
+
+    public bool EnableDebugLogs 
+    { 
+        get => enableDebugLogs; 
+        set => enableDebugLogs = value; 
+    }
+
+    public string GetDebugStatus()
+    {
+        string stageName = CurrentStage?.stageName ?? "None";
+        string status = IsStageInProgress ? "IN_PROGRESS" : "IDLE";
+        return $"Stage {CurrentStageIndex}: {stageName} ({status}) Captured:{capturedCubeCount} Escaped:{escapedCubeCount}";
+    }
+
+    public Dictionary<string, object> GetDebugData()
+    {
+        return new Dictionary<string, object>
+        {
+            ["Current Stage Index"] = CurrentStageIndex,
+            ["Current Stage Name"] = CurrentStage?.stageName ?? "None",
+            ["Is Stage In Progress"] = IsStageInProgress,
+            ["Stage Start Time"] = stageStartTime,
+            ["Captured Cube Count"] = capturedCubeCount,
+            ["Escaped Cube Count"] = escapedCubeCount,
+            ["Auto Advance Stages"] = autoAdvanceStages,
+            ["Restart On Failure"] = restartOnFailure,
+            ["Stage Transition Delay"] = stageTransitionDelay,
+            ["Completed Stages"] = string.Join(", ", completedStages),
+            ["Available Stages"] = GetAvailableStages().Count,
+            ["Stage Attempts"] = stageAttempts.Count,
+            ["Current Stage Grid Size"] = CurrentStage != null ? $"{CurrentStage.gridWidth}x{CurrentStage.gridHeight}" : "N/A",
+            ["Current Stage Player Start"] = CurrentStage?.playerStartPosition.ToString() ?? "N/A",
+            ["Current Stage Waves"] = CurrentStage?.waveConfigurations?.Count ?? 0,
+            ["Required Capture Count"] = CurrentStage?.requiredCaptureCount ?? 0,
+            ["Max Allowed Escapes"] = CurrentStage?.maxAllowedEscapes ?? 0
+        };
+    }
+
+    public void ResetToDefaults()
+    {
+        // Stop any current stage
+        if (IsStageInProgress)
+        {
+            CleanupCurrentStage();
+        }
+        
+        // Reset to starting stage
+        CurrentStageIndex = startingStageIndex;
+        CurrentStage = null;
+        IsStageInProgress = false;
+        
+        // Reset statistics
+        capturedCubeCount = 0;
+        escapedCubeCount = 0;
+        stageStartTime = 0f;
+        
+        // Clear stage history
+        completedStages.Clear();
+        stageAttempts.Clear();
+        
+        // Load starting stage if valid
+        if (startingStageIndex >= 0)
+        {
+            LoadStage(startingStageIndex);
+        }
+        
+        if (EnableDebugLogs)
+            Debug.Log("[StageManager] Reset to defaults completed");
+    }
+
+    public void LoadConfiguration(string configName)
+    {
+        // TODO: Implement configuration loading for stage settings
+        if (EnableDebugLogs)
+            Debug.Log($"[StageManager] Loading configuration: {configName} (not yet implemented)");
+    }
+
+    public void SaveConfiguration(string configName)
+    {
+        // TODO: Implement configuration saving for stage settings
+        if (EnableDebugLogs)
+            Debug.Log($"[StageManager] Saving configuration: {configName} (not yet implemented)");
+    }
+
     #endregion
 }

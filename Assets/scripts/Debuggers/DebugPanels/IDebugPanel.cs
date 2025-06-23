@@ -16,7 +16,8 @@ public interface IDebugPanel
     void Initialize();
     void Update();
     void DrawPanel();
-    
+    void MarkDirty();
+
     /// <summary>
     /// Called when the panel becomes visible.
     /// </summary>

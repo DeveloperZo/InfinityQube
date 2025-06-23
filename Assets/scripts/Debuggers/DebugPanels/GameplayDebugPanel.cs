@@ -24,28 +24,54 @@ public class GameplayDebugPanel : DebugPanelBase
 
     protected override void DrawPanelContent()
     {
-        DrawSectionToggles();
-        DebugUIHelpers.Space();
+        // Simple test content first
+        GUILayout.Label("=== GAMEPLAY DEBUG PANEL ===");
+        GUILayout.Label("This panel is working!");
+        
+        try
+        {
+            DrawSectionToggles();
+            GUILayout.Space(5);
 
-        if (showStageDetails) DrawStageDetailsSection();
-        if (showStageNavigation) DrawStageNavigationSection();
-        if (showGameState) DrawGameStateSection();
-        if (showSystemOverview) DrawSystemOverviewSection();
+            if (showStageDetails) DrawStageDetailsSection();
+            if (showStageNavigation) DrawStageNavigationSection();
+            if (showGameState) DrawGameStateSection();
+            if (showSystemOverview) DrawSystemOverviewSection();
+        }
+        catch (System.Exception e)
+        {
+            GUILayout.Label($"Gameplay Panel Error: {e.Message}");
+        }
     }
 
     private void DrawSectionToggles()
     {
         GUILayout.BeginHorizontal();
-        showStageDetails = DebugUIHelpers.DrawToggleButton("Stage Details", showStageDetails);
-        showStageNavigation = DebugUIHelpers.DrawToggleButton("Navigation", showStageNavigation);
-        showGameState = DebugUIHelpers.DrawToggleButton("Game State", showGameState);
-        showSystemOverview = DebugUIHelpers.DrawToggleButton("Overview", showSystemOverview);
+        
+        // Simplified toggles without theme dependencies
+        GUI.backgroundColor = showStageDetails ? Color.yellow : Color.white;
+        if (GUILayout.Button("Stage Details")) showStageDetails = !showStageDetails;
+        
+        GUI.backgroundColor = showStageNavigation ? Color.yellow : Color.white;
+        if (GUILayout.Button("Navigation")) showStageNavigation = !showStageNavigation;
+        
+        GUI.backgroundColor = showGameState ? Color.yellow : Color.white;
+        if (GUILayout.Button("Game State")) showGameState = !showGameState;
+        
+        GUI.backgroundColor = showSystemOverview ? Color.yellow : Color.white;
+        if (GUILayout.Button("Overview")) showSystemOverview = !showSystemOverview;
+        
+        GUI.backgroundColor = Color.white;
         GUILayout.EndHorizontal();
     }
 
     private void DrawStageDetailsSection()
     {
-        DebugUIHelpers.DrawSection("STAGE DETAILS", () => {
+        GUILayout.BeginVertical(GUI.skin.box);
+        GUILayout.Label("STAGE DETAILS", GUI.skin.box);
+        
+        try
+        {
             if (stageManager?.CurrentStage != null)
             {
                 var stage = stageManager.CurrentStage;
@@ -56,7 +82,7 @@ public class GameplayDebugPanel : DebugPanelBase
                 GUILayout.Label($"Grid: {stage.gridWidth}x{stage.gridHeight}");
                 GUILayout.Label($"Waves: {stage.waveConfigurations.Count}");
                 
-                DebugUIHelpers.DrawStatusIndicator("Progress", stageManager.IsStageInProgress);
+                GUILayout.Label($"Progress: {(stageManager.IsStageInProgress ? "In Progress" : "Not Started")}");
                 
                 if (!string.IsNullOrEmpty(stage.objective))
                 {
@@ -74,17 +100,23 @@ public class GameplayDebugPanel : DebugPanelBase
                 }
                 
                 // Quick stage controls
-                DebugUIHelpers.DrawButtonGrid(new(string, System.Action)[] {
-                    ("Restart", () => stageManager.RestartCurrentStage()),
-                    ("Force Win", () => stageManager.ForceCompleteStage(true)),
-                    ("Force Fail", () => stageManager.ForceCompleteStage(false))
-                });
+                GUILayout.BeginHorizontal();
+                if (GUILayout.Button("Restart")) stageManager.RestartCurrentStage();
+                if (GUILayout.Button("Force Win")) stageManager.ForceCompleteStage(true);
+                if (GUILayout.Button("Force Fail")) stageManager.ForceCompleteStage(false);
+                GUILayout.EndHorizontal();
             }
             else
             {
                 GUILayout.Label("No active stage");
             }
-        });
+        }
+        catch (System.Exception e)
+        {
+            GUILayout.Label($"Stage Details Error: {e.Message}");
+        }
+        
+        GUILayout.EndVertical();
     }
 
     private void DrawStageNavigationSection()

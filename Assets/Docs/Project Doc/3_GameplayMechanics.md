@@ -29,10 +29,10 @@ Details the functional rules and systemic interactions, clearly outlining the be
 ### Core Cube Types
 | Type | Visual | Movement | Capture Behavior | Special Properties |
 |------|--------|----------|------------------|-------------------|
-| **Normal** | Gray | Standard step movement | Capturable via markers | Basic scoring |
-| **Blue** | Blue | Standard step movement | Creates detonation markers | Generates cube markers on capture |
-| **Black** | Black | Standard step movement | **Uncapturable** | Kills player on contact |
-| **Reinforced** | Darker/Metallic | Standard step movement | Requires multiple hits | Increased durability |
+| **Unit** | Gray | Standard step movement | Capturable via markers | Basic scoring |
+| **Prime** | Blue | Standard step movement | Creates detonation markers | Generates cube markers on capture |
+| **Infinity** | Black | Standard step movement | **Uncapturable** | Kills player on contact |
+| **Dense** | Darker/Metallic | Standard step movement | Requires multiple hits | Increased durability |
 
 ### Movement System
 - **Step-Based Progression**: Discrete grid movement per wave step
@@ -70,13 +70,13 @@ Face painting affects cube behavior dynamically based on cube orientation and fa
 ### Action System (PlayerActionManager)
 Comprehensive marker and detonation management:
 
-#### Individual Markers
+#### Light Markers
 - **Placement Key**: F
 - **Trigger Key**: R  
 - **Charge System**: Limited uses with regeneration
 - **Visual Feedback**: Placement indicators and charge display
 
-#### Area Markers  
+#### Prime Markers  
 - **Placement Key**: G
 - **Trigger Key**: T
 - **Coverage**: 2x2 grid area
@@ -85,14 +85,14 @@ Comprehensive marker and detonation management:
 
 #### Cube Markers
 - **Trigger Key**: Q
-- **Generation**: Created by capturing Blue cubes
+- **Generation**: Created by capturing Prime cubes
 - **Direct Detonation**: Immediate cube destruction
 - **Strategic Resource**: Finite and valuable
 
 ### Player Statistics
 Comprehensive tracking system:
-- **Cube Captures**: By type (Normal, Blue, Black attempts)
-- **Marker Usage**: Individual and area marker placement/triggers
+- **Cube Captures**: By type (Unit, Prime, Infinity attempts)
+- **Marker Usage**: Light and prime marker placement/triggers
 - **Detonation Metrics**: Efficiency and timing
 - **Movement Tracking**: Distance and time
 - **Death/Respawn**: Player mortality events
@@ -128,10 +128,10 @@ WaveData Properties:
 | Action | Input | System | Effect |
 |--------|-------|--------|--------|
 | **Movement** | WASD/Arrows | PlayerManager | Grid navigation |
-| **Individual Marker** | F | PlayerActionManager | Place single marker |
-| **Area Marker** | G | PlayerActionManager | Place 2x2 area marker |
-| **Trigger Individual** | R | PlayerActionManager | Activate individual markers |
-| **Trigger Area** | T | PlayerActionManager | Activate area markers |
+| **Light Marker** | F | PlayerActionManager | Place single marker |
+| **Prime Marker** | G | PlayerActionManager | Place 2x2 area marker |
+| **Trigger Light** | R | PlayerActionManager | Activate light markers |
+| **Trigger Prime** | T | PlayerActionManager | Activate prime markers |
 | **Trigger Cube Marker** | Q | PlayerActionManager | Direct cube detonation |
 | **Start Wave** | ENTER | WaveManager | Begin wave progression |
 | **Restart Level** | P | Game System | Reset current stage |
@@ -182,7 +182,7 @@ DetonationType Enum:
 1. **Marker-Based**: Cubes pass through marked tiles
 2. **Manual Trigger**: Player-activated marker detonation
 3. **Cube Marker**: Direct cube targeting
-4. **Blue Cube Capture**: Automatic marker generation
+4. **Prime Cube Capture**: Automatic marker generation
 
 ### Visual/Audio Feedback
 - **Placement Indicators**: Clear marker visualization

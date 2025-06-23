@@ -4,7 +4,7 @@ using System.Linq;
 using System;
 using System.Collections;
 
-public class PlayerManager : MonoBehaviour
+public class PlayerManager : MonoBehaviour, IManagerDebugInterface
 {
     #region Inspector Configuration
     [Header("Core References")]
@@ -636,5 +636,94 @@ public class PlayerManager : MonoBehaviour
     {
         if (enableDebugLogs) Debug.Log($"[PlayerManager] {message}");
     }
+    #endregion
+
+    #region IManagerDebugInterface Implementation
+
+    public bool EnableDebugLogs 
+    { 
+        get => enableDebugLogs; 
+        set => enableDebugLogs = value; 
+    }
+
+    public string GetDebugStatus()
+    {
+        string status = isDead ? "DEAD" : "ALIVE";
+        string invuln = respawnInvulnerabilityTimer > 0f ? " (INVULN)" : "";
+        return $"Player: {status}{invuln} @({currentTilePosition.x},{currentTilePosition.y}) Moves:{movesCount} Deaths:{playerDeaths}";
+    }
+
+    public Dictionary<string, object> GetDebugData()
+    {
+        return new Dictionary<string, object>
+        {
+            ["Is Alive"] = !isDead,
+            ["Current Position"] = $"({currentTilePosition.x}, {currentTilePosition.y})",
+            ["World Position"] = transform.position,
+            ["Is Moving"] = isMoving,
+            ["Current Velocity"] = currentVelocity,
+            ["Respawn Invulnerability"] = respawnInvulnerabilityTimer,
+            ["Moves Count"] = movesCount,
+            ["Player Deaths"] = playerDeaths,
+            ["Time Alive"] = timeAlive,
+            ["Total Play Time"] = totalPlayTime,
+            ["Normal Cubes Captured"] = normalCubesCaptured,
+            ["Blue Cubes Captured"] = blueCubesCaptured,
+            ["Black Cubes Captured"] = blackCubesCaptured,
+            ["Reinforced Cubes Captured"] = reinforcedCubesCaptured,
+            ["Cubes Escaped"] = cubesEscaped,
+            ["Markers Placed"] = markersPlaced,
+            ["Markers Triggered"] = markersTriggered,
+            ["Detonations Used"] = detonationsUsed,
+            ["Tiles Corrupted"] = tilesCorrupted,
+            ["Tiles Enhanced"] = tilesEnhanced,
+            ["Max Marker Charge"] = maxMarkerCharge,
+            ["Current Markers"] = currentMarkers,
+            ["Debug Death Override"] = debugDeathOverride
+        };
+    }
+
+    public void ResetToDefaults()
+    {
+        // Reset position to initial location
+        SetPosition(grid.Width / 2, 0);
+        
+        // Reset state
+        isDead = false;
+        respawnInvulnerabilityTimer = 0f;
+        currentVelocity = Vector3.zero;
+        isMoving = false;
+        
+        // Reset markers
+        ResetMarkers();
+        
+        // Reset statistics
+        ResetStatistics();
+        
+        // Clear hover tile
+        if (currentHoveredTile != null)
+        {
+            currentHoveredTile.SetPlayerHover(false);
+            currentHoveredTile = null;
+        }
+        
+        if (EnableDebugLogs)
+            Debug.Log("[PlayerManager] Reset to defaults completed");
+    }
+
+    public void LoadConfiguration(string configName)
+    {
+        // TODO: Implement configuration loading for player settings
+        if (EnableDebugLogs)
+            Debug.Log($"[PlayerManager] Loading configuration: {configName} (not yet implemented)");
+    }
+
+    public void SaveConfiguration(string configName)
+    {
+        // TODO: Implement configuration saving for player settings
+        if (EnableDebugLogs)
+            Debug.Log($"[PlayerManager] Saving configuration: {configName} (not yet implemented)");
+    }
+
     #endregion
 }

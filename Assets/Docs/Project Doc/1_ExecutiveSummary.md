@@ -43,16 +43,16 @@ The heartbeat of the game - cubes advance in perfect synchronization:
 
 ### **Cosmic Paint Mechanics**
 Where order meets chaos - tiles can paint cube faces with cosmic liquids:
-- **Dark Matter (Corruption)**: Transforms normal cubes into chaotic threats
+- **Dark Matter (Corruption)**: Transforms unit cubes into chaotic threats
 - **Stellar Plasma (Enhancement)**: Elevates simple cubes into valuable resources
 - **Temporal Effects**: Paint duration creates evolving rhythmic patterns
 - **Face Rotation**: Painted effects activate as cubes roll forward
 
 ### **Multi-Layered Marker System**
 Tools for conducting the cosmic orchestra:
-- **Individual Markers**: Precision beats in the cosmic rhythm
-- **Area Markers**: Harmonic coverage creating chord progressions
-- **Cube Markers**: Crescendo moments generated from Blue cube captures
+- **Light Markers**: Precision beats in the cosmic rhythm
+- **Prime Markers**: Harmonic coverage creating chord progressions
+- **Cube Markers**: Crescendo moments generated from Prime cube captures
 
 ### **Progressive Rhythm Training**
 12-stage journey from simple beats to complex cosmic jazz:

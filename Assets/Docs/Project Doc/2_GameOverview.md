@@ -28,11 +28,11 @@ From learning the beat to conducting cosmic jazz - players evolve from pattern r
 - **Movement**: WASD navigation in sync with the beat
 - **Observation**: Learning which cubes follow which patterns
 - **Anticipation**: Predicting where the rhythm will take them
-- **Threat Assessment**: Black cubes as dangerous discord
+- **Threat Assessment**: Infinity cubes as dangerous discord
 
 ### 3. **Marker Placement - Conducting the Orchestra**
-- **Individual Markers** (F): Precise notes in the cosmic score
-- **Area Markers** (G): Harmonic zones creating chord progressions
+- **Light Markers** (F): Precise notes in the cosmic score
+- **Prime Markers** (G): Harmonic zones creating chord progressions
 - **Timing Windows**: Placing markers in rhythm with cube advancement
 - **Resource Tempo**: Managing regeneration cycles
 
@@ -45,7 +45,7 @@ From learning the beat to conducting cosmic jazz - players evolve from pattern r
 ### 5. **Active Performance - The Dance**
 - **Cube Advancement**: The steady beat continues
 - **Capture Moments**: Successful hits create musical feedback
-- **Blue Cube Crescendos**: High-value captures generate cube markers
+- **Prime Cube Crescendos**: High-value captures generate cube markers
 - **Detonation Symphony**: Chain reactions as climactic moments
 
 ### 6. **Dynamic Improvisation - Adapting to Chaos**
@@ -91,10 +91,10 @@ From learning the beat to conducting cosmic jazz - players evolve from pattern r
 
 | Cube Type | Rhythm Role | Chaos Interaction | Player Response |
 |-----------|-------------|-------------------|-----------------|
-| **Normal** | Basic beat, steady tempo | Can be corrupted or enhanced | Standard capture timing |
-| **Blue** | Valuable notes, create crescendos | Generate detonation resources | Aggressive pursuit |
-| **Black** | Dangerous discord, break rhythm | Cannot be transformed | Avoidance choreography |
-| **Reinforced** | Strong beats, require multiple hits | Resist transformation | Extended engagement |
+| **Unit** | Basic beat, steady tempo | Can be corrupted or enhanced | Standard capture timing |
+| **Prime** | Valuable notes, create crescendos | Generate detonation resources | Aggressive pursuit |
+| **Infinity** | Dangerous discord, break rhythm | Cannot be transformed | Avoidance choreography |
+| **Dense** | Strong beats, require multiple hits | Resist transformation | Extended engagement |
 
 ### The Chaos Bringers - Paint System
 
@@ -111,18 +111,18 @@ From learning the beat to conducting cosmic jazz - players evolve from pattern r
 
 ### The Conductor's Tools - Markers
 
-#### **Individual Markers (F/R)**
+#### **Light Markers (F/R)**
 - Single-tile precision instruments
 - Create focused capture moments
 - Limited charges require rhythmic timing
 
-#### **Area Markers (G/T)**
+#### **Prime Markers (G/T)**
 - 2x2 harmonic zones
 - Capture multiple cubes in chord progressions
 - Cooldown creates rhythmic availability
 
 #### **Cube Markers (Q)**
-- Generated from Blue cube captures
+- Generated from Prime cube captures
 - Direct detonation capabilities
 - Crescendo moments of power
 
@@ -130,7 +130,7 @@ From learning the beat to conducting cosmic jazz - players evolve from pattern r
 
 ### From Metronome to Maestro
 
-1. **Rhythm Student**: Learning basic patterns, avoiding Black cubes
+1. **Rhythm Student**: Learning basic patterns, avoiding Infinity cubes
 2. **Beat Reader**: Anticipating cube movements, basic marker timing
 3. **Pattern Conductor**: Managing multiple cube types, resource optimization
 4. **Chaos Apprentice**: Discovering paint mechanics, controlled disruption

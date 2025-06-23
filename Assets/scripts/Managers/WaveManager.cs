@@ -5,7 +5,7 @@ using UnityEngine;
 using System.Linq;
 using static Enumerations;
 
-public class WaveManager : MonoBehaviour
+public class WaveManager : MonoBehaviour, IManagerDebugInterface
 {
     #region Inspector Configuration
     [Header("Core References")]
@@ -720,5 +720,91 @@ public class WaveManager : MonoBehaviour
             Destroy(cube.gameObject);
         }
     }
+    #endregion
+
+    #region IManagerDebugInterface Implementation
+
+    public bool EnableDebugLogs { get; set; } = false;
+
+    public string GetDebugStatus()
+    {
+        string status = waveActive ? "ACTIVE" : "STOPPED";
+        string speedState = isSpeedingUp ? "FAST" : "NORMAL";
+        return $"Wave {currentWaveIndex}: {status} ({speedState}) Step:{MoveStep} Cubes:{activeCubes.Count} Mode:{(debugMode ? "DEBUG" : "NORMAL")}";
+    }
+
+    public Dictionary<string, object> GetDebugData()
+    {
+        return new Dictionary<string, object>
+        {
+            ["Wave Active"] = waveActive,
+            ["Current Wave Index"] = currentWaveIndex,
+            ["Move Step"] = MoveStep,
+            ["Active Cubes"] = activeCubes.Count,
+            ["Is Speeding Up"] = isSpeedingUp,
+            ["Debug Mode"] = debugMode,
+            ["Manual Control"] = manualControl,
+            ["Is Paused"] = isPaused,
+            ["Show Messages"] = showMessages,
+            ["Normal Cubes Captured"] = normalCubesCaptured,
+            ["Blue Cubes Captured"] = blueCubesCaptured,
+            ["Reinforced Cubes Captured"] = reinforcedCubesCaptured,
+            ["Cubes Escaped"] = cubesEscaped,
+            ["Markers Placed"] = markersPlaced,
+            ["Detonations Used"] = detonationsUsed,
+            ["Total Non-Black Cubes"] = totalNonBlackCubes,
+            ["Processed Non-Black Cubes"] = processedNonBlackCubes,
+            ["Current Move Interval"] = GetCurrentMoveInterval(),
+            ["Wave Start Delay"] = GetWaveStartDelay(),
+            ["Use Wave Configuration"] = useWaveConfiguration,
+            ["Pending Messages"] = pendingMessages.Count
+        };
+    }
+
+    public void ResetToDefaults()
+    {
+        // Stop current wave
+        StopWave();
+        
+        // Reset wave index
+        currentWaveIndex = 0;
+        MoveStep = 0;
+        
+        // Reset flags
+        waveActive = false;
+        isSpeedingUp = false;
+        debugMode = false;
+        manualControl = false;
+        isPaused = false;
+        
+        // Reset statistics
+        ResetWaveStatistics();
+        
+        // Clear message queue
+        pendingMessages.Clear();
+        isProcessingMessageQueue = false;
+        
+        // Hide any active messages
+        if (messagePanel != null)
+            messagePanel.SetActive(false);
+        
+        if (EnableDebugLogs)
+            Debug.Log("[WaveManager] Reset to defaults completed");
+    }
+
+    public void LoadConfiguration(string configName)
+    {
+        // TODO: Implement configuration loading for wave settings
+        if (EnableDebugLogs)
+            Debug.Log($"[WaveManager] Loading configuration: {configName} (not yet implemented)");
+    }
+
+    public void SaveConfiguration(string configName)
+    {
+        // TODO: Implement configuration saving for wave settings
+        if (EnableDebugLogs)
+            Debug.Log($"[WaveManager] Saving configuration: {configName} (not yet implemented)");
+    }
+
     #endregion
 }

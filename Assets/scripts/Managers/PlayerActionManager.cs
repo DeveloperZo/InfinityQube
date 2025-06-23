@@ -36,7 +36,7 @@ public class AreaMarker
     }
 }
 
-public class PlayerActionManager : MonoBehaviour
+public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
 {
     [Header("References")]
     [SerializeField] private GridManager gridManager;
@@ -387,6 +387,83 @@ public class PlayerActionManager : MonoBehaviour
     public int GetCurrentCubeMarkers() => markerSystem?.cubeMarkers?.Count ?? 0;
     public int GetCurrentIndividualCharges() => currentIndividualMarkerCharges;
     public int GetCurrentAreaCharges() => currentAreaMarkerCharges;
+
+    #endregion
+
+    #region IManagerDebugInterface Implementation
+
+    public bool EnableDebugLogs { get; set; } = false;
+
+    public string GetDebugStatus()
+    {
+        return $"PlayerAction: Ind:{currentIndividualMarkerCharges}/{maxIndividualMarkerCharges} Area:{currentAreaMarkerCharges}/{maxAreaMarkerCharges} OnGrid:{currentIndividualMarkers}+{currentAreaMarkers} Cube:{GetCurrentCubeMarkers()}";
+    }
+
+    public Dictionary<string, object> GetDebugData()
+    {
+        return new Dictionary<string, object>
+        {
+            ["Individual Markers Placed"] = individualMarkersPlaced,
+            ["Current Individual Markers"] = currentIndividualMarkers,
+            ["Individual Charges"] = $"{currentIndividualMarkerCharges}/{maxIndividualMarkerCharges}",
+            ["Individual Cooldown Remaining"] = GetIndividualMarkerCooldownRemaining(),
+            ["Area Markers Placed"] = areaMarkersPlaced,
+            ["Current Area Markers"] = currentAreaMarkers,
+            ["Area Charges"] = $"{currentAreaMarkerCharges}/{maxAreaMarkerCharges}",
+            ["Area Cooldown Remaining"] = GetAreaMarkerCooldownRemaining(),
+            ["Cube Markers Active"] = GetCurrentCubeMarkers(),
+            ["Perfect Timing Hits"] = perfectTimingHits,
+            ["Cube Markers Triggered"] = cubeMarkersTriggered,
+            ["Input Enabled"] = inputEnabled,
+            ["Can Place Individual"] = CanPlaceIndividualMarker(),
+            ["Can Place Area"] = CanPlaceAreaMarker()
+        };
+    }
+
+    public void ResetToDefaults()
+    {
+        // Reset charges to max
+        currentIndividualMarkerCharges = maxIndividualMarkerCharges;
+        currentAreaMarkerCharges = maxAreaMarkerCharges;
+        
+        // Clear all markers
+        if (markerSystem != null)
+        {
+            markerSystem.ClearAllActions();
+        }
+        
+        // Reset counters
+        individualMarkersPlaced = 0;
+        areaMarkersPlaced = 0;
+        currentIndividualMarkers = 0;
+        currentAreaMarkers = 0;
+        cubeMarkersTriggered = 0;
+        perfectTimingHits = 0;
+        
+        // Reset timers
+        lastIndividualMarkerTime = 0f;
+        lastAreaMarkerTime = 0f;
+        
+        // Update UI
+        UpdateUI();
+        
+        if (EnableDebugLogs)
+            Debug.Log("[PlayerActionManager] Reset to defaults completed");
+    }
+
+    public void LoadConfiguration(string configName)
+    {
+        // TODO: Implement configuration loading from ScriptableObject or JSON
+        if (EnableDebugLogs)
+            Debug.Log($"[PlayerActionManager] Loading configuration: {configName} (not yet implemented)");
+    }
+
+    public void SaveConfiguration(string configName)
+    {
+        // TODO: Implement configuration saving to ScriptableObject or JSON
+        if (EnableDebugLogs)
+            Debug.Log($"[PlayerActionManager] Saving configuration: {configName} (not yet implemented)");
+    }
 
     #endregion
 }

@@ -2,8 +2,7 @@ using UnityEngine;
 using System;
 
 /// <summary>
-/// Centralized utility class for standardized debug UI components.
-/// Eliminates code duplication across debug panels and provides consistent styling.
+/// Simple utility class for basic debug UI components using Unity's built-in GUI styling.
 /// </summary>
 public static class DebugUIHelpers
 {
@@ -17,29 +16,28 @@ public static class DebugUIHelpers
     public static readonly Color SuccessColor = Color.green;
     #endregion
 
-    #region Common UI Components
+    #region Simple UI Components
 
     /// <summary>
-    /// Draws a toggle button with consistent styling and behavior using DebugTheme.
-    /// This replaces the identical DrawToggleButton method duplicated across 7 panels.
+    /// Draws a simple toggle button with basic Unity styling.
     /// </summary>
     /// <param name="label">Button text</param>
     /// <param name="current">Current toggle state</param>
-    /// <param name="activeColor">Color when active (defaults to theme active color)</param>
+    /// <param name="activeColor">Color when active (defaults to cyan)</param>
     /// <returns>New toggle state</returns>
     public static bool DrawToggleButton(string label, bool current, Color? activeColor = null)
     {
         Color originalColor = GUI.backgroundColor;
-        GUI.backgroundColor = current ? (activeColor ?? DebugTheme.Active) : DebugTheme.Inactive;
+        GUI.backgroundColor = current ? (activeColor ?? ActiveToggleColor) : InactiveToggleColor;
         
-        bool clicked = GUILayout.Button(label, DebugTheme.GetToggleStyle(), GUILayout.Height(25));
+        bool clicked = GUILayout.Button(label, GUILayout.Height(25));
         
         GUI.backgroundColor = originalColor;
         return clicked ? !current : current;
     }
 
     /// <summary>
-    /// Draws a standardized section with consistent boxing and header styling using DebugTheme.
+    /// Draws a simple section with basic Unity styling.
     /// </summary>
     /// <param name="title">Section title</param>
     /// <param name="content">Action to draw section content</param>
@@ -48,11 +46,11 @@ public static class DebugUIHelpers
     {
         if (!isExpanded) return;
 
-        GUILayout.BeginVertical(DebugTheme.GetBoxStyle());
+        GUILayout.BeginVertical(GUI.skin.box);
         
         if (!string.IsNullOrEmpty(title))
         {
-            GUILayout.Label(title, DebugTheme.GetHeaderStyle());
+            GUILayout.Label(title, GUI.skin.label);
             Space(3);
         }
         
@@ -61,7 +59,7 @@ public static class DebugUIHelpers
     }
 
     /// <summary>
-    /// Draws a grid of buttons with consistent spacing and layout using DebugTheme.
+    /// Draws a grid of buttons with basic Unity styling.
     /// </summary>
     /// <param name="buttonData">Array of (label, action) pairs</param>
     /// <param name="buttonsPerRow">Number of buttons per row</param>
@@ -74,7 +72,7 @@ public static class DebugUIHelpers
             for (int j = 0; j < buttonsPerRow && i + j < buttonData.Length; j++)
             {
                 var (label, action) = buttonData[i + j];
-                if (GUILayout.Button(label, DebugTheme.GetButtonStyle()))
+                if (GUILayout.Button(label))
                 {
                     action?.Invoke();
                 }
@@ -85,7 +83,7 @@ public static class DebugUIHelpers
     }
 
     /// <summary>
-    /// Draws scrollable content with consistent styling and height management.
+    /// Draws simple scrollable content with basic Unity styling.
     /// </summary>
     /// <param name="scrollPosition">Current scroll position</param>
     /// <param name="content">Action to draw scrollable content</param>
@@ -100,7 +98,7 @@ public static class DebugUIHelpers
     }
 
     /// <summary>
-    /// Draws an integer field with +/- buttons for easy adjustment using DebugTheme.
+    /// Draws an integer field with +/- buttons using basic Unity styling.
     /// </summary>
     /// <param name="label">Field label</param>
     /// <param name="value">Current value</param>
@@ -116,21 +114,21 @@ public static class DebugUIHelpers
         
         if (!string.IsNullOrEmpty(label))
         {
-            GUILayout.Label(label, DebugTheme.GetLabelStyle(), GUILayout.Width(labelWidth));
+            GUILayout.Label(label, GUILayout.Width(labelWidth));
         }
         
-        if (GUILayout.Button("-", DebugTheme.GetSmallButtonStyle(), GUILayout.Width(20)) && value > min)
+        if (GUILayout.Button("-", GUILayout.Width(20)) && value > min)
         {
             value -= step;
         }
         
-        string valueStr = GUILayout.TextField(value.ToString(), DebugTheme.GetTextFieldStyle(), GUILayout.Width(40));
+        string valueStr = GUILayout.TextField(value.ToString(), GUILayout.Width(40));
         if (int.TryParse(valueStr, out int newValue))
         {
             value = Mathf.Clamp(newValue, min, max);
         }
         
-        if (GUILayout.Button("+", DebugTheme.GetSmallButtonStyle(), GUILayout.Width(20)) && value < max)
+        if (GUILayout.Button("+", GUILayout.Width(20)) && value < max)
         {
             value += step;
         }
@@ -141,47 +139,7 @@ public static class DebugUIHelpers
     }
 
     /// <summary>
-    /// Draws a Vector2Int field with individual X/Y controls using DebugTheme.
-    /// </summary>
-    /// <param name="label">Field label</param>
-    /// <param name="value">Current value</param>
-    /// <param name="minX">Minimum X value</param>
-    /// <param name="maxX">Maximum X value</param>
-    /// <param name="minY">Minimum Y value</param>
-    /// <param name="maxY">Maximum Y value</param>
-    /// <returns>New value</returns>
-    public static Vector2Int DrawVector2IntField(string label, Vector2Int value, 
-                                                int minX = 0, int maxX = 100, 
-                                                int minY = 0, int maxY = 100)
-    {
-        GUILayout.BeginHorizontal();
-        
-        if (!string.IsNullOrEmpty(label))
-        {
-            GUILayout.Label(label, DebugTheme.GetLabelStyle(), GUILayout.Width(80));
-        }
-        
-        GUILayout.Label("X:", DebugTheme.GetLabelStyle(), GUILayout.Width(15));
-        string xStr = GUILayout.TextField(value.x.ToString(), DebugTheme.GetTextFieldStyle(), GUILayout.Width(30));
-        if (int.TryParse(xStr, out int newX))
-        {
-            value.x = Mathf.Clamp(newX, minX, maxX);
-        }
-        
-        GUILayout.Label("Y:", DebugTheme.GetLabelStyle(), GUILayout.Width(15));
-        string yStr = GUILayout.TextField(value.y.ToString(), DebugTheme.GetTextFieldStyle(), GUILayout.Width(30));
-        if (int.TryParse(yStr, out int newY))
-        {
-            value.y = Mathf.Clamp(newY, minY, maxY);
-        }
-        
-        GUILayout.EndHorizontal();
-        
-        return value;
-    }
-
-    /// <summary>
-    /// Draws a status indicator with color coding using DebugTheme.
+    /// Draws a simple status indicator with color coding.
     /// </summary>
     /// <param name="label">Status label</param>
     /// <param name="isActive">Whether status is active</param>
@@ -194,103 +152,16 @@ public static class DebugUIHelpers
                                           Color? activeColor = null, Color? inactiveColor = null)
     {
         GUILayout.BeginHorizontal();
-        GUILayout.Label($"{label}:", DebugTheme.GetLabelStyle());
+        GUILayout.Label($"{label}:");
         
         Color originalColor = GUI.color;
-        GUI.color = isActive ? (activeColor ?? DebugTheme.Success) : (inactiveColor ?? DebugTheme.Inactive);
-        GUILayout.Label(isActive ? activeText : inactiveText, DebugTheme.GetTextStyle());
+        GUI.color = isActive ? (activeColor ?? SuccessColor) : (inactiveColor ?? Color.gray);
+        GUILayout.Label(isActive ? activeText : inactiveText);
         GUI.color = originalColor;
         
         GUILayout.EndHorizontal();
     }
 
-    /// <summary>
-    /// Draws a list of items with selection and action buttons using DebugTheme.
-    /// </summary>
-    /// <typeparam name="T">Type of items in the list</typeparam>
-    /// <param name="items">List of items</param>
-    /// <param name="selectedItem">Currently selected item</param>
-    /// <param name="drawItem">Function to draw each item</param>
-    /// <param name="onSelect">Action when item is selected</param>
-    /// <param name="maxVisible">Maximum visible items</param>
-    /// <param name="scrollPosition">Scroll position</param>
-    /// <returns>Updated scroll position</returns>
-    public static Vector2 DrawSelectableList<T>(System.Collections.Generic.IList<T> items, T selectedItem,
-                                                System.Func<T, string> drawItem,
-                                                System.Action<T> onSelect = null,
-                                                int maxVisible = 10,
-                                                Vector2 scrollPosition = default)
-    {
-        if (items == null || items.Count == 0)
-        {
-            GUILayout.Label("No items found", DebugTheme.GetTextStyle());
-            return scrollPosition;
-        }
-
-        scrollPosition = GUILayout.BeginScrollView(scrollPosition, GUILayout.MaxHeight(maxVisible * 25));
-
-        foreach (T item in items)
-        {
-            bool isSelected = item != null && item.Equals(selectedItem);
-            
-            Color originalBgColor = GUI.backgroundColor;
-            if (isSelected)
-            {
-                GUI.backgroundColor = DebugTheme.Selected;
-            }
-
-            GUILayout.BeginHorizontal(DebugTheme.GetBoxStyle());
-            
-            string itemText = drawItem?.Invoke(item) ?? item?.ToString() ?? "null";
-            GUILayout.Label(itemText, DebugTheme.GetTextStyle());
-            
-            if (GUILayout.Button("Select", DebugTheme.GetSmallButtonStyle(), GUILayout.Width(60)))
-            {
-                onSelect?.Invoke(item);
-            }
-            
-            GUILayout.EndHorizontal();
-            GUI.backgroundColor = originalBgColor;
-        }
-
-        GUILayout.EndScrollView();
-        return scrollPosition;
-    }
-
-    /// <summary>
-    /// Draws a progress bar with text overlay using DebugTheme.
-    /// </summary>
-    /// <param name="label">Progress bar label</param>
-    /// <param name="current">Current value</param>
-    /// <param name="max">Maximum value</param>
-    /// <param name="width">Bar width</param>
-    /// <param name="height">Bar height</param>
-    public static void DrawProgressBar(string label, float current, float max, float width = 200f, float height = 20f)
-    {
-        if (!string.IsNullOrEmpty(label))
-        {
-            GUILayout.Label(label, DebugTheme.GetLabelStyle());
-        }
-
-        Rect rect = GUILayoutUtility.GetRect(width, height);
-        
-        // Background
-        GUI.Box(rect, "", DebugTheme.GetBoxStyle());
-        
-        // Progress fill
-        float progress = max > 0 ? Mathf.Clamp01(current / max) : 0f;
-        Rect fillRect = new Rect(rect.x + 2, rect.y + 2, (rect.width - 4) * progress, rect.height - 4);
-        
-        Color fillColor = progress > 0.66f ? DebugTheme.Success : progress > 0.33f ? DebugTheme.Warning : DebugTheme.Error;
-        Color originalColor = GUI.color;
-        GUI.color = fillColor;
-        GUI.DrawTexture(fillRect, Texture2D.whiteTexture);
-        GUI.color = originalColor;
-        
-        // Text overlay
-        string progressText = $"{current:F0}/{max:F0} ({progress:P0})";
-        GUI.Label(rect, progressText, DebugTheme.GetTextStyle());
-    }
     #endregion
 
     #region Utility Methods
@@ -331,7 +202,7 @@ public static class DebugUIHelpers
     }
 
     /// <summary>
-    /// Draws a horizontal separator line using DebugTheme.
+    /// Draws a simple horizontal separator line.
     /// </summary>
     public static void DrawSeparator()
     {
@@ -339,49 +210,128 @@ public static class DebugUIHelpers
         
         Rect rect = GUILayoutUtility.GetRect(GUILayoutUtility.GetLastRect().width, 1);
         Color originalColor = GUI.color;
-        GUI.color = DebugTheme.Border;
+        GUI.color = Color.gray;
         GUI.DrawTexture(rect, Texture2D.whiteTexture);
         GUI.color = originalColor;
         
         GUILayout.Space(5);
     }
+    
     #endregion
     
-    #region Theme Integration
+    #region Simple Initialization
     
     /// <summary>
-    /// Initializes the DebugTheme system. Call this at application start.
+    /// Simple initialization - no complex theme setup needed.
     /// </summary>
     public static void InitializeTheme()
     {
-        DebugTheme.RefreshStyles();
+        // No complex initialization needed - using basic Unity GUI
+        Debug.Log("DebugUIHelpers: Using simple Unity GUI styling");
     }
-    
+
     /// <summary>
-    /// Draws a theme toggle button to switch between dark and light themes.
+    /// Draws a Vector2Int field with +/- buttons for X and Y using basic Unity styling.
     /// </summary>
-    /// <returns>True if theme was changed</returns>
-    public static bool DrawThemeToggle()
+    /// <param name="label">Field label</param>
+    /// <param name="targetPosition">Current Vector2Int value</param>
+    /// <param name="minWidth">Minimum X value</param>
+    /// <param name="maxWidth">Maximum X value</param>
+    /// <param name="minHeight">Minimum Y value</param>
+    /// <param name="maxHeight">Maximum Y value</param>
+    /// <returns>New Vector2Int value</returns>
+    public static Vector2Int DrawVector2IntField(string label, Vector2Int targetPosition, int minWidth, int maxWidth, int minHeight, int maxHeight)
     {
-        string themeLabel = DebugTheme.CurrentTheme == DebugTheme.ThemeVariant.Dark ? "Light Theme" : "Dark Theme";
-        
-        if (GUILayout.Button(themeLabel, DebugTheme.GetSmallButtonStyle(), GUILayout.Width(100)))
+        GUILayout.BeginHorizontal();
+        if (!string.IsNullOrEmpty(label))
         {
-            DebugTheme.ToggleTheme();
-            return true;
+            GUILayout.Label(label, GUILayout.Width(60f));
         }
-        
-        return false;
+
+        // X field
+        GUILayout.Label("X", GUILayout.Width(12f));
+        if (GUILayout.Button("-", GUILayout.Width(20)) && targetPosition.x > minWidth)
+        {
+            targetPosition.x--;
+        }
+        string xStr = GUILayout.TextField(targetPosition.x.ToString(), GUILayout.Width(40));
+        if (int.TryParse(xStr, out int newX))
+        {
+            targetPosition.x = Mathf.Clamp(newX, minWidth, maxWidth);
+        }
+        if (GUILayout.Button("+", GUILayout.Width(20)) && targetPosition.x < maxWidth)
+        {
+            targetPosition.x++;
+        }
+
+        // Y field
+        GUILayout.Label("Y", GUILayout.Width(12f));
+        if (GUILayout.Button("-", GUILayout.Width(20)) && targetPosition.y > minHeight)
+        {
+            targetPosition.y--;
+        }
+        string yStr = GUILayout.TextField(targetPosition.y.ToString(), GUILayout.Width(40));
+        if (int.TryParse(yStr, out int newY))
+        {
+            targetPosition.y = Mathf.Clamp(newY, minHeight, maxHeight);
+        }
+        if (GUILayout.Button("+", GUILayout.Width(20)) && targetPosition.y < maxHeight)
+        {
+            targetPosition.y++;
+        }
+
+        GUILayout.EndHorizontal();
+        return new Vector2Int(
+            Mathf.Clamp(targetPosition.x, minWidth, maxWidth),
+            Mathf.Clamp(targetPosition.y, minHeight, maxHeight)
+        );
     }
-    
-    /// <summary>
-    /// Draws the current theme indicator.
-    /// </summary>
-    public static void DrawThemeIndicator()
+    public static Vector2 DrawVector2Field(string label, Vector2 targetPosition, int minWidth, int maxWidth, int minHeight, int maxHeight)
     {
-        string currentTheme = DebugTheme.CurrentTheme.ToString();
-        DrawStatusIndicator("Theme", true, currentTheme, currentTheme);
+        GUILayout.BeginHorizontal();
+        if (!string.IsNullOrEmpty(label))
+        {
+            GUILayout.Label(label, GUILayout.Width(60f));
+        }
+
+        // X field
+        GUILayout.Label("X", GUILayout.Width(12f));
+        if (GUILayout.Button("-", GUILayout.Width(20)) && targetPosition.x > minWidth)
+        {
+            targetPosition.x--;
+        }
+        string xStr = GUILayout.TextField(targetPosition.x.ToString(), GUILayout.Width(40));
+        if (int.TryParse(xStr, out int newX))
+        {
+            targetPosition.x = Mathf.Clamp(newX, minWidth, maxWidth);
+        }
+        if (GUILayout.Button("+", GUILayout.Width(20)) && targetPosition.x < maxWidth)
+        {
+            targetPosition.x++;
+        }
+
+        // Y field
+        GUILayout.Label("Y", GUILayout.Width(12f));
+        if (GUILayout.Button("-", GUILayout.Width(20)) && targetPosition.y > minHeight)
+        {
+            targetPosition.y--;
+        }
+        string yStr = GUILayout.TextField(targetPosition.y.ToString(), GUILayout.Width(40));
+        if (int.TryParse(yStr, out int newY))
+        {
+            targetPosition.y = Mathf.Clamp(newY, minHeight, maxHeight);
+        }
+        if (GUILayout.Button("+", GUILayout.Width(20)) && targetPosition.y < maxHeight)
+        {
+            targetPosition.y++;
+        }
+
+        GUILayout.EndHorizontal();
+        return new Vector2(
+            Mathf.Clamp(targetPosition.x, minWidth, maxWidth),
+            Mathf.Clamp(targetPosition.y, minHeight, maxHeight)
+        );
     }
-    
+
     #endregion
 }

@@ -12,8 +12,8 @@
 A grid-based tactical puzzle game where players strategically place markers to intercept advancing cube formations before they escape. Combining the spatial reasoning of classic puzzle games with resource management and predictive planning in a minimalist 3D environment that prioritizes mechanical clarity and strategic depth.
 
 ### Key Features
-- **Multi-layered Marker System**: Individual, area, and cube markers with distinct strategic applications
-- **Diverse Cube Mechanics**: Four cube types (Normal, Blue, Black, Reinforced) creating varied tactical scenarios  
+- **Multi-layered Marker System**: Light, prime, and cube markers with distinct strategic applications
+- **Diverse Cube Mechanics**: Four cube types (Unit, Prime, Infinity, Dense) creating varied tactical scenarios  
 - **Progressive Stage Design**: 12-stage structured learning curve with clear pedagogical progression
 - **Comprehensive Statistics**: Detailed performance tracking enabling improvement and replayability
 - **Robust Debug Infrastructure**: Extensive developer tooling supporting rapid iteration
@@ -26,8 +26,8 @@ A grid-based tactical puzzle game where players strategically place markers to i
 
 1. **Wave Initiation**: Player-controlled wave starts (ENTER key) with predetermined cube formations
 2. **Strategic Positioning**: WASD navigation, threat assessment, and opportunity recognition
-3. **Marker Placement**: Individual markers (F), Area markers (G), resource management
-4. **Active Engagement**: Cube advancement, capture events, blue cube rewards, manual detonation control
+3. **Marker Placement**: Light markers (F), Prime markers (G), resource management
+4. **Active Engagement**: Cube advancement, capture events, prime cube rewards, manual detonation control
 5. **Dynamic Response**: Resource regeneration, state adaptation, threat reaction
 6. **Wave Resolution**: Success conditions, statistics tracking, progression to next challenge
 
@@ -46,17 +46,17 @@ A grid-based tactical puzzle game where players strategically place markers to i
 
 #### **Player System (PlayerManager + PlayerActionManager)**
 - Smooth analog movement (WASD) with acceleration/deceleration physics
-- Three-tier marker system: Individual (F/R), Area (G/T), Cube markers (Q)
+- Three-tier marker system: Light (F/R), Prime (G/T), Cube markers (Q)
 - Resource management with charge limits, cooldowns, and regeneration
 - Comprehensive statistics tracking: captures, escapes, efficiency metrics
 
 #### **Cube System**
 | Type | Properties | Strategic Value |
 |------|------------|-----------------|
-| **Normal** | Capturable, basic scoring | Safe interaction, foundational gameplay |
-| **Blue** | Capturable, generates cube markers | High value, creates detonation resources |
-| **Black** | Uncapturable | Absolute threat, forces repositioning |
-| **Reinforced** | Capturable, Multi-hit requirement | High durability, resource optimization challenge |
+| **Unit** | Capturable, basic scoring | Safe interaction, foundational gameplay |
+| **Prime** | Capturable, generates cube markers | High value, creates detonation resources |
+| **Infinity** | Uncapturable | Absolute threat, forces repositioning |
+| **Dense** | Capturable, Multi-hit requirement | High durability, resource optimization challenge |
 
 #### **Wave Management (WaveManager)**
 - Manual wave initiation with step-based cube advancement
@@ -68,10 +68,10 @@ A grid-based tactical puzzle game where players strategically place markers to i
 ```
 Core Controls:
 Movement: WASD/Arrows → Grid navigation
-Individual Marker: F → Single-tile placement  
-Area Marker: G → 2x2 area placement
-Trigger Individual: R → Activate individual markers
-Trigger Area: T → Activate area markers
+Light Marker: F → Single-tile placement  
+Prime Marker: G → 2x2 area placement
+Trigger Light: R → Activate light markers
+Trigger Prime: T → Activate prime markers
 Trigger Cube Marker: Q → Direct cube detonation
 Wave Control: ENTER → Start wave progression
 System: P (restart), ESC (quit), TAB (toggle UI)
@@ -84,16 +84,16 @@ System: P (restart), ESC (quit), TAB (toggle UI)
 #### **Act 1: Learn the Rules (Stages 0-2)**
 - **Focus**: Core loop establishment and danger recognition
 - **Grid Size**: 5x20 with basic tool introduction
-- **Key Learning**: Movement, marker placement, black cube lethality
+- **Key Learning**: Movement, marker placement, infinity cube lethality
 
 #### **Act 2: Efficiency Under Pressure (Stages 3-5)**  
 - **Focus**: Density management and resource optimization
-- **Grid Size**: 7x25 with area marker introduction
-- **Key Learning**: Resource constraints, blue cube value, spatial management
+- **Grid Size**: 7x25 with prime marker introduction
+- **Key Learning**: Resource constraints, prime cube value, spatial management
 
 #### **Act 3: Advanced Tactics (Stages 6-8)**
 - **Focus**: Complex interactions and forward planning
-- **Grid Size**: 9x28-32 with reinforced cube introduction
+- **Grid Size**: 9x28-32 with dense cube introduction
 - **Key Learning**: Chain reactions, durability mechanics, perfect efficiency
 
 #### **Act 4: Environmental Hazards (Stages 9-10)**
@@ -177,7 +177,7 @@ StageData Components:
 - Foundational stage progression with tutorial content
 
 ### **Near-Term Development**
-- Advanced cube type implementation (Reinforced mechanics)
+- Advanced cube type implementation (Dense mechanics)
 - Complete tile state system (Corrupted/Enhanced tiles)
 - Remaining stage content creation and balance testing
 - Audio system integration and feedback implementation

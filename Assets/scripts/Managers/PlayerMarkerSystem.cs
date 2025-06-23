@@ -312,16 +312,10 @@ public class PlayerMarkerSystem : MonoBehaviour
         cubeMarkersTriggered++;
         DestroyMarkerVisual(cubeMarker.visualObject);
 
-        if (cubeMarker.type == CubeMarkerType.Individual)
-        {
-            return TriggerSingleTileMarker(cubeMarker.position);
-        }
-        else
-        {
-            var tempAreaMarker = new AreaMarker(cubeMarker.position, 3, Time.time);
-            tempAreaMarker.affectedPositions = GetAreaPositions(cubeMarker.position, 3);
-            return TriggerAreaMarkerAt(tempAreaMarker);
-        }
+        var tempAreaMarker = new AreaMarker(cubeMarker.position, 3, Time.time);
+        tempAreaMarker.affectedPositions = GetAreaPositions(cubeMarker.position, 3);
+        return TriggerAreaMarkerAt(tempAreaMarker);
+        
     }
 
     private bool TriggerSingleTileMarker(Vector2Int position)

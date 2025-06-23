@@ -634,29 +634,46 @@ public class Tile : MonoBehaviour
 
     public void HandleCubeLanding(CubeManager cube)
     {
-        if (cube == null || currentState != Enumerations.TileState.Transformed)
-            return;
+        if (cube == null) return;
+
+        // Store cube reference for potential processing
+        currentCube = cube;
         
-
-        if (IsBlackened)
+        // Handle transformed tile behavior
+        if (currentState == Enumerations.TileState.Transformed)
         {
-            // Black tiles have no effect
-            paintColor = Color.black;
-            paintStatus = FaceStatus.Corrupted;
-            ReduceCharge();
-        }
-
-        if (IsAdvantaged)
-        {
-            if (cube.type == Enumerations.CubeType.Black)
+            if (IsBlackened)
             {
-                Debug.Log("Black cube landed on an advantaged tile. Charge Reduced.");
+                // Black tiles have no effect but consume charge
+                paintColor = Color.black;
+                paintStatus = FaceStatus.Corrupted;
+                ReduceCharge();
             }
-            ReduceCharge();
+            else if (IsAdvantaged)
+            {
+                if (cube.type == Enumerations.CubeType.Black)
+                {
+                    Debug.Log("Black cube landed on an advantaged tile. Charge Reduced.");
+                }
+                ReduceCharge();
+            }
         }
 
+        // Handle face painting coordination
         TryPaintCube(cube);
+        
+        // Notify FacePaintingManager of coordination
+        NotifyFacePaintingManager(cube);
+    }
 
+    private void NotifyFacePaintingManager(CubeManager cube)
+    {
+        FacePaintingManager facePaintingManager = FindObjectOfType<FacePaintingManager>();
+        if (facePaintingManager != null && canPaintCubes)
+        {
+            Vector2Int pos = new Vector2Int(x, y);
+            facePaintingManager.OnCubeMoved(cube, pos, pos); // Update tracking
+        }
     }
 
     #region Overlay System - Replaces Material Management
@@ -777,6 +794,13 @@ public class Tile : MonoBehaviour
         paintOnLanding = onLanding;
         paintOnExit = onExit;
 
+        // Register with FacePaintingManager
+        FacePaintingManager facePaintingManager = FindObjectOfType<FacePaintingManager>();
+        if (facePaintingManager != null)
+        {
+            facePaintingManager.RegisterFacePaintingTile(this);
+        }
+
         Debug.Log($"Tile ({x},{y}) set up to paint cubes with {status} status");
     }
 
@@ -880,6 +904,13 @@ public class Tile : MonoBehaviour
     {
         canPaintCubes = false;
         paintStatus = FaceStatus.None;
+        
+        // Unregister from FacePaintingManager
+        FacePaintingManager facePaintingManager = FindObjectOfType<FacePaintingManager>();
+        if (facePaintingManager != null)
+        {
+            facePaintingManager.UnregisterFacePaintingTile(this);
+        }
     }
 
     #endregion

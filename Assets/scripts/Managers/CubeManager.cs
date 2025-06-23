@@ -1,8 +1,9 @@
 using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 using static Enumerations;
 
-public class CubeManager : MonoBehaviour
+public class CubeManager : MonoBehaviour, IManagerDebugInterface
 {
     [Header("Cube Properties")]
     [SerializeField] public int level = 1;
@@ -185,6 +186,13 @@ public class CubeManager : MonoBehaviour
         isDestroyed = true;
         StopAllCoroutines();
 
+        // Notify FacePaintingManager that cube is leaving
+        FacePaintingManager facePaintingManager = FindObjectOfType<FacePaintingManager>();
+        if (facePaintingManager != null)
+        {
+            facePaintingManager.OnCubeLeft(position);
+        }
+
         // Clean up face indicators
         for (int i = 0; i < faceIndicators.Length; i++)
         {
@@ -236,7 +244,16 @@ public class CubeManager : MonoBehaviour
         RotateFaceMapping();
         ProcessFaceDurations();
 
+        Vector2Int oldPosition = new Vector2Int(position.x, position.y + 1); // Previous position
+        
         Debug.Log($"Cube moved to ({position.x}, {position.y}), move count: {moveCount}");
+
+        // Notify FacePaintingManager of movement
+        FacePaintingManager facePaintingManager = FindObjectOfType<FacePaintingManager>();
+        if (facePaintingManager != null)
+        {
+            facePaintingManager.OnCubeMoved(this, oldPosition, position);
+        }
 
         StartCoroutine(AnimateMove(position));
 
@@ -725,6 +742,103 @@ public class CubeManager : MonoBehaviour
         }
         UpdateFaceVisuals();
         Debug.Log($"Cleared all face statuses on cube at ({position.x}, {position.y})");
+    }
+
+    #endregion
+
+    #region IManagerDebugInterface Implementation
+
+    public bool EnableDebugLogs { get; set; } = false;
+
+    public string GetDebugStatus()
+    {
+        string status = isDestroyed ? "DESTROYED" : (isMoving ? "MOVING" : "IDLE");
+        string effectiveType = GetEffectiveType().ToString();
+        return $"Cube {type}->{effectiveType}: @({position.x},{position.y}) HP:{currentHitPoints}/{maxHitPoints} ({status}) Face:{GetCurrentDownFace()}";
+    }
+
+    public Dictionary<string, object> GetDebugData()
+    {
+        return new Dictionary<string, object>
+        {
+            ["Cube Type"] = type.ToString(),
+            ["Effective Type"] = GetEffectiveType().ToString(),
+            ["Position"] = $"({position.x}, {position.y})",
+            ["World Position"] = transform.position,
+            ["Level"] = level,
+            ["Hit Points"] = $"{currentHitPoints}/{maxHitPoints}",
+            ["Move Count"] = moveCount,
+            ["Is Moving"] = isMoving,
+            ["Is Destroyed"] = isDestroyed,
+            ["Is Raining Cube"] = isRainingCube,
+            ["Move Count Remaining"] = moveCountRemaining,
+            ["Current Down Face"] = GetCurrentDownFace(),
+            ["Active Face Status"] = GetActiveFaceStatus(),
+            ["Can Be Captured"] = CanBeCaptured(),
+            ["Should Create Detonation"] = ShouldCreateDetonation(),
+            ["Use Physics"] = usePhysics,
+            ["Show Face Indicators"] = showFaceIndicators,
+            ["Material Assigned"] = material != null,
+            ["Prefab Assigned"] = prefab != null,
+            ["Move Duration"] = moveDuration,
+            ["Squash Duration"] = squashDuration,
+            ["Rain Speed"] = rainSpeed,
+            ["Rain Height"] = rainHeight,
+            ["Target Row"] = targetRow,
+            ["Tile Size"] = tileSize
+        };
+    }
+
+    public void ResetToDefaults()
+    {
+        // Reset cube state to initial values
+        isMoving = false;
+        isDestroyed = false;
+        moveCount = 0;
+        moveCountRemaining = 0;
+        isRainingCube = false;
+        targetRow = -1;
+        
+        // Reset health to maximum
+        currentHitPoints = maxHitPoints;
+        
+        // Clear all face paintings
+        ClearAllFaces();
+        
+        // Reset physics state
+        if (cubeRigidbody != null)
+        {
+            cubeRigidbody.velocity = Vector3.zero;
+            cubeRigidbody.angularVelocity = Vector3.zero;
+        }
+        
+        // Reset scale and rotation
+        transform.localScale = new Vector3(tileSize, tileSize, tileSize);
+        transform.rotation = Quaternion.identity;
+        
+        // Reset face mapping to original state
+        InitializeFaceMapping();
+        
+        // Update visuals
+        UpdateDamageVisual();
+        UpdateFaceVisuals();
+        
+        if (EnableDebugLogs)
+            Debug.Log($"[CubeManager] Cube at ({position.x}, {position.y}) reset to defaults");
+    }
+
+    public void LoadConfiguration(string configName)
+    {
+        // TODO: Implement configuration loading for cube settings
+        if (EnableDebugLogs)
+            Debug.Log($"[CubeManager] Loading configuration: {configName} (not yet implemented)");
+    }
+
+    public void SaveConfiguration(string configName)
+    {
+        // TODO: Implement configuration saving for cube settings
+        if (EnableDebugLogs)
+            Debug.Log($"[CubeManager] Saving configuration: {configName} (not yet implemented)");
     }
 
     #endregion

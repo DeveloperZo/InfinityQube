@@ -33,23 +33,112 @@ public class TestingDebugPanel : DebugPanelBase
 
     protected override void DrawPanelContent()
     {
-        DrawSectionToggles();
-        DebugUIHelpers.Space();
+        // Simple test content
+        GUILayout.Label("=== TESTING DEBUG PANEL ===");
+        GUILayout.Label("This panel is for integration testing!");
+        
+        GUILayout.Space(10);
+        
+        // Show manager status
+        GUILayout.Label($"Grid Manager: {(gridManager != null ? "Found" : "Missing")}");
+        GUILayout.Label($"Player Manager: {(playerManager != null ? "Found" : "Missing")}");
+        GUILayout.Label($"Wave Manager: {(waveManager != null ? "Found" : "Missing")}");
+        
+        GUILayout.Space(10);
+        
+        // Simple test buttons
+        if (GUILayout.Button("Test Button 1"))
+        {
+            Debug.Log("Testing Panel: Button 1 clicked!");
+        }
+        
+        if (GUILayout.Button("Test Button 2"))
+        {
+            Debug.Log("Testing Panel: Button 2 clicked!");
+        }
+        
+        try
+        {
+            DrawSectionToggles();
+            GUILayout.Space(5);
 
-        if (showFacePainting) DrawFacePaintingSection();
-        if (showTestScenarios) DrawTestScenariosSection();
-        if (showAdvancedTests) DrawAdvancedTestsSection();
-        if (showIntegrationTests) DrawIntegrationTestsSection();
+            if (showFacePainting) DrawSimpleFacePaintingSection();
+            if (showTestScenarios) DrawSimpleTestScenariosSection();
+            if (showAdvancedTests) DrawSimpleAdvancedTestsSection();
+            if (showIntegrationTests) DrawSimpleIntegrationTestsSection();
+        }
+        catch (System.Exception e)
+        {
+            GUILayout.Label($"Testing Panel Error: {e.Message}");
+        }
     }
 
     private void DrawSectionToggles()
     {
         GUILayout.BeginHorizontal();
-        showFacePainting = DebugUIHelpers.DrawToggleButton("Face Paint", showFacePainting);
-        showTestScenarios = DebugUIHelpers.DrawToggleButton("Scenarios", showTestScenarios);
-        showAdvancedTests = DebugUIHelpers.DrawToggleButton("Advanced", showAdvancedTests);
-        showIntegrationTests = DebugUIHelpers.DrawToggleButton("Integration", showIntegrationTests);
+        
+        GUI.backgroundColor = showFacePainting ? Color.yellow : Color.white;
+        if (GUILayout.Button("Face Paint")) showFacePainting = !showFacePainting;
+        
+        GUI.backgroundColor = showTestScenarios ? Color.yellow : Color.white;
+        if (GUILayout.Button("Scenarios")) showTestScenarios = !showTestScenarios;
+        
+        GUI.backgroundColor = showAdvancedTests ? Color.yellow : Color.white;
+        if (GUILayout.Button("Advanced")) showAdvancedTests = !showAdvancedTests;
+        
+        GUI.backgroundColor = showIntegrationTests ? Color.yellow : Color.white;
+        if (GUILayout.Button("Integration")) showIntegrationTests = !showIntegrationTests;
+        
+        GUI.backgroundColor = Color.white;
         GUILayout.EndHorizontal();
+    }
+    
+    private void DrawSimpleFacePaintingSection()
+    {
+        GUILayout.BeginVertical(GUI.skin.box);
+        GUILayout.Label("FACE PAINTING (Simplified)", GUI.skin.box);
+        GUILayout.Label("Face painting tools would go here.");
+        if (GUILayout.Button("Test Face Paint"))
+        {
+            Debug.Log("Face painting test clicked!");
+        }
+        GUILayout.EndVertical();
+    }
+    
+    private void DrawSimpleTestScenariosSection()
+    {
+        GUILayout.BeginVertical(GUI.skin.box);
+        GUILayout.Label("TEST SCENARIOS (Simplified)", GUI.skin.box);
+        GUILayout.Label("Test scenarios would go here.");
+        if (GUILayout.Button("Run Test Scenario"))
+        {
+            Debug.Log("Test scenario clicked!");
+        }
+        GUILayout.EndVertical();
+    }
+    
+    private void DrawSimpleAdvancedTestsSection()
+    {
+        GUILayout.BeginVertical(GUI.skin.box);
+        GUILayout.Label("ADVANCED TESTS (Simplified)", GUI.skin.box);
+        GUILayout.Label("Advanced tests would go here.");
+        if (GUILayout.Button("Run Advanced Test"))
+        {
+            Debug.Log("Advanced test clicked!");
+        }
+        GUILayout.EndVertical();
+    }
+    
+    private void DrawSimpleIntegrationTestsSection()
+    {
+        GUILayout.BeginVertical(GUI.skin.box);
+        GUILayout.Label("INTEGRATION TESTS (Simplified)", GUI.skin.box);
+        GUILayout.Label("Integration tests would go here.");
+        if (GUILayout.Button("Run Integration Test"))
+        {
+            Debug.Log("Integration test clicked!");
+        }
+        GUILayout.EndVertical();
     }
 
     private void DrawFacePaintingSection()
