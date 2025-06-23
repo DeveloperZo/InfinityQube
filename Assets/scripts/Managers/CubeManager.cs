@@ -112,8 +112,8 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
 
     public void UpdateDamageVisual()
     {
-        // Only apply damage visuals to reinforced cubes
-        if (type != CubeType.Reinforced) return;
+        // Only apply damage visuals to dense cubes
+        if (type != CubeType.Dense) return;
 
         // Calculate damage ratio (1.0 = full health, 0.0 = destroyed)
         float damageRatio = maxHitPoints > 0 ? (float)currentHitPoints / maxHitPoints : 1.0f;
@@ -148,7 +148,7 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
                 
                 cubeRenderer.material = damagedMaterial;
                 
-                Debug.Log($"Reinforced cube at ({position.x}, {position.y}) visual damage updated: {damageRatio:F2} health ratio");
+                Debug.Log($"Dense cube at ({position.x}, {position.y}) visual damage updated: {damageRatio:F2} health ratio");
             }
         }
         else if (material != null)
@@ -218,9 +218,9 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
             {
                 CubeType effectiveType = GetEffectiveType();
 
-                if (effectiveType == CubeType.Black)
+                if (effectiveType == CubeType.Infinity)
                 {
-                    Debug.Log("Cube with corrupted face escaped (acts as black)");
+                    Debug.Log("Cube with corrupted face escaped (acts as infinity)");
                 }
                 else
                 {
@@ -243,6 +243,7 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
 
         RotateFaceMapping();
         ProcessFaceDurations();
+        UpdateFaceRotationTracking(); // Enhanced face rotation tracking
 
         Vector2Int oldPosition = new Vector2Int(position.x, position.y + 1); // Previous position
         
@@ -361,9 +362,9 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
         switch (activeStatus)
         {
             case FaceStatus.Corrupted:
-                return CubeType.Black;
+                return CubeType.Infinity;
             case FaceStatus.Enhanced:
-                return type == CubeType.Normal ? CubeType.Blue : type;
+                return type == CubeType.Unit ? CubeType.Prime : type;
             default:
                 return type;
         }
@@ -378,14 +379,14 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
             case FaceStatus.Corrupted:
                 return false;
             default:
-                return type != CubeType.Black;
+                return type != CubeType.Infinity;
         }
     }
 
     public bool ShouldCreateDetonation()
     {
         FaceStatus activeStatus = GetActiveFaceStatus();
-        return activeStatus == FaceStatus.Enhanced || type == CubeType.Blue;
+        return activeStatus == FaceStatus.Enhanced || type == CubeType.Prime;
     }
 
     public void PaintFace(CubeFace face, FaceStatus status, Color color, int duration = -1)
@@ -712,6 +713,9 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
 
         // Update visuals immediately after rotation to ensure proper orientation
         UpdateFaceVisuals();
+        
+        // Enhanced face rotation tracking for corruption mechanics
+        UpdateFaceRotationTracking();
     }
 
     // Public methods for external testing
@@ -742,6 +746,124 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
         }
         UpdateFaceVisuals();
         Debug.Log($"Cleared all face statuses on cube at ({position.x}, {position.y})");
+    }
+
+    #endregion
+
+    #region Marker Interaction and Corruption System
+
+    /// <summary>
+    /// Called when a marker hits this cube. Handles infinity cube face painting.
+    /// </summary>
+    public void OnMarkerHit()
+    {
+        if (type == CubeType.Infinity)
+        {
+            CubeFace topFace = GetTopFace();
+            PaintFace(topFace, FaceStatus.Corrupted, Color.black, -1);
+            CreateMarkerHitEffect();
+            Debug.Log($"Infinity cube at ({position.x}, {position.y}) hit by marker - top face painted for corruption");
+        }
+    }
+
+    /// <summary>
+    /// Gets the current top face of the cube based on face mapping
+    /// </summary>
+    /// <returns>The face currently positioned at the top</returns>
+    public CubeFace GetTopFace()
+    {
+        return currentFaceMapping[1]; // Index 1 is the top position
+    }
+
+    /// <summary>
+    /// Creates visual effect when marker hits cube
+    /// </summary>
+    private void CreateMarkerHitEffect()
+    {
+        // Create a temporary visual effect for marker hit
+        GameObject hitEffect = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+        hitEffect.name = "MarkerHitEffect";
+        hitEffect.transform.position = transform.position + Vector3.up * 0.6f;
+        hitEffect.transform.localScale = Vector3.one * 0.3f;
+        
+        // Set up the effect material
+        Renderer renderer = hitEffect.GetComponent<Renderer>();
+        Material effectMaterial = new Material(Shader.Find("Standard"));
+        effectMaterial.color = new Color(1f, 0.5f, 0f, 0.8f); // Orange color
+        effectMaterial.SetFloat("_Mode", 3); // Transparent mode
+        effectMaterial.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
+        effectMaterial.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+        effectMaterial.SetInt("_ZWrite", 0);
+        effectMaterial.EnableKeyword("_ALPHABLEND_ON");
+        effectMaterial.renderQueue = 3000;
+        renderer.material = effectMaterial;
+        
+        // Remove collider to avoid interference
+        Destroy(hitEffect.GetComponent<Collider>());
+        
+        // Destroy the effect after a short time
+        Destroy(hitEffect, 1f);
+    }
+
+    /// <summary>
+    /// Checks if this cube should trigger corruption based on its current state
+    /// </summary>
+    public void CheckForCorruption()
+    {
+        if (type == CubeType.Infinity && HasCorruptedDownFace())
+        {
+            // Coordinate with tile for corruption
+            Vector2Int currentPos = position;
+            if (grid != null && currentPos.x >= 0 && currentPos.x < grid.Width && 
+                currentPos.y >= 0 && currentPos.y < grid.Height)
+            {
+                Tile currentTile = grid.tiles[currentPos.x, currentPos.y];
+                if (currentTile != null)
+                {
+                    // Signal to tile that corruption should occur
+                    // This provides the coordination point for the Tile.cs task
+                    PrepareCorruptionForTile(currentTile);
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// Checks if the current down face has corrupted status
+    /// </summary>
+    /// <returns>True if the down face is corrupted</returns>
+    private bool HasCorruptedDownFace()
+    {
+        CubeFace downFace = GetCurrentDownFace();
+        return faceStatuses[(int)downFace] == FaceStatus.Corrupted;
+    }
+
+    /// <summary>
+    /// Prepares corruption coordination with tile system
+    /// </summary>
+    /// <param name="tile">The tile to coordinate corruption with</param>
+    private void PrepareCorruptionForTile(Tile tile)
+    {
+        // This method provides the coordination point for tile corruption
+        // The actual tile corruption logic will be implemented in the Tile.cs task
+        Debug.Log($"Infinity cube at ({position.x}, {position.y}) preparing corruption for tile - ready for Tile.cs implementation");
+        
+        // Mark cube as having triggered corruption
+        // Additional corruption state tracking can be added here if needed
+    }
+
+    /// <summary>
+    /// Enhanced face rotation tracking for corruption mechanics
+    /// </summary>
+    private void UpdateFaceRotationTracking()
+    {
+        // Enhanced tracking of face rotation for corruption preparation
+        // This ensures accurate face state during cube movement
+        if (type == CubeType.Infinity)
+        {
+            // Track which face was painted and is now in the down position
+            CheckForCorruption();
+        }
     }
 
     #endregion

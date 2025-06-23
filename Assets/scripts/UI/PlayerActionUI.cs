@@ -6,26 +6,39 @@ public class PlayerActionUI : MonoBehaviour
 {
     [Header("UI References")]
     [SerializeField] private Image[] lightMarkerSegments = new Image[6];
-    [SerializeField] private Image[] areaMarkerSegments = new Image[6];
+    [SerializeField] private Image[] heavyMarkerSegments = new Image[6];
+    [SerializeField] private Image[] primeMarkerSegments = new Image[6];
+    [SerializeField] private Image[] cubeMarkerSegments = new Image[6];
     [SerializeField] private TextMeshProUGUI lightChargeText;
-    [SerializeField] private TextMeshProUGUI areaChargeText;
+    [SerializeField] private TextMeshProUGUI heavyChargeText;
+    [SerializeField] private TextMeshProUGUI primeChargeText;
+    [SerializeField] private TextMeshProUGUI cubeChargeText;
 
     [Header("UI Colors")]
     [SerializeField] private Color segmentFullColor = new Color(1f, 0.7f, 0.2f, 1f);     // Orange when charged
     [SerializeField] private Color segmentChargingColor = new Color(0.5f, 0.5f, 1f, 0.8f); // Blue when charging
     [SerializeField] private Color segmentFirstChargeColor = new Color(0.7f, 0.7f, 1f, 0.6f); // Light blue when charging toward first charge
     [SerializeField] private Color segmentEmptyColor = new Color(0.3f, 0.3f, 0.3f, 0.3f);  // Gray when empty
+    [SerializeField] private Color heavyMarkerColor = new Color(1f, 0.3f, 0.3f, 1f);      // Red for heavy markers
+    [SerializeField] private Color primeMarkerColor = new Color(0.8f, 0.2f, 1f, 1f);      // Purple for prime markers
+    [SerializeField] private Color cubeMarkerColor = new Color(0.2f, 1f, 0.2f, 1f);       // Green for cube markers
 
     [Header("Cooldown Settings")]
     [SerializeField] private PlayerActionManager playerActionManager;
     public float lightMarkerCooldownTime = 2f;
-    public float areaMarkerCooldownTime = 4f;
+    public float heavyMarkerCooldownTime = 5f;
+    public float primeMarkerCooldownTime = 4f;
+    public float cubeMarkerCooldownTime = 1f;
 
     // Cached references
     public int lightCharges;
     public int lightMaxCharges;
-    public int areaCharges;
-    public int areaMaxCharges;
+    public int heavyCharges;
+    public int heavyMaxCharges;
+    public int primeCharges;
+    public int primeMaxCharges;
+    public int cubeCharges;
+    public int cubeMaxCharges;
 
     void Start()
     {
@@ -33,10 +46,14 @@ public class PlayerActionUI : MonoBehaviour
 
         if (playerActionManager != null)
         {
-            lightMaxCharges = playerActionManager.maxIndividualMarkerCharges;
-            areaMaxCharges = playerActionManager.maxAreaMarkerCharges;
-            lightMarkerCooldownTime = playerActionManager.individualMarkerCooldown;
-            areaMarkerCooldownTime = playerActionManager.areaMarkerCooldown;
+            lightMaxCharges = playerActionManager.maxLightMarkerCharges;
+            heavyMaxCharges = playerActionManager.maxHeavyMarkerCharges;
+            primeMaxCharges = playerActionManager.maxPrimeMarkerCharges;
+            cubeMaxCharges = 10; // Default value for cube markers
+            lightMarkerCooldownTime = playerActionManager.lightMarkerCooldown;
+            heavyMarkerCooldownTime = playerActionManager.heavyMarkerCooldown;
+            primeMarkerCooldownTime = playerActionManager.primeMarkerCooldown;
+            cubeMarkerCooldownTime = 1f; // Default value for cube markers
         }
 
         UpdateDisplay();
@@ -47,26 +64,51 @@ public class PlayerActionUI : MonoBehaviour
         UpdateDisplay();
     }
 
-    public void UpdateCharges(int currentLightCharges, int currentAreaCharges)
+    public void UpdateCharges(int currentLightCharges, int currentHeavyCharges, int currentPrimeCharges, int currentCubeCharges)
     {
         lightCharges = currentLightCharges;
-        areaCharges = currentAreaCharges;
+        heavyCharges = currentHeavyCharges;
+        primeCharges = currentPrimeCharges;
+        cubeCharges = currentCubeCharges;
 
         // Set max charges if not already set
         if (lightMaxCharges == 0 && playerActionManager != null)
         {
-            lightMaxCharges = playerActionManager.maxIndividualMarkerCharges;
+            lightMaxCharges = playerActionManager.maxLightMarkerCharges;
         }
-        if (areaMaxCharges == 0 && playerActionManager != null)
+        if (heavyMaxCharges == 0 && playerActionManager != null)
         {
-            areaMaxCharges = playerActionManager.maxAreaMarkerCharges;
+            heavyMaxCharges = playerActionManager.maxHeavyMarkerCharges;
+        }
+        if (primeMaxCharges == 0 && playerActionManager != null)
+        {
+            primeMaxCharges = playerActionManager.maxPrimeMarkerCharges;
+        }
+        if (cubeMaxCharges == 0)
+        {
+            cubeMaxCharges = 10; // Default value for cube markers
         }
     }
 
+    // Backward compatibility method
+    public void UpdateCharges(int currentLightCharges, int currentAreaCharges)
+    {
+        UpdateCharges(currentLightCharges, 0, currentAreaCharges, 0);
+    }
+
+    public void UpdateCooldowns(float lightCooldown, float heavyCooldown, float primeCooldown, float cubeCooldown)
+    {
+        lightMarkerCooldownTime = lightCooldown;
+        heavyMarkerCooldownTime = heavyCooldown;
+        primeMarkerCooldownTime = primeCooldown;
+        cubeMarkerCooldownTime = cubeCooldown;
+    }
+
+    // Backward compatibility method
     public void UpdateCooldowns(float individualCooldown, float areaCooldown)
     {
         lightMarkerCooldownTime = individualCooldown;
-        areaMarkerCooldownTime = areaCooldown;
+        primeMarkerCooldownTime = areaCooldown;
     }
 
     public void OnMarkerPlaced(bool isLightMarker)
@@ -82,15 +124,29 @@ public class PlayerActionUI : MonoBehaviour
         float lightCooldownProgress = CalculateCooldownProgress(
             lightCharges,
             lightMaxCharges,
-            playerActionManager.GetIndividualMarkerCooldownRemaining(),
+            playerActionManager.GetLightMarkerCooldownRemaining(),
             lightMarkerCooldownTime
         );
 
-        float areaCooldownProgress = CalculateCooldownProgress(
-            areaCharges,
-            areaMaxCharges,
-            playerActionManager.GetAreaMarkerCooldownRemaining(),
-            areaMarkerCooldownTime
+        float heavyCooldownProgress = CalculateCooldownProgress(
+            heavyCharges,
+            heavyMaxCharges,
+            playerActionManager.GetHeavyMarkerCooldownRemaining(),
+            heavyMarkerCooldownTime
+        );
+
+        float primeCooldownProgress = CalculateCooldownProgress(
+            primeCharges,
+            primeMaxCharges,
+            playerActionManager.GetPrimeMarkerCooldownRemaining(),
+            primeMarkerCooldownTime
+        );
+
+        float cubeCooldownProgress = CalculateCooldownProgress(
+            cubeCharges,
+            cubeMaxCharges,
+            0f, // Cube markers don't have cooldowns in the same way
+            cubeMarkerCooldownTime
         );
 
         // Update Light Marker UI
@@ -99,17 +155,32 @@ public class PlayerActionUI : MonoBehaviour
             lightMaxCharges,
             lightCooldownProgress,
             lightMarkerSegments,
-            lightChargeText
+            lightChargeText,
+            segmentFullColor
         );
 
-        // Update Area Marker UI
+        // Update Heavy Marker UI
         UpdateMarkerUI(
-            areaCharges,
-            areaMaxCharges,
-            areaCooldownProgress,
-            areaMarkerSegments,
-            areaChargeText
+            heavyCharges,
+            heavyMaxCharges,
+            heavyCooldownProgress,
+            heavyMarkerSegments,
+            heavyChargeText,
+            heavyMarkerColor
         );
+
+        // Update Prime Marker UI
+        UpdateMarkerUI(
+            primeCharges,
+            primeMaxCharges,
+            primeCooldownProgress,
+            primeMarkerSegments,
+            primeChargeText,
+            primeMarkerColor
+        );
+
+        // Update Cube Marker UI
+        UpdateCubeMarkerUI();
     }
 
     private float CalculateCooldownProgress(int charges, int maxCharges, float cooldownRemaining, float cooldownTime)
@@ -132,7 +203,7 @@ public class PlayerActionUI : MonoBehaviour
     }
 
     private void UpdateMarkerUI(int charges, int maxCharges, float cooldownProgress,
-                               Image[] segments, TextMeshProUGUI chargeText)
+                               Image[] segments, TextMeshProUGUI chargeText, Color fullChargeColor)
     {
         // Update charge text
         if (chargeText != null)
@@ -140,12 +211,12 @@ public class PlayerActionUI : MonoBehaviour
 
         if (charges >= maxCharges)
         {
-            // Full charges - all segments bright orange
+            // Full charges - all segments with marker-specific color
             foreach (var segment in segments)
             {
                 if (segment != null)
                 {
-                    segment.color = segmentFullColor;
+                    segment.color = fullChargeColor;
                     segment.gameObject.SetActive(true);
                 }
             }
@@ -184,6 +255,36 @@ public class PlayerActionUI : MonoBehaviour
         }
     }
 
+    private void UpdateCubeMarkerUI()
+    {
+        // Get current cube marker count from PlayerActionManager
+        int currentCubeMarkers = playerActionManager != null ? playerActionManager.GetCurrentCubeMarkers() : 0;
+        cubeCharges = currentCubeMarkers;
+
+        // Update cube charge text
+        if (cubeChargeText != null)
+            cubeChargeText.text = cubeCharges.ToString();
+
+        // Update cube marker segments - show active markers
+        for (int i = 0; i < cubeMarkerSegments.Length; i++)
+        {
+            if (cubeMarkerSegments[i] == null) continue;
+
+            if (i < cubeCharges)
+            {
+                // Active cube marker
+                cubeMarkerSegments[i].color = cubeMarkerColor;
+            }
+            else
+            {
+                // Inactive cube marker slot
+                cubeMarkerSegments[i].color = segmentEmptyColor;
+            }
+
+            cubeMarkerSegments[i].gameObject.SetActive(true);
+        }
+    }
+
     // Public getters for UI state
     public float GetLightCooldownProgress()
     {
@@ -191,29 +292,62 @@ public class PlayerActionUI : MonoBehaviour
         return CalculateCooldownProgress(
             lightCharges,
             lightMaxCharges,
-            playerActionManager.GetIndividualMarkerCooldownRemaining(),
+            playerActionManager.GetLightMarkerCooldownRemaining(),
             lightMarkerCooldownTime
         );
     }
 
-    public float GetAreaCooldownProgress()
+    public float GetHeavyCooldownProgress()
     {
         if (playerActionManager == null) return 0f;
         return CalculateCooldownProgress(
-            areaCharges,
-            areaMaxCharges,
-            playerActionManager.GetAreaMarkerCooldownRemaining(),
-            areaMarkerCooldownTime
+            heavyCharges,
+            heavyMaxCharges,
+            playerActionManager.GetHeavyMarkerCooldownRemaining(),
+            heavyMarkerCooldownTime
         );
     }
 
+    public float GetPrimeCooldownProgress()
+    {
+        if (playerActionManager == null) return 0f;
+        return CalculateCooldownProgress(
+            primeCharges,
+            primeMaxCharges,
+            playerActionManager.GetPrimeMarkerCooldownRemaining(),
+            primeMarkerCooldownTime
+        );
+    }
+
+    public float GetCubeCooldownProgress()
+    {
+        return 1f; // Cube markers are always ready when available
+    }
+
+    // Backward compatibility getter
+    public float GetAreaCooldownProgress() => GetPrimeCooldownProgress();
+
     public bool IsLightCharging() => lightCharges < lightMaxCharges;
-    public bool IsAreaCharging() => areaCharges < areaMaxCharges;
+    public bool IsHeavyCharging() => heavyCharges < heavyMaxCharges;
+    public bool IsPrimeCharging() => primeCharges < primeMaxCharges;
+    public bool IsCubeCharging() => false; // Cube markers don't have traditional charging
+    
+    // Backward compatibility property
+    public bool IsAreaCharging() => IsPrimeCharging();
 
     // Set max charges explicitly
+    public void SetMaxCharges(int maxLight, int maxHeavy, int maxPrime, int maxCube)
+    {
+        lightMaxCharges = maxLight;
+        heavyMaxCharges = maxHeavy;
+        primeMaxCharges = maxPrime;
+        cubeMaxCharges = maxCube;
+    }
+
+    // Backward compatibility method
     public void SetMaxCharges(int maxLight, int maxArea)
     {
         lightMaxCharges = maxLight;
-        areaMaxCharges = maxArea;
+        primeMaxCharges = maxArea;
     }
 }

@@ -435,10 +435,10 @@ namespace WaveDebugSystem
                 if (cube == null || cube.isDestroyed) continue;
                 switch (cube.type)
                 {
-                    case CubeType.Normal: composition.normal++; break;
-                    case CubeType.Blue: composition.blue++; break;
-                    case CubeType.Black: composition.black++; break;
-                    case CubeType.Reinforced: composition.reinforced++; break;
+                    case CubeType.Unit: composition.normal++; break;
+                    case CubeType.Prime: composition.blue++; break;
+                    case CubeType.Infinity: composition.black++; break;
+                    case CubeType.Dense: composition.reinforced++; break;
                 }
             }
             return composition;
@@ -495,18 +495,18 @@ namespace WaveDebugSystem
             waveManager?.ClearAllCubes();
             int topRow = gridManager.Height - 1;
 
-            SpawnCubeAt(new Vector2Int(0, topRow), CubeType.Normal);
-            SpawnCubeAt(new Vector2Int(1, topRow), CubeType.Blue);
-            SpawnCubeAt(new Vector2Int(2, topRow), CubeType.Black);
-            SpawnCubeAt(new Vector2Int(3, topRow), CubeType.Normal);
+            SpawnCubeAt(new Vector2Int(0, topRow), CubeType.Unit);
+            SpawnCubeAt(new Vector2Int(1, topRow), CubeType.Prime);
+            SpawnCubeAt(new Vector2Int(2, topRow), CubeType.Infinity);
+            SpawnCubeAt(new Vector2Int(3, topRow), CubeType.Unit);
 
             if (gridManager.Width > 4)
-                SpawnCubeAt(new Vector2Int(4, topRow), CubeType.Reinforced);
+                SpawnCubeAt(new Vector2Int(4, topRow), CubeType.Dense);
 
             if (gridManager.Height > 1)
             {
-                SpawnCubeAt(new Vector2Int(1, topRow - 1), CubeType.Normal);
-                SpawnCubeAt(new Vector2Int(2, topRow - 1), CubeType.Blue);
+                SpawnCubeAt(new Vector2Int(1, topRow - 1), CubeType.Unit);
+                SpawnCubeAt(new Vector2Int(2, topRow - 1), CubeType.Prime);
             }
         }
 
@@ -537,10 +537,10 @@ namespace WaveDebugSystem
         {
             switch (type)
             {
-                case CubeType.Normal: return Color.gray;
-                case CubeType.Blue: return new Color(0.3f, 0.6f, 1f);
-                case CubeType.Black: return new Color(0.2f, 0.2f, 0.2f);
-                case CubeType.Reinforced: return new Color(0.8f, 0.3f, 0.8f);
+                case CubeType.Unit: return Color.gray;
+                case CubeType.Prime: return new Color(0.3f, 0.6f, 1f);
+                case CubeType.Infinity: return new Color(0.2f, 0.2f, 0.2f);
+                case CubeType.Dense: return new Color(0.8f, 0.3f, 0.8f);
                 default: return Color.white;
             }
         }
@@ -549,10 +549,10 @@ namespace WaveDebugSystem
         {
             switch (type)
             {
-                case CubeType.Normal: return "N";
-                case CubeType.Blue: return "B";
-                case CubeType.Black: return "X";
-                case CubeType.Reinforced: return "R";
+                case CubeType.Unit: return "N";
+                case CubeType.Prime: return "B";
+                case CubeType.Infinity: return "X";
+                case CubeType.Dense: return "R";
                 default: return "?";
             }
         }

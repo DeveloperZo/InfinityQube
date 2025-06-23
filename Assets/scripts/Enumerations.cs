@@ -34,15 +34,6 @@ public static class Enumerations
         /// <summary>Enhanced durability cube type (formerly Reinforced)</summary>
         Dense,
         
-        // Obsolete values for backward compatibility
-        [System.Obsolete("Use Unit instead", false)]
-        Normal = Unit,
-        [System.Obsolete("Use Prime instead", false)]
-        Blue = Prime,
-        [System.Obsolete("Use Infinity instead", false)]
-        Black = Infinity,
-        [System.Obsolete("Use Dense instead", false)]
-        Reinforced = Dense
     }
 
     /// <summary>

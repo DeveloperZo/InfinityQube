@@ -20,7 +20,7 @@ public class PlayerActionDebugPanel : DebugPanelBase
     private Vector2 markerListScroll;
 
     // Marker placement controls
-    private int selectedMarkerType = 0; // 0=Individual, 1=Area, 2=Cube
+    private int selectedMarkerType = 0; // 0=Light, 1=Heavy, 2=Prime, 3=Cube
     private Vector2Int targetPosition = new Vector2Int(0, 0);
     private bool autoTrackPlayer = true;
     private int areaMarkerSize = 2;
@@ -155,24 +155,28 @@ public class PlayerActionDebugPanel : DebugPanelBase
         GUILayout.Label("Current Markers:");
 
         GUILayout.BeginHorizontal();
-        GUILayout.Label($"Individual: {actionManager.GetCurrentIndividualMarkers()}/3", GUILayout.Width(100));
-        GUILayout.Label($"Area: {actionManager.GetCurrentAreaMarkers()}/2", GUILayout.Width(80));
+        GUILayout.Label($"Light: {actionManager.GetCurrentLightMarkers()}/{actionManager.maxLightMarkers}", GUILayout.Width(80));
+        GUILayout.Label($"Heavy: {actionManager.GetCurrentHeavyMarkers()}/{actionManager.maxHeavyMarkers}", GUILayout.Width(80));
+        GUILayout.Label($"Prime: {actionManager.GetCurrentPrimeMarkers()}/{actionManager.maxPrimeMarkers}", GUILayout.Width(80));
         GUILayout.Label($"Cube: {actionManager.GetCurrentCubeMarkers()}", GUILayout.Width(60));
         GUILayout.EndHorizontal();
 
         // Cooldown information
         if (showCooldownTimers)
         {
-            float individualCD = actionManager.GetIndividualMarkerCooldownRemaining();
-            float areaCD = actionManager.GetAreaMarkerCooldownRemaining();
+            float lightCD = actionManager.GetLightMarkerCooldownRemaining();
+            float heavyCD = actionManager.GetHeavyMarkerCooldownRemaining();
+            float primeCD = actionManager.GetPrimeMarkerCooldownRemaining();
 
-            if (individualCD > 0 || areaCD > 0)
+            if (lightCD > 0 || heavyCD > 0 || primeCD > 0)
             {
                 GUILayout.BeginHorizontal();
-                if (individualCD > 0)
-                    GUILayout.Label($"Individual CD: {individualCD:F1}s", GUILayout.Width(120));
-                if (areaCD > 0)
-                    GUILayout.Label($"Area CD: {areaCD:F1}s", GUILayout.Width(100));
+                if (lightCD > 0)
+                    GUILayout.Label($"Light CD: {lightCD:F1}s", GUILayout.Width(100));
+                if (heavyCD > 0)
+                    GUILayout.Label($"Heavy CD: {heavyCD:F1}s", GUILayout.Width(100));
+                if (primeCD > 0)
+                    GUILayout.Label($"Prime CD: {primeCD:F1}s", GUILayout.Width(100));
                 GUILayout.EndHorizontal();
             }
         }
@@ -210,13 +214,18 @@ public class PlayerActionDebugPanel : DebugPanelBase
         // Show target position status
         if (gridManager != null && gridManager.IsValidGridPosition(targetPosition))
         {
-            bool hasIndividual = actionManager.HasIndividualMarkerAt(targetPosition);
-            bool hasArea = actionManager.HasAreaMarkerAt(targetPosition);
+            bool hasLight = actionManager.HasLightMarkerAt(targetPosition);
+            bool hasHeavy = actionManager.HasHeavyMarkerAt(targetPosition);
+            bool hasPrime = actionManager.HasPrimeMarkerAt(targetPosition);
 
             string status = "Empty";
-            if (hasIndividual && hasArea) status = "Individual + Area";
-            else if (hasIndividual) status = "Individual Marker";
-            else if (hasArea) status = "Area Marker";
+            List<string> markers = new List<string>();
+            if (hasLight) markers.Add("Light");
+            if (hasHeavy) markers.Add("Heavy");
+            if (hasPrime) markers.Add("Prime");
+            
+            if (markers.Count > 0)
+                status = string.Join(" + ", markers) + " Marker" + (markers.Count > 1 ? "s" : "");
 
             GUILayout.Label($"Target Status: {status}");
         }
@@ -227,20 +236,28 @@ public class PlayerActionDebugPanel : DebugPanelBase
         GUILayout.Label("Marker Type:");
         GUILayout.BeginHorizontal();
 
-        GUI.backgroundColor = selectedMarkerType == 0 ? Color.red : Color.white;
-        if (GUILayout.Button("Individual")) selectedMarkerType = 0;
+        GUI.backgroundColor = selectedMarkerType == 0 ? Color.cyan : Color.white;
+        if (GUILayout.Button("Light")) selectedMarkerType = 0;
 
-        GUI.backgroundColor = selectedMarkerType == 1 ? Color.green : Color.white;
-        if (GUILayout.Button("Area")) selectedMarkerType = 1;
+        GUI.backgroundColor = selectedMarkerType == 1 ? Color.yellow : Color.white;
+        if (GUILayout.Button("Heavy")) selectedMarkerType = 1;
 
-        GUI.backgroundColor = selectedMarkerType == 2 ? Color.magenta : Color.white;
-        if (GUILayout.Button("Cube")) selectedMarkerType = 2;
+        GUI.backgroundColor = selectedMarkerType == 2 ? Color.green : Color.white;
+        if (GUILayout.Button("Prime")) selectedMarkerType = 2;
+
+        GUI.backgroundColor = selectedMarkerType == 3 ? Color.magenta : Color.white;
+        if (GUILayout.Button("Cube")) selectedMarkerType = 3;
 
         GUI.backgroundColor = Color.white;
         GUILayout.EndHorizontal();
 
         // Type-specific settings
-        if (selectedMarkerType == 1) // Area
+        if (selectedMarkerType == 1) // Heavy
+        {
+            GUILayout.Label("Heavy markers work best with dense cubes", GUI.skin.label);
+            GUILayout.Label("Provides enhanced effectiveness vs dense cube types");
+        }
+        else if (selectedMarkerType == 2) // Prime
         {
             GUILayout.BeginHorizontal();
             GUILayout.Label("Size:", GUILayout.Width(40));
@@ -251,19 +268,19 @@ public class PlayerActionDebugPanel : DebugPanelBase
                 areaMarkerSize++;
             GUILayout.EndHorizontal();
         }
-        else if (selectedMarkerType == 2) // Cube
+        else if (selectedMarkerType == 3) // Cube
         {
             GUILayout.BeginHorizontal();
             GUILayout.Label("Type:", GUILayout.Width(40));
-            GUI.backgroundColor = cubeMarkerType == 0 ? Color.magenta : Color.white;
-            if (GUILayout.Button("Individual (1x1)", GUILayout.Width(90))) cubeMarkerType = 0;
-            GUI.backgroundColor = cubeMarkerType == 1 ? Color.cyan : Color.white;
-            if (GUILayout.Button("Area (3x3)", GUILayout.Width(80))) cubeMarkerType = 1;
+            GUI.backgroundColor = cubeMarkerType == 0 ? Color.cyan : Color.white;
+            if (GUILayout.Button("Light (1x1)", GUILayout.Width(80))) cubeMarkerType = 0;
+            GUI.backgroundColor = cubeMarkerType == 1 ? Color.green : Color.white;
+            if (GUILayout.Button("Prime (3x3)", GUILayout.Width(80))) cubeMarkerType = 1;
             GUI.backgroundColor = Color.white;
             GUILayout.EndHorizontal();
 
-            GUILayout.Label("Individual marker + Blue cube = Individual cube marker (1x1)");
-            GUILayout.Label("Area marker + Blue cube = Area cube marker (3x3)");
+            GUILayout.Label("Light marker + Prime cube = Light cube marker (1x1)");
+            GUILayout.Label("Prime marker + Prime cube = Prime cube marker (3x3)");
         }
     }
 
@@ -291,14 +308,18 @@ public class PlayerActionDebugPanel : DebugPanelBase
         // Capability indicators
         GUILayout.BeginHorizontal();
 
-        bool canPlaceIndividual = actionManager.CanPlaceIndividualMarkerCheck();
-        bool canPlaceArea = actionManager.CanPlaceAreaMarkerCheck();
+        bool canPlaceLight = actionManager.CanPlaceLightMarkerCheck();
+        bool canPlaceHeavy = actionManager.CanPlaceHeavyMarkerCheck();
+        bool canPlacePrime = actionManager.CanPlacePrimeMarkerCheck();
 
-        GUI.color = canPlaceIndividual ? Color.green : Color.red;
-        GUILayout.Label("Individual", GUILayout.Width(70));
+        GUI.color = canPlaceLight ? Color.green : Color.red;
+        GUILayout.Label("Light", GUILayout.Width(50));
 
-        GUI.color = canPlaceArea ? Color.green : Color.red;
-        GUILayout.Label("Area", GUILayout.Width(50));
+        GUI.color = canPlaceHeavy ? Color.green : Color.red;
+        GUILayout.Label("Heavy", GUILayout.Width(50));
+
+        GUI.color = canPlacePrime ? Color.green : Color.red;
+        GUILayout.Label("Prime", GUILayout.Width(50));
 
         GUI.color = Color.white;
         GUILayout.EndHorizontal();
@@ -309,14 +330,19 @@ public class PlayerActionDebugPanel : DebugPanelBase
         GUILayout.Label("Quick Triggers:");
         GUILayout.BeginHorizontal();
 
-        if (GUILayout.Button("Trigger Individual"))
+        if (GUILayout.Button("Trigger Light"))
         {
-            actionManager.TriggerNextIndividualMarker();
+            actionManager.TriggerNextLightMarker();
         }
 
-        if (GUILayout.Button("Trigger Area"))
+        if (GUILayout.Button("Trigger Heavy"))
         {
-            actionManager.TriggerNextAreaMarker();
+            actionManager.TriggerNextHeavyMarker();
+        }
+
+        if (GUILayout.Button("Trigger Prime"))
+        {
+            actionManager.TriggerNextPrimeMarker();
         }
 
         if (GUILayout.Button("Trigger Cube"))
@@ -327,14 +353,19 @@ public class PlayerActionDebugPanel : DebugPanelBase
         GUILayout.EndHorizontal();
 
         GUILayout.BeginHorizontal();
-        if (GUILayout.Button("Trigger All Individual"))
+        if (GUILayout.Button("Trigger All Light"))
         {
-            TriggerAllIndividualMarkers();
+            TriggerAllLightMarkers();
         }
 
-        if (GUILayout.Button("Trigger All Area"))
+        if (GUILayout.Button("Trigger All Heavy"))
         {
-            TriggerAllAreaMarkers();
+            TriggerAllHeavyMarkers();
+        }
+
+        if (GUILayout.Button("Trigger All Prime"))
+        {
+            TriggerAllPrimeMarkers();
         }
 
         if (GUILayout.Button("Clear All"))
@@ -375,12 +406,13 @@ public class PlayerActionDebugPanel : DebugPanelBase
 
         // Basic statistics
         GUILayout.BeginHorizontal();
-        GUILayout.Label($"Individual Placed: {actionManager.GetIndividualMarkersPlaced()}", GUILayout.Width(130));
-        GUILayout.Label($"Area Placed: {actionManager.GetAreaMarkersPlaced()}", GUILayout.Width(100));
-        GUILayout.Label($"Cube Triggered: {actionManager.GetCubeMarkersTriggered()}", GUILayout.Width(110));
+        GUILayout.Label($"Light Placed: {actionManager.GetLightMarkersPlaced()}", GUILayout.Width(100));
+        GUILayout.Label($"Heavy Placed: {actionManager.GetHeavyMarkersPlaced()}", GUILayout.Width(100));
+        GUILayout.Label($"Prime Placed: {actionManager.GetPrimeMarkersPlaced()}", GUILayout.Width(100));
         GUILayout.EndHorizontal();
 
         GUILayout.BeginHorizontal();
+        GUILayout.Label($"Cube Triggered: {actionManager.GetCubeMarkersTriggered()}", GUILayout.Width(110));
         GUILayout.Label($"Perfect Timing: {actionManager.GetPerfectTimingHits()}", GUILayout.Width(120));
         GUILayout.Label($"Total Operations: {totalOperations}", GUILayout.Width(120));
         GUILayout.EndHorizontal();
@@ -415,25 +447,36 @@ public class PlayerActionDebugPanel : DebugPanelBase
 
         markerListScroll = GUILayout.BeginScrollView(markerListScroll, GUILayout.MinHeight(200));
 
-        // Individual markers
-        var individualMarkers = actionManager.lightMarkers.ToArray();
-        if (individualMarkers.Length > 0)
+        // Light markers
+        var lightMarkers = actionManager.lightMarkers.ToArray();
+        if (lightMarkers.Length > 0)
         {
-            GUILayout.Label("Individual Markers:", GUI.skin.box);
-            foreach (var marker in individualMarkers.Take(10))
+            GUILayout.Label("Light Markers:", GUI.skin.box);
+            foreach (var marker in lightMarkers.Take(10))
             {
-                DrawIndividualMarkerItem(marker);
+                DrawLightMarkerItem(marker);
             }
         }
 
-        // Area markers
-        var areaMarkers = actionManager.primeMarkers.ToArray();
-        if (areaMarkers.Length > 0)
+        // Heavy markers
+        var heavyMarkers = actionManager.heavyMarkers.ToArray();
+        if (heavyMarkers.Length > 0)
         {
-            GUILayout.Label("Area Markers:", GUI.skin.box);
-            foreach (var marker in areaMarkers.Take(5))
+            GUILayout.Label("Heavy Markers:", GUI.skin.box);
+            foreach (var marker in heavyMarkers.Take(5))
             {
-                DrawAreaMarkerItem(marker);
+                DrawHeavyMarkerItem(marker);
+            }
+        }
+
+        // Prime markers
+        var primeMarkers = actionManager.primeMarkers.ToArray();
+        if (primeMarkers.Length > 0)
+        {
+            GUILayout.Label("Prime Markers:", GUI.skin.box);
+            foreach (var marker in primeMarkers.Take(5))
+            {
+                DrawPrimeMarkerItem(marker);
             }
         }
 
@@ -453,7 +496,7 @@ public class PlayerActionDebugPanel : DebugPanelBase
         GUILayout.EndVertical();
     }
 
-    private void DrawIndividualMarkerItem(LightMarker marker)
+    private void DrawLightMarkerItem(LightMarker marker)
     {
         GUILayout.BeginHorizontal(GUI.skin.box);
         GUILayout.Label($"({marker.position.x},{marker.position.y})", GUILayout.Width(60));
@@ -482,7 +525,41 @@ public class PlayerActionDebugPanel : DebugPanelBase
         GUILayout.EndHorizontal();
     }
 
-    private void DrawAreaMarkerItem(PrimeMarker marker)
+    private void DrawHeavyMarkerItem(HeavyMarker marker)
+    {
+        GUILayout.BeginHorizontal(GUI.skin.box);
+        GUILayout.Label($"({marker.position.x},{marker.position.y})", GUILayout.Width(60));
+
+        if (showMarkerAges)
+        {
+            float age = Time.time - marker.placementTime;
+            Color ageColor = age > 5f ? Color.red : (age > 2f ? Color.yellow : Color.white);
+            GUI.color = ageColor;
+            GUILayout.Label($"Age: {age:F1}s", GUILayout.Width(70));
+            GUI.color = Color.white;
+        }
+
+        // Heavy marker indicator
+        GUI.color = Color.yellow;
+        GUILayout.Label("HEAVY", GUILayout.Width(50));
+        GUI.color = Color.white;
+
+        if (marker.isPerfectTiming && highlightPerfectTimingMarkers)
+        {
+            GUI.color = Color.yellow;
+            GUILayout.Label("PERFECT", GUILayout.Width(60));
+            GUI.color = Color.white;
+        }
+
+        if (GUILayout.Button("Go To", GUILayout.Width(50)))
+        {
+            targetPosition = marker.position;
+            autoTrackPlayer = false;
+        }
+        GUILayout.EndHorizontal();
+    }
+
+    private void DrawPrimeMarkerItem(PrimeMarker marker)
     {
         GUILayout.BeginHorizontal(GUI.skin.box);
         GUILayout.Label($"Center: ({marker.centerPosition.x},{marker.centerPosition.y})", GUILayout.Width(100));
@@ -503,14 +580,16 @@ public class PlayerActionDebugPanel : DebugPanelBase
         GUILayout.Label("Action Settings:");
 
         GUILayout.BeginHorizontal();
-        GUILayout.Label($"Individual Max: {actionManager.maxIndividualMarkers}", GUILayout.Width(110));
-        GUILayout.Label($"Area Max: {actionManager.maxPrimeMarkerCharges}", GUILayout.Width(80));
-        GUILayout.Label($"Area Size: {actionManager.primeMarkerSize}", GUILayout.Width(80));
+        GUILayout.Label($"Light Max: {actionManager.maxLightMarkers}", GUILayout.Width(80));
+        GUILayout.Label($"Heavy Max: {actionManager.maxHeavyMarkers}", GUILayout.Width(80));
+        GUILayout.Label($"Prime Max: {actionManager.maxPrimeMarkers}", GUILayout.Width(80));
+        GUILayout.Label($"Prime Size: {actionManager.primeMarkerSize}", GUILayout.Width(80));
         GUILayout.EndHorizontal();
 
         GUILayout.BeginHorizontal();
-        GUILayout.Label($"Individual CD: {actionManager.individualMarkerCooldown:F1}s", GUILayout.Width(120));
-        GUILayout.Label($"Area CD: {actionManager.areaMarkerCooldown:F1}s", GUILayout.Width(100));
+        GUILayout.Label($"Light CD: {actionManager.lightMarkerCooldown:F1}s", GUILayout.Width(100));
+        GUILayout.Label($"Heavy CD: {actionManager.heavyMarkerCooldown:F1}s", GUILayout.Width(100));
+        GUILayout.Label($"Prime CD: {actionManager.primeMarkerCooldown:F1}s", GUILayout.Width(100));
         GUILayout.EndHorizontal();
 
         showCooldownTimers = GUILayout.Toggle(showCooldownTimers, "Show Cooldown Timers");
@@ -604,6 +683,20 @@ public class PlayerActionDebugPanel : DebugPanelBase
         if (GUILayout.Button("Corners"))
         {
             CreateCornerPattern();
+        }
+        GUILayout.EndHorizontal();
+        
+        // Heavy marker testing
+        GUILayout.Space(5);
+        GUILayout.Label("Heavy Marker Tests:");
+        GUILayout.BeginHorizontal();
+        if (GUILayout.Button("Test Heavy + Dense"))
+        {
+            TestHeavyMarkerDenseCube();
+        }
+        if (GUILayout.Button("All Heavy Combos"))
+        {
+            TestAllHeavyMarkerCombos();
         }
         GUILayout.EndHorizontal();
     }
@@ -1885,13 +1978,16 @@ public class PlayerActionDebugPanel : DebugPanelBase
     {
         switch (selectedMarkerType)
         {
-            case 0: // Individual
-                actionManager.PlaceIndividualMarker(targetPosition);
+            case 0: // Light
+                actionManager.PlaceLightMarker(targetPosition);
                 break;
-            case 1: // Area
-                actionManager.PlaceAreaMarker(targetPosition, areaMarkerSize);
+            case 1: // Heavy
+                actionManager.PlaceHeavyMarker(targetPosition);
                 break;
-            case 2: // Cube
+            case 2: // Prime
+                actionManager.PlacePrimeMarker(targetPosition, areaMarkerSize);
+                break;
+            case 3: // Cube
                 var cubeMarkerType = (PlayerMarkerSystem.CubeMarkerType)this.cubeMarkerType;
                 actionManager.CreateCubeMarker(targetPosition, cubeMarkerType);
                 break;
@@ -1900,20 +1996,25 @@ public class PlayerActionDebugPanel : DebugPanelBase
 
     private void RemoveMarkerAtTarget()
     {
-        if (actionManager.HasIndividualMarkerAt(targetPosition))
+        if (actionManager.HasLightMarkerAt(targetPosition))
         {
-            actionManager.RemoveIndividualMarkerAt(targetPosition);
+            actionManager.RemoveLightMarkerAt(targetPosition);
         }
-        if (actionManager.HasAreaMarkerAt(targetPosition))
+        if (actionManager.HasHeavyMarkerAt(targetPosition))
         {
-            actionManager.RemoveAreaMarkerAt(targetPosition);
+            actionManager.RemoveHeavyMarkerAt(targetPosition);
+        }
+        if (actionManager.HasPrimeMarkerAt(targetPosition))
+        {
+            actionManager.RemovePrimeMarkerAt(targetPosition);
         }
     }
 
     private void ToggleMarkerAtTarget()
     {
-        bool hasMarker = actionManager.HasIndividualMarkerAt(targetPosition) ||
-                        actionManager.HasAreaMarkerAt(targetPosition);
+        bool hasMarker = actionManager.HasLightMarkerAt(targetPosition) ||
+                        actionManager.HasHeavyMarkerAt(targetPosition) ||
+                        actionManager.HasPrimeMarkerAt(targetPosition);
 
         if (hasMarker)
         {
@@ -1925,24 +2026,34 @@ public class PlayerActionDebugPanel : DebugPanelBase
         }
     }
 
-    private void TriggerAllIndividualMarkers()
+    private void TriggerAllLightMarkers()
     {
-        int count = actionManager.GetCurrentIndividualMarkers();
+        int count = actionManager.GetCurrentLightMarkers();
         for (int i = 0; i < count; i++)
         {
-            actionManager.TriggerNextIndividualMarker();
+            actionManager.TriggerNextLightMarker();
         }
-        Debug.Log($"Triggered {count} individual markers");
+        Debug.Log($"Triggered {count} light markers");
     }
 
-    private void TriggerAllAreaMarkers()
+    private void TriggerAllHeavyMarkers()
     {
-        int count = actionManager.GetCurrentAreaMarkers();
+        int count = actionManager.GetCurrentHeavyMarkers();
         for (int i = 0; i < count; i++)
         {
-            actionManager.TriggerNextAreaMarker();
+            actionManager.TriggerNextHeavyMarker();
         }
-        Debug.Log($"Triggered {count} area markers");
+        Debug.Log($"Triggered {count} heavy markers");
+    }
+
+    private void TriggerAllPrimeMarkers()
+    {
+        int count = actionManager.GetCurrentPrimeMarkers();
+        for (int i = 0; i < count; i++)
+        {
+            actionManager.TriggerNextPrimeMarker();
+        }
+        Debug.Log($"Triggered {count} prime markers");
     }
 
     private void CreateLinePattern()
@@ -2104,7 +2215,7 @@ public class PlayerActionDebugPanel : DebugPanelBase
                 Random.Range(0, gridManager.Width),
                 Random.Range(0, gridManager.Height)
             );
-            if (!actionManager.PlaceAreaMarker(randomPos, areaMarkerSize))
+            if (!actionManager.PlacePrimeMarker(randomPos, areaMarkerSize))
                 break;
         }
         Debug.Log("Filled area markers to maximum");
@@ -2112,13 +2223,10 @@ public class PlayerActionDebugPanel : DebugPanelBase
 
     private void TriggerAllMarkers()
     {
-        TriggerAllIndividualMarkers();
-        TriggerAllAreaMarkers();
+        TriggerAllHeavyMarkers();
+        TriggerAllLightMarkers();
+        TriggerAllPrimeMarkers();
 
-        while (actionManager.GetCurrentCubeMarkers() > 0)
-        {
-            actionManager.TriggerNextCubeMarker();
-        }
         Debug.Log("Triggered all markers");
     }
 
@@ -2243,6 +2351,61 @@ public class PlayerActionDebugPanel : DebugPanelBase
         Debug.Log($"Place marker when at limit: {overLimitResult}");
 
         Debug.Log("Edge case testing complete");
+    }
+
+    // Heavy marker testing methods
+    private void TestHeavyMarkerDenseCube()
+    {
+        Debug.Log("=== TESTING HEAVY MARKER + DENSE CUBE ====");
+        
+        Vector2Int testPos = targetPosition;
+        
+        // Place a heavy marker at the target position
+        if (actionManager.PlaceHeavyMarker(testPos))
+        {
+            Debug.Log($"Placed heavy marker at ({testPos.x}, {testPos.y})");
+            
+            // TODO: Spawn a dense cube at or near the position
+            // This would require access to cube spawning functionality
+            Debug.Log("Dense cube interaction testing - requires cube spawning system integration");
+            
+            // Trigger the heavy marker for testing
+            actionManager.TriggerNextHeavyMarker();
+            Debug.Log("Triggered heavy marker for dense cube interaction test");
+        }
+        else
+        {
+            Debug.LogWarning("Could not place heavy marker - check charges and cooldowns");
+        }
+    }
+    
+    private void TestAllHeavyMarkerCombos()
+    {
+        Debug.Log("=== TESTING ALL HEAVY MARKER COMBINATIONS ====");
+        
+        // Test heavy marker effectiveness against all cube types
+        string[] cubeTypes = { "Unit", "Prime", "Infinity", "Dense" };
+        
+        for (int i = 0; i < cubeTypes.Length; i++)
+        {
+            Vector2Int testPos = new Vector2Int(targetPosition.x + i, targetPosition.y);
+            
+            if (actionManager.CanPlaceHeavyMarkerCheck())
+            {
+                actionManager.PlaceHeavyMarker(testPos);
+                Debug.Log($"Placed heavy marker at ({testPos.x}, {testPos.y}) for {cubeTypes[i]} cube test");
+                
+                // TODO: Spawn appropriate cube type at position
+                Debug.Log($"TODO: Spawn {cubeTypes[i]} cube at ({testPos.x}, {testPos.y})");
+            }
+            else
+            {
+                Debug.LogWarning($"Cannot place heavy marker for {cubeTypes[i]} test - insufficient charges");
+                break;
+            }
+        }
+        
+        Debug.Log("Heavy marker combination testing setup complete");
     }
 
     private System.Collections.IEnumerator StartCoroutine(System.Collections.IEnumerator routine)

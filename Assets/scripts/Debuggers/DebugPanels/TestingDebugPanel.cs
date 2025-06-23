@@ -312,7 +312,7 @@ public class TestingDebugPanel : DebugPanelBase
     {
         Vector2Int testPos = new Vector2Int(2, 10);
         SetupTilePainting(testPos, FaceStatus.Corrupted, Color.red, 3);
-        SpawnCubeAt(new Vector2Int(testPos.x, testPos.y + 1), CubeType.Normal);
+        SpawnCubeAt(new Vector2Int(testPos.x, testPos.y + 1), CubeType.Unit);
         Debug.Log("Corrupted face test: Normal cube will act like black cube when painted");
     }
 
@@ -320,7 +320,7 @@ public class TestingDebugPanel : DebugPanelBase
     {
         Vector2Int testPos = new Vector2Int(3, 10);
         SetupTilePainting(testPos, FaceStatus.Enhanced, Color.blue, 3);
-        SpawnCubeAt(new Vector2Int(testPos.x, testPos.y + 1), CubeType.Normal);
+        SpawnCubeAt(new Vector2Int(testPos.x, testPos.y + 1), CubeType.Unit);
         Debug.Log("Enhanced face test: Normal cube will create detonation when captured");
     }
 
@@ -333,7 +333,7 @@ public class TestingDebugPanel : DebugPanelBase
             Color color = status == FaceStatus.Corrupted ? Color.red : Color.blue;
             SetupTilePainting(new Vector2Int(testPos.x, testPos.y + i), status, color, 2);
         }
-        SpawnCubeAt(new Vector2Int(testPos.x, testPos.y + 4), CubeType.Normal);
+        SpawnCubeAt(new Vector2Int(testPos.x, testPos.y + 4), CubeType.Unit);
         Debug.Log("Face rotation test: Cube will be painted multiple times with different durations");
     }
 
@@ -343,7 +343,7 @@ public class TestingDebugPanel : DebugPanelBase
         SetupTilePainting(new Vector2Int(testPos.x, testPos.y), FaceStatus.Corrupted, Color.red, 3);
         SetupTilePainting(new Vector2Int(testPos.x, testPos.y + 1), FaceStatus.Enhanced, Color.blue, 3);
         SetupTilePainting(new Vector2Int(testPos.x, testPos.y + 2), FaceStatus.Corrupted, Color.red, 2);
-        SpawnCubeAt(new Vector2Int(testPos.x, testPos.y + 4), CubeType.Normal);
+        SpawnCubeAt(new Vector2Int(testPos.x, testPos.y + 4), CubeType.Unit);
         Debug.Log("Mixed face test: Cube will accumulate different face paintings");
     }
 
@@ -355,7 +355,7 @@ public class TestingDebugPanel : DebugPanelBase
         SetupTilePainting(testPos, FaceStatus.Enhanced, Color.blue, 5);
 
         // Spawn normal cube
-        SpawnCubeAt(new Vector2Int(testPos.x, testPos.y + 2), CubeType.Normal);
+        SpawnCubeAt(new Vector2Int(testPos.x, testPos.y + 2), CubeType.Unit);
 
         // Place action marker
         var actionManager = Object.FindObjectOfType<PlayerActionManager>();
@@ -376,7 +376,7 @@ public class TestingDebugPanel : DebugPanelBase
         {
             for (int y = 15; y < gridManager.Height; y++)
             {
-                CubeType type = (x + y) % 3 == 0 ? CubeType.Blue : CubeType.Normal;
+                CubeType type = (x + y) % 3 == 0 ? CubeType.Prime : CubeType.Unit;
                 SpawnCubeAt(new Vector2Int(x, y), type);
             }
         }
@@ -416,11 +416,11 @@ public class TestingDebugPanel : DebugPanelBase
         Debug.Log("Testing grid boundary conditions...");
 
         // Test at grid edges
-        SpawnCubeAt(new Vector2Int(0, gridManager.Height - 1), CubeType.Normal);
-        SpawnCubeAt(new Vector2Int(gridManager.Width - 1, gridManager.Height - 1), CubeType.Blue);
+        SpawnCubeAt(new Vector2Int(0, gridManager.Height - 1), CubeType.Unit);
+        SpawnCubeAt(new Vector2Int(gridManager.Width - 1, gridManager.Height - 1), CubeType.Prime);
 
         // Test near bottom
-        SpawnCubeAt(new Vector2Int(gridManager.Width / 2, 1), CubeType.Black);
+        SpawnCubeAt(new Vector2Int(gridManager.Width / 2, 1), CubeType.Infinity);
 
         Debug.Log("Boundary test cubes spawned - watch for edge case handling!");
     }
@@ -433,9 +433,9 @@ public class TestingDebugPanel : DebugPanelBase
         Vector2Int center = new Vector2Int(gridManager.Width / 2, 10);
 
         // Mixed cubes
-        SpawnCubeAt(new Vector2Int(center.x - 1, center.y + 3), CubeType.Normal);
-        SpawnCubeAt(new Vector2Int(center.x, center.y + 3), CubeType.Blue);
-        SpawnCubeAt(new Vector2Int(center.x + 1, center.y + 3), CubeType.Black);
+        SpawnCubeAt(new Vector2Int(center.x - 1, center.y + 3), CubeType.Unit);
+        SpawnCubeAt(new Vector2Int(center.x, center.y + 3), CubeType.Prime);
+        SpawnCubeAt(new Vector2Int(center.x + 1, center.y + 3), CubeType.Infinity);
 
         // Face painting tiles
         SetupTilePainting(new Vector2Int(center.x - 1, center.y + 1), FaceStatus.Enhanced, Color.blue, 5);

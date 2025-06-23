@@ -434,8 +434,10 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
     {
         if (actionUI != null)
         {
-            actionUI.UpdateCharges(currentLightMarkerCharges, currentPrimeMarkerCharges);
-            actionUI.UpdateCooldowns(lightMarkerCooldown, primeMarkerCooldown);
+            actionUI.UpdateCharges(currentLightMarkerCharges, currentHeavyMarkerCharges, 
+                                 currentPrimeMarkerCharges, GetCurrentCubeMarkers());
+            actionUI.UpdateCooldowns(lightMarkerCooldown, heavyMarkerCooldown, 
+                                   primeMarkerCooldown, 1f);
         }
     }
 

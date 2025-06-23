@@ -233,7 +233,7 @@ namespace WaveDebugSystem
                 {
                     basicWave.CubesData.Add(new CubeData
                     {
-                        type = Enumerations.CubeType.Normal,
+                        type = Enumerations.CubeType.Unit,
                         position = new Vector2Int(x, basicWave.GridHeight - 1),
                         level = 1
                     });
@@ -260,9 +260,9 @@ namespace WaveDebugSystem
             {
                 for (int x = 0; x < advancedWave.GridWidth; x++)
                 {
-                    Enumerations.CubeType cubeType = Enumerations.CubeType.Normal;
-                    if (x == 1 || x == 3) cubeType = Enumerations.CubeType.Blue;
-                    if (x == 2 && y == advancedWave.GridHeight - 1) cubeType = Enumerations.CubeType.Black;
+                    Enumerations.CubeType cubeType = Enumerations.CubeType.Unit;
+                    if (x == 1 || x == 3) cubeType = Enumerations.CubeType.Prime;
+                    if (x == 2 && y == advancedWave.GridHeight - 1) cubeType = Enumerations.CubeType.Infinity;
 
                     advancedWave.CubesData.Add(new CubeData
                     {

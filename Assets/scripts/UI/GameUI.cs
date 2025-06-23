@@ -167,11 +167,14 @@ public class GameUI : MonoBehaviour
 
         // Essential controls
         GUILayout.Label("WASD  Move Player", textStyle);
-        GUILayout.Label("F  Individual Marker", textStyle);
-        GUILayout.Label("G  Area Marker", textStyle);
-        GUILayout.Label("R      Trigger Individual", textStyle);
-        GUILayout.Label("T      Trigger Area", textStyle);
+        GUILayout.Label("F      Light Marker", textStyle);
+        GUILayout.Label("V      Heavy Marker", textStyle);
+        GUILayout.Label("G      Prime Marker", textStyle);
+        GUILayout.Label("R      Trigger Light", textStyle);
+        GUILayout.Label("Y      Trigger Heavy", textStyle);
+        GUILayout.Label("T      Trigger Prime", textStyle);
         GUILayout.Label("Q      Trigger Cube Marker", textStyle);
+        GUILayout.Label("E      Power Up Cube Marker", textStyle);
         GUILayout.Label("K      Close Dialog", textStyle);
 
         GUILayout.Space(5);
@@ -210,8 +213,9 @@ public class GameUI : MonoBehaviour
 
         // Helpful gameplay tips
         GUILayout.Label("• Place markers in cube paths", textStyle);
-        GUILayout.Label("• Blue cubes create detonations", textStyle);
-        GUILayout.Label("• Avoid black cubes!", textStyle);
+        GUILayout.Label("• Infinity cubes create detonations", textStyle);
+        GUILayout.Label("• Avoid dense cubes!", textStyle);
+        GUILayout.Label("• Heavy markers for dense cubes", textStyle);
 
         // Dynamic tip based on game state
         string dynamicTip = GetDynamicTip();
@@ -289,7 +293,7 @@ public class GameUI : MonoBehaviour
             int markers = playerActionManager.GetCurrentCubeMarkers();
             if (markers > 0)
             {
-                return "Press D to trigger detonation";
+                return "Press Q to trigger detonation";
             }
         }
 

@@ -15,7 +15,7 @@ public class CubeDebugPanel : DebugPanelBase
     private bool showFacePainter = true;
     private bool showActiveCubes = true;
     private bool showCubeInspector = false;
-    private bool showReinforcedTests = false;
+    private bool showDenseTests = false;
     private Vector2 activeCubesScroll;
     private Vector2 inspectorScroll;
 
@@ -64,7 +64,7 @@ public class CubeDebugPanel : DebugPanelBase
         if (showFacePainter) DrawFacePainterSection();
         if (showActiveCubes) DrawActiveCubesSection();
         if (showCubeInspector && selectedCube != null) DrawCubeInspectorSection();
-        if (showReinforcedTests) DrawReinforcedTestsSection();
+        if (showDenseTests) DrawDenseTestsSection();
     }
 
     private void DrawSectionToggles()
@@ -73,7 +73,7 @@ public class CubeDebugPanel : DebugPanelBase
         showFacePainter = DebugUIHelpers.DrawToggleButton("Face Painter", showFacePainter);
         showActiveCubes = DebugUIHelpers.DrawToggleButton("Active Cubes", showActiveCubes);
         showCubeInspector = DebugUIHelpers.DrawToggleButton("Inspector", showCubeInspector);
-        showReinforcedTests = DebugUIHelpers.DrawToggleButton("Reinforced", showReinforcedTests);
+        showDenseTests = DebugUIHelpers.DrawToggleButton("Dense", showDenseTests);
         GUILayout.EndHorizontal();
     }
 
@@ -167,8 +167,9 @@ public class CubeDebugPanel : DebugPanelBase
             // Individual cube controls
             foreach (var cube in cubesAtPosition.Take(3)) // Show max 3 cubes
             {
-                GUILayout.BeginHorizontal();
-                GUILayout.Label($"{cube.type}:", GUILayout.Width(60));
+            GUILayout.BeginHorizontal();
+            string cubeTypeName = GetCubeTypeDisplayName(cube.type);
+            GUILayout.Label($"{cubeTypeName}:", GUILayout.Width(60));
 
                 if (GUILayout.Button("Paint", GUILayout.Width(50)))
                 {
@@ -257,7 +258,8 @@ public class CubeDebugPanel : DebugPanelBase
 
         // Header line
         GUILayout.BeginHorizontal();
-        GUILayout.Label($"{cube.type} at ({cube.position.x},{cube.position.y})", GUILayout.Width(140));
+        string cubeTypeName = GetCubeTypeDisplayName(cube.type);
+        GUILayout.Label($"{cubeTypeName} at ({cube.position.x},{cube.position.y})", GUILayout.Width(140));
 
         if (GUILayout.Button("Select", GUILayout.Width(50)))
         {
@@ -579,10 +581,10 @@ public class CubeDebugPanel : DebugPanelBase
         }
         GUILayout.EndHorizontal();
 
-        // Reinforced cube specific controls
-        if (selectedCube.type == CubeType.Reinforced)
+        // Dense cube specific controls
+        if (selectedCube.type == CubeType.Dense || selectedCube.type == CubeType.Dense) // Backward compatibility
         {
-            DrawReinforcedCubeControls();
+            DrawDenseCubeControls();
         }
     }
 
@@ -617,21 +619,21 @@ public class CubeDebugPanel : DebugPanelBase
         return DebugCubeSpawnHelper.FindCubesAt(position);
     }
 
-    private void DrawReinforcedTestsSection()
+    private void DrawDenseTestsSection()
     {
         GUILayout.BeginVertical(GUI.skin.box);
-        GUILayout.Label("REINFORCED CUBE TESTING", GUI.skin.box);
+        GUILayout.Label("DENSE CUBE TESTING", GUI.skin.box);
 
         // Quick spawning controls
         GUILayout.Label("Quick Spawn Controls:", GUI.skin.box);
         GUILayout.BeginHorizontal();
         if (GUILayout.Button("Spawn at Player"))
         {
-            SpawnReinforcedCubeAtPlayer();
+            SpawnDenseCubeAtPlayer();
         }
         if (GUILayout.Button("Spawn Multiple"))
         {
-            SpawnMultipleReinforcedCubes();
+            SpawnMultipleDenseCubes();
         }
         GUILayout.EndHorizontal();
 
@@ -671,16 +673,16 @@ public class CubeDebugPanel : DebugPanelBase
 
         GUILayout.Space(5);
 
-        // Show current reinforced cubes
-        DrawCurrentReinforcedCubes();
+        // Show current dense cubes
+        DrawCurrentDenseCubes();
 
         GUILayout.EndVertical();
     }
 
-    private void DrawReinforcedCubeControls()
+    private void DrawDenseCubeControls()
     {
         GUILayout.Space(5);
-        GUILayout.Label("Reinforced Cube Controls:", GUI.skin.box);
+        GUILayout.Label("Dense Cube Controls:", GUI.skin.box);
 
         // Display current HP with color coding
         float hpRatio = (float)selectedCube.currentHitPoints / selectedCube.maxHitPoints;
@@ -720,23 +722,23 @@ public class CubeDebugPanel : DebugPanelBase
         }
     }
 
-    private void DrawCurrentReinforcedCubes()
+    private void DrawCurrentDenseCubes()
     {
-        GUILayout.Label("Current Reinforced Cubes:", GUI.skin.box);
+        GUILayout.Label("Current Dense Cubes:", GUI.skin.box);
 
-        var reinforcedCubes = Object.FindObjectsOfType<CubeManager>()
-            .Where(c => c != null && !c.isDestroyed && c.type == CubeType.Reinforced)
+        var denseCubes = Object.FindObjectsOfType<CubeManager>()
+            .Where(c => c != null && !c.isDestroyed && (c.type == CubeType.Dense || c.type == CubeType.Dense))
             .OrderBy(c => c.position.y)
             .ThenBy(c => c.position.x)
             .ToList();
 
-        if (reinforcedCubes.Count == 0)
+        if (denseCubes.Count == 0)
         {
-            GUILayout.Label("No reinforced cubes found");
+            GUILayout.Label("No dense cubes found");
             return;
         }
 
-        foreach (var cube in reinforcedCubes.Take(3)) // Show max 3 for UI space
+        foreach (var cube in denseCubes.Take(3)) // Show max 3 for UI space
         {
             GUILayout.BeginVertical(GUI.skin.box);
 
@@ -782,52 +784,52 @@ public class CubeDebugPanel : DebugPanelBase
             GUILayout.EndVertical();
         }
 
-        if (reinforcedCubes.Count > 3)
+        if (denseCubes.Count > 3)
         {
-            GUILayout.Label($"... and {reinforcedCubes.Count - 3} more");
+            GUILayout.Label($"... and {denseCubes.Count - 3} more");
         }
     }
 
-    private void SpawnReinforcedCubeAtPlayer()
+    private void SpawnDenseCubeAtPlayer()
     {
         if (playerManager == null) return;
 
         Vector2Int playerPos = playerManager.currentTilePosition;
         Vector2Int spawnPos = new Vector2Int(playerPos.x, playerPos.y + 2); // Spawn slightly ahead
         
-        SpawnCubeAt(spawnPos, CubeType.Reinforced);
-        Debug.Log($"Spawned reinforced cube at ({spawnPos.x}, {spawnPos.y})");
+        SpawnCubeAt(spawnPos, CubeType.Dense);
+        Debug.Log($"Spawned dense cube at ({spawnPos.x}, {spawnPos.y})");
     }
 
-    private void SpawnMultipleReinforcedCubes()
+    private void SpawnMultipleDenseCubes()
     {
         if (playerManager == null) return;
 
         Vector2Int playerPos = playerManager.currentTilePosition;
         
-        // Spawn 3 reinforced cubes in a line
+        // Spawn 3 dense cubes in a line
         for (int i = 0; i < 3; i++)
         {
             Vector2Int spawnPos = new Vector2Int(playerPos.x + i - 1, playerPos.y + 3);
-            SpawnCubeAt(spawnPos, CubeType.Reinforced);
+            SpawnCubeAt(spawnPos, CubeType.Dense);
         }
         
-        Debug.Log($"Spawned 3 reinforced cubes near player position");
+        Debug.Log($"Spawned 3 dense cubes near player position");
     }
 
     private void SimulateMultiHitSequence(int hitCount)
     {
-        var reinforcedCubes = Object.FindObjectsOfType<CubeManager>()
-            .Where(c => c != null && !c.isDestroyed && c.type == CubeType.Reinforced)
+        var denseCubes = Object.FindObjectsOfType<CubeManager>()
+            .Where(c => c != null && !c.isDestroyed && (c.type == CubeType.Dense || c.type == CubeType.Dense))
             .ToList();
 
-        if (reinforcedCubes.Count == 0)
+        if (denseCubes.Count == 0)
         {
-            Debug.Log("No reinforced cubes found for multi-hit simulation");
+            Debug.Log("No dense cubes found for multi-hit simulation");
             return;
         }
 
-        foreach (var cube in reinforcedCubes)
+        foreach (var cube in denseCubes)
         {
             // Reset to full HP first
             SetCubeHP(cube, cube.maxHitPoints);
@@ -839,60 +841,60 @@ public class CubeDebugPanel : DebugPanelBase
                 if (destroyed) break;
             }
             
-            Debug.Log($"Applied {hitCount} hits to reinforced cube at ({cube.position.x},{cube.position.y})");
+            Debug.Log($"Applied {hitCount} hits to dense cube at ({cube.position.x},{cube.position.y})");
         }
     }
 
     private void TestAllDamageStates()
     {
-        var reinforcedCubes = Object.FindObjectsOfType<CubeManager>()
-            .Where(c => c != null && !c.isDestroyed && c.type == CubeType.Reinforced)
+        var denseCubes = Object.FindObjectsOfType<CubeManager>()
+            .Where(c => c != null && !c.isDestroyed && (c.type == CubeType.Dense || c.type == CubeType.Dense))
             .ToList();
 
-        if (reinforcedCubes.Count == 0)
+        if (denseCubes.Count == 0)
         {
-            Debug.Log("No reinforced cubes found for damage state testing");
+            Debug.Log("No dense cubes found for damage state testing");
             return;
         }
 
         // Test different damage states
-        for (int i = 0; i < reinforcedCubes.Count && i < 3; i++)
+        for (int i = 0; i < denseCubes.Count && i < 3; i++)
         {
-            var cube = reinforcedCubes[i];
+            var cube = denseCubes[i];
             int targetHP = 3 - i; // 3, 2, 1 HP respectively
             SetCubeHP(cube, targetHP);
             ForceVisualUpdate(cube);
         }
         
-        Debug.Log("Set reinforced cubes to different damage states for visual testing");
+        Debug.Log("Set dense cubes to different damage states for visual testing");
     }
 
     private void ForceVisualUpdateOnAll()
     {
-        var reinforcedCubes = Object.FindObjectsOfType<CubeManager>()
-            .Where(c => c != null && !c.isDestroyed && c.type == CubeType.Reinforced)
+        var denseCubes = Object.FindObjectsOfType<CubeManager>()
+            .Where(c => c != null && !c.isDestroyed && (c.type == CubeType.Dense || c.type == CubeType.Dense))
             .ToList();
 
-        foreach (var cube in reinforcedCubes)
+        foreach (var cube in denseCubes)
         {
             ForceVisualUpdate(cube);
         }
         
-        Debug.Log($"Forced visual update on {reinforcedCubes.Count} reinforced cubes");
+        Debug.Log($"Forced visual update on {denseCubes.Count} dense cubes");
     }
 
     private void SetCubeHP(CubeManager cube, int hp)
     {
-        if (cube == null || cube.type != CubeType.Reinforced) return;
+        if (cube == null || (cube.type != CubeType.Dense && cube.type != CubeType.Dense)) return;
         
         cube.currentHitPoints = Mathf.Clamp(hp, 1, cube.maxHitPoints);
         ForceVisualUpdate(cube);
-        Debug.Log($"Set reinforced cube HP to {cube.currentHitPoints}/{cube.maxHitPoints}");
+        Debug.Log($"Set dense cube HP to {cube.currentHitPoints}/{cube.maxHitPoints}");
     }
 
     private void ForceVisualUpdate(CubeManager cube)
     {
-        if (cube == null || cube.type != CubeType.Reinforced) return;
+        if (cube == null || (cube.type != CubeType.Dense && cube.type != CubeType.Dense)) return;
         
         // Force call to UpdateDamageVisual
         cube.UpdateDamageVisual();
@@ -907,5 +909,22 @@ public class CubeDebugPanel : DebugPanelBase
     private Color GetCubeColor(CubeType type)
     {
         return DebugUIHelpers.GetCubeDisplayColor(type);
+    }
+    
+    private string GetCubeTypeDisplayName(CubeType type)
+    {
+        switch (type)
+        {
+            case CubeType.Unit:
+                return "Unit";
+            case CubeType.Prime:
+                return "Prime";
+            case CubeType.Infinity:
+                return "Infinity";
+            case CubeType.Dense:
+                return "Dense";
+            default:
+                return type.ToString();
+        }
     }
 }

@@ -665,10 +665,10 @@ namespace WaveDebugSystem
                 {
                     switch (cube.type)
                     {
-                        case CubeType.Normal: stats.normalCount++; break;
-                        case CubeType.Blue: stats.blueCount++; break;
-                        case CubeType.Black: stats.blackCount++; break;
-                        case CubeType.Reinforced: stats.reinforcedCount++; break;
+                        case CubeType.Unit: stats.normalCount++; break;
+                        case CubeType.Prime: stats.blueCount++; break;
+                        case CubeType.Infinity: stats.blackCount++; break;
+                        case CubeType.Dense: stats.reinforcedCount++; break;
                     }
                 }
 
@@ -719,7 +719,7 @@ namespace WaveDebugSystem
                     {
                         currentEditingWave.CubesData.Add(new CubeData
                         {
-                            type = Enumerations.CubeType.Normal,
+                            type = Enumerations.CubeType.Unit,
                             position = new Vector2Int(x, y),
                             level = 1
                         });
@@ -745,9 +745,9 @@ namespace WaveDebugSystem
                     {
                         if ((x + y) % 2 == 0)
                         {
-                            Enumerations.CubeType cubeType = Enumerations.CubeType.Normal;
-                            if (x % 3 == 1) cubeType = Enumerations.CubeType.Blue;
-                            else if (x % 3 == 2) cubeType = Enumerations.CubeType.Black;
+                            Enumerations.CubeType cubeType = Enumerations.CubeType.Unit;
+                            if (x % 3 == 1) cubeType = Enumerations.CubeType.Prime;
+                            else if (x % 3 == 2) cubeType = Enumerations.CubeType.Infinity;
                             
                             currentEditingWave.CubesData.Add(new CubeData
                             {
@@ -795,11 +795,11 @@ namespace WaveDebugSystem
                         occupiedPositions.Add(position);
                         
                         // Random cube type with weighted distribution
-                        Enumerations.CubeType cubeType = Enumerations.CubeType.Normal;
+                        Enumerations.CubeType cubeType = Enumerations.CubeType.Unit;
                         float random = Random.value;
-                        if (random < 0.7f) cubeType = Enumerations.CubeType.Normal;
-                        else if (random < 0.9f) cubeType = Enumerations.CubeType.Blue;
-                        else cubeType = Enumerations.CubeType.Black;
+                        if (random < 0.7f) cubeType = Enumerations.CubeType.Unit;
+                        else if (random < 0.9f) cubeType = Enumerations.CubeType.Prime;
+                        else cubeType = Enumerations.CubeType.Infinity;
                         
                         currentEditingWave.CubesData.Add(new CubeData
                         {

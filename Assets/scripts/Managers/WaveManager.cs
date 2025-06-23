@@ -463,9 +463,9 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
     {
         switch (cubeType)
         {
-            case Enumerations.CubeType.Normal: normalCubesCaptured++; break;
-            case Enumerations.CubeType.Blue: blueCubesCaptured++; break;
-            case Enumerations.CubeType.Reinforced: reinforcedCubesCaptured++; break;
+            case Enumerations.CubeType.Unit: normalCubesCaptured++; break;
+            case Enumerations.CubeType.Prime: blueCubesCaptured++; break;
+            case Enumerations.CubeType.Dense: reinforcedCubesCaptured++; break;
         }
 
         NotifyStageManager(sm => sm.OnCubeCaptured(cubeType));
@@ -474,7 +474,7 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
     public void OnCubeEscaped(Enumerations.CubeType cubeType)
     {
         // Replace the grid reduction call with row removal
-        if (cubeType == Enumerations.CubeType.Normal)
+        if (cubeType == Enumerations.CubeType.Unit)
         {
             Debug.Log($"Normal cube escaped - triggering bottom row removal");
             grid.RemoveBottomRow();
@@ -487,7 +487,7 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
 
     public void OnNonBlackCubeProcessed(Enumerations.CubeType cubeType, bool wasCaptured)
     {
-        if (cubeType == Enumerations.CubeType.Black) return;
+        if (cubeType == Enumerations.CubeType.Infinity) return;
 
         processedNonBlackCubes++;
         DebugLog($"📊 Non-black cube processed: {processedNonBlackCubes}/{totalNonBlackCubes}");
@@ -573,14 +573,14 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
     private Enumerations.CubeType GetRandomCubeType()
     {
         float random = Random.value;
-        if (random < normalCubeChance) return Enumerations.CubeType.Normal;
-        if (random < normalCubeChance + blueCubeChance) return Enumerations.CubeType.Blue;
-        return Enumerations.CubeType.Black;
+        if (random < normalCubeChance) return Enumerations.CubeType.Unit;
+        if (random < normalCubeChance + blueCubeChance) return Enumerations.CubeType.Prime;
+        return Enumerations.CubeType.Infinity;
     }
 
     private void CountNonBlackCubes()
     {
-        totalNonBlackCubes = activeCubes.Count(c => c != null && c.type != Enumerations.CubeType.Black);
+        totalNonBlackCubes = activeCubes.Count(c => c != null && c.type != Enumerations.CubeType.Infinity);
         processedNonBlackCubes = 0;
     }
 

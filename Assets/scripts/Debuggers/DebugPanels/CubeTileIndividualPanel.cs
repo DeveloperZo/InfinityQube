@@ -39,7 +39,7 @@ public class CubeTileIndividualPanel : DebugPanelBase
     private Tile testTile = null;
     private Vector2Int testPosition = new Vector2Int(0, 0);
     private bool autoTrackPlayer = true;
-    private CubeType spawnCubeType = CubeType.Normal;
+    private CubeType spawnCubeType = CubeType.Unit;
     private int testPaintDuration = 3;
     private int selectedFaceStatus = 1; // 1=Corrupted, 2=Enhanced
     private int lifecycleStepIndex = 0;

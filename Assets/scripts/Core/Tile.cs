@@ -24,6 +24,15 @@ public class Tile : MonoBehaviour
     [SerializeField] public bool paintOnLanding = true;
     [SerializeField] public bool paintOnExit = false;
 
+    [Header("Corruption System")]
+    [SerializeField] private bool isCorrupted = false;
+    [SerializeField] private int corruptionDuration = 5; // Move count duration
+    [SerializeField] private int maxCorruptionInteractions = 3; // Max cubes that can be painted
+    [SerializeField] private int corruptionInteractions = 0; // Current painted cubes count
+    [SerializeField] private int corruptionDecayCount = 0; // Current move count for decay
+    [SerializeField] private bool showCorruptionCountdown = true;
+    [SerializeField] private GameObject corruptionEffect;
+
     [Header("Detonation Point")]
     [SerializeField] private bool hasDetonationPoint = false;
     public bool HasDetonationPoint => hasDetonationPoint;
@@ -49,8 +58,10 @@ public class Tile : MonoBehaviour
     public bool IsBlackened => isBlackened;
     public bool IsPrimed => hasDetonationPoint;
     public bool HasMarker => hasMarker;
+    public bool IsCorrupted => isCorrupted;
     public TileState currentState = TileState.Normal;
-    public bool CanBeMarked => currentState == TileState.Normal && !isBlackened;
+    public bool CanBeMarked => currentState == TileState.Normal && !isBlackened && !isCorrupted;
+    public bool CanAcceptMarkers => !isCorrupted;
 
     // Face painting properties for external access
     public bool CanPaintCubes => canPaintCubes;
@@ -100,12 +111,15 @@ public class Tile : MonoBehaviour
             softHighlightObject = null;
         }
 
+        // Clean up corruption effects
+        RemoveCorruptionEffect();
+        
         RemoveOverlay();
     }
 
     public void PlaceMarker()
     {
-        if (!isInitialized || hasMarker || !CanBeMarked) return;
+        if (!isInitialized || hasMarker || !CanBeMarked || !CanAcceptMarkers) return;
 
         hasMarker = true;
 
@@ -252,6 +266,7 @@ public class Tile : MonoBehaviour
         isBlackened = false;
         hasDetonationPoint = false;
         ClearMarker();
+        CleanseCorruption(); // Clean corruption when resetting
         RemoveOverlay();
 
         Debug.Log($"Tile ({x}, {y}) reset to normal state");
@@ -309,24 +324,24 @@ public class Tile : MonoBehaviour
         // Handle cube type-specific behavior using effective type
         switch (effectiveType)
         {
-            case Enumerations.CubeType.Black:
+            case Enumerations.CubeType.Infinity:
                 // Cube is acting as black due to corrupted face
                 Debug.Log($"Cube acting as black due to face status at ({x}, {y})");
-                NotifyPlayerCubeCapture(Enumerations.CubeType.Black);
+                NotifyPlayerCubeCapture(Enumerations.CubeType.Infinity);
                 // Don't destroy the cube - black cubes can't be captured
                 break;
 
-            case Enumerations.CubeType.Blue:
+            case Enumerations.CubeType.Prime:
                 // Prime cube captured - creates prime cube marker for 3x3 area trigger
                 Debug.Log($"Prime cube captured at ({x}, {y}) - Creating prime cube marker");
-                NotifyPlayerCubeCapture(Enumerations.CubeType.Blue);
+                NotifyPlayerCubeCapture(Enumerations.CubeType.Prime);
                 PrimeTile(); // This creates the prime cube marker for 3x3 area capture
 
                 Destroy(cubeToProcess.gameObject);
                 break;
 
-            case Enumerations.CubeType.Normal:
-                NotifyPlayerCubeCapture(Enumerations.CubeType.Normal);
+            case Enumerations.CubeType.Unit:
+                NotifyPlayerCubeCapture(Enumerations.CubeType.Unit);
 
                 // Check if it should create detonation despite being normal
                 if (cubeToProcess.ShouldCreateDetonation())
@@ -338,7 +353,7 @@ public class Tile : MonoBehaviour
                 Destroy(cubeToProcess.gameObject);
                 break;
 
-            case Enumerations.CubeType.Reinforced:
+            case Enumerations.CubeType.Dense:
                 HandleReinforcedCube(cubeToProcess);
                 break;
         }
@@ -358,13 +373,13 @@ public class Tile : MonoBehaviour
         {
             // Cube was destroyed - handle like a successful capture
             Debug.Log($"Reinforced cube destroyed at ({x}, {y}) after taking damage");
-            NotifyPlayerCubeCapture(Enumerations.CubeType.Reinforced);
+            NotifyPlayerCubeCapture(Enumerations.CubeType.Dense);
             
             // Notify WaveManager for statistics and wave completion tracking
             WaveManager waveManager = FindObjectOfType<WaveManager>();
             if (waveManager != null)
             {
-                waveManager.OnNonBlackCubeProcessed(Enumerations.CubeType.Reinforced, true);
+                waveManager.OnNonBlackCubeProcessed(Enumerations.CubeType.Dense, true);
             }
             
             Destroy(cube.gameObject);
@@ -476,8 +491,8 @@ public class Tile : MonoBehaviour
 
         isPlayerOnTile = isHovering;
 
-        // Only show highlight if not marked, not blackened, and not a detonation point
-        if (isHovering && !hasMarker && !isBlackened && !hasDetonationPoint)
+        // Only show highlight if not marked, not blackened, not a detonation point, and not corrupted
+        if (isHovering && !hasMarker && !isBlackened && !hasDetonationPoint && !isCorrupted)
         {
             ShowSoftHighlight();
         }
@@ -489,10 +504,10 @@ public class Tile : MonoBehaviour
 
     private void ShowSoftHighlight()
     {
-        if (isBlackened || hasMarker || hasDetonationPoint)
+        if (isBlackened || hasMarker || hasDetonationPoint || isCorrupted)
         {
-            Debug.Log($"Tile ({x},{y}): Cannot show highlight - isBlackened={isBlackened}, hasMarker={hasMarker}, hasDetonationPoint={hasDetonationPoint}");
-            return; // Don't highlight blackened, marked, or detonation point tiles
+            Debug.Log($"Tile ({x},{y}): Cannot show highlight - isBlackened={isBlackened}, hasMarker={hasMarker}, hasDetonationPoint={hasDetonationPoint}, isCorrupted={isCorrupted}");
+            return; // Don't highlight blackened, marked, detonation point, or corrupted tiles
         }
 
         Debug.Log($"Tile ({x},{y}): Showing soft highlight");
@@ -549,7 +564,7 @@ public class Tile : MonoBehaviour
             currentState = Enumerations.TileState.Transformed;
 
             // Only handle corruption transformation
-            if (cubeType == Enumerations.CubeType.Black)
+            if (cubeType == Enumerations.CubeType.Infinity)
             {
                 BlackenTile();
             }
@@ -590,6 +605,28 @@ public class Tile : MonoBehaviour
 
         // Store cube reference for potential processing
         currentCube = cube;
+        
+        // Check for corruption from infinity cubes with painted faces
+        if (cube.type == CubeType.Infinity && cube.GetActiveFaceStatus() == FaceStatus.Corrupted)
+        {
+            CorruptTile(corruptionDuration, maxCorruptionInteractions);
+            Debug.Log($"Tile ({x},{y}) corrupted by infinity cube with painted face");
+        }
+        
+        // Handle corrupted tile behavior - paint non-infinity cubes
+        if (isCorrupted && cube.type != CubeType.Infinity)
+        {
+            cube.PaintCurrentDownFace(FaceStatus.Corrupted, Color.black, -1);
+            corruptionInteractions++;
+            Debug.Log($"Corrupted tile painted {cube.type} cube at ({x},{y}). Interactions: {corruptionInteractions}/{maxCorruptionInteractions}");
+            
+            // Check if corruption should end due to interaction limit
+            if (corruptionInteractions >= maxCorruptionInteractions)
+            {
+                CleanseCorruption();
+                Debug.Log($"Tile ({x},{y}) corruption cleansed due to interaction limit");
+            }
+        }
         
         // Handle transformed tile behavior for corruption
         if (currentState == Enumerations.TileState.Transformed && IsBlackened)
@@ -643,6 +680,9 @@ public class Tile : MonoBehaviour
         // Priority order - return first match
         if (hasMarker)
             return (true, markerColor);
+
+        if (isCorrupted)
+            return (true, new Color(0.5f, 0f, 0.5f, 1f)); // Dark purple for corruption
 
         if (isBlackened)
             return (true, corruptedColor);
@@ -845,5 +885,230 @@ public class Tile : MonoBehaviour
         }
     }
 
+    #endregion
+
+    #region Corruption System
+
+    /// <summary>
+    /// Corrupts the tile for a specified duration with interaction limits
+    /// </summary>
+    /// <param name="duration">Number of moves the corruption lasts (-1 for permanent)</param>
+    /// <param name="maxInteractions">Maximum number of cubes that can be painted before cleansing</param>
+    public void CorruptTile(int duration = 5, int maxInteractions = 3)
+    {
+        if (isCorrupted) return; // Already corrupted
+        
+        isCorrupted = true;
+        corruptionDuration = duration;
+        maxCorruptionInteractions = maxInteractions;
+        corruptionInteractions = 0;
+        corruptionDecayCount = 0;
+        
+        // Clear any existing markers
+        ClearMarker();
+        
+        // Set up corruption painting behavior
+        SetupCorruptionPainting(duration);
+        
+        // Create corruption visual effects
+        CreateCorruptionEffect();
+        
+        // Update tile visuals
+        UpdateTileVisuals();
+        
+        Debug.Log($"Tile ({x},{y}) corrupted with duration {duration} and max interactions {maxInteractions}");
+    }
+    
+    /// <summary>
+    /// Cleanses corruption from the tile
+    /// </summary>
+    public void CleanseCorruption()
+    {
+        if (!isCorrupted) return;
+        
+        isCorrupted = false;
+        corruptionDuration = 0;
+        corruptionInteractions = 0;
+        corruptionDecayCount = 0;
+        
+        // Disable face painting
+        DisableFacePainting();
+        
+        // Remove corruption effects
+        RemoveCorruptionEffect();
+        
+        // Update tile visuals
+        UpdateTileVisuals();
+        
+        Debug.Log($"Tile ({x},{y}) corruption cleansed");
+    }
+    
+    /// <summary>
+    /// Processes corruption decay each move
+    /// </summary>
+    public void ProcessCorruptionDecay()
+    {
+        if (!isCorrupted || corruptionDuration == -1) return;
+        
+        corruptionDecayCount++;
+        
+        // Update countdown display
+        UpdateCorruptionCountdown();
+        
+        // Check if corruption duration has expired
+        if (corruptionDecayCount >= corruptionDuration)
+        {
+            CleanseCorruption();
+            Debug.Log($"Tile ({x},{y}) corruption expired after {corruptionDecayCount} moves");
+        }
+    }
+    
+    /// <summary>
+    /// Creates visual corruption effect
+    /// </summary>
+    private void CreateCorruptionEffect()
+    {
+        if (corruptionEffect != null) return;
+        
+        // Create corruption particle effect
+        corruptionEffect = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+        corruptionEffect.name = $"CorruptionEffect_{x}_{y}";
+        corruptionEffect.transform.SetParent(transform);
+        corruptionEffect.transform.localPosition = new Vector3(0, overlayHeight + 0.02f, 0);
+        corruptionEffect.transform.localScale = new Vector3(0.8f, 0.01f, 0.8f);
+        
+        // Remove collider
+        Destroy(corruptionEffect.GetComponent<Collider>());
+        
+        // Set corruption material with pulsing effect
+        Renderer effectRenderer = corruptionEffect.GetComponent<Renderer>();
+        if (effectRenderer != null)
+        {
+            Material corruptionMaterial = new Material(Shader.Find("Standard"));
+            corruptionMaterial.color = new Color(0.5f, 0f, 0.5f, 0.8f); // Dark purple
+            corruptionMaterial.EnableKeyword("_EMISSION");
+            corruptionMaterial.SetColor("_EmissionColor", new Color(0.5f, 0f, 0.5f) * 0.5f);
+            effectRenderer.material = corruptionMaterial;
+        }
+        
+        // Start pulsing animation
+        StartCoroutine(PulseCorruptionEffect());
+        
+        // Create countdown text if enabled
+        if (showCorruptionCountdown)
+        {
+            CreateCorruptionCountdown();
+        }
+    }
+    
+    /// <summary>
+    /// Removes corruption visual effect
+    /// </summary>
+    private void RemoveCorruptionEffect()
+    {
+        if (corruptionEffect != null)
+        {
+            StopCoroutine(PulseCorruptionEffect());
+            Destroy(corruptionEffect);
+            corruptionEffect = null;
+        }
+        
+        RemoveCorruptionCountdown();
+    }
+    
+    /// <summary>
+    /// Pulsing animation for corruption effect
+    /// </summary>
+    private IEnumerator PulseCorruptionEffect()
+    {
+        if (corruptionEffect == null) yield break;
+        
+        Vector3 baseScale = corruptionEffect.transform.localScale;
+        Vector3 pulseScale = baseScale * 1.2f;
+        
+        while (isCorrupted && corruptionEffect != null)
+        {
+            // Pulse up
+            float elapsed = 0f;
+            float duration = 1f;
+            
+            while (elapsed < duration && corruptionEffect != null)
+            {
+                elapsed += Time.deltaTime;
+                float t = Mathf.Sin(elapsed / duration * Mathf.PI);
+                corruptionEffect.transform.localScale = Vector3.Lerp(baseScale, pulseScale, t * 0.3f);
+                yield return null;
+            }
+            
+            yield return new WaitForSeconds(0.5f);
+        }
+    }
+    
+    /// <summary>
+    /// Creates countdown text for corruption duration
+    /// </summary>
+    private void CreateCorruptionCountdown()
+    {
+        if (corruptionDuration == -1) return; // No countdown for permanent corruption
+        
+        GameObject countdownObj = new GameObject($"CorruptionCountdown_{x}_{y}");
+        countdownObj.transform.SetParent(transform);
+        countdownObj.transform.localPosition = new Vector3(0, overlayHeight + 0.5f, 0);
+        
+        countdownText = countdownObj.AddComponent<TextMesh>();
+        countdownText.text = (corruptionDuration - corruptionDecayCount).ToString();
+        countdownText.fontSize = 10;
+        countdownText.color = Color.red;
+        countdownText.anchor = TextAnchor.MiddleCenter;
+        
+        // Make text face camera
+        countdownObj.transform.LookAt(Camera.main.transform);
+        countdownObj.transform.Rotate(0, 180, 0);
+    }
+    
+    /// <summary>
+    /// Updates corruption countdown display
+    /// </summary>
+    private void UpdateCorruptionCountdown()
+    {
+        if (countdownText != null && corruptionDuration != -1)
+        {
+            int remaining = corruptionDuration - corruptionDecayCount;
+            countdownText.text = remaining.ToString();
+            
+            // Change color as time runs out
+            if (remaining <= 1)
+                countdownText.color = Color.red;
+            else if (remaining <= 2)
+                countdownText.color = Color.yellow;
+            else
+                countdownText.color = Color.white;
+        }
+    }
+    
+    /// <summary>
+    /// Removes corruption countdown display
+    /// </summary>
+    private void RemoveCorruptionCountdown()
+    {
+        if (countdownText != null)
+        {
+            Destroy(countdownText.gameObject);
+            countdownText = null;
+        }
+    }
+    
+    /// <summary>
+    /// Gets corruption status information
+    /// </summary>
+    /// <returns>Corruption status string</returns>
+    public string GetCorruptionStatus()
+    {
+        if (!isCorrupted) return "Clean";
+        
+        int remaining = corruptionDuration == -1 ? -1 : corruptionDuration - corruptionDecayCount;
+        return $"Corrupted: {corruptionInteractions}/{maxCorruptionInteractions} painted, {remaining} moves left";
+    }
+    
     #endregion
 }

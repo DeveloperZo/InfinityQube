@@ -164,22 +164,22 @@ public class CubeIndividualPanel : DebugPanelBase
         GUILayout.BeginHorizontal();
         
         // Normal cube
-        GUI.backgroundColor = selectedCubeType == 0 ? DebugUIHelpers.GetCubeDisplayColor(CubeType.Normal) : Color.white;
+        GUI.backgroundColor = selectedCubeType == 0 ? DebugUIHelpers.GetCubeDisplayColor(CubeType.Unit) : Color.white;
         if (GUILayout.Button("Normal", GUILayout.Width(60)))
             selectedCubeType = 0;
 
         // Blue cube
-        GUI.backgroundColor = selectedCubeType == 1 ? DebugUIHelpers.GetCubeDisplayColor(CubeType.Blue) : Color.white;
+        GUI.backgroundColor = selectedCubeType == 1 ? DebugUIHelpers.GetCubeDisplayColor(CubeType.Prime) : Color.white;
         if (GUILayout.Button("Blue", GUILayout.Width(60)))
             selectedCubeType = 1;
 
         // Black cube
-        GUI.backgroundColor = selectedCubeType == 2 ? DebugUIHelpers.GetCubeDisplayColor(CubeType.Black) : Color.white;
+        GUI.backgroundColor = selectedCubeType == 2 ? DebugUIHelpers.GetCubeDisplayColor(CubeType.Infinity) : Color.white;
         if (GUILayout.Button("Black", GUILayout.Width(60)))
             selectedCubeType = 2;
 
         // Reinforced cube
-        GUI.backgroundColor = selectedCubeType == 3 ? DebugUIHelpers.GetCubeDisplayColor(CubeType.Reinforced) : Color.white;
+        GUI.backgroundColor = selectedCubeType == 3 ? DebugUIHelpers.GetCubeDisplayColor(CubeType.Dense) : Color.white;
         if (GUILayout.Button("Reinforced", GUILayout.Width(80)))
             selectedCubeType = 3;
 
@@ -294,7 +294,7 @@ public class CubeIndividualPanel : DebugPanelBase
         GUILayout.Space(5);
 
         // Health management (for reinforced cubes)
-        if (selectedCube.type == CubeType.Reinforced)
+        if (selectedCube.type == CubeType.Dense)
         {
             DrawHealthManagement();
             GUILayout.Space(5);
@@ -315,7 +315,7 @@ public class CubeIndividualPanel : DebugPanelBase
         GUILayout.Label($"Position: ({selectedCube.position.x}, {selectedCube.position.y})");
         GUILayout.Label($"Move Count: {selectedCube.moveCount}");
         
-        if (selectedCube.type == CubeType.Reinforced)
+        if (selectedCube.type == CubeType.Dense)
         {
             float hpRatio = (float)selectedCube.currentHitPoints / selectedCube.maxHitPoints;
             Color hpColor = hpRatio > 0.66f ? Color.green : (hpRatio > 0.33f ? Color.yellow : Color.red);
@@ -795,7 +795,7 @@ public class CubeIndividualPanel : DebugPanelBase
 
     private void SetCubeHP(int hp)
     {
-        if (selectedCube == null || selectedCube.type != CubeType.Reinforced) return;
+        if (selectedCube == null || selectedCube.type != CubeType.Dense) return;
         
         selectedCube.currentHitPoints = Mathf.Clamp(hp, 1, selectedCube.maxHitPoints);
         selectedCube.UpdateDamageVisual();
@@ -890,10 +890,10 @@ public class CubeIndividualPanel : DebugPanelBase
     {
         switch (type)
         {
-            case CubeType.Normal: return "Standard cube, can be painted";
-            case CubeType.Blue: return "Valuable cube, creates detonations";
-            case CubeType.Black: return "Dangerous cube, avoid capture";
-            case CubeType.Reinforced: return "Multi-hit cube, requires damage";
+            case CubeType.Unit: return "Standard cube, can be painted";
+            case CubeType.Prime: return "Valuable cube, creates detonations";
+            case CubeType.Infinity: return "Dangerous cube, avoid capture";
+            case CubeType.Dense: return "Multi-hit cube, requires damage";
             default: return "Unknown cube type";
         }
     }
