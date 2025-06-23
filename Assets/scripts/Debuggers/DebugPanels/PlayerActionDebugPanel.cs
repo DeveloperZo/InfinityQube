@@ -416,7 +416,7 @@ public class PlayerActionDebugPanel : DebugPanelBase
         markerListScroll = GUILayout.BeginScrollView(markerListScroll, GUILayout.MinHeight(200));
 
         // Individual markers
-        var individualMarkers = actionManager.individualMarkers.ToArray();
+        var individualMarkers = actionManager.lightMarkers.ToArray();
         if (individualMarkers.Length > 0)
         {
             GUILayout.Label("Individual Markers:", GUI.skin.box);
@@ -427,7 +427,7 @@ public class PlayerActionDebugPanel : DebugPanelBase
         }
 
         // Area markers
-        var areaMarkers = actionManager.areaMarkers.ToArray();
+        var areaMarkers = actionManager.primeMarkers.ToArray();
         if (areaMarkers.Length > 0)
         {
             GUILayout.Label("Area Markers:", GUI.skin.box);
@@ -453,7 +453,7 @@ public class PlayerActionDebugPanel : DebugPanelBase
         GUILayout.EndVertical();
     }
 
-    private void DrawIndividualMarkerItem(IndividualMarker marker)
+    private void DrawIndividualMarkerItem(LightMarker marker)
     {
         GUILayout.BeginHorizontal(GUI.skin.box);
         GUILayout.Label($"({marker.position.x},{marker.position.y})", GUILayout.Width(60));
@@ -482,7 +482,7 @@ public class PlayerActionDebugPanel : DebugPanelBase
         GUILayout.EndHorizontal();
     }
 
-    private void DrawAreaMarkerItem(AreaMarker marker)
+    private void DrawAreaMarkerItem(PrimeMarker marker)
     {
         GUILayout.BeginHorizontal(GUI.skin.box);
         GUILayout.Label($"Center: ({marker.centerPosition.x},{marker.centerPosition.y})", GUILayout.Width(100));
@@ -504,8 +504,8 @@ public class PlayerActionDebugPanel : DebugPanelBase
 
         GUILayout.BeginHorizontal();
         GUILayout.Label($"Individual Max: {actionManager.maxIndividualMarkers}", GUILayout.Width(110));
-        GUILayout.Label($"Area Max: {actionManager.maxAreaMarkers}", GUILayout.Width(80));
-        GUILayout.Label($"Area Size: {actionManager.areaMarkerSize}", GUILayout.Width(80));
+        GUILayout.Label($"Area Max: {actionManager.maxPrimeMarkerCharges}", GUILayout.Width(80));
+        GUILayout.Label($"Area Size: {actionManager.primeMarkerSize}", GUILayout.Width(80));
         GUILayout.EndHorizontal();
 
         GUILayout.BeginHorizontal();
@@ -1559,7 +1559,7 @@ public class PlayerActionDebugPanel : DebugPanelBase
         int cleared = 0;
         
         // Clear in order of placement time (oldest first)
-        var individualMarkers = actionManager.individualMarkers.OrderBy(m => m.placementTime).ToArray();
+        var individualMarkers = actionManager.lightMarkers.OrderBy(m => m.placementTime).ToArray();
         foreach (var marker in individualMarkers)
         {
             actionManager.RemoveIndividualMarkerAt(marker.position);
@@ -1568,7 +1568,7 @@ public class PlayerActionDebugPanel : DebugPanelBase
             yield return new WaitForSeconds(batchDelay * 0.5f);
         }
         
-        var areaMarkers = actionManager.areaMarkers.ToArray();
+        var areaMarkers = actionManager.primeMarkers.ToArray();
         foreach (var marker in areaMarkers)
         {
             actionManager.RemoveAreaMarkerAt(marker.centerPosition);
@@ -1607,7 +1607,7 @@ public class PlayerActionDebugPanel : DebugPanelBase
         // Trigger in wave pattern from left to right
         for (int x = 0; x < gridManager.Width; x++)
         {
-            var markersAtX = actionManager.individualMarkers.Where(m => m.position.x == x).ToArray();
+            var markersAtX = actionManager.lightMarkers.Where(m => m.position.x == x).ToArray();
             
             foreach (var marker in markersAtX)
             {
@@ -1627,7 +1627,7 @@ public class PlayerActionDebugPanel : DebugPanelBase
         currentBatchOperation = "Random Burst";
         batchProgressPercentage = 0f;
         
-        var allMarkers = actionManager.individualMarkers.ToList();
+        var allMarkers = actionManager.lightMarkers.ToList();
         int totalMarkers = allMarkers.Count;
         
         for (int i = 0; i < totalMarkers; i++)
@@ -2124,7 +2124,7 @@ public class PlayerActionDebugPanel : DebugPanelBase
 
     private void RemoveAllIndividualMarkers()
     {
-        var markers = actionManager.individualMarkers.ToArray();
+        var markers = actionManager.lightMarkers.ToArray();
         foreach (var marker in markers)
         {
             actionManager.RemoveIndividualMarkerAt(marker.position);
@@ -2134,7 +2134,7 @@ public class PlayerActionDebugPanel : DebugPanelBase
 
     private void RemoveAllAreaMarkers()
     {
-        var markers = actionManager.areaMarkers.ToArray();
+        var markers = actionManager.primeMarkers.ToArray();
         foreach (var marker in markers)
         {
             actionManager.RemoveAreaMarkerAt(marker.centerPosition);
@@ -2191,15 +2191,15 @@ public class PlayerActionDebugPanel : DebugPanelBase
     {
         Debug.Log("=== ALL MARKER POSITIONS ===");
 
-        var individual = actionManager.individualMarkers.ToArray();
+        var individual = actionManager.lightMarkers.ToArray();
         Debug.Log($"Individual Markers ({individual.Length}):");
         foreach (var marker in individual)
         {
             Debug.Log($"  ({marker.position.x}, {marker.position.y}) - Age: {Time.time - marker.placementTime:F1}s");
         }
 
-        var area = actionManager.areaMarkers.ToArray();
-        Debug.Log($"Area Markers ({area.Length}):");
+        var area = actionManager.primeMarkers.ToArray();
+        Debug.Log($"Prime Markers ({area.Length}):");
         foreach (var marker in area)
         {
             Debug.Log($"  Center: ({marker.centerPosition.x}, {marker.centerPosition.y}) - Size: {marker.size}x{marker.size}");

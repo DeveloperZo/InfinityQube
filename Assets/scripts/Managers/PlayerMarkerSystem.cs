@@ -20,9 +20,10 @@ public class PlayerMarkerSystem : MonoBehaviour
 
     private Dictionary<Vector2Int, GameObject> temporaryMarkerOverlays = new Dictionary<Vector2Int, GameObject>();
 
-    // Marker Collections
-    [SerializeField] public Queue<IndividualMarker> individualMarkers = new Queue<IndividualMarker>();
-    [SerializeField] public Queue<AreaMarker> areaMarkers = new Queue<AreaMarker>();
+    // Marker Collections - Four-tier system
+    [SerializeField] public Queue<LightMarker> lightMarkers = new Queue<LightMarker>();
+    [SerializeField] public Queue<HeavyMarker> heavyMarkers = new Queue<HeavyMarker>();
+    [SerializeField] public Queue<PrimeMarker> primeMarkers = new Queue<PrimeMarker>();
     public List<CubeMarker> cubeMarkers = new List<CubeMarker>();
 
     // Preview system
@@ -36,11 +37,51 @@ public class PlayerMarkerSystem : MonoBehaviour
     // Parent reference
     private PlayerActionManager actionManager;
 
-    public Queue<IndividualMarker> IndividualMarkers => individualMarkers;
-    public Queue<AreaMarker> AreaMarkers => areaMarkers;
+    // Public accessors for new marker system
+    public Queue<LightMarker> LightMarkers => lightMarkers;
+    public Queue<HeavyMarker> HeavyMarkers => heavyMarkers;
+    public Queue<PrimeMarker> PrimeMarkers => primeMarkers;
+    
+    // Backward compatibility accessors
+    [System.Obsolete("Use LightMarkers instead", false)]
+    public Queue<IndividualMarker> IndividualMarkers 
+    {
+        get
+        {
+            var compatQueue = new Queue<IndividualMarker>();
+            foreach (var marker in lightMarkers)
+            {
+                var compatMarker = new IndividualMarker(marker.position, marker.placementTime)
+                {
+                    visualObject = marker.visualObject,
+                    isPerfectTiming = marker.isPerfectTiming
+                };
+                compatQueue.Enqueue(compatMarker);
+            }
+            return compatQueue;
+        }
+    }
+    
+    [System.Obsolete("Use PrimeMarkers instead", false)]
+    public Queue<AreaMarker> AreaMarkers
+    {
+        get
+        {
+            var compatQueue = new Queue<AreaMarker>();
+            foreach (var marker in primeMarkers)
+            {
+                var compatMarker = new AreaMarker(marker.centerPosition, marker.size, marker.placementTime)
+                {
+                    visualObjects = marker.visualObjects,
+                    affectedPositions = marker.affectedPositions
+                };
+                compatQueue.Enqueue(compatMarker);
+            }
+            return compatQueue;
+        }
+    }
 
     #region Data Structures
-
 
     [System.Serializable]
     public class CubeMarker
@@ -59,17 +100,46 @@ public class PlayerMarkerSystem : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Cube marker types for markers created from prime cube captures
+    /// </summary>
     public enum CubeMarkerType
     {
-        Individual,
-        Area
+        /// <summary>Light cube marker: Basic targeting (formerly Individual)</summary>
+        Light,
+        /// <summary>Heavy cube marker: Enhanced targeting for dense cubes (NEW)</summary>
+        Heavy,
+        /// <summary>Prime cube marker: Area coverage (formerly Area)</summary>
+        Prime,
+        /// <summary>Cube marker: Standard cube marker type</summary>
+        Cube,
+        
+        // Backward compatibility aliases
+        [System.Obsolete("Use Light instead", false)]
+        Individual = Light,
+        [System.Obsolete("Use Prime instead", false)]
+        Area = Prime
     }
 
+    /// <summary>
+    /// Marker types used for processing different marker behaviors
+    /// </summary>
     public enum MarkerType
     {
-        Individual,
-        Area,
-        CubeMarker
+        /// <summary>Light marker: Basic targeting (formerly Individual)</summary>
+        Light,
+        /// <summary>Heavy marker: Enhanced marker for dense cubes (NEW)</summary>
+        Heavy,
+        /// <summary>Prime marker: Area coverage marker (formerly Area)</summary>
+        Prime,
+        /// <summary>Cube marker: Generated from prime cube captures</summary>
+        CubeMarker,
+        
+        // Backward compatibility aliases
+        [System.Obsolete("Use Light instead", false)]
+        Individual = Light,
+        [System.Obsolete("Use Prime instead", false)]
+        Area = Prime
     }
 
     #endregion
@@ -93,30 +163,30 @@ public class PlayerMarkerSystem : MonoBehaviour
         }
     }
 
-    #region Individual Markers
+    #region Light Markers
 
-    public bool PlaceIndividualMarker(Vector2Int position)
+    public bool PlaceLightMarker(Vector2Int position)
     {
-        if (!actionManager.CanPlaceIndividualMarker() || !IsValidPosition(position))
+        if (!actionManager.CanPlaceLightMarker() || !IsValidPosition(position))
             return false;
 
         if (!CanPlaceMarkerAt(position))
             return false;
 
-        var marker = new IndividualMarker(position, Time.time);
-        marker.visualObject = CreateIndividualMarkerVisual(position);
+        var marker = new LightMarker(position, Time.time);
+        marker.visualObject = CreateLightMarkerVisual(position);
 
-        individualMarkers.Enqueue(marker);
-        actionManager.ConsumeIndividualCharge();
+        lightMarkers.Enqueue(marker);
+        actionManager.ConsumeLightCharge();
 
-        Debug.Log($"Individual marker placed at ({position.x}, {position.y})");
+        Debug.Log($"Light marker placed at ({position.x}, {position.y})");
         return true;
     }
 
-    public bool RemoveIndividualMarkerAt(Vector2Int position)
+    public bool RemoveLightMarkerAt(Vector2Int position)
     {
-        var markersArray = individualMarkers.ToArray();
-        var newQueue = new Queue<IndividualMarker>();
+        var markersArray = lightMarkers.ToArray();
+        var newQueue = new Queue<LightMarker>();
         bool removed = false;
 
         foreach (var marker in markersArray)
@@ -124,9 +194,9 @@ public class PlayerMarkerSystem : MonoBehaviour
             if (marker.position == position && !removed)
             {
                 DestroyMarkerVisual(marker.visualObject);
-                actionManager.ReleaseIndividualMarker();
+                actionManager.ReleaseLightMarker();
                 removed = true;
-                Debug.Log($"Removed individual marker at ({position.x}, {position.y})");
+                Debug.Log($"Removed light marker at ({position.x}, {position.y})");
             }
             else
             {
@@ -134,33 +204,131 @@ public class PlayerMarkerSystem : MonoBehaviour
             }
         }
 
-        individualMarkers = newQueue;
+        lightMarkers = newQueue;
         return removed;
     }
 
-    public bool HasIndividualMarkerAt(Vector2Int position)
+    public bool HasLightMarkerAt(Vector2Int position)
     {
-        return individualMarkers.Any(m => m.position == position);
+        return lightMarkers.Any(m => m.position == position);
     }
 
-    public bool TriggerNextIndividualMarker()
+    public bool TriggerNextLightMarker()
     {
-        if (individualMarkers.Count == 0) return false;
+        if (lightMarkers.Count == 0) return false;
 
-        var marker = individualMarkers.Dequeue();
-        actionManager.ReleaseIndividualMarker();
+        var marker = lightMarkers.Dequeue();
+        actionManager.ReleaseLightMarker();
 
-        return TriggerIndividualMarkerAt(marker.position, marker);
+        return TriggerLightMarkerAt(marker.position, marker);
     }
 
-    private bool TriggerIndividualMarkerAt(Vector2Int position, IndividualMarker marker)
+    private bool TriggerLightMarkerAt(Vector2Int position, LightMarker marker)
     {
         var cubes = FindAllCubesAt(position);
         bool success = false;
 
         foreach (var cube in cubes)
         {
-            success |= ProcessCubeCapture(cube, position, MarkerType.Individual, marker);
+            success |= ProcessCubeCapture(cube, position, MarkerType.Light, marker);
+        }
+
+        if (success && IsWithinPerfectTimingWindow(marker.placementTime))
+        {
+            perfectTimingHits++;
+            marker.isPerfectTiming = true;
+        }
+
+        DestroyMarkerVisual(marker.visualObject);
+        StartCoroutine(ShowMarkerTriggerEffect(position));
+
+        return success;
+    }
+
+    // Backward compatibility methods
+    [System.Obsolete("Use PlaceLightMarker instead", false)]
+    public bool PlaceIndividualMarker(Vector2Int position) => PlaceLightMarker(position);
+    
+    [System.Obsolete("Use RemoveLightMarkerAt instead", false)]
+    public bool RemoveIndividualMarkerAt(Vector2Int position) => RemoveLightMarkerAt(position);
+    
+    [System.Obsolete("Use HasLightMarkerAt instead", false)]
+    public bool HasIndividualMarkerAt(Vector2Int position) => HasLightMarkerAt(position);
+    
+    [System.Obsolete("Use TriggerNextLightMarker instead", false)]
+    public bool TriggerNextIndividualMarker() => TriggerNextLightMarker();
+
+    #endregion
+
+    #region Heavy Markers
+
+    public bool PlaceHeavyMarker(Vector2Int position)
+    {
+        if (!actionManager.CanPlaceHeavyMarker() || !IsValidPosition(position))
+            return false;
+
+        if (!CanPlaceMarkerAt(position))
+            return false;
+
+        var marker = new HeavyMarker(position, Time.time);
+        marker.visualObject = CreateHeavyMarkerVisual(position);
+
+        heavyMarkers.Enqueue(marker);
+        actionManager.ConsumeHeavyCharge();
+
+        Debug.Log($"Heavy marker placed at ({position.x}, {position.y})");
+        return true;
+    }
+
+    public bool RemoveHeavyMarkerAt(Vector2Int position)
+    {
+        var markersArray = heavyMarkers.ToArray();
+        var newQueue = new Queue<HeavyMarker>();
+        bool removed = false;
+
+        foreach (var marker in markersArray)
+        {
+            if (marker.position == position && !removed)
+            {
+                DestroyMarkerVisual(marker.visualObject);
+                actionManager.ReleaseHeavyMarker();
+                removed = true;
+                Debug.Log($"Removed heavy marker at ({position.x}, {position.y})");
+            }
+            else
+            {
+                newQueue.Enqueue(marker);
+            }
+        }
+
+        heavyMarkers = newQueue;
+        return removed;
+    }
+
+    public bool HasHeavyMarkerAt(Vector2Int position)
+    {
+        return heavyMarkers.Any(m => m.position == position);
+    }
+
+    public bool TriggerNextHeavyMarker()
+    {
+        if (heavyMarkers.Count == 0) return false;
+
+        var marker = heavyMarkers.Dequeue();
+        actionManager.ReleaseHeavyMarker();
+
+        return TriggerHeavyMarkerAt(marker.position, marker);
+    }
+
+    private bool TriggerHeavyMarkerAt(Vector2Int position, HeavyMarker marker)
+    {
+        var cubes = FindAllCubesAt(position);
+        bool success = false;
+
+        foreach (var cube in cubes)
+        {
+            // Heavy markers are specifically designed for dense cubes but work on all cube types
+            success |= ProcessCubeCapture(cube, position, MarkerType.Heavy, marker);
         }
 
         if (success && IsWithinPerfectTimingWindow(marker.placementTime))
@@ -177,32 +345,32 @@ public class PlayerMarkerSystem : MonoBehaviour
 
     #endregion
 
-    #region Area Markers
+    #region Prime Markers
 
-    public bool PlaceAreaMarker(Vector2Int centerPosition, int size)
+    public bool PlacePrimeMarker(Vector2Int centerPosition, int size)
     {
-        if (!actionManager.CanPlaceAreaMarker() || !IsValidPosition(centerPosition))
+        if (!actionManager.CanPlacePrimeMarker() || !IsValidPosition(centerPosition))
             return false;
 
         if (!CanPlaceMarkerAt(centerPosition))
             return false;
 
-        AreaMarker newMarker = new AreaMarker(centerPosition, size, Time.time);
+        PrimeMarker newMarker = new PrimeMarker(centerPosition, size, Time.time);
         newMarker.affectedPositions = GetAreaPositions(centerPosition, size);
-        GameObject visual = CreateAreaMarkerVisual(centerPosition);
+        GameObject visual = CreatePrimeMarkerVisual(centerPosition);
         newMarker.visualObjects.Add(visual);
 
-        areaMarkers.Enqueue(newMarker);
-        actionManager.ConsumeAreaCharge();
+        primeMarkers.Enqueue(newMarker);
+        actionManager.ConsumePrimeCharge();
 
-        Debug.Log($"Area marker placed at ({centerPosition.x}, {centerPosition.y})");
+        Debug.Log($"Prime marker placed at ({centerPosition.x}, {centerPosition.y})");
         return true;
     }
 
-    public bool RemoveAreaMarkerAt(Vector2Int centerPosition)
+    public bool RemovePrimeMarkerAt(Vector2Int centerPosition)
     {
-        var markersArray = areaMarkers.ToArray();
-        var newQueue = new Queue<AreaMarker>();
+        var markersArray = primeMarkers.ToArray();
+        var newQueue = new Queue<PrimeMarker>();
         bool removed = false;
 
         foreach (var marker in markersArray)
@@ -213,9 +381,9 @@ public class PlayerMarkerSystem : MonoBehaviour
                 {
                     DestroyMarkerVisual(visual);
                 }
-                actionManager.ReleaseAreaMarker();
+                actionManager.ReleasePrimeMarker();
                 removed = true;
-                Debug.Log($"Removed area marker at ({centerPosition.x}, {centerPosition.y})");
+                Debug.Log($"Removed prime marker at ({centerPosition.x}, {centerPosition.y})");
             }
             else
             {
@@ -223,30 +391,30 @@ public class PlayerMarkerSystem : MonoBehaviour
             }
         }
 
-        areaMarkers = newQueue;
+        primeMarkers = newQueue;
         return removed;
     }
 
-    public bool HasAreaMarkerAt(Vector2Int centerPosition)
+    public bool HasPrimeMarkerAt(Vector2Int centerPosition)
     {
-        return areaMarkers.Any(m => m.centerPosition == centerPosition);
+        return primeMarkers.Any(m => m.centerPosition == centerPosition);
     }
 
-    public bool TriggerNextAreaMarker()
+    public bool TriggerNextPrimeMarker()
     {
-        if (areaMarkers.Count == 0) return false;
+        if (primeMarkers.Count == 0) return false;
 
-        var marker = areaMarkers.Dequeue();
-        actionManager.ReleaseAreaMarker();
+        var marker = primeMarkers.Dequeue();
+        actionManager.ReleasePrimeMarker();
 
-        return TriggerAreaMarkerAt(marker);
+        return TriggerPrimeMarkerAt(marker);
     }
 
-    private bool TriggerAreaMarkerAt(AreaMarker marker)
+    private bool TriggerPrimeMarkerAt(PrimeMarker marker)
     {
         bool anySuccess = false;
 
-        Debug.Log($"Triggering area marker - expanding from center ({marker.centerPosition.x}, {marker.centerPosition.y}) to {marker.affectedPositions.Count} tiles");
+        Debug.Log($"Triggering prime marker - expanding from center ({marker.centerPosition.x}, {marker.centerPosition.y}) to {marker.affectedPositions.Count} tiles");
 
         foreach (var visual in marker.visualObjects)
         {
@@ -264,7 +432,7 @@ public class PlayerMarkerSystem : MonoBehaviour
             var cubes = FindAllCubesAt(position);
             foreach (var cube in cubes)
             {
-                anySuccess |= ProcessCubeCapture(cube, position, MarkerType.Area);
+                anySuccess |= ProcessCubeCapture(cube, position, MarkerType.Prime);
             }
             StartCoroutine(ShowMarkerTriggerEffect(position));
         }
@@ -272,6 +440,19 @@ public class PlayerMarkerSystem : MonoBehaviour
         StartCoroutine(ClearAreaExpansionAfterDelay(marker.affectedPositions, marker.centerPosition, 1f));
         return anySuccess;
     }
+
+    // Backward compatibility methods
+    [System.Obsolete("Use PlacePrimeMarker instead", false)]
+    public bool PlaceAreaMarker(Vector2Int centerPosition, int size) => PlacePrimeMarker(centerPosition, size);
+    
+    [System.Obsolete("Use RemovePrimeMarkerAt instead", false)]
+    public bool RemoveAreaMarkerAt(Vector2Int centerPosition) => RemovePrimeMarkerAt(centerPosition);
+    
+    [System.Obsolete("Use HasPrimeMarkerAt instead", false)]
+    public bool HasAreaMarkerAt(Vector2Int centerPosition) => HasPrimeMarkerAt(centerPosition);
+    
+    [System.Obsolete("Use TriggerNextPrimeMarker instead", false)]
+    public bool TriggerNextAreaMarker() => TriggerNextPrimeMarker();
 
     private IEnumerator ClearAreaExpansionAfterDelay(List<Vector2Int> positions, Vector2Int centerPos, float delay)
     {
@@ -287,7 +468,7 @@ public class PlayerMarkerSystem : MonoBehaviour
 
     #region Cube Markers
 
-    public void CreateCubeMarker(Vector2Int position, CubeMarkerType type = CubeMarkerType.Area)
+    public void CreateCubeMarker(Vector2Int position, CubeMarkerType type = CubeMarkerType.Prime)
     {
         var cubeMarker = new CubeMarker(position, type);
         cubeMarker.visualObject = CreateCubeMarkerVisual(position, type);
@@ -312,9 +493,9 @@ public class PlayerMarkerSystem : MonoBehaviour
         cubeMarkersTriggered++;
         DestroyMarkerVisual(cubeMarker.visualObject);
 
-        var tempAreaMarker = new AreaMarker(cubeMarker.position, 3, Time.time);
-        tempAreaMarker.affectedPositions = GetAreaPositions(cubeMarker.position, 3);
-        return TriggerAreaMarkerAt(tempAreaMarker);
+        var tempPrimeMarker = new PrimeMarker(cubeMarker.position, 3, Time.time);
+        tempPrimeMarker.affectedPositions = GetAreaPositions(cubeMarker.position, 3);
+        return TriggerPrimeMarkerAt(tempPrimeMarker);
         
     }
 
@@ -325,7 +506,7 @@ public class PlayerMarkerSystem : MonoBehaviour
 
         foreach (var cube in cubes)
         {
-            success |= ProcessCubeCapture(cube, position, MarkerType.Individual);
+            success |= ProcessCubeCapture(cube, position, MarkerType.Light);
         }
 
         StartCoroutine(ShowMarkerTriggerEffect(position));
@@ -352,7 +533,7 @@ public class PlayerMarkerSystem : MonoBehaviour
 
     #region Cube Interaction System
 
-    private bool ProcessCubeCapture(CubeManager cube, Vector2Int position, MarkerType markerType, IndividualMarker individualMarker = null)
+    private bool ProcessCubeCapture(CubeManager cube, Vector2Int position, MarkerType markerType, object marker = null)
     {
         if (cube == null || cube.isDestroyed) return false;
 
@@ -366,7 +547,15 @@ public class PlayerMarkerSystem : MonoBehaviour
 
         if (cube.type == CubeType.Prime)
         {
-            CreateCubeMarker(position, markerType == MarkerType.Individual ? CubeMarkerType.Individual : CubeMarkerType.Area);
+            // Create cube marker based on the marker type that captured the prime cube
+            CubeMarkerType cubeMarkerType = markerType switch
+            {
+                MarkerType.Light => CubeMarkerType.Light,
+                MarkerType.Heavy => CubeMarkerType.Heavy,
+                MarkerType.Prime => CubeMarkerType.Prime,
+                _ => CubeMarkerType.Cube
+            };
+            CreateCubeMarker(position, cubeMarkerType);
         }
 
         RemoveCubeFromWaveManager(cube);
@@ -412,39 +601,67 @@ public class PlayerMarkerSystem : MonoBehaviour
 
     #region Visual Creation Methods
 
-    public GameObject CreateIndividualMarkerVisual(Vector2Int position)
+    public GameObject CreateLightMarkerVisual(Vector2Int position)
     {
         Tile tile = actionManager.GridManager.GetTileAt(position.x, position.y);
         if (tile != null)
         {
-            SetTileHighlight(tile, Color.red, "Individual");
+            SetTileHighlight(tile, Color.red, "Light");
         }
 
-        GameObject dummy = new GameObject($"IndividualMarker_{position.x}_{position.y}");
+        GameObject dummy = new GameObject($"LightMarker_{position.x}_{position.y}");
         dummy.transform.position = actionManager.GridManager.GridToWorldPosition(position.x, position.y, 0f);
         return dummy;
     }
 
-    public GameObject CreateAreaMarkerVisual(Vector2Int position)
+    public GameObject CreateHeavyMarkerVisual(Vector2Int position)
     {
         Tile tile = actionManager.GridManager.GetTileAt(position.x, position.y);
         if (tile != null)
         {
-            SetTileHighlight(tile, Color.green, "Area");
+            SetTileHighlight(tile, new Color(0.8f, 0.2f, 0.2f, 1f), "Heavy"); // Dark red for heavy markers
         }
 
-        GameObject dummy = new GameObject($"AreaMarker_{position.x}_{position.y}");
+        GameObject dummy = new GameObject($"HeavyMarker_{position.x}_{position.y}");
         dummy.transform.position = actionManager.GridManager.GridToWorldPosition(position.x, position.y, 0f);
         return dummy;
     }
+
+    // Backward compatibility method
+    [System.Obsolete("Use CreateLightMarkerVisual instead", false)]
+    public GameObject CreateIndividualMarkerVisual(Vector2Int position) => CreateLightMarkerVisual(position);
+
+    public GameObject CreatePrimeMarkerVisual(Vector2Int position)
+    {
+        Tile tile = actionManager.GridManager.GetTileAt(position.x, position.y);
+        if (tile != null)
+        {
+            SetTileHighlight(tile, Color.green, "Prime");
+        }
+
+        GameObject dummy = new GameObject($"PrimeMarker_{position.x}_{position.y}");
+        dummy.transform.position = actionManager.GridManager.GridToWorldPosition(position.x, position.y, 0f);
+        return dummy;
+    }
+
+    // Backward compatibility method
+    [System.Obsolete("Use CreatePrimeMarkerVisual instead", false)]
+    public GameObject CreateAreaMarkerVisual(Vector2Int position) => CreatePrimeMarkerVisual(position);
 
     private GameObject CreateCubeMarkerVisual(Vector2Int position, CubeMarkerType type)
     {
         Tile tile = actionManager.GridManager.GetTileAt(position.x, position.y);
         if (tile != null)
         {
-            Color highlightColor = type == CubeMarkerType.Individual ? Color.magenta : Color.cyan;
-            string markerName = type == CubeMarkerType.Individual ? "CubeIndividual" : "CubeArea";
+            Color highlightColor = type switch
+            {
+                CubeMarkerType.Light => Color.magenta,
+                CubeMarkerType.Heavy => new Color(0.7f, 0.2f, 0.7f, 1f), // Dark magenta
+                CubeMarkerType.Prime => Color.cyan,
+                CubeMarkerType.Cube => Color.yellow,
+                _ => Color.white
+            };
+            string markerName = $"Cube{type}";
             SetTileHighlight(tile, highlightColor, markerName);
         }
 
@@ -458,9 +675,16 @@ public class PlayerMarkerSystem : MonoBehaviour
         Tile tile = actionManager.GridManager.GetTileAt(position.x, position.y);
         if (tile != null)
         {
-            Color baseColor = type == CubeMarkerType.Individual ? Color.magenta : Color.cyan;
+            Color baseColor = type switch
+            {
+                CubeMarkerType.Light => Color.magenta,
+                CubeMarkerType.Heavy => new Color(0.7f, 0.2f, 0.7f, 1f),
+                CubeMarkerType.Prime => Color.cyan,
+                CubeMarkerType.Cube => Color.yellow,
+                _ => Color.white
+            };
             Color poweredColor = new Color(baseColor.r * 1.5f, baseColor.g * 1.5f, baseColor.b * 1.5f, baseColor.a);
-            string markerName = type == CubeMarkerType.Individual ? "PoweredCubeIndividual" : "PoweredCubeArea";
+            string markerName = $"PoweredCube{type}";
             SetTileHighlight(tile, poweredColor, markerName);
         }
 
@@ -480,7 +704,7 @@ public class PlayerMarkerSystem : MonoBehaviour
 
     private bool CanPlaceMarkerAt(Vector2Int position)
     {
-        return !HasIndividualMarkerAt(position) && !HasAreaMarkerAt(position);
+        return !HasLightMarkerAt(position) && !HasHeavyMarkerAt(position) && !HasPrimeMarkerAt(position);
     }
 
 
@@ -636,22 +860,29 @@ public class PlayerMarkerSystem : MonoBehaviour
     {
         HideAreaPreview();
 
-        while (individualMarkers.Count > 0)
+        while (lightMarkers.Count > 0)
         {
-            var marker = individualMarkers.Dequeue();
+            var marker = lightMarkers.Dequeue();
             DestroyMarkerVisual(marker.visualObject);
         }
-        actionManager.currentIndividualMarkers = 0;
+        // Note: Light marker count managed by PlayerActionManager
 
-        while (areaMarkers.Count > 0)
+        while (heavyMarkers.Count > 0)
         {
-            var marker = areaMarkers.Dequeue();
+            var marker = heavyMarkers.Dequeue();
+            DestroyMarkerVisual(marker.visualObject);
+        }
+        // Note: Heavy marker count managed by PlayerActionManager
+
+        while (primeMarkers.Count > 0)
+        {
+            var marker = primeMarkers.Dequeue();
             foreach (var visual in marker.visualObjects)
             {
                 DestroyMarkerVisual(visual);
             }
         }
-        actionManager.currentAreaMarkers = 0;
+        // Note: Prime marker count managed by PlayerActionManager
 
         foreach (var cubeMarker in cubeMarkers)
         {

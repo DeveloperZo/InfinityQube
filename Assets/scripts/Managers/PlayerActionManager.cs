@@ -5,14 +5,14 @@ using static PlayerActionManager;
 using static UnityEditor.PlayerSettings;
 
 [System.Serializable]
-public class IndividualMarker
+public class LightMarker
 {
     public Vector2Int position;
     public float placementTime;
     public GameObject visualObject;
     public bool isPerfectTiming = false;
 
-    public IndividualMarker(Vector2Int pos, float time)
+    public LightMarker(Vector2Int pos, float time)
     {
         position = pos;
         placementTime = time;
@@ -20,7 +20,29 @@ public class IndividualMarker
 }
 
 [System.Serializable]
-public class AreaMarker
+public class HeavyMarker
+{
+    public Vector2Int position;
+    public float placementTime;
+    public GameObject visualObject;
+    public bool isPerfectTiming = false;
+
+    public HeavyMarker(Vector2Int pos, float time)
+    {
+        position = pos;
+        placementTime = time;
+    }
+}
+
+// Backward compatibility aliases
+[System.Obsolete("Use LightMarker instead")]
+public class IndividualMarker : LightMarker
+{
+    public IndividualMarker(Vector2Int pos, float time) : base(pos, time) { }
+}
+
+[System.Serializable]
+public class PrimeMarker
 {
     public Vector2Int centerPosition;
     public int size;
@@ -28,12 +50,19 @@ public class AreaMarker
     public List<GameObject> visualObjects = new List<GameObject>();
     public List<Vector2Int> affectedPositions = new List<Vector2Int>();
 
-    public AreaMarker(Vector2Int center, int markerSize, float time)
+    public PrimeMarker(Vector2Int center, int markerSize, float time)
     {
         centerPosition = center;
         size = markerSize;
         placementTime = time;
     }
+}
+
+// Backward compatibility alias
+[System.Obsolete("Use PrimeMarker instead")]
+public class AreaMarker : PrimeMarker
+{
+    public AreaMarker(Vector2Int center, int markerSize, float time) : base(center, markerSize, time) { }
 }
 
 public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
@@ -45,35 +74,57 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
     [SerializeField] private PlayerActionUI actionUI;
     [SerializeField] private PlayerMarkerSystem markerSystem;
 
-    [Header("Individual Marker Settings")]
-    [SerializeField] public int maxIndividualMarkers = 3;
-    [SerializeField] public int individualMarkersPlaced = 0;
-    [SerializeField] public int currentIndividualMarkers = 0;
-    [SerializeField] public int maxIndividualMarkerCharges = 2;
-    [SerializeField] private int currentIndividualMarkerCharges;
-    [SerializeField] public float individualMarkerCooldown = 2f;
-    [SerializeField] public Material individualMarkerMaterial;
-    [SerializeField] public float lastIndividualMarkerTime = 0f;
+    [Header("Light Marker Settings")]
+    [SerializeField] public int maxLightMarkers = 3;
+    [SerializeField] public int lightMarkersPlaced = 0;
+    [SerializeField] public int currentLightMarkers = 0;
+    [SerializeField] public int maxLightMarkerCharges = 2;
+    [SerializeField] private int currentLightMarkerCharges;
+    [SerializeField] public float lightMarkerCooldown = 2f;
+    [SerializeField] public Material lightMarkerMaterial;
+    [SerializeField] public float lastLightMarkerTime = 0f;
 
-    [Header("Area Marker Settings")]
-    [SerializeField] public int maxAreaMarkers = 2;
-    [SerializeField] public int areaMarkersPlaced = 0;
-    [SerializeField] public int currentAreaMarkers = 0;
-    [SerializeField] public int maxAreaMarkerCharges = 2;
-    [SerializeField] private int currentAreaMarkerCharges;
-    [SerializeField] public float areaMarkerCooldown = 4f;
-    [SerializeField] public float lastAreaMarkerTime = 0f;
-    [SerializeField] public int areaMarkerSize = 2;
-    [SerializeField] public int areaMarkerOnGridLimit = 1;
-    [SerializeField] public Material areaMarkerMaterial;
+    [Header("Heavy Marker Settings")]
+    [SerializeField] public int maxHeavyMarkers = 2;
+    [SerializeField] public int heavyMarkersPlaced = 0;
+    [SerializeField] public int currentHeavyMarkers = 0;
+    [SerializeField] public int maxHeavyMarkerCharges = 1;
+    [SerializeField] private int currentHeavyMarkerCharges;
+    [SerializeField] public float heavyMarkerCooldown = 5f;
+    [SerializeField] public Material heavyMarkerMaterial;
+    [SerializeField] public float lastHeavyMarkerTime = 0f;
+
+    [Header("Prime Marker Settings")]
+    [SerializeField] public int maxPrimeMarkers = 2;
+    [SerializeField] public int primeMarkersPlaced = 0;
+    [SerializeField] public int currentPrimeMarkers = 0;
+    [SerializeField] public int maxPrimeMarkerCharges = 2;
+    [SerializeField] private int currentPrimeMarkerCharges;
+    [SerializeField] public float primeMarkerCooldown = 4f;
+    [SerializeField] public float lastPrimeMarkerTime = 0f;
+    [SerializeField] public int primeMarkerSize = 2;
+    [SerializeField] public int primeMarkerOnGridLimit = 1;
+    [SerializeField] public Material primeMarkerMaterial;
 
     [Header("Input Settings")]
-    [SerializeField] private KeyCode individualMarkerKey = KeyCode.F;
-    [SerializeField] private KeyCode areaMarkerKey = KeyCode.G;
-    [SerializeField] private KeyCode triggerIndividualKey = KeyCode.R;
-    [SerializeField] private KeyCode triggerAreaKey = KeyCode.T;
+    [SerializeField] private KeyCode lightMarkerKey = KeyCode.F;
+    [SerializeField] private KeyCode heavyMarkerKey = KeyCode.V;
+    [SerializeField] private KeyCode primeMarkerKey = KeyCode.G;
+    [SerializeField] private KeyCode triggerLightKey = KeyCode.R;
+    [SerializeField] private KeyCode triggerHeavyKey = KeyCode.Y;
+    [SerializeField] private KeyCode triggerPrimeKey = KeyCode.T;
     [SerializeField] private KeyCode triggerCubeMarkerKey = KeyCode.Q;
     [SerializeField] private KeyCode powerUpCubeMarkerKey = KeyCode.E;
+    
+    // Backward compatibility for input keys
+    [System.Obsolete("Use lightMarkerKey instead")]
+    private KeyCode individualMarkerKey => lightMarkerKey;
+    [System.Obsolete("Use primeMarkerKey instead")]
+    private KeyCode areaMarkerKey => primeMarkerKey;
+    [System.Obsolete("Use triggerLightKey instead")]
+    private KeyCode triggerIndividualKey => triggerLightKey;
+    [System.Obsolete("Use triggerPrimeKey instead")]
+    private KeyCode triggerAreaKey => triggerPrimeKey;
 
     // Statistics
     private int cubeMarkersTriggered = 0;
@@ -125,8 +176,9 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
 
     private void InitializeCharges()
     {
-        currentIndividualMarkerCharges = maxIndividualMarkerCharges;
-        currentAreaMarkerCharges = maxAreaMarkerCharges;
+        currentLightMarkerCharges = maxLightMarkerCharges;
+        currentHeavyMarkerCharges = maxHeavyMarkerCharges;
+        currentPrimeMarkerCharges = maxPrimeMarkerCharges;
         inputEnabled = true;
     }
 
@@ -143,56 +195,79 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
     {
         if (playerManager == null || !playerManager.IsAlive()) return;
 
-        HandleIndividualMarkerInput();
-        HandleAreaMarkerInput();
+        HandleLightMarkerInput();
+        HandleHeavyMarkerInput();
+        HandlePrimeMarkerInput();
         HandleTriggerInputs();
         HandleCubeMarkerInputs();
     }
 
-    private void HandleIndividualMarkerInput()
+    private void HandleLightMarkerInput()
     {
-        if (Input.GetKeyDown(individualMarkerKey))
+        if (Input.GetKeyDown(lightMarkerKey))
         {
             Vector2Int playerPos = playerManager.currentTilePosition;
 
-            if (markerSystem.HasIndividualMarkerAt(playerPos))
+            if (markerSystem.HasLightMarkerAt(playerPos))
             {
-                markerSystem.RemoveIndividualMarkerAt(playerPos);
+                markerSystem.RemoveLightMarkerAt(playerPos);
             }
-            else if (CanPlaceIndividualMarker())
+            else if (CanPlaceLightMarker())
             {
-                markerSystem.PlaceIndividualMarker(playerPos);
+                markerSystem.PlaceLightMarker(playerPos);
             }
         }
     }
 
-    private void HandleAreaMarkerInput()
+    private void HandleHeavyMarkerInput()
     {
-        if (Input.GetKeyDown(areaMarkerKey))
+        if (Input.GetKeyDown(heavyMarkerKey))
         {
             Vector2Int playerPos = playerManager.currentTilePosition;
 
-            if (markerSystem.HasAreaMarkerAt(playerPos))
+            if (markerSystem.HasHeavyMarkerAt(playerPos))
             {
-                markerSystem.RemoveAreaMarkerAt(playerPos);
+                markerSystem.RemoveHeavyMarkerAt(playerPos);
             }
-            else if (CanPlaceAreaMarker())
+            else if (CanPlaceHeavyMarker())
             {
-                markerSystem.PlaceAreaMarker(playerPos, areaMarkerSize);
+                markerSystem.PlaceHeavyMarker(playerPos);
+            }
+        }
+    }
+
+    private void HandlePrimeMarkerInput()
+    {
+        if (Input.GetKeyDown(primeMarkerKey))
+        {
+            Vector2Int playerPos = playerManager.currentTilePosition;
+
+            if (markerSystem.HasPrimeMarkerAt(playerPos))
+            {
+                markerSystem.RemovePrimeMarkerAt(playerPos);
+            }
+            else if (CanPlacePrimeMarker())
+            {
+                markerSystem.PlacePrimeMarker(playerPos, primeMarkerSize);
             }
         }
     }
 
     private void HandleTriggerInputs()
     {
-        if (Input.GetKeyDown(triggerIndividualKey))
+        if (Input.GetKeyDown(triggerLightKey))
         {
-            markerSystem.TriggerNextIndividualMarker();
+            markerSystem.TriggerNextLightMarker();
         }
 
-        if (Input.GetKeyDown(triggerAreaKey))
+        if (Input.GetKeyDown(triggerHeavyKey))
         {
-            markerSystem.TriggerNextAreaMarker();
+            markerSystem.TriggerNextHeavyMarker();
+        }
+
+        if (Input.GetKeyDown(triggerPrimeKey))
+        {
+            markerSystem.TriggerNextPrimeMarker();
         }
     }
 
@@ -213,26 +288,33 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
 
     #region Charge Management
 
-    public bool CanPlaceIndividualMarker()
+    public bool CanPlaceLightMarker()
     {
-        return currentIndividualMarkerCharges > 0 &&
-               currentIndividualMarkers < maxIndividualMarkerCharges &&
-               individualMarkersPlaced <= maxIndividualMarkers;
+        return currentLightMarkerCharges > 0 &&
+               currentLightMarkers < maxLightMarkerCharges &&
+               lightMarkersPlaced <= maxLightMarkers;
     }
 
-    public bool CanPlaceAreaMarker()
+    public bool CanPlaceHeavyMarker()
     {
-        return currentAreaMarkerCharges > 0 &&
-               currentAreaMarkers < areaMarkerOnGridLimit &&
-               areaMarkersPlaced <= maxAreaMarkers;
+        return currentHeavyMarkerCharges > 0 &&
+               currentHeavyMarkers < maxHeavyMarkerCharges &&
+               heavyMarkersPlaced <= maxHeavyMarkers;
     }
 
-    public void ConsumeIndividualCharge()
+    public bool CanPlacePrimeMarker()
     {
-        currentIndividualMarkerCharges--;
-        lastIndividualMarkerTime = Time.time;
-        currentIndividualMarkers++;
-        individualMarkersPlaced++;
+        return currentPrimeMarkerCharges > 0 &&
+               currentPrimeMarkers < primeMarkerOnGridLimit &&
+               primeMarkersPlaced <= maxPrimeMarkers;
+    }
+
+    public void ConsumeLightCharge()
+    {
+        currentLightMarkerCharges--;
+        lastLightMarkerTime = Time.time;
+        currentLightMarkers++;
+        lightMarkersPlaced++;
 
         UpdateUI();
 
@@ -242,12 +324,27 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
         }
     }
 
-    public void ConsumeAreaCharge()
+    public void ConsumeHeavyCharge()
     {
-        currentAreaMarkerCharges--;
-        lastAreaMarkerTime = Time.time;
-        currentAreaMarkers++;
-        areaMarkersPlaced++;
+        currentHeavyMarkerCharges--;
+        lastHeavyMarkerTime = Time.time;
+        currentHeavyMarkers++;
+        heavyMarkersPlaced++;
+
+        UpdateUI();
+
+        if (actionUI != null)
+        {
+            actionUI.OnMarkerPlaced(true);
+        }
+    }
+
+    public void ConsumePrimeCharge()
+    {
+        currentPrimeMarkerCharges--;
+        lastPrimeMarkerTime = Time.time;
+        currentPrimeMarkers++;
+        primeMarkersPlaced++;
 
         UpdateUI();
 
@@ -257,21 +354,27 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
         }
     }
 
-    public void ReleaseIndividualMarker()
+    public void ReleaseLightMarker()
     {
-        currentIndividualMarkers--;
+        currentLightMarkers--;
     }
 
-    public void ReleaseAreaMarker()
+    public void ReleaseHeavyMarker()
     {
-        currentAreaMarkers--;
+        currentHeavyMarkers--;
+    }
+
+    public void ReleasePrimeMarker()
+    {
+        currentPrimeMarkers--;
     }
 
     private void RegenerateCharges()
     {
         bool chargesChanged = false;
-        chargesChanged |= RegenerateIndividualCharges();
-        chargesChanged |= RegenerateAreaCharges();
+        chargesChanged |= RegenerateLightCharges();
+        chargesChanged |= RegenerateHeavyCharges();
+        chargesChanged |= RegeneratePrimeCharges();
 
         if (chargesChanged)
         {
@@ -279,32 +382,48 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
         }
     }
 
-    private bool RegenerateIndividualCharges()
+    private bool RegenerateLightCharges()
     {
-        if (currentIndividualMarkerCharges < maxIndividualMarkerCharges)
+        if (currentLightMarkerCharges < maxLightMarkerCharges)
         {
-            float timeSinceLastUse = Time.time - lastIndividualMarkerTime;
-            if (timeSinceLastUse >= individualMarkerCooldown)
+            float timeSinceLastUse = Time.time - lastLightMarkerTime;
+            if (timeSinceLastUse >= lightMarkerCooldown)
             {
-                currentIndividualMarkerCharges++;
-                lastIndividualMarkerTime = Time.time;
-                Debug.Log($"Individual marker charge regenerated. Charges: {currentIndividualMarkerCharges}/{maxIndividualMarkerCharges}");
+                currentLightMarkerCharges++;
+                lastLightMarkerTime = Time.time;
+                Debug.Log($"Light marker charge regenerated. Charges: {currentLightMarkerCharges}/{maxLightMarkerCharges}");
                 return true;
             }
         }
         return false;
     }
 
-    private bool RegenerateAreaCharges()
+    private bool RegenerateHeavyCharges()
     {
-        if (currentAreaMarkerCharges < maxAreaMarkerCharges)
+        if (currentHeavyMarkerCharges < maxHeavyMarkerCharges)
         {
-            float timeSinceLastUse = Time.time - lastAreaMarkerTime;
-            if (timeSinceLastUse >= areaMarkerCooldown)
+            float timeSinceLastUse = Time.time - lastHeavyMarkerTime;
+            if (timeSinceLastUse >= heavyMarkerCooldown)
             {
-                currentAreaMarkerCharges++;
-                lastAreaMarkerTime = Time.time;
-                Debug.Log($"Area marker charge regenerated. Charges: {currentAreaMarkerCharges}/{maxAreaMarkerCharges}");
+                currentHeavyMarkerCharges++;
+                lastHeavyMarkerTime = Time.time;
+                Debug.Log($"Heavy marker charge regenerated. Charges: {currentHeavyMarkerCharges}/{maxHeavyMarkerCharges}");
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private bool RegeneratePrimeCharges()
+    {
+        if (currentPrimeMarkerCharges < maxPrimeMarkerCharges)
+        {
+            float timeSinceLastUse = Time.time - lastPrimeMarkerTime;
+            if (timeSinceLastUse >= primeMarkerCooldown)
+            {
+                currentPrimeMarkerCharges++;
+                lastPrimeMarkerTime = Time.time;
+                Debug.Log($"Prime marker charge regenerated. Charges: {currentPrimeMarkerCharges}/{maxPrimeMarkerCharges}");
                 return true;
             }
         }
@@ -315,8 +434,8 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
     {
         if (actionUI != null)
         {
-            actionUI.UpdateCharges(currentIndividualMarkerCharges, currentAreaMarkerCharges);
-            actionUI.UpdateCooldowns(individualMarkerCooldown, areaMarkerCooldown);
+            actionUI.UpdateCharges(currentLightMarkerCharges, currentPrimeMarkerCharges);
+            actionUI.UpdateCooldowns(lightMarkerCooldown, primeMarkerCooldown);
         }
     }
 
@@ -325,22 +444,33 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
     #region Public API (Delegates to MarkerSystem)
 
     // Next charge time for UI system
-    public float GetNextIndividualChargeTime() =>
-        currentIndividualMarkerCharges < maxIndividualMarkerCharges ?
-        lastIndividualMarkerTime + individualMarkerCooldown : Time.time;
-    public float GetNextAreaChargeTime() =>
-        currentAreaMarkerCharges < maxAreaMarkerCharges ?
-        lastAreaMarkerTime + areaMarkerCooldown : Time.time;
+    public float GetNextLightChargeTime() =>
+        currentLightMarkerCharges < maxLightMarkerCharges ?
+        lastLightMarkerTime + lightMarkerCooldown : Time.time;
+    public float GetNextHeavyChargeTime() =>
+        currentHeavyMarkerCharges < maxHeavyMarkerCharges ?
+        lastHeavyMarkerTime + heavyMarkerCooldown : Time.time;
+    public float GetNextPrimeChargeTime() =>
+        currentPrimeMarkerCharges < maxPrimeMarkerCharges ?
+        lastPrimeMarkerTime + primeMarkerCooldown : Time.time;
 
-    public bool PlaceIndividualMarker(Vector2Int position) => markerSystem.PlaceIndividualMarker(position);
-    public bool RemoveIndividualMarkerAt(Vector2Int position) => markerSystem.RemoveIndividualMarkerAt(position);
-    public bool HasIndividualMarkerAt(Vector2Int position) => markerSystem.HasIndividualMarkerAt(position);
-    public bool TriggerNextIndividualMarker() => markerSystem.TriggerNextIndividualMarker();
+    // Light marker methods
+    public bool PlaceLightMarker(Vector2Int position) => markerSystem.PlaceLightMarker(position);
+    public bool RemoveLightMarkerAt(Vector2Int position) => markerSystem.RemoveLightMarkerAt(position);
+    public bool HasLightMarkerAt(Vector2Int position) => markerSystem.HasLightMarkerAt(position);
+    public bool TriggerNextLightMarker() => markerSystem.TriggerNextLightMarker();
 
-    public bool PlaceAreaMarker(Vector2Int centerPosition, int size) => markerSystem.PlaceAreaMarker(centerPosition, size);
-    public bool RemoveAreaMarkerAt(Vector2Int centerPosition) => markerSystem.RemoveAreaMarkerAt(centerPosition);
-    public bool HasAreaMarkerAt(Vector2Int centerPosition) => markerSystem.HasAreaMarkerAt(centerPosition);
-    public bool TriggerNextAreaMarker() => markerSystem.TriggerNextAreaMarker();
+    // Heavy marker methods
+    public bool PlaceHeavyMarker(Vector2Int position) => markerSystem.PlaceHeavyMarker(position);
+    public bool RemoveHeavyMarkerAt(Vector2Int position) => markerSystem.RemoveHeavyMarkerAt(position);
+    public bool HasHeavyMarkerAt(Vector2Int position) => markerSystem.HasHeavyMarkerAt(position);
+    public bool TriggerNextHeavyMarker() => markerSystem.TriggerNextHeavyMarker();
+
+    // Prime marker methods
+    public bool PlacePrimeMarker(Vector2Int centerPosition, int size) => markerSystem.PlacePrimeMarker(centerPosition, size);
+    public bool RemovePrimeMarkerAt(Vector2Int centerPosition) => markerSystem.RemovePrimeMarkerAt(centerPosition);
+    public bool HasPrimeMarkerAt(Vector2Int centerPosition) => markerSystem.HasPrimeMarkerAt(centerPosition);
+    public bool TriggerNextPrimeMarker() => markerSystem.TriggerNextPrimeMarker();
 
     public void CreateCubeMarker(Vector2Int position, PlayerMarkerSystem.CubeMarkerType type = PlayerMarkerSystem.CubeMarkerType.Area) => markerSystem.CreateCubeMarker(position, type);
     public bool TriggerNextCubeMarker() => markerSystem.TriggerNextCubeMarker();
@@ -349,44 +479,135 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
     public void ClearAllActions() => markerSystem.ClearAllActions();
 
     // Direct queue access for debugging
-    public Queue<IndividualMarker> individualMarkers => markerSystem.IndividualMarkers;
-    public Queue<AreaMarker> areaMarkers => markerSystem.AreaMarkers;
+    public Queue<LightMarker> lightMarkers => markerSystem.LightMarkers;
+    public Queue<HeavyMarker> heavyMarkers => markerSystem.HeavyMarkers;
+    public Queue<PrimeMarker> primeMarkers => markerSystem.PrimeMarkers;
+
+    // Backward compatibility aliases
+    [System.Obsolete("Use GetNextLightChargeTime instead")]
+    public float GetNextIndividualChargeTime() => GetNextLightChargeTime();
+    [System.Obsolete("Use GetNextPrimeChargeTime instead")]
+    public float GetNextAreaChargeTime() => GetNextPrimeChargeTime();
+    
+    [System.Obsolete("Use PlaceLightMarker instead")]
+    public bool PlaceIndividualMarker(Vector2Int position) => PlaceLightMarker(position);
+    [System.Obsolete("Use RemoveLightMarkerAt instead")]
+    public bool RemoveIndividualMarkerAt(Vector2Int position) => RemoveLightMarkerAt(position);
+    [System.Obsolete("Use HasLightMarkerAt instead")]
+    public bool HasIndividualMarkerAt(Vector2Int position) => HasLightMarkerAt(position);
+    [System.Obsolete("Use TriggerNextLightMarker instead")]
+    public bool TriggerNextIndividualMarker() => TriggerNextLightMarker();
+    
+    [System.Obsolete("Use PlacePrimeMarker instead")]
+    public bool PlaceAreaMarker(Vector2Int centerPosition, int size) => PlacePrimeMarker(centerPosition, size);
+    [System.Obsolete("Use RemovePrimeMarkerAt instead")]
+    public bool RemoveAreaMarkerAt(Vector2Int centerPosition) => RemovePrimeMarkerAt(centerPosition);
+    [System.Obsolete("Use HasPrimeMarkerAt instead")]
+    public bool HasAreaMarkerAt(Vector2Int centerPosition) => HasPrimeMarkerAt(centerPosition);
+    [System.Obsolete("Use TriggerNextPrimeMarker instead")]
+    public bool TriggerNextAreaMarker() => TriggerNextPrimeMarker();
+    
+    
+    // Backward compatibility properties
+    [System.Obsolete("Use maxLightMarkers instead")]
+    public int maxIndividualMarkers => maxLightMarkers;
+    [System.Obsolete("Use maxPrimeMarkers instead")]
+    public int maxAreaMarkers => maxPrimeMarkers;
+    [System.Obsolete("Use maxLightMarkerCharges instead")]
+    public int maxIndividualMarkerCharges => maxLightMarkerCharges;
+    [System.Obsolete("Use maxPrimeMarkerCharges instead")]
+    public int maxAreaMarkerCharges => maxPrimeMarkerCharges;
+    [System.Obsolete("Use lightMarkerCooldown instead")]
+    public float individualMarkerCooldown => lightMarkerCooldown;
+    [System.Obsolete("Use primeMarkerCooldown instead")]
+    public float areaMarkerCooldown => primeMarkerCooldown;
+    [System.Obsolete("Use lightMarkerMaterial instead")]
+    public Material individualMarkerMaterial => lightMarkerMaterial;
+    [System.Obsolete("Use primeMarkerMaterial instead")]
+    public Material areaMarkerMaterial => primeMarkerMaterial;
+    
+    // Backward compatibility for charge management methods
+    [System.Obsolete("Use CanPlaceLightMarker instead")]
+    public bool CanPlaceIndividualMarker() => CanPlaceLightMarker();
+    [System.Obsolete("Use CanPlacePrimeMarker instead")]
+    public bool CanPlaceAreaMarker() => CanPlacePrimeMarker();
+    [System.Obsolete("Use ConsumeLightCharge instead")]
+    public void ConsumeIndividualCharge() => ConsumeLightCharge();
+    [System.Obsolete("Use ConsumePrimeCharge instead")]
+    public void ConsumeAreaCharge() => ConsumePrimeCharge();
+    [System.Obsolete("Use ReleaseLightMarker instead")]
+    public void ReleaseIndividualMarker() => ReleaseLightMarker();
+    [System.Obsolete("Use ReleasePrimeMarker instead")]
+    public void ReleaseAreaMarker() => ReleasePrimeMarker();
 
     #endregion
 
     #region Public Information Methods
 
     // Resource availability checks
-    public bool CanPlaceIndividualMarkerCheck() => CanPlaceIndividualMarker();
-    public bool CanPlaceAreaMarkerCheck() => CanPlaceAreaMarker();
+    public bool CanPlaceLightMarkerCheck() => CanPlaceLightMarker();
+    public bool CanPlaceHeavyMarkerCheck() => CanPlaceHeavyMarker();
+    public bool CanPlacePrimeMarkerCheck() => CanPlacePrimeMarker();
 
-    // Cooldown information - FIXED
-    public float GetIndividualMarkerCooldownRemaining()
+    // Cooldown information
+    public float GetLightMarkerCooldownRemaining()
     {
-        if (currentIndividualMarkerCharges >= maxIndividualMarkerCharges)
+        if (currentLightMarkerCharges >= maxLightMarkerCharges)
             return 0f;
-        return Mathf.Max(0f, individualMarkerCooldown - (Time.time - lastIndividualMarkerTime));
+        return Mathf.Max(0f, lightMarkerCooldown - (Time.time - lastLightMarkerTime));
     }
 
-    public float GetAreaMarkerCooldownRemaining()
+    public float GetHeavyMarkerCooldownRemaining()
     {
-        if (currentAreaMarkerCharges >= maxAreaMarkerCharges)
+        if (currentHeavyMarkerCharges >= maxHeavyMarkerCharges)
             return 0f;
-        return Mathf.Max(0f, areaMarkerCooldown - (Time.time - lastAreaMarkerTime));
+        return Mathf.Max(0f, heavyMarkerCooldown - (Time.time - lastHeavyMarkerTime));
+    }
+
+    public float GetPrimeMarkerCooldownRemaining()
+    {
+        if (currentPrimeMarkerCharges >= maxPrimeMarkerCharges)
+            return 0f;
+        return Mathf.Max(0f, primeMarkerCooldown - (Time.time - lastPrimeMarkerTime));
     }
 
     // Statistics
-    public int GetIndividualMarkersPlaced() => individualMarkersPlaced;
-    public int GetAreaMarkersPlaced() => areaMarkersPlaced;
+    public int GetLightMarkersPlaced() => lightMarkersPlaced;
+    public int GetHeavyMarkersPlaced() => heavyMarkersPlaced;
+    public int GetPrimeMarkersPlaced() => primeMarkersPlaced;
     public int GetCubeMarkersTriggered() => cubeMarkersTriggered;
     public int GetPerfectTimingHits() => perfectTimingHits;
 
     // Current state information
-    public int GetCurrentIndividualMarkers() => currentIndividualMarkers;
-    public int GetCurrentAreaMarkers() => currentAreaMarkers;
+    public int GetCurrentLightMarkers() => currentLightMarkers;
+    public int GetCurrentHeavyMarkers() => currentHeavyMarkers;
+    public int GetCurrentPrimeMarkers() => currentPrimeMarkers;
     public int GetCurrentCubeMarkers() => markerSystem?.cubeMarkers?.Count ?? 0;
-    public int GetCurrentIndividualCharges() => currentIndividualMarkerCharges;
-    public int GetCurrentAreaCharges() => currentAreaMarkerCharges;
+    public int GetCurrentLightCharges() => currentLightMarkerCharges;
+    public int GetCurrentHeavyCharges() => currentHeavyMarkerCharges;
+    public int GetCurrentPrimeCharges() => currentPrimeMarkerCharges;
+    
+    // Backward compatibility for information methods
+    [System.Obsolete("Use CanPlaceLightMarkerCheck instead")]
+    public bool CanPlaceIndividualMarkerCheck() => CanPlaceLightMarkerCheck();
+    [System.Obsolete("Use CanPlacePrimeMarkerCheck instead")]
+    public bool CanPlaceAreaMarkerCheck() => CanPlacePrimeMarkerCheck();
+    [System.Obsolete("Use GetLightMarkerCooldownRemaining instead")]
+    public float GetIndividualMarkerCooldownRemaining() => GetLightMarkerCooldownRemaining();
+    [System.Obsolete("Use GetPrimeMarkerCooldownRemaining instead")]
+    public float GetAreaMarkerCooldownRemaining() => GetPrimeMarkerCooldownRemaining();
+    [System.Obsolete("Use GetLightMarkersPlaced instead")]
+    public int GetIndividualMarkersPlaced() => GetLightMarkersPlaced();
+    [System.Obsolete("Use GetPrimeMarkersPlaced instead")]
+    public int GetAreaMarkersPlaced() => GetPrimeMarkersPlaced();
+    [System.Obsolete("Use GetCurrentLightMarkers instead")]
+    public int GetCurrentIndividualMarkers() => GetCurrentLightMarkers();
+    [System.Obsolete("Use GetCurrentPrimeMarkers instead")]
+    public int GetCurrentAreaMarkers() => GetCurrentPrimeMarkers();
+    [System.Obsolete("Use GetCurrentLightCharges instead")]
+    public int GetCurrentIndividualCharges() => GetCurrentLightCharges();
+    [System.Obsolete("Use GetCurrentPrimeCharges instead")]
+    public int GetCurrentAreaCharges() => GetCurrentPrimeCharges();
 
     #endregion
 
@@ -396,35 +617,41 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
 
     public string GetDebugStatus()
     {
-        return $"PlayerAction: Ind:{currentIndividualMarkerCharges}/{maxIndividualMarkerCharges} Area:{currentAreaMarkerCharges}/{maxAreaMarkerCharges} OnGrid:{currentIndividualMarkers}+{currentAreaMarkers} Cube:{GetCurrentCubeMarkers()}";
+        return $"PlayerAction: Light:{currentLightMarkerCharges}/{maxLightMarkerCharges} Heavy:{currentHeavyMarkerCharges}/{maxHeavyMarkerCharges} Prime:{currentPrimeMarkerCharges}/{maxPrimeMarkerCharges} OnGrid:{currentLightMarkers}+{currentHeavyMarkers}+{currentPrimeMarkers} Cube:{GetCurrentCubeMarkers()}";
     }
 
     public Dictionary<string, object> GetDebugData()
     {
         return new Dictionary<string, object>
         {
-            ["Individual Markers Placed"] = individualMarkersPlaced,
-            ["Current Individual Markers"] = currentIndividualMarkers,
-            ["Individual Charges"] = $"{currentIndividualMarkerCharges}/{maxIndividualMarkerCharges}",
-            ["Individual Cooldown Remaining"] = GetIndividualMarkerCooldownRemaining(),
-            ["Area Markers Placed"] = areaMarkersPlaced,
-            ["Current Area Markers"] = currentAreaMarkers,
-            ["Area Charges"] = $"{currentAreaMarkerCharges}/{maxAreaMarkerCharges}",
-            ["Area Cooldown Remaining"] = GetAreaMarkerCooldownRemaining(),
+            ["Light Markers Placed"] = lightMarkersPlaced,
+            ["Current Light Markers"] = currentLightMarkers,
+            ["Light Charges"] = $"{currentLightMarkerCharges}/{maxLightMarkerCharges}",
+            ["Light Cooldown Remaining"] = GetLightMarkerCooldownRemaining(),
+            ["Heavy Markers Placed"] = heavyMarkersPlaced,
+            ["Current Heavy Markers"] = currentHeavyMarkers,
+            ["Heavy Charges"] = $"{currentHeavyMarkerCharges}/{maxHeavyMarkerCharges}",
+            ["Heavy Cooldown Remaining"] = GetHeavyMarkerCooldownRemaining(),
+            ["Prime Markers Placed"] = primeMarkersPlaced,
+            ["Current Prime Markers"] = currentPrimeMarkers,
+            ["Prime Charges"] = $"{currentPrimeMarkerCharges}/{maxPrimeMarkerCharges}",
+            ["Prime Cooldown Remaining"] = GetPrimeMarkerCooldownRemaining(),
             ["Cube Markers Active"] = GetCurrentCubeMarkers(),
             ["Perfect Timing Hits"] = perfectTimingHits,
             ["Cube Markers Triggered"] = cubeMarkersTriggered,
             ["Input Enabled"] = inputEnabled,
-            ["Can Place Individual"] = CanPlaceIndividualMarker(),
-            ["Can Place Area"] = CanPlaceAreaMarker()
+            ["Can Place Light"] = CanPlaceLightMarker(),
+            ["Can Place Heavy"] = CanPlaceHeavyMarker(),
+            ["Can Place Prime"] = CanPlacePrimeMarker()
         };
     }
 
     public void ResetToDefaults()
     {
         // Reset charges to max
-        currentIndividualMarkerCharges = maxIndividualMarkerCharges;
-        currentAreaMarkerCharges = maxAreaMarkerCharges;
+        currentLightMarkerCharges = maxLightMarkerCharges;
+        currentHeavyMarkerCharges = maxHeavyMarkerCharges;
+        currentPrimeMarkerCharges = maxPrimeMarkerCharges;
         
         // Clear all markers
         if (markerSystem != null)
@@ -433,16 +660,19 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
         }
         
         // Reset counters
-        individualMarkersPlaced = 0;
-        areaMarkersPlaced = 0;
-        currentIndividualMarkers = 0;
-        currentAreaMarkers = 0;
+        lightMarkersPlaced = 0;
+        heavyMarkersPlaced = 0;
+        primeMarkersPlaced = 0;
+        currentLightMarkers = 0;
+        currentHeavyMarkers = 0;
+        currentPrimeMarkers = 0;
         cubeMarkersTriggered = 0;
         perfectTimingHits = 0;
         
         // Reset timers
-        lastIndividualMarkerTime = 0f;
-        lastAreaMarkerTime = 0f;
+        lastLightMarkerTime = 0f;
+        lastHeavyMarkerTime = 0f;
+        lastPrimeMarkerTime = 0f;
         
         // Update UI
         UpdateUI();
