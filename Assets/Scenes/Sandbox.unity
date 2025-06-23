@@ -302,7 +302,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: eb13b32e81d0bf940a464584188eaf5e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  showControlsAtStart: 1
+  showControlsAtStart: 0
   showTips: 1
   toggleUIKey: 9
 --- !u!4 &150564768
@@ -1442,7 +1442,7 @@ GameObject:
   - component: {fileID: 596713751}
   - component: {fileID: 596713752}
   m_Layer: 5
-  m_Name: AreaMarker
+  m_Name: PrimeMarker
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1685,7 +1685,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Area
+  m_text: Prime
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: d70f485aa27dc43f79a8fd168f58435c, type: 2}
   m_sharedMaterial: {fileID: 5416806443266638455, guid: d70f485aa27dc43f79a8fd168f58435c, type: 2}
@@ -12286,12 +12286,12 @@ MonoBehaviour:
   - {fileID: 0}
   - {fileID: 0}
   primeMarkerSegments:
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
+  - {fileID: 1799705721}
+  - {fileID: 35727126}
+  - {fileID: 1922694879}
+  - {fileID: 880057722}
+  - {fileID: 884713163}
+  - {fileID: 1442097047}
   cubeMarkerSegments:
   - {fileID: 0}
   - {fileID: 0}
@@ -12301,7 +12301,7 @@ MonoBehaviour:
   - {fileID: 0}
   lightChargeText: {fileID: 585395268}
   heavyChargeText: {fileID: 0}
-  primeChargeText: {fileID: 0}
+  primeChargeText: {fileID: 622622456}
   cubeChargeText: {fileID: 0}
   segmentFullColor: {r: 1, g: 0.7, b: 0.2, a: 1}
   segmentChargingColor: {r: 0.5, g: 0.5, b: 1, a: 0.8}
@@ -12399,7 +12399,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   toggleKey: 293
-  showOnStart: 1
+  showOnStart: 0
   displayMode: 0
   windowSize: {x: 500, y: 600}
   windowPosition: {x: 10, y: 10}

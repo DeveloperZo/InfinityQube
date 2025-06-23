@@ -458,7 +458,16 @@ public class PlayerManager : MonoBehaviour, IManagerDebugInterface
             if (cube.position.x == currentTilePosition.x && cube.position.y == currentTilePosition.y)
             {
                 DebugLog($"Collision with {cube.type} cube at ({currentTilePosition.x}, {currentTilePosition.y})");
-                if (!debugDeathOverride)
+                
+                bool willCauseDeath = !debugDeathOverride;
+                
+                // Notify statistics manager about collision
+                if (PlayerStatisticsManager.Instance != null)
+                {
+                    PlayerStatisticsManager.Instance.OnCubeCollision(currentTilePosition, cube.type.ToString(), willCauseDeath);
+                }
+                
+                if (willCauseDeath)
                 {
                     Die();
                 }

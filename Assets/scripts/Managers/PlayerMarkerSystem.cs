@@ -239,6 +239,12 @@ public class PlayerMarkerSystem : MonoBehaviour
             marker.isPerfectTiming = true;
         }
 
+        // Notify statistics manager
+        if (PlayerStatisticsManager.Instance != null)
+        {
+            PlayerStatisticsManager.Instance.OnMarkerTriggered(position, "light", success, cubes.Count);
+        }
+
         DestroyMarkerVisual(marker.visualObject);
         StartCoroutine(ShowMarkerTriggerEffect(position));
 
@@ -337,6 +343,12 @@ public class PlayerMarkerSystem : MonoBehaviour
             marker.isPerfectTiming = true;
         }
 
+        // Notify statistics manager
+        if (PlayerStatisticsManager.Instance != null)
+        {
+            PlayerStatisticsManager.Instance.OnMarkerTriggered(position, "heavy", success, cubes.Count);
+        }
+
         DestroyMarkerVisual(marker.visualObject);
         StartCoroutine(ShowMarkerTriggerEffect(position));
 
@@ -413,6 +425,7 @@ public class PlayerMarkerSystem : MonoBehaviour
     private bool TriggerPrimeMarkerAt(PrimeMarker marker)
     {
         bool anySuccess = false;
+        int totalCubesAffected = 0;
 
         Debug.Log($"Triggering prime marker - expanding from center ({marker.centerPosition.x}, {marker.centerPosition.y}) to {marker.affectedPositions.Count} tiles");
 
@@ -430,11 +443,18 @@ public class PlayerMarkerSystem : MonoBehaviour
             }
 
             var cubes = FindAllCubesAt(position);
+            totalCubesAffected += cubes.Count;
             foreach (var cube in cubes)
             {
                 anySuccess |= ProcessCubeCapture(cube, position, MarkerType.Prime);
             }
             StartCoroutine(ShowMarkerTriggerEffect(position));
+        }
+
+        // Notify statistics manager
+        if (PlayerStatisticsManager.Instance != null)
+        {
+            PlayerStatisticsManager.Instance.OnMarkerTriggered(marker.centerPosition, "prime", anySuccess, totalCubesAffected);
         }
 
         StartCoroutine(ClearAreaExpansionAfterDelay(marker.affectedPositions, marker.centerPosition, 1f));
@@ -556,6 +576,12 @@ public class PlayerMarkerSystem : MonoBehaviour
                 _ => CubeMarkerType.Cube
             };
             CreateCubeMarker(position, cubeMarkerType);
+        }
+
+        // Notify statistics manager about cube capture
+        if (PlayerStatisticsManager.Instance != null)
+        {
+            PlayerStatisticsManager.Instance.OnCubeCaptured(position, cube.type.ToString(), markerType.ToString());
         }
 
         RemoveCubeFromWaveManager(cube);

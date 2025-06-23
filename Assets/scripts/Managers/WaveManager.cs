@@ -439,7 +439,14 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
         {
             messagePanel.SetActive(true);
             messageText.text = message.Message;
+            
+            // Notify statistics manager about message display
+            if (PlayerStatisticsManager.Instance != null)
+            {
+                PlayerStatisticsManager.Instance.OnMessageDisplayed(message.Message, MoveStep);
+            }
 
+            bool wasSkipped = false;
             if (message.RequirePause)
             {
                 isPaused = true;
@@ -450,10 +457,26 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
             }
             else if (message.AutoHideDelay > 0)
             {
-                yield return new WaitForSeconds(message.AutoHideDelay);
+                float timer = 0f;
+                while (timer < message.AutoHideDelay)
+                {
+                    if (Input.GetKeyDown(KeyCode.K)) // Allow skipping auto-hide messages
+                    {
+                        wasSkipped = true;
+                        break;
+                    }
+                    timer += Time.deltaTime;
+                    yield return null;
+                }
             }
 
             messagePanel.SetActive(false);
+            
+            // Notify statistics manager about message dismissal
+            if (PlayerStatisticsManager.Instance != null)
+            {
+                PlayerStatisticsManager.Instance.OnMessageDismissed(message.Message, wasSkipped);
+            }
         }
     }
     #endregion
@@ -473,6 +496,15 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
 
     public void OnCubeEscaped(Enumerations.CubeType cubeType)
     {
+        // Notify statistics manager about cube escape
+        if (PlayerStatisticsManager.Instance != null)
+        {
+            // Find the cube that's escaping to get its position
+            var escapingCube = activeCubes.FirstOrDefault(c => c != null && c.type == cubeType && c.position.y <= 0);
+            Vector2Int escapePosition = escapingCube != null ? escapingCube.position : Vector2Int.zero;
+            PlayerStatisticsManager.Instance.OnCubeEscaped(escapePosition, cubeType.ToString());
+        }
+        
         // Replace the grid reduction call with row removal
         if (cubeType == Enumerations.CubeType.Unit)
         {

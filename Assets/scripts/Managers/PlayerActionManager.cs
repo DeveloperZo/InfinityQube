@@ -322,6 +322,12 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
         {
             actionUI.OnMarkerPlaced(true);
         }
+        
+        // Notify statistics manager
+        if (PlayerStatisticsManager.Instance != null)
+        {
+            PlayerStatisticsManager.Instance.OnMarkerPlaced(playerManager.currentTilePosition, "light");
+        }
     }
 
     public void ConsumeHeavyCharge()
@@ -337,6 +343,12 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
         {
             actionUI.OnMarkerPlaced(true);
         }
+        
+        // Notify statistics manager
+        if (PlayerStatisticsManager.Instance != null)
+        {
+            PlayerStatisticsManager.Instance.OnMarkerPlaced(playerManager.currentTilePosition, "heavy");
+        }
     }
 
     public void ConsumePrimeCharge()
@@ -351,6 +363,12 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
         if (actionUI != null)
         {
             actionUI.OnMarkerPlaced(false);
+        }
+        
+        // Notify statistics manager
+        if (PlayerStatisticsManager.Instance != null)
+        {
+            PlayerStatisticsManager.Instance.OnMarkerPlaced(playerManager.currentTilePosition, "prime");
         }
     }
 
