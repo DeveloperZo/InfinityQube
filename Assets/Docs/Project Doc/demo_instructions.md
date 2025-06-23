@@ -17,6 +17,7 @@
 **Wave Control:**
 - **ENTER**: Start the next wave when you're ready to face new challenges
 - **K**: Skip dialogue and tutorial messages
+- **F12**: Manual save statistics file (if needed)
 
 ## Your Mission
 
@@ -29,8 +30,13 @@ This demo features the first stage tutorial with 3 progressive waves designed as
 ## Performance Analytics
 
 The game automatically saves your play data to help improve the cosmic experience:
-- **Statistics Location**: Check your game folder or Documents folder for "player_statistics.json"
-- **Feedback Request**: If you enjoyed this cosmic journey, consider sharing your stats file via Discord! Your play data helps refine the universe for future wanderers.
+- **Statistics File**: "player_statistics.json" - automatically created when you play
+- **File Locations** (check any of these):
+  - **Documents/InfinityQube/** folder (easiest to find)
+  - Game installation folder (next to the .exe file)
+  - Game data folder (AppData/LocalLow/...)
+- **Feedback Request**: If you enjoyed this cosmic journey, please share your "player_statistics.json" file via Discord! Your play data helps refine the universe for future wanderers.
+- **Privacy**: Only gameplay patterns are recorded - no personal information
 
 ## System Requirements
 

@@ -105,8 +105,16 @@ public class PlayerStatisticsManager : MonoBehaviour, IManagerDebugInterface
     
     private void OnApplicationQuit()
     {
-        if (emergencySaveOnQuit && currentSession != null)
+        // Always save when quitting, regardless of settings when not in editor
+        if ((emergencySaveOnQuit || !Application.isEditor) && currentSession != null)
         {
+            // Mark as completed if we have meaningful data
+            if (currentSession.sessionDuration > 10f || currentSession.movementData.totalMoves > 5)
+            {
+                FinalizeSessionData();
+                currentSession.isCompleted = true;
+            }
+            
             PerformEmergencySave();
         }
     }
@@ -527,9 +535,39 @@ public class PlayerStatisticsManager : MonoBehaviour, IManagerDebugInterface
     {
         try
         {
-            string fileName = $"InfinityQube_DemoStats_{currentSession.sessionId}_{currentSession.timestamp}.json";
-            string filePath = Path.Combine(Application.persistentDataPath, fileName);
+            // Save with simple name for friends to find easily
+            string simpleFileName = "player_statistics.json";
+            string detailedFileName = $"InfinityQube_DemoStats_{currentSession.sessionId}_{currentSession.timestamp}.json";
             
+            // Save to multiple locations for maximum accessibility
+            SaveToLocation(Application.persistentDataPath, simpleFileName);
+            SaveToLocation(Application.persistentDataPath, detailedFileName);
+            
+            // Also save to game directory if possible (build location)
+            if (!Application.isEditor)
+            {
+                string gameDirectory = Path.GetDirectoryName(Application.dataPath);
+                SaveToLocation(gameDirectory, simpleFileName);
+            }
+            
+            // Save to Documents folder for easy access
+            string documentsPath = System.Environment.GetFolderPath(System.Environment.SpecialFolder.MyDocuments);
+            string gameDocumentsFolder = Path.Combine(documentsPath, "InfinityQube");
+            Directory.CreateDirectory(gameDocumentsFolder);
+            SaveToLocation(gameDocumentsFolder, simpleFileName);
+            
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogError($"[PlayerStatisticsManager] Failed to save session data: {e.Message}");
+        }
+    }
+    
+    private void SaveToLocation(string directory, string fileName)
+    {
+        try
+        {
+            string filePath = Path.Combine(directory, fileName);
             string jsonData = JsonUtility.ToJson(currentSession, true);
             File.WriteAllText(filePath, jsonData);
             
@@ -537,7 +575,7 @@ public class PlayerStatisticsManager : MonoBehaviour, IManagerDebugInterface
         }
         catch (System.Exception e)
         {
-            Debug.LogError($"[PlayerStatisticsManager] Failed to save session data: {e.Message}");
+            Debug.LogWarning($"[PlayerStatisticsManager] Could not save to {directory}: {e.Message}");
         }
     }
     
@@ -547,16 +585,37 @@ public class PlayerStatisticsManager : MonoBehaviour, IManagerDebugInterface
         {
             if (currentSession == null) return;
             
+            // Update session data for emergency save
             currentSession.sessionDuration = Time.time - sessionStartTime;
             currentSession.isCompleted = false; // Mark as emergency save
             
-            string fileName = $"InfinityQube_EmergencyStats_{currentSession.sessionId}_{DateTime.Now:yyyy-MM-dd_HH-mm-ss}.json";
-            string filePath = Path.Combine(Application.persistentDataPath, fileName);
+            // Update timestamp for final save
+            currentSession.timestamp = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
             
-            string jsonData = JsonUtility.ToJson(currentSession, true);
-            File.WriteAllText(filePath, jsonData);
+            // Save as both emergency backup and regular file
+            string emergencyFileName = $"InfinityQube_EmergencyStats_{currentSession.sessionId}_{DateTime.Now:yyyy-MM-dd_HH-mm-ss}.json";
+            string regularFileName = "player_statistics.json";
             
-            DebugLog($"🚨 Emergency save completed: {filePath}");
+            // Save emergency backup
+            SaveToLocation(Application.persistentDataPath, emergencyFileName);
+            
+            // Save regular file for friends
+            SaveToLocation(Application.persistentDataPath, regularFileName);
+            
+            // Also save to Documents folder
+            string documentsPath = System.Environment.GetFolderPath(System.Environment.SpecialFolder.MyDocuments);
+            string gameDocumentsFolder = Path.Combine(documentsPath, "InfinityQube");
+            Directory.CreateDirectory(gameDocumentsFolder);
+            SaveToLocation(gameDocumentsFolder, regularFileName);
+            
+            // Save to game directory if not in editor
+            if (!Application.isEditor)
+            {
+                string gameDirectory = Path.GetDirectoryName(Application.dataPath);
+                SaveToLocation(gameDirectory, regularFileName);
+            }
+            
+            DebugLog($"🚨 Emergency save completed to multiple locations");
         }
         catch (System.Exception e)
         {
@@ -720,6 +779,30 @@ public class PlayerStatisticsManager : MonoBehaviour, IManagerDebugInterface
         }
         StartNewSession();
         DebugLog("🔄 Current session reset");
+    }
+    
+    public void ForceManualSave()
+    {
+        if (currentSession == null)
+        {
+            DebugLog("⚠️ No active session to save");
+            return;
+        }
+        
+        // Update current session data
+        currentSession.sessionDuration = Time.time - sessionStartTime;
+        currentSession.timestamp = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
+        
+        // Finalize data if we have meaningful content
+        if (currentSession.movementData.totalMoves > 0 || currentSession.sessionDuration > 5f)
+        {
+            FinalizeSessionData();
+        }
+        
+        // Perform the save
+        SaveSessionData();
+        
+        DebugLog("💾 Manual save completed");
     }
     #endregion
 
