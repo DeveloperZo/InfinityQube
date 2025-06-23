@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using System.Collections;
 using System.Collections.Generic;
 using System;
@@ -368,16 +369,45 @@ public class StageManager : MonoBehaviour, IManagerDebugInterface
     {
         yield return new WaitForSeconds(stageTransitionDelay);
 
-        if (autoAdvanceStages)
+        // Check if this is Stage 1 (CurrentStageIndex == 0) - Demo completion
+        if (CurrentStageIndex == 0)
         {
-            int nextStage = CurrentStageIndex + 1;
-            if (stageDatabase.GetStage(nextStage) != null)
+            DebugLog("Demo completed! Showing completion message and returning to splash screen.");
+            
+            // Show demo completion message
+            if (waveManager != null)
             {
-                LoadStage(nextStage);
+                var completionMessage = new WaveMessage
+                {
+                    Message = "Congratulations!\n\nYou've completed the InfinityQube demo!\n\nThank you for playing!",
+                    RequirePause = true,
+                    AutoHideDelay = 0f
+                };
+                
+                waveManager.ShowMessage(completionMessage);
+                
+                // Wait for message to be dismissed
+                yield return new WaitForSeconds(1f);
             }
-            else
+            
+            // Transition back to Splash scene
+            DebugLog("Transitioning back to Splash scene...");
+            UnityEngine.SceneManagement.SceneManager.LoadScene("Splash");
+        }
+        else
+        {
+            // Normal stage progression for non-demo stages
+            if (autoAdvanceStages)
             {
-                DebugLog("All stages completed!");
+                int nextStage = CurrentStageIndex + 1;
+                if (stageDatabase.GetStage(nextStage) != null)
+                {
+                    LoadStage(nextStage);
+                }
+                else
+                {
+                    DebugLog("All stages completed!");
+                }
             }
         }
     }
