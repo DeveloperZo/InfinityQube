@@ -413,7 +413,7 @@ public class PlayerActionDebugPanel : DebugPanelBase
         GUILayout.BeginVertical(GUI.skin.box);
         GUILayout.Label("Active Markers:");
 
-        markerListScroll = GUILayout.BeginScrollView(markerListScroll, GUILayout.MaxHeight(200));
+        markerListScroll = GUILayout.BeginScrollView(markerListScroll, GUILayout.MinHeight(200));
 
         // Individual markers
         var individualMarkers = actionManager.individualMarkers.ToArray();

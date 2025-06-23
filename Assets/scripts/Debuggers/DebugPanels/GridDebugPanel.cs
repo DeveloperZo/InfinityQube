@@ -331,7 +331,7 @@ public class GridDebugPanel : DebugPanelBase
         }
 
         // Tile list
-        tileListScroll = GUILayout.BeginScrollView(tileListScroll, GUILayout.MaxHeight(300));
+        tileListScroll = GUILayout.BeginScrollView(tileListScroll, GUILayout.MinHeight(300));
         DrawTileList();
         GUILayout.EndScrollView();
 

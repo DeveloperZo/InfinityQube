@@ -228,7 +228,7 @@ public class CubeDebugPanel : DebugPanelBase
         }
 
         // Cube list
-        activeCubesScroll = GUILayout.BeginScrollView(activeCubesScroll, GUILayout.MaxHeight(300));
+        activeCubesScroll = GUILayout.BeginScrollView(activeCubesScroll, GUILayout.MinHeight(300));
 
         int shown = 0;
         foreach (var cube in allCubes)

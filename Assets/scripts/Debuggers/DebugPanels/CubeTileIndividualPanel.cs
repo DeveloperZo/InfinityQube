@@ -142,7 +142,7 @@ public class CubeTileIndividualPanel : DebugPanelBase
         GUILayout.BeginVertical(GUI.skin.box);
         GUILayout.Label("CUBE SPAWNING & SELECTION", GUI.skin.box);
 
-        spawningScroll = GUILayout.BeginScrollView(spawningScroll, GUILayout.MaxHeight(200));
+        spawningScroll = GUILayout.BeginScrollView(spawningScroll, GUILayout.MinHeight(200));
 
         // Cube type selection
         GUILayout.Label("Cube Type:", GUI.skin.box);
@@ -308,7 +308,7 @@ public class CubeTileIndividualPanel : DebugPanelBase
         GUILayout.BeginVertical(GUI.skin.box);
         GUILayout.Label("CUBE LIFECYCLE TESTING", GUI.skin.box);
 
-        lifecycleScroll = GUILayout.BeginScrollView(lifecycleScroll, GUILayout.MaxHeight(200));
+        lifecycleScroll = GUILayout.BeginScrollView(lifecycleScroll, GUILayout.MinHeight(200));
 
         // Lifecycle configuration
         GUILayout.Label("Lifecycle Configuration:", GUI.skin.box);
@@ -380,7 +380,7 @@ public class CubeTileIndividualPanel : DebugPanelBase
         GUILayout.BeginVertical(GUI.skin.box);
         GUILayout.Label("CUBE-TILE INTERACTION TESTING", GUI.skin.box);
 
-        interactionScroll = GUILayout.BeginScrollView(interactionScroll, GUILayout.MaxHeight(200));
+        interactionScroll = GUILayout.BeginScrollView(interactionScroll, GUILayout.MinHeight(200));
 
         // Interaction configuration
         GUILayout.Label("Interaction Configuration:", GUI.skin.box);
@@ -457,7 +457,7 @@ public class CubeTileIndividualPanel : DebugPanelBase
         GUILayout.BeginVertical(GUI.skin.box);
         GUILayout.Label("FACE PAINTER", GUI.skin.box);
 
-        facePainterScroll = GUILayout.BeginScrollView(facePainterScroll, GUILayout.MaxHeight(250));
+        facePainterScroll = GUILayout.BeginScrollView(facePainterScroll, GUILayout.MinHeight(250));
 
         // Face painting settings
         GUILayout.Label("Face Painting Settings:", GUI.skin.box);
