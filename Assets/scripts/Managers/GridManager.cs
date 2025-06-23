@@ -829,8 +829,7 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
                     state = tile.currentState,
                     hasMarker = tile.HasMarker,
                     isBlackened = tile.IsBlackened,
-                    isPrimed = tile.IsPrimed,
-                    charges = tile.DetonationCharges
+                    isPrimed = tile.IsPrimed
                 });
             }
         }
@@ -1016,10 +1015,6 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
         else if (entry.isPrimed)
         {
             tile.PrimeTile();
-        }
-        else if (entry.charges > 0)
-        {
-            tile.AdvantageTile(entry.charges);
         }
         
         // Apply marker if needed

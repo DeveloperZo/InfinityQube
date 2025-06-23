@@ -518,10 +518,7 @@ public class GridDebugPanel : DebugPanelBase
         {
             tile.BlackenTile();
         }
-        if (GUILayout.Button("E", GUILayout.Width(25))) // Enhance
-        {
-            tile.AdvantageTile(enhancementCharges);
-        }
+
         if (GUILayout.Button("P", GUILayout.Width(25))) // Prime
         {
             tile.PrimeTile();
@@ -552,8 +549,9 @@ public class GridDebugPanel : DebugPanelBase
             case 2: // Blackened
                 tile.BlackenTile();
                 break;
-            case 3: // Enhanced
-                tile.AdvantageTile(enhancementCharges);
+            case 3: // Enhanced (removed)
+                // Enhanced functionality has been removed
+                Debug.LogWarning("Enhanced tile functionality has been removed from the system");
                 break;
         }
 
@@ -688,24 +686,6 @@ public class GridDebugPanel : DebugPanelBase
     }
 
 
-
-    private void EnhanceTopRow()
-    {
-        if (gridManager == null) return;
-
-        int enhancedCount = 0;
-        int topRow = gridManager.Height - 1;
-        for (int x = 0; x < gridManager.Width; x++)
-        {
-            Tile tile = gridManager.GetTileAt(x, topRow);
-            if (tile != null)
-            {
-                tile.AdvantageTile(enhancementCharges);
-                enhancedCount++;
-            }
-        }
-        Debug.Log($"Enhanced {enhancedCount} tiles in top row with {enhancementCharges} charges");
-    }
 
     private void CreateCheckerboardPattern(TileState stateType)
     {
@@ -872,7 +852,7 @@ public class GridDebugPanel : DebugPanelBase
             Tile tile = gridManager.GetTileAt(i, gridManager.Height - 1 - i);
             if (tile != null)
             {
-                tile.AdvantageTile(2);
+                tile.BlackenTile(); // Changed from enhance to blacken since enhancement was removed
                 diagonalCount++;
             }
         }
@@ -900,7 +880,7 @@ public class GridDebugPanel : DebugPanelBase
 
                     if (normalizedDistance < 0.3f)
                     {
-                        tile.AdvantageTile(3); // Inner enhanced
+                        tile.PrimeTile(); // Inner primed (changed from enhanced)
                     }
                     else if (normalizedDistance < 0.6f)
                     {
@@ -942,7 +922,8 @@ public class GridDebugPanel : DebugPanelBase
                     }
                     else if (random < 0.45f)
                     {
-                        tile.AdvantageTile(Random.Range(1, 5));
+                        // Enhancement removed - use priming instead
+                        tile.PrimeTile();
                         randomCount++;
                     }
                 }
@@ -1029,15 +1010,15 @@ public class GridDebugPanel : DebugPanelBase
     {
         if (gridManager == null) return;
 
-        int enhancedCount = 0;
+        int primedCount = 0;
         // Left edge
         for (int y = 0; y < gridManager.Height; y++)
         {
             Tile tile = gridManager.GetTileAt(0, y);
             if (tile != null)
             {
-                tile.AdvantageTile(enhancementCharges);
-                enhancedCount++;
+                tile.PrimeTile(); // Changed from enhance to prime
+                primedCount++;
             }
         }
         // Right edge
@@ -1046,11 +1027,11 @@ public class GridDebugPanel : DebugPanelBase
             Tile tile = gridManager.GetTileAt(gridManager.Width - 1, y);
             if (tile != null)
             {
-                tile.AdvantageTile(enhancementCharges);
-                enhancedCount++;
+                tile.PrimeTile(); // Changed from enhance to prime
+                primedCount++;
             }
         }
-        Debug.Log($"Enhanced {enhancedCount} tiles in edge columns");
+        Debug.Log($"Primed {primedCount} tiles in edge columns (enhancement functionality removed)");
     }
 
     private void PlaceGridMarkerPattern()
@@ -1187,8 +1168,8 @@ public class GridDebugPanel : DebugPanelBase
                 if (tile == null) continue;
 
                 // Apply filters
-                bool isSpecial = tile.HasMarker || tile.IsBlackened || tile.IsAdvantaged ||
-                               tile.IsPrimed || tile.CanPaintCubes || !tile.IsPlayable;
+                bool isSpecial = tile.HasMarker || tile.IsBlackened ||
+                tile.IsPrimed || tile.CanPaintCubes || !tile.IsPlayable;
 
                 if (showOnlySpecialTiles && !isSpecial) continue;
                 if (!showEmptyTiles && !isSpecial) continue;
@@ -1216,7 +1197,7 @@ public class GridDebugPanel : DebugPanelBase
                     total++;
                     if (tile.HasMarker) marked++;
                     if (!tile.IsPlayable) fallen++;
-                    if (tile.IsBlackened || tile.IsAdvantaged || tile.IsPrimed || tile.CanPaintCubes)
+                    if (tile.IsBlackened || tile.IsPrimed || tile.CanPaintCubes)
                         special++;
                 }
             }
@@ -1229,7 +1210,7 @@ public class GridDebugPanel : DebugPanelBase
     {
         if (!tile.IsPlayable) return new Color(0.5f, 0.5f, 0.5f); // Gray for fallen
         if (tile.IsBlackened) return new Color(0.3f, 0.3f, 0.3f); // Dark gray
-        if (tile.IsAdvantaged) return new Color(1f, 1f, 0.3f); // Yellow
+
         if (tile.IsPrimed) return new Color(0.3f, 0.6f, 1f); // Blue
         if (tile.HasMarker) return new Color(1f, 0.3f, 0.3f); // Red
         if (tile.CanPaintCubes) return new Color(0.8f, 0.4f, 0.8f); // Purple
@@ -1240,7 +1221,7 @@ public class GridDebugPanel : DebugPanelBase
     {
         if (!tile.IsPlayable) return "FALLEN";
         if (tile.IsBlackened) return "Blackened";
-        if (tile.IsAdvantaged) return $"Enhanced({tile.DetonationCharges})";
+
         if (tile.IsPrimed) return "Primed";
         if (tile.HasMarker) return "Marked";
         if (tile.CanPaintCubes) return $"Painter({tile.PaintStatus})";

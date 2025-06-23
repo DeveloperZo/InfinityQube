@@ -364,7 +364,7 @@ public class PlayerMarkerSystem : MonoBehaviour
 
         Debug.Log($"Capturing {cube.type} cube at ({position.x}, {position.y}) with {markerType} marker");
 
-        if (cube.type == CubeType.Blue)
+        if (cube.type == CubeType.Prime)
         {
             CreateCubeMarker(position, markerType == MarkerType.Individual ? CubeMarkerType.Individual : CubeMarkerType.Area);
         }
@@ -397,7 +397,7 @@ public class PlayerMarkerSystem : MonoBehaviour
 
     private void RemoveCubeFromWaveManager(CubeManager cube)
     {
-        if (cube.CanBeCaptured() && actionManager.WaveManager != null && cube.type != CubeType.Black)
+        if (cube.CanBeCaptured() && actionManager.WaveManager != null && cube.type != CubeType.Infinity)
         {
             actionManager.WaveManager.activeCubes.Remove(cube);
         }

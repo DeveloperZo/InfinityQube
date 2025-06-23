@@ -15,6 +15,7 @@ public static class DebugUIHelpers
     public static readonly Color CorruptedColor = new Color(0.8f, 0.3f, 0.3f);
     public static readonly Color EnhancedColor = new Color(0.3f, 0.3f, 0.8f);
     public static readonly Color InfoColor = new Color(0.7f, 0.7f, 0.9f);
+    public static readonly Color SelectedItemColor = Color.yellow;
     #endregion
 
     #region Color and Style Utilities
@@ -60,11 +61,10 @@ public static class DebugUIHelpers
     {
         switch (cubeType)
         {
-            case CubeType.Normal: return Color.white;
-            case CubeType.Armored: return new Color(0.8f, 0.8f, 0.8f);
-            case CubeType.Reinforced: return new Color(0.6f, 0.4f, 0.2f);
-            case CubeType.Berserker: return new Color(0.8f, 0.2f, 0.2f);
-            case CubeType.Heavy: return new Color(0.3f, 0.3f, 0.3f);
+            case CubeType.Unit: return Color.gray;
+            case CubeType.Prime: return new Color(0.8f, 0.8f, 0.8f);
+            case CubeType.Dense: return new Color(0.6f, 0.4f, 0.2f);
+            case CubeType.Infinity: return new Color(0.3f, 0.3f, 0.3f);
             default: return Color.gray;
         }
     }
@@ -116,11 +116,147 @@ public static class DebugUIHelpers
     {
         return GUILayout.Toggle(currentValue, label);
     }
+    /// <summary>
+    /// Draws a grid of buttons with basic Unity styling.
+    /// </summary>
+    /// <param name="buttonData">Array of (label, action) pairs</param>
+    /// <param name="buttonsPerRow">Number of buttons per row</param>
+    public static void DrawButtonGrid((string label, System.Action action)[] buttonData, int buttonsPerRow = 3)
+    {
+        for (int i = 0; i < buttonData.Length; i += buttonsPerRow)
+        {
+            GUILayout.BeginHorizontal();
+
+            for (int j = 0; j < buttonsPerRow && i + j < buttonData.Length; j++)
+            {
+                var (label, action) = buttonData[i + j];
+                if (GUILayout.Button(label))
+                {
+                    action?.Invoke();
+                }
+            }
+
+            GUILayout.EndHorizontal();
+        }
+    }
 
     #endregion
 
     #region Input Field Utilities
+    /// <summary>
+    /// Draws a simple section with basic Unity styling.
+    /// </summary>
+    /// <param name="title">Section title</param>
+    /// <param name="content">Action to draw section content</param>
+    /// <param name="isExpanded">Whether section is currently expanded</param>
+    public static void DrawSection(string title, System.Action content, bool isExpanded = true)
+    {
+        if (!isExpanded) return;
 
+        GUILayout.BeginVertical(GUI.skin.box);
+
+        if (!string.IsNullOrEmpty(title))
+        {
+            GUILayout.Label(title, GUI.skin.label);
+            Space(3);
+        }
+
+        content?.Invoke();
+        GUILayout.EndVertical();
+    }
+
+    public static Vector2Int DrawVector2IntField(string label, Vector2Int targetPosition, int minWidth, int maxWidth, int minHeight, int maxHeight)
+    {
+        GUILayout.BeginHorizontal();
+        if (!string.IsNullOrEmpty(label))
+        {
+            GUILayout.Label(label, GUILayout.Width(60f));
+        }
+
+        // X field
+        GUILayout.Label("X", GUILayout.Width(12f));
+        if (GUILayout.Button("-", GUILayout.Width(20)) && targetPosition.x > minWidth)
+        {
+            targetPosition.x--;
+        }
+        string xStr = GUILayout.TextField(targetPosition.x.ToString(), GUILayout.Width(40));
+        if (int.TryParse(xStr, out int newX))
+        {
+            targetPosition.x = Mathf.Clamp(newX, minWidth, maxWidth);
+        }
+        if (GUILayout.Button("+", GUILayout.Width(20)) && targetPosition.x < maxWidth)
+        {
+            targetPosition.x++;
+        }
+
+        // Y field
+        GUILayout.Label("Y", GUILayout.Width(12f));
+        if (GUILayout.Button("-", GUILayout.Width(20)) && targetPosition.y > minHeight)
+        {
+            targetPosition.y--;
+        }
+        string yStr = GUILayout.TextField(targetPosition.y.ToString(), GUILayout.Width(40));
+        if (int.TryParse(yStr, out int newY))
+        {
+            targetPosition.y = Mathf.Clamp(newY, minHeight, maxHeight);
+        }
+        if (GUILayout.Button("+", GUILayout.Width(20)) && targetPosition.y < maxHeight)
+        {
+            targetPosition.y++;
+        }
+
+        GUILayout.EndHorizontal();
+        return new Vector2Int(
+            Mathf.Clamp(targetPosition.x, minWidth, maxWidth),
+            Mathf.Clamp(targetPosition.y, minHeight, maxHeight)
+        );
+    }
+    public static Vector2 DrawVector2Field(string label, Vector2 targetPosition, int minWidth, int maxWidth, int minHeight, int maxHeight)
+    {
+        GUILayout.BeginHorizontal();
+        if (!string.IsNullOrEmpty(label))
+        {
+            GUILayout.Label(label, GUILayout.Width(60f));
+        }
+
+        // X field
+        GUILayout.Label("X", GUILayout.Width(12f));
+        if (GUILayout.Button("-", GUILayout.Width(20)) && targetPosition.x > minWidth)
+        {
+            targetPosition.x--;
+        }
+        string xStr = GUILayout.TextField(targetPosition.x.ToString(), GUILayout.Width(40));
+        if (int.TryParse(xStr, out int newX))
+        {
+            targetPosition.x = Mathf.Clamp(newX, minWidth, maxWidth);
+        }
+        if (GUILayout.Button("+", GUILayout.Width(20)) && targetPosition.x < maxWidth)
+        {
+            targetPosition.x++;
+        }
+
+        // Y field
+        GUILayout.Label("Y", GUILayout.Width(12f));
+        if (GUILayout.Button("-", GUILayout.Width(20)) && targetPosition.y > minHeight)
+        {
+            targetPosition.y--;
+        }
+        string yStr = GUILayout.TextField(targetPosition.y.ToString(), GUILayout.Width(40));
+        if (int.TryParse(yStr, out int newY))
+        {
+            targetPosition.y = Mathf.Clamp(newY, minHeight, maxHeight);
+        }
+        if (GUILayout.Button("+", GUILayout.Width(20)) && targetPosition.y < maxHeight)
+        {
+            targetPosition.y++;
+        }
+
+        GUILayout.EndHorizontal();
+        return new Vector2(
+            Mathf.Clamp(targetPosition.x, minWidth, maxWidth),
+            Mathf.Clamp(targetPosition.y, minHeight, maxHeight)
+        );
+    }
     /// <summary>
     /// Draws an integer input field with label and constraints
     /// </summary>

@@ -214,7 +214,6 @@ public static class DebugTileHelper
 
         if (!tile.IsPlayable) return "FALLEN";
         if (tile.IsBlackened) return "Blackened";
-        if (tile.IsAdvantaged) return $"Enhanced({tile.DetonationCharges})";
         if (tile.IsPrimed) return "Primed";
         if (tile.HasMarker) return "Marked";
         if (tile.CanPaintCubes) return $"Painter({tile.PaintStatus})";
@@ -233,7 +232,6 @@ public static class DebugTileHelper
 
         if (!tile.IsPlayable) return new Color(0.5f, 0.5f, 0.5f); // Gray for fallen
         if (tile.IsBlackened) return new Color(0.3f, 0.3f, 0.3f); // Dark gray
-        if (tile.IsAdvantaged) return new Color(1f, 1f, 0.3f); // Yellow
         if (tile.IsPrimed) return new Color(0.3f, 0.6f, 1f); // Blue
         if (tile.HasMarker) return new Color(1f, 0.3f, 0.3f); // Red
         if (tile.CanPaintCubes) return new Color(0.8f, 0.4f, 0.8f); // Purple
@@ -250,7 +248,7 @@ public static class DebugTileHelper
     {
         if (tile == null) return false;
 
-        return !tile.IsPlayable || tile.IsBlackened || tile.IsAdvantaged || 
+        return !tile.IsPlayable || tile.IsBlackened || 
                tile.IsPrimed || tile.HasMarker || tile.CanPaintCubes;
     }
 

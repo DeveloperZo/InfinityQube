@@ -273,10 +273,11 @@ public class CubeTileIndividualPanel : DebugPanelBase
                     GUILayout.Label($"Paint: {testTile.PaintStatus}");
                     GUILayout.Label($"Duration: {testTile.PaintDuration}");
                 }
-                if (testTile.IsAdvantaged)
-                {
-                    GUILayout.Label($"Charges: {testTile.DetonationCharges}");
-                }
+                // Enhanced tile features have been removed
+                // if (testTile.IsAdvantaged)
+                // {
+                //     GUILayout.Label($"Charges: {testTile.DetonationCharges}");
+                // }
             });
         }
         else

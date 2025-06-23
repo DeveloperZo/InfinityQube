@@ -20,7 +20,45 @@ public static class Enumerations
     {
         Down, Up, Forward, Back
     }
-    public enum CubeType {Normal, Blue, Black, Reinforced }
+    /// <summary>
+    /// Defines the different types of cubes in the game
+    /// </summary>
+    public enum CubeType 
+    {
+        /// <summary>Basic cube type (formerly Normal)</summary>
+        Unit,
+        /// <summary>Area coverage cube type (formerly Blue)</summary>
+        Prime,
+        /// <summary>Special corruption cube type (formerly Black)</summary>
+        Infinity,
+        /// <summary>Enhanced durability cube type (formerly Reinforced)</summary>
+        Dense,
+        
+        // Obsolete values for backward compatibility
+        [System.Obsolete("Use Unit instead", false)]
+        Normal = Unit,
+        [System.Obsolete("Use Prime instead", false)]
+        Blue = Prime,
+        [System.Obsolete("Use Infinity instead", false)]
+        Black = Infinity,
+        [System.Obsolete("Use Dense instead", false)]
+        Reinforced = Dense
+    }
+
+    /// <summary>
+    /// Defines the four-tier marker system for targeting
+    /// </summary>
+    public enum MarkerType
+    {
+        /// <summary>Light marker: Basic targeting (formerly Individual)</summary>
+        Light,
+        /// <summary>Heavy marker: Enhanced marker for dense cubes (NEW)</summary>
+        Heavy,
+        /// <summary>Prime marker: Area coverage marker (formerly Area)</summary>
+        Prime,
+        /// <summary>Cube marker: Generated from prime cube captures</summary>
+        Cube
+    }
 
     public enum TileState
     {

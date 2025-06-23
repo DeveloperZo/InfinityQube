@@ -28,9 +28,7 @@ public class Tile : MonoBehaviour
     [SerializeField] private bool hasDetonationPoint = false;
     public bool HasDetonationPoint => hasDetonationPoint;
 
-    [Header("Enhanced Blue Tile")]
-    [SerializeField] private int detonationCharges = 0;
-    [SerializeField] private int maxCharges = 3;
+
 
     [Header("Player Hover Effect")]
     [SerializeField] private bool isPlayerOnTile = false;
@@ -46,13 +44,9 @@ public class Tile : MonoBehaviour
     private readonly Color markerColor = Color.red;
     private readonly Color corruptedColor = Color.black;
     private readonly Color primedColor = Color.blue;
-    private readonly Color enhancedColor = Color.yellow;
 
-    // Properties to access charge information
-    public int DetonationCharges => detonationCharges;
-    public bool HasCharges => detonationCharges > 0;
+    // Properties to access tile state information
     public bool IsBlackened => isBlackened;
-    public bool IsAdvantaged => isAdvantaged;
     public bool IsPrimed => hasDetonationPoint;
     public bool HasMarker => hasMarker;
     public TileState currentState = TileState.Normal;
@@ -69,7 +63,6 @@ public class Tile : MonoBehaviour
     public CubeManager currentCube;
     private bool isInitialized = false;
     private bool isBlackened = false;
-    private bool isAdvantaged = false;
 
     public bool isPhasedZone { get; private set; }
     private TextMesh countdownText;
@@ -227,8 +220,6 @@ public class Tile : MonoBehaviour
     public void BlackenTile()
     {
         isBlackened = true;
-        isAdvantaged = false;
-        detonationCharges = 0;
         ClearMarker(); // Remove any existing marker
 
         UpdateTileVisuals();
@@ -253,25 +244,12 @@ public class Tile : MonoBehaviour
         Debug.Log($"Tile ({x},{y}): Primed for detonation and registered with PlayerActionManager");
     }
 
-    public void AdvantageTile(int charges = 3)
-    {
-        if (isBlackened) return;
 
-        isAdvantaged = true;
-        detonationCharges = charges > maxCharges ? maxCharges : charges;
-        ClearMarker();
-
-        UpdateTileVisuals();
-
-        Debug.Log($"Blue tile at ({x}, {y}) enhanced to charge level {detonationCharges}");
-    }
 
     public void ResetTile()
     {
         currentState = TileState.Normal;
         isBlackened = false;
-        isAdvantaged = false;
-        detonationCharges = 0;
         hasDetonationPoint = false;
         ClearMarker();
         RemoveOverlay();
@@ -339,10 +317,10 @@ public class Tile : MonoBehaviour
                 break;
 
             case Enumerations.CubeType.Blue:
-                // Cube is acting as blue (enhanced face or naturally blue)
-                Debug.Log($"Cube acting as blue captured at ({x}, {y}) - Priming tile for detonation");
+                // Prime cube captured - creates prime cube marker for 3x3 area trigger
+                Debug.Log($"Prime cube captured at ({x}, {y}) - Creating prime cube marker");
                 NotifyPlayerCubeCapture(Enumerations.CubeType.Blue);
-                PrimeTile();
+                PrimeTile(); // This creates the prime cube marker for 3x3 area capture
 
                 Destroy(cubeToProcess.gameObject);
                 break;
@@ -570,47 +548,23 @@ public class Tile : MonoBehaviour
         {
             currentState = Enumerations.TileState.Transformed;
 
-            switch (cubeType)
+            // Only handle corruption transformation
+            if (cubeType == Enumerations.CubeType.Black)
             {
-                case Enumerations.CubeType.Black:
-                    BlackenTile();
-                    break;
-                case Enumerations.CubeType.Blue:
-                    AdvantageTile();
-                    break;
+                BlackenTile();
             }
         }
     }
 
     public void TransformToPaintingTile(FaceStatus status, Color color, int duration = -1)
     {
-        // Transform the tile visually
-        TransformTile(Enumerations.CubeType.Blue); // Use blue transformation as base
+        // Set current state to transformed
+        currentState = Enumerations.TileState.Transformed;
 
         // Set up face painting
         SetupFacePainting(status, color, duration);
 
         Debug.Log($"Tile ({x},{y}) transformed to paint cubes with {status} status");
-    }
-
-    public void ReduceCharge()
-    {
-        if (detonationCharges <= 0)
-        {
-            ResetToNormalState();
-            return;
-        }
-
-        detonationCharges = isAdvantaged ? detonationCharges - 1 : 0;
-
-        if (detonationCharges > 0)
-        {
-            UpdateTileVisuals(); // Update overlay for new charge level
-        }
-        else
-        {
-            ResetToNormalState();
-        }
     }
 
     private void ResetToNormalState()
@@ -619,8 +573,6 @@ public class Tile : MonoBehaviour
         canPaintCubes = false;
         paintColor = Color.clear;
         paintStatus = FaceStatus.None;
-        isAdvantaged = false;
-        detonationCharges = 0;
         RemoveOverlay();
     }
 
@@ -639,24 +591,12 @@ public class Tile : MonoBehaviour
         // Store cube reference for potential processing
         currentCube = cube;
         
-        // Handle transformed tile behavior
-        if (currentState == Enumerations.TileState.Transformed)
+        // Handle transformed tile behavior for corruption
+        if (currentState == Enumerations.TileState.Transformed && IsBlackened)
         {
-            if (IsBlackened)
-            {
-                // Black tiles have no effect but consume charge
-                paintColor = Color.black;
-                paintStatus = FaceStatus.Corrupted;
-                ReduceCharge();
-            }
-            else if (IsAdvantaged)
-            {
-                if (cube.type == Enumerations.CubeType.Black)
-                {
-                    Debug.Log("Black cube landed on an advantaged tile. Charge Reduced.");
-                }
-                ReduceCharge();
-            }
+            // Corrupted tiles paint cubes black
+            paintColor = Color.black;
+            paintStatus = FaceStatus.Corrupted;
         }
 
         // Handle face painting coordination
@@ -709,14 +649,6 @@ public class Tile : MonoBehaviour
 
         if (hasDetonationPoint)
             return (true, primedColor);
-
-        if (isAdvantaged && detonationCharges > 0)
-        {
-            // Different shades of yellow based on charge level
-            float intensity = (float)detonationCharges / maxCharges;
-            Color chargedColor = Color.Lerp(new Color(1f, 1f, 0.3f), enhancedColor, intensity);
-            return (true, chargedColor);
-        }
 
         return (false, Color.white); // No overlay needed
     }
