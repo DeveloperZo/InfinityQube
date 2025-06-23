@@ -70,21 +70,29 @@ Face painting affects cube behavior dynamically based on cube orientation and fa
 ### Action System (PlayerActionManager)
 Comprehensive marker and detonation management:
 
-#### Light Markers
+#### Light Markers (formerly Individual)
 - **Placement Key**: F
 - **Trigger Key**: R  
 - **Charge System**: Limited uses with regeneration
 - **Visual Feedback**: Placement indicators and charge display
 
-#### Prime Markers  
+#### Heavy Markers (NEW)
+- **Placement Key**: V
+- **Trigger Key**: Y
+- **Target**: Enhanced marker for dense cubes
+- **Charge System**: Limited uses with longer cooldown
+- **Enhanced Power**: Designed for dense cube interaction
+
+#### Prime Markers (formerly Area)
 - **Placement Key**: G
 - **Trigger Key**: T
-- **Coverage**: 2x2 grid area
+- **Coverage**: 3x3 grid area
 - **Cooldown System**: Time-based restrictions
 - **Resource Limits**: Configurable maximum on-grid count
 
 #### Cube Markers
 - **Trigger Key**: Q
+- **Power Up Key**: E
 - **Generation**: Created by capturing Prime cubes
 - **Direct Detonation**: Immediate cube destruction
 - **Strategic Resource**: Finite and valuable
@@ -129,10 +137,13 @@ WaveData Properties:
 |--------|-------|--------|--------|
 | **Movement** | WASD/Arrows | PlayerManager | Grid navigation |
 | **Light Marker** | F | PlayerActionManager | Place single marker |
-| **Prime Marker** | G | PlayerActionManager | Place 2x2 area marker |
+| **Heavy Marker** | V | PlayerActionManager | Place enhanced marker |
+| **Prime Marker** | G | PlayerActionManager | Place 3x3 area marker |
 | **Trigger Light** | R | PlayerActionManager | Activate light markers |
+| **Trigger Heavy** | Y | PlayerActionManager | Activate heavy markers |
 | **Trigger Prime** | T | PlayerActionManager | Activate prime markers |
 | **Trigger Cube Marker** | Q | PlayerActionManager | Direct cube detonation |
+| **Power Up Cube Marker** | E | PlayerActionManager | Enhance cube marker |
 | **Start Wave** | ENTER | WaveManager | Begin wave progression |
 | **Restart Level** | P | Game System | Reset current stage |
 | **Quit Game** | ESC | Game System | Exit application |
