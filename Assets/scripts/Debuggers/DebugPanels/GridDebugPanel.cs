@@ -11,11 +11,11 @@ public class GridDebugPanel : DebugPanelBase
     private GridManager gridManager;
     private PlayerManager playerManager;
 
-    // UI State
+    // UI State - Reorganized to prioritize grid-wide operations
+    private bool showGridOperations = true;  // Now primary
     private bool showGridManagement = true;
-    private bool showTileManipulation = true;
-    private bool showGridInspection = true;
-    private bool showGridOperations = false;
+    private bool showGridTesting = true;     // Renamed from inspection
+    private bool showTileManipulation = false; // De-emphasized, for testing support
     private Vector2 tileListScroll;
 
     // Tile manipulation controls
@@ -55,19 +55,21 @@ public class GridDebugPanel : DebugPanelBase
         DrawSectionToggles();
         GUILayout.Space(5);
 
-        if (showGridManagement) DrawGridManagementSection();
-        if (showTileManipulation) DrawTileManipulationSection();
-        if (showGridInspection) DrawGridInspectionSection();
+        // Reordered to prioritize grid-wide operations
         if (showGridOperations) DrawGridOperationsSection();
+        if (showGridManagement) DrawGridManagementSection();
+        if (showGridTesting) DrawGridTestingSection();
+        if (showTileManipulation) DrawTileManipulationSection();
     }
 
     private void DrawSectionToggles()
     {
         GUILayout.BeginHorizontal();
+        // Reordered to prioritize grid-wide operations
+        showGridOperations = DebugUIHelpers.DrawToggleButton("Grid Ops", showGridOperations);
         showGridManagement = DebugUIHelpers.DrawToggleButton("Grid Mgmt", showGridManagement);
-        showTileManipulation = DebugUIHelpers.DrawToggleButton("Tile Edit", showTileManipulation);
-        showGridInspection = DebugUIHelpers.DrawToggleButton("Inspection", showGridInspection);
-        showGridOperations = DebugUIHelpers.DrawToggleButton("Operations", showGridOperations);
+        showGridTesting = DebugUIHelpers.DrawToggleButton("Testing", showGridTesting);
+        showTileManipulation = DebugUIHelpers.DrawToggleButton("Tile Tools", showTileManipulation);
         GUILayout.EndHorizontal();
     }
 
@@ -117,30 +119,58 @@ public class GridDebugPanel : DebugPanelBase
             }
             GUILayout.EndHorizontal();
 
-            // Grid operations
+            // Enhanced grid operations
             GUILayout.Space(5);
+            GUILayout.Label("Grid Operations:", GUI.skin.box);
             GUILayout.BeginHorizontal();
             if (GUILayout.Button("Regenerate"))
             {
                 gridManager.RegenerateGrid();
+                Debug.Log("Grid regenerated for testing");
             }
             if (GUILayout.Button("Debug Info"))
             {
                 gridManager.DebugPrintGridInfo();
             }
+            if (GUILayout.Button("Stress Test"))
+            {
+                StressTestGrid();
+            }
             GUILayout.EndHorizontal();
 
-            // Row management
+            // Enhanced row management
             GUILayout.Space(5);
             GUILayout.Label("Row Management:", GUI.skin.box);
             GUILayout.BeginHorizontal();
-            if (GUILayout.Button("Remove Bottom Row"))
+            if (GUILayout.Button("Remove Bottom"))
             {
                 gridManager.RemoveBottomRow();
             }
             if (GUILayout.Button("Test Row Fall"))
             {
                 TestRowFall();
+            }
+            if (GUILayout.Button("Add Test Row"))
+            {
+                TestAddRow();
+            }
+            GUILayout.EndHorizontal();
+            
+            // Grid size presets for testing
+            GUILayout.Space(5);
+            GUILayout.Label("Size Presets:", GUI.skin.box);
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button("Small (6x15)"))
+            {
+                gridManager.ResizeGrid(6, 15);
+            }
+            if (GUILayout.Button("Medium (10x20)"))
+            {
+                gridManager.ResizeGrid(10, 20);
+            }
+            if (GUILayout.Button("Large (15x30)"))
+            {
+                gridManager.ResizeGrid(15, 30);
             }
             GUILayout.EndHorizontal();
         }
@@ -155,7 +185,7 @@ public class GridDebugPanel : DebugPanelBase
     private void DrawTileManipulationSection()
     {
         GUILayout.BeginVertical(GUI.skin.box);
-        GUILayout.Label("TILE MANIPULATION", GUI.skin.box);
+        GUILayout.Label("TILE TOOLS (Grid Testing Support)", GUI.skin.box);
 
         // Target position controls
         DrawTargetPositionControls();
@@ -273,10 +303,10 @@ public class GridDebugPanel : DebugPanelBase
         GUILayout.EndHorizontal();
     }
 
-    private void DrawGridInspectionSection()
+    private void DrawGridTestingSection()
     {
         GUILayout.BeginVertical(GUI.skin.box);
-        GUILayout.Label("GRID INSPECTION", GUI.skin.box);
+        GUILayout.Label("GRID TESTING & VALIDATION", GUI.skin.box);
 
         // Filters and controls
         GUILayout.BeginHorizontal();
@@ -311,61 +341,120 @@ public class GridDebugPanel : DebugPanelBase
     private void DrawGridOperationsSection()
     {
         GUILayout.BeginVertical(GUI.skin.box);
-        GUILayout.Label("GRID OPERATIONS", GUI.skin.box);
+        GUILayout.Label("GRID-WIDE OPERATIONS", GUI.skin.box);
+
+        // Quick grid state operations
+        GUILayout.Label("Quick Actions:", GUI.skin.box);
+        GUILayout.BeginHorizontal();
+        if (GUILayout.Button("Clear All"))
+        {
+            ClearEntireGrid();
+        }
+        if (GUILayout.Button("Reset Grid"))
+        {
+            ResetAllTiles();
+        }
+        if (GUILayout.Button("Test Fall All"))
+        {
+            TestMakeAllTilesFall();
+        }
+        GUILayout.EndHorizontal();
+
+        // Grid pattern operations - enhanced
+        GUILayout.Label("Grid Patterns:", GUI.skin.box);
+        GUILayout.BeginHorizontal();
+        if (GUILayout.Button("Prime Cross"))
+        {
+            CreateCrossPattern(TileState.Transformed);
+        }
+        if (GUILayout.Button("Checkerboard"))
+        {
+            CreateCheckerboardPattern(TileState.Transformed);
+        }
+        if (GUILayout.Button("Border Pattern"))
+        {
+            CreateBorderPattern();
+        }
+        GUILayout.EndHorizontal();
+        
+        GUILayout.BeginHorizontal();
+        if (GUILayout.Button("Diagonal Lines"))
+        {
+            CreateDiagonalPattern();
+        }
+        if (GUILayout.Button("Gradient Test"))
+        {
+            CreateGradientPattern();
+        }
+        if (GUILayout.Button("Random Pattern"))
+        {
+            CreateRandomPattern();
+        }
+        GUILayout.EndHorizontal();
+
+        // Comprehensive row/column operations
+        GUILayout.Label("Row/Column Operations:", GUI.skin.box);
+        GUILayout.BeginHorizontal();
+        if (GUILayout.Button("Fall All Rows"))
+        {
+            TestFallAllRows();
+        }
+        if (GUILayout.Button("Fall Columns"))
+        {
+            TestFallAlternateColumns();
+        }
+        if (GUILayout.Button("Restore Fallen"))
+        {
+            RestoreAllFallenTiles();
+        }
+        GUILayout.EndHorizontal();
+        
+        GUILayout.BeginHorizontal();
+        if (GUILayout.Button("Prime Top Row"))
+        {
+            PrimeEntireRow(gridManager.Height - 1);
+        }
+        if (GUILayout.Button("Blacken Bottom"))
+        {
+            BlackenEntireRow(0);
+        }
+        if (GUILayout.Button("Enhance Edges"))
+        {
+            EnhanceEdgeColumns();
+        }
+        GUILayout.EndHorizontal();
 
         // Marker operations
-        GUILayout.Label("Markers:", GUI.skin.box);
+        GUILayout.Label("Marker Testing:", GUI.skin.box);
         GUILayout.BeginHorizontal();
         if (GUILayout.Button("Clear All Markers"))
         {
             gridManager?.ClearAllMarkers();
         }
-        if (GUILayout.Button("Test Diagonal Pattern"))
+        if (GUILayout.Button("Diagonal Markers"))
         {
             PlaceTestMarkerPattern();
         }
-        GUILayout.EndHorizontal();
-
-        // Tile state operations
-        GUILayout.Label("Tile States:", GUI.skin.box);
-        GUILayout.BeginHorizontal();
-        if (GUILayout.Button("Reset All Tiles"))
+        if (GUILayout.Button("Grid Markers"))
         {
-            ResetAllTiles();
-        }
-        if (GUILayout.Button("Blacken Border"))
-        {
-            BlackenBorderTiles();
+            PlaceGridMarkerPattern();
         }
         GUILayout.EndHorizontal();
 
-        // Pattern operations - simplified to one type each
-        GUILayout.Label("Patterns:", GUI.skin.box);
+        // Grid validation and testing
+        GUILayout.Label("Grid Testing:", GUI.skin.box);
         GUILayout.BeginHorizontal();
-        if (GUILayout.Button("Prime Cross"))
-        {
-            CreateCrossPattern(TileState.Transformed); // Will use PrimeTile
-        }
-        if (GUILayout.Button("Blacken Checkerboard"))
-        {
-            CreateCheckerboardPattern(TileState.Transformed); // Will use BlackenTile  
-        }
-        if (GUILayout.Button("Enhance Top Row"))
-        {
-            EnhanceTopRow();
-        }
-        GUILayout.EndHorizontal();
-
-        // Restore operations
-        GUILayout.Label("Restore:", GUI.skin.box);
-        GUILayout.BeginHorizontal();
-        if (GUILayout.Button("Restore All Fallen"))
-        {
-            RestoreAllFallenTiles();
-        }
-        if (GUILayout.Button("Test Grid Bounds"))
+        if (GUILayout.Button("Test Bounds"))
         {
             TestGridBounds();
+        }
+        if (GUILayout.Button("Validate Grid"))
+        {
+            ValidateGridIntegrity();
+        }
+        if (GUILayout.Button("Performance Test"))
+        {
+            RunGridPerformanceTest();
         }
         GUILayout.EndHorizontal();
 
@@ -540,6 +629,43 @@ public class GridDebugPanel : DebugPanelBase
         Debug.Log("Made row 1 fall for testing");
     }
 
+    private void StressTestGrid()
+    {
+        if (gridManager == null) return;
+
+        Debug.Log("=== GRID STRESS TEST ===");
+        
+        // Test multiple rapid resize operations
+        for (int i = 0; i < 5; i++)
+        {
+            int width = Random.Range(5, 20);
+            int height = Random.Range(10, 40);
+            gridManager.ResizeGrid(width, height);
+            Debug.Log($"Stress test iteration {i + 1}: Resized to {width}x{height}");
+        }
+        
+        // Reset to a standard size
+        gridManager.ResizeGrid(10, 20);
+        Debug.Log("Stress test completed - grid reset to 10x20");
+    }
+
+    private void TestAddRow()
+    {
+        if (gridManager == null) return;
+
+        // Test adding a row by resizing
+        int newHeight = gridManager.Height + 1;
+        if (newHeight <= 50) // Respect maximum
+        {
+            gridManager.ResizeGrid(gridManager.Width, newHeight);
+            Debug.Log($"Added row - grid now {gridManager.Width}x{gridManager.Height}");
+        }
+        else
+        {
+            Debug.Log("Cannot add row - maximum height reached");
+        }
+    }
+
     private void ResetAllTiles()
     {
         if (gridManager == null) return;
@@ -561,28 +687,7 @@ public class GridDebugPanel : DebugPanelBase
         Debug.Log($"Reset {resetCount} tiles to normal state");
     }
 
-    private void BlackenBorderTiles()
-    {
-        if (gridManager == null) return;
 
-        int blackenedCount = 0;
-        for (int x = 0; x < gridManager.Width; x++)
-        {
-            for (int y = 0; y < gridManager.Height; y++)
-            {
-                if (x == 0 || x == gridManager.Width - 1 || y == 0 || y == gridManager.Height - 1)
-                {
-                    Tile tile = gridManager.GetTileAt(x, y);
-                    if (tile != null)
-                    {
-                        tile.BlackenTile();
-                        blackenedCount++;
-                    }
-                }
-            }
-        }
-        Debug.Log($"Blackened {blackenedCount} border tiles");
-    }
 
     private void EnhanceTopRow()
     {
@@ -691,6 +796,350 @@ public class GridDebugPanel : DebugPanelBase
             }
         }
         Debug.Log($"Placed {markersPlaced} test markers in diagonal pattern");
+    }
+
+    // New comprehensive grid operation methods
+    private void ClearEntireGrid()
+    {
+        if (gridManager == null) return;
+
+        gridManager.ClearAllMarkers();
+        ResetAllTiles();
+        Debug.Log("Cleared entire grid - all markers and tile states reset");
+    }
+
+    private void TestMakeAllTilesFall()
+    {
+        if (gridManager == null) return;
+
+        int fallenCount = 0;
+        for (int x = 0; x < gridManager.Width; x++)
+        {
+            for (int y = 0; y < gridManager.Height; y++)
+            {
+                Tile tile = gridManager.GetTileAt(x, y);
+                if (tile != null)
+                {
+                    tile.MakeTileFall();
+                    fallenCount++;
+                }
+            }
+        }
+        Debug.Log($"Made {fallenCount} tiles fall for grid testing");
+    }
+
+    private void CreateBorderPattern()
+    {
+        if (gridManager == null) return;
+
+        int borderCount = 0;
+        for (int x = 0; x < gridManager.Width; x++)
+        {
+            for (int y = 0; y < gridManager.Height; y++)
+            {
+                if (x == 0 || x == gridManager.Width - 1 || y == 0 || y == gridManager.Height - 1)
+                {
+                    Tile tile = gridManager.GetTileAt(x, y);
+                    if (tile != null)
+                    {
+                        tile.BlackenTile();
+                        borderCount++;
+                    }
+                }
+            }
+        }
+        Debug.Log($"Created border pattern with {borderCount} blackened tiles");
+    }
+
+    private void CreateDiagonalPattern()
+    {
+        if (gridManager == null) return;
+
+        int diagonalCount = 0;
+        // Main diagonal
+        for (int i = 0; i < Mathf.Min(gridManager.Width, gridManager.Height); i++)
+        {
+            Tile tile = gridManager.GetTileAt(i, i);
+            if (tile != null)
+            {
+                tile.PrimeTile();
+                diagonalCount++;
+            }
+        }
+        // Anti-diagonal
+        for (int i = 0; i < Mathf.Min(gridManager.Width, gridManager.Height); i++)
+        {
+            Tile tile = gridManager.GetTileAt(i, gridManager.Height - 1 - i);
+            if (tile != null)
+            {
+                tile.AdvantageTile(2);
+                diagonalCount++;
+            }
+        }
+        Debug.Log($"Created diagonal pattern with {diagonalCount} special tiles");
+    }
+
+    private void CreateGradientPattern()
+    {
+        if (gridManager == null) return;
+
+        int gradientCount = 0;
+        for (int x = 0; x < gridManager.Width; x++)
+        {
+            for (int y = 0; y < gridManager.Height; y++)
+            {
+                Tile tile = gridManager.GetTileAt(x, y);
+                if (tile != null)
+                {
+                    // Create gradient based on distance from center
+                    float centerX = gridManager.Width / 2f;
+                    float centerY = gridManager.Height / 2f;
+                    float distance = Vector2.Distance(new Vector2(x, y), new Vector2(centerX, centerY));
+                    float maxDistance = Vector2.Distance(Vector2.zero, new Vector2(centerX, centerY));
+                    float normalizedDistance = distance / maxDistance;
+
+                    if (normalizedDistance < 0.3f)
+                    {
+                        tile.AdvantageTile(3); // Inner enhanced
+                    }
+                    else if (normalizedDistance < 0.6f)
+                    {
+                        tile.PrimeTile(); // Middle primed
+                    }
+                    else
+                    {
+                        tile.BlackenTile(); // Outer blackened
+                    }
+                    gradientCount++;
+                }
+            }
+        }
+        Debug.Log($"Created gradient pattern with {gradientCount} tiles");
+    }
+
+    private void CreateRandomPattern()
+    {
+        if (gridManager == null) return;
+
+        int randomCount = 0;
+        for (int x = 0; x < gridManager.Width; x++)
+        {
+            for (int y = 0; y < gridManager.Height; y++)
+            {
+                Tile tile = gridManager.GetTileAt(x, y);
+                if (tile != null)
+                {
+                    float random = Random.Range(0f, 1f);
+                    if (random < 0.2f)
+                    {
+                        tile.PrimeTile();
+                        randomCount++;
+                    }
+                    else if (random < 0.35f)
+                    {
+                        tile.BlackenTile();
+                        randomCount++;
+                    }
+                    else if (random < 0.45f)
+                    {
+                        tile.AdvantageTile(Random.Range(1, 5));
+                        randomCount++;
+                    }
+                }
+            }
+        }
+        Debug.Log($"Created random pattern with {randomCount} special tiles");
+    }
+
+    private void TestFallAllRows()
+    {
+        if (gridManager == null) return;
+
+        int rowsFallen = 0;
+        for (int y = 0; y < gridManager.Height; y += 2) // Every other row
+        {
+            for (int x = 0; x < gridManager.Width; x++)
+            {
+                Tile tile = gridManager.GetTileAt(x, y);
+                if (tile != null)
+                {
+                    tile.MakeTileFall();
+                }
+            }
+            rowsFallen++;
+        }
+        Debug.Log($"Made {rowsFallen} rows fall for testing");
+    }
+
+    private void TestFallAlternateColumns()
+    {
+        if (gridManager == null) return;
+
+        int columnsFallen = 0;
+        for (int x = 0; x < gridManager.Width; x += 2) // Every other column
+        {
+            for (int y = 0; y < gridManager.Height; y++)
+            {
+                Tile tile = gridManager.GetTileAt(x, y);
+                if (tile != null)
+                {
+                    tile.MakeTileFall();
+                }
+            }
+            columnsFallen++;
+        }
+        Debug.Log($"Made {columnsFallen} columns fall for testing");
+    }
+
+    private void PrimeEntireRow(int row)
+    {
+        if (gridManager == null || row < 0 || row >= gridManager.Height) return;
+
+        int primedCount = 0;
+        for (int x = 0; x < gridManager.Width; x++)
+        {
+            Tile tile = gridManager.GetTileAt(x, row);
+            if (tile != null)
+            {
+                tile.PrimeTile();
+                primedCount++;
+            }
+        }
+        Debug.Log($"Primed {primedCount} tiles in row {row}");
+    }
+
+    private void BlackenEntireRow(int row)
+    {
+        if (gridManager == null || row < 0 || row >= gridManager.Height) return;
+
+        int blackenedCount = 0;
+        for (int x = 0; x < gridManager.Width; x++)
+        {
+            Tile tile = gridManager.GetTileAt(x, row);
+            if (tile != null)
+            {
+                tile.BlackenTile();
+                blackenedCount++;
+            }
+        }
+        Debug.Log($"Blackened {blackenedCount} tiles in row {row}");
+    }
+
+    private void EnhanceEdgeColumns()
+    {
+        if (gridManager == null) return;
+
+        int enhancedCount = 0;
+        // Left edge
+        for (int y = 0; y < gridManager.Height; y++)
+        {
+            Tile tile = gridManager.GetTileAt(0, y);
+            if (tile != null)
+            {
+                tile.AdvantageTile(enhancementCharges);
+                enhancedCount++;
+            }
+        }
+        // Right edge
+        for (int y = 0; y < gridManager.Height; y++)
+        {
+            Tile tile = gridManager.GetTileAt(gridManager.Width - 1, y);
+            if (tile != null)
+            {
+                tile.AdvantageTile(enhancementCharges);
+                enhancedCount++;
+            }
+        }
+        Debug.Log($"Enhanced {enhancedCount} tiles in edge columns");
+    }
+
+    private void PlaceGridMarkerPattern()
+    {
+        if (gridManager == null) return;
+
+        int markersPlaced = 0;
+        // Place markers in a grid pattern (every 3rd tile)
+        for (int x = 0; x < gridManager.Width; x += 3)
+        {
+            for (int y = 0; y < gridManager.Height; y += 3)
+            {
+                if (gridManager.PlaceMarker(x, y))
+                {
+                    markersPlaced++;
+                }
+            }
+        }
+        Debug.Log($"Placed {markersPlaced} markers in grid pattern");
+    }
+
+    private void ValidateGridIntegrity()
+    {
+        if (gridManager == null) return;
+
+        Debug.Log("=== GRID INTEGRITY VALIDATION ===");
+        Debug.Log($"Grid Dimensions: {gridManager.Width}x{gridManager.Height}");
+        Debug.Log($"Grid Ready State: {gridManager.IsGridReady}");
+        Debug.Log($"Playable Rows: {gridManager.GetPlayableRowCount()}/{gridManager.Height}");
+        
+        int nullTiles = 0;
+        int playableTiles = 0;
+        int fallenTiles = 0;
+        
+        for (int x = 0; x < gridManager.Width; x++)
+        {
+            for (int y = 0; y < gridManager.Height; y++)
+            {
+                Tile tile = gridManager.GetTileAt(x, y);
+                if (tile == null)
+                {
+                    nullTiles++;
+                    Debug.LogWarning($"Null tile found at ({x}, {y})");
+                }
+                else
+                {
+                    if (tile.IsPlayable) playableTiles++;
+                    else fallenTiles++;
+                }
+            }
+        }
+        
+        Debug.Log($"Validation Results: {nullTiles} null tiles, {playableTiles} playable, {fallenTiles} fallen");
+        if (nullTiles > 0)
+        {
+            Debug.LogError("Grid integrity compromised - null tiles detected!");
+        }
+        else
+        {
+            Debug.Log("Grid integrity validated successfully");
+        }
+    }
+
+    private void RunGridPerformanceTest()
+    {
+        if (gridManager == null) return;
+
+        Debug.Log("=== GRID PERFORMANCE TEST ===");
+        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+        
+        // Test tile access performance
+        int accessCount = 0;
+        for (int i = 0; i < 1000; i++)
+        {
+            for (int x = 0; x < gridManager.Width; x++)
+            {
+                for (int y = 0; y < gridManager.Height; y++)
+                {
+                    Tile tile = gridManager.GetTileAt(x, y);
+                    if (tile != null) accessCount++;
+                }
+            }
+        }
+        
+        stopwatch.Stop();
+        Debug.Log($"Performance Test Results:");
+        Debug.Log($"- Accessed {accessCount} tiles in {stopwatch.ElapsedMilliseconds}ms");
+        Debug.Log($"- Average access time: {(float)stopwatch.ElapsedMilliseconds / accessCount:F4}ms per tile");
+        Debug.Log($"- Grid throughput: {accessCount / (stopwatch.ElapsedMilliseconds / 1000f):F0} tiles/second");
     }
 
     private void TestGridBounds()

@@ -155,13 +155,10 @@ public class DebugSystem : MonoBehaviour
             // 4. Player and actions coordination
             RegisterPanel(new PlayerActionDebugPanel()); // PlayerActionManager + PlayerManager
             
-            // 5. Cube behavior and interactions
-            RegisterPanel(new CubeDebugPanel());      // CubeManager - cube behavior, face painting
-            
-            // 6. Individual cube-tile testing
+            // 5. Individual cube-tile testing
             RegisterPanel(new CubeIndividualPanel()); // Individual entity testing, lifecycle testing
             
-            // 7. Cross-system testing and scenarios
+            // 6. Cross-system testing and scenarios
             RegisterPanel(new TestingDebugPanel());   // Integration testing, scenarios
             
             Debug.Log($"DebugSystem: Successfully registered {debugPanels.Count} panels");
