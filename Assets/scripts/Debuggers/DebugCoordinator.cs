@@ -662,6 +662,231 @@ public class DebugCoordinator : MonoBehaviour
 
         return $"{workingCount} working, {errorCount} errors";
     }
+
+    /// <summary>
+    /// Provides integration testing capabilities for the Testing Debug Panel
+    /// </summary>
+    public void RunCrossSystemIntegrationTest()
+    {
+        StartOperation("Cross-System Integration Test");
+        
+        var results = new Dictionary<string, bool>();
+        
+        // Test each manager individually
+        foreach (var manager in discoveredManagers)
+        {
+            try
+            {
+                string managerName = manager.GetType().Name;
+                
+                // Basic health check
+                var status = manager.GetDebugStatus();
+                var debugData = manager.GetDebugData();
+                
+                bool isHealthy = !string.IsNullOrEmpty(status) && debugData != null;
+                results[managerName] = isHealthy;
+                
+                DebugLog($"Integration Test - {managerName}: {(isHealthy ? "PASS" : "FAIL")}");
+            }
+            catch (System.Exception e)
+            {
+                string managerName = manager?.GetType().Name ?? "Unknown";
+                results[managerName] = false;
+                DebugLog($"Integration Test - {managerName}: FAIL - {e.Message}");
+            }
+        }
+        
+        // Test cross-manager coordination
+        TestManagerCoordination();
+        
+        EndOperation();
+        
+        int passCount = results.Values.Count(r => r);
+        int totalCount = results.Count;
+        DebugLog($"Cross-System Integration Test Complete: {passCount}/{totalCount} managers passed");
+    }
+    
+    /// <summary>
+    /// Tests coordination between different managers
+    /// </summary>
+    private void TestManagerCoordination()
+    {
+        DebugLog("Testing manager coordination...");
+        
+        // Test scenario: Save and restore state
+        try
+        {
+            string testScenarioName = "__integration_test_temp__";
+            
+            SaveCurrentScenario(testScenarioName);
+            
+            // Modify some states
+            foreach (var manager in discoveredManagers.Take(2))
+            {
+                try
+                {
+                    manager.ResetToDefaults();
+                }
+                catch (System.Exception e)
+                {
+                    DebugLog($"Coordination test - Reset failed for {manager.GetType().Name}: {e.Message}");
+                }
+            }
+            
+            // Restore state
+            LoadScenario(testScenarioName);
+            
+            // Clean up test scenario
+            DeleteScenario(testScenarioName);
+            
+            DebugLog("Manager coordination test: PASS");
+        }
+        catch (System.Exception e)
+        {
+            DebugLog($"Manager coordination test: FAIL - {e.Message}");
+        }
+    }
+    
+    /// <summary>
+    /// Provides stress testing capabilities
+    /// </summary>
+    public void RunStressTest(int operationCount = 10)
+    {
+        StartOperation($"Stress Test ({operationCount} operations)");
+        
+        int successCount = 0;
+        int errorCount = 0;
+        
+        for (int i = 0; i < operationCount; i++)
+        {
+            try
+            {
+                // Perform various operations rapidly
+                switch (i % 4)
+                {
+                    case 0:
+                        GetAllManagerStatuses();
+                        break;
+                    case 1:
+                        GetAllManagerDebugData();
+                        break;
+                    case 2:
+                        ValidateAllSystems();
+                        break;
+                    case 3:
+                        ResetAllManagersToDefaults();
+                        break;
+                }
+                
+                successCount++;
+            }
+            catch (System.Exception e)
+            {
+                errorCount++;
+                DebugLog($"Stress test operation {i} failed: {e.Message}");
+            }
+        }
+        
+        EndOperation();
+        DebugLog($"Stress test complete: {successCount} success, {errorCount} errors");
+    }
+    
+    /// <summary>
+    /// Gets detailed system health report for Testing Debug Panel
+    /// </summary>
+    public SystemHealthReport GetSystemHealthReport()
+    {
+        var report = new SystemHealthReport
+        {
+            Timestamp = System.DateTime.Now,
+            TotalManagers = discoveredManagers.Count,
+            HealthyManagers = 0,
+            UnhealthyManagers = 0,
+            ManagerDetails = new Dictionary<string, ManagerHealth>(),
+            OverallHealth = SystemHealth.Unknown
+        };
+        
+        foreach (var manager in discoveredManagers)
+        {
+            var health = new ManagerHealth();
+            health.ManagerName = manager.GetType().Name;
+            
+            try
+            {
+                health.Status = manager.GetDebugStatus();
+                health.DebugData = manager.GetDebugData();
+                health.IsResponsive = true;
+                health.LastError = null;
+                
+                // Basic health assessment
+                health.IsHealthy = !string.IsNullOrEmpty(health.Status) && health.DebugData != null;
+                
+                if (health.IsHealthy)
+                {
+                    report.HealthyManagers++;
+                }
+                else
+                {
+                    report.UnhealthyManagers++;
+                }
+            }
+            catch (System.Exception e)
+            {
+                health.IsResponsive = false;
+                health.IsHealthy = false;
+                health.LastError = e.Message;
+                health.Status = "ERROR";
+                health.DebugData = null;
+                report.UnhealthyManagers++;
+            }
+            
+            report.ManagerDetails[health.ManagerName] = health;
+        }
+        
+        // Determine overall health
+        if (report.UnhealthyManagers == 0)
+        {
+            report.OverallHealth = SystemHealth.Healthy;
+        }
+        else if (report.HealthyManagers > report.UnhealthyManagers)
+        {
+            report.OverallHealth = SystemHealth.Degraded;
+        }
+        else
+        {
+            report.OverallHealth = SystemHealth.Unhealthy;
+        }
+        
+        return report;
+    }
+    
+    /// <summary>
+    /// Quick panel integration check - used by panels to verify coordinator availability
+    /// </summary>
+    public bool IsPanelIntegrationReady()
+    {
+        return discoveredManagers.Count > 0 && !isOperationInProgress;
+    }
+    
+    /// <summary>
+    /// Provides a quick coordination test for panels
+    /// </summary>
+    public bool QuickCoordinationTest()
+    {
+        try
+        {
+            // Quick test: can we get status from all managers?
+            foreach (var manager in discoveredManagers)
+            {
+                manager.GetDebugStatus();
+            }
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
     #endregion
 
     #region Utility Methods
@@ -708,5 +933,42 @@ public class DebugScenario
     public string name;
     public string timestamp;
     public Dictionary<string, Dictionary<string, object>> managerConfigurations;
+}
+
+/// <summary>
+/// System health report for debugging panels
+/// </summary>
+public class SystemHealthReport
+{
+    public System.DateTime Timestamp;
+    public int TotalManagers;
+    public int HealthyManagers;
+    public int UnhealthyManagers;
+    public Dictionary<string, ManagerHealth> ManagerDetails;
+    public SystemHealth OverallHealth;
+}
+
+/// <summary>
+/// Health information for individual managers
+/// </summary>
+public class ManagerHealth
+{
+    public string ManagerName;
+    public bool IsHealthy;
+    public bool IsResponsive;
+    public string Status;
+    public Dictionary<string, object> DebugData;
+    public string LastError;
+}
+
+/// <summary>
+/// Overall system health states
+/// </summary>
+public enum SystemHealth
+{
+    Unknown,
+    Healthy,
+    Degraded,
+    Unhealthy
 }
 #endregion

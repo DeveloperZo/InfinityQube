@@ -156,7 +156,7 @@ public class DebugSystem : MonoBehaviour
             RegisterPanel(new PlayerActionDebugPanel()); // PlayerActionManager + PlayerManager
             
             // 5. Individual cube-tile testing
-            RegisterPanel(new CubeIndividualPanel()); // Individual entity testing, lifecycle testing
+            RegisterPanel(new CubeTileIndividualPanel()); // Individual entity testing, lifecycle testing
             
             // 6. Cross-system testing and scenarios
             RegisterPanel(new TestingDebugPanel());   // Integration testing, scenarios
