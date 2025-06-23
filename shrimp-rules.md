@@ -30,6 +30,7 @@ Key Trade-offs: [Benefits vs costs/risks]
 - NEVER introduce new singleton patterns without approval
 - NEVER modify core enumerations (Enumerations.cs) without approval
 - NEVER change Unity lifecycle patterns without approval
+- NEVER create new documentation without approval
 
 ---
 
@@ -338,6 +339,7 @@ public void PlaceMarker(int x, int y)
 **Debug**: Standardized debug flags + `[ManagerName] {method}: Message` format  
 **POC Marking**: Use `// POC:` comments for quick implementations  
 **Tracking**: No formal technical debt tracking - if it works, it works  
+**Documentation** Make edits to existing documentation before creating new documents (unless its makes sound sense)
 
 ---
 
