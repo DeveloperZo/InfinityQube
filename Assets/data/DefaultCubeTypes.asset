@@ -38,10 +38,42 @@ MonoBehaviour:
     detonationRadius: 0
     maxHitPoints: 1
   - name: Reinforced
-    prefab: {fileID: 1728893673582764340, guid: 28923bfb13f3dde44b857f03a0188e95, type: 3}
-    material: {fileID: 2100000, guid: a85f9ed5dfb6ed64b89ade32ef958cc5, type: 2}
+    prefab: {fileID: 9015426373669967719, guid: 27d5b12d461fa594cb0cbdc6ccb7e113, type: 3}
+    material: {fileID: 2100000, guid: 4b123f0ccf0ca2349970846f0d3a8b32, type: 2}
     canBeMarked: 1
     causesCorruption: 0
     enablesDetonation: 0
     detonationRadius: 0
     maxHitPoints: 3
+  - name: Default
+    prefab: {fileID: 0}
+    material: {fileID: 0}
+    canBeMarked: 1
+    causesCorruption: 0
+    enablesDetonation: 0
+    detonationRadius: 0
+    maxHitPoints: 1
+  - name: Default
+    prefab: {fileID: 0}
+    material: {fileID: 0}
+    canBeMarked: 1
+    causesCorruption: 0
+    enablesDetonation: 0
+    detonationRadius: 0
+    maxHitPoints: 1
+  - name: Default
+    prefab: {fileID: 0}
+    material: {fileID: 0}
+    canBeMarked: 1
+    causesCorruption: 0
+    enablesDetonation: 0
+    detonationRadius: 0
+    maxHitPoints: 1
+  - name: Default
+    prefab: {fileID: 0}
+    material: {fileID: 0}
+    canBeMarked: 1
+    causesCorruption: 0
+    enablesDetonation: 0
+    detonationRadius: 0
+    maxHitPoints: 1
