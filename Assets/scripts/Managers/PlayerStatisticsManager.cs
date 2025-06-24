@@ -4,6 +4,7 @@ using System.Collections;
 using System;
 using System.IO;
 using System.Linq;
+using static Enumerations;
 
 public class PlayerStatisticsManager : MonoBehaviour, IManagerDebugInterface
 {
@@ -38,9 +39,22 @@ public class PlayerStatisticsManager : MonoBehaviour, IManagerDebugInterface
     private List<MessageInteractionEvent> activeMessageEvents = new List<MessageInteractionEvent>();
     private Dictionary<string, MarkerPlacementEvent> activeMarkers = new Dictionary<string, MarkerPlacementEvent>();
     
+    // Advanced Analytics Tracking
+    private Dictionary<string, float> strategicDecisionTimes = new Dictionary<string, float>();
+    private List<FacePaintingEvent> facePaintingEvents = new List<FacePaintingEvent>();
+    private float sessionAPM = 0f;
+    private int totalActions = 0;
+    private float lastActionTime = 0f;
+    private List<float> recentActionTimes = new List<float>();
+    private Dictionary<string, int> actionCounts = new Dictionary<string, int>();
+    private float lastDecisionStartTime = 0f;
+    private string currentDecisionType = "";
+    
     // Performance Optimization
     private float positionTrackingInterval = 0.1f;
     private int maxPositionHistory = 1000;
+    private float apmCalculationInterval = 5f; // Calculate APM every 5 seconds
+    private float lastAPMCalculationTime = 0f;
     #endregion
 
     #region Singleton Pattern
@@ -105,14 +119,28 @@ public class PlayerStatisticsManager : MonoBehaviour, IManagerDebugInterface
     
     private void OnApplicationQuit()
     {
+        DebugLog("🚪 Application quitting - preparing final save");
+        
         // Always save when quitting, regardless of settings when not in editor
         if ((emergencySaveOnQuit || !Application.isEditor) && currentSession != null)
         {
+            // Calculate final duration
+            float currentTime = Time.time;
+            float calculatedDuration = currentTime - sessionStartTime;
+            currentSession.sessionDuration = Mathf.Max(0f, calculatedDuration);
+            
+            DebugLog($"💾 Final save: {calculatedDuration:F2}s duration, {currentSession.movementData.totalMoves} moves");
+            
             // Mark as completed if we have meaningful data
             if (currentSession.sessionDuration > 10f || currentSession.movementData.totalMoves > 5)
             {
                 FinalizeSessionData();
                 currentSession.isCompleted = true;
+            }
+            else
+            {
+                // For very short sessions, still save but mark as incomplete
+                currentSession.isCompleted = false;
             }
             
             PerformEmergencySave();
@@ -213,9 +241,23 @@ public class PlayerStatisticsManager : MonoBehaviour, IManagerDebugInterface
         activeMessageEvents.Clear();
         activeMarkers.Clear();
         
+        // Clear advanced analytics tracking
+        strategicDecisionTimes.Clear();
+        facePaintingEvents.Clear();
+        sessionAPM = 0f;
+        totalActions = 0;
+        lastActionTime = 0f;
+        recentActionTimes.Clear();
+        actionCounts.Clear();
+        lastDecisionStartTime = 0f;
+        currentDecisionType = "";
+        lastAPMCalculationTime = 0f;
+        
         isCollecting = true;
         
         RecordInitialState();
+        
+        DebugLog($"📊 Session initialized at time {sessionStartTime}, ID: {currentSession.sessionId}");
     }
     
     public void CompleteCurrentSession()
@@ -229,10 +271,34 @@ public class PlayerStatisticsManager : MonoBehaviour, IManagerDebugInterface
         DebugLog($"✅ Session completed: {currentSession.sessionId}");
     }
     
+    // Helper class for face painting tracking
+    [System.Serializable]
+    public class FacePaintingEvent
+    {
+        public float timestamp;
+        public Vector2Int cubePosition;
+        public string faceDirection;
+        public bool wasSuccessful;
+        
+        public FacePaintingEvent(float time, Vector2Int pos, string face)
+        {
+            timestamp = time;
+            cubePosition = pos;
+            faceDirection = face;
+            wasSuccessful = false;
+        }
+    }
+    
     private void FinalizeSessionData()
     {
-        currentSession.sessionDuration = Time.time - sessionStartTime;
+        float currentTime = Time.time;
+        float calculatedDuration = currentTime - sessionStartTime;
+        
+        // Ensure duration is never negative
+        currentSession.sessionDuration = Mathf.Max(0f, calculatedDuration);
         currentSession.isCompleted = true;
+        
+        DebugLog($"🕐 Session duration calculated: {currentSession.sessionDuration:F2}s (start: {sessionStartTime:F2}, end: {currentTime:F2})");
         
         // Calculate final movement data
         currentSession.movementData.CalculateDistanceTraveled();
@@ -244,11 +310,16 @@ public class PlayerStatisticsManager : MonoBehaviour, IManagerDebugInterface
         // Calculate tutorial progress
         CalculateTutorialProgress();
         
+        // Calculate advanced analytics
+        CalculateAdvancedAnalytics();
+        
         // Copy final player statistics
         if (playerManager != null)
         {
             currentSession.finalStats = playerManager.GetCurrentStatistics();
         }
+        
+        DebugLog($"📈 Final stats: {currentSession.movementData.totalMoves} moves, {currentSession.finalStats.playerDeaths} deaths");
     }
     #endregion
 
@@ -257,6 +328,7 @@ public class PlayerStatisticsManager : MonoBehaviour, IManagerDebugInterface
     {
         TrackPlayerMovement();
         UpdateSessionTimer();
+        UpdateAPMCalculation();
     }
     
     private void TrackPlayerMovement()
@@ -287,6 +359,9 @@ public class PlayerStatisticsManager : MonoBehaviour, IManagerDebugInterface
             tileVisitCounts[position] = 0;
         tileVisitCounts[position]++;
         
+        // Record movement as an action for APM calculation
+        RecordAction("movement");
+        
         // Maintain position history limit
         if (currentSession.movementData.positionHistory.Count > maxPositionHistory)
         {
@@ -298,6 +373,16 @@ public class PlayerStatisticsManager : MonoBehaviour, IManagerDebugInterface
     private void UpdateSessionTimer()
     {
         // Timer updates handled in FinalizeSessionData
+    }
+    
+    private void UpdateAPMCalculation()
+    {
+        float currentTime = Time.time;
+        if (currentTime - lastAPMCalculationTime >= apmCalculationInterval)
+        {
+            CalculateAPM();
+            lastAPMCalculationTime = currentTime;
+        }
     }
     
     private void RecordInitialState()
@@ -318,6 +403,7 @@ public class PlayerStatisticsManager : MonoBehaviour, IManagerDebugInterface
         var collisionEvent = new CubeCollisionEvent(deathPosition, Time.time, "Unknown", true);
         currentSession.cubeData.collisionEvents.Add(collisionEvent);
         
+        RecordAction("death");
         DebugLog($"💀 Player death recorded at {deathPosition}");
     }
     
@@ -360,6 +446,10 @@ public class PlayerStatisticsManager : MonoBehaviour, IManagerDebugInterface
         string markerKey = $"{markerType}_{position.x}_{position.y}";
         activeMarkers[markerKey] = placementEvent;
         
+        // Add strategic analysis
+        RecordStrategicDecision("marker_placement", position, markerType);
+        RecordAction("marker_placement");
+        
         DebugLog($"📍 {markerType} marker placed at {position}");
     }
     
@@ -382,6 +472,7 @@ public class PlayerStatisticsManager : MonoBehaviour, IManagerDebugInterface
             activeMarkers.Remove(markerKey);
         }
         
+        RecordAction("marker_trigger");
         DebugLog($"🎯 {markerType} marker triggered at {position}, hit: {hitTarget}, cubes: {cubesAffected}");
     }
     #endregion
@@ -399,6 +490,7 @@ public class PlayerStatisticsManager : MonoBehaviour, IManagerDebugInterface
             currentSession.cubeData.cubeTypesCaptured[cubeType] = 0;
         currentSession.cubeData.cubeTypesCaptured[cubeType]++;
         
+        RecordAction("cube_capture");
         DebugLog($"📦 {cubeType} cube captured at {position} via {method}");
     }
     
@@ -428,6 +520,69 @@ public class PlayerStatisticsManager : MonoBehaviour, IManagerDebugInterface
     }
     #endregion
 
+    #region Advanced Analytics Event Handlers
+    public void OnFacePainted(Vector2Int cubePosition, CubeFace face, FaceStatus status)
+    {
+        if (!isCollecting) return;
+        
+        string faceDirection = ConvertCubeFaceToString(face);
+        var paintingEvent = new FacePaintingEvent(Time.time, cubePosition, faceDirection);
+        paintingEvent.wasSuccessful = (status != FaceStatus.None);
+        
+        facePaintingEvents.Add(paintingEvent);
+        currentSession.facePaintingData.paintingEvents.Add(new CubePaintingEvent(Time.time, cubePosition, faceDirection, "paint"));
+        
+        // Update face painting statistics
+        if (!currentSession.facePaintingData.facesPaintedByType.ContainsKey(faceDirection))
+            currentSession.facePaintingData.facesPaintedByType[faceDirection] = 0;
+        currentSession.facePaintingData.facesPaintedByType[faceDirection]++;
+        
+        currentSession.facePaintingData.totalFacesPainted++;
+        
+        RecordAction("face_painting");
+        DebugLog($"🎨 Face painted: {faceDirection} at {cubePosition}, success: {paintingEvent.wasSuccessful}");
+    }
+    
+    public void OnResourceWasted(string resourceType, float wasteAmount)
+    {
+        if (!isCollecting) return;
+        
+        if (!currentSession.resourceMetrics.wasteByCategory.ContainsKey(resourceType))
+            currentSession.resourceMetrics.wasteByCategory[resourceType] = 0;
+        currentSession.resourceMetrics.wasteByCategory[resourceType]++;
+        
+        if (resourceType == "marker")
+            currentSession.resourceMetrics.wastedMarkers++;
+            
+        DebugLog($"🗑️ Resource wasted: {resourceType}, amount: {wasteAmount}");
+    }
+    
+    public void OnSkillImprovement(string skillArea, float improvement)
+    {
+        if (!isCollecting) return;
+        
+        var skillMeasurement = new SkillMeasurement(Time.time, skillArea, improvement, "performance_based");
+        currentSession.learningData.skillMeasurements.Add(skillMeasurement);
+        
+        // Update skill levels
+        if (!currentSession.learningData.skillLevels.ContainsKey(skillArea))
+            currentSession.learningData.skillLevels[skillArea] = 0f;
+        
+        float previousLevel = currentSession.learningData.skillLevels[skillArea];
+        float newLevel = previousLevel + improvement;
+        currentSession.learningData.skillLevels[skillArea] = newLevel;
+        
+        // Record improvement event if significant
+        if (improvement > 0.1f)
+        {
+            var improvementEvent = new ImprovementEvent(Time.time, skillArea, previousLevel, newLevel);
+            currentSession.learningData.improvementEvents.Add(improvementEvent);
+        }
+        
+        DebugLog($"📈 Skill improvement: {skillArea}, +{improvement:F2} (now {newLevel:F2})");
+    }
+    #endregion
+    
     #region Tutorial Progress Tracking
     public void OnMessageDisplayed(string messageContent, int moveStep)
     {
@@ -511,6 +666,86 @@ public class PlayerStatisticsManager : MonoBehaviour, IManagerDebugInterface
         currentSession.tutorialData.totalPauseTime = messages.Sum(m => m.readTime);
     }
     
+    private void CalculateAdvancedAnalytics()
+    {
+        // Final APM calculation
+        CalculateAPM();
+        
+        // Calculate average APM for the session
+        if (currentSession.resourceMetrics.apmSamples.Count > 0)
+        {
+            currentSession.resourceMetrics.averageAPM = 
+                currentSession.resourceMetrics.apmSamples.Average(s => s.apmValue);
+        }
+        
+        // Calculate strategic decision analytics
+        if (currentSession.strategicData.decisionEvents.Count > 0)
+        {
+            currentSession.strategicData.averageDecisionTime = 
+                currentSession.strategicData.decisionEvents.Average(d => d.decisionTime);
+                
+            // Calculate time between decisions
+            var sortedDecisions = currentSession.strategicData.decisionEvents
+                .OrderBy(d => d.timestamp).ToList();
+            if (sortedDecisions.Count > 1)
+            {
+                float totalTimeBetween = 0f;
+                for (int i = 1; i < sortedDecisions.Count; i++)
+                {
+                    totalTimeBetween += sortedDecisions[i].timestamp - sortedDecisions[i - 1].timestamp;
+                }
+                currentSession.strategicData.timeBetweenDecisions = totalTimeBetween / (sortedDecisions.Count - 1);
+            }
+        }
+        
+        // Analyze face painting efficiency
+        AnalyzeFacePaintingEfficiency();
+        
+        // Update learning progression
+        UpdateLearningProgression();
+        
+        // Calculate resource efficiency metrics
+        CalculateResourceEfficiency();
+        
+        DebugLog("📊 Advanced analytics calculations completed");
+    }
+    
+    private void CalculateResourceEfficiency()
+    {
+        // Calculate optimal timing percentage
+        var timingEvents = currentSession.resourceMetrics.timingEvents;
+        if (timingEvents.Count > 0)
+        {
+            int perfectTimings = timingEvents.Count(t => t.wasPerfect);
+            currentSession.resourceMetrics.optimalTimingPercentage = (float)perfectTimings / timingEvents.Count;
+            currentSession.resourceMetrics.perfectTimingCount = perfectTimings;
+            currentSession.resourceMetrics.poorTimingCount = timingEvents.Count - perfectTimings;
+            
+            // Calculate average reaction time
+            currentSession.resourceMetrics.averageReactionTime = 
+                timingEvents.Average(t => Mathf.Abs(t.actualTime - t.optimalTime));
+        }
+        
+        // Count inefficient movements (simplified)
+        if (currentSession.movementData.positionHistory.Count > 2)
+        {
+            int backAndForthMovements = 0;
+            for (int i = 2; i < currentSession.movementData.positionHistory.Count; i++)
+            {
+                Vector2Int current = currentSession.movementData.positionHistory[i];
+                Vector2Int previous = currentSession.movementData.positionHistory[i - 1];
+                Vector2Int twoBefore = currentSession.movementData.positionHistory[i - 2];
+                
+                // Check if player moved back to where they were 2 moves ago
+                if (current == twoBefore && current != previous)
+                {
+                    backAndForthMovements++;
+                }
+            }
+            currentSession.resourceMetrics.inefficientMovements = backAndForthMovements;
+        }
+    }
+    
     private string GetGridAreaKey(Vector2Int position)
     {
         // Simplified grid area classification
@@ -527,6 +762,168 @@ public class PlayerStatisticsManager : MonoBehaviour, IManagerDebugInterface
     private string GetGameVersion()
     {
         return Application.version;
+    }
+    #endregion
+
+    #region Advanced Analytics Calculations
+    private void RecordStrategicDecision(string decisionType, Vector2Int position, string context)
+    {
+        if (!isCollecting) return;
+        
+        float currentTime = Time.time;
+        
+        // If we were tracking a decision, finalize it
+        if (!string.IsNullOrEmpty(currentDecisionType) && lastDecisionStartTime > 0)
+        {
+            float decisionTime = currentTime - lastDecisionStartTime;
+            var decisionEvent = new DecisionEvent(lastDecisionStartTime, currentDecisionType, decisionTime, context);
+            currentSession.strategicData.decisionEvents.Add(decisionEvent);
+            
+            DebugLog($"⚡ Decision completed: {currentDecisionType} took {decisionTime:F2}s");
+        }
+        
+        // Start tracking this new decision
+        lastDecisionStartTime = currentTime;
+        currentDecisionType = decisionType;
+        
+        if (!strategicDecisionTimes.ContainsKey(decisionType))
+            strategicDecisionTimes[decisionType] = 0f;
+    }
+    
+    private void RecordAction(string actionType)
+    {
+        if (!isCollecting) return;
+        
+        float currentTime = Time.time;
+        totalActions++;
+        lastActionTime = currentTime;
+        
+        // Track recent actions for APM calculation
+        recentActionTimes.Add(currentTime);
+        
+        // Remove actions older than 1 minute
+        recentActionTimes.RemoveAll(time => currentTime - time > 60f);
+        
+        // Update action counts
+        if (!actionCounts.ContainsKey(actionType))
+            actionCounts[actionType] = 0;
+        actionCounts[actionType]++;
+    }
+    
+    private void CalculateAPM()
+    {
+        if (!isCollecting || recentActionTimes.Count == 0) return;
+        
+        float currentTime = Time.time;
+        
+        // Count actions in the last minute
+        int actionsInLastMinute = recentActionTimes.Count(time => currentTime - time <= 60f);
+        sessionAPM = actionsInLastMinute;
+        
+        // Create APM sample
+        string dominantAction = GetDominantActionType();
+        var apmSample = new APMSample(currentTime, actionsInLastMinute, dominantAction);
+        apmSample.apmValue = sessionAPM;
+        currentSession.resourceMetrics.apmSamples.Add(apmSample);
+        
+        // Update peak APM
+        if (sessionAPM > currentSession.resourceMetrics.peakAPM)
+            currentSession.resourceMetrics.peakAPM = sessionAPM;
+            
+        currentSession.resourceMetrics.currentAPM = sessionAPM;
+        
+        DebugLog($"📊 APM calculated: {sessionAPM:F1} (peak: {currentSession.resourceMetrics.peakAPM:F1})");
+    }
+    
+    private void AnalyzeFacePaintingEfficiency()
+    {
+        if (facePaintingEvents.Count == 0) return;
+        
+        int successfulPaints = facePaintingEvents.Count(e => e.wasSuccessful);
+        currentSession.facePaintingData.paintingSuccessRate = (float)successfulPaints / facePaintingEvents.Count;
+        
+        // Calculate most painted face
+        if (currentSession.facePaintingData.facesPaintedByType.Count > 0)
+        {
+            var mostPainted = currentSession.facePaintingData.facesPaintedByType
+                .OrderByDescending(kvp => kvp.Value)
+                .First();
+            currentSession.facePaintingData.mostPaintedFace = mostPainted.Key;
+            currentSession.facePaintingData.mostPaintedFaceCount = mostPainted.Value;
+        }
+        
+        // Calculate success rate by face
+        foreach (var faceGroup in facePaintingEvents.GroupBy(e => e.faceDirection))
+        {
+            string face = faceGroup.Key;
+            int total = faceGroup.Count();
+            int successful = faceGroup.Count(e => e.wasSuccessful);
+            currentSession.facePaintingData.successRateByFace[face] = total > 0 ? (float)successful / total : 0f;
+        }
+        
+        // Calculate average painting interval
+        if (facePaintingEvents.Count > 1)
+        {
+            var sortedEvents = facePaintingEvents.OrderBy(e => e.timestamp).ToList();
+            float totalInterval = 0f;
+            for (int i = 1; i < sortedEvents.Count; i++)
+            {
+                totalInterval += sortedEvents[i].timestamp - sortedEvents[i - 1].timestamp;
+            }
+            currentSession.facePaintingData.averagePaintingInterval = totalInterval / (sortedEvents.Count - 1);
+        }
+    }
+    
+    private void UpdateLearningProgression()
+    {
+        // Calculate overall skill progression
+        if (currentSession.learningData.skillLevels.Count > 0)
+        {
+            currentSession.learningData.overallSkillProgression = 
+                currentSession.learningData.skillLevels.Values.Average();
+        }
+        
+        // Calculate improvement rates
+        foreach (var skill in currentSession.learningData.skillLevels.Keys)
+        {
+            var improvements = currentSession.learningData.improvementEvents
+                .Where(e => e.skillName == skill)
+                .OrderBy(e => e.timestamp)
+                .ToList();
+                
+            if (improvements.Count > 1)
+            {
+                float totalImprovement = improvements.Sum(e => e.improvementAmount);
+                float timeSpan = improvements.Last().timestamp - improvements.First().timestamp;
+                currentSession.learningData.improvementRates[skill] = timeSpan > 0 ? totalImprovement / timeSpan : 0f;
+            }
+        }
+        
+        // Calculate overall improvement rate
+        if (currentSession.learningData.improvementRates.Count > 0)
+        {
+            currentSession.learningData.overallImprovementRate = 
+                currentSession.learningData.improvementRates.Values.Average();
+        }
+    }
+    
+    private string GetDominantActionType()
+    {
+        if (actionCounts.Count == 0) return "movement";
+        
+        return actionCounts.OrderByDescending(kvp => kvp.Value).First().Key;
+    }
+    
+    private string ConvertCubeFaceToString(CubeFace face)
+    {
+        switch (face)
+        {
+            case CubeFace.Front: return "front";
+            case CubeFace.Back: return "back";
+            case CubeFace.Top: return "top";
+            case CubeFace.Bottom: return "bottom";
+            default: return "unknown";
+        }
     }
     #endregion
 
@@ -789,9 +1186,13 @@ public class PlayerStatisticsManager : MonoBehaviour, IManagerDebugInterface
             return;
         }
         
-        // Update current session data
-        currentSession.sessionDuration = Time.time - sessionStartTime;
+        // Update current session data with proper duration calculation
+        float currentTime = Time.time;
+        float calculatedDuration = currentTime - sessionStartTime;
+        currentSession.sessionDuration = Mathf.Max(0f, calculatedDuration);
         currentSession.timestamp = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
+        
+        DebugLog($"💾 Manual save: duration {currentSession.sessionDuration:F2}s, moves {currentSession.movementData.totalMoves}");
         
         // Finalize data if we have meaningful content
         if (currentSession.movementData.totalMoves > 0 || currentSession.sessionDuration > 5f)
@@ -847,7 +1248,13 @@ public class PlayerStatisticsManager : MonoBehaviour, IManagerDebugInterface
             ["Auto Save Enabled"] = autoSaveOnCompletion,
             ["Emergency Save Enabled"] = emergencySaveOnQuit,
             ["Detailed Tracking"] = enableDetailedTracking,
-            ["Collection Enabled"] = enableStatisticsCollection
+            ["Collection Enabled"] = enableStatisticsCollection,
+            ["Current APM"] = sessionAPM,
+            ["Total Actions"] = totalActions,
+            ["Strategic Decisions"] = currentSession?.strategicData?.decisionEvents?.Count ?? 0,
+            ["Face Painting Events"] = facePaintingEvents?.Count ?? 0,
+            ["APM Samples"] = currentSession?.resourceMetrics?.apmSamples?.Count ?? 0,
+            ["Recent Actions (1min)"] = recentActionTimes?.Count ?? 0
         };
     }
 
@@ -863,6 +1270,18 @@ public class PlayerStatisticsManager : MonoBehaviour, IManagerDebugInterface
         tileVisitCounts.Clear();
         activeMessageEvents.Clear();
         activeMarkers.Clear();
+        
+        // Reset advanced analytics tracking
+        strategicDecisionTimes.Clear();
+        facePaintingEvents.Clear();
+        sessionAPM = 0f;
+        totalActions = 0;
+        lastActionTime = 0f;
+        recentActionTimes.Clear();
+        actionCounts.Clear();
+        lastDecisionStartTime = 0f;
+        currentDecisionType = "";
+        lastAPMCalculationTime = 0f;
         
         // Reset state
         isCollecting = false;

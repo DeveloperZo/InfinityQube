@@ -22,6 +22,12 @@ public class PlayerSessionData
     [Header("Summary Statistics")]
     public PlayerStatistics finalStats;
     
+    [Header("Advanced Analytics")]
+    public StrategicDecisionData strategicData;
+    public FacePaintingAnalytics facePaintingData;
+    public ResourceEfficiencyMetrics resourceMetrics;
+    public LearningProgressionData learningData;
+    
     public PlayerSessionData()
     {
         sessionId = System.Guid.NewGuid().ToString();
@@ -31,6 +37,18 @@ public class PlayerSessionData
         cubeData = new CubeInteractionData();
         tutorialData = new TutorialProgressData();
         finalStats = new PlayerStatistics();
+        
+        // Initialize advanced analytics
+        strategicData = new StrategicDecisionData();
+        facePaintingData = new FacePaintingAnalytics();
+        resourceMetrics = new ResourceEfficiencyMetrics();
+        learningData = new LearningProgressionData();
+        
+        // Ensure dictionaries are initialized
+        movementData.timeInGridAreas = new Dictionary<string, float>();
+        cubeData.cubeTypesCaptured = new Dictionary<string, int>();
+        cubeData.cubeTypesEscaped = new Dictionary<string, int>();
+        tutorialData.conceptMasteryTimes = new Dictionary<string, float>();
     }
 }
 
@@ -209,5 +227,329 @@ public class MessageInteractionEvent
         moveStepDisplayed = step;
         wasSkipped = false;
         readTime = 0f;
+    }
+}
+
+[System.Serializable]
+public class StrategicDecisionData
+{
+    [Header("Decision Timing")]
+    public List<DecisionEvent> decisionEvents = new List<DecisionEvent>();
+    public float averageDecisionTime;
+    public float timeBetweenDecisions;
+    
+    [Header("Risk Assessment")]
+    public List<RiskAssessmentEvent> riskEvents = new List<RiskAssessmentEvent>();
+    public float riskTolerance;
+    public int conservativeDecisions;
+    public int aggressiveDecisions;
+    
+    [Header("Adaptation Patterns")]
+    public Dictionary<string, int> strategyChanges = new Dictionary<string, int>();
+    public List<AdaptationEvent> adaptationEvents = new List<AdaptationEvent>();
+    public float adaptationSpeed;
+    
+    public StrategicDecisionData()
+    {
+        strategyChanges = new Dictionary<string, int>();
+    }
+}
+
+[System.Serializable]
+public class DecisionEvent
+{
+    public float timestamp;
+    public string decisionType; // "marker_placement", "movement_direction", "resource_usage"
+    public float decisionTime; // Time taken to make decision
+    public string context; // What was happening when decision was made
+    public bool wasSuccessful;
+    
+    public DecisionEvent(float time, string type, float duration, string contextInfo)
+    {
+        timestamp = time;
+        decisionType = type;
+        decisionTime = duration;
+        context = contextInfo;
+        wasSuccessful = false;
+    }
+}
+
+[System.Serializable]
+public class RiskAssessmentEvent
+{
+    public float timestamp;
+    public string situation; // "multiple_cubes_nearby", "low_health", "limited_markers"
+    public string action; // "retreat", "advance", "wait"
+    public float riskLevel; // 0-1 scale
+    public bool wasCorrect;
+    
+    public RiskAssessmentEvent(float time, string sit, string act, float risk)
+    {
+        timestamp = time;
+        situation = sit;
+        action = act;
+        riskLevel = risk;
+        wasCorrect = false;
+    }
+}
+
+[System.Serializable]
+public class AdaptationEvent
+{
+    public float timestamp;
+    public string previousStrategy;
+    public string newStrategy;
+    public string trigger; // What caused the adaptation
+    public float timeToAdapt;
+    
+    public AdaptationEvent(float time, string prev, string newStrat, string trig)
+    {
+        timestamp = time;
+        previousStrategy = prev;
+        newStrategy = newStrat;
+        trigger = trig;
+        timeToAdapt = 0f;
+    }
+}
+
+[System.Serializable]
+public class FacePaintingAnalytics
+{
+    [Header("Cube Painting Frequency")]
+    public List<CubePaintingEvent> paintingEvents = new List<CubePaintingEvent>();
+    public Dictionary<string, int> facesPaintedByType = new Dictionary<string, int>();
+    public float averagePaintingInterval;
+    public int totalFacesPainted;
+    
+    [Header("Success Rates")]
+    public float paintingSuccessRate;
+    public Dictionary<string, float> successRateByFace = new Dictionary<string, float>();
+    public List<PaintingAttemptEvent> attemptEvents = new List<PaintingAttemptEvent>();
+    
+    [Header("Face Rotation Tracking")]
+    public List<FaceRotationEvent> rotationEvents = new List<FaceRotationEvent>();
+    public Dictionary<string, float> timeSpentOnFace = new Dictionary<string, float>();
+    public string mostPaintedFace;
+    public int mostPaintedFaceCount;
+    
+    public FacePaintingAnalytics()
+    {
+        facesPaintedByType = new Dictionary<string, int>();
+        successRateByFace = new Dictionary<string, float>();
+        timeSpentOnFace = new Dictionary<string, float>();
+    }
+}
+
+[System.Serializable]
+public class CubePaintingEvent
+{
+    public float timestamp;
+    public Vector2Int cubePosition;
+    public string faceDirection; // "front", "back", "left", "right", "top", "bottom"
+    public string paintType; // "light", "heavy", "prime"
+    public bool wasSuccessful;
+    public float paintDuration;
+    
+    public CubePaintingEvent(float time, Vector2Int pos, string face, string type)
+    {
+        timestamp = time;
+        cubePosition = pos;
+        faceDirection = face;
+        paintType = type;
+        wasSuccessful = false;
+        paintDuration = 0f;
+    }
+}
+
+[System.Serializable]
+public class PaintingAttemptEvent
+{
+    public float timestamp;
+    public Vector2Int position;
+    public string intendedFace;
+    public bool succeeded;
+    public string failureReason; // "missed_cube", "wrong_face", "interrupted"
+    
+    public PaintingAttemptEvent(float time, Vector2Int pos, string face, bool success)
+    {
+        timestamp = time;
+        position = pos;
+        intendedFace = face;
+        succeeded = success;
+        failureReason = success ? "" : "unknown";
+    }
+}
+
+[System.Serializable]
+public class FaceRotationEvent
+{
+    public float timestamp;
+    public Vector2Int cubePosition;
+    public string fromFace;
+    public string toFace;
+    public float rotationDuration;
+    
+    public FaceRotationEvent(float time, Vector2Int pos, string from, string to)
+    {
+        timestamp = time;
+        cubePosition = pos;
+        fromFace = from;
+        toFace = to;
+        rotationDuration = 0f;
+    }
+}
+
+[System.Serializable]
+public class ResourceEfficiencyMetrics
+{
+    [Header("APM Calculations")]
+    public List<APMSample> apmSamples = new List<APMSample>();
+    public float averageAPM; // Actions Per Minute
+    public float peakAPM;
+    public float currentAPM;
+    
+    [Header("Resource Waste Analysis")]
+    public int wastedMarkers;
+    public int inefficientMovements;
+    public float timeWastedIdle;
+    public Dictionary<string, int> wasteByCategory = new Dictionary<string, int>();
+    
+    [Header("Optimal Timing Metrics")]
+    public List<TimingEvent> timingEvents = new List<TimingEvent>();
+    public float optimalTimingPercentage;
+    public float averageReactionTime;
+    public int perfectTimingCount;
+    public int poorTimingCount;
+    
+    public ResourceEfficiencyMetrics()
+    {
+        wasteByCategory = new Dictionary<string, int>();
+    }
+}
+
+[System.Serializable]
+public class APMSample
+{
+    public float timestamp;
+    public int actionsInWindow; // Actions in the last minute
+    public float apmValue;
+    public string dominantActionType; // "movement", "marker_placement", "interaction"
+    
+    public APMSample(float time, int actions, string actionType)
+    {
+        timestamp = time;
+        actionsInWindow = actions;
+        apmValue = actions; // Will be calculated based on time window
+        dominantActionType = actionType;
+    }
+}
+
+[System.Serializable]
+public class TimingEvent
+{
+    public float timestamp;
+    public string eventType; // "marker_trigger", "cube_capture", "movement_decision"
+    public float optimalTime; // What the optimal timing would have been
+    public float actualTime; // When the player actually acted
+    public float efficiency; // 0-1 scale, 1 being perfect timing
+    public bool wasPerfect;
+    
+    public TimingEvent(float time, string type, float optimal, float actual)
+    {
+        timestamp = time;
+        eventType = type;
+        optimalTime = optimal;
+        actualTime = actual;
+        efficiency = 0f;
+        wasPerfect = false;
+    }
+}
+
+[System.Serializable]
+public class LearningProgressionData
+{
+    [Header("Skill Progression Indicators")]
+    public List<SkillMeasurement> skillMeasurements = new List<SkillMeasurement>();
+    public Dictionary<string, float> skillLevels = new Dictionary<string, float>();
+    public float overallSkillProgression;
+    public List<string> masteredSkills = new List<string>();
+    
+    [Header("Plateau Detection")]
+    public List<PlateauEvent> plateauEvents = new List<PlateauEvent>();
+    public bool isCurrentlyOnPlateau;
+    public float plateauDuration;
+    public string plateauSkill;
+    
+    [Header("Improvement Rates")]
+    public Dictionary<string, float> improvementRates = new Dictionary<string, float>();
+    public List<ImprovementEvent> improvementEvents = new List<ImprovementEvent>();
+    public float overallImprovementRate;
+    public float learningVelocity;
+    
+    public LearningProgressionData()
+    {
+        skillLevels = new Dictionary<string, float>();
+        improvementRates = new Dictionary<string, float>();
+    }
+}
+
+[System.Serializable]
+public class SkillMeasurement
+{
+    public float timestamp;
+    public string skillName; // "marker_accuracy", "movement_efficiency", "timing_precision"
+    public float skillValue; // 0-1 scale
+    public float confidenceLevel; // How reliable this measurement is
+    public string measurementMethod; // "performance_based", "time_based", "accuracy_based"
+    
+    public SkillMeasurement(float time, string skill, float value, string method)
+    {
+        timestamp = time;
+        skillName = skill;
+        skillValue = value;
+        measurementMethod = method;
+        confidenceLevel = 1f;
+    }
+}
+
+[System.Serializable]
+public class PlateauEvent
+{
+    public float startTime;
+    public float endTime;
+    public string skillName;
+    public float plateauLevel;
+    public bool isOngoing;
+    public string potentialCause; // "difficulty_spike", "lack_of_challenge", "fatigue"
+    
+    public PlateauEvent(float start, string skill, float level)
+    {
+        startTime = start;
+        skillName = skill;
+        plateauLevel = level;
+        isOngoing = true;
+        endTime = -1f;
+        potentialCause = "unknown";
+    }
+}
+
+[System.Serializable]
+public class ImprovementEvent
+{
+    public float timestamp;
+    public string skillName;
+    public float previousLevel;
+    public float newLevel;
+    public float improvementAmount;
+    public string trigger; // What caused the improvement
+    
+    public ImprovementEvent(float time, string skill, float prev, float newLevel)
+    {
+        timestamp = time;
+        skillName = skill;
+        previousLevel = prev;
+        this.newLevel = newLevel;
+        improvementAmount = newLevel - prev;
+        trigger = "unknown";
     }
 }

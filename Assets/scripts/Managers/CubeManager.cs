@@ -397,6 +397,13 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
         faceDurations[faceIndex] = duration;
         faceIndicators[faceIndex].SetActive(true);
         UpdateFaceVisuals();
+        
+        // Notify PlayerStatisticsManager of face painting
+        if (PlayerStatisticsManager.Instance != null)
+        {
+            PlayerStatisticsManager.Instance.OnFacePainted(position, face, status);
+        }
+        
         Debug.Log($"Painted {face} of cube at ({position.x}, {position.y}) with {status} status, duration: {duration}");
     }
 

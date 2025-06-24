@@ -59,7 +59,7 @@ public class CubeTileIndividualPanel : DebugPanelBase
     {
         base.Initialize();
         
-        gridManager = GridManager.Instance;
+        gridManager = Object.FindObjectOfType<GridManager>();
         playerManager = Object.FindObjectOfType<PlayerManager>();
         waveManager = Object.FindObjectOfType<WaveManager>();
 

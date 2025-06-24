@@ -4,7 +4,7 @@ using UnityEngine;
 public class BuildInfo : MonoBehaviour
 {
     [Header("Build Information")]
-    public string buildVersion = "0.1.0-alpha";
+    public string buildVersion = "0.2.623-alpha";
     public string buildDate;
 
     // Add to BuildInfo.cs around line 15

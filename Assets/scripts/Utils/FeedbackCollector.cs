@@ -4,14 +4,14 @@ using UnityEngine;
 public class FeedbackCollector : MonoBehaviour
 {
     [Header("Feedback Settings")]
-    [SerializeField] private KeyCode feedbackKey = KeyCode.F12;
+    [SerializeField] private KeyCode feedbackKey = KeyCode.F10;
     [SerializeField] private string feedbackEmail = "awilliams9293@gmail.com";
 
     private void Update()
     {
         if (Input.GetKeyDown(feedbackKey))
         {
-            OpenFeedbackForm();
+            TriggerManualStatisticsSave(); 
         }
     }
 
