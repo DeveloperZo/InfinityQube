@@ -19,6 +19,13 @@ A grid-based tactical puzzle game where players strategically place markers to i
 - **Robust Debug Infrastructure**: Extensive developer tooling supporting rapid iteration
 - **Cosmic-themed Minimalist Aesthetics**: Clean geometric design with stellar atmospheric elements
 
+## Architecture Documentation
+
+This Game Design Document serves as the master reference, with detailed implementation specifications provided in specialized architecture documents:
+
+- **[Artistic Architecture](5_ArtisticArchitecture.md)**: Comprehensive visual identity framework for external graphics and animation teams
+- **[Sound Architecture](6_SoundArchitecture.md)**: Complete audio system specifications with focus on infinity cube signature sounds and dynamic cadence patterns
+
 ## Game Overview
 
 ### Core Gameplay Loop
@@ -148,6 +155,19 @@ StageData Components:
 - **Cosmic Atmospheric Elements**: Dark space backgrounds with subtle particle effects
 - **Dynamic Feedback**: Responsive visual cues for player actions and state changes
 
+### **Detailed Visual Specifications**
+For comprehensive visual identity implementation, including infinity cube distinctive features, cosmic material systems, and external team integration guidelines, see:
+
+**→ [Artistic Architecture Document](5_ArtisticArchitecture.md)**
+
+This specialized document provides detailed specifications for:
+- Infinity Cube visual identity with luscious black & white cosmic dust materials
+- Four-cube aesthetic hierarchy and material systems
+- Cosmic/mathematical design principles with "Geometric Precision meets Cosmic Chaos"
+- Animation frameworks synchronized to 120 BPM rhythm
+- UI/UX cosmic control panel specifications
+- Unity prefab architecture for external graphics teams
+
 ### **UI/UX Design Principles**  
 - **Contextual Information**: TAB-toggleable interface with dynamic tips system
 - **Minimal HUD Elements**: Essential information without screen clutter
@@ -162,7 +182,21 @@ StageData Components:
 - **Minimal Ambient Design**: Subtle atmospheric audio supporting concentration
 - **Responsive Feedback**: Audio confirmation of player actions and game events
 
+### **Comprehensive Audio System Specifications**
+For complete audio implementation including the critical infinity cube signature sound and dynamic cadence patterns, see:
+
+**→ [Sound Architecture Document](6_SoundArchitecture.md)**
+
+This specialized document provides detailed specifications for:
+- **Infinity Cube Signature Sound**: The distinctive audio identity that defines the game's core sound
+- **Dynamic Cadence System**: Revolutionary audio system that transforms gameplay into living musical composition
+- **"Cosmic Jazz" Audio Philosophy**: Intelligent mastery of cube rhythms with cosmic wanderlust
+- **Step-based rhythm synchronization** with WaveManager timing (120 BPM framework)
+- **Unity AudioSource integration** with 3D positioning and mixer architecture
+- **Performance optimization** for complex audio scenarios
+
 ### **Implementation Priority**
+- **HIGHEST**: Infinity cube signature sound and cadence pattern system (4 complexity points)
 - **Core Action Sounds**: Marker placement, cube capture, detonation effects
 - **System Feedback**: Wave progression, resource regeneration, state transitions
 - **Atmospheric Enhancement**: Subtle background elements supporting cosmic theme
@@ -200,7 +234,8 @@ StageData Components:
 
 ---
 **Last Updated:** June 23, 2025  
-**Document Version:** 3.0 - Production Ready Implementation  
+**Document Version:** 3.1 - Architecture Cross-Reference Integration  
 **Development Phase:** Production Ready → Commercial Release Preparation  
 **Measured Development Velocity:** 17.8 complexity points/month  
-**Projected Release:** September 15, 2025
+**Projected Release:** September 15, 2025  
+**Architecture Documents:** [Artistic Architecture](5_ArtisticArchitecture.md) | [Sound Architecture](6_SoundArchitecture.md)
