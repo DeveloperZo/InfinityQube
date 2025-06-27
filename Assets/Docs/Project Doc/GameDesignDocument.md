@@ -13,7 +13,7 @@ A grid-based tactical puzzle game where players strategically place markers to i
 
 ### Key Features
 - **Multi-layered Marker System**: Light, prime, and cube markers with distinct strategic applications
-- **Diverse Cube Mechanics**: Four cube types (Unit, Prime, Infinity, Dense) creating varied tactical scenarios  
+- **Diverse Cube Mechanics**: Four cube types (Unit, Prime, Infinity, Recursion) creating varied tactical scenarios  
 - **Progressive Stage Design**: 12-stage structured learning curve with clear pedagogical progression
 - **Comprehensive Statistics**: Detailed performance tracking enabling improvement and replayability
 - **Robust Debug Infrastructure**: Extensive developer tooling supporting rapid iteration
@@ -63,7 +63,7 @@ This Game Design Document serves as the master reference, with detailed implemen
 | **Unit** | Capturable, basic scoring | Safe interaction, foundational gameplay |
 | **Prime** | Capturable, generates cube markers | High value, creates detonation resources |
 | **Infinity** | Uncapturable | Absolute threat, forces repositioning |
-| **Dense** | Capturable, Multi-hit requirement | High durability, resource optimization challenge |
+| **Recursion** | Capturable, Multi-hit requirement | High durability, resource optimization challenge |
 
 #### **Wave Management (WaveManager)**
 - Manual wave initiation with step-based cube advancement
@@ -100,7 +100,7 @@ System: P (restart), ESC (quit), TAB (toggle UI)
 
 #### **Act 3: Advanced Tactics (Stages 6-8)**
 - **Focus**: Complex interactions and forward planning
-- **Grid Size**: 9x28-32 with dense cube introduction
+- **Grid Size**: 9x28-32 with recursion cube introduction
 - **Key Learning**: Chain reactions, durability mechanics, perfect efficiency
 
 #### **Act 4: Environmental Hazards (Stages 9-10)**
@@ -208,7 +208,7 @@ This specialized document provides detailed specifications for:
 - Four-tier marker system (Light/Heavy/Prime/Cube) fully operational
 - Face painting mechanics with rotation tracking
 - Corruption/enhancement tile system integrated
-- Dense cube multi-hit mechanics with heavy marker support
+- Recursion cube multi-hit mechanics with heavy marker support
 - Comprehensive statistics tracking and performance analysis
 - Production-quality debug tooling and testing infrastructure
 - Integration testing framework with 100% system validation

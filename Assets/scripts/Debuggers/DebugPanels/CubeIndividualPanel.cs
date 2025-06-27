@@ -179,7 +179,7 @@ public class CubeIndividualPanel : DebugPanelBase
             selectedCubeType = 2;
 
         // Reinforced cube
-        GUI.backgroundColor = selectedCubeType == 3 ? DebugUIHelpers.GetCubeDisplayColor(CubeType.Dense) : Color.white;
+        GUI.backgroundColor = selectedCubeType == 3 ? DebugUIHelpers.GetCubeDisplayColor(CubeType.Recursion) : Color.white;
         if (GUILayout.Button("Reinforced", GUILayout.Width(80)))
             selectedCubeType = 3;
 
@@ -294,7 +294,7 @@ public class CubeIndividualPanel : DebugPanelBase
         GUILayout.Space(5);
 
         // Health management (for reinforced cubes)
-        if (selectedCube.type == CubeType.Dense)
+        if (selectedCube.type == CubeType.Recursion)
         {
             DrawHealthManagement();
             GUILayout.Space(5);
@@ -315,7 +315,7 @@ public class CubeIndividualPanel : DebugPanelBase
         GUILayout.Label($"Position: ({selectedCube.position.x}, {selectedCube.position.y})");
         GUILayout.Label($"Move Count: {selectedCube.moveCount}");
         
-        if (selectedCube.type == CubeType.Dense)
+        if (selectedCube.type == CubeType.Recursion)
         {
             float hpRatio = (float)selectedCube.currentHitPoints / selectedCube.maxHitPoints;
             Color hpColor = hpRatio > 0.66f ? Color.green : (hpRatio > 0.33f ? Color.yellow : Color.red);
@@ -795,7 +795,7 @@ public class CubeIndividualPanel : DebugPanelBase
 
     private void SetCubeHP(int hp)
     {
-        if (selectedCube == null || selectedCube.type != CubeType.Dense) return;
+        if (selectedCube == null || selectedCube.type != CubeType.Recursion) return;
         
         selectedCube.currentHitPoints = Mathf.Clamp(hp, 1, selectedCube.maxHitPoints);
         selectedCube.UpdateDamageVisual();
@@ -893,7 +893,7 @@ public class CubeIndividualPanel : DebugPanelBase
             case CubeType.Unit: return "Standard cube, can be painted";
             case CubeType.Prime: return "Valuable cube, creates detonations";
             case CubeType.Infinity: return "Dangerous cube, avoid capture";
-            case CubeType.Dense: return "Multi-hit cube, requires damage";
+            case CubeType.Recursion: return "Multi-hit cube, requires damage";
             default: return "Unknown cube type";
         }
     }

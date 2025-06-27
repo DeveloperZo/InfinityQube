@@ -7,16 +7,19 @@ public class AudioManager : MonoBehaviour, IManagerDebugInterface
     #region Inspector Configuration
     [Header("Audio Configuration")]
     public AudioSource audioSourcePrefab;
+    
+    [SerializeField]
+    [Tooltip("ScriptableObject containing all cube-specific audio configuration")]
     public CubeAudioConfiguration cubeAudioConfiguration;
     public AudioClip[] cubeImpactSounds;
     public AudioClip[] cubeDestructionSounds;
     public AudioClip[] specialEffectSounds;
 
     [Header("Volume Controls")]
-    [Range(0f, 1f)] public float masterVolume = 1f;
-    [Range(0f, 1f)] public float soundEffectsVolume = 0.8f;
-    [Range(0f, 1f)] public float cubeImpactVolume = 0.7f;
-    [Range(0f, 1f)] public float cubeDestructionVolume = 0.6f;
+    [Range(0f, 2f)] public float masterVolume = 1f;
+    [Range(0f, 2f)] public float soundEffectsVolume = 0.8f;
+    [Range(0f, 2f)] public float cubeImpactVolume = 0.7f;
+    [Range(0f, 2f)] public float cubeDestructionVolume = 0.6f;
 
     [Header("Performance Settings")]
     public int audioSourcePoolSize = 10;
@@ -28,6 +31,15 @@ public class AudioManager : MonoBehaviour, IManagerDebugInterface
     public bool enableDebugLogs = true;
     public bool showAudioGizmos = false;
     public bool logAudioEvents = false;
+    
+    [Header("Testing Tools")]
+    [Range(0f, 1f)]
+    [Tooltip("Volume slider for real-time audio testing")]
+    public float testingVolume = 0.8f;
+    
+    [Space(5)]
+    [Tooltip("Use context menu 'Test Audio System' to test all cube types")]
+    public bool showTestingInstructions = true;
     #endregion
 
     #region Runtime State
@@ -232,6 +244,245 @@ public class AudioManager : MonoBehaviour, IManagerDebugInterface
     }
     #endregion
 
+    #region Testing and Validation Tools
+    
+    /// <summary>
+    /// Validates and sets up proper audio folder structure for the project
+    /// </summary>
+    [ContextMenu("Validate Audio Folder Structure")]
+    public void ValidateAudioFolderStructure()
+    {
+        DebugLog("=== AUDIO FOLDER STRUCTURE VALIDATION ===");
+        
+        // Check if Audio folder exists
+        string audioFolderPath = "Assets/Audio";
+        bool audioFolderExists = System.IO.Directory.Exists(audioFolderPath);
+        
+        if (audioFolderExists)
+        {
+            DebugLog("✓ Audio folder found at: " + audioFolderPath);
+            
+            // Check for recommended subfolders
+            string[] recommendedFolders = { "CubeLanding", "CubeCapture", "CubeDestruction", "SpecialEffects", "Fallback" };
+            
+            foreach (string folder in recommendedFolders)
+            {
+                string fullPath = System.IO.Path.Combine(audioFolderPath, folder);
+                if (System.IO.Directory.Exists(fullPath))
+                {
+                    DebugLog($"✓ {folder} subfolder found");
+                }
+                else
+                {
+                    DebugLog($"⚠ {folder} subfolder missing - recommended for organization");
+                }
+            }
+        }
+        else
+        {
+            DebugLog("⚠ Audio folder not found. Consider creating: " + audioFolderPath);
+        }
+        
+        // Validate current audio clip assignments
+        ValidateAudioClipAssignments();
+    }
+    
+    /// <summary>
+    /// Validates all audio clip assignments and provides helpful warnings
+    /// </summary>
+    public void ValidateAudioClipAssignments()
+    {
+        DebugLog("=== AUDIO CLIP ASSIGNMENT VALIDATION ===");
+        
+        List<string> issues = new List<string>();
+        List<string> warnings = new List<string>();
+        
+        // Check legacy audio arrays
+        if (cubeImpactSounds == null || cubeImpactSounds.Length == 0)
+        {
+            warnings.Add("No legacy cube impact sounds assigned");
+        }
+        else
+        {
+            DebugLog($"✓ Legacy cube impact sounds: {cubeImpactSounds.Length} clips");
+        }
+        
+        if (cubeDestructionSounds == null || cubeDestructionSounds.Length == 0)
+        {
+            warnings.Add("No legacy cube destruction sounds assigned");
+        }
+        else
+        {
+            DebugLog($"✓ Legacy cube destruction sounds: {cubeDestructionSounds.Length} clips");
+        }
+        
+        // Check CubeAudioConfiguration
+        if (cubeAudioConfiguration == null)
+        {
+            issues.Add("CubeAudioConfiguration not assigned! Create one using: Assets > Create > Infinity Qube > Cube Audio Configuration");
+        }
+        else
+        {
+            DebugLog("✓ CubeAudioConfiguration assigned");
+            bool configValid = cubeAudioConfiguration.ValidateConfiguration();
+            if (!configValid)
+            {
+                warnings.Add("CubeAudioConfiguration has validation issues - see previous log messages");
+            }
+        }
+        
+        // Check AudioSource prefab
+        if (audioSourcePrefab == null)
+        {
+            warnings.Add("AudioSource prefab not assigned - using default AudioSource component");
+        }
+        else
+        {
+            DebugLog("✓ AudioSource prefab assigned");
+        }
+        
+        // Report results
+        if (issues.Count > 0)
+        {
+            string issueList = string.Join("\n• ", issues);
+            DebugLog($"❌ CRITICAL ISSUES FOUND:\n• {issueList}");
+        }
+        
+        if (warnings.Count > 0)
+        {
+            string warningList = string.Join("\n• ", warnings);
+            DebugLog($"⚠ WARNINGS:\n• {warningList}");
+        }
+        
+        if (issues.Count == 0 && warnings.Count == 0)
+        {
+            DebugLog("✓ All audio clip assignments validated successfully!");
+        }
+    }
+    
+    /// <summary>
+    /// Tests the entire audio system by playing sounds for all cube types
+    /// </summary>
+    [ContextMenu("Test Audio System")]
+    public void TestAudioSystem()
+    {
+        if (!IsInitialized)
+        {
+            DebugLog("AudioManager not initialized! Cannot perform audio system test.");
+            return;
+        }
+        
+        DebugLog("=== AUDIO SYSTEM TEST STARTED ===");
+        
+        // Test all cube types
+        System.Array cubeTypes = System.Enum.GetValues(typeof(Enumerations.CubeType));
+        Vector3 testPosition = transform.position;
+        
+        foreach (Enumerations.CubeType cubeType in cubeTypes)
+        {
+            DebugLog($"Testing audio for cube type: {cubeType}");
+            TestCubeLandingSound(cubeType);
+            
+            // Small delay between tests to avoid overwhelming the audio system
+            System.Threading.Thread.Sleep(200);
+        }
+        
+        DebugLog("=== AUDIO SYSTEM TEST COMPLETED ===");
+        DebugPrintAudioInfo();
+    }
+    
+    /// <summary>
+    /// Tests landing sound for a specific cube type with current testing volume
+    /// </summary>
+    /// <param name="cubeType">The cube type to test</param>
+    public void TestCubeLandingSound(Enumerations.CubeType cubeType)
+    {
+        if (!IsInitialized)
+        {
+            DebugLog($"Cannot test {cubeType} - AudioManager not initialized");
+            return;
+        }
+        
+        Vector3 testPosition = transform.position + Vector3.right * UnityEngine.Random.Range(-2f, 2f);
+        
+        // Store original volume and use testing volume
+        float originalImpactVolume = cubeImpactVolume;
+        cubeImpactVolume = testingVolume;
+        
+        DebugLog($"Testing {cubeType} landing sound at position {testPosition} with volume {testingVolume:F2}");
+        
+        try
+        {
+            PlayCubeLandingSound(cubeType, testPosition);
+        }
+        catch (System.Exception ex)
+        {
+            DebugLog($"Error testing {cubeType} landing sound: {ex.Message}");
+        }
+        finally
+        {
+            // Restore original volume
+            cubeImpactVolume = originalImpactVolume;
+        }
+    }
+    
+    /// <summary>
+    /// Creates a default CubeAudioConfiguration ScriptableObject for initial setup
+    /// </summary>
+    [ContextMenu("Create Default Audio Configuration")]
+    public void CreateDefaultAudioConfiguration()
+    {
+        DebugLog("=== CREATING DEFAULT AUDIO CONFIGURATION ===");
+        
+        if (cubeAudioConfiguration != null)
+        {
+            DebugLog("CubeAudioConfiguration already assigned. Use 'Validate Audio Folder Structure' to check current setup.");
+            return;
+        }
+        
+        // This is a hint for developers - actual ScriptableObject creation must be done through Unity's Asset menu
+        DebugLog("To create a default audio configuration:");
+        DebugLog("1. Right-click in Project window");
+        DebugLog("2. Go to Create > Infinity Qube > Cube Audio Configuration");
+        DebugLog("3. Name it 'DefaultCubeAudioConfiguration'");
+        DebugLog("4. Assign it to the 'cubeAudioConfiguration' field in this AudioManager");
+        DebugLog("5. Configure audio clips for each cube type in the ScriptableObject");
+        
+        #if UNITY_EDITOR
+        // In editor, we can help by selecting the AudioManager so the field is visible
+        UnityEditor.Selection.activeObject = this;
+        #endif
+    }
+    
+    /// <summary>
+    /// Tests real-time volume adjustment by playing a test sound
+    /// </summary>
+    [ContextMenu("Test Volume Adjustment")]
+    public void TestVolumeAdjustment()
+    {
+        if (!IsInitialized)
+        {
+            DebugLog("AudioManager not initialized! Cannot test volume adjustment.");
+            return;
+        }
+        
+        // Play a test sound using the testing volume slider
+        if (cubeImpactSounds != null && cubeImpactSounds.Length > 0)
+        {
+            AudioClip testClip = cubeImpactSounds[0];
+            Vector3 testPosition = transform.position;
+            
+            DebugLog($"Testing volume adjustment: {testingVolume:F2} volume");
+            PlayAudioClip(testClip, testingVolume, testPosition);
+        }
+        else
+        {
+            DebugLog("No cube impact sounds available for volume testing");
+        }
+    }
+    
+    #endregion
+
     #region Core Audio Methods
     
     /// <summary>
@@ -424,6 +675,58 @@ public class AudioManager : MonoBehaviour, IManagerDebugInterface
         }
     }
     
+    /// <summary>
+    /// Plays a specific audio clip by name from the special effects collection
+    /// Designed for specific cube types that need particular sound effects
+    /// </summary>
+    /// <param name="clipName">Name of the audio clip to play</param>
+    /// <param name="position">World position for 3D spatial audio</param>
+    /// <param name="volume">Volume override (uses soundEffectsVolume if not specified)</param>
+    public void PlayNamedSpecialEffect(string clipName, Vector3 position = default, float volume = -1f)
+    {
+        if (string.IsNullOrEmpty(clipName))
+        {
+            if (enableDebugLogs)
+            {
+                DebugLog("PlayNamedSpecialEffect called with null or empty clip name");
+            }
+            return;
+        }
+        
+        AudioClip foundClip = null;
+        
+        // Search through special effect sounds for the named clip
+        if (specialEffectSounds != null)
+        {
+            foreach (AudioClip clip in specialEffectSounds)
+            {
+                if (clip != null && clip.name.Equals(clipName, System.StringComparison.OrdinalIgnoreCase))
+                {
+                    foundClip = clip;
+                    break;
+                }
+            }
+        }
+        
+        if (foundClip != null)
+        {
+            float playVolume = volume >= 0f ? volume : soundEffectsVolume;
+            PlayAudioClip(foundClip, playVolume, position);
+            
+            if (enableDebugLogs && logAudioEvents)
+            {
+                DebugLog($"Played named special effect: {clipName} at position {position} with volume {playVolume:F2}");
+            }
+        }
+        else
+        {
+            if (enableDebugLogs)
+            {
+                DebugLog($"Named special effect sound '{clipName}' not found in specialEffectSounds array");
+            }
+        }
+    }
+    
     public void PlayCubeImpactSound(Vector3 position = default)
     {
         if (cubeImpactSounds == null || cubeImpactSounds.Length == 0)
@@ -591,7 +894,7 @@ public class AudioManager : MonoBehaviour, IManagerDebugInterface
         // Check for rapid-fire prevention
         if (IsClipPlayedTooRecently(clip))
         {
-            return;
+            //return;
         }
 
         AudioSource audioSource = GetAudioSource();
@@ -606,13 +909,13 @@ public class AudioManager : MonoBehaviour, IManagerDebugInterface
 
         // Apply distance-based volume falloff for spatial audio
         float finalVolume = volume * masterVolume;
-        if (position != default)
-        {
-            // Calculate distance-based volume falloff
-            float distance = Vector3.Distance(position, Camera.main?.transform.position ?? Vector3.zero);
-            float volumeFalloff = Mathf.Clamp01(1f - (distance / 50f)); // 50f is max distance from Configure3DAudioSource
-            finalVolume *= volumeFalloff;
-        }
+        //if (position != default)
+        //{
+        //    // Calculate distance-based volume falloff
+        //    float distance = Vector3.Distance(position, Camera.main?.transform.position ?? Vector3.zero);
+        //    float volumeFalloff = Mathf.Clamp01(1f - (distance / 50f)); // 50f is max distance from Configure3DAudioSource
+        //    finalVolume *= volumeFalloff;
+        //}
 
         SetupAudioSourceForPlayback(audioSource, clip, finalVolume, position, pitch);
         audioSource.Play();
@@ -960,7 +1263,7 @@ public class AudioManager : MonoBehaviour, IManagerDebugInterface
 
     public Dictionary<string, object> GetDebugData()
     {
-        return new Dictionary<string, object>
+        var debugData = new Dictionary<string, object>
         {
             ["Is Initialized"] = IsInitialized,
             ["Master Volume"] = masterVolume,
@@ -984,10 +1287,82 @@ public class AudioManager : MonoBehaviour, IManagerDebugInterface
             ["Log Audio Events"] = logAudioEvents,
             ["Show Audio Gizmos"] = showAudioGizmos,
             ["Sound Cleanup Interval"] = soundCleanupInterval,
-            ["Cube Audio Configuration Assigned"] = cubeAudioConfiguration != null,
-            ["Cube Audio Global Volume"] = cubeAudioConfiguration?.globalCubeAudioVolume ?? 0f,
-            ["Cube Audio Debug Logs"] = cubeAudioConfiguration?.enableAudioDebugLogs ?? false
+            ["Testing Volume"] = testingVolume,
+            ["Show Testing Instructions"] = showTestingInstructions
         };
+        
+        // Add enhanced audio clip assignment validation
+        debugData["Cube Audio Configuration Assigned"] = cubeAudioConfiguration != null;
+        
+        if (cubeAudioConfiguration != null)
+        {
+            debugData["Cube Audio Global Volume"] = cubeAudioConfiguration.globalCubeAudioVolume;
+            debugData["Cube Audio Debug Logs"] = cubeAudioConfiguration.enableAudioDebugLogs;
+            
+            // Validate configuration and add results to debug data
+            bool configurationValid = cubeAudioConfiguration.ValidateConfiguration();
+            debugData["Configuration Valid"] = configurationValid;
+            
+            // Count configured cube types
+            int configuredCubeTypes = 0;
+            int totalCubeTypes = System.Enum.GetValues(typeof(Enumerations.CubeType)).Length;
+            
+            foreach (Enumerations.CubeType cubeType in System.Enum.GetValues(typeof(Enumerations.CubeType)))
+            {
+                var audioData = cubeAudioConfiguration.GetAudioData(cubeType);
+                if (audioData != null && audioData.HasAnyAudioClips())
+                {
+                    configuredCubeTypes++;
+                }
+            }
+            
+            debugData["Configured Cube Types"] = $"{configuredCubeTypes}/{totalCubeTypes}";
+            debugData["Configuration Coverage %"] = totalCubeTypes > 0 ? (float)configuredCubeTypes / totalCubeTypes * 100f : 0f;
+            
+            // Check fallback audio availability
+            debugData["Fallback Landing Clips"] = cubeAudioConfiguration.fallbackLandingSounds?.GetValidClipCount() ?? 0;
+            debugData["Fallback Capture Clips"] = cubeAudioConfiguration.fallbackCaptureSounds?.GetValidClipCount() ?? 0;
+            debugData["Fallback Destruction Clips"] = cubeAudioConfiguration.fallbackDestructionSounds?.GetValidClipCount() ?? 0;
+            debugData["Fallback Special Effect Clips"] = cubeAudioConfiguration.fallbackSpecialEffectSounds?.GetValidClipCount() ?? 0;
+        }
+        else
+        {
+            debugData["Cube Audio Global Volume"] = 0f;
+            debugData["Cube Audio Debug Logs"] = false;
+            debugData["Configuration Valid"] = false;
+            debugData["Configured Cube Types"] = "0/0 (No Configuration)";
+            debugData["Configuration Coverage %"] = 0f;
+            debugData["Configuration Validation Error"] = "CubeAudioConfiguration not assigned";
+        }
+        
+        // Add audio folder structure validation results
+        bool audioFolderExists = System.IO.Directory.Exists("Assets/Audio");
+        debugData["Audio Folder Exists"] = audioFolderExists;
+        
+        if (audioFolderExists)
+        {
+            string[] recommendedFolders = { "CubeLanding", "CubeCapture", "CubeDestruction", "SpecialEffects", "Fallback" };
+            int existingSubfolders = 0;
+            
+            foreach (string folder in recommendedFolders)
+            {
+                string fullPath = System.IO.Path.Combine("Assets/Audio", folder);
+                if (System.IO.Directory.Exists(fullPath))
+                {
+                    existingSubfolders++;
+                }
+            }
+            
+            debugData["Audio Subfolders"] = $"{existingSubfolders}/{recommendedFolders.Length}";
+            debugData["Audio Organization %"] = (float)existingSubfolders / recommendedFolders.Length * 100f;
+        }
+        else
+        {
+            debugData["Audio Subfolders"] = "0/0 (No Audio Folder)";
+            debugData["Audio Organization %"] = 0f;
+        }
+        
+        return debugData;
     }
 
     public void ResetToDefaults()

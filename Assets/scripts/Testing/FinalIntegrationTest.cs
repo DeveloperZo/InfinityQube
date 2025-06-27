@@ -58,7 +58,7 @@ public class FinalIntegrationTest : MonoBehaviour
         // Test 2: Light marker functionality (was individual)
         yield return TestLightMarkerPlacement();
         
-        // Test 3: Heavy marker functionality (NEW - for dense cubes)
+        // Test 3: Heavy marker functionality (NEW - for recursion cubes)
         yield return TestHeavyMarkerFunctionality();
         
         // Test 4: Prime marker area coverage (was area)
@@ -67,11 +67,11 @@ public class FinalIntegrationTest : MonoBehaviour
         // Test 5: Cube marker generation from prime cube captures
         yield return TestCubeMarkerGeneration();
         
-        // Test 6: New cube terminology (unit/infinity/prime/dense)
+        // Test 6: New cube terminology (unit/infinity/prime/recursion)
         yield return TestCubeTerminology();
         
-        // Test 7: Heavy marker + dense cube interaction
-        yield return TestHeavyMarkerDenseCubeInteraction();
+        // Test 7: Heavy marker + recursion cube interaction
+        yield return TestHeavyMarkerRecursionCubeInteraction();
         
         // Test 8: Corruption mechanics
         yield return TestCorruptionMechanics();
@@ -254,13 +254,13 @@ public class FinalIntegrationTest : MonoBehaviour
     #region Test 6: New cube terminology
     private IEnumerator TestCubeTerminology()
     {
-        Log("Testing new cube terminology (unit/infinity/prime/dense)...");
+        Log("Testing new cube terminology (unit/infinity/prime/recursion)...");
         
         // Test CubeType enum has new values
         AssertTrue(System.Enum.IsDefined(typeof(CubeType), CubeType.Unit), "CubeType.Unit exists (was Normal)");
         AssertTrue(System.Enum.IsDefined(typeof(CubeType), CubeType.Infinity), "CubeType.Infinity exists (was Black)");
         AssertTrue(System.Enum.IsDefined(typeof(CubeType), CubeType.Prime), "CubeType.Prime exists (was Blue)");
-        AssertTrue(System.Enum.IsDefined(typeof(CubeType), CubeType.Dense), "CubeType.Dense exists (was Reinforced)");
+        AssertTrue(System.Enum.IsDefined(typeof(CubeType), CubeType.Recursion), "CubeType.Recursion exists (was Reinforced)");
         
         // Test cube creation with new types
         Vector2Int pos = new Vector2Int(1, 8);
@@ -274,44 +274,44 @@ public class FinalIntegrationTest : MonoBehaviour
         GameObject primeCube = CreateTestCube(CubeType.Prime, pos + Vector2Int.right * 2);
         AssertNotNull(primeCube, "Prime cube created");
         
-        GameObject denseCube = CreateTestCube(CubeType.Dense, pos + Vector2Int.right * 3);
-        AssertNotNull(denseCube, "Dense cube created");
+        GameObject recursionCube = CreateTestCube(CubeType.Recursion, pos + Vector2Int.right * 3);
+        AssertNotNull(recursionCube, "Recursion cube created");
         
         // Cleanup
         if (unitCube != null) Destroy(unitCube);
         if (infinityCube != null) Destroy(infinityCube);
         if (primeCube != null) Destroy(primeCube);
-        if (denseCube != null) Destroy(denseCube);
+        if (recursionCube != null) Destroy(recursionCube);
         
         yield return new WaitForSeconds(testDelay);
     }
     #endregion
 
-    #region Test 7: Heavy marker + dense cube interaction
-    private IEnumerator TestHeavyMarkerDenseCubeInteraction()
+    #region Test 7: Heavy marker + recursion cube interaction
+    private IEnumerator TestHeavyMarkerRecursionCubeInteraction()
     {
-        Log("Testing heavy marker + dense cube interaction...");
+        Log("Testing heavy marker + recursion cube interaction...");
         
         Vector2Int pos = new Vector2Int(5, 7);
         
-        // Create dense cube
-        GameObject denseCubeObj = CreateTestCube(CubeType.Dense, pos);
-        CubeManager denseCube = denseCubeObj.GetComponent<CubeManager>();
+        // Create recursion cube
+        GameObject recursionCubeObj = CreateTestCube(CubeType.Recursion, pos);
+        CubeManager recursionCube = recursionCubeObj.GetComponent<CubeManager>();
         
-        AssertNotNull(denseCube, "Dense cube created for heavy marker test");
-        AssertTrue(denseCube.type == CubeType.Dense, "Cube type is Dense");
+        AssertNotNull(recursionCube, "Recursion cube created for heavy marker test");
+        AssertTrue(recursionCube.type == CubeType.Recursion, "Cube type is Recursion");
         
         // Place heavy marker at cube position
         bool heavyPlaced = playerActionManager.PlaceHeavyMarker(pos);
-        AssertTrue(heavyPlaced, "Heavy marker placed for dense cube interaction");
+        AssertTrue(heavyPlaced, "Heavy marker placed for recursion cube interaction");
         
-        // Test heavy marker can interact with dense cubes
+        // Test heavy marker can interact with recursion cubes
         bool hasHeavyMarker = playerActionManager.HasHeavyMarkerAt(pos);
-        AssertTrue(hasHeavyMarker, "Heavy marker detected at dense cube position");
+        AssertTrue(hasHeavyMarker, "Heavy marker detected at recursion cube position");
         
         // Cleanup
         playerActionManager.RemoveHeavyMarkerAt(pos);
-        if (denseCubeObj != null) Destroy(denseCubeObj);
+        if (recursionCubeObj != null) Destroy(recursionCubeObj);
         
         yield return new WaitForSeconds(testDelay);
     }

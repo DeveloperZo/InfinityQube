@@ -48,13 +48,13 @@ Core Cube Materials (Existing Unity Assets):
 ├── CosmicBlack.mat     → Infinity Cube foundation (luscious black base)
 ├── CosmicBlue.mat      → Prime Cube ocean energy (vibrant nebula blue)
 ├── CosmicNormal.mat    → Unit Cube standard (functional gray-blue base)
-└── CosmicReinforced.mat → Dense Cube complexity (honey-caramel foundation)
+└── CosmicReinforced.mat → Recursion Cube complexity (honey-caramel foundation)
 
 Extended Cube Palette (To Create):
 ├── InfinityElite.mat   → Luscious black with white cosmic dust complexity
 ├── UnitAdaptive.mat    → Level-adaptive gray-blue for different stages
 ├── PrimeNebula.mat     → Pulsating ocean blue with wave foam effects
-└── DenseHoney.mat      → Layered honey-caramel transitioning to red-purple
+└── RecursionHoney.mat      → Layered honey-caramel transitioning to red-purple
 ```
 
 ### Four Cube Aesthetic Hierarchy
@@ -88,7 +88,7 @@ Attention Level: Active but not overwhelming attraction
 Design Philosophy: "Living water energy with cosmic playfulness"
 ```
 
-#### **4. Dense Cube - The Warm Anchor**
+#### **4. Recursion Cube - The Warm Anchor**
 ```
 Visual Role: Provide warm contrast and layered complexity
 Aesthetic Strategy: Rich depth through honey-caramel gradient layering
@@ -145,7 +145,7 @@ Prime Cube Energy (Playful Ocean):
 - Living Water: Dynamic but not flashlight-bright intensity
 - Nebula Texture: Cosmic cloud formations within blue spectrum
 
-Dense Cube Warmth (Layered Honey-Caramel):
+Recursion Cube Warmth (Layered Honey-Caramel):
 - Deep Honey Base: Rich caramel foundation tones
 - Purple Transition: Gradient flow to red-purple depths
 - Warm Contrast: Deliberate opposition to prime cube's cool energy
@@ -156,7 +156,7 @@ Dense Cube Warmth (Layered Honey-Caramel):
 - **Infinity Black-White**: Focus, elegance, infinite possibility, cosmic mystery
 - **Unit Gray-Blue**: Functional harmony, adaptable foundation, group coherence
 - **Prime Ocean Blue**: Playful energy, living motion, gentle illumination, nebula wonder
-- **Dense Honey-Caramel**: Warm strength, layered complexity, rich depth, earthly contrast
+- **Recursion Honey-Caramel**: Warm strength, layered complexity, rich depth, earthly contrast
 
 ---
 

@@ -15,7 +15,7 @@ public class CubeDebugPanel : DebugPanelBase
     private bool showFacePainter = true;
     private bool showActiveCubes = true;
     private bool showCubeInspector = false;
-    private bool showDenseTests = false;
+    private bool showRecursionTests = false;
     private Vector2 activeCubesScroll;
     private Vector2 inspectorScroll;
 
@@ -64,7 +64,7 @@ public class CubeDebugPanel : DebugPanelBase
         if (showFacePainter) DrawFacePainterSection();
         if (showActiveCubes) DrawActiveCubesSection();
         if (showCubeInspector && selectedCube != null) DrawCubeInspectorSection();
-        if (showDenseTests) DrawDenseTestsSection();
+        if (showRecursionTests) DrawRecursionTestsSection();
     }
 
     private void DrawSectionToggles()
@@ -73,7 +73,7 @@ public class CubeDebugPanel : DebugPanelBase
         showFacePainter = DebugUIHelpers.DrawToggleButton("Face Painter", showFacePainter);
         showActiveCubes = DebugUIHelpers.DrawToggleButton("Active Cubes", showActiveCubes);
         showCubeInspector = DebugUIHelpers.DrawToggleButton("Inspector", showCubeInspector);
-        showDenseTests = DebugUIHelpers.DrawToggleButton("Dense", showDenseTests);
+        showRecursionTests = DebugUIHelpers.DrawToggleButton("Recursion", showRecursionTests);
         GUILayout.EndHorizontal();
     }
 
@@ -581,10 +581,10 @@ public class CubeDebugPanel : DebugPanelBase
         }
         GUILayout.EndHorizontal();
 
-        // Dense cube specific controls
-        if (selectedCube.type == CubeType.Dense || selectedCube.type == CubeType.Dense) // Backward compatibility
+        // Recursion cube specific controls
+        if (selectedCube.type == CubeType.Recursion || selectedCube.type == CubeType.Recursion) // Backward compatibility
         {
-            DrawDenseCubeControls();
+            DrawRecursionCubeControls();
         }
     }
 
@@ -619,7 +619,7 @@ public class CubeDebugPanel : DebugPanelBase
         return DebugCubeSpawnHelper.FindCubesAt(position);
     }
 
-    private void DrawDenseTestsSection()
+    private void DrawRecursionTestsSection()
     {
         GUILayout.BeginVertical(GUI.skin.box);
         GUILayout.Label("DENSE CUBE TESTING", GUI.skin.box);
@@ -629,11 +629,11 @@ public class CubeDebugPanel : DebugPanelBase
         GUILayout.BeginHorizontal();
         if (GUILayout.Button("Spawn at Player"))
         {
-            SpawnDenseCubeAtPlayer();
+            SpawnRecursionCubeAtPlayer();
         }
         if (GUILayout.Button("Spawn Multiple"))
         {
-            SpawnMultipleDenseCubes();
+            SpawnMultipleRecursionCubes();
         }
         GUILayout.EndHorizontal();
 
@@ -673,16 +673,16 @@ public class CubeDebugPanel : DebugPanelBase
 
         GUILayout.Space(5);
 
-        // Show current dense cubes
-        DrawCurrentDenseCubes();
+        // Show current recursion cubes
+        DrawCurrentRecursionCubes();
 
         GUILayout.EndVertical();
     }
 
-    private void DrawDenseCubeControls()
+    private void DrawRecursionCubeControls()
     {
         GUILayout.Space(5);
-        GUILayout.Label("Dense Cube Controls:", GUI.skin.box);
+        GUILayout.Label("Recursion Cube Controls:", GUI.skin.box);
 
         // Display current HP with color coding
         float hpRatio = (float)selectedCube.currentHitPoints / selectedCube.maxHitPoints;
@@ -722,23 +722,23 @@ public class CubeDebugPanel : DebugPanelBase
         }
     }
 
-    private void DrawCurrentDenseCubes()
+    private void DrawCurrentRecursionCubes()
     {
-        GUILayout.Label("Current Dense Cubes:", GUI.skin.box);
+        GUILayout.Label("Current Recursion Cubes:", GUI.skin.box);
 
-        var denseCubes = Object.FindObjectsOfType<CubeManager>()
-            .Where(c => c != null && !c.isDestroyed && (c.type == CubeType.Dense || c.type == CubeType.Dense))
+        var recursionCubes = Object.FindObjectsOfType<CubeManager>()
+            .Where(c => c != null && !c.isDestroyed && (c.type == CubeType.Recursion || c.type == CubeType.Recursion))
             .OrderBy(c => c.position.y)
             .ThenBy(c => c.position.x)
             .ToList();
 
-        if (denseCubes.Count == 0)
+        if (recursionCubes.Count == 0)
         {
-            GUILayout.Label("No dense cubes found");
+            GUILayout.Label("No recursion cubes found");
             return;
         }
 
-        foreach (var cube in denseCubes.Take(3)) // Show max 3 for UI space
+        foreach (var cube in recursionCubes.Take(3)) // Show max 3 for UI space
         {
             GUILayout.BeginVertical(GUI.skin.box);
 
@@ -784,52 +784,52 @@ public class CubeDebugPanel : DebugPanelBase
             GUILayout.EndVertical();
         }
 
-        if (denseCubes.Count > 3)
+        if (recursionCubes.Count > 3)
         {
-            GUILayout.Label($"... and {denseCubes.Count - 3} more");
+            GUILayout.Label($"... and {recursionCubes.Count - 3} more");
         }
     }
 
-    private void SpawnDenseCubeAtPlayer()
+    private void SpawnRecursionCubeAtPlayer()
     {
         if (playerManager == null) return;
 
         Vector2Int playerPos = playerManager.currentTilePosition;
         Vector2Int spawnPos = new Vector2Int(playerPos.x, playerPos.y + 2); // Spawn slightly ahead
         
-        SpawnCubeAt(spawnPos, CubeType.Dense);
-        Debug.Log($"Spawned dense cube at ({spawnPos.x}, {spawnPos.y})");
+        SpawnCubeAt(spawnPos, CubeType.Recursion);
+        Debug.Log($"Spawned recursion cube at ({spawnPos.x}, {spawnPos.y})");
     }
 
-    private void SpawnMultipleDenseCubes()
+    private void SpawnMultipleRecursionCubes()
     {
         if (playerManager == null) return;
 
         Vector2Int playerPos = playerManager.currentTilePosition;
         
-        // Spawn 3 dense cubes in a line
+        // Spawn 3 recursion cubes in a line
         for (int i = 0; i < 3; i++)
         {
             Vector2Int spawnPos = new Vector2Int(playerPos.x + i - 1, playerPos.y + 3);
-            SpawnCubeAt(spawnPos, CubeType.Dense);
+            SpawnCubeAt(spawnPos, CubeType.Recursion);
         }
         
-        Debug.Log($"Spawned 3 dense cubes near player position");
+        Debug.Log($"Spawned 3 recursion cubes near player position");
     }
 
     private void SimulateMultiHitSequence(int hitCount)
     {
-        var denseCubes = Object.FindObjectsOfType<CubeManager>()
-            .Where(c => c != null && !c.isDestroyed && (c.type == CubeType.Dense || c.type == CubeType.Dense))
+        var recursionCubes = Object.FindObjectsOfType<CubeManager>()
+            .Where(c => c != null && !c.isDestroyed && (c.type == CubeType.Recursion || c.type == CubeType.Recursion))
             .ToList();
 
-        if (denseCubes.Count == 0)
+        if (recursionCubes.Count == 0)
         {
-            Debug.Log("No dense cubes found for multi-hit simulation");
+            Debug.Log("No recursion cubes found for multi-hit simulation");
             return;
         }
 
-        foreach (var cube in denseCubes)
+        foreach (var cube in recursionCubes)
         {
             // Reset to full HP first
             SetCubeHP(cube, cube.maxHitPoints);
@@ -841,60 +841,60 @@ public class CubeDebugPanel : DebugPanelBase
                 if (destroyed) break;
             }
             
-            Debug.Log($"Applied {hitCount} hits to dense cube at ({cube.position.x},{cube.position.y})");
+            Debug.Log($"Applied {hitCount} hits to recursion cube at ({cube.position.x},{cube.position.y})");
         }
     }
 
     private void TestAllDamageStates()
     {
-        var denseCubes = Object.FindObjectsOfType<CubeManager>()
-            .Where(c => c != null && !c.isDestroyed && (c.type == CubeType.Dense || c.type == CubeType.Dense))
+        var recursionCubes = Object.FindObjectsOfType<CubeManager>()
+            .Where(c => c != null && !c.isDestroyed && (c.type == CubeType.Recursion || c.type == CubeType.Recursion))
             .ToList();
 
-        if (denseCubes.Count == 0)
+        if (recursionCubes.Count == 0)
         {
-            Debug.Log("No dense cubes found for damage state testing");
+            Debug.Log("No recursion cubes found for damage state testing");
             return;
         }
 
         // Test different damage states
-        for (int i = 0; i < denseCubes.Count && i < 3; i++)
+        for (int i = 0; i < recursionCubes.Count && i < 3; i++)
         {
-            var cube = denseCubes[i];
+            var cube = recursionCubes[i];
             int targetHP = 3 - i; // 3, 2, 1 HP respectively
             SetCubeHP(cube, targetHP);
             ForceVisualUpdate(cube);
         }
         
-        Debug.Log("Set dense cubes to different damage states for visual testing");
+        Debug.Log("Set recursion cubes to different damage states for visual testing");
     }
 
     private void ForceVisualUpdateOnAll()
     {
-        var denseCubes = Object.FindObjectsOfType<CubeManager>()
-            .Where(c => c != null && !c.isDestroyed && (c.type == CubeType.Dense || c.type == CubeType.Dense))
+        var recursionCubes = Object.FindObjectsOfType<CubeManager>()
+            .Where(c => c != null && !c.isDestroyed && (c.type == CubeType.Recursion || c.type == CubeType.Recursion))
             .ToList();
 
-        foreach (var cube in denseCubes)
+        foreach (var cube in recursionCubes)
         {
             ForceVisualUpdate(cube);
         }
         
-        Debug.Log($"Forced visual update on {denseCubes.Count} dense cubes");
+        Debug.Log($"Forced visual update on {recursionCubes.Count} recursion cubes");
     }
 
     private void SetCubeHP(CubeManager cube, int hp)
     {
-        if (cube == null || (cube.type != CubeType.Dense && cube.type != CubeType.Dense)) return;
+        if (cube == null || (cube.type != CubeType.Recursion && cube.type != CubeType.Recursion)) return;
         
         cube.currentHitPoints = Mathf.Clamp(hp, 1, cube.maxHitPoints);
         ForceVisualUpdate(cube);
-        Debug.Log($"Set dense cube HP to {cube.currentHitPoints}/{cube.maxHitPoints}");
+        Debug.Log($"Set recursion cube HP to {cube.currentHitPoints}/{cube.maxHitPoints}");
     }
 
     private void ForceVisualUpdate(CubeManager cube)
     {
-        if (cube == null || (cube.type != CubeType.Dense && cube.type != CubeType.Dense)) return;
+        if (cube == null || (cube.type != CubeType.Recursion && cube.type != CubeType.Recursion)) return;
         
         // Force call to UpdateDamageVisual
         cube.UpdateDamageVisual();
@@ -921,8 +921,8 @@ public class CubeDebugPanel : DebugPanelBase
                 return "Prime";
             case CubeType.Infinity:
                 return "Infinity";
-            case CubeType.Dense:
-                return "Dense";
+            case CubeType.Recursion:
+                return "Recursion";
             default:
                 return type.ToString();
         }

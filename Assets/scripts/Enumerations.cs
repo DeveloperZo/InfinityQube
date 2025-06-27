@@ -32,7 +32,7 @@ public static class Enumerations
         /// <summary>Special corruption cube type (formerly Black)</summary>
         Infinity,
         /// <summary>Enhanced durability cube type (formerly Reinforced)</summary>
-        Dense,
+        Recursion,
         
     }
 
@@ -43,7 +43,7 @@ public static class Enumerations
     {
         /// <summary>Light marker: Basic targeting (formerly Individual)</summary>
         Light,
-        /// <summary>Heavy marker: Enhanced marker for dense cubes (NEW)</summary>
+        /// <summary>Heavy marker: Enhanced marker for recursion cubes (NEW)</summary>
         Heavy,
         /// <summary>Prime marker: Area coverage marker (formerly Area)</summary>
         Prime,

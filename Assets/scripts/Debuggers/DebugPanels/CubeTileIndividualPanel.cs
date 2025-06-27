@@ -17,6 +17,296 @@ public class CubeTileIndividualPanel : DebugPanelBase
     private GridManager gridManager;
     private PlayerManager playerManager;
     private WaveManager waveManager;
+    private AudioManager audioManager;
+    #endregion
+
+    #region Audio Testing Implementation
+         
+   
+    private int DrawAudioCubeTypeSelector(int currentType)
+    {
+        GUILayout.BeginHorizontal();
+        
+        for (int i = 0; i < System.Enum.GetValues(typeof(CubeType)).Length; i++)
+        {
+            var cubeType = (CubeType)i;
+            Color bgColor = currentType == i ? DebugUIHelpers.GetCubeDisplayColor(cubeType) : Color.white;
+            
+            DebugUIHelpers.WithBackgroundColor(bgColor, () =>
+            {
+                if (GUILayout.Button(cubeType.ToString(), GUILayout.Width(60)))
+                {
+                    currentType = i;
+                    if (enableAudioPreview && audioManager != null)
+                    {
+                        // Preview audio for the newly selected cube type
+                        LogAudioTest($"Selected {cubeType} for audio testing");
+                        TestCubeTypeAudio(cubeType, selectedSoundCategory);
+                    }
+                }
+            });
+        }
+        
+        GUILayout.EndHorizontal();
+        return currentType;
+    }
+    
+    private SoundCategory DrawSoundCategorySelector(SoundCategory currentCategory)
+    {
+        GUILayout.BeginHorizontal();
+        
+        var categories = System.Enum.GetValues(typeof(SoundCategory));
+        foreach (SoundCategory category in categories)
+        {
+            Color bgColor = currentCategory == category ? Color.cyan : Color.white;
+            
+            DebugUIHelpers.WithBackgroundColor(bgColor, () =>
+            {
+                if (GUILayout.Button(category.ToString(), GUILayout.Width(80)))
+                {
+                    currentCategory = category;
+                    if (enableAudioPreview && audioManager != null)
+                    {
+                        // Preview audio for the newly selected category
+                        LogAudioTest($"Selected {category} sound category");
+                        TestCubeTypeAudio(selectedAudioCubeType, category);
+                    }
+                }
+            });
+        }
+        
+        GUILayout.EndHorizontal();
+        return currentCategory;
+    }
+    
+    private void TestQuickAudioPreview()
+    {
+        if (audioManager == null || !audioManager.IsInitialized) return;
+        
+        Vector3 testPos = GetAudioTestPosition();
+        TestCubeTypeAudio(selectedAudioCubeType, SoundCategory.Landing, true);
+    }
+    
+    private void TestSelectedCubeAudio()
+    {
+        if (audioManager == null)
+        {
+            LogAudioTest("AudioManager not available");
+            return;
+        }
+        
+        Vector3 testPos = GetAudioTestPosition();
+        LogAudioTest($"Testing {selectedAudioCubeType} {selectedSoundCategory} audio at {testPos}");
+        TestCubeTypeAudio(selectedAudioCubeType, selectedSoundCategory);
+    }
+    
+    private void TestAllCubeTypesAudio()
+    {
+        if (audioManager == null)
+        {
+            LogAudioTest("AudioManager not available for full test");
+            return;
+        }
+        
+        LogAudioTest($"Testing all cube types with {selectedSoundCategory} sounds");
+        
+        var cubeTypes = System.Enum.GetValues(typeof(CubeType));
+        int delay = 0;
+        
+        foreach (CubeType cubeType in cubeTypes)
+        {
+            // Use delayed testing to avoid overwhelming the audio system
+            UnityEngine.Object.FindObjectOfType<MonoBehaviour>().StartCoroutine(DelayedAudioTest(cubeType, selectedSoundCategory, delay));
+            delay += 500; // 500ms delay between tests
+        }
+    }
+    
+    private void TestCurrentTestCubeAudio()
+    {
+        if (testCube == null)
+        {
+            LogAudioTest("No test cube available for audio testing");
+            return;
+        }
+        
+        if (audioManager == null)
+        {
+            LogAudioTest("AudioManager not available");
+            return;
+        }
+        
+        Vector3 cubePosition = new Vector3(testCube.position.x, 0, testCube.position.y);
+        LogAudioTest($"Testing {testCube.type} cube audio at its position {cubePosition}");
+        
+        switch (selectedSoundCategory)
+        {
+            case SoundCategory.Landing:
+                audioManager.PlayCubeLandingSound(testCube.type, cubePosition);
+                break;
+            case SoundCategory.Capture:
+                audioManager.PlayCubeCaptureSound(testCube.type, cubePosition);
+                break;
+            case SoundCategory.Destruction:
+                audioManager.PlayCubeDestructionSound(testCube.type, cubePosition);
+                break;
+            case SoundCategory.SpecialEffect:
+                audioManager.PlayCubeSpecialEffectSound(testCube.type, cubePosition);
+                break;
+        }
+    }
+    
+    private void TestAudioAtPlayerPosition()
+    {
+        if (playerManager == null)
+        {
+            LogAudioTest("PlayerManager not available");
+            return;
+        }
+        
+        Vector3 playerPos = new Vector3(playerManager.currentTilePosition.x, 0, playerManager.currentTilePosition.y);
+        LogAudioTest($"Testing {selectedAudioCubeType} {selectedSoundCategory} audio at player position {playerPos}");
+        TestCubeTypeAudio(selectedAudioCubeType, selectedSoundCategory, false, playerPos);
+    }
+    
+    private void ValidateAudioConfiguration()
+    {
+        if (audioManager == null)
+        {
+            LogAudioTest("AudioManager not available for configuration validation");
+            return;
+        }
+        
+        LogAudioTest("Validating audio configuration...");
+        audioManager.ValidateAudioClipAssignments();
+        audioManager.ValidateAudioFolderStructure();
+        
+        var debugData = audioManager.GetDebugData();
+        LogAudioTest($"Configuration valid: {debugData.GetValueOrDefault("Configuration Valid", false)}");
+        LogAudioTest($"Configured cube types: {debugData.GetValueOrDefault("Configured Cube Types", "0/0")}");
+    }
+    
+    private void TestEntireAudioSystem()
+    {
+        if (audioManager == null)
+        {
+            LogAudioTest("AudioManager not available for system test");
+            return;
+        }
+        
+        LogAudioTest("Running complete audio system test...");
+        audioManager.TestAudioSystem();
+        LogAudioTest("Audio system test completed - check console for detailed results");
+    }
+    
+    private void TestVolumeControls()
+    {
+        if (audioManager == null)
+        {
+            LogAudioTest("AudioManager not available for volume testing");
+            return;
+        }
+        
+        LogAudioTest($"Testing volume controls at {testAudioVolume:F2} volume");
+        audioManager.TestVolumeAdjustment();
+        
+        // Also test the AudioManager's testing volume control
+        float originalTestingVolume = audioManager.testingVolume;
+        audioManager.testingVolume = testAudioVolume;
+        audioManager.TestCubeLandingSound(selectedAudioCubeType);
+        audioManager.testingVolume = originalTestingVolume;
+        
+        LogAudioTest("Volume control test completed");
+    }
+    
+    private void TestCubeTypeAudio(CubeType cubeType, SoundCategory category, bool isPreview = false, Vector3? customPosition = null)
+    {
+        if (audioManager == null || !audioManager.IsInitialized) return;
+        
+        Vector3 testPos = customPosition ?? GetAudioTestPosition();
+        
+        // Store original volume and apply test volume
+        float originalImpactVolume = audioManager.cubeImpactVolume;
+        audioManager.cubeImpactVolume = testAudioVolume;
+        
+        try
+        {
+            switch (category)
+            {
+                case SoundCategory.Landing:
+                    audioManager.PlayCubeLandingSound(cubeType, testPos);
+                    break;
+                case SoundCategory.Capture:
+                    audioManager.PlayCubeCaptureSound(cubeType, testPos);
+                    break;
+                case SoundCategory.Destruction:
+                    audioManager.PlayCubeDestructionSound(cubeType, testPos);
+                    break;
+                case SoundCategory.SpecialEffect:
+                    audioManager.PlayCubeSpecialEffectSound(cubeType, testPos);
+                    break;
+            }
+            
+            if (!isPreview)
+            {
+                LogAudioTest($"Played {cubeType} {category} sound at {testPos}");
+            }
+        }
+        catch (System.Exception ex)
+        {
+            LogAudioTest($"Error playing {cubeType} {category} sound: {ex.Message}");
+        }
+        finally
+        {
+            // Restore original volume
+            audioManager.cubeImpactVolume = originalImpactVolume;
+        }
+    }
+    
+    private Vector3 GetAudioTestPosition()
+    {
+        if (useRandomPositions)
+        {
+            return new Vector3(
+                UnityEngine.Random.Range(-5f, 5f),
+                0f,
+                UnityEngine.Random.Range(-5f, 5f)
+            );
+        }
+        else
+        {
+            return new Vector3(testPosition.x, 0f, testPosition.y);
+        }
+    }
+    
+    private System.Collections.IEnumerator DelayedAudioTest(CubeType cubeType, SoundCategory category, int delayMs)
+    {
+        yield return new WaitForSeconds(delayMs / 1000f);
+        TestCubeTypeAudio(cubeType, category);
+    }
+    
+    private void LogAudioTest(string message)
+    {
+        string timestamp = System.DateTime.Now.ToString("HH:mm:ss");
+        string logEntry = $"[{timestamp}] {message}";
+        
+        audioTestHistory.Add(logEntry);
+        
+        // Limit history size
+        while (audioTestHistory.Count > maxAudioHistoryEntries)
+        {
+            audioTestHistory.RemoveAt(0);
+        }
+        
+        // Also log to console for debugging
+        Debug.Log($"[AudioTesting] {message}");
+    }
+    
+    private void ClearAudioTestHistory()
+    {
+        audioTestHistory.Clear();
+        LogAudioTest("Audio test history cleared");
+    }
+    
     #endregion
 
     #region UI State
@@ -26,11 +316,13 @@ public class CubeTileIndividualPanel : DebugPanelBase
     private bool showLifecycleTesting = true;
     private bool showInteractionTesting = true;
     private bool showReinforcedTests = false;
+    private bool showAudioTesting = true;
     private Vector2 spawningScroll;
     private Vector2 facePainterScroll;
     private Vector2 inspectorScroll;
     private Vector2 lifecycleScroll;
     private Vector2 interactionScroll;
+    private Vector2 audioTestingScroll;
     #endregion
 
     #region Individual Entity Testing State
@@ -45,9 +337,16 @@ public class CubeTileIndividualPanel : DebugPanelBase
     private int lifecycleStepIndex = 0;
     private bool isLifecycleRunning = false;
     private float lifecycleStartTime;
+    #region Audio Testing State
+    private float testAudioVolume = 0.8f;
+    private bool enableAudioPreview = true;
+    private CubeType selectedAudioCubeType = CubeType.Unit;
+    private SoundCategory selectedSoundCategory = SoundCategory.Landing;
+    private Vector3 audioTestPosition = Vector3.zero;
+    private bool useRandomPositions = true;
+    private List<string> audioTestHistory = new List<string>();
+    private int maxAudioHistoryEntries = 8;
     #endregion
-
-    #region Interaction Testing State
     private bool trackInteractionHistory = true;
     private List<string> interactionHistory = new List<string>();
     private int maxHistoryEntries = 10;
@@ -62,6 +361,7 @@ public class CubeTileIndividualPanel : DebugPanelBase
         gridManager = Object.FindObjectOfType<GridManager>();
         playerManager = Object.FindObjectOfType<PlayerManager>();
         waveManager = Object.FindObjectOfType<WaveManager>();
+        audioManager = AudioManager.Instance;
 
         if (playerManager != null)
         {
@@ -69,7 +369,9 @@ public class CubeTileIndividualPanel : DebugPanelBase
         }
 
         ClearInteractionHistory();
+        ClearAudioTestHistory();
         LogInteraction("Panel initialized");
+        LogAudioTest("Audio testing panel initialized");
     }
 
     public override void Update()
@@ -118,6 +420,7 @@ public class CubeTileIndividualPanel : DebugPanelBase
         if (showFacePainter) DrawFacePainterSection();
         if (showLifecycleTesting) DrawLifecycleTestingSection();
         if (showInteractionTesting) DrawInteractionTestingSection();
+        if (showAudioTesting) DrawAudioTestingSection();
     }
 
     #region UI Drawing Methods
@@ -133,6 +436,10 @@ public class CubeTileIndividualPanel : DebugPanelBase
         GUILayout.BeginHorizontal();
         showLifecycleTesting = DebugUIHelpers.DrawToggleButton("Lifecycle", showLifecycleTesting);
         showInteractionTesting = DebugUIHelpers.DrawToggleButton("Interactions", showInteractionTesting);
+        showAudioTesting = DebugUIHelpers.DrawToggleButton("Audio Testing", showAudioTesting);
+        GUILayout.EndHorizontal();
+        
+        GUILayout.BeginHorizontal();
         showReinforcedTests = DebugUIHelpers.DrawToggleButton("Reinforced", showReinforcedTests);
         GUILayout.EndHorizontal();
     }
@@ -221,6 +528,148 @@ public class CubeTileIndividualPanel : DebugPanelBase
         }
         GUILayout.EndHorizontal();
 
+        GUILayout.EndScrollView();
+        GUILayout.EndVertical();
+    }
+    
+    private void DrawAudioTestingSection()
+    {
+        GUILayout.BeginVertical(GUI.skin.box);
+        GUILayout.Label("CUBE AUDIO TESTING", GUI.skin.box);
+        
+        audioTestingScroll = GUILayout.BeginScrollView(audioTestingScroll, GUILayout.MinHeight(250));
+        
+        // Audio system status
+        if (audioManager == null)
+        {
+            DebugUIHelpers.WithColor(DebugUIHelpers.ErrorColor, () =>
+            {
+                GUILayout.Label("⚠ AudioManager not found! Audio testing unavailable.");
+            });
+        }
+        else if (!audioManager.IsInitialized)
+        {
+            DebugUIHelpers.WithColor(DebugUIHelpers.WarningColor, () =>
+            {
+                GUILayout.Label("⚠ AudioManager not initialized.");
+            });
+        }
+        else
+        {
+            DebugUIHelpers.WithColor(DebugUIHelpers.SuccessColor, () =>
+            {
+                GUILayout.Label($"✓ AudioManager ready - {audioManager.ActiveSources}/{audioManager.GetDebugData()["Max Simultaneous Sounds"]} sources active");
+            });
+        }
+        
+        DebugUIHelpers.Space(5);
+        
+        // Audio testing configuration
+        GUILayout.Label("Audio Testing Configuration:", GUI.skin.box);
+        
+        // Volume control with real-time testing
+        GUILayout.BeginHorizontal();
+        GUILayout.Label("Test Volume:", GUILayout.Width(80));
+        float newVolume = GUILayout.HorizontalSlider(testAudioVolume, 0f, 1f, GUILayout.Width(100));
+        if (Mathf.Abs(newVolume - testAudioVolume) > 0.01f)
+        {
+            testAudioVolume = newVolume;
+            if (enableAudioPreview && audioManager != null)
+            {
+                // Play a quick preview sound when volume changes
+                TestQuickAudioPreview();
+            }
+        }
+        GUILayout.Label($"{testAudioVolume:F2}", GUILayout.Width(40));
+        GUILayout.EndHorizontal();
+        
+        enableAudioPreview = GUILayout.Toggle(enableAudioPreview, "Enable real-time audio preview");
+        useRandomPositions = GUILayout.Toggle(useRandomPositions, "Use random 3D positions for testing");
+        
+        DebugUIHelpers.Space(5);
+        
+        // Cube type selection for audio testing
+        GUILayout.Label("Cube Type for Audio Testing:", GUI.skin.box);
+        selectedAudioCubeType = (CubeType)DrawAudioCubeTypeSelector((int)selectedAudioCubeType);
+        
+        DebugUIHelpers.Space(3);
+        
+        // Sound category selection
+        GUILayout.Label("Sound Category:", GUI.skin.box);
+        selectedSoundCategory = DrawSoundCategorySelector(selectedSoundCategory);
+        
+        DebugUIHelpers.Space(5);
+        
+        // Quick audio tests
+        GUILayout.Label("Quick Audio Tests:", GUI.skin.box);
+        
+        GUILayout.BeginHorizontal();
+        if (GUILayout.Button("Test Selected Cube Type"))
+        {
+            TestSelectedCubeAudio();
+        }
+        if (GUILayout.Button("Test All Cube Types"))
+        {
+            TestAllCubeTypesAudio();
+        }
+        GUILayout.EndHorizontal();
+        
+        GUILayout.BeginHorizontal();
+        if (GUILayout.Button("Test Current Test Cube"))
+        {
+            TestCurrentTestCubeAudio();
+        }
+        if (GUILayout.Button("Test at Player Position"))
+        {
+            TestAudioAtPlayerPosition();
+        }
+        GUILayout.EndHorizontal();
+        
+        DebugUIHelpers.Space(5);
+        
+        // Comprehensive audio system testing
+        GUILayout.Label("System Audio Tests:", GUI.skin.box);
+        
+        GUILayout.BeginHorizontal();
+        if (GUILayout.Button("Validate Audio Configuration"))
+        {
+            ValidateAudioConfiguration();
+        }
+        if (GUILayout.Button("Test Audio System"))
+        {
+            TestEntireAudioSystem();
+        }
+        GUILayout.EndHorizontal();
+        
+        GUILayout.BeginHorizontal();
+        if (GUILayout.Button("Test Volume Controls"))
+        {
+            TestVolumeControls();
+        }
+        if (GUILayout.Button("Clear Audio History"))
+        {
+            ClearAudioTestHistory();
+        }
+        GUILayout.EndHorizontal();
+        
+        DebugUIHelpers.Space(5);
+        
+        // Audio test history
+        if (audioTestHistory.Count > 0)
+        {
+            GUILayout.Label("Audio Test History:", GUI.skin.box);
+            
+            foreach (var entry in audioTestHistory.TakeLast(6))
+            {
+                GUILayout.Label($"• {entry}");
+            }
+            
+            if (audioTestHistory.Count > 6)
+            {
+                GUILayout.Label($"... and {audioTestHistory.Count - 6} more entries");
+            }
+        }
+        
         GUILayout.EndScrollView();
         GUILayout.EndVertical();
     }

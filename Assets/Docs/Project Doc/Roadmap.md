@@ -12,7 +12,7 @@ This roadmap outlines the development path from current production-ready state t
 - **Four-tier marker system** (Light/Heavy/Prime/Cube) - Production ready
 - **Face painting mechanics** with rotation tracking - Fully operational
 - **Corruption/enhancement tile system** - Integrated and tested
-- **Dense cube multi-hit mechanics** - Working with heavy markers
+- **Recursion cube multi-hit mechanics** - Working with heavy markers
 - **Comprehensive debug infrastructure** - Production quality
 - **Statistics and analytics system** - Complete tracking implemented
 - **Integration testing framework** - All systems validated

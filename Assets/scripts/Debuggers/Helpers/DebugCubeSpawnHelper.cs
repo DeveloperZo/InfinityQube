@@ -181,7 +181,7 @@ public static class DebugCubeSpawnHelper
             case CubeType.Unit: return new Color(0.8f, 0.8f, 0.8f);
             case CubeType.Prime: return new Color(0.3f, 0.6f, 1f);
             case CubeType.Infinity: return new Color(0.3f, 0.3f, 0.3f);
-            case CubeType.Dense: return new Color(0.8f, 0.4f, 0.8f);
+            case CubeType.Recursion: return new Color(0.8f, 0.4f, 0.8f);
             default: return Color.white;
         }
     }

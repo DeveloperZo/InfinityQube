@@ -63,7 +63,7 @@ public static class DebugUIHelpers
         {
             case CubeType.Unit: return Color.gray;
             case CubeType.Prime: return new Color(0.8f, 0.8f, 0.8f);
-            case CubeType.Dense: return new Color(0.6f, 0.4f, 0.2f);
+            case CubeType.Recursion: return new Color(0.6f, 0.4f, 0.2f);
             case CubeType.Infinity: return new Color(0.3f, 0.3f, 0.3f);
             default: return Color.gray;
         }

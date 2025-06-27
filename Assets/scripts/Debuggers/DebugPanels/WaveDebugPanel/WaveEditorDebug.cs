@@ -670,7 +670,7 @@ namespace WaveDebugSystem
                         case CubeType.Unit: stats.normalCount++; break;
                         case CubeType.Prime: stats.blueCount++; break;
                         case CubeType.Infinity: stats.blackCount++; break;
-                        case CubeType.Dense: stats.reinforcedCount++; break;
+                        case CubeType.Recursion: stats.reinforcedCount++; break;
                     }
                 }
 

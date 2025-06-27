@@ -32,7 +32,7 @@ Details the functional rules and systemic interactions, clearly outlining the be
 | **Unit** | Gray | Standard step movement | Capturable via markers | Basic scoring |
 | **Prime** | Blue | Standard step movement | Creates detonation markers | Generates cube markers on capture |
 | **Infinity** | Black | Standard step movement | **Uncapturable** | Kills player on contact |
-| **Dense** | Darker/Metallic | Standard step movement | Requires multiple hits | Increased durability |
+| **Recursion** | Darker/Metallic | Standard step movement | Requires multiple hits | Increased durability |
 
 ### Movement System
 - **Step-Based Progression**: Discrete grid movement per wave step
@@ -79,9 +79,9 @@ Comprehensive marker and detonation management:
 #### Heavy Markers (NEW)
 - **Placement Key**: V
 - **Trigger Key**: Y
-- **Target**: Enhanced marker for dense cubes
+- **Target**: Enhanced marker for recursion cubes
 - **Charge System**: Limited uses with longer cooldown
-- **Enhanced Power**: Designed for dense cube interaction
+- **Enhanced Power**: Designed for recursion cube interaction
 
 #### Prime Markers (formerly Area)
 - **Placement Key**: G

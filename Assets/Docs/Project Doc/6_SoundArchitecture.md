@@ -77,7 +77,7 @@ Spatial: Enhanced reverb parameters for "spaciousness"
 Special: Generates harmonic overtones at 480Hz, 720Hz
 ```
 
-#### **Dense Cubes (Multi-Hit Progression)**
+#### **Recursion Cubes (Multi-Hit Progression)**
 ```
 Base Frequency: 80 Hz fundamental (lower = more solid)
 Character: Solid, resistant, requires multiple impacts
@@ -113,7 +113,7 @@ The system continuously monitors WaveManager.activeCubes.Count to determine the 
 ```csharp
 public enum CadenceState
 {
-    FullWave,      // 8+ cubes: Dense polyrhythmic ensemble
+    FullWave,      // 8+ cubes: Recursion polyrhythmic ensemble
     MidDensity,    // 4-7 cubes: Moderate rhythmic complexity  
     Sparse,        // 2-3 cubes: Exposed individual rhythms
     Isolation,     // 1 cube: Solo performance with emphasis
@@ -136,7 +136,7 @@ public CadenceState GetCurrentCadenceState()
 #### **Full Wave Cadence (8+ Cubes)**
 ```
 Audio Characteristics:
-- Dense polyrhythmic texture with overlapping impacts
+- Recursion polyrhythmic texture with overlapping impacts
 - Individual cube sounds blend into ensemble performance
 - Complex stereo field with wide spatial distribution
 - Moderate reverb to maintain clarity in density
@@ -447,7 +447,7 @@ Metronome Reference: Internal clock maintains beat consistency
 
 #### **Full Wave Cadence (Opening Movement)**
 ```
-Pattern: Multiple cubes create dense rhythmic texture
+Pattern: Multiple cubes create recursion rhythmic texture
 Characteristics:
   - Overlapping impact sounds create polyrhythmic complexity
   - Frequency masking requires careful EQ separation
@@ -466,8 +466,8 @@ Characteristics:
 ```
 
 #### **Transition Dynamics**
-- **Crescendo**: Building from sparse to dense (increasing complexity)
-- **Diminuendo**: Reducing from dense to sparse (increasing focus)
+- **Crescendo**: Building from sparse to recursion (increasing complexity)
+- **Diminuendo**: Reducing from recursion to sparse (increasing focus)
 - **Cross-fade**: Smooth transitions between cadence types
 - **Emphasis Shift**: From ensemble to solo performance
 
@@ -488,7 +488,7 @@ public class AudioManager : MonoBehaviour
     [Header("Cube Impact Sounds")]
     public AudioClip unitCubeImpact;
     public AudioClip primeCubeImpact;  
-    public AudioClip denseCubeImpact;
+    public AudioClip recursionCubeImpact;
     public AudioClip infinityCubeImpact; // THE SIGNATURE SOUND
     
     [Header("Rhythm Timing")]
@@ -575,7 +575,7 @@ AudioManager (Singleton)
 ├── CubeSounds (Mixer Group)
 │   ├── UnitCubeAudio
 │   ├── PrimeCubeAudio  
-│   ├── DenseCubeAudio
+│   ├── RecursionCubeAudio
 │   └── InfinityCubeAudio (SIGNATURE SOUND)
 ├── PlayerActions (Mixer Group)
 │   ├── MarkerPlacement
@@ -661,7 +661,7 @@ Audio Modifications:
 - Maximum concurrent cube impacts: 16 (Unity's default voice limit)
 - Audio priority system for voice stealing
 - Distance-based culling for far cubes
-- Performance scaling for dense wave patterns
+- Performance scaling for recursion wave patterns
 
 #### **Memory Management**
 - Audio clip compression: Vorbis for ambient, PCM for impacts

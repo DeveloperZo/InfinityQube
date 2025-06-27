@@ -254,8 +254,8 @@ public class PlayerActionDebugPanel : DebugPanelBase
         // Type-specific settings
         if (selectedMarkerType == 1) // Heavy
         {
-            GUILayout.Label("Heavy markers work best with dense cubes", GUI.skin.label);
-            GUILayout.Label("Provides enhanced effectiveness vs dense cube types");
+            GUILayout.Label("Heavy markers work best with recursion cubes", GUI.skin.label);
+            GUILayout.Label("Provides enhanced effectiveness vs recursion cube types");
         }
         else if (selectedMarkerType == 2) // Prime
         {
@@ -690,9 +690,9 @@ public class PlayerActionDebugPanel : DebugPanelBase
         GUILayout.Space(5);
         GUILayout.Label("Heavy Marker Tests:");
         GUILayout.BeginHorizontal();
-        if (GUILayout.Button("Test Heavy + Dense"))
+        if (GUILayout.Button("Test Heavy + Recursion"))
         {
-            TestHeavyMarkerDenseCube();
+            TestHeavyMarkerRecursionCube();
         }
         if (GUILayout.Button("All Heavy Combos"))
         {
@@ -2354,7 +2354,7 @@ public class PlayerActionDebugPanel : DebugPanelBase
     }
 
     // Heavy marker testing methods
-    private void TestHeavyMarkerDenseCube()
+    private void TestHeavyMarkerRecursionCube()
     {
         Debug.Log("=== TESTING HEAVY MARKER + DENSE CUBE ====");
         
@@ -2365,13 +2365,13 @@ public class PlayerActionDebugPanel : DebugPanelBase
         {
             Debug.Log($"Placed heavy marker at ({testPos.x}, {testPos.y})");
             
-            // TODO: Spawn a dense cube at or near the position
+            // TODO: Spawn a recursion cube at or near the position
             // This would require access to cube spawning functionality
-            Debug.Log("Dense cube interaction testing - requires cube spawning system integration");
+            Debug.Log("Recursion cube interaction testing - requires cube spawning system integration");
             
             // Trigger the heavy marker for testing
             actionManager.TriggerNextHeavyMarker();
-            Debug.Log("Triggered heavy marker for dense cube interaction test");
+            Debug.Log("Triggered heavy marker for recursion cube interaction test");
         }
         else
         {
@@ -2384,7 +2384,7 @@ public class PlayerActionDebugPanel : DebugPanelBase
         Debug.Log("=== TESTING ALL HEAVY MARKER COMBINATIONS ====");
         
         // Test heavy marker effectiveness against all cube types
-        string[] cubeTypes = { "Unit", "Prime", "Infinity", "Dense" };
+        string[] cubeTypes = { "Unit", "Prime", "Infinity", "Recursion" };
         
         for (int i = 0; i < cubeTypes.Length; i++)
         {

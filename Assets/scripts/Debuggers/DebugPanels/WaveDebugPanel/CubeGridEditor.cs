@@ -438,7 +438,7 @@ namespace WaveDebugSystem
                     case CubeType.Unit: composition.normal++; break;
                     case CubeType.Prime: composition.blue++; break;
                     case CubeType.Infinity: composition.black++; break;
-                    case CubeType.Dense: composition.reinforced++; break;
+                    case CubeType.Recursion: composition.reinforced++; break;
                 }
             }
             return composition;
@@ -501,7 +501,7 @@ namespace WaveDebugSystem
             SpawnCubeAt(new Vector2Int(3, topRow), CubeType.Unit);
 
             if (gridManager.Width > 4)
-                SpawnCubeAt(new Vector2Int(4, topRow), CubeType.Dense);
+                SpawnCubeAt(new Vector2Int(4, topRow), CubeType.Recursion);
 
             if (gridManager.Height > 1)
             {
@@ -540,7 +540,7 @@ namespace WaveDebugSystem
                 case CubeType.Unit: return Color.gray;
                 case CubeType.Prime: return new Color(0.3f, 0.6f, 1f);
                 case CubeType.Infinity: return new Color(0.2f, 0.2f, 0.2f);
-                case CubeType.Dense: return new Color(0.8f, 0.3f, 0.8f);
+                case CubeType.Recursion: return new Color(0.8f, 0.3f, 0.8f);
                 default: return Color.white;
             }
         }
@@ -552,7 +552,7 @@ namespace WaveDebugSystem
                 case CubeType.Unit: return "N";
                 case CubeType.Prime: return "B";
                 case CubeType.Infinity: return "X";
-                case CubeType.Dense: return "R";
+                case CubeType.Recursion: return "R";
                 default: return "?";
             }
         }

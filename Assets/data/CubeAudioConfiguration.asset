@@ -1,0 +1,185 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 832a87be45e9c0543a93b4133dc4e3d8, type: 3}
+  m_Name: CubeAudioConfiguration
+  m_EditorClassIdentifier: 
+  audioData:
+  - cubeType: 0
+    landingSounds:
+      clips:
+      - {fileID: 8300000, guid: ea067b6492bd0ef4aaa347a99d789f38, type: 3}
+      minPitch: 0.9
+      maxPitch: 1.1
+      volume: 1
+      enablePitchVariation: 1
+      enableVolumeVariation: 0
+      volumeVariationRange: 0.1
+    captureSounds:
+      clips: []
+      minPitch: 0.9
+      maxPitch: 1.1
+      volume: 1
+      enablePitchVariation: 1
+      enableVolumeVariation: 0
+      volumeVariationRange: 0.1
+    destructionSounds:
+      clips: []
+      minPitch: 0.9
+      maxPitch: 1.1
+      volume: 1
+      enablePitchVariation: 1
+      enableVolumeVariation: 0
+      volumeVariationRange: 0.1
+    specialEffectSounds:
+      clips: []
+      minPitch: 0.9
+      maxPitch: 1.1
+      volume: 1
+      enablePitchVariation: 1
+      enableVolumeVariation: 0
+      volumeVariationRange: 0.1
+  - cubeType: 1
+    landingSounds:
+      clips:
+      - {fileID: 0}
+      minPitch: 0
+      maxPitch: 0
+      volume: 1
+      enablePitchVariation: 0
+      enableVolumeVariation: 0
+      volumeVariationRange: 0
+    captureSounds:
+      clips: []
+      minPitch: 0
+      maxPitch: 0
+      volume: 0
+      enablePitchVariation: 0
+      enableVolumeVariation: 0
+      volumeVariationRange: 0
+    destructionSounds:
+      clips: []
+      minPitch: 0
+      maxPitch: 0
+      volume: 0
+      enablePitchVariation: 0
+      enableVolumeVariation: 0
+      volumeVariationRange: 0
+    specialEffectSounds:
+      clips: []
+      minPitch: 0
+      maxPitch: 0
+      volume: 0
+      enablePitchVariation: 0
+      enableVolumeVariation: 0
+      volumeVariationRange: 0
+  - cubeType: 2
+    landingSounds:
+      clips:
+      - {fileID: 8300000, guid: 06db626c424a1774ebfdd4aba3bda1ad, type: 3}
+      minPitch: 0.9
+      maxPitch: 1.1
+      volume: 1
+      enablePitchVariation: 0
+      enableVolumeVariation: 0
+      volumeVariationRange: 0
+    captureSounds:
+      clips: []
+      minPitch: 0.9
+      maxPitch: 1.1
+      volume: 1
+      enablePitchVariation: 1
+      enableVolumeVariation: 0
+      volumeVariationRange: 0.1
+    destructionSounds:
+      clips: []
+      minPitch: 0.9
+      maxPitch: 1.1
+      volume: 1
+      enablePitchVariation: 1
+      enableVolumeVariation: 0
+      volumeVariationRange: 0.1
+    specialEffectSounds:
+      clips: []
+      minPitch: 0.9
+      maxPitch: 1.1
+      volume: 1
+      enablePitchVariation: 1
+      enableVolumeVariation: 0
+      volumeVariationRange: 0.1
+  - cubeType: 3
+    landingSounds:
+      clips: []
+      minPitch: 0.9
+      maxPitch: 1.1
+      volume: 1
+      enablePitchVariation: 1
+      enableVolumeVariation: 0
+      volumeVariationRange: 0.1
+    captureSounds:
+      clips: []
+      minPitch: 0.9
+      maxPitch: 1.1
+      volume: 1
+      enablePitchVariation: 1
+      enableVolumeVariation: 0
+      volumeVariationRange: 0.1
+    destructionSounds:
+      clips: []
+      minPitch: 0.9
+      maxPitch: 1.1
+      volume: 1
+      enablePitchVariation: 1
+      enableVolumeVariation: 0
+      volumeVariationRange: 0.1
+    specialEffectSounds:
+      clips: []
+      minPitch: 0.9
+      maxPitch: 1.1
+      volume: 1
+      enablePitchVariation: 1
+      enableVolumeVariation: 0
+      volumeVariationRange: 0.1
+  fallbackLandingSounds:
+    clips: []
+    minPitch: 0.9
+    maxPitch: 1.1
+    volume: 1
+    enablePitchVariation: 1
+    enableVolumeVariation: 0
+    volumeVariationRange: 0.1
+  fallbackCaptureSounds:
+    clips: []
+    minPitch: 0.9
+    maxPitch: 1.1
+    volume: 1
+    enablePitchVariation: 1
+    enableVolumeVariation: 0
+    volumeVariationRange: 0.1
+  fallbackDestructionSounds:
+    clips: []
+    minPitch: 0.9
+    maxPitch: 1.1
+    volume: 1
+    enablePitchVariation: 1
+    enableVolumeVariation: 0
+    volumeVariationRange: 0.1
+  fallbackSpecialEffectSounds:
+    clips: []
+    minPitch: 0.9
+    maxPitch: 1.1
+    volume: 1
+    enablePitchVariation: 1
+    enableVolumeVariation: 0
+    volumeVariationRange: 0.1
+  globalCubeAudioVolume: 0.8
+  globalPitchModifier: 1
+  enableAudioDebugLogs: 0

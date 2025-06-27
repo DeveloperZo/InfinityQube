@@ -39,9 +39,9 @@ Infinity Cube:
 - "Mystical infinite cube capture, ethereal harmonics with cosmic echo"
 - "Reality-bending sound, infinite reverb with celestial tones"
 
-Dense Cube:
+Recursion Cube:
 - "Heavy matter compression, deep thrum with gravitational pull sound"
-- "Dense core collapse, low frequency pulse with metallic resonance"
+- "Recursion core collapse, low frequency pulse with metallic resonance"
 ```
 
 **Paint System Effects:**
@@ -91,7 +91,7 @@ Assets/Audio/
 │   │   ├── SFX_CubeCapture_Unit_01.wav
 │   │   ├── SFX_CubeCapture_Prime_01.wav
 │   │   ├── SFX_CubeCapture_Infinity_01.wav
-│   │   └── SFX_CubeCapture_Dense_01.wav
+│   │   └── SFX_CubeCapture_Recursion_01.wav
 │   ├── Paint/
 │   │   ├── SFX_Paint_Corruption_01.wav
 │   │   ├── SFX_Paint_Enhancement_01.wav
@@ -134,7 +134,7 @@ public class CubeAudioClips
     public AudioClip unitCubeCapture;
     public AudioClip primeCubeCapture;
     public AudioClip infinityCubeCapture;
-    public AudioClip denseCubeCapture;
+    public AudioClip recursionCubeCapture;
     
     [Header("Paint System")]
     public AudioClip paintCorruption;
@@ -154,7 +154,7 @@ public void PlayCubeCaptureSound(CubeType cubeType)
         CubeType.Unit => cubeAudioClips.unitCubeCapture,
         CubeType.Prime => cubeAudioClips.primeCubeCapture,
         CubeType.Infinity => cubeAudioClips.infinityCubeCapture,
-        CubeType.Dense => cubeAudioClips.denseCubeCapture,
+        CubeType.Recursion => cubeAudioClips.recursionCubeCapture,
         _ => cubeAudioClips.unitCubeCapture
     };
     
@@ -194,7 +194,7 @@ High Priority (Generate First):
 
 Medium Priority:
 5. Infinity cube capture (2 variations)
-6. Dense cube capture (2 variations)
+6. Recursion cube capture (2 variations)
 7. Wave completion sound (1 variation)
 8. Detonation sound (2 variations)
 

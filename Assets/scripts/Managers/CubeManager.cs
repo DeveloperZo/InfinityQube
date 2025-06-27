@@ -112,8 +112,8 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
 
     public void UpdateDamageVisual()
     {
-        // Only apply damage visuals to dense cubes
-        if (type != CubeType.Dense) return;
+        // Only apply damage visuals to recursion cubes
+        if (type != CubeType.Recursion) return;
 
         // Calculate damage ratio (1.0 = full health, 0.0 = destroyed)
         float damageRatio = maxHitPoints > 0 ? (float)currentHitPoints / maxHitPoints : 1.0f;
@@ -148,7 +148,7 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
                 
                 cubeRenderer.material = damagedMaterial;
                 
-                Debug.Log($"Dense cube at ({position.x}, {position.y}) visual damage updated: {damageRatio:F2} health ratio");
+                Debug.Log($"Recursion cube at ({position.x}, {position.y}) visual damage updated: {damageRatio:F2} health ratio");
             }
         }
         else if (material != null)
@@ -310,6 +310,21 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
         {
             transform.position = end;
             transform.rotation = Quaternion.identity;
+            
+            // Play cube landing sound effect
+            if (GetEffectiveType() == CubeType.Infinity)
+            {
+                // Play specific cosmic infinity sound for infinity cubes
+                AudioManager.Instance?.PlayNamedSpecialEffect("sfx_cosmic_infinity_grid", transform.position);
+                Debug.Log($"Infinity cube cosmic sound triggered at position {transform.position}");
+            }
+            else
+            {
+                // Play standard cube landing sound for all other cube types
+
+                AudioManager.Instance?.PlayCubeLandingSound(GetEffectiveType(), transform.position);
+                //Debug.Log($"Cube landing sound triggered for {GetEffectiveType()} at position {transform.position}");
+            }
         }
 
         if (isDestroyed) yield break;

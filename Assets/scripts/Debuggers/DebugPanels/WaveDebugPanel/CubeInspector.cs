@@ -187,7 +187,7 @@ namespace WaveDebugSystem
             if (GUILayout.Button("Black", GUILayout.Width(60)))
                 ChangeCubeType(CubeType.Infinity, onCubeAdded, onCubeRemoved);
             if (GUILayout.Button("Reinforced", GUILayout.Width(80)))
-                ChangeCubeType(CubeType.Dense, onCubeAdded, onCubeRemoved);
+                ChangeCubeType(CubeType.Recursion, onCubeAdded, onCubeRemoved);
             GUILayout.EndHorizontal();
 
             // Position modification

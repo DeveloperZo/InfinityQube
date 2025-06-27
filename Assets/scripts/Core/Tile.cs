@@ -353,7 +353,7 @@ public class Tile : MonoBehaviour
                 Destroy(cubeToProcess.gameObject);
                 break;
 
-            case Enumerations.CubeType.Dense:
+            case Enumerations.CubeType.Recursion:
                 HandleReinforcedCube(cubeToProcess);
                 break;
         }
@@ -373,13 +373,13 @@ public class Tile : MonoBehaviour
         {
             // Cube was destroyed - handle like a successful capture
             Debug.Log($"Reinforced cube destroyed at ({x}, {y}) after taking damage");
-            NotifyPlayerCubeCapture(Enumerations.CubeType.Dense);
+            NotifyPlayerCubeCapture(Enumerations.CubeType.Recursion);
             
             // Notify WaveManager for statistics and wave completion tracking
             WaveManager waveManager = FindObjectOfType<WaveManager>();
             if (waveManager != null)
             {
-                waveManager.OnNonBlackCubeProcessed(Enumerations.CubeType.Dense, true);
+                waveManager.OnNonBlackCubeProcessed(Enumerations.CubeType.Recursion, true);
             }
             
             Destroy(cube.gameObject);

@@ -80,8 +80,8 @@ Assets/scripts/Managers/PlayerMarkerSystem.cs
 
 #### Systems Successfully Integrated:
 ✅ **Four-Tier Marker System**: Light/Heavy/Prime/Cube markers fully operational  
-✅ **New Cube Terminology**: Unit/Infinity/Prime/Dense implemented throughout  
-✅ **Heavy Marker + Dense Cube Integration**: Enhanced marker functionality working  
+✅ **New Cube Terminology**: Unit/Infinity/Prime/Recursion implemented throughout  
+✅ **Heavy Marker + Recursion Cube Integration**: Enhanced marker functionality working  
 ✅ **Corruption Mechanics**: Infinity cube face painting and tile corruption operational  
 ✅ **Backward Compatibility**: All obsolete aliases functional with zero breaking changes  
 ✅ **UI Integration**: Four-tier marker display and controls implemented  
@@ -255,11 +255,11 @@ private int corruptionDuration = 5;
 ### Test Categories Completed:
 1. ✅ Four-tier marker system terminology validation
 2. ✅ Light marker functionality (was individual) 
-3. ✅ Heavy marker functionality (NEW for dense cubes)
+3. ✅ Heavy marker functionality (NEW for recursion cubes)
 4. ✅ Prime marker area coverage (was area)
 5. ✅ Cube marker generation from prime captures
 6. ✅ New cube terminology integration
-7. ✅ Heavy marker + dense cube interaction
+7. ✅ Heavy marker + recursion cube interaction
 8. ✅ Corruption mechanics validation
 9. ✅ Face painting integration testing
 10. ✅ Backward compatibility verification

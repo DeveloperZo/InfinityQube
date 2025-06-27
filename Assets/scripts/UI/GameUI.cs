@@ -248,8 +248,8 @@ public class GameUI : MonoBehaviour
         // Helpful gameplay tips
         GUILayout.Label("• Place markers in cube paths", textStyle);
         GUILayout.Label("• Infinity cubes create detonations", textStyle);
-        GUILayout.Label("• Avoid dense cubes!", textStyle);
-        GUILayout.Label("• Heavy markers for dense cubes", textStyle);
+        GUILayout.Label("• Avoid recursion cubes!", textStyle);
+        GUILayout.Label("• Heavy markers for recursion cubes", textStyle);
 
         // Dynamic tip based on game state
         string dynamicTip = GetDynamicTip();

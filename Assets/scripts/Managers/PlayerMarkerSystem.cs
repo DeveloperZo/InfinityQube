@@ -107,7 +107,7 @@ public class PlayerMarkerSystem : MonoBehaviour
     {
         /// <summary>Light cube marker: Basic targeting (formerly Individual)</summary>
         Light,
-        /// <summary>Heavy cube marker: Enhanced targeting for dense cubes (NEW)</summary>
+        /// <summary>Heavy cube marker: Enhanced targeting for recursion cubes (NEW)</summary>
         Heavy,
         /// <summary>Prime cube marker: Area coverage (formerly Area)</summary>
         Prime,
@@ -128,7 +128,7 @@ public class PlayerMarkerSystem : MonoBehaviour
     {
         /// <summary>Light marker: Basic targeting (formerly Individual)</summary>
         Light,
-        /// <summary>Heavy marker: Enhanced marker for dense cubes (NEW)</summary>
+        /// <summary>Heavy marker: Enhanced marker for recursion cubes (NEW)</summary>
         Heavy,
         /// <summary>Prime marker: Area coverage marker (formerly Area)</summary>
         Prime,
@@ -333,7 +333,7 @@ public class PlayerMarkerSystem : MonoBehaviour
 
         foreach (var cube in cubes)
         {
-            // Heavy markers are specifically designed for dense cubes but work on all cube types
+            // Heavy markers are specifically designed for recursion cubes but work on all cube types
             success |= ProcessCubeCapture(cube, position, MarkerType.Heavy, marker);
         }
 

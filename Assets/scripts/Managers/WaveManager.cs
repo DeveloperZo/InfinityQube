@@ -488,7 +488,7 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
         {
             case Enumerations.CubeType.Unit: normalCubesCaptured++; break;
             case Enumerations.CubeType.Prime: blueCubesCaptured++; break;
-            case Enumerations.CubeType.Dense: reinforcedCubesCaptured++; break;
+            case Enumerations.CubeType.Recursion: reinforcedCubesCaptured++; break;
         }
 
         NotifyStageManager(sm => sm.OnCubeCaptured(cubeType));

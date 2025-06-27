@@ -76,6 +76,83 @@ public class CubeAudioData
                $"Destruction: {destructionSounds.clips?.Length ?? 0} | " +
                $"Special: {specialEffectSounds.clips?.Length ?? 0}";
     }
+    
+    /// <summary>
+    /// Tests all audio clips in this data and returns validation results
+    /// </summary>
+    /// <returns>Tuple containing total clip count and valid clip count</returns>
+    public (int total, int valid) TestAudioClips()
+    {
+        int total = 0;
+        int valid = 0;
+        
+        // Test each category
+        var categories = new[] 
+        {
+            ("Landing", landingSounds),
+            ("Capture", captureSounds),
+            ("Destruction", destructionSounds),
+            ("Special Effect", specialEffectSounds)
+        };
+        
+        foreach (var (categoryName, clipSet) in categories)
+        {
+            if (clipSet != null && clipSet.clips != null)
+            {
+                foreach (var clip in clipSet.clips)
+                {
+                    total++;
+                    if (clip != null)
+                    {
+                        valid++;
+                        Debug.Log($"[CubeAudioData] ✓ {cubeType}.{categoryName}: {clip.name}");
+                    }
+                    else
+                    {
+                        Debug.LogWarning($"[CubeAudioData] ✗ {cubeType}.{categoryName}: Null clip found");
+                    }
+                }
+            }
+        }
+        
+        return (total, valid);
+    }
+    
+    /// <summary>
+    /// Checks if this audio data has any landing clips configured
+    /// </summary>
+    /// <returns>True if landing sounds are available</returns>
+    public bool HasLandingClips()
+    {
+        return landingSounds != null && landingSounds.HasClips();
+    }
+    
+    /// <summary>
+    /// Checks if this audio data has any capture clips configured
+    /// </summary>
+    /// <returns>True if capture sounds are available</returns>
+    public bool HasCaptureClips()
+    {
+        return captureSounds != null && captureSounds.HasClips();
+    }
+    
+    /// <summary>
+    /// Checks if this audio data has any destruction clips configured
+    /// </summary>
+    /// <returns>True if destruction sounds are available</returns>
+    public bool HasDestructionClips()
+    {
+        return destructionSounds != null && destructionSounds.HasClips();
+    }
+    
+    /// <summary>
+    /// Checks if this audio data has any special effect clips configured
+    /// </summary>
+    /// <returns>True if special effect sounds are available</returns>
+    public bool HasSpecialEffectClips()
+    {
+        return specialEffectSounds != null && specialEffectSounds.HasClips();
+    }
 }
 
 [Serializable]
@@ -179,6 +256,15 @@ public class AudioClipSet
         }
         
         return count;
+    }
+    
+    /// <summary>
+    /// Gets all audio clips in this set (including null entries)
+    /// </summary>
+    /// <returns>Array of all audio clips</returns>
+    public AudioClip[] GetAllClips()
+    {
+        return clips ?? new AudioClip[0];
     }
 }
 

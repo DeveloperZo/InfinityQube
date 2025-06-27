@@ -94,7 +94,7 @@ From learning the beat to conducting cosmic jazz - players evolve from pattern r
 | **Unit** | Basic beat, steady tempo | Can be corrupted or enhanced | Standard capture timing |
 | **Prime** | Valuable notes, create crescendos | Generate detonation resources | Aggressive pursuit |
 | **Infinity** | Dangerous discord, break rhythm | Cannot be transformed | Avoidance choreography |
-| **Dense** | Strong beats, require multiple hits | Resist transformation | Extended engagement |
+| **Recursion** | Strong beats, require multiple hits | Resist transformation | Extended engagement |
 
 ### The Chaos Bringers - Paint System
 
