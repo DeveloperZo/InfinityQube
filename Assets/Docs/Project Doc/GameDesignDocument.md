@@ -12,7 +12,7 @@
 A grid-based tactical puzzle game where players strategically place markers to intercept advancing cube formations before they escape. Combining the spatial reasoning of classic puzzle games with resource management and predictive planning in a minimalist 3D environment that prioritizes mechanical clarity and strategic depth.
 
 ### Key Features
-- **Multi-layered Marker System**: Light, prime, and cube markers with distinct strategic applications
+- **Four-Tier Marker System**: Light, Heavy, Prime, and Cube markers with distinct strategic applications (Production Complete)
 - **Diverse Cube Mechanics**: Four cube types (Unit, Prime, Infinity, Recursion) creating varied tactical scenarios  
 - **Progressive Stage Design**: 12-stage structured learning curve with clear pedagogical progression
 - **Comprehensive Statistics**: Detailed performance tracking enabling improvement and replayability
@@ -53,7 +53,7 @@ This Game Design Document serves as the master reference, with detailed implemen
 
 #### **Player System (PlayerManager + PlayerActionManager)**
 - Smooth analog movement (WASD) with acceleration/deceleration physics
-- Three-tier marker system: Light (F/R), Prime (G/T), Cube markers (Q)
+- Four-tier marker system: Light (F/R), Heavy (V/Y), Prime (G/T), Cube markers (Q/E)
 - Resource management with charge limits, cooldowns, and regeneration
 - Comprehensive statistics tracking: captures, escapes, efficiency metrics
 
@@ -62,8 +62,8 @@ This Game Design Document serves as the master reference, with detailed implemen
 |------|------------|-----------------|
 | **Unit** | Capturable, basic scoring | Safe interaction, foundational gameplay |
 | **Prime** | Capturable, generates cube markers | High value, creates detonation resources |
-| **Infinity** | Uncapturable | Absolute threat, forces repositioning |
-| **Recursion** | Capturable, Multi-hit requirement | High durability, resource optimization challenge |
+| **Infinity** | Uncapturable, face painting mechanics | Absolute threat, forces repositioning, enables corruption |
+| **Recursion** | Capturable, Multi-hit requirement | High durability, optimized for heavy markers |
 
 #### **Wave Management (WaveManager)**
 - Manual wave initiation with step-based cube advancement
@@ -76,10 +76,13 @@ This Game Design Document serves as the master reference, with detailed implemen
 Core Controls:
 Movement: WASD/Arrows → Grid navigation
 Light Marker: F → Single-tile placement  
-Prime Marker: G → 2x2 area placement
+Heavy Marker: V → Enhanced single-tile placement
+Prime Marker: G → 3x3 area placement
 Trigger Light: R → Activate light markers
+Trigger Heavy: Y → Activate heavy markers
 Trigger Prime: T → Activate prime markers
 Trigger Cube Marker: Q → Direct cube detonation
+Power Up Cube Marker: E → Enhanced cube marker detonation
 Wave Control: ENTER → Start wave progression
 System: P (restart), ESC (quit), TAB (toggle UI)
 ```
@@ -100,7 +103,7 @@ System: P (restart), ESC (quit), TAB (toggle UI)
 
 #### **Act 3: Advanced Tactics (Stages 6-8)**
 - **Focus**: Complex interactions and forward planning
-- **Grid Size**: 9x28-32 with recursion cube introduction
+- **Grid Size**: 9x28-32 with dense cube introduction
 - **Key Learning**: Chain reactions, durability mechanics, perfect efficiency
 
 #### **Act 4: Environmental Hazards (Stages 9-10)**
@@ -205,26 +208,28 @@ This specialized document provides detailed specifications for:
 
 ### **Completed Systems** ✅
 - Complete core gameplay loop with all primary mechanics
-- Four-tier marker system (Light/Heavy/Prime/Cube) fully operational
+- **Four-tier marker system (Light/Heavy/Prime/Cube) - PRODUCTION COMPLETE**
 - Face painting mechanics with rotation tracking
 - Corruption/enhancement tile system integrated
-- Recursion cube multi-hit mechanics with heavy marker support
+- Recursion cube multi-hit mechanics with heavy marker optimization
 - Comprehensive statistics tracking and performance analysis
 - Production-quality debug tooling and testing infrastructure
-- Integration testing framework with 100% system validation
+- Integration testing framework with 100% system validation (June 23, 2025)
 - Wave management system with editor tools
 - Player action system with full input handling
+- New cube terminology (Unit/Prime/Infinity/Recursion) fully implemented
 
-### **Immediate Development Priorities** (July 2025)
+### **Current Development Focus - Phase 2: Audio + UI + Polish** (July 2025)
 - **Audio system implementation** (highest priority - 4 complexity points)
 - **UI modernization** (OnGUI → Unity UI conversion - 3 complexity points)
 - **Visual polish pass** (particle effects, game feel - 2 complexity points)
+- Cosmic theme visual integration
 
 ### **Short-Term Development** (August 2025)
 - Stage content creation (6-8 additional stages)
-- Cosmic theme visual integration
 - Meta-progression systems (achievements, ratings)
 - Save/load system for progress persistence
+- Performance optimization
 
 ### **Release Preparation** (September 2025)
 - Steam platform integration and distribution preparation
@@ -233,9 +238,10 @@ This specialized document provides detailed specifications for:
 - Marketing materials and launch preparation
 
 ---
-**Last Updated:** June 23, 2025  
-**Document Version:** 3.1 - Architecture Cross-Reference Integration  
-**Development Phase:** Production Ready → Commercial Release Preparation  
+**Last Updated:** June 28, 2025  
+**Document Version:** 3.2 - Four-Tier System Production Status Update  
+**Development Phase:** Phase 2 - Audio + UI + Polish  
+**Core Systems Status:** Four-tier marker system PRODUCTION COMPLETE (June 23, 2025)  
 **Measured Development Velocity:** 17.8 complexity points/month  
 **Projected Release:** September 15, 2025  
 **Architecture Documents:** [Artistic Architecture](5_ArtisticArchitecture.md) | [Sound Architecture](6_SoundArchitecture.md)
