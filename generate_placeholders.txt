@@ -1,0 +1,28 @@
+# Run this to create a base audio file:
+# python base_tone_gen.py
+
+# Then run these commands to create placeholder sounds:
+
+# 1. UI Click
+mcp-audio-tweaker:apply_preset --inputFile base_tone.wav --outputFile ui_click_placeholder.ogg --preset punchy-game-sfx
+
+# 2. UI Hover  
+mcp-audio-tweaker:apply_preset --inputFile base_tone.wav --outputFile ui_hover_placeholder.ogg --preset bright-crystalline
+
+# 3. UI Error
+mcp-audio-tweaker:apply_preset --inputFile base_tone.wav --outputFile ui_error_placeholder.ogg --preset deep-mechanical
+
+# 4. Action Jump
+mcp-audio-tweaker:advanced_process --inputFile base_tone.wav --outputFile action_jump_placeholder.ogg --pitch.semitones 5
+
+# 5. Success Notification
+mcp-audio-tweaker:apply_preset --inputFile base_tone.wav --outputFile notify_success_placeholder.ogg --preset bright-crystalline
+
+# 6. Warning Notification
+mcp-audio-tweaker:apply_preset --inputFile base_tone.wav --outputFile notify_warning_placeholder.ogg --preset deep-mechanical
+
+# 7. Ambient Background
+mcp-audio-tweaker:apply_preset --inputFile base_tone.wav --outputFile env_ambient_placeholder.ogg --preset space-ambient
+
+# 8. Item Collect
+mcp-audio-tweaker:advanced_process --inputFile base_tone.wav --outputFile action_collect_placeholder.ogg --pitch.semitones 7

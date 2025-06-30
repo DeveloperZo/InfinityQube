@@ -1,5 +1,7 @@
 # Development Roadmap
 
+> **Document Purpose:** This is the definitive, actionable guide for what to work on next, in priority order. For a historical record of completed milestones, see [MilestoneTracking.md](MilestoneTracking.md).
+
 ## Overview
 This roadmap outlines the development path from current production-ready state to a polished, commercial release with validated core mechanics across all complexity levels.
 
@@ -32,17 +34,31 @@ This roadmap outlines the development path from current production-ready state t
 
 ### Milestone 1.1: Audio System Implementation ⭐ **HIGHEST PRIORITY** - 🔄 IN PROGRESS
 - **Target**: Complete audio foundation
-- **Complexity**: 4 points (achievable in 1 week with focused effort)
-- **Current Status**: Initial implementation started (commit 1795dd5a)
+- **Complexity**: 2 points (revised - technical foundation 85% complete)
+- **Current Status**: AudioManager fully implemented, integration testing needed
 - **Tasks**:
-  - [x] Audio system architecture foundation - STARTED
-  - [ ] Core action sounds (marker placement, cube capture, detonation)
-  - [ ] System feedback (wave start/complete, resource regeneration)
-  - [ ] Atmospheric cosmic ambience layer
-  - [ ] Dynamic audio scaling with gameplay intensity
-  - [ ] UI interaction sounds
+  - [x] Audio system architecture foundation - **COMPLETE**
+    - [x] AudioManager with spatial audio, pooling, volume controls ✅
+    - [x] CubeAudioConfiguration ScriptableObject system ✅
+    - [x] Background music and wave composition systems ✅
+    - [x] Debug tools and testing interface ✅
 
-### Milestone 1.2: UI Modernization 
+
+### Milestone 1.3: Stage Content Creation
+- **Target**: 12-13 stages defined with waves and 4-5 complete stages with progression
+- **Complexity**: 7 points
+- **Tasks**:
+  - [ ] Design, implement and verify remaining stages and waves
+  - [ ] Proper difficulty curve implementation
+  - [ ] Ensure debuggers allow easy tuning of stages/waves
+
+### Milestone 1.4: RPG/Progression Ideation
+- **Target**: Establish framework to deliver progression and RPG vibes for player
+- **Complexity**: 4 points
+- **Tasks**:
+  - [ ] Brainstorm and design RPG elements and progression
+
+### Milestone 1.5: UI Modernization 
 - **Target**: Replace OnGUI with modern Unity UI
 - **Complexity**: 3 points 
 - **Updated Timeline**: Start July 8, complete July 22
@@ -53,7 +69,8 @@ This roadmap outlines the development path from current production-ready state t
   - [ ] Add stage complete/failed screens
   - [ ] Modernize charge indicators and cooldown displays
 
-### Milestone 1.3: Visual Polish Pass
+
+### Milestone 1.5: Visual Polish Pass
 - **Target**: Enhanced game feel and visual feedback
 - **Complexity**: 2 points
 - **Tasks**:
@@ -62,17 +79,19 @@ This roadmap outlines the development path from current production-ready state t
   - [ ] Enhanced face painting visualization
   - [ ] Tile state change visual effects
   - [ ] Marker placement/detonation polish
+  - [ ] Animation/scripted sequence placeholders for key events (stage intro, wave intro, etc)
+  - [ ] Event hooks for identifying and triggering major gameplay moments (stage start, wave start, boss intro, etc)
 
 ---
 
 ## Phase 2: Content & Polish Completion (3-4 weeks) - AUGUST 2025
 **Goal**: Complete remaining content and achieve commercial polish level
 
-### Milestone 2.1: Stage Content Creation
-- **Target**: 6-8 complete stages with progression
+### Milestone 2.1: Polish Stage Content
+- **Target**: Review Stage/Wave content
 - **Complexity**: 5 points
 - **Tasks**:
-  - [ ] Design and implement remaining stages
+  - [ ] Analyze and verify stages
   - [ ] Proper difficulty curve implementation
   - [ ] Interactive tutorial system
   - [ ] Stage progression and unlock system
@@ -88,8 +107,43 @@ This roadmap outlines the development path from current production-ready state t
   - [ ] Cosmic liquid animations for face painting
   - [ ] Atmospheric visual enhancement
 
-### Milestone 2.3: Meta-Progression Systems
-- **Target**: Player retention and achievement
+### Milestone 2.3: Polish Audio System
+- **Target**: Complete audio content creation and polish
+- **Complexity**: 5 points
+- **Tasks**:
+  - [ ] Complete core action sounds integration testing
+  - [ ] Assign placeholder audio clips to CubeAudioConfiguration
+  - [ ] Execute comprehensive audio testing with game managers
+  - [ ] Verify audio performance under load
+  - [ ] **Core Action Sound Content Creation**:
+    - [ ] Generate/source marker placement sounds (3 variations)
+    - [ ] Create cube capture sounds by type (8 variations: 2 per cube type)
+    - [ ] Generate detonation effect sounds (3 variations)
+    - [ ] Add UI interaction sounds (click, hover, success/failure)
+  - [ ] **System Feedback Sound Content**:
+    - [ ] Generate wave start/complete sound effects
+    - [ ] Create resource regeneration audio cues
+    - [ ] Add player movement feedback sounds
+    - [ ] Generate marker trigger confirmation sounds
+  - [ ] **Atmospheric Audio Layer**:
+    - [ ] Source/create cosmic ambient background music (2-3 minute loop)
+    - [ ] Implement dynamic ambient layers (calm, active, tense)
+    - [ ] Add stage transition musical stingers
+    - [ ] Create environmental audio atmosphere
+  - [ ] **Dynamic Audio Scaling**:
+    - [ ] Implement intensity-based volume scaling
+    - [ ] Add gameplay state audio adaptation
+    - [ ] Create wave composition enhancements
+    - [ ] Optimize audio performance for complex scenes
+  - [ ] **Advanced UI Interaction Audio**:
+    - [ ] Complete UI sound integration across all menus
+    - [ ] Add accessibility audio cues
+    - [ ] Implement audio options menu
+    - [ ] Create audio feedback for tutorial elements
+
+
+### Milestone 2.4: Meta-Progression Systems
+- **Target**: Player retention, achievement, and expressive progression
 - **Complexity**: 2 points
 - **Tasks**:
   - [ ] Achievement system implementation
@@ -97,6 +151,10 @@ This roadmap outlines the development path from current production-ready state t
   - [ ] Post-stage breakdown and statistics
   - [ ] Unlockable content or modes
   - [ ] Settings persistence system
+  - [ ] **RPG-like progression system** (character growth, unlockable abilities, or upgrades)
+  - [ ] **Hub area (village/town)**: A central location where player progression is visually and interactively expressed (inspired by Bastion's village)
+  - [ ] Visual and interactive feedback for progression in the hub
+  - [ ] Integration of meta-progression with core gameplay and hub
 
 ---
 

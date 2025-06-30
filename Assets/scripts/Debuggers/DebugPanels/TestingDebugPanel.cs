@@ -361,7 +361,7 @@ public class TestingDebugPanel : DebugPanelBase
         var actionManager = Object.FindObjectOfType<PlayerActionManager>();
         if (actionManager != null)
         {
-            actionManager.PlaceIndividualMarker(testPos);
+            actionManager.PlaceLightMarker(testPos);
         }
 
         Debug.Log("Action + Face combo test: Normal cube will be enhanced, then captured with marker");
@@ -387,7 +387,7 @@ public class TestingDebugPanel : DebugPanelBase
         {
             for (int x = 0; x < gridManager.Width; x += 2)
             {
-                actionManager.PlaceIndividualMarker(new Vector2Int(x, 10));
+                actionManager.PlaceLightMarker(new Vector2Int(x, 10));
             }
         }
 
@@ -449,8 +449,8 @@ public class TestingDebugPanel : DebugPanelBase
         var actionManager = Object.FindObjectOfType<PlayerActionManager>();
         if (actionManager != null)
         {
-            actionManager.PlaceIndividualMarker(new Vector2Int(center.x - 1, center.y));
-            actionManager.PlaceAreaMarker(center, 2);
+            actionManager.PlaceLightMarker(new Vector2Int(center.x - 1, center.y));
+            actionManager.PlacePrimeMarker(center, 2);
         }
 
         Debug.Log("Integration test complete - all systems engaged!");
@@ -482,7 +482,7 @@ public class TestingDebugPanel : DebugPanelBase
         var actionManager = Object.FindObjectOfType<PlayerActionManager>();
         if (actionManager != null)
         {
-            Debug.Log($"Actions - Individual: {actionManager.GetCurrentIndividualMarkers()}, Area: {actionManager.GetCurrentAreaMarkers()}, Cube: {actionManager.GetCurrentCubeMarkers()}");
+            Debug.Log($"Actions - Light: {actionManager.GetCurrentLightMarkers()}, Area: {actionManager.GetCurrentPrimeMarkers()}, Cube: {actionManager.GetCurrentCubeMarkers()}");
         }
 
         Debug.Log("=== END SYSTEM STATE ===");

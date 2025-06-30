@@ -17,6 +17,15 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
     [SerializeField] public int moveCount = 0;
     [System.NonSerialized] private CubeData cubeData;
 
+    [Header("Audio Configuration")]
+    [SerializeField] 
+    [Tooltip("ScriptableObject containing cube-specific audio configuration. Will use AudioManager's configuration if not assigned.")]
+    private CubeAudioConfiguration cubeAudioConfig;
+    
+    [SerializeField]
+    [Tooltip("AudioSource component for playing cube-specific audio. Will be created automatically if not assigned.")]
+    private AudioSource cubeAudioSource;
+
     [Header("Animation Settings")]
     [SerializeField] private float moveDuration = 0.25f;
     [SerializeField] private float squashDuration = 0.25f;
@@ -90,6 +99,7 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
         InitializeFaceSystem();
         InitializeFaceMapping();
         SetupPhysics();
+        SetupAudioSystem();
         UpdateDamageVisual();
     }
 
@@ -104,6 +114,8 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
 
         if (currentHitPoints <= 0)
         {
+            // Play destruction sound when cube is destroyed by damage
+            PlayDestructionSound();
             return true;
         }
 
@@ -176,15 +188,248 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
         Debug.Log($"Collider setup complete for {name} cube");
     }
 
+    /// <summary>
+    /// Sets up the audio system for this cube by configuring AudioSource and CubeAudioConfiguration
+    /// </summary>
+    private void SetupAudioSystem()
+    {
+        // Set up AudioSource component
+        if (cubeAudioSource == null)
+        {
+            cubeAudioSource = GetComponent<AudioSource>();
+        }
+        
+        if (cubeAudioSource == null)
+        {
+            cubeAudioSource = gameObject.AddComponent<AudioSource>();
+        }
+        
+        // Configure AudioSource for cube-specific audio playback
+        ConfigureCubeAudioSource();
+        
+        // Set up audio configuration
+        if (cubeAudioConfig == null)
+        {
+            // Try to get from AudioManager if not assigned locally
+            if (AudioManager.Instance != null && AudioManager.Instance.cubeAudioConfiguration != null)
+            {
+                cubeAudioConfig = AudioManager.Instance.cubeAudioConfiguration;
+                Debug.Log($"[CubeManager] Using CubeAudioConfiguration from AudioManager for {type} cube");
+            }
+            else
+            {
+                Debug.LogWarning($"[CubeManager] No CubeAudioConfiguration available for {type} cube - audio will not play");
+            }
+        }
+        
+        // Validate audio configuration
+        if (cubeAudioConfig != null)
+        {
+            var audioData = cubeAudioConfig.GetAudioData(type);
+            if (audioData == null || !audioData.HasAnyAudioClips())
+            {
+                Debug.LogWarning($"[CubeManager] No audio clips configured for cube type {type} in CubeAudioConfiguration");
+            }
+        }
+        
+        Debug.Log($"[CubeManager] Audio system setup complete for {type} cube (AudioSource: {cubeAudioSource != null}, Config: {cubeAudioConfig != null})");
+    }
+    
+    /// <summary>
+    /// Configures the AudioSource component for optimal cube audio playback
+    /// </summary>
+    private void ConfigureCubeAudioSource()
+    {
+        if (cubeAudioSource == null) return;
+        
+        // Configure for 3D spatial audio
+        cubeAudioSource.playOnAwake = false;
+        cubeAudioSource.loop = false;
+        cubeAudioSource.spatialBlend = 1f; // Full 3D spatial sound
+        cubeAudioSource.rolloffMode = AudioRolloffMode.Logarithmic;
+        cubeAudioSource.maxDistance = 30f; // Reasonable distance for cube sounds
+        cubeAudioSource.minDistance = 1f;
+        cubeAudioSource.spread = 0f; // Directional sound
+        cubeAudioSource.dopplerLevel = 0.1f; // Minimal doppler effect
+        
+        // Set default volume and pitch
+        cubeAudioSource.volume = 0.8f;
+        cubeAudioSource.pitch = 1f;
+    }
+
     public void ResetMovementState()
     {
         isMoving = false;
     }
 
+    #region Cube Audio Playback
+    
+    /// <summary>
+    /// Plays cube audio for the specified sound category using CubeAudioConfiguration
+    /// </summary>
+    /// <param name="soundCategory">Type of sound to play (Landing, Capture, Destruction, SpecialEffect)</param>
+    /// <param name="volumeMultiplier">Optional volume multiplier (default 1.0)</param>
+    private void PlayCubeAudio(SoundCategory soundCategory, float volumeMultiplier = 1f)
+    {
+        if (cubeAudioConfig == null || cubeAudioSource == null)
+        {
+            // Fallback to AudioManager if no local configuration
+            if (AudioManager.Instance != null)
+            {
+                switch (soundCategory)
+                {
+                    case SoundCategory.Landing:
+                        AudioManager.Instance.PlayCubeLandingSound(GetEffectiveType(), transform.position);
+                        break;
+                    case SoundCategory.Capture:
+                        AudioManager.Instance.PlayCubeCaptureSound(GetEffectiveType(), transform.position);
+                        break;
+                    case SoundCategory.Destruction:
+                        AudioManager.Instance.PlayCubeDestructionSound(GetEffectiveType(), transform.position);
+                        break;
+                    case SoundCategory.SpecialEffect:
+                        AudioManager.Instance.PlayCubeSpecialEffectSound(GetEffectiveType(), transform.position);
+                        break;
+                }
+            }
+            return;
+        }
+        
+        // Get audio clip using effective type (considers face painting)
+        CubeType effectiveType = GetEffectiveType();
+        AudioClip audioClip = cubeAudioConfig.GetRandomClip(effectiveType, soundCategory);
+        
+        if (audioClip == null)
+        {
+            // Try with original type if effective type has no audio
+            audioClip = cubeAudioConfig.GetRandomClip(type, soundCategory);
+        }
+        
+        if (audioClip != null)
+        {
+            // Get playback settings from configuration
+            AudioPlaybackSettings settings = cubeAudioConfig.GetPlaybackSettings(effectiveType, soundCategory);
+            
+            // Apply volume multiplier and ensure reasonable values
+            float finalVolume = Mathf.Clamp01(settings.volume * volumeMultiplier);
+            float finalPitch = Mathf.Clamp(settings.pitch, 0.5f, 2f);
+            
+            // Configure and play audio
+            cubeAudioSource.clip = audioClip;
+            cubeAudioSource.volume = finalVolume;
+            cubeAudioSource.pitch = finalPitch;
+            cubeAudioSource.Play();
+            
+            Debug.Log($"[CubeManager] Played {soundCategory} audio for {effectiveType} cube: {audioClip.name} (Vol: {finalVolume:F2}, Pitch: {finalPitch:F2})");
+        }
+        else
+        {
+            Debug.Log($"[CubeManager] No {soundCategory} audio available for {effectiveType} cube (fallback also checked)");
+        }
+    }
+    
+    /// <summary>
+    /// Plays cube landing sound when cube lands on a tile
+    /// </summary>
+    public void PlayLandingSound()
+    {
+        PlayCubeAudio(SoundCategory.Landing);
+    }
+    
+    /// <summary>
+    /// Plays cube capture sound when cube is captured by player
+    /// </summary>
+    public void PlayCaptureSound()
+    {
+        PlayCubeAudio(SoundCategory.Capture);
+    }
+    
+    /// <summary>
+    /// Plays cube destruction sound when cube is destroyed
+    /// </summary>
+    public void PlayDestructionSound()
+    {
+        PlayCubeAudio(SoundCategory.Destruction);
+    }
+    
+    /// <summary>
+    /// Plays cube special effect sound for special cube interactions
+    /// </summary>
+    public void PlaySpecialEffectSound()
+    {
+        PlayCubeAudio(SoundCategory.SpecialEffect);
+    }
+    
+    /// <summary>
+    /// Called when this cube is captured - plays capture sound and any additional effects
+    /// This method should be called by external systems (like Tile.cs) when cube capture occurs
+    /// </summary>
+    public void OnCubeCapture()
+    {
+        PlayCaptureSound();
+        
+        // Add any additional capture effects here if needed
+        Debug.Log($"[CubeManager] Cube {GetEffectiveType()} captured at ({position.x}, {position.y}) - capture audio triggered");
+    }
+    
+    /// <summary>
+    /// Validates that audio system is properly configured for this cube
+    /// </summary>
+    /// <returns>True if audio system is configured and ready</returns>
+    public bool IsAudioSystemReady()
+    {
+        bool hasAudioSource = cubeAudioSource != null;
+        bool hasAudioConfig = cubeAudioConfig != null;
+        bool hasAudioManager = AudioManager.Instance != null;
+        
+        return hasAudioSource && (hasAudioConfig || hasAudioManager);
+    }
+    
+    /// <summary>
+    /// Gets diagnostic information about the cube's audio system
+    /// </summary>
+    /// <returns>String containing audio diagnostic information</returns>
+    public string GetAudioDiagnostics()
+    {
+        var diagnostics = new System.Text.StringBuilder();
+        diagnostics.AppendLine($"=== Audio Diagnostics for {type} Cube ===");
+        diagnostics.AppendLine($"AudioSource: {(cubeAudioSource != null ? "Configured" : "Missing")}");
+        diagnostics.AppendLine($"CubeAudioConfig: {(cubeAudioConfig != null ? "Assigned" : "Not Assigned")}");
+        diagnostics.AppendLine($"AudioManager Available: {(AudioManager.Instance != null ? "Yes" : "No")}");
+        diagnostics.AppendLine($"Audio System Ready: {IsAudioSystemReady()}");
+        
+        if (cubeAudioConfig != null)
+        {
+            var audioData = cubeAudioConfig.GetAudioData(type);
+            if (audioData != null)
+            {
+                diagnostics.AppendLine($"Audio Data Available: {audioData.HasAnyAudioClips()}");
+                diagnostics.AppendLine($"Landing Clips: {(audioData.HasLandingClips() ? "Yes" : "No")}");
+                diagnostics.AppendLine($"Capture Clips: {(audioData.HasCaptureClips() ? "Yes" : "No")}");
+                diagnostics.AppendLine($"Destruction Clips: {(audioData.HasDestructionClips() ? "Yes" : "No")}");
+                diagnostics.AppendLine($"Special Effect Clips: {(audioData.HasSpecialEffectClips() ? "Yes" : "No")}");
+            }
+            else
+            {
+                diagnostics.AppendLine($"No audio data found for cube type: {type}");
+            }
+        }
+        
+        return diagnostics.ToString();
+    }
+    
+    #endregion
+
     private void OnDestroy()
     {
         isDestroyed = true;
         StopAllCoroutines();
+        
+        // Play destruction sound before cleanup
+        if (cubeAudioSource != null && !cubeAudioSource.isPlaying)
+        {
+            PlayDestructionSound();
+        }
 
         // Notify FacePaintingManager that cube is leaving
         FacePaintingManager facePaintingManager = FindObjectOfType<FacePaintingManager>();
@@ -201,6 +446,12 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
                 Destroy(faceIndicators[i]);
                 faceIndicators[i] = null;
             }
+        }
+        
+        // Clean up audio source if it exists
+        if (cubeAudioSource != null)
+        {
+            cubeAudioSource.Stop();
         }
     }
 
@@ -311,19 +562,20 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
             transform.position = end;
             transform.rotation = Quaternion.identity;
             
-            // Play cube landing sound effect
+            // Play cube landing sound using integrated audio system
             if (GetEffectiveType() == CubeType.Infinity)
             {
-                // Play specific cosmic infinity sound for infinity cubes
+                // Play special effect sound for infinity cubes
+                PlaySpecialEffectSound();
+                
+                // Also play the named special effect if available through AudioManager
                 AudioManager.Instance?.PlayNamedSpecialEffect("sfx_cosmic_infinity_grid", transform.position);
                 Debug.Log($"Infinity cube cosmic sound triggered at position {transform.position}");
             }
             else
             {
-                // Play standard cube landing sound for all other cube types
-
-                AudioManager.Instance?.PlayCubeLandingSound(GetEffectiveType(), transform.position);
-                //Debug.Log($"Cube landing sound triggered for {GetEffectiveType()} at position {transform.position}");
+                // Play standard cube landing sound using CubeAudioConfiguration
+                PlayLandingSound();
             }
         }
 
@@ -898,7 +1150,8 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
     {
         string status = isDestroyed ? "DESTROYED" : (isMoving ? "MOVING" : "IDLE");
         string effectiveType = GetEffectiveType().ToString();
-        return $"Cube {type}->{effectiveType}: @({position.x},{position.y}) HP:{currentHitPoints}/{maxHitPoints} ({status}) Face:{GetCurrentDownFace()}";
+        string audioStatus = IsAudioSystemReady() ? "AudioOK" : "NoAudio";
+        return $"Cube {type}->{effectiveType}: @({position.x},{position.y}) HP:{currentHitPoints}/{maxHitPoints} ({status}) Face:{GetCurrentDownFace()} Audio:{audioStatus}";
     }
 
     public Dictionary<string, object> GetDebugData()
@@ -929,7 +1182,15 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
             ["Rain Speed"] = rainSpeed,
             ["Rain Height"] = rainHeight,
             ["Target Row"] = targetRow,
-            ["Tile Size"] = tileSize
+            ["Tile Size"] = tileSize,
+            
+            // Audio system debug information
+            ["Audio System Ready"] = IsAudioSystemReady(),
+            ["AudioSource Configured"] = cubeAudioSource != null,
+            ["CubeAudioConfig Assigned"] = cubeAudioConfig != null,
+            ["Audio Currently Playing"] = cubeAudioSource?.isPlaying ?? false,
+            ["Audio Volume"] = cubeAudioSource?.volume ?? 0f,
+            ["Audio Pitch"] = cubeAudioSource?.pitch ?? 1f
         };
     }
 
@@ -959,6 +1220,14 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
         // Reset scale and rotation
         transform.localScale = new Vector3(tileSize, tileSize, tileSize);
         transform.rotation = Quaternion.identity;
+        
+        // Reset audio system
+        if (cubeAudioSource != null)
+        {
+            cubeAudioSource.Stop();
+            cubeAudioSource.clip = null;
+            ConfigureCubeAudioSource(); // Reset to default audio settings
+        }
         
         // Reset face mapping to original state
         InitializeFaceMapping();

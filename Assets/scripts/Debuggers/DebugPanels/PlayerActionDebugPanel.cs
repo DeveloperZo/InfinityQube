@@ -23,8 +23,8 @@ public class PlayerActionDebugPanel : DebugPanelBase
     private int selectedMarkerType = 0; // 0=Light, 1=Heavy, 2=Prime, 3=Cube
     private Vector2Int targetPosition = new Vector2Int(0, 0);
     private bool autoTrackPlayer = true;
-    private int areaMarkerSize = 2;
-    private int cubeMarkerType = 0; // 0=Individual, 1=Area
+    private int PrimeMarkerSize = 2;
+    private int cubeMarkerType = 0; // 0=Light, 1=Prime
 
     // Testing settings
     private int testMarkerCount = 5;
@@ -261,11 +261,11 @@ public class PlayerActionDebugPanel : DebugPanelBase
         {
             GUILayout.BeginHorizontal();
             GUILayout.Label("Size:", GUILayout.Width(40));
-            if (GUILayout.Button("-", GUILayout.Width(20)) && areaMarkerSize > 1)
-                areaMarkerSize--;
-            GUILayout.Label($"{areaMarkerSize}x{areaMarkerSize}", GUILayout.Width(40));
-            if (GUILayout.Button("+", GUILayout.Width(20)) && areaMarkerSize < 5)
-                areaMarkerSize++;
+            if (GUILayout.Button("-", GUILayout.Width(20)) && PrimeMarkerSize > 1)
+                PrimeMarkerSize--;
+            GUILayout.Label($"{PrimeMarkerSize}x{PrimeMarkerSize}", GUILayout.Width(40));
+            if (GUILayout.Button("+", GUILayout.Width(20)) && PrimeMarkerSize < 5)
+                PrimeMarkerSize++;
             GUILayout.EndHorizontal();
         }
         else if (selectedMarkerType == 3) // Cube
@@ -753,13 +753,13 @@ public class PlayerActionDebugPanel : DebugPanelBase
         GUILayout.Label("Batch Operations:");
 
         GUILayout.BeginHorizontal();
-        if (GUILayout.Button("Fill Individual"))
+        if (GUILayout.Button("Fill Light"))
         {
-            FillIndividualMarkers();
+            FillLightMarkers();
         }
-        if (GUILayout.Button("Fill Area"))
+        if (GUILayout.Button("Fill Prime"))
         {
-            FillAreaMarkers();
+            FillPrimeMarkers();
         }
         if (GUILayout.Button("Clear All"))
         {
@@ -772,13 +772,13 @@ public class PlayerActionDebugPanel : DebugPanelBase
         {
             TriggerAllMarkers();
         }
-        if (GUILayout.Button("Remove All Individual"))
+        if (GUILayout.Button("Remove All Light"))
         {
-            RemoveAllIndividualMarkers();
+            RemoveAllLightMarkers();
         }
-        if (GUILayout.Button("Remove All Area"))
+        if (GUILayout.Button("Remove All Prime"))
         {
-            RemoveAllAreaMarkers();
+            RemoveAllPrimeMarkers();
         }
         GUILayout.EndHorizontal();
     }
@@ -1181,21 +1181,21 @@ public class PlayerActionDebugPanel : DebugPanelBase
     {
         if (!showCooldownTimers) return;
         
-        float individualCD = actionManager.GetIndividualMarkerCooldownRemaining();
-        float areaCD = actionManager.GetAreaMarkerCooldownRemaining();
+        float LightCD = actionManager.GetLightMarkerCooldownRemaining();
+        float PrimeCD = actionManager.GetPrimeMarkerCooldownRemaining();
         
-        if (individualCD > 0 || areaCD > 0)
+        if (LightCD > 0 || PrimeCD > 0)
         {
             GUILayout.Label("Cooldown Status:");
             
-            if (individualCD > 0)
+            if (LightCD > 0)
             {
-                DrawCooldownBar("Individual", individualCD, actionManager.individualMarkerCooldown);
+                DrawCooldownBar("Light", LightCD, actionManager.lightMarkerCooldown);
             }
             
-            if (areaCD > 0)
+            if (PrimeCD > 0)
             {
-                DrawCooldownBar("Area", areaCD, actionManager.areaMarkerCooldown);
+                DrawCooldownBar("Prime", PrimeCD, actionManager.primeMarkerCooldown);
             }
         }
     }
@@ -1221,8 +1221,8 @@ public class PlayerActionDebugPanel : DebugPanelBase
     {
         if (totalOperations == 0) return 100f;
         
-        int successfulOperations = actionManager.GetIndividualMarkersPlaced() + 
-                                  actionManager.GetAreaMarkersPlaced() + 
+        int successfulOperations = actionManager.GetLightMarkersPlaced() + 
+                                  actionManager.GetPrimeMarkersPlaced() + 
                                   actionManager.GetCubeMarkersTriggered();
         
         return (successfulOperations * 100f) / totalOperations;
@@ -1290,14 +1290,14 @@ public class PlayerActionDebugPanel : DebugPanelBase
         for (int x = center.x - 3; x <= center.x + 3; x++)
         {
             if (gridManager.IsValidGridPosition(new Vector2Int(x, center.y)))
-                actionManager.PlaceIndividualMarker(new Vector2Int(x, center.y));
+                actionManager.PlaceLightMarker(new Vector2Int(x, center.y));
         }
         
         // Vertical line
         for (int y = center.y - 3; y <= center.y + 3; y++)
         {
             if (gridManager.IsValidGridPosition(new Vector2Int(center.x, y)))
-                actionManager.PlaceIndividualMarker(new Vector2Int(center.x, y));
+                actionManager.PlaceLightMarker(new Vector2Int(center.x, y));
         }
     }
     
@@ -1319,9 +1319,9 @@ public class PlayerActionDebugPanel : DebugPanelBase
                 Vector2Int pos2 = center + new Vector2Int(x, y2);
                 
                 if (gridManager.IsValidGridPosition(pos1))
-                    actionManager.PlaceIndividualMarker(pos1);
+                    actionManager.PlaceLightMarker(pos1);
                 if (y2 != y1 && gridManager.IsValidGridPosition(pos2))
-                    actionManager.PlaceIndividualMarker(pos2);
+                    actionManager.PlaceLightMarker(pos2);
             }
         }
     }
@@ -1341,7 +1341,7 @@ public class PlayerActionDebugPanel : DebugPanelBase
         int steps = 1;
         int placed = 0;
         
-        actionManager.PlaceIndividualMarker(current);
+        actionManager.PlaceLightMarker(current);
         placed++;
         
         while (placed < testMarkerCount)
@@ -1351,7 +1351,7 @@ public class PlayerActionDebugPanel : DebugPanelBase
                 current += new Vector2Int(dx[direction], dy[direction]);
                 if (gridManager.IsValidGridPosition(current))
                 {
-                    actionManager.PlaceIndividualMarker(current);
+                    actionManager.PlaceLightMarker(current);
                     placed++;
                 }
             }
@@ -1374,7 +1374,7 @@ public class PlayerActionDebugPanel : DebugPanelBase
             {
                 if ((x + y) % 2 == 0)
                 {
-                    actionManager.PlaceIndividualMarker(new Vector2Int(x, y));
+                    actionManager.PlaceLightMarker(new Vector2Int(x, y));
                     placed++;
                 }
             }
@@ -1390,15 +1390,15 @@ public class PlayerActionDebugPanel : DebugPanelBase
         // Top and bottom borders
         for (int x = 0; x < gridManager.Width; x++)
         {
-            actionManager.PlaceIndividualMarker(new Vector2Int(x, 0));
-            actionManager.PlaceIndividualMarker(new Vector2Int(x, gridManager.Height - 1));
+            actionManager.PlaceLightMarker(new Vector2Int(x, 0));
+            actionManager.PlaceLightMarker(new Vector2Int(x, gridManager.Height - 1));
         }
         
         // Left and right borders
         for (int y = 1; y < gridManager.Height - 1; y++)
         {
-            actionManager.PlaceIndividualMarker(new Vector2Int(0, y));
-            actionManager.PlaceIndividualMarker(new Vector2Int(gridManager.Width - 1, y));
+            actionManager.PlaceLightMarker(new Vector2Int(0, y));
+            actionManager.PlaceLightMarker(new Vector2Int(gridManager.Width - 1, y));
         }
     }
     
@@ -1415,7 +1415,7 @@ public class PlayerActionDebugPanel : DebugPanelBase
             
             if (gridManager.IsValidGridPosition(new Vector2Int(x, y)))
             {
-                actionManager.PlaceIndividualMarker(new Vector2Int(x, y));
+                actionManager.PlaceLightMarker(new Vector2Int(x, y));
             }
         }
     }
@@ -1442,7 +1442,7 @@ public class PlayerActionDebugPanel : DebugPanelBase
                     Vector2Int pos = clusterCenter + new Vector2Int(x, y);
                     if (gridManager.IsValidGridPosition(pos))
                     {
-                        actionManager.PlaceIndividualMarker(pos);
+                        actionManager.PlaceLightMarker(pos);
                     }
                 }
             }
@@ -1513,12 +1513,12 @@ public class PlayerActionDebugPanel : DebugPanelBase
         for (int i = 0; i < 100; i++)
         {
             Vector2Int randomPos = new Vector2Int(Random.Range(0, gridManager.Width), Random.Range(0, gridManager.Height));
-            actionManager.PlaceIndividualMarker(randomPos);
+            actionManager.PlaceLightMarker(randomPos);
             performanceTestOperations++;
             
             yield return new WaitForSeconds(0.01f);
             
-            actionManager.RemoveIndividualMarkerAt(randomPos);
+            actionManager.RemoveLightMarkerAt(randomPos);
             performanceTestOperations++;
             
             yield return new WaitForSeconds(0.01f);
@@ -1566,8 +1566,8 @@ public class PlayerActionDebugPanel : DebugPanelBase
         // Test memory usage patterns
         for (int i = 0; i < 20; i++)
         {
-            FillIndividualMarkers();
-            FillAreaMarkers();
+            FillLightMarkers();
+            FillPrimeMarkers();
             performanceTestOperations += 2;
             yield return new WaitForSeconds(0.2f);
             
@@ -1585,11 +1585,11 @@ public class PlayerActionDebugPanel : DebugPanelBase
         for (int i = 0; i < 10; i++)
         {
             Vector2Int testPos = new Vector2Int(i, gridManager.Height / 2);
-            actionManager.PlaceIndividualMarker(testPos);
+            actionManager.PlaceLightMarker(testPos);
             
             // Immediate trigger for perfect timing
             yield return null; // Wait one frame
-            actionManager.TriggerNextIndividualMarker();
+            actionManager.TriggerNextLightMarker();
             performanceTestOperations++;
             
             yield return new WaitForSeconds(0.1f);
@@ -1613,13 +1613,13 @@ public class PlayerActionDebugPanel : DebugPanelBase
             // Smart positioning logic
             Vector2Int smartPos = CalculateOptimalPosition();
             
-            if (actionManager.CanPlaceIndividualMarkerCheck())
+            if (actionManager.CanPlaceLightMarkerCheck())
             {
-                actionManager.PlaceIndividualMarker(smartPos);
+                actionManager.PlaceLightMarker(smartPos);
             }
-            else if (actionManager.CanPlaceAreaMarkerCheck())
+            else if (actionManager.CanPlacePrimeMarkerCheck())
             {
-                actionManager.PlaceAreaMarker(smartPos, 2);
+                actionManager.PlacePrimeMarker(smartPos, 2);
             }
             
             batchProgressPercentage = ((float)(i + 1) / totalOperations) * 100f;
@@ -1648,23 +1648,23 @@ public class PlayerActionDebugPanel : DebugPanelBase
         currentBatchOperation = "Optimized Clear";
         batchProgressPercentage = 0f;
         
-        int totalMarkers = actionManager.GetCurrentIndividualMarkers() + actionManager.GetCurrentAreaMarkers();
+        int totalMarkers = actionManager.GetCurrentLightMarkers() + actionManager.GetCurrentPrimeMarkers();
         int cleared = 0;
         
         // Clear in order of placement time (oldest first)
-        var individualMarkers = actionManager.lightMarkers.OrderBy(m => m.placementTime).ToArray();
-        foreach (var marker in individualMarkers)
+        var LightMarkers = actionManager.lightMarkers.OrderBy(m => m.placementTime).ToArray();
+        foreach (var marker in LightMarkers)
         {
-            actionManager.RemoveIndividualMarkerAt(marker.position);
+            actionManager.RemoveLightMarkerAt(marker.position);
             cleared++;
             batchProgressPercentage = ((float)cleared / totalMarkers) * 100f;
             yield return new WaitForSeconds(batchDelay * 0.5f);
         }
         
-        var areaMarkers = actionManager.primeMarkers.ToArray();
-        foreach (var marker in areaMarkers)
+        var PrimeMarkers = actionManager.primeMarkers.ToArray();
+        foreach (var marker in PrimeMarkers)
         {
-            actionManager.RemoveAreaMarkerAt(marker.centerPosition);
+            actionManager.RemovePrimeMarkerAt(marker.centerPosition);
             cleared++;
             batchProgressPercentage = ((float)cleared / totalMarkers) * 100f;
             yield return new WaitForSeconds(batchDelay * 0.5f);
@@ -1679,11 +1679,11 @@ public class PlayerActionDebugPanel : DebugPanelBase
         currentBatchOperation = "Cascade Trigger";
         batchProgressPercentage = 0f;
         
-        int totalMarkers = actionManager.GetCurrentIndividualMarkers();
+        int totalMarkers = actionManager.GetCurrentLightMarkers();
         
         for (int i = 0; i < totalMarkers; i++)
         {
-            actionManager.TriggerNextIndividualMarker();
+            actionManager.TriggerNextLightMarker();
             batchProgressPercentage = ((float)(i + 1) / totalMarkers) * 100f;
             yield return new WaitForSeconds(batchDelay);
         }
@@ -1704,7 +1704,7 @@ public class PlayerActionDebugPanel : DebugPanelBase
             
             foreach (var marker in markersAtX)
             {
-                actionManager.RemoveIndividualMarkerAt(marker.position);
+                actionManager.RemoveLightMarkerAt(marker.position);
             }
             
             batchProgressPercentage = ((float)(x + 1) / gridManager.Width) * 100f;
@@ -1729,7 +1729,7 @@ public class PlayerActionDebugPanel : DebugPanelBase
             {
                 int randomIndex = Random.Range(0, allMarkers.Count);
                 var randomMarker = allMarkers[randomIndex];
-                actionManager.RemoveIndividualMarkerAt(randomMarker.position);
+                actionManager.RemoveLightMarkerAt(randomMarker.position);
                 allMarkers.RemoveAt(randomIndex);
             }
             
@@ -1757,8 +1757,8 @@ public class PlayerActionDebugPanel : DebugPanelBase
                     {
                         Vector2Int pos = playerPos + new Vector2Int(x, y);
                         if (gridManager.IsValidGridPosition(pos) && 
-                            !actionManager.HasIndividualMarkerAt(pos) && 
-                            !actionManager.HasAreaMarkerAt(pos))
+                            !actionManager.HasLightMarkerAt(pos) && 
+                            !actionManager.HasPrimeMarkerAt(pos))
                         {
                             return pos;
                         }
@@ -1829,11 +1829,11 @@ public class PlayerActionDebugPanel : DebugPanelBase
         
         if (actionManager != null)
         {
-            Debug.Log($"Individual Markers: {actionManager.GetCurrentIndividualMarkers()}/{actionManager.maxIndividualMarkers}");
-            Debug.Log($"Area Markers: {actionManager.GetCurrentAreaMarkers()}/{actionManager.maxAreaMarkers}");
+            Debug.Log($"Light Markers: {actionManager.GetCurrentLightMarkers()}/{actionManager.maxLightMarkers}");
+            Debug.Log($"Prime Markers: {actionManager.GetCurrentPrimeMarkers()}/{actionManager.maxPrimeMarkers}");
             Debug.Log($"Cube Markers: {actionManager.GetCurrentCubeMarkers()}");
-            Debug.Log($"Individual CD Remaining: {actionManager.GetIndividualMarkerCooldownRemaining():F2}s");
-            Debug.Log($"Area CD Remaining: {actionManager.GetAreaMarkerCooldownRemaining():F2}s");
+            Debug.Log($"Light CD Remaining: {actionManager.GetLightMarkerCooldownRemaining():F2}s");
+            Debug.Log($"Prime CD Remaining: {actionManager.GetPrimeMarkerCooldownRemaining():F2}s");
         }
         
         Debug.Log($"Enhanced Stats - Total Operations: {totalOperations}");
@@ -1888,18 +1888,18 @@ public class PlayerActionDebugPanel : DebugPanelBase
         
         if (actionManager != null)
         {
-            int individualCount = actionManager.GetCurrentIndividualMarkers();
-            int areaCount = actionManager.GetCurrentAreaMarkers();
+            int LightCount = actionManager.GetCurrentLightMarkers();
+            int PrimeCount = actionManager.GetCurrentPrimeMarkers();
             
-            if (individualCount > actionManager.maxIndividualMarkers)
+            if (LightCount > actionManager.maxLightMarkers)
             {
-                Debug.LogError($"Individual marker count ({individualCount}) exceeds maximum ({actionManager.maxIndividualMarkers})!");
+                Debug.LogError($"Light marker count ({LightCount}) exceeds maximum ({actionManager.maxLightMarkers})!");
                 isValid = false;
             }
             
-            if (areaCount > actionManager.maxAreaMarkers)
+            if (PrimeCount > actionManager.maxPrimeMarkers)
             {
-                Debug.LogError($"Area marker count ({areaCount}) exceeds maximum ({actionManager.maxAreaMarkers})!");
+                Debug.LogError($"Prime marker count ({PrimeCount}) exceeds maximum ({actionManager.maxPrimeMarkers})!");
                 isValid = false;
             }
         }
@@ -1933,7 +1933,7 @@ public class PlayerActionDebugPanel : DebugPanelBase
         for (int i = 0; i < 50; i++)
         {
             Vector2Int pos = new Vector2Int(Random.Range(0, gridManager.Width), Random.Range(0, gridManager.Height));
-            actionManager.PlaceIndividualMarker(pos);
+            actionManager.PlaceLightMarker(pos);
             yield return null;
         }
         float rapidTime = Time.time - startTime;
@@ -1956,19 +1956,19 @@ public class PlayerActionDebugPanel : DebugPanelBase
         
         foreach (var pos in invalidPositions)
         {
-            bool result = actionManager.PlaceIndividualMarker(pos);
+            bool result = actionManager.PlaceLightMarker(pos);
             Debug.Log($"Place marker at invalid position {pos}: {result} (should be false)");
         }
         
         // Test capacity limits
         Debug.Log("Testing capacity limits...");
-        FillIndividualMarkers();
-        bool overLimitResult = actionManager.PlaceIndividualMarker(targetPosition);
-        Debug.Log($"Place marker over individual limit: {overLimitResult} (should be false)");
+        FillLightMarkers();
+        bool overLimitResult = actionManager.PlaceLightMarker(targetPosition);
+        Debug.Log($"Place marker over Light limit: {overLimitResult} (should be false)");
         
-        FillAreaMarkers();
-        overLimitResult = actionManager.PlaceAreaMarker(targetPosition, 2);
-        Debug.Log($"Place area marker over limit: {overLimitResult} (should be false)");
+        FillPrimeMarkers();
+        overLimitResult = actionManager.PlacePrimeMarker(targetPosition, 2);
+        Debug.Log($"Place Prime marker over limit: {overLimitResult} (should be false)");
         
         Debug.Log("Error condition simulation completed");
     }
@@ -1985,7 +1985,7 @@ public class PlayerActionDebugPanel : DebugPanelBase
                 actionManager.PlaceHeavyMarker(targetPosition);
                 break;
             case 2: // Prime
-                actionManager.PlacePrimeMarker(targetPosition, areaMarkerSize);
+                actionManager.PlacePrimeMarker(targetPosition, PrimeMarkerSize);
                 break;
             case 3: // Cube
                 var cubeMarkerType = (PlayerMarkerSystem.CubeMarkerType)this.cubeMarkerType;
@@ -2065,7 +2065,7 @@ public class PlayerActionDebugPanel : DebugPanelBase
 
         for (int i = 0; i < testMarkerCount && i < gridManager.Width; i++)
         {
-            actionManager.PlaceIndividualMarker(new Vector2Int(i, centerY));
+            actionManager.PlaceLightMarker(new Vector2Int(i, centerY));
         }
         Debug.Log($"Created line pattern with {testMarkerCount} markers");
     }
@@ -2081,7 +2081,7 @@ public class PlayerActionDebugPanel : DebugPanelBase
         {
             for (int y = 1; y < gridManager.Height - 1 && placed < testMarkerCount; y += 2)
             {
-                actionManager.PlaceIndividualMarker(new Vector2Int(x, y));
+                actionManager.PlaceLightMarker(new Vector2Int(x, y));
                 placed++;
             }
         }
@@ -2100,7 +2100,7 @@ public class PlayerActionDebugPanel : DebugPanelBase
                 Random.Range(0, gridManager.Width),
                 Random.Range(0, gridManager.Height)
             );
-            actionManager.PlaceIndividualMarker(randomPos);
+            actionManager.PlaceLightMarker(randomPos);
         }
         Debug.Log($"Created random pattern with {testMarkerCount} markers");
     }
@@ -2123,7 +2123,7 @@ public class PlayerActionDebugPanel : DebugPanelBase
                         Vector2Int pos = center + new Vector2Int(x, y);
                         if (gridManager.IsValidGridPosition(pos))
                         {
-                            actionManager.PlaceIndividualMarker(pos);
+                            actionManager.PlaceLightMarker(pos);
                         }
                     }
                 }
@@ -2141,7 +2141,7 @@ public class PlayerActionDebugPanel : DebugPanelBase
 
         for (int x = 0; x < gridManager.Width && x < testMarkerCount; x++)
         {
-            actionManager.PlaceIndividualMarker(new Vector2Int(x, topRow));
+            actionManager.PlaceLightMarker(new Vector2Int(x, topRow));
         }
         Debug.Log($"Created top row pattern");
     }
@@ -2161,9 +2161,9 @@ public class PlayerActionDebugPanel : DebugPanelBase
 
         foreach (var corner in corners)
         {
-            actionManager.PlaceAreaMarker(corner, 2);
+            actionManager.PlacePrimeMarker(corner, 2);
         }
-        Debug.Log("Created corner pattern with area markers");
+        Debug.Log("Created corner pattern with Prime markers");
     }
 
     private System.Collections.IEnumerator RapidPlaceRemoveTest()
@@ -2172,9 +2172,9 @@ public class PlayerActionDebugPanel : DebugPanelBase
 
         for (int i = 0; i < 10; i++)
         {
-            actionManager.PlaceIndividualMarker(testPos);
+            actionManager.PlaceLightMarker(testPos);
             yield return new WaitForSeconds(0.1f);
-            actionManager.RemoveIndividualMarkerAt(testPos);
+            actionManager.RemoveLightMarkerAt(testPos);
             yield return new WaitForSeconds(0.1f);
         }
         Debug.Log("Rapid place/remove test completed");
@@ -2185,40 +2185,40 @@ public class PlayerActionDebugPanel : DebugPanelBase
         CreateRandomPattern();
         yield return new WaitForSeconds(0.5f);
 
-        while (actionManager.GetCurrentIndividualMarkers() > 0)
+        while (actionManager.GetCurrentLightMarkers() > 0)
         {
-            actionManager.TriggerNextIndividualMarker();
+            actionManager.TriggerNextLightMarker();
             yield return new WaitForSeconds(testTriggerDelay);
         }
         Debug.Log("Trigger stress test completed");
     }
 
-    private void FillIndividualMarkers()
+    private void FillLightMarkers()
     {
-        while (actionManager.CanPlaceIndividualMarkerCheck() && actionManager.GetCurrentIndividualMarkers() < actionManager.maxIndividualMarkers)
+        while (actionManager.CanPlaceLightMarkerCheck() && actionManager.GetCurrentLightMarkers() < actionManager.maxLightMarkers)
         {
             Vector2Int randomPos = new Vector2Int(
                 Random.Range(0, gridManager.Width),
                 Random.Range(0, gridManager.Height)
             );
-            if (!actionManager.PlaceIndividualMarker(randomPos))
+            if (!actionManager.PlaceLightMarker(randomPos))
                 break;
         }
-        Debug.Log("Filled individual markers to maximum");
+        Debug.Log("Filled Light markers to maximum");
     }
 
-    private void FillAreaMarkers()
+    private void FillPrimeMarkers()
     {
-        while (actionManager.CanPlaceAreaMarkerCheck() && actionManager.GetCurrentAreaMarkers() < actionManager.maxAreaMarkers)
+        while (actionManager.CanPlacePrimeMarkerCheck() && actionManager.GetCurrentPrimeMarkers() < actionManager.maxPrimeMarkers)
         {
             Vector2Int randomPos = new Vector2Int(
                 Random.Range(0, gridManager.Width),
                 Random.Range(0, gridManager.Height)
             );
-            if (!actionManager.PlacePrimeMarker(randomPos, areaMarkerSize))
+            if (!actionManager.PlacePrimeMarker(randomPos, PrimeMarkerSize))
                 break;
         }
-        Debug.Log("Filled area markers to maximum");
+        Debug.Log("Filled Prime markers to maximum");
     }
 
     private void TriggerAllMarkers()
@@ -2230,24 +2230,24 @@ public class PlayerActionDebugPanel : DebugPanelBase
         Debug.Log("Triggered all markers");
     }
 
-    private void RemoveAllIndividualMarkers()
+    private void RemoveAllLightMarkers()
     {
         var markers = actionManager.lightMarkers.ToArray();
         foreach (var marker in markers)
         {
-            actionManager.RemoveIndividualMarkerAt(marker.position);
+            actionManager.RemoveLightMarkerAt(marker.position);
         }
-        Debug.Log($"Removed {markers.Length} individual markers");
+        Debug.Log($"Removed {markers.Length} Light markers");
     }
 
-    private void RemoveAllAreaMarkers()
+    private void RemoveAllPrimeMarkers()
     {
         var markers = actionManager.primeMarkers.ToArray();
         foreach (var marker in markers)
         {
-            actionManager.RemoveAreaMarkerAt(marker.centerPosition);
+            actionManager.RemovePrimeMarkerAt(marker.centerPosition);
         }
-        Debug.Log($"Removed {markers.Length} area markers");
+        Debug.Log($"Removed {markers.Length} Prime markers");
     }
 
     private void ResetCooldowns()
@@ -2272,11 +2272,11 @@ public class PlayerActionDebugPanel : DebugPanelBase
     private void ValidateActionSystem()
     {
         Debug.Log("=== ACTION SYSTEM VALIDATION ===");
-        Debug.Log($"Individual Markers: {actionManager.GetCurrentIndividualMarkers()}/{actionManager.maxIndividualMarkers}");
-        Debug.Log($"Area Markers: {actionManager.GetCurrentAreaMarkers()}/{actionManager.maxAreaMarkers}");
+        Debug.Log($"Light Markers: {actionManager.GetCurrentLightMarkers()}/{actionManager.maxLightMarkers}");
+        Debug.Log($"Prime Markers: {actionManager.GetCurrentPrimeMarkers()}/{actionManager.maxPrimeMarkers}");
         Debug.Log($"Cube Markers: {actionManager.GetCurrentCubeMarkers()}");
-        Debug.Log($"Can Place Individual: {actionManager.CanPlaceIndividualMarkerCheck()}");
-        Debug.Log($"Can Place Area: {actionManager.CanPlaceAreaMarkerCheck()}");
+        Debug.Log($"Can Place Light: {actionManager.CanPlaceLightMarkerCheck()}");
+        Debug.Log($"Can Place Prime: {actionManager.CanPlacePrimeMarkerCheck()}");
         Debug.Log("Action system validation complete");
     }
 
@@ -2286,11 +2286,11 @@ public class PlayerActionDebugPanel : DebugPanelBase
         Debug.Log($"PlayerActionManager found: {actionManager != null}");
         if (actionManager != null)
         {
-            Debug.Log($"Individual: {actionManager.GetCurrentIndividualMarkers()}/{actionManager.maxIndividualMarkers}");
-            Debug.Log($"Area: {actionManager.GetCurrentAreaMarkers()}/{actionManager.maxAreaMarkers}");
+            Debug.Log($"Light: {actionManager.GetCurrentLightMarkers()}/{actionManager.maxLightMarkers}");
+            Debug.Log($"Prime: {actionManager.GetCurrentPrimeMarkers()}/{actionManager.maxPrimeMarkers}");
             Debug.Log($"Cube: {actionManager.GetCurrentCubeMarkers()}");
-            Debug.Log($"Statistics - Individual Placed: {actionManager.GetIndividualMarkersPlaced()}");
-            Debug.Log($"Statistics - Area Placed: {actionManager.GetAreaMarkersPlaced()}");
+            Debug.Log($"Statistics - Light Placed: {actionManager.GetLightMarkersPlaced()}");
+            Debug.Log($"Statistics - Prime Placed: {actionManager.GetPrimeMarkersPlaced()}");
             Debug.Log($"Statistics - Perfect Timing: {actionManager.GetPerfectTimingHits()}");
         }
     }
@@ -2299,16 +2299,16 @@ public class PlayerActionDebugPanel : DebugPanelBase
     {
         Debug.Log("=== ALL MARKER POSITIONS ===");
 
-        var individual = actionManager.lightMarkers.ToArray();
-        Debug.Log($"Individual Markers ({individual.Length}):");
-        foreach (var marker in individual)
+        var Light = actionManager.lightMarkers.ToArray();
+        Debug.Log($"Light Markers ({Light.Length}):");
+        foreach (var marker in Light)
         {
             Debug.Log($"  ({marker.position.x}, {marker.position.y}) - Age: {Time.time - marker.placementTime:F1}s");
         }
 
-        var area = actionManager.primeMarkers.ToArray();
-        Debug.Log($"Prime Markers ({area.Length}):");
-        foreach (var marker in area)
+        var Prime = actionManager.primeMarkers.ToArray();
+        Debug.Log($"Prime Markers ({Prime.Length}):");
+        foreach (var marker in Prime)
         {
             Debug.Log($"  Center: ({marker.centerPosition.x}, {marker.centerPosition.y}) - Size: {marker.size}x{marker.size}");
         }
@@ -2319,9 +2319,9 @@ public class PlayerActionDebugPanel : DebugPanelBase
         Vector2Int testPos = targetPosition;
 
         // Place marker and trigger immediately for perfect timing
-        if (actionManager.PlaceIndividualMarker(testPos))
+        if (actionManager.PlaceLightMarker(testPos))
         {
-            actionManager.TriggerNextIndividualMarker();
+            actionManager.TriggerNextLightMarker();
             Debug.Log("Simulated perfect timing trigger");
         }
     }
@@ -2339,15 +2339,15 @@ public class PlayerActionDebugPanel : DebugPanelBase
 
         foreach (var pos in invalidPositions)
         {
-            bool result = actionManager.PlaceIndividualMarker(pos);
+            bool result = actionManager.PlaceLightMarker(pos);
             Debug.Log($"Place marker at invalid position ({pos.x}, {pos.y}): {result}");
         }
 
         // Test when at maximum capacity
         Debug.Log("Testing maximum capacity behavior...");
-        FillIndividualMarkers();
+        FillLightMarkers();
 
-        bool overLimitResult = actionManager.PlaceIndividualMarker(targetPosition);
+        bool overLimitResult = actionManager.PlaceLightMarker(targetPosition);
         Debug.Log($"Place marker when at limit: {overLimitResult}");
 
         Debug.Log("Edge case testing complete");

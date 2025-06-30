@@ -403,24 +403,24 @@ public class FinalIntegrationTest : MonoBehaviour
 #pragma warning disable CS0618 // Disable obsolete warnings for testing
             
             // Test obsolete marker placement methods
-            bool individualPlaced = playerActionManager.PlaceIndividualMarker(pos);
-            Log($"Obsolete PlaceIndividualMarker still works: {individualPlaced}");
+            bool individualPlaced = playerActionManager.PlaceLightMarker(pos);
+            Log($"Obsolete PlaceLightMarker still works: {individualPlaced}");
             
-            bool hasIndividual = playerActionManager.HasIndividualMarkerAt(pos);
-            Log($"Obsolete HasIndividualMarkerAt still works: {hasIndividual}");
+            bool hasIndividual = playerActionManager.HasLightMarkerAt(pos);
+            Log($"Obsolete HasLightMarkerAt still works: {hasIndividual}");
             
             if (hasIndividual)
             {
-                playerActionManager.RemoveIndividualMarkerAt(pos);
+                playerActionManager.RemoveLightMarkerAt(pos);
             }
             
             // Test obsolete area marker methods
-            bool areaPlaced = playerActionManager.PlaceAreaMarker(pos, 2);
-            Log($"Obsolete PlaceAreaMarker still works: {areaPlaced}");
+            bool areaPlaced = playerActionManager.PlacePrimeMarker(pos, 2);
+            Log($"Obsolete PlacePrimeMarker still works: {areaPlaced}");
             
             if (areaPlaced)
             {
-                playerActionManager.RemoveAreaMarkerAt(pos);
+                playerActionManager.RemovePrimeMarkerAt(pos);
             }
             
 #pragma warning restore CS0618

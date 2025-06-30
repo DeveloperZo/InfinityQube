@@ -1,7 +1,61 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
+/// <summary>
+/// Enumeration for different audio volume categories
+/// </summary>
+public enum VolumeCategory
+{
+    Master,
+    SoundEffects,
+    CubeImpact,
+    CubeDestruction,
+    BackgroundAudio,
+    SystemAudio,
+    WaveComposition
+}
+
+/// <summary>
+/// Data structure for tracking active wave composition layers
+/// </summary>
+[System.Serializable]
+public class WaveCompositionLayer
+{
+    public AudioSource audioSource;
+    public float startTime;
+    public float duration;
+    public bool isActive;
+    public Enumerations.CubeType cubeType;
+    public Vector3 position;
+    
+    public WaveCompositionLayer(AudioSource source, float start, float dur, Enumerations.CubeType type, Vector3 pos)
+    {
+        audioSource = source;
+        startTime = start;
+        duration = dur;
+        isActive = true;
+        cubeType = type;
+        position = pos;
+    }
+    
+    public bool IsFinished => Time.time >= startTime + duration;
+}
+
+/// <summary>
+/// Comprehensive audio management system for InfinityQube that handles all game audio including:
+/// - Cube-specific audio (landing, capture, destruction, special effects)
+/// - Background music system with playlist management and fade transitions
+/// - System feedback audio (wave events, marker placement/triggers, UI interactions)
+/// - Wave composition system for dynamic layered audio based on cube movements
+/// - Enhanced volume control hierarchy supporting all audio categories
+/// - 3D spatial audio positioning and audio source pooling
+/// - Comprehensive debug interface and testing capabilities
+/// 
+/// This manager consolidates functionality from AudioController and provides a unified
+/// audio system with enhanced performance, debugging, and configuration capabilities.
+/// </summary>
 public class AudioManager : MonoBehaviour, IManagerDebugInterface
 {
     #region Inspector Configuration
@@ -20,6 +74,8 @@ public class AudioManager : MonoBehaviour, IManagerDebugInterface
     [Range(0f, 2f)] public float soundEffectsVolume = 0.8f;
     [Range(0f, 2f)] public float cubeImpactVolume = 0.7f;
     [Range(0f, 2f)] public float cubeDestructionVolume = 0.6f;
+    [Range(0f, 1f)] public float backgroundAudioVolume = 0.3f;
+    [Range(0f, 1f)] public float systemAudioVolume = 0.7f;
 
     [Header("Performance Settings")]
     public int audioSourcePoolSize = 10;
@@ -32,6 +88,30 @@ public class AudioManager : MonoBehaviour, IManagerDebugInterface
     public bool showAudioGizmos = false;
     public bool logAudioEvents = false;
     
+    [Header("Background Music")]
+    [SerializeField] public AudioClip[] backgroundAmbientTracks;
+    [SerializeField] private bool enableBackgroundMusic = true;
+    [SerializeField] private bool shufflePlaylist = true;
+    [SerializeField] private float trackTransitionTime = 2f;
+
+    [Header("System Feedback Sounds")]
+    [SerializeField] public AudioClip waveStartSound;
+    [SerializeField] public AudioClip waveCompleteSound;
+    [SerializeField] public AudioClip uiClickSound;
+    [SerializeField] public AudioClip lightMarkerPlaceSound;
+    [SerializeField] public AudioClip heavyMarkerPlaceSound;
+    [SerializeField] public AudioClip primeMarkerPlaceSound;
+    [SerializeField] public AudioClip lightMarkerTriggerSound;
+    [SerializeField] public AudioClip heavyMarkerTriggerSound;
+    [SerializeField] public AudioClip primeMarkerTriggerSound;
+
+    [Header("Wave Composition System")]
+    [SerializeField] public bool enableWaveComposition = true;
+    [SerializeField] [Range(0.1f, 2f)] public float compositionLayerDelay = 0.3f;
+    [SerializeField] [Range(2, 10)] public int maxCompositionLayers = 5;
+    [SerializeField] public AnimationCurve volumeFalloffCurve = AnimationCurve.EaseInOut(0f, 1f, 1f, 0.2f);
+    [SerializeField] [Range(0f, 1f)] public float waveCompositionVolume = 0.6f;
+
     [Header("Testing Tools")]
     [Range(0f, 1f)]
     [Tooltip("Volume slider for real-time audio testing")]
@@ -48,10 +128,23 @@ public class AudioManager : MonoBehaviour, IManagerDebugInterface
     private Dictionary<AudioClip, float> lastPlayedTimes = new Dictionary<AudioClip, float>();
     private float lastCleanupTime = 0f;
     
+    // Background music state
+    private AudioSource backgroundAudioSource;
+    private int currentTrackIndex = 0;
+    private List<int> shuffledTrackIndices = new List<int>();
+    private Coroutine backgroundPlaybackCoroutine;
+    private bool isTransitioning = false;
+    
     // Performance tracking
     private int totalSoundsPlayed = 0;
     private int pooledSourcesUsed = 0;
     private int instantiatedSources = 0;
+    
+    // Wave composition state
+    private List<WaveCompositionLayer> activeCompositionLayers = new List<WaveCompositionLayer>();
+    private Dictionary<Enumerations.CubeType, AudioClip> lastPlayedCubeSounds = new Dictionary<Enumerations.CubeType, AudioClip>();
+    private float lastWaveStepTime = 0f;
+    private Coroutine waveCompositionCoroutine;
     #endregion
 
     #region Properties
@@ -60,10 +153,42 @@ public class AudioManager : MonoBehaviour, IManagerDebugInterface
     public int ActiveSources => activeAudioSources.Count;
     public int AvailablePoolSources => audioSourcePool.Count;
     public float CurrentMasterVolume => masterVolume;
+    public bool IsPlayingBackground => backgroundAudioSource != null && backgroundAudioSource.isPlaying;
+    public float CurrentBackgroundVolume => backgroundAudioVolume;
     public float sfxVolume 
     { 
         get => soundEffectsVolume; 
         set => soundEffectsVolume = Mathf.Clamp01(value); 
+    }
+    
+    /// <summary>
+    /// Get current volume level for a specific category
+    /// </summary>
+    /// <param name="category">Volume category to query</param>
+    /// <returns>Current volume level for the category</returns>
+    public float GetCurrentVolumeLevel(VolumeCategory category)
+    {
+        switch (category)
+        {
+            case VolumeCategory.Master: return masterVolume;
+            case VolumeCategory.SoundEffects: return soundEffectsVolume;
+            case VolumeCategory.CubeImpact: return cubeImpactVolume;
+            case VolumeCategory.CubeDestruction: return cubeDestructionVolume;
+            case VolumeCategory.BackgroundAudio: return backgroundAudioVolume;
+            case VolumeCategory.SystemAudio: return systemAudioVolume;
+            case VolumeCategory.WaveComposition: return waveCompositionVolume;
+            default: return 1f;
+        }
+    }
+    
+    /// <summary>
+    /// Get the effective volume for a category (category volume * master volume)
+    /// </summary>
+    /// <param name="category">Volume category to calculate</param>
+    /// <returns>Effective volume level including master volume</returns>
+    public float GetEffectiveVolumeLevel(VolumeCategory category)
+    {
+        return GetCurrentVolumeLevel(category) * masterVolume;
     }
     #endregion
 
@@ -82,6 +207,8 @@ public class AudioManager : MonoBehaviour, IManagerDebugInterface
     private void Update()
     {
         PerformCleanup();
+        UpdateBackgroundMusic();
+        UpdateWaveComposition();
     }
 
     private void OnDestroy()
@@ -133,11 +260,19 @@ public class AudioManager : MonoBehaviour, IManagerDebugInterface
         maxSimultaneousSounds = Mathf.Max(1, maxSimultaneousSounds);
         soundCleanupInterval = Mathf.Max(1f, soundCleanupInterval);
         
-        // Clamp volume values
+        // Clamp all volume values to ensure they stay within valid ranges
         masterVolume = Mathf.Clamp01(masterVolume);
         soundEffectsVolume = Mathf.Clamp01(soundEffectsVolume);
         cubeImpactVolume = Mathf.Clamp01(cubeImpactVolume);
         cubeDestructionVolume = Mathf.Clamp01(cubeDestructionVolume);
+        backgroundAudioVolume = Mathf.Clamp01(backgroundAudioVolume);
+        systemAudioVolume = Mathf.Clamp01(systemAudioVolume);
+        waveCompositionVolume = Mathf.Clamp01(waveCompositionVolume);
+        
+        if (enableDebugLogs)
+        {
+            DebugLog($"Volume validation complete - Master: {masterVolume:F2}, SFX: {soundEffectsVolume:F2}, CubeImpact: {cubeImpactVolume:F2}, CubeDestruction: {cubeDestructionVolume:F2}, Background: {backgroundAudioVolume:F2}, System: {systemAudioVolume:F2}, WaveComposition: {waveCompositionVolume:F2}");
+        }
     }
 
     private AudioSource CreateDefaultAudioSource()
@@ -157,6 +292,9 @@ public class AudioManager : MonoBehaviour, IManagerDebugInterface
         {
             InitializeAudioSourcePool();
         }
+        
+        SetupBackgroundAudio();
+        InitializeWaveComposition();
         
         IsInitialized = true;
         DebugLog("Audio system initialization complete");
@@ -241,6 +379,795 @@ public class AudioManager : MonoBehaviour, IManagerDebugInterface
         audioSource.rolloffMode = AudioRolloffMode.Logarithmic;
         audioSource.maxDistance = 50f;
         audioSource.minDistance = 1f;
+    }
+    #endregion
+
+    #region Wave Composition System
+    
+    /// <summary>
+    /// Initializes the wave composition system
+    /// </summary>
+    private void InitializeWaveComposition()
+    {
+        if (!enableWaveComposition) return;
+        
+        activeCompositionLayers.Clear();
+        lastPlayedCubeSounds.Clear();
+        lastWaveStepTime = 0f;
+        
+        // Ensure volume falloff curve has reasonable values
+        if (volumeFalloffCurve == null || volumeFalloffCurve.length < 2)
+        {
+            volumeFalloffCurve = AnimationCurve.EaseInOut(0f, 1f, 1f, 0.2f);
+        }
+        
+        DebugLog("Wave composition system initialized");
+    }
+    
+    /// <summary>
+    /// Updates the wave composition system each frame
+    /// </summary>
+    private void UpdateWaveComposition()
+    {
+        if (!enableWaveComposition) return;
+        
+        UpdateActiveCompositionLayers();
+    }
+    
+    /// <summary>
+    /// Called when WaveManager detects a wave step
+    /// </summary>
+    /// <param name="stepNumber">The current wave step number</param>
+    public void OnWaveStepDetected(int stepNumber)
+    {
+        if (!enableWaveComposition) return;
+        
+        lastWaveStepTime = Time.time;
+        CreateWaveComposition(stepNumber);
+        
+        if (enableDebugLogs)
+        {
+            DebugLog($"Wave step {stepNumber} detected - creating composition with {lastPlayedCubeSounds.Count} cube types");
+        }
+    }
+    
+    /// <summary>
+    /// Creates a wave composition based on recently played cube sounds
+    /// </summary>
+    /// <param name="stepNumber">The current wave step number</param>
+    private void CreateWaveComposition(int stepNumber)
+    {
+        if (lastPlayedCubeSounds.Count == 0) return;
+        
+        List<AudioClip> clipsToLayer = new List<AudioClip>();
+        List<Vector3> positions = new List<Vector3>();
+        List<float> volumes = new List<float>();
+        
+        int layerIndex = 0;
+        foreach (var kvp in lastPlayedCubeSounds)
+        {
+            if (layerIndex >= maxCompositionLayers) break;
+            
+            if (kvp.Value != null)
+            {
+                clipsToLayer.Add(kvp.Value);
+                positions.Add(Vector3.zero); // Will be set in the coroutine based on cube positions
+                volumes.Add(CalculateCompositionLayerVolume(layerIndex));
+                layerIndex++;
+            }
+        }
+        
+        if (clipsToLayer.Count > 0)
+        {
+            if (waveCompositionCoroutine != null)
+            {
+                StopCoroutine(waveCompositionCoroutine);
+            }
+            waveCompositionCoroutine = StartCoroutine(PlayWaveComposition(clipsToLayer, positions, volumes));
+        }
+    }
+    
+    /// <summary>
+    /// Gets a cube audio clip for wave composition
+    /// </summary>
+    /// <param name="cubeType">The cube type to get audio for</param>
+    /// <returns>Audio clip for the cube type, or null if none available</returns>
+    private AudioClip GetCubeAudioForComposition(Enumerations.CubeType cubeType)
+    {
+        AudioClip clip = null;
+        
+        // Try to get clip from cube audio configuration
+        if (cubeAudioConfiguration != null)
+        {
+            clip = cubeAudioConfiguration.GetRandomClip(cubeType, SoundCategory.Landing);
+        }
+        
+        // Fallback to legacy cube impact sounds
+        if (clip == null && cubeImpactSounds != null && cubeImpactSounds.Length > 0)
+        {
+            clip = GetRandomAudioClip(cubeImpactSounds);
+        }
+        
+        return clip;
+    }
+    
+    /// <summary>
+    /// Calculates the volume for a composition layer based on its index
+    /// </summary>
+    /// <param name="layerIndex">The index of the layer (0 = first/loudest)</param>
+    /// <returns>Volume multiplier for the layer</returns>
+    private float CalculateCompositionLayerVolume(int layerIndex)
+    {
+        if (layerIndex >= maxCompositionLayers) return 0f;
+        
+        float normalizedIndex = (float)layerIndex / (maxCompositionLayers - 1);
+        float falloffVolume = volumeFalloffCurve.Evaluate(normalizedIndex);
+        
+        return falloffVolume * waveCompositionVolume;
+    }
+    
+    /// <summary>
+    /// Updates and cleans up active composition layers
+    /// </summary>
+    private void UpdateActiveCompositionLayers()
+    {
+        for (int i = activeCompositionLayers.Count - 1; i >= 0; i--)
+        {
+            var layer = activeCompositionLayers[i];
+            
+            if (layer.IsFinished || layer.audioSource == null || !layer.audioSource.isPlaying)
+            {
+                if (layer.audioSource != null)
+                {
+                    ReturnAudioSource(layer.audioSource);
+                }
+                activeCompositionLayers.RemoveAt(i);
+            }
+        }
+    }
+    
+    /// <summary>
+    /// Cleans up the wave composition system
+    /// </summary>
+    private void CleanupWaveComposition()
+    {
+        if (waveCompositionCoroutine != null)
+        {
+            StopCoroutine(waveCompositionCoroutine);
+            waveCompositionCoroutine = null;
+        }
+        
+        // Stop and return all active composition layers
+        foreach (var layer in activeCompositionLayers)
+        {
+            if (layer.audioSource != null)
+            {
+                layer.audioSource.Stop();
+                ReturnAudioSource(layer.audioSource);
+            }
+        }
+        
+        activeCompositionLayers.Clear();
+        lastPlayedCubeSounds.Clear();
+    }
+    
+    /// <summary>
+    /// Sets the volume for wave composition
+    /// </summary>
+    /// <param name="volume">New volume level (0-1)</param>
+    public void SetWaveCompositionVolume(float volume)
+    {
+        waveCompositionVolume = Mathf.Clamp01(volume);
+        
+        // Update active layers
+        for (int i = 0; i < activeCompositionLayers.Count; i++)
+        {
+            var layer = activeCompositionLayers[i];
+            if (layer.audioSource != null)
+            {
+                float layerVolume = CalculateCompositionLayerVolume(i);
+                layer.audioSource.volume = layerVolume * masterVolume;
+            }
+        }
+        
+        DebugLog($"Wave composition volume set to: {waveCompositionVolume:F2}");
+    }
+    
+    /// <summary>
+    /// Coroutine to play layered wave composition
+    /// </summary>
+    /// <param name="clips">List of audio clips to layer</param>
+    /// <param name="positions">List of positions for spatial audio</param>
+    /// <param name="volumes">List of volume levels for each layer</param>
+    private IEnumerator PlayWaveComposition(List<AudioClip> clips, List<Vector3> positions, List<float> volumes)
+    {
+        for (int i = 0; i < clips.Count && i < maxCompositionLayers; i++)
+        {
+            if (clips[i] == null) continue;
+            
+            AudioSource audioSource = GetAvailableAudioSource();
+            if (audioSource == null)
+            {
+                DebugLog("Failed to get audio source for wave composition layer");
+                continue;
+            }
+            
+            // Configure the audio source for composition
+            audioSource.clip = clips[i];
+            audioSource.volume = volumes[i] * masterVolume;
+            audioSource.pitch = 1f + (i * 0.05f); // Slight pitch variation for layers
+            
+            // Set position for spatial audio if available
+            if (i < positions.Count && positions[i] != Vector3.zero)
+            {
+                audioSource.transform.position = positions[i];
+                Configure3DAudioSource(audioSource);
+            }
+            else
+            {
+                // Default to 2D audio for composition
+                audioSource.spatialBlend = 0f;
+            }
+            
+            audioSource.Play();
+            
+            // Create and track the composition layer
+            var layer = new WaveCompositionLayer(
+                audioSource,
+                Time.time,
+                clips[i].length,
+                lastPlayedCubeSounds.Keys.ToArray()[Mathf.Min(i, lastPlayedCubeSounds.Count - 1)],
+                positions.Count > i ? positions[i] : Vector3.zero
+            );
+            
+            activeCompositionLayers.Add(layer);
+            
+            if (enableDebugLogs)
+            {
+                DebugLog($"Wave composition layer {i + 1} started: {clips[i].name} at volume {volumes[i]:F2}");
+            }
+            
+            // Wait before starting the next layer
+            if (i < clips.Count - 1)
+            {
+                yield return new WaitForSeconds(compositionLayerDelay);
+            }
+        }
+    }
+    
+    #endregion
+
+    #region Background Music System
+    private void SetupBackgroundAudio()
+    {
+        if (backgroundAmbientTracks == null || backgroundAmbientTracks.Length == 0)
+        {
+            DebugLog("No background ambient tracks assigned");
+            return;
+        }
+        
+        // Create dedicated audio source for background music
+        GameObject backgroundObj = new GameObject("BackgroundAudioSource");
+        backgroundObj.transform.SetParent(transform);
+        backgroundAudioSource = backgroundObj.AddComponent<AudioSource>();
+        backgroundAudioSource.playOnAwake = false;
+        backgroundAudioSource.loop = false; // We handle looping manually for transitions
+        backgroundAudioSource.spatialBlend = 0f; // 2D audio
+        backgroundAudioSource.volume = backgroundAudioVolume;
+        
+        // Initialize playlist
+        InitializePlaylist();
+        
+        if (enableBackgroundMusic)
+        {
+            StartBackgroundMusic();
+        }
+        
+        DebugLog($"Background audio system initialized with {backgroundAmbientTracks.Length} tracks");
+    }
+
+    private void InitializePlaylist()
+    {
+        shuffledTrackIndices.Clear();
+        for (int i = 0; i < backgroundAmbientTracks.Length; i++)
+        {
+            shuffledTrackIndices.Add(i);
+        }
+        
+        if (shufflePlaylist)
+        {
+            ShufflePlaylist();
+        }
+        
+        currentTrackIndex = 0;
+    }
+
+    private void ShufflePlaylist()
+    {
+        for (int i = 0; i < shuffledTrackIndices.Count; i++)
+        {
+            int temp = shuffledTrackIndices[i];
+            int randomIndex = Random.Range(i, shuffledTrackIndices.Count);
+            shuffledTrackIndices[i] = shuffledTrackIndices[randomIndex];
+            shuffledTrackIndices[randomIndex] = temp;
+        }
+        
+        DebugLog("Background playlist shuffled");
+    }
+
+    public void StartBackgroundMusic()
+    {
+        if (backgroundAmbientTracks == null || backgroundAmbientTracks.Length == 0 || !enableBackgroundMusic)
+        {
+            DebugLog("Cannot start background music: no tracks available or disabled");
+            return;
+        }
+        
+        if (backgroundPlaybackCoroutine != null)
+        {
+            StopCoroutine(backgroundPlaybackCoroutine);
+        }
+        
+        backgroundPlaybackCoroutine = StartCoroutine(BackgroundMusicCoroutine());
+        DebugLog("Background music started");
+    }
+
+    public void StopBackgroundMusic()
+    {
+        if (backgroundPlaybackCoroutine != null)
+        {
+            StopCoroutine(backgroundPlaybackCoroutine);
+            backgroundPlaybackCoroutine = null;
+        }
+        
+        if (backgroundAudioSource != null && backgroundAudioSource.isPlaying)
+        {
+            backgroundAudioSource.Stop();
+        }
+        
+        DebugLog("Background music stopped");
+    }
+
+    public void NextTrack()
+    {
+        if (!enableBackgroundMusic || backgroundAmbientTracks.Length <= 1) return;
+        
+        currentTrackIndex = (currentTrackIndex + 1) % shuffledTrackIndices.Count;
+        
+        if (currentTrackIndex == 0 && shufflePlaylist)
+        {
+            ShufflePlaylist(); // Re-shuffle when we complete a cycle
+        }
+        
+        StartCoroutine(TransitionToTrack(GetCurrentTrack()));
+        DebugLog($"Transitioning to next track: {GetCurrentTrack()?.name ?? "null"}");
+    }
+
+    public void PreviousTrack()
+    {
+        if (!enableBackgroundMusic || backgroundAmbientTracks.Length <= 1) return;
+        
+        currentTrackIndex = (currentTrackIndex - 1 + shuffledTrackIndices.Count) % shuffledTrackIndices.Count;
+        StartCoroutine(TransitionToTrack(GetCurrentTrack()));
+        DebugLog($"Transitioning to previous track: {GetCurrentTrack()?.name ?? "null"}");
+    }
+
+    public void SetBackgroundVolume(float volume)
+    {
+        backgroundAudioVolume = Mathf.Clamp01(volume);
+        if (backgroundAudioSource != null)
+        {
+            backgroundAudioSource.volume = backgroundAudioVolume;
+        }
+        DebugLog($"Background volume set to: {backgroundAudioVolume:F2}");
+    }
+
+    private IEnumerator BackgroundMusicCoroutine()
+    {
+        while (enableBackgroundMusic && backgroundAmbientTracks.Length > 0)
+        {
+            AudioClip currentClip = GetCurrentTrack();
+            if (currentClip != null && backgroundAudioSource != null)
+            {
+                yield return StartCoroutine(PlayTrackWithFade(currentClip));
+                
+                // Move to next track
+                currentTrackIndex = (currentTrackIndex + 1) % shuffledTrackIndices.Count;
+                
+                // Re-shuffle playlist if we've completed a cycle
+                if (currentTrackIndex == 0 && shufflePlaylist)
+                {
+                    ShufflePlaylist();
+                }
+            }
+            else
+            {
+                yield return new WaitForSeconds(1f); // Wait before retrying if no valid track
+            }
+        }
+    }
+
+    private IEnumerator PlayTrackWithFade(AudioClip track)
+    {
+        if (track == null || backgroundAudioSource == null) yield break;
+        
+        // Fade in
+        backgroundAudioSource.clip = track;
+        backgroundAudioSource.volume = 0f;
+        backgroundAudioSource.Play();
+        
+        float fadeTime = Mathf.Min(trackTransitionTime, track.length * 0.1f); // Max 10% of track length
+        yield return StartCoroutine(FadeVolume(backgroundAudioSource, 0f, backgroundAudioVolume, fadeTime));
+        
+        // Play full track (minus fade times)
+        float playTime = track.length - (fadeTime * 2f);
+        if (playTime > 0f)
+        {
+            yield return new WaitForSeconds(playTime);
+        }
+        
+        // Fade out
+        yield return StartCoroutine(FadeVolume(backgroundAudioSource, backgroundAudioVolume, 0f, fadeTime));
+        backgroundAudioSource.Stop();
+    }
+
+    private IEnumerator TransitionToTrack(AudioClip newTrack)
+    {
+        if (newTrack == null || isTransitioning) yield break;
+        
+        isTransitioning = true;
+        
+        // Fade out current track
+        if (backgroundAudioSource != null && backgroundAudioSource.isPlaying)
+        {
+            yield return StartCoroutine(FadeVolume(backgroundAudioSource, backgroundAudioSource.volume, 0f, trackTransitionTime * 0.5f));
+            backgroundAudioSource.Stop();
+        }
+        
+        // Start new track
+        if (backgroundAudioSource != null)
+        {
+            backgroundAudioSource.clip = newTrack;
+            backgroundAudioSource.volume = 0f;
+            backgroundAudioSource.Play();
+            yield return StartCoroutine(FadeVolume(backgroundAudioSource, 0f, backgroundAudioVolume, trackTransitionTime * 0.5f));
+        }
+        
+        isTransitioning = false;
+    }
+
+    private IEnumerator FadeVolume(AudioSource audioSource, float startVolume, float targetVolume, float fadeTime)
+    {
+        if (audioSource == null || fadeTime <= 0f)
+        {
+            if (audioSource != null) audioSource.volume = targetVolume;
+            yield break;
+        }
+        
+        float elapsedTime = 0f;
+        audioSource.volume = startVolume;
+        
+        while (elapsedTime < fadeTime)
+        {
+            elapsedTime += Time.deltaTime;
+            float t = elapsedTime / fadeTime;
+            audioSource.volume = Mathf.Lerp(startVolume, targetVolume, t);
+            yield return null;
+        }
+        
+        audioSource.volume = targetVolume;
+    }
+
+    private AudioClip GetCurrentTrack()
+    {
+        if (backgroundAmbientTracks == null || backgroundAmbientTracks.Length == 0 || 
+            currentTrackIndex >= shuffledTrackIndices.Count) return null;
+        
+        int trackIndex = shuffledTrackIndices[currentTrackIndex];
+        return (trackIndex >= 0 && trackIndex < backgroundAmbientTracks.Length) ? backgroundAmbientTracks[trackIndex] : null;
+    }
+
+    private void UpdateBackgroundMusic()
+    {
+        if (backgroundAudioSource != null)
+        {
+            backgroundAudioSource.volume = backgroundAudioVolume; // Ensure volume stays synced
+        }
+    }
+
+    [ContextMenu("Test Background Music")]
+    public void TestBackgroundMusic()
+    {
+        if (backgroundAmbientTracks == null || backgroundAmbientTracks.Length == 0)
+        {
+            DebugLog("No background tracks available for testing");
+            return;
+        }
+        
+        if (IsPlayingBackground)
+        {
+            StopBackgroundMusic();
+            DebugLog("Background music stopped");
+        }
+        else
+        {
+            StartBackgroundMusic();
+            DebugLog("Background music started");
+        }
+    }
+    
+    [ContextMenu("Test Wave Composition")]
+    public void TestWaveCompositionSystem()
+    {
+        if (!enableWaveComposition)
+        {
+            DebugLog("Wave composition is disabled");
+            return;
+        }
+        
+        DebugLog("Testing wave composition system...");
+        
+        // Simulate some cube landing sounds to populate the tracking dictionary
+        var cubeTypes = new[] { Enumerations.CubeType.Unit, Enumerations.CubeType.Prime, Enumerations.CubeType.Recursion };
+        Vector3 testPosition = transform.position;
+        
+        foreach (var cubeType in cubeTypes)
+        {
+            PlayCubeLandingSound(cubeType, testPosition + Vector3.right * UnityEngine.Random.Range(-2f, 2f));
+            testPosition += Vector3.forward;
+        }
+        
+        // Wait a bit then trigger wave composition
+        StartCoroutine(DelayedWaveCompositionTest());
+    }
+    
+    [ContextMenu("Test System Feedback")]
+    public void TestSystemFeedback()
+    {
+        DebugLog("Testing system feedback audio...");
+        
+        PlayWaveStartSound();
+        
+        // Test marker placement sounds with delays
+        StartCoroutine(TestSystemAudioSequence());
+    }
+    #endregion
+
+    #region System Feedback Audio
+    public void PlayWaveStartSound()
+    {
+        if (waveStartSound != null)
+        {
+            PlaySystemFeedbackSound(waveStartSound, systemAudioVolume);
+            DebugLog("Wave start sound played");
+        }
+        else if (logAudioEvents)
+        {
+            DebugLog("Wave start sound requested but no clip assigned");
+        }
+    }
+
+    public void PlayWaveCompleteSound()
+    {
+        if (waveCompleteSound != null)
+        {
+            PlaySystemFeedbackSound(waveCompleteSound, systemAudioVolume);
+            DebugLog("Wave complete sound played");
+        }
+        else if (logAudioEvents)
+        {
+            DebugLog("Wave complete sound requested but no clip assigned");
+        }
+    }
+
+    public void PlayMarkerPlaceSound(Enumerations.MarkerType markerType, Vector3 position = default)
+    {
+        AudioClip clipToPlay = null;
+        string markerTypeName = "";
+        
+        switch (markerType)
+        {
+            case Enumerations.MarkerType.Light:
+                clipToPlay = lightMarkerPlaceSound;
+                markerTypeName = "Light";
+                break;
+            case Enumerations.MarkerType.Heavy:
+                clipToPlay = heavyMarkerPlaceSound;
+                markerTypeName = "Heavy";
+                break;
+            case Enumerations.MarkerType.Prime:
+                clipToPlay = primeMarkerPlaceSound;
+                markerTypeName = "Prime";
+                break;
+        }
+        
+        if (clipToPlay != null)
+        {
+            PlaySystemFeedbackSound(clipToPlay, systemAudioVolume, position);
+            DebugLog($"{markerTypeName} marker place sound played at position {position}");
+        }
+        else if (logAudioEvents)
+        {
+            DebugLog($"{markerTypeName} marker place sound requested but no clip assigned");
+        }
+    }
+    
+    public void PlayMarkerTriggerSound(Enumerations.MarkerType markerType, Vector3 position = default)
+    {
+        AudioClip clipToPlay = null;
+        string markerTypeName = "";
+        
+        switch (markerType)
+        {
+            case Enumerations.MarkerType.Light:
+                clipToPlay = lightMarkerTriggerSound;
+                markerTypeName = "Light";
+                break;
+            case Enumerations.MarkerType.Heavy:
+                clipToPlay = heavyMarkerTriggerSound;
+                markerTypeName = "Heavy";
+                break;
+            case Enumerations.MarkerType.Prime:
+                clipToPlay = primeMarkerTriggerSound;
+                markerTypeName = "Prime";
+                break;
+        }
+        
+        if (clipToPlay != null)
+        {
+            PlaySystemFeedbackSound(clipToPlay, systemAudioVolume * 1.2f, position); // Slightly louder for triggers
+            DebugLog($"{markerTypeName} marker trigger sound played at position {position}");
+        }
+        else if (logAudioEvents)
+        {
+            DebugLog($"{markerTypeName} marker trigger sound requested but no clip assigned");
+        }
+    }
+
+    public void PlayUIClickSound()
+    {
+        if (uiClickSound != null)
+        {
+            PlaySystemFeedbackSound(uiClickSound, systemAudioVolume * 0.8f); // Slightly quieter for UI
+            DebugLog("UI click sound played");
+        }
+        else if (logAudioEvents)
+        {
+            DebugLog("UI click sound requested but no clip assigned");
+        }
+    }
+
+    private void PlaySystemFeedbackSound(AudioClip clip, float volume, Vector3 position = default)
+    {
+        if (clip == null) return;
+        
+        // Use existing PlayAudioClip method with system audio volume
+        float finalVolume = volume * masterVolume;
+        PlayAudioClip(clip, finalVolume, position, 1f);
+        
+        if (enableDebugLogs && logAudioEvents)
+        {
+            DebugLog($"System feedback sound played: {clip.name} at volume {finalVolume:F2} at position {position}");
+        }
+    }
+
+    public void SetSystemAudioVolume(float volume)
+    {
+        systemAudioVolume = Mathf.Clamp01(volume);
+        DebugLog($"System audio volume set to: {systemAudioVolume:F2}");
+    }
+
+    /// <summary>
+    /// Integration point for WaveManager wave start events
+    /// </summary>
+    public void OnWaveStarted()
+    {
+        PlayWaveStartSound();
+        DebugLog("Wave started event processed");
+    }
+
+    /// <summary>
+    /// Integration point for WaveManager wave complete events
+    /// </summary>
+    public void OnWaveCompleted()
+    {
+        PlayWaveCompleteSound();
+        DebugLog("Wave completed event processed");
+    }
+
+    /// <summary>
+    /// Integration point for marker placement events
+    /// </summary>
+    public void OnMarkerPlaced(Enumerations.MarkerType markerType, Vector3 worldPosition)
+    {
+        PlayMarkerPlaceSound(markerType, worldPosition);
+        DebugLog($"{markerType} marker placed event processed at position {worldPosition}");
+    }
+
+    /// <summary>
+    /// Integration point for UI interaction events
+    /// </summary>
+    public void OnUIInteraction()
+    {
+        PlayUIClickSound();
+    }
+
+
+
+    private IEnumerator TestSystemAudioSequence()
+    {
+        yield return new WaitForSeconds(0.5f);
+        PlayMarkerPlaceSound(Enumerations.MarkerType.Light, transform.position);
+        
+        yield return new WaitForSeconds(0.5f);
+        PlayMarkerPlaceSound(Enumerations.MarkerType.Heavy, transform.position + Vector3.right);
+        
+        yield return new WaitForSeconds(0.5f);
+        PlayMarkerPlaceSound(Enumerations.MarkerType.Prime, transform.position + Vector3.left);
+        
+        yield return new WaitForSeconds(0.5f);
+        PlayMarkerTriggerSound(Enumerations.MarkerType.Light, transform.position);
+        
+        yield return new WaitForSeconds(0.5f);
+        PlayMarkerTriggerSound(Enumerations.MarkerType.Heavy, transform.position + Vector3.right);
+        
+        yield return new WaitForSeconds(0.5f);
+        PlayMarkerTriggerSound(Enumerations.MarkerType.Prime, transform.position + Vector3.left);
+        
+        yield return new WaitForSeconds(0.5f);
+        PlayUIClickSound();
+        
+        yield return new WaitForSeconds(1f);
+        PlayWaveCompleteSound();
+        
+        DebugLog("System feedback audio test complete");
+    }
+    
+
+    
+    private IEnumerator DelayedWaveCompositionTest()
+    {
+        yield return new WaitForSeconds(0.5f);
+        
+        // Trigger wave step to create composition
+        OnWaveStepDetected(1);
+        
+        DebugLog("Wave composition test triggered");
+    }
+    
+    [ContextMenu("Test Volume Controls")]
+    public void TestVolumeControls()
+    {
+        DebugLog("=== VOLUME CONTROL SYSTEM TEST STARTED ===");
+        
+        // Test getting current volume levels for all categories
+        foreach (VolumeCategory category in System.Enum.GetValues(typeof(VolumeCategory)))
+        {
+            float currentVolume = GetCurrentVolumeLevel(category);
+            float effectiveVolume = GetEffectiveVolumeLevel(category);
+            DebugLog($"{category}: Current={currentVolume:F2}, Effective={effectiveVolume:F2}");
+        }
+        
+        // Test setting volumes
+        DebugLog("Testing SetVolumeForCategory method...");
+        
+        float originalMaster = masterVolume;
+        SetVolumeForCategory(VolumeCategory.Master, 0.5f);
+        
+        SetVolumeForCategory(VolumeCategory.SoundEffects, 0.7f);
+        SetVolumeForCategory(VolumeCategory.BackgroundAudio, 0.3f);
+        SetVolumeForCategory(VolumeCategory.SystemAudio, 0.8f);
+        
+        // Test a sound with the new volumes
+        if (cubeImpactSounds != null && cubeImpactSounds.Length > 0)
+        {
+            PlayAudioClip(cubeImpactSounds[0], soundEffectsVolume, transform.position);
+        }
+        
+        // Restore original master volume
+        SetMasterVolume(originalMaster);
+        
+        DebugLog("=== VOLUME CONTROL SYSTEM TEST COMPLETED ===");
     }
     #endregion
 
@@ -481,6 +1408,52 @@ public class AudioManager : MonoBehaviour, IManagerDebugInterface
         }
     }
     
+    /// <summary>
+    /// Tests the audio event system by triggering different event types
+    /// </summary>
+    [ContextMenu("Test Audio Event System")]
+    public void TestAudioEventSystem()
+    {
+        if (!IsInitialized)
+        {
+            DebugLog("AudioManager not initialized! Cannot test audio event system.");
+            return;
+        }
+        
+        DebugLog("=== AUDIO EVENT SYSTEM TEST STARTED ===");
+        
+        Vector3 testPosition = transform.position;
+        
+        // Test basic cube events with different cube types
+        System.Array cubeTypes = System.Enum.GetValues(typeof(Enumerations.CubeType));
+        foreach (Enumerations.CubeType cubeType in cubeTypes)
+        {
+            // Test cube landing event (this should play actual audio)
+            TriggerCubeAudioEvent(Enumerations.GameAudioEvent.CubeLanded, cubeType, testPosition + Vector3.right * UnityEngine.Random.Range(-2f, 2f), testingVolume);
+            
+            // Small delay between tests
+            System.Threading.Thread.Sleep(150);
+            
+            // Test cube capture event
+            TriggerCubeAudioEvent(Enumerations.GameAudioEvent.CubeCaptured, cubeType, testPosition + Vector3.forward * UnityEngine.Random.Range(-2f, 2f), testingVolume);
+            
+            System.Threading.Thread.Sleep(150);
+        }
+        
+        // Test other event types (these will log but not play audio yet)
+        TriggerAudioEvent(Enumerations.GameAudioEvent.PlayerMoved, testPosition);
+        TriggerAudioEvent(Enumerations.GameAudioEvent.LightMarkerPlaced, testPosition + Vector3.left);
+        TriggerAudioEvent(Enumerations.GameAudioEvent.PrimeMarkerPlaced, testPosition + Vector3.back);
+        TriggerAudioEvent(Enumerations.GameAudioEvent.HeavyMarkerPlaced, testPosition + Vector3.forward);
+        TriggerAudioEvent(Enumerations.GameAudioEvent.MarkerTriggered, testPosition);
+        TriggerAudioEvent(Enumerations.GameAudioEvent.WaveStarted, Vector3.zero);
+        TriggerAudioEvent(Enumerations.GameAudioEvent.WaveCompleted, Vector3.zero);
+        TriggerAudioEvent(Enumerations.GameAudioEvent.ResourceRegeneration, testPosition);
+        
+        DebugLog("=== AUDIO EVENT SYSTEM TEST COMPLETED ===");
+        DebugPrintAudioInfo();
+    }
+    
     #endregion
 
     #region Core Audio Methods
@@ -572,6 +1545,12 @@ public class AudioManager : MonoBehaviour, IManagerDebugInterface
         if (selectedClip != null)
         {
             PlayAudioClip(selectedClip, volume, position, pitch);
+            
+            // Track the clip for wave composition
+            if (enableWaveComposition)
+            {
+                lastPlayedCubeSounds[cubeType] = selectedClip;
+            }
             
             if (enableDebugLogs && logAudioEvents)
             {
@@ -1044,41 +2023,120 @@ public class AudioManager : MonoBehaviour, IManagerDebugInterface
     #endregion
 
     #region Volume Management
+    /// <summary>
+    /// Enhanced master volume control that proportionally affects all categories
+    /// </summary>
+    /// <param name="volume">New master volume level (0-1)</param>
     public void SetMasterVolume(float volume)
     {
         masterVolume = Mathf.Clamp01(volume);
         UpdateActiveSourceVolumes();
-        DebugLog($"Master volume set to: {masterVolume}");
+        
+        // Update background music volume
+        if (backgroundAudioSource != null)
+        {
+            backgroundAudioSource.volume = backgroundAudioVolume * masterVolume;
+        }
+        
+        // Update wave composition layers
+        UpdateWaveCompositionVolumes();
+        
+        DebugLog($"Master volume set to: {masterVolume:F2} - all categories updated proportionally");
     }
 
     public void SetSoundEffectsVolume(float volume)
     {
         soundEffectsVolume = Mathf.Clamp01(volume);
         UpdateActiveSourceVolumes();
-        DebugLog($"Sound effects volume set to: {soundEffectsVolume}");
+        DebugLog($"Sound effects volume set to: {soundEffectsVolume:F2}");
     }
 
     public void SetCubeImpactVolume(float volume)
     {
         cubeImpactVolume = Mathf.Clamp01(volume);
-        DebugLog($"Cube impact volume set to: {cubeImpactVolume}");
+        DebugLog($"Cube impact volume set to: {cubeImpactVolume:F2}");
     }
 
     public void SetCubeDestructionVolume(float volume)
     {
         cubeDestructionVolume = Mathf.Clamp01(volume);
-        DebugLog($"Cube destruction volume set to: {cubeDestructionVolume}");
+        DebugLog($"Cube destruction volume set to: {cubeDestructionVolume:F2}");
     }
 
+    /// <summary>
+    /// Sets volume for a specific category with validation
+    /// </summary>
+    /// <param name="category">Volume category to set</param>
+    /// <param name="volume">New volume level (0-1)</param>
+    public void SetVolumeForCategory(VolumeCategory category, float volume)
+    {
+        volume = Mathf.Clamp01(volume);
+        
+        switch (category)
+        {
+            case VolumeCategory.Master:
+                SetMasterVolume(volume);
+                break;
+            case VolumeCategory.SoundEffects:
+                SetSoundEffectsVolume(volume);
+                break;
+            case VolumeCategory.CubeImpact:
+                SetCubeImpactVolume(volume);
+                break;
+            case VolumeCategory.CubeDestruction:
+                SetCubeDestructionVolume(volume);
+                break;
+            case VolumeCategory.BackgroundAudio:
+                SetBackgroundVolume(volume);
+                break;
+            case VolumeCategory.SystemAudio:
+                SetSystemAudioVolume(volume);
+                break;
+            case VolumeCategory.WaveComposition:
+                SetWaveCompositionVolume(volume);
+                break;
+            default:
+                DebugLog($"Unknown volume category: {category}");
+                break;
+        }
+    }
+
+    /// <summary>
+    /// Enhanced method to update all active audio sources with proper volume categories
+    /// </summary>
     private void UpdateActiveSourceVolumes()
     {
         foreach (AudioSource audioSource in activeAudioSources)
         {
             if (audioSource != null && audioSource.isPlaying)
             {
-                // Adjust volume based on the type of sound (this is a simplified approach)
-                audioSource.volume = soundEffectsVolume * masterVolume;
+                // Apply master volume to all active sources
+                // Note: Individual category volumes are applied at playback time
+                audioSource.volume = audioSource.volume * masterVolume / (audioSource.volume > 0 ? audioSource.volume : 1f);
             }
+        }
+    }
+    
+    /// <summary>
+    /// Updates wave composition layer volumes when master volume changes
+    /// </summary>
+    private void UpdateWaveCompositionVolumes()
+    {
+        if (!enableWaveComposition || activeCompositionLayers == null) return;
+        
+        for (int i = 0; i < activeCompositionLayers.Count; i++)
+        {
+            var layer = activeCompositionLayers[i];
+            if (layer.audioSource != null && layer.audioSource.isPlaying)
+            {
+                float layerVolume = CalculateCompositionLayerVolume(i);
+                layer.audioSource.volume = layerVolume * masterVolume;
+            }
+        }
+        
+        if (enableDebugLogs && activeCompositionLayers.Count > 0)
+        {
+            DebugLog($"Updated {activeCompositionLayers.Count} wave composition layer volumes");
         }
     }
     #endregion
@@ -1157,6 +2215,8 @@ public class AudioManager : MonoBehaviour, IManagerDebugInterface
     private void CleanupAudioSystem()
     {
         StopAllAudio();
+        StopBackgroundMusic();
+        CleanupWaveComposition();
         
         // Ensure all pooled audio sources are properly deactivated
         if (useAudioSourcePooling)
@@ -1171,6 +2231,12 @@ public class AudioManager : MonoBehaviour, IManagerDebugInterface
                     pooledSource.gameObject.SetActive(false);
                 }
             }
+        }
+        
+        // Cleanup background audio source
+        if (backgroundAudioSource != null)
+        {
+            Destroy(backgroundAudioSource.gameObject);
         }
         
         // Clear collections
@@ -1249,6 +2315,137 @@ public class AudioManager : MonoBehaviour, IManagerDebugInterface
     }
     #endregion
 
+    #region Audio Event System
+    
+    /// <summary>
+    /// Triggers an audio event using comprehensive event data
+    /// </summary>
+    /// <param name="eventData">Complete audio event data structure</param>
+    public void TriggerAudioEvent(AudioEventData eventData)
+    {
+        if (!IsInitialized)
+        {
+            DebugLog("AudioManager not initialized. Skipping audio event.");
+            return;
+        }
+        
+        if (!eventData.IsValid())
+        {
+            DebugLog("AudioEvent data is not valid. Skipping audio event.");
+            return;
+        }
+        
+        if (enableDebugLogs && logAudioEvents)
+        {
+            DebugLog($"Processing audio event: {eventData}");
+        }
+        
+        ProcessAudioEvent(eventData);
+    }
+    
+    /// <summary>
+    /// Triggers an audio event with basic parameters
+    /// </summary>
+    /// <param name="eventType">Type of audio event to trigger</param>
+    /// <param name="worldPosition">World position for spatial audio</param>
+    /// <param name="intensity">Audio intensity/volume multiplier</param>
+    public void TriggerAudioEvent(Enumerations.GameAudioEvent eventType, Vector3 worldPosition, float intensity = 1f)
+    {
+        AudioEventData eventData = new AudioEventData(eventType, worldPosition, intensity);
+        TriggerAudioEvent(eventData);
+    }
+    
+    /// <summary>
+    /// Triggers a cube-specific audio event with cube type information
+    /// </summary>
+    /// <param name="eventType">Type of audio event to trigger</param>
+    /// <param name="cubeType">Type of cube involved in the event</param>
+    /// <param name="worldPosition">World position for spatial audio</param>
+    /// <param name="intensity">Audio intensity/volume multiplier</param>
+    public void TriggerCubeAudioEvent(Enumerations.GameAudioEvent eventType, Enumerations.CubeType cubeType, Vector3 worldPosition, float intensity = 1f)
+    {
+        AudioEventData eventData = new AudioEventData(eventType, cubeType, worldPosition, intensity);
+        TriggerAudioEvent(eventData);
+    }
+    
+    /// <summary>
+    /// Internal method to process audio events and trigger appropriate sounds
+    /// </summary>
+    /// <param name="eventData">Audio event data to process</param>
+    private void ProcessAudioEvent(AudioEventData eventData)
+    {
+        switch (eventData.eventType)
+        {
+            case Enumerations.GameAudioEvent.CubeLanded:
+                PlayCubeLandingSound(eventData.cubeType, eventData.worldPosition);
+                break;
+                
+            case Enumerations.GameAudioEvent.CubeCaptured:
+                PlayCubeCaptureSound(eventData.cubeType, eventData.worldPosition);
+                break;
+                
+            case Enumerations.GameAudioEvent.CubeEscaped:
+                // TODO: Implement cube escape sound when audio clips are available
+                if (enableDebugLogs && logAudioEvents)
+                {
+                    DebugLog($"Cube escape event triggered for {eventData.cubeType} at {eventData.worldPosition} (no audio implementation yet)");
+                }
+                break;
+                
+            case Enumerations.GameAudioEvent.PlayerMoved:
+                // TODO: Implement player movement sound when audio clips are available
+                if (enableDebugLogs && logAudioEvents)
+                {
+                    DebugLog($"Player moved event triggered at {eventData.worldPosition} (no audio implementation yet)");
+                }
+                break;
+                
+            case Enumerations.GameAudioEvent.LightMarkerPlaced:
+                PlayMarkerPlaceSound(Enumerations.MarkerType.Light, eventData.worldPosition);
+                break;
+            case Enumerations.GameAudioEvent.HeavyMarkerPlaced:
+                PlayMarkerPlaceSound(Enumerations.MarkerType.Heavy, eventData.worldPosition);
+                break;
+            case Enumerations.GameAudioEvent.PrimeMarkerPlaced:
+                PlayMarkerPlaceSound(Enumerations.MarkerType.Prime, eventData.worldPosition);
+                break;
+                
+            case Enumerations.GameAudioEvent.MarkerTriggered:
+                // For now, play a generic marker trigger sound - could be enhanced with marker type info
+                PlayUIClickSound(); // Placeholder until we have marker trigger event with type info
+                if (enableDebugLogs && logAudioEvents)
+                {
+                    DebugLog($"Marker triggered event at {eventData.worldPosition}");
+                }
+                break;
+                
+            case Enumerations.GameAudioEvent.WaveStarted:
+                PlayWaveStartSound();
+                break;
+                
+            case Enumerations.GameAudioEvent.WaveCompleted:
+                PlayWaveCompleteSound();
+                break;
+                
+            case Enumerations.GameAudioEvent.ResourceRegeneration:
+                // TODO: Implement resource regeneration sound when audio clips are available
+                if (enableDebugLogs && logAudioEvents)
+                {
+                    DebugLog($"Resource regeneration event triggered at {eventData.worldPosition} (no audio implementation yet)");
+                }
+                break;
+                
+            default:
+                if (enableDebugLogs)
+                {
+                    DebugLog( $"Unknown audio event type: {eventData.eventType}");
+                }
+                break;
+        }
+    }
+    
+    #endregion
+
     #region IManagerDebugInterface Implementation
     public bool EnableDebugLogs 
     { 
@@ -1258,7 +2455,7 @@ public class AudioManager : MonoBehaviour, IManagerDebugInterface
 
     public string GetDebugStatus()
     {
-        return $"Audio: Master:{masterVolume:F2} SFX:{soundEffectsVolume:F2} Active:{activeAudioSources.Count}/{maxSimultaneousSounds} Pool:{audioSourcePool.Count}/{audioSourcePoolSize} 3D:Enabled Total:{totalSoundsPlayed}";
+        return $"Audio: Master:{masterVolume:F2} Cube:{cubeImpactVolume:F2} BG:{backgroundAudioVolume:F2} Sys:{systemAudioVolume:F2} Comp:{waveCompositionVolume:F2} Active:{activeAudioSources.Count}/{maxSimultaneousSounds} Pool:{audioSourcePool.Count} Track:{GetCurrentTrack()?.name ?? "None"} CompLayers:{activeCompositionLayers.Count}";
     }
 
     public Dictionary<string, object> GetDebugData()
@@ -1288,7 +2485,45 @@ public class AudioManager : MonoBehaviour, IManagerDebugInterface
             ["Show Audio Gizmos"] = showAudioGizmos,
             ["Sound Cleanup Interval"] = soundCleanupInterval,
             ["Testing Volume"] = testingVolume,
-            ["Show Testing Instructions"] = showTestingInstructions
+            ["Show Testing Instructions"] = showTestingInstructions,
+            
+            // Background music information
+            ["Background Music Enabled"] = enableBackgroundMusic,
+            ["Background Audio Volume"] = backgroundAudioVolume,
+            ["Background Music Playing"] = IsPlayingBackground,
+            ["Current Track"] = GetCurrentTrack()?.name ?? "None",
+            ["Total Background Tracks"] = backgroundAmbientTracks?.Length ?? 0,
+            ["Shuffle Playlist"] = shufflePlaylist,
+            ["Track Transition Time"] = trackTransitionTime,
+            ["Current Track Index"] = currentTrackIndex,
+            ["Is Transitioning"] = isTransitioning,
+            
+            // System feedback audio information
+            ["System Audio Volume"] = systemAudioVolume,
+            ["Wave Start Sound Assigned"] = waveStartSound != null,
+            ["Wave Complete Sound Assigned"] = waveCompleteSound != null,
+            ["UI Click Sound Assigned"] = uiClickSound != null,
+            ["Light Marker Place Sound Assigned"] = lightMarkerPlaceSound != null,
+            ["Heavy Marker Place Sound Assigned"] = heavyMarkerPlaceSound != null,
+            ["Prime Marker Place Sound Assigned"] = primeMarkerPlaceSound != null,
+            ["Light Marker Trigger Sound Assigned"] = lightMarkerTriggerSound != null,
+            ["Heavy Marker Trigger Sound Assigned"] = heavyMarkerTriggerSound != null,
+            ["Prime Marker Trigger Sound Assigned"] = primeMarkerTriggerSound != null,
+            
+            // Audio event system information
+            ["Audio Event System Enabled"] = true,
+            ["Supported Event Types"] = System.Enum.GetNames(typeof(Enumerations.GameAudioEvent)).Length,
+            ["Event Data Validation"] = "Enabled",
+            
+            // Wave composition system information
+            ["Wave Composition Enabled"] = enableWaveComposition,
+            ["Wave Composition Volume"] = waveCompositionVolume,
+            ["Composition Layer Delay"] = compositionLayerDelay,
+            ["Max Composition Layers"] = maxCompositionLayers,
+            ["Active Composition Layers"] = activeCompositionLayers.Count,
+            ["Last Wave Step Time"] = lastWaveStepTime,
+            ["Tracked Cube Sounds"] = lastPlayedCubeSounds.Count,
+            ["Wave Composition Coroutine Active"] = waveCompositionCoroutine != null
         };
         
         // Add enhanced audio clip assignment validation
@@ -1369,12 +2604,23 @@ public class AudioManager : MonoBehaviour, IManagerDebugInterface
     {
         // Stop all current audio
         StopAllAudio();
+        StopBackgroundMusic();
+        CleanupWaveComposition();
         
         // Reset volume settings
         masterVolume = 1f;
         soundEffectsVolume = 0.8f;
         cubeImpactVolume = 0.7f;
         cubeDestructionVolume = 0.6f;
+        backgroundAudioVolume = 0.3f;
+        systemAudioVolume = 0.7f;
+        
+        // Reset background music settings
+        enableBackgroundMusic = true;
+        shufflePlaylist = true;
+        trackTransitionTime = 2f;
+        currentTrackIndex = 0;
+        isTransitioning = false;
         
         // Reset performance settings
         audioSourcePoolSize = 10;
@@ -1387,6 +2633,29 @@ public class AudioManager : MonoBehaviour, IManagerDebugInterface
         showAudioGizmos = false;
         logAudioEvents = false;
         
+        // Reset wave composition settings
+        enableWaveComposition = true;
+        compositionLayerDelay = 0.3f;
+        maxCompositionLayers = 5;
+        waveCompositionVolume = 0.6f;
+        if (volumeFalloffCurve == null || volumeFalloffCurve.length < 2)
+        {
+            volumeFalloffCurve = AnimationCurve.EaseInOut(0f, 1f, 1f, 0.2f);
+        }
+        
+        // Reset all audio categories properly
+        InitializeWaveComposition();
+        
+        // Reinitialize background music if needed
+        if (backgroundAmbientTracks != null && backgroundAmbientTracks.Length > 0)
+        {
+            InitializePlaylist();
+            if (enableBackgroundMusic)
+            {
+                StartBackgroundMusic();
+            }
+        }
+        
         // Reset tracking variables
         totalSoundsPlayed = 0;
         pooledSourcesUsed = 0;
@@ -1395,6 +2664,7 @@ public class AudioManager : MonoBehaviour, IManagerDebugInterface
         
         // Clear collections
         lastPlayedTimes.Clear();
+        shuffledTrackIndices.Clear();
         
         // Reinitialize if needed
         if (IsInitialized)

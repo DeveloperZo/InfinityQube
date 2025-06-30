@@ -33,12 +33,7 @@ public class HeavyMarker
     }
 }
 
-// Backward compatibility aliases
-[System.Obsolete("Use LightMarker instead")]
-public class IndividualMarker : LightMarker
-{
-    public IndividualMarker(Vector2Int pos, float time) : base(pos, time) { }
-}
+
 
 [System.Serializable]
 public class PrimeMarker
@@ -57,12 +52,7 @@ public class PrimeMarker
     }
 }
 
-// Backward compatibility alias
-[System.Obsolete("Use PrimeMarker instead")]
-public class AreaMarker : PrimeMarker
-{
-    public AreaMarker(Vector2Int center, int markerSize, float time) : base(center, markerSize, time) { }
-}
+
 
 public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
 {
@@ -72,6 +62,7 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
     [SerializeField] private WaveManager waveManager;
     [SerializeField] private PlayerActionUI actionUI;
     [SerializeField] private PlayerMarkerSystem markerSystem;
+    [SerializeField] private AudioManager audioManager;
 
     [Header("Light Marker Settings")]
     [SerializeField] public int maxLightMarkers = 3;
@@ -115,15 +106,7 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
     [SerializeField] private KeyCode triggerCubeMarkerKey = KeyCode.Q;
     [SerializeField] private KeyCode powerUpCubeMarkerKey = KeyCode.E;
     
-    // Backward compatibility for input keys
-    [System.Obsolete("Use lightMarkerKey instead")]
-    private KeyCode individualMarkerKey => lightMarkerKey;
-    [System.Obsolete("Use primeMarkerKey instead")]
-    private KeyCode areaMarkerKey => primeMarkerKey;
-    [System.Obsolete("Use triggerLightKey instead")]
-    private KeyCode triggerIndividualKey => triggerLightKey;
-    [System.Obsolete("Use triggerPrimeKey instead")]
-    private KeyCode triggerAreaKey => triggerPrimeKey;
+
 
     // Statistics
     private int cubeMarkersTriggered = 0;
@@ -171,6 +154,22 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
             waveManager = FindObjectOfType<WaveManager>();
         if (actionUI == null)
             actionUI = FindObjectOfType<PlayerActionUI>();
+        if (audioManager == null)
+            audioManager = FindObjectOfType<AudioManager>();
+            
+        ValidateAudioManager();
+    }
+
+    private void ValidateAudioManager()
+    {
+        if (audioManager == null)
+        {
+            Debug.LogWarning("[PlayerActionManager] AudioManager not found! Audio events will not be triggered.");
+        }
+        else if (!audioManager.IsInitialized)
+        {
+            Debug.LogWarning("[PlayerActionManager] AudioManager found but not initialized. Audio events may not work correctly.");
+        }
     }
 
     private void InitializeCharges()
@@ -285,6 +284,49 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
 
     #endregion
 
+    #region Audio Event Integration
+
+    /// <summary>
+    /// Triggers an audio event if AudioManager is available
+    /// </summary>
+    /// <param name="eventType">The type of audio event to trigger</param>
+    /// <param name="worldPosition">World position for spatial audio</param>
+    /// <param name="intensity">Audio intensity/volume multiplier</param>
+    private void TriggerAudioEvent(Enumerations.GameAudioEvent eventType, Vector3 worldPosition, float intensity = 1f)
+    {
+        if (audioManager != null && audioManager.IsInitialized)
+        {
+            audioManager.TriggerAudioEvent(eventType, worldPosition, intensity);
+            
+            if (EnableDebugLogs)
+            {
+                Debug.Log($"[PlayerActionManager] Triggered audio event: {eventType} at position {worldPosition} with intensity {intensity:F2}");
+            }
+        }
+        else if (EnableDebugLogs)
+        {
+            Debug.LogWarning($"[PlayerActionManager] Cannot trigger audio event {eventType} - AudioManager not available or initialized");
+        }
+    }
+
+    /// <summary>
+    /// Converts grid position to world position for audio positioning
+    /// </summary>
+    /// <param name="gridPosition">Grid position to convert</param>
+    /// <returns>World position for audio</returns>
+    private Vector3 GetWorldPositionForAudio(Vector2Int gridPosition)
+    {
+        if (gridManager != null)
+        {
+            return gridManager.GridToWorldPosition(gridPosition.x, gridPosition.y);
+        }
+        
+        // Fallback: approximate world position
+        return new Vector3(gridPosition.x, 0f, gridPosition.y);
+    }
+
+    #endregion
+
     #region Charge Management
 
     public bool CanPlaceLightMarker()
@@ -315,6 +357,10 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
         currentLightMarkers++;
         lightMarkersPlaced++;
 
+        // Trigger audio event for light marker placement
+        Vector3 worldPosition = GetWorldPositionForAudio(playerManager.currentTilePosition);
+        TriggerAudioEvent(Enumerations.GameAudioEvent.LightMarkerPlaced, worldPosition);
+
         UpdateUI();
 
         if (actionUI != null)
@@ -336,6 +382,10 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
         currentHeavyMarkers++;
         heavyMarkersPlaced++;
 
+        // Trigger audio event for heavy marker placement
+        Vector3 worldPosition = GetWorldPositionForAudio(playerManager.currentTilePosition);
+        TriggerAudioEvent(Enumerations.GameAudioEvent.HeavyMarkerPlaced, worldPosition);
+
         UpdateUI();
 
         if (actionUI != null)
@@ -356,6 +406,10 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
         lastPrimeMarkerTime = Time.time;
         currentPrimeMarkers++;
         primeMarkersPlaced++;
+
+        // Trigger audio event for prime marker placement
+        Vector3 worldPosition = GetWorldPositionForAudio(playerManager.currentTilePosition);
+        TriggerAudioEvent(Enumerations.GameAudioEvent.PrimeMarkerPlaced, worldPosition);
 
         UpdateUI();
 
@@ -408,6 +462,11 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
             {
                 currentLightMarkerCharges++;
                 lastLightMarkerTime = Time.time;
+                
+                // Trigger audio event for resource regeneration
+                Vector3 playerWorldPos = GetWorldPositionForAudio(playerManager.currentTilePosition);
+                TriggerAudioEvent(Enumerations.GameAudioEvent.ResourceRegeneration, playerWorldPos, 0.8f);
+                
                 Debug.Log($"Light marker charge regenerated. Charges: {currentLightMarkerCharges}/{maxLightMarkerCharges}");
                 return true;
             }
@@ -424,6 +483,11 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
             {
                 currentHeavyMarkerCharges++;
                 lastHeavyMarkerTime = Time.time;
+                
+                // Trigger audio event for resource regeneration
+                Vector3 playerWorldPos = GetWorldPositionForAudio(playerManager.currentTilePosition);
+                TriggerAudioEvent(Enumerations.GameAudioEvent.ResourceRegeneration, playerWorldPos, 0.8f);
+                
                 Debug.Log($"Heavy marker charge regenerated. Charges: {currentHeavyMarkerCharges}/{maxHeavyMarkerCharges}");
                 return true;
             }
@@ -440,6 +504,11 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
             {
                 currentPrimeMarkerCharges++;
                 lastPrimeMarkerTime = Time.time;
+                
+                // Trigger audio event for resource regeneration
+                Vector3 playerWorldPos = GetWorldPositionForAudio(playerManager.currentTilePosition);
+                TriggerAudioEvent(Enumerations.GameAudioEvent.ResourceRegeneration, playerWorldPos, 0.8f);
+                
                 Debug.Log($"Prime marker charge regenerated. Charges: {currentPrimeMarkerCharges}/{maxPrimeMarkerCharges}");
                 return true;
             }
@@ -491,7 +560,7 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
     public bool HasPrimeMarkerAt(Vector2Int centerPosition) => markerSystem.HasPrimeMarkerAt(centerPosition);
     public bool TriggerNextPrimeMarker() => markerSystem.TriggerNextPrimeMarker();
 
-    public void CreateCubeMarker(Vector2Int position, PlayerMarkerSystem.CubeMarkerType type = PlayerMarkerSystem.CubeMarkerType.Area) => markerSystem.CreateCubeMarker(position, type);
+    public void CreateCubeMarker(Vector2Int position, PlayerMarkerSystem.CubeMarkerType type = PlayerMarkerSystem.CubeMarkerType.Prime) => markerSystem.CreateCubeMarker(position, type);
     public bool TriggerNextCubeMarker() => markerSystem.TriggerNextCubeMarker();
     public bool PowerUpNextCubeMarker() => markerSystem.PowerUpNextCubeMarker();
 
@@ -502,62 +571,10 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
     public Queue<HeavyMarker> heavyMarkers => markerSystem.HeavyMarkers;
     public Queue<PrimeMarker> primeMarkers => markerSystem.PrimeMarkers;
 
-    // Backward compatibility aliases
-    [System.Obsolete("Use GetNextLightChargeTime instead")]
-    public float GetNextIndividualChargeTime() => GetNextLightChargeTime();
-    [System.Obsolete("Use GetNextPrimeChargeTime instead")]
-    public float GetNextAreaChargeTime() => GetNextPrimeChargeTime();
-    
-    [System.Obsolete("Use PlaceLightMarker instead")]
-    public bool PlaceIndividualMarker(Vector2Int position) => PlaceLightMarker(position);
-    [System.Obsolete("Use RemoveLightMarkerAt instead")]
-    public bool RemoveIndividualMarkerAt(Vector2Int position) => RemoveLightMarkerAt(position);
-    [System.Obsolete("Use HasLightMarkerAt instead")]
-    public bool HasIndividualMarkerAt(Vector2Int position) => HasLightMarkerAt(position);
-    [System.Obsolete("Use TriggerNextLightMarker instead")]
-    public bool TriggerNextIndividualMarker() => TriggerNextLightMarker();
-    
-    [System.Obsolete("Use PlacePrimeMarker instead")]
-    public bool PlaceAreaMarker(Vector2Int centerPosition, int size) => PlacePrimeMarker(centerPosition, size);
-    [System.Obsolete("Use RemovePrimeMarkerAt instead")]
-    public bool RemoveAreaMarkerAt(Vector2Int centerPosition) => RemovePrimeMarkerAt(centerPosition);
-    [System.Obsolete("Use HasPrimeMarkerAt instead")]
-    public bool HasAreaMarkerAt(Vector2Int centerPosition) => HasPrimeMarkerAt(centerPosition);
-    [System.Obsolete("Use TriggerNextPrimeMarker instead")]
-    public bool TriggerNextAreaMarker() => TriggerNextPrimeMarker();
+
     
     
-    // Backward compatibility properties
-    [System.Obsolete("Use maxLightMarkers instead")]
-    public int maxIndividualMarkers => maxLightMarkers;
-    [System.Obsolete("Use maxPrimeMarkers instead")]
-    public int maxAreaMarkers => maxPrimeMarkers;
-    [System.Obsolete("Use maxLightMarkerCharges instead")]
-    public int maxIndividualMarkerCharges => maxLightMarkerCharges;
-    [System.Obsolete("Use maxPrimeMarkerCharges instead")]
-    public int maxAreaMarkerCharges => maxPrimeMarkerCharges;
-    [System.Obsolete("Use lightMarkerCooldown instead")]
-    public float individualMarkerCooldown => lightMarkerCooldown;
-    [System.Obsolete("Use primeMarkerCooldown instead")]
-    public float areaMarkerCooldown => primeMarkerCooldown;
-    [System.Obsolete("Use lightMarkerMaterial instead")]
-    public Material individualMarkerMaterial => lightMarkerMaterial;
-    [System.Obsolete("Use primeMarkerMaterial instead")]
-    public Material areaMarkerMaterial => primeMarkerMaterial;
-    
-    // Backward compatibility for charge management methods
-    [System.Obsolete("Use CanPlaceLightMarker instead")]
-    public bool CanPlaceIndividualMarker() => CanPlaceLightMarker();
-    [System.Obsolete("Use CanPlacePrimeMarker instead")]
-    public bool CanPlaceAreaMarker() => CanPlacePrimeMarker();
-    [System.Obsolete("Use ConsumeLightCharge instead")]
-    public void ConsumeIndividualCharge() => ConsumeLightCharge();
-    [System.Obsolete("Use ConsumePrimeCharge instead")]
-    public void ConsumeAreaCharge() => ConsumePrimeCharge();
-    [System.Obsolete("Use ReleaseLightMarker instead")]
-    public void ReleaseIndividualMarker() => ReleaseLightMarker();
-    [System.Obsolete("Use ReleasePrimeMarker instead")]
-    public void ReleaseAreaMarker() => ReleasePrimeMarker();
+
 
     #endregion
 
@@ -606,27 +623,7 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
     public int GetCurrentHeavyCharges() => currentHeavyMarkerCharges;
     public int GetCurrentPrimeCharges() => currentPrimeMarkerCharges;
     
-    // Backward compatibility for information methods
-    [System.Obsolete("Use CanPlaceLightMarkerCheck instead")]
-    public bool CanPlaceIndividualMarkerCheck() => CanPlaceLightMarkerCheck();
-    [System.Obsolete("Use CanPlacePrimeMarkerCheck instead")]
-    public bool CanPlaceAreaMarkerCheck() => CanPlacePrimeMarkerCheck();
-    [System.Obsolete("Use GetLightMarkerCooldownRemaining instead")]
-    public float GetIndividualMarkerCooldownRemaining() => GetLightMarkerCooldownRemaining();
-    [System.Obsolete("Use GetPrimeMarkerCooldownRemaining instead")]
-    public float GetAreaMarkerCooldownRemaining() => GetPrimeMarkerCooldownRemaining();
-    [System.Obsolete("Use GetLightMarkersPlaced instead")]
-    public int GetIndividualMarkersPlaced() => GetLightMarkersPlaced();
-    [System.Obsolete("Use GetPrimeMarkersPlaced instead")]
-    public int GetAreaMarkersPlaced() => GetPrimeMarkersPlaced();
-    [System.Obsolete("Use GetCurrentLightMarkers instead")]
-    public int GetCurrentIndividualMarkers() => GetCurrentLightMarkers();
-    [System.Obsolete("Use GetCurrentPrimeMarkers instead")]
-    public int GetCurrentAreaMarkers() => GetCurrentPrimeMarkers();
-    [System.Obsolete("Use GetCurrentLightCharges instead")]
-    public int GetCurrentIndividualCharges() => GetCurrentLightCharges();
-    [System.Obsolete("Use GetCurrentPrimeCharges instead")]
-    public int GetCurrentAreaCharges() => GetCurrentPrimeCharges();
+
 
     #endregion
 

@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using static Enumerations;
 using System;
+using UnityEngine.UIElements;
 
 public class PlayerMarkerSystem : MonoBehaviour
 {
@@ -42,44 +43,7 @@ public class PlayerMarkerSystem : MonoBehaviour
     public Queue<HeavyMarker> HeavyMarkers => heavyMarkers;
     public Queue<PrimeMarker> PrimeMarkers => primeMarkers;
     
-    // Backward compatibility accessors
-    [System.Obsolete("Use LightMarkers instead", false)]
-    public Queue<IndividualMarker> IndividualMarkers 
-    {
-        get
-        {
-            var compatQueue = new Queue<IndividualMarker>();
-            foreach (var marker in lightMarkers)
-            {
-                var compatMarker = new IndividualMarker(marker.position, marker.placementTime)
-                {
-                    visualObject = marker.visualObject,
-                    isPerfectTiming = marker.isPerfectTiming
-                };
-                compatQueue.Enqueue(compatMarker);
-            }
-            return compatQueue;
-        }
-    }
-    
-    [System.Obsolete("Use PrimeMarkers instead", false)]
-    public Queue<AreaMarker> AreaMarkers
-    {
-        get
-        {
-            var compatQueue = new Queue<AreaMarker>();
-            foreach (var marker in primeMarkers)
-            {
-                var compatMarker = new AreaMarker(marker.centerPosition, marker.size, marker.placementTime)
-                {
-                    visualObjects = marker.visualObjects,
-                    affectedPositions = marker.affectedPositions
-                };
-                compatQueue.Enqueue(compatMarker);
-            }
-            return compatQueue;
-        }
-    }
+
 
     #region Data Structures
 
@@ -114,11 +78,7 @@ public class PlayerMarkerSystem : MonoBehaviour
         /// <summary>Cube marker: Standard cube marker type</summary>
         Cube,
         
-        // Backward compatibility aliases
-        [System.Obsolete("Use Light instead", false)]
-        Individual = Light,
-        [System.Obsolete("Use Prime instead", false)]
-        Area = Prime
+
     }
 
     /// <summary>
@@ -135,11 +95,7 @@ public class PlayerMarkerSystem : MonoBehaviour
         /// <summary>Cube marker: Generated from prime cube captures</summary>
         CubeMarker,
         
-        // Backward compatibility aliases
-        [System.Obsolete("Use Light instead", false)]
-        Individual = Light,
-        [System.Obsolete("Use Prime instead", false)]
-        Area = Prime
+
     }
 
     #endregion
@@ -228,6 +184,10 @@ public class PlayerMarkerSystem : MonoBehaviour
         var cubes = FindAllCubesAt(position);
         bool success = false;
 
+        // Trigger audio event for marker triggering
+        Vector3 worldPosition = actionManager.GridManager.GridToWorldPosition(position.x, position.y);
+        TriggerMarkerAudioEvent(Enumerations.GameAudioEvent.MarkerTriggered, worldPosition);
+
         foreach (var cube in cubes)
         {
             success |= ProcessCubeCapture(cube, position, MarkerType.Light, marker);
@@ -251,18 +211,7 @@ public class PlayerMarkerSystem : MonoBehaviour
         return success;
     }
 
-    // Backward compatibility methods
-    [System.Obsolete("Use PlaceLightMarker instead", false)]
-    public bool PlaceIndividualMarker(Vector2Int position) => PlaceLightMarker(position);
-    
-    [System.Obsolete("Use RemoveLightMarkerAt instead", false)]
-    public bool RemoveIndividualMarkerAt(Vector2Int position) => RemoveLightMarkerAt(position);
-    
-    [System.Obsolete("Use HasLightMarkerAt instead", false)]
-    public bool HasIndividualMarkerAt(Vector2Int position) => HasLightMarkerAt(position);
-    
-    [System.Obsolete("Use TriggerNextLightMarker instead", false)]
-    public bool TriggerNextIndividualMarker() => TriggerNextLightMarker();
+
 
     #endregion
 
@@ -330,6 +279,10 @@ public class PlayerMarkerSystem : MonoBehaviour
     {
         var cubes = FindAllCubesAt(position);
         bool success = false;
+
+        // Trigger audio event for marker triggering
+        Vector3 worldPosition = actionManager.GridManager.GridToWorldPosition(position.x, position.y);
+        TriggerMarkerAudioEvent(Enumerations.GameAudioEvent.MarkerTriggered, worldPosition);
 
         foreach (var cube in cubes)
         {
@@ -429,6 +382,10 @@ public class PlayerMarkerSystem : MonoBehaviour
 
         Debug.Log($"Triggering prime marker - expanding from center ({marker.centerPosition.x}, {marker.centerPosition.y}) to {marker.affectedPositions.Count} tiles");
 
+        // Trigger audio event for marker triggering
+        Vector3 centerWorldPosition = actionManager.GridManager.GridToWorldPosition(marker.centerPosition.x, marker.centerPosition.y);
+        TriggerMarkerAudioEvent(Enumerations.GameAudioEvent.MarkerTriggered, centerWorldPosition);
+
         foreach (var visual in marker.visualObjects)
         {
             DestroyMarkerVisual(visual);
@@ -461,18 +418,7 @@ public class PlayerMarkerSystem : MonoBehaviour
         return anySuccess;
     }
 
-    // Backward compatibility methods
-    [System.Obsolete("Use PlacePrimeMarker instead", false)]
-    public bool PlaceAreaMarker(Vector2Int centerPosition, int size) => PlacePrimeMarker(centerPosition, size);
-    
-    [System.Obsolete("Use RemovePrimeMarkerAt instead", false)]
-    public bool RemoveAreaMarkerAt(Vector2Int centerPosition) => RemovePrimeMarkerAt(centerPosition);
-    
-    [System.Obsolete("Use HasPrimeMarkerAt instead", false)]
-    public bool HasAreaMarkerAt(Vector2Int centerPosition) => HasPrimeMarkerAt(centerPosition);
-    
-    [System.Obsolete("Use TriggerNextPrimeMarker instead", false)]
-    public bool TriggerNextAreaMarker() => TriggerNextPrimeMarker();
+
 
     private IEnumerator ClearAreaExpansionAfterDelay(List<Vector2Int> positions, Vector2Int centerPos, float delay)
     {
@@ -511,6 +457,11 @@ public class PlayerMarkerSystem : MonoBehaviour
     public bool TriggerCubeMarkerAt(CubeMarker cubeMarker)
     {
         cubeMarkersTriggered++;
+
+        // Trigger audio event for cube marker triggering
+        Vector3 worldPosition = actionManager.GridManager.GridToWorldPosition(cubeMarker.position.x, cubeMarker.position.y);
+        TriggerMarkerAudioEvent(Enumerations.GameAudioEvent.MarkerTriggered, worldPosition, 1.2f);
+        
         DestroyMarkerVisual(cubeMarker.visualObject);
 
         var tempPrimeMarker = new PrimeMarker(cubeMarker.position, 3, Time.time);
@@ -547,6 +498,39 @@ public class PlayerMarkerSystem : MonoBehaviour
 
         Debug.Log($"Cube marker powered up at ({cubeMarker.position.x}, {cubeMarker.position.y})");
         return true;
+    }
+
+    #endregion
+
+    #region Audio Event Integration
+
+    /// <summary>
+    /// Triggers an audio event through the PlayerActionManager if available
+    /// </summary>
+    /// <param name="eventType">The type of audio event to trigger</param>
+    /// <param name="worldPosition">World position for spatial audio</param>
+    /// <param name="intensity">Audio intensity/volume multiplier</param>
+    private void TriggerMarkerAudioEvent(Enumerations.GameAudioEvent eventType, Vector3 worldPosition, float intensity = 1f)
+    {
+        if (actionManager != null)
+        {
+            // Use reflection to access the private TriggerAudioEvent method in PlayerActionManager
+            var method = typeof(PlayerActionManager).GetMethod("TriggerAudioEvent", 
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                
+            if (method != null)
+            {
+                method.Invoke(actionManager, new object[] { eventType, worldPosition, intensity });
+            }
+            else
+            {
+                Debug.LogWarning("[PlayerMarkerSystem] Could not find TriggerAudioEvent method in PlayerActionManager");
+            }
+        }
+        else
+        {
+            Debug.LogWarning("[PlayerMarkerSystem] ActionManager reference is null, cannot trigger audio event");
+        }
     }
 
     #endregion
@@ -653,9 +637,7 @@ public class PlayerMarkerSystem : MonoBehaviour
         return dummy;
     }
 
-    // Backward compatibility method
-    [System.Obsolete("Use CreateLightMarkerVisual instead", false)]
-    public GameObject CreateIndividualMarkerVisual(Vector2Int position) => CreateLightMarkerVisual(position);
+
 
     public GameObject CreatePrimeMarkerVisual(Vector2Int position)
     {
@@ -670,9 +652,7 @@ public class PlayerMarkerSystem : MonoBehaviour
         return dummy;
     }
 
-    // Backward compatibility method
-    [System.Obsolete("Use CreatePrimeMarkerVisual instead", false)]
-    public GameObject CreateAreaMarkerVisual(Vector2Int position) => CreatePrimeMarkerVisual(position);
+
 
     private GameObject CreateCubeMarkerVisual(Vector2Int position, CubeMarkerType type)
     {

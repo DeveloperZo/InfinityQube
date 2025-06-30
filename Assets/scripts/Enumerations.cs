@@ -81,4 +81,46 @@ public static class Enumerations
         Content,        // Tiles, Cubes, Actions
         Testing         // Face Painting, Scenarios
     }
+
+    /// <summary>
+    /// Defines message importance and display priority for the tutorial system
+    /// </summary>
+    public enum MessageCategory
+    {
+        /// <summary>Critical messages that block gameplay until acknowledged</summary>
+        Essential,
+        /// <summary>Important guidance that should be prominently displayed</summary>
+        Important,
+        /// <summary>Contextual hints that enhance understanding but don't interrupt flow</summary>
+        Contextual,
+        /// <summary>Debug and development messages for testing</summary>
+        Debug
+    }
+
+    /// <summary>
+    /// Defines all game audio events for the event-driven audio system
+    /// </summary>
+    public enum GameAudioEvent
+    {
+        // Cube Events
+        CubeLanded,         // When a cube lands on the grid
+        CubeCaptured,       // When a cube is captured by the player
+        CubeEscaped,        // When a cube escapes the grid
+        
+        // Player Events
+        PlayerMoved,        // When the player moves position
+        
+        // Marker Events
+        LightMarkerPlaced,  // When a light marker is placed
+        PrimeMarkerPlaced,  // When a prime marker is placed
+        HeavyMarkerPlaced,  // When a heavy marker is placed
+        MarkerTriggered,    // When any marker is triggered
+        
+        // Wave Events
+        WaveStarted,        // When a new wave begins
+        WaveCompleted,      // When a wave is completed
+        
+        // System Events
+        ResourceRegeneration // When resources regenerate
+    }
 }

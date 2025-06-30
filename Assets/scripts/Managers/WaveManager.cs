@@ -13,6 +13,7 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
     [SerializeField] public GameObject[] cubePrefabs;
     [SerializeField] public PlayerManager player;
     [SerializeField] public PlayerActionManager playerActionManager;
+    private AudioManager audioManager;
 
 
     [Header("Wave Configuration")]
@@ -101,6 +102,7 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
         if (grid == null) grid = FindObjectOfType<GridManager>();
         if (player == null) player = FindObjectOfType<PlayerManager>();
         if (playerActionManager == null) playerActionManager = FindObjectOfType<PlayerActionManager>();
+        if (audioManager == null) audioManager = AudioManager.Instance;
 
         ValidateReferences();
     }
@@ -109,6 +111,7 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
     {
         if (grid == null) Debug.LogError("WaveManager: GridManager not found!");
         if (cubePrefabs == null || cubePrefabs.Length < 3) Debug.LogError("WaveManager: Need at least 3 cube prefabs!");
+        if (audioManager == null) Debug.LogWarning("WaveManager: AudioManager not found! Audio events will not be triggered.");
     }
 
     private void InitializeState()
@@ -128,6 +131,14 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
         if (waveCoroutine != null) StopCoroutine(waveCoroutine);
 
         ResetWaveStatistics();
+        
+        // Trigger wave start audio event
+        if (audioManager != null)
+        {
+            audioManager.TriggerAudioEvent(Enumerations.GameAudioEvent.WaveStarted, Vector3.zero);
+            DebugLog("🔊 Audio: Wave start event triggered");
+        }
+        
         waveCoroutine = StartCoroutine(RunWaveCoroutine());
     }
 
@@ -216,6 +227,13 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
         waveCoroutine = null;
 
         if (grid != null) grid.ClearAllMarkers();
+
+        // Trigger wave completion audio event
+        if (audioManager != null)
+        {
+            audioManager.TriggerAudioEvent(Enumerations.GameAudioEvent.WaveCompleted, Vector3.zero);
+            DebugLog("🔊 Audio: Wave completion event triggered");
+        }
 
         ProcessEndMessages();
         AdvanceToNextWave();
@@ -321,6 +339,14 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
                 cube.ResetMovementState();
                 bool stillAlive = cube.MoveForward();
 
+                // Trigger cube landing audio event after movement
+                if (stillAlive && audioManager != null && grid != null)
+                {
+                    Vector3 cubeWorldPosition = grid.GridToWorldPosition(cube.position.x, cube.position.y, 2f);
+                    audioManager.TriggerCubeAudioEvent(Enumerations.GameAudioEvent.CubeLanded, cube.type, cubeWorldPosition);
+                    DebugLog($"🔊 Audio: Cube landing event triggered for {cube.type} at position {cube.position}");
+                }
+
                 if (!stillAlive)
                 {
                     activeCubes.RemoveAt(i);
@@ -328,6 +354,12 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
             }
         }
         MoveStep++;
+        
+        // Notify AudioManager about wave step completion for composition
+        if (audioManager != null)
+        {
+            audioManager.OnWaveStepDetected(MoveStep);
+        }
     } 
 
     public void ClearAllCubes()
@@ -491,18 +523,41 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
             case Enumerations.CubeType.Recursion: reinforcedCubesCaptured++; break;
         }
 
+        // Trigger cube captured audio event
+        if (audioManager != null)
+        {
+            // Find the captured cube to get its position
+            var capturedCube = activeCubes.FirstOrDefault(c => c != null && c.type == cubeType);
+            Vector3 cubePosition = Vector3.zero;
+            if (capturedCube != null && grid != null)
+            {
+                cubePosition = grid.GridToWorldPosition(capturedCube.position.x, capturedCube.position.y, 2f);
+            }
+            audioManager.TriggerCubeAudioEvent(Enumerations.GameAudioEvent.CubeCaptured, cubeType, cubePosition);
+            DebugLog($"🔊 Audio: Cube captured event triggered for {cubeType}");
+        }
+
         NotifyStageManager(sm => sm.OnCubeCaptured(cubeType));
     }
 
     public void OnCubeEscaped(Enumerations.CubeType cubeType)
     {
+        // Find the cube that's escaping to get its position
+        var escapingCube = activeCubes.FirstOrDefault(c => c != null && c.type == cubeType && c.position.y <= 0);
+        Vector2Int escapePosition = escapingCube != null ? escapingCube.position : Vector2Int.zero;
+        
         // Notify statistics manager about cube escape
         if (PlayerStatisticsManager.Instance != null)
         {
-            // Find the cube that's escaping to get its position
-            var escapingCube = activeCubes.FirstOrDefault(c => c != null && c.type == cubeType && c.position.y <= 0);
-            Vector2Int escapePosition = escapingCube != null ? escapingCube.position : Vector2Int.zero;
             PlayerStatisticsManager.Instance.OnCubeEscaped(escapePosition, cubeType.ToString());
+        }
+        
+        // Trigger cube escaped audio event
+        if (audioManager != null && grid != null)
+        {
+            Vector3 escapeWorldPosition = grid.GridToWorldPosition(escapePosition.x, escapePosition.y, 2f);
+            audioManager.TriggerCubeAudioEvent(Enumerations.GameAudioEvent.CubeEscaped, cubeType, escapeWorldPosition);
+            DebugLog($"🔊 Audio: Cube escaped event triggered for {cubeType} at position {escapePosition}");
         }
         
         // Replace the grid reduction call with row removal

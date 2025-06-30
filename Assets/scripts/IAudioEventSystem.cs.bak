@@ -1,0 +1,31 @@
+using UnityEngine;
+
+/// <summary>
+/// Interface for the audio event system that allows triggering audio events
+/// through a standardized event-driven approach
+/// </summary>
+public interface IAudioEventSystem
+{
+    /// <summary>
+    /// Triggers an audio event using comprehensive event data
+    /// </summary>
+    /// <param name="eventData">Complete audio event data structure</param>
+    void TriggerAudioEvent(AudioEventData eventData);
+
+    /// <summary>
+    /// Triggers an audio event with basic parameters
+    /// </summary>
+    /// <param name="eventType">Type of audio event to trigger</param>
+    /// <param name="worldPosition">World position for spatial audio</param>
+    /// <param name="intensity">Audio intensity/volume multiplier (default: 1.0)</param>
+    void TriggerAudioEvent(Enumerations.GameAudioEvent eventType, Vector3 worldPosition, float intensity = 1f);
+
+    /// <summary>
+    /// Triggers a cube-specific audio event with cube type information
+    /// </summary>
+    /// <param name="eventType">Type of audio event to trigger</param>
+    /// <param name="cubeType">Type of cube involved in the event</param>
+    /// <param name="worldPosition">World position for spatial audio</param>
+    /// <param name="intensity">Audio intensity/volume multiplier (default: 1.0)</param>
+    void TriggerCubeAudioEvent(Enumerations.GameAudioEvent eventType, Enumerations.CubeType cubeType, Vector3 worldPosition, float intensity = 1f);
+}

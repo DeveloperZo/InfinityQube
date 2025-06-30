@@ -1,288 +1,471 @@
-# AI Audio Implementation Guide for Infinity Cube
+# Infinity Cube Audio Architecture & Implementation Guide
 
-## Quick Start Workflow
+## Updated Audio Architecture Overview
 
-### Step 1: Tool Setup
-1. **ElevenLabs Account** (Primary SFX Generation)
-   - Sign up at https://elevenlabs.io/sound-effects
-   - Subscribe to Starter plan ($5/month) or Creator plan ($22/month)
-   - Access Text-to-Sound generator
+### Current Foundation Status: 70% Complete
+✅ **Solid Technical Foundation**: AudioManager, spatial audio, pooling, ScriptableObject configuration  
+❌ **Missing Integration Layer**: Event-driven audio system and rhythmic synchronization
 
-2. **Soundraw Account** (Ambient/Background Music)
-   - Sign up at https://soundraw.io
-   - Subscribe to Creator plan ($19.99/month)
-   - Enables commercial game use
+## 1. Core Audio Architecture
 
-### Step 2: Audio Generation Process
+### 1.1 Event-Driven Audio System
 
-#### Core Game Sound Effects (ElevenLabs)
-
-**Marker Placement Sounds:**
-```
-Prompts:
-- "Soft cosmic chime, crystalline marker placement on grid"
-- "Gentle electronic beep, precise placement sound"
-- "Subtle energy pulse, marker activation tone"
-```
-
-**Cube Capture Sounds by Type:**
-```
-Unit Cube:
-- "Small cube absorption, gentle whoosh with crystalline chime"
-- "Light energy capture, soft harmonic resonance"
-
-Prime Cube:
-- "Powerful cube capture, deep harmonic bass with energy crackling"
-- "Prime energy absorption, rich resonant tone with sparkles"
-
-Infinity Cube:
-- "Mystical infinite cube capture, ethereal harmonics with cosmic echo"
-- "Reality-bending sound, infinite reverb with celestial tones"
-
-Recursion Cube:
-- "Heavy matter compression, deep thrum with gravitational pull sound"
-- "Recursion core collapse, low frequency pulse with metallic resonance"
-```
-
-**Paint System Effects:**
-```
-Corruption (Dark Matter):
-- "Dark matter corruption spreading, ominous bubbling with distortion"
-- "Cosmic liquid spreading, eerie whispers with static interference"
-
-Enhancement (Stellar Plasma):
-- "Stellar plasma enhancement, bright energetic fizzing with sparkles"
-- "Cosmic liquid empowerment, uplifting harmonics with gentle bubbling"
-```
-
-**System Feedback:**
-```
-- "Wave completion success, triumphant cosmic chord progression"
-- "Resource regeneration, gentle energy building with soft chimes"
-- "Detonation sequence, controlled explosion with harmonic aftermath"
-```
-
-#### Ambient Cosmic Audio (Soundraw)
-
-**Background Atmosphere Settings:**
-- Genre: Ambient, Electronic, Cinematic
-- Mood: Mysterious, Peaceful, Cosmic
-- Tempo: Slow (60-80 BPM)
-- Length: 2-5 minutes (for looping)
-- Instruments: Pads, Ambient textures, Subtle percussion
-
-**Adaptive Music Layers:**
-- **Exploration Phase**: Gentle cosmic ambient
-- **Active Phase**: Slightly more rhythmic with subtle pulse
-- **Tension Phase**: Deeper bass with cosmic tension
-- **Success Phase**: Uplifting harmonic resolution
-
-### Step 3: Unity Integration
-
-#### Audio Folder Structure
-```
-Assets/Audio/
-├── SFX/
-│   ├── Core/
-│   │   ├── SFX_MarkerPlace_01.wav
-│   │   ├── SFX_MarkerPlace_02.wav
-│   │   └── SFX_MarkerPlace_03.wav
-│   ├── Cubes/
-│   │   ├── SFX_CubeCapture_Unit_01.wav
-│   │   ├── SFX_CubeCapture_Prime_01.wav
-│   │   ├── SFX_CubeCapture_Infinity_01.wav
-│   │   └── SFX_CubeCapture_Recursion_01.wav
-│   ├── Paint/
-│   │   ├── SFX_Paint_Corruption_01.wav
-│   │   ├── SFX_Paint_Enhancement_01.wav
-│   │   └── SFX_Paint_Spread_01.wav
-│   └── System/
-│       ├── SFX_WaveComplete_01.wav
-│       ├── SFX_ResourceRegen_01.wav
-│       └── SFX_Detonation_01.wav
-├── Ambient/
-│   ├── AMB_CosmicBackground_Calm.ogg
-│   ├── AMB_CosmicBackground_Active.ogg
-│   └── AMB_CosmicBackground_Tension.ogg
-└── Music/
-    ├── MUS_MainTheme.ogg
-    └── MUS_GameplayLoop.ogg
+#### GameAudioEvent Enumeration
+```csharp
+public enum GameAudioEvent
+{
+    // === CORE RHYTHM EVENTS ===
+    RhythmBeat,           // Cosmic metronome - synced to cube movement timing
+    WaveStepAdvanced,     // Each step of cube advancement
+    RhythmDisrupted,      // When painted cubes break the rhythm
+    
+    // === CUBE LIFECYCLE EVENTS ===
+    CubeLanded,           // When cube reaches new position (per step)
+    CubeCaptured,         // When cube is successfully captured by marker
+    CubeEscaped,          // When cube leaves the grid area  
+    CubeCreated,          // When new cube spawns
+    CubeDestroyed,        // When cube is destroyed/removed
+    CubeCollision,        // When cube collides with player
+    
+    // === PLAYER MOVEMENT EVENTS ===
+    PlayerMoved,          // Single step movement
+    PlayerRunning,        // Continuous movement
+    PlayerStopped,        // When player stops moving
+    PlayerDamaged,        // When player takes damage
+    PlayerRespawned,      // When player respawns after death
+    
+    // === MARKER EVENTS ===
+    LightMarkerPlaced,    // F key marker placement
+    PrimeMarkerPlaced,    // G key marker placement  
+    HeavyMarkerPlaced,    // V key marker placement
+    MarkerTriggered,      // When marker activates/detonates
+    MarkerHit,            // When marker successfully hits cube
+    MarkerMiss,           // When marker triggers but misses
+    MarkerRecharge,       // When marker resources regenerate
+    
+    // === WAVE EVENTS ===
+    WaveStarted,          // Wave initiation (ENTER key)
+    WaveCompleted,        // Wave success
+    WaveFailed,           // Wave failure
+    WavePaused,           // Wave pause state
+    WaveResumed,          // Wave resume after pause
+    
+    // === STAGE EVENTS ===
+    StageStarted,         // Beginning of new stage
+    StageCompleted,       // Stage completion
+    StageFailed,          // Stage failure
+    StageTransition,      // Between stages
+    
+    // === PAINT SYSTEM EVENTS ===
+    FacePainted,          // When cube face gets painted
+    PaintActivated,       // When painted face becomes active
+    CorruptionApplied,    // When corruption effect triggers
+    EnhancementApplied,   // When enhancement effect triggers
+    PaintSpread,          // When paint spreads to adjacent faces
+    
+    // === MUSICAL FEEDBACK EVENTS ===
+    MelodyNote,           // Musical note for captures
+    HarmonyChord,         // Chord progression for combos
+    DissonanceBreak,      // When cosmic harmony is disrupted
+    
+    // === UI EVENTS ===
+    ButtonClick,          // UI button interactions
+    ButtonHover,          // UI button hover
+    MenuOpen,             // Menu opening
+    MenuClose,            // Menu closing
+    
+    // === SYSTEM EVENTS ===
+    GameStarted,          // Game initialization
+    GamePaused,           // Game pause
+    GameResumed,          // Game resume
+    GameOver,             // Game over state
+    
+    // === ATMOSPHERIC EVENTS ===
+    AmbienceStart,        // Background ambience
+    AmbienceStop,         // Stop background ambience
+    IntensityIncrease,    // Tension/difficulty increase
+    IntensityDecrease,    // Relaxation/ease
+}
 ```
 
-#### Audio Import Settings
+### 1.2 Audio Event Data Structure
+```csharp
+[System.Serializable]
+public struct AudioEventData
+{
+    public GameAudioEvent eventType;
+    public Vector3 worldPosition;           // For 3D spatial audio
+    public float intensity;                 // 0-1 for volume/pitch variation
+    public Enumerations.CubeType cubeType;  // For cube-specific events
+    public float rhythmTiming;              // For musical timing
+    public object additionalData;           // For any extra context
+}
+```
 
-**For Short SFX (< 2 seconds):**
-- Load Type: Decompress On Load
-- Compression Format: PCM
-- Quality: 100%
-- Force To Mono: Check (if appropriate)
+### 1.3 Enhanced AudioManager Interface
+```csharp
+public interface IAudioEventSystem
+{
+    void TriggerAudioEvent(AudioEventData eventData);
+    void TriggerAudioEvent(GameAudioEvent eventType, Vector3 position = default, float intensity = 1f);
+    void TriggerCubeAudioEvent(GameAudioEvent eventType, Enumerations.CubeType cubeType, Vector3 position, float intensity = 1f);
+    void SubscribeToGameEvents();
+    void UnsubscribeFromGameEvents();
+    void SetRhythmTempo(float beatsPerMinute);
+    void StartCosmicMetronome();
+    void StopCosmicMetronome();
+}
+```
 
-**For Ambient/Music (> 10 seconds):**
-- Load Type: Compressed In Memory
-- Compression Format: Vorbis
-- Quality: 70%
-- Force To Mono: Uncheck
+## 2. Rhythmic Audio System (NEW - CRITICAL)
 
-#### Basic Unity AudioManager Integration
+### 2.1 Cosmic Metronome Implementation
+The cosmic metronome synchronizes with WaveManager's `moveInterval` to create the rhythmic foundation:
 
 ```csharp
-// Add this to existing audio management system
-[System.Serializable]
-public class CubeAudioClips
+public class RhythmicAudioController : MonoBehaviour
 {
-    [Header("Cube Capture Sounds")]
-    public AudioClip unitCubeCapture;
-    public AudioClip primeCubeCapture;
-    public AudioClip infinityCubeCapture;
-    public AudioClip recursionCubeCapture;
+    [Header("Cosmic Metronome")]
+    public AudioClipSet rhythmBeatSounds;
+    public float beatVolume = 0.3f;
+    public bool enableMetronome = true;
     
-    [Header("Paint System")]
-    public AudioClip paintCorruption;
-    public AudioClip paintEnhancement;
+    [Header("Rhythm Synchronization")]
+    public bool syncToWaveManager = true;
+    public float customBPM = 120f;
     
-    [Header("Core Actions")]
-    public AudioClip markerPlacement;
-    public AudioClip detonation;
-    public AudioClip waveComplete;
-}
-
-// Integration example for existing cube capture system
-public void PlayCubeCaptureSound(CubeType cubeType)
-{
-    AudioClip clipToPlay = cubeType switch
+    private Coroutine metronomeCoroutine;
+    private float currentBeatInterval;
+    
+    // Subscribe to WaveManager events
+    private void OnEnable()
     {
-        CubeType.Unit => cubeAudioClips.unitCubeCapture,
-        CubeType.Prime => cubeAudioClips.primeCubeCapture,
-        CubeType.Infinity => cubeAudioClips.infinityCubeCapture,
-        CubeType.Recursion => cubeAudioClips.recursionCubeCapture,
-        _ => cubeAudioClips.unitCubeCapture
-    };
+        if (WaveManager.Instance != null)
+        {
+            WaveManager.Instance.OnStepAdvanced += OnWaveStepAdvanced;
+            WaveManager.Instance.OnWaveStarted += StartMetronome;
+            WaveManager.Instance.OnWaveEnded += StopMetronome;
+        }
+    }
     
-    if (clipToPlay != null)
+    private void OnWaveStepAdvanced()
     {
-        AudioSource.PlayClipAtPoint(clipToPlay, transform.position);
+        if (enableMetronome)
+        {
+            AudioManager.Instance.TriggerAudioEvent(GameAudioEvent.RhythmBeat);
+        }
     }
 }
 ```
 
-### Step 4: Quality Control Process
+### 2.2 Musical Feedback System
+Transform player actions into musical elements:
 
-#### Audio Standards Checklist
-- [ ] **Volume Consistency**: All SFX within -12dB to -6dB range
-- [ ] **Format Optimization**: WAV for short SFX, OGG for longer audio
-- [ ] **No Clipping**: Check for audio distortion or clipping
-- [ ] **Appropriate Length**: SFX under 3 seconds, ambient 2-5 minutes
-- [ ] **Cosmic Theme**: Audio matches game's cosmic aesthetic
-- [ ] **Unity Compatibility**: All files import without errors
-
-#### Testing Workflow
-1. **Generate 3-5 variations** of each sound type
-2. **Import into Unity** and test playback
-3. **Test in-game integration** with existing systems
-4. **Gather feedback** on audio quality and theme fit
-5. **Iterate** based on gameplay testing
-
-### Step 5: Batch Generation Strategy
-
-#### Week 1 Priority Sounds
+```csharp
+public class MusicalFeedbackController : MonoBehaviour
+{
+    [Header("Capture Melodies")]
+    public AudioClipSet melodyNotes;
+    public float[] musicalScale = { 1f, 1.125f, 1.25f, 1.33f, 1.5f, 1.67f, 1.875f, 2f };
+    
+    [Header("Combo System")]
+    public AudioClipSet harmonyChords;
+    public int minComboForHarmony = 3;
+    
+    private int currentComboCount = 0;
+    private int currentNoteIndex = 0;
+    
+    public void OnCubeCaptured(Enumerations.CubeType cubeType)
+    {
+        // Play musical note based on cube type and current sequence
+        float pitch = GetPitchForCubeType(cubeType);
+        AudioEventData eventData = new AudioEventData
+        {
+            eventType = GameAudioEvent.MelodyNote,
+            intensity = 0.8f,
+            additionalData = pitch
+        };
+        
+        AudioManager.Instance.TriggerAudioEvent(eventData);
+        
+        // Build toward harmony
+        currentComboCount++;
+        if (currentComboCount >= minComboForHarmony)
+        {
+            AudioManager.Instance.TriggerAudioEvent(GameAudioEvent.HarmonyChord);
+        }
+    }
+}
 ```
-High Priority (Generate First):
-1. Marker placement (3 variations)
-2. Unit cube capture (2 variations)
-3. Prime cube capture (2 variations)
-4. Basic cosmic ambient background (1 track)
 
-Medium Priority:
-5. Infinity cube capture (2 variations)
-6. Recursion cube capture (2 variations)
-7. Wave completion sound (1 variation)
-8. Detonation sound (2 variations)
+## 3. Integration Points with Existing Systems
+
+### 3.1 WaveManager Integration
+```csharp
+// Add to existing WaveManager.cs
+public class WaveManager : MonoBehaviour
+{
+    // Existing code...
+    
+    public System.Action OnStepAdvanced;
+    public System.Action OnWaveStarted;
+    public System.Action OnWaveEnded;
+    
+    // In existing AnimateMove method:
+    private void AnimateMove()
+    {
+        // Existing cube movement code...
+        
+        // NEW: Trigger rhythm beat
+        OnStepAdvanced?.Invoke();
+        
+        // NEW: Trigger cube landed events for each cube
+        foreach (var cube in activeCubes)
+        {
+            Vector3 worldPos = GridToWorldPosition(cube.position);
+            AudioManager.Instance.TriggerCubeAudioEvent(
+                GameAudioEvent.CubeLanded, 
+                cube.type, 
+                worldPos
+            );
+        }
+    }
+    
+    // In existing OnCubeCaptured method:
+    public void OnCubeCaptured(Enumerations.CubeType cubeType)
+    {
+        // Existing code...
+        
+        // NEW: Trigger cube captured audio event
+        Vector3 cubePosition = GetCapturedCubePosition(cubeType);
+        AudioManager.Instance.TriggerCubeAudioEvent(
+            GameAudioEvent.CubeCaptured, 
+            cubeType, 
+            cubePosition
+        );
+    }
+}
+```
+
+### 3.2 PlayerActionManager Integration
+```csharp
+// Add to existing PlayerActionManager.cs
+public class PlayerActionManager : MonoBehaviour
+{
+    // Existing code...
+    
+    // In existing PlaceMarker methods:
+    private void PlaceLightMarker()
+    {
+        // Existing placement logic...
+        
+        // NEW: Trigger marker placement audio
+        Vector3 worldPos = GridToWorldPosition(playerManager.GridPosition);
+        AudioManager.Instance.TriggerAudioEvent(
+            GameAudioEvent.LightMarkerPlaced, 
+            worldPos, 
+            0.8f
+        );
+    }
+    
+    // In existing TriggerMarkers method:
+    public void TriggerLightMarkers()
+    {
+        // Existing trigger logic...
+        
+        // NEW: Trigger marker activation audio for each marker
+        foreach (var marker in lightMarkers)
+        {
+            Vector3 worldPos = GridToWorldPosition(marker.position);
+            AudioManager.Instance.TriggerAudioEvent(
+                GameAudioEvent.MarkerTriggered, 
+                worldPos, 
+                1.0f
+            );
+        }
+    }
+}
+```
+
+### 3.3 PlayerManager Integration
+```csharp
+// Add to existing PlayerManager.cs  
+public class PlayerManager : MonoBehaviour
+{
+    // Existing code...
+    
+    // In existing movement methods:
+    private void MovePlayer(Vector2Int newPosition)
+    {
+        // Existing movement logic...
+        
+        // NEW: Trigger player movement audio
+        Vector3 worldPos = GridToWorldPosition(newPosition);
+        AudioManager.Instance.TriggerAudioEvent(
+            GameAudioEvent.PlayerMoved, 
+            worldPos, 
+            0.6f
+        );
+    }
+}
+```
+
+## 4. Implementation Plan
+
+### Phase 1: Event System Foundation (Week 1)
+**Priority: CRITICAL - Core Integration**
+
+#### Day 1-2: Event Enumeration & Data Structures
+- [ ] Create `GameAudioEvent` enum in new script
+- [ ] Create `AudioEventData` struct
+- [ ] Add `IAudioEventSystem` interface to existing AudioManager
+
+#### Day 3-4: AudioManager Event Integration
+- [ ] Add event triggering methods to AudioManager
+- [ ] Implement event-to-sound mapping system
+- [ ] Update existing PlayCubeLandingSound() to use events
+
+#### Day 5-7: Manager Integration
+- [ ] Add event triggers to WaveManager (cube landed, captured, escaped)
+- [ ] Add event triggers to PlayerActionManager (marker placement, triggering)
+- [ ] Add event triggers to PlayerManager (movement)
+- [ ] Test all basic event triggering
+
+**Completion Criteria**: All existing manual audio calls replaced with event triggers
+
+### Phase 2: Rhythmic Audio System (Week 2)
+**Priority: CRITICAL - Cosmic Metronome**
+
+#### Day 1-3: Rhythm Controller Implementation
+- [ ] Create RhythmicAudioController component
+- [ ] Implement WaveManager synchronization
+- [ ] Add cosmic metronome beat generation
+- [ ] Sync beat timing to cube movement intervals
+
+#### Day 4-5: Musical Feedback System
+- [ ] Create MusicalFeedbackController component
+- [ ] Implement capture-to-melody system
+- [ ] Add combo-to-harmony progression
+- [ ] Integrate with existing statistics system
+
+#### Day 6-7: Paint System Audio Integration
+- [ ] Add paint application audio events
+- [ ] Implement "rhythm disruption" when painted cubes activate
+- [ ] Add visual-audio sync for cosmic liquid effects
+
+**Completion Criteria**: Players can hear and internalize the cosmic rhythm
+
+### Phase 3: Audio Content & Polish (Week 3)
+**Priority: HIGH - Content & Atmosphere**
+
+#### Day 1-3: AI-Generated Sound Content
+- [ ] Generate core action sounds using ElevenLabs
+- [ ] Create ambient cosmic background using Soundraw
+- [ ] Generate musical feedback tones and chords
+- [ ] Import and configure in Unity with proper settings
+
+#### Day 4-5: Atmospheric Audio System
+- [ ] Implement background ambient audio controller
+- [ ] Add intensity-based audio scaling
+- [ ] Create stage transition audio
+- [ ] Add UI interaction sounds
+
+#### Day 6-7: Testing & Polish
+- [ ] Comprehensive audio system testing
+- [ ] Volume balancing and mixing
+- [ ] Performance optimization
+- [ ] Bug fixes and refinement
+
+**Completion Criteria**: Complete audio experience supporting "Intelligent Mastery of Cube Rhythms with Cosmic Wanderlust"
+
+### Phase 4: Advanced Features (Week 4+)
+**Priority: MEDIUM - Enhancement**
+
+- [ ] Dynamic music system that responds to gameplay intensity
+- [ ] Advanced paint system audio (corruption/enhancement effects)
+- [ ] Accessibility options (visual rhythm indicators for hearing impaired)
+- [ ] Audio achievement system integration
+- [ ] Advanced spatial audio for large grids
+
+## 5. Success Metrics
+
+### Technical Metrics
+- [ ] All 25+ identified game events trigger appropriate audio
+- [ ] Audio system maintains 60fps performance with no frame drops
+- [ ] Memory usage stays under 50MB for audio assets
+- [ ] Zero audio-related bugs or glitches
+
+### Design Metrics  
+- [ ] Players can identify cube movement rhythm within 30 seconds
+- [ ] Musical feedback creates satisfying "conducting" feeling
+- [ ] Paint effects feel like "cosmic disruption" of rhythm
+- [ ] Overall audio supports "cosmic wanderlust" aesthetic
+
+### Player Experience Metrics
+- [ ] Playtesters report enhanced engagement with audio on
+- [ ] Audio provides clear feedback for off-screen events
+- [ ] Musical elements feel integrated, not distracting
+- [ ] Cosmic theme is reinforced through audio design
+
+## 6. Audio Asset Requirements
+
+### Core Sound Effects (ElevenLabs Generation)
+```
+High Priority:
+- Marker placement sounds (3 variations)
+- Cube capture by type (Unit, Prime, Infinity, Dense - 2 each)
+- Cosmic metronome beat (3 variations)
+- Wave start/complete sounds (1 each)
+
+Medium Priority:  
+- Paint application sounds (2 variations)
+- Detonation effects (3 variations)
+- Player movement sounds (2 variations)
+- UI interaction sounds (3 variations)
 
 Low Priority:
-9. Paint corruption effects (2 variations)
-10. Paint enhancement effects (2 variations)
-11. Additional ambient layers
+- Advanced paint effects (corruption/enhancement)
+- Musical feedback tones (8 note scale)
+- Atmospheric enhancement effects
 ```
 
-### Step 6: Naming Convention
-
-#### File Naming Format
+### Ambient & Musical Content (Soundraw Generation)
 ```
-[Category]_[Type]_[Variation].[ext]
-
-Examples:
-- SFX_MarkerPlace_01.wav
-- SFX_CubeCapture_Unit_01.wav
-- AMB_CosmicBackground_Calm.ogg
-- MUS_GameplayLoop.ogg
+- Background cosmic ambient (2-3 minute loop)
+- Intensity layers (calm, active, tense)
+- Musical progression elements
+- Stage transition stingers
 ```
 
-#### Category Codes
-- **SFX**: Sound Effects
-- **AMB**: Ambient Audio
-- **MUS**: Music
-- **STG**: Stingers (short musical phrases)
+## 7. Quality Standards
 
-### Step 7: Integration with Existing Code
+### Audio Technical Standards
+- **Format**: WAV for SFX (<3 sec), OGG for ambient/music (>10 sec)
+- **Quality**: PCM for SFX, Vorbis 70% for longer audio
+- **Volume**: Consistent levels, -12dB to -6dB range
+- **Length**: SFX under 3 seconds, ambient 2-5 minutes
 
-#### Locate Audio Integration Points
-Based on the project analysis, integrate audio calls in these existing systems:
+### Design Standards
+- **Cosmic Theme**: All audio supports space/cosmic aesthetic
+- **Clarity**: Clear distinction between different event types
+- **Integration**: Audio feels connected to game mechanics
+- **Accessibility**: Important information conveyed both visually and auditorily
 
-1. **Marker System**: Add audio to marker placement logic
-2. **Cube Capture**: Enhance cube capture events with audio
-3. **Detonation System**: Add explosion sound effects
-4. **Wave Management**: Audio for wave start/complete
-5. **Paint System**: Sound effects for face painting mechanics
+## 8. Legacy System Integration
 
-#### Example Integration Points
-```csharp
-// In marker placement system
-public void PlaceMarker()
-{
-    // Existing marker logic...
-    
-    // Add audio
-    AudioManager.Instance.PlayMarkerPlacementSound();
-}
+### Existing AudioManager Features to Preserve
+✅ **Keep**: Spatial audio system, object pooling, volume controls, debug tools  
+✅ **Enhance**: Add event triggering layer on top of existing foundation  
+✅ **Extend**: Integrate with CubeAudioConfiguration system
 
-// In cube capture system
-public void OnCubeCapture(CubeController cube)
-{
-    // Existing capture logic...
-    
-    // Add audio
-    AudioManager.Instance.PlayCubeCaptureSound(cube.CubeType);
-}
-```
-
-## Troubleshooting Common Issues
-
-### Audio Not Playing
-1. Check AudioSource component is present
-2. Verify AudioListener is in scene
-3. Confirm audio files imported correctly
-4. Check volume levels and mute settings
-
-### Performance Issues
-1. Use compressed formats for longer audio
-2. Limit concurrent audio sources
-3. Consider audio pooling for frequent SFX
-4. Monitor memory usage with Unity Profiler
-
-### Quality Issues
-1. Check original generation settings
-2. Verify Unity import settings
-3. Test audio levels for consistency
-4. Consider re-generating with different prompts
-
-## Next Steps After Implementation
-
-1. **Player Testing**: Gather feedback on audio enhancement
-2. **Iteration**: Refine sounds based on gameplay experience
-3. **Expansion**: Generate additional variations and special effects
-4. **Optimization**: Fine-tune performance and memory usage
-5. **Polish**: Add subtle audio features like dynamic mixing
+### Migration Strategy
+1. **Phase 1**: Add event system alongside existing manual calls
+2. **Phase 2**: Gradually replace manual calls with event triggers  
+3. **Phase 3**: Remove deprecated manual calling methods
+4. **Phase 4**: Full event-driven audio system
 
 ---
 
-This guide provides a complete workflow for implementing AI-generated audio in Infinity Cube, from tool setup through Unity integration and quality control.
+**Last Updated:** December 29, 2024  
+**Architecture Status:** Event system designed, implementation plan defined  
+**Next Milestone:** Phase 1 - Event System Foundation implementation
