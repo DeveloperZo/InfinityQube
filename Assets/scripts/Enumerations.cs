@@ -98,6 +98,19 @@ public static class Enumerations
     }
 
     /// <summary>
+    /// Defines the three marker modes for unified input system
+    /// </summary>
+    public enum MarkerMode
+    {
+        /// <summary>Light marker mode: Basic targeting (Key: 1)</summary>
+        Light = 1,
+        /// <summary>Prime marker mode: Area coverage targeting (Key: 2)</summary>
+        Prime = 2,
+        /// <summary>Heavy marker mode: Enhanced targeting for recursion cubes (Key: 3)</summary>
+        Heavy = 3
+    }
+
+    /// <summary>
     /// Defines all game audio events for the event-driven audio system
     /// </summary>
     public enum GameAudioEvent
@@ -121,6 +134,20 @@ public static class Enumerations
         WaveCompleted,      // When a wave is completed
         
         // System Events
-        ResourceRegeneration // When resources regenerate
+        ResourceRegeneration, // When resources regenerate
+        
+        // Mode Switching Events
+        ModeSwitchedToLight,  // When switching to Light marker mode
+        ModeSwitchedToPrime,  // When switching to Prime marker mode
+        ModeSwitchedToHeavy,  // When switching to Heavy marker mode
+        
+        // Message Polish Events
+        MessageShow,         // When a tutorial/guidance message is shown
+        MessageHide,         // When a tutorial/guidance message is hidden
+        MessageSkip,         // When a tutorial/guidance message is skipped
+        
+        // Error Feedback Events
+        ActionError,         // When an action fails and error feedback is shown
+        ActionSuccess        // When an action succeeds (for positive feedback)
     }
 }

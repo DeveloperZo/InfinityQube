@@ -285,29 +285,48 @@ public class TutorialMessageManager : MonoBehaviour, IMessageSystem, IManagerDeb
         // Use MessageProgressTracker if available for sophisticated filtering
         if (progressTracker != null)
         {
-            return progressTracker.CanShowMessage(message);
-        }
-        
-        // Fallback to original logic if progress tracker unavailable
-        // Check global cooldown
-        if (Time.time - lastMessageTime < messageCooldown)
-            return false;
-
-        // Check one-time messages
-        if (message.showOnce && shownOnceMessages.Contains(message.messageId))
-            return false;
-
-        // Check message-specific cooldown
-        if (lastMessageTimes.ContainsKey(message.messageId))
-        {
-            float timeSinceLastShow = Time.time - lastMessageTimes[message.messageId];
-            if (timeSinceLastShow < message.cooldownSeconds)
+            if (!progressTracker.CanShowMessage(message))
                 return false;
+        }
+        else
+        {
+            // Fallback filtering if progress tracker unavailable
+            // Check global cooldown
+            if (Time.time - lastMessageTime < messageCooldown)
+                return false;
+
+            // Check one-time messages
+            if (message.showOnce && shownOnceMessages.Contains(message.messageId))
+                return false;
+
+            // Check message-specific cooldown
+            if (lastMessageTimes.ContainsKey(message.messageId))
+            {
+                float timeSinceLastShow = Time.time - lastMessageTimes[message.messageId];
+                if (timeSinceLastShow < message.cooldownSeconds)
+                    return false;
+            }
         }
 
         // Check context triggers
         if (!message.ShouldDisplay(currentContext))
             return false;
+
+        // Enhanced relevance filtering with player capabilities
+        var playerCapabilities = BuildPlayerCapabilities();
+        if (!message.IsImmediatelyRelevant(currentContext, playerCapabilities))
+        {
+            DebugLog("ShouldDisplayMessage", $"Message {message.messageId} filtered - not immediately relevant");
+            return false;
+        }
+
+        // Validate message formatting (optional strict mode)
+        var validation = message.ValidateFormatting();
+        if (!validation.IsValid && enableDebugLogs)
+        {
+            DebugLog("ShouldDisplayMessage", $"Message {message.messageId} has formatting issues: {validation.ErrorMessage}");
+            // Note: Still allow display but with formatting applied
+        }
 
         return true;
     }
@@ -353,9 +372,11 @@ public class TutorialMessageManager : MonoBehaviour, IMessageSystem, IManagerDeb
 
         currentMessageId++;
         
-        // Setup message display
-        bool isRepeat = shownOnceMessages.Contains(message.messageId);
-        string displayText = message.GetDisplayMessage(isRepeat);
+        // Build progressive disclosure context
+        var progressiveContext = BuildProgressiveDisclosureContext(message);
+        
+        // Get formatted message with all enhancements
+        string displayText = GetFormattedDisplayText(message, progressiveContext);
         
         messagePanel.SetActive(true);
         messageText.text = displayText;
@@ -363,12 +384,18 @@ public class TutorialMessageManager : MonoBehaviour, IMessageSystem, IManagerDeb
         if (continuePrompt != null)
             continuePrompt.SetActive(message.RequirePause);
 
-        DebugLog("DisplayMessage", $"Showing message: {message.messageId}");
+        DebugLog("DisplayMessage", $"Showing formatted message: {message.messageId} - '{displayText}'");
         
         // Notify progress tracker that message is being shown
         if (progressTracker != null)
         {
             progressTracker.OnMessageShown(message);
+        }
+        
+        // Trigger polish hooks for message show
+        if (MessagePolishEvents.Instance != null)
+        {
+            MessagePolishEvents.Instance.OnTutorialMessageShow(message.messageId, message.Message, message.category);
         }
         
         // Notify statistics manager about message display
@@ -405,6 +432,12 @@ public class TutorialMessageManager : MonoBehaviour, IMessageSystem, IManagerDeb
         {
             PlayerStatisticsManager.Instance.OnMessageDismissed(message.Message, wasSkipped);
         }
+        
+        // Trigger polish hooks for message hide/skip
+        if (MessagePolishEvents.Instance != null)
+        {
+            MessagePolishEvents.Instance.OnTutorialMessageHide(message.messageId, wasSkipped);
+        }
 
         yield return HideCurrentMessage();
     }
@@ -419,8 +452,116 @@ public class TutorialMessageManager : MonoBehaviour, IMessageSystem, IManagerDeb
 
         OnMessageClosed?.Invoke(currentMessageId);
         
+        // Note: Polish hooks for message hide are triggered in DisplayMessage method based on skip status
+        
         DebugLog("HideCurrentMessage", $"Message hidden: ID {currentMessageId}");
         yield return null;
+    }
+    #endregion
+
+    #region Message Formatting and Processing
+    /// <summary>
+    /// Build progressive disclosure context for a message
+    /// </summary>
+    private ProgressiveDisclosureContext BuildProgressiveDisclosureContext(TutorialMessage message)
+    {
+        bool hasSeenBefore = shownOnceMessages.Contains(message.messageId);
+        int relatedMessagesShown = CountRelatedMessagesShown(message);
+        float timeSinceLastShown = GetTimeSinceLastShown(message.messageId);
+        
+        return new ProgressiveDisclosureContext
+        {
+            gameContext = GetCurrentContext(),
+            HasSeenBefore = hasSeenBefore,
+            RelatedMessagesShown = relatedMessagesShown,
+            TimeSinceLastShown = timeSinceLastShown,
+            PlayerExperience = DeterminePlayerExperience()
+        };
+    }
+
+    /// <summary>
+    /// Get formatted display text with all enhancements applied
+    /// </summary>
+    private string GetFormattedDisplayText(TutorialMessage message, ProgressiveDisclosureContext progressiveContext)
+    {
+        // Generate preview to validate formatting
+        var preview = MessageFormatter.GeneratePreview(message, currentContext, progressiveContext);
+        
+        // Log formatting information if debug enabled
+        if (enableDebugLogs && preview.ValidationResult != null)
+        {
+            if (!preview.ValidationResult.IsValid)
+            {
+                DebugLog("GetFormattedDisplayText", 
+                    $"Message formatting applied: {preview.ValidationResult.ErrorType} - {preview.ValidationResult.ErrorMessage}");
+            }
+            
+            if (!preview.ValidationResult.IsActionOriented && !string.IsNullOrEmpty(preview.ValidationResult.SuggestedFix))
+            {
+                DebugLog("GetFormattedDisplayText", 
+                    $"Applied action-oriented formatting to message: {message.messageId}");
+            }
+        }
+        
+        return preview.GetFinalMessage();
+    }
+
+    /// <summary>
+    /// Count how many related messages have been shown
+    /// </summary>
+    private int CountRelatedMessagesShown(TutorialMessage message)
+    {
+        if (messageDatabase == null) return 0;
+        
+        var categoryMessages = messageDatabase.GetMessagesByCategory(message.category);
+        return categoryMessages.Count(msg => shownOnceMessages.Contains(msg.messageId));
+    }
+
+    /// <summary>
+    /// Get time since message was last shown
+    /// </summary>
+    private float GetTimeSinceLastShown(string messageId)
+    {
+        if (lastMessageTimes.TryGetValue(messageId, out float lastTime))
+        {
+            return Time.time - lastTime;
+        }
+        return float.MaxValue;
+    }
+
+    /// <summary>
+    /// Determine player experience level based on progress
+    /// </summary>
+    private PlayerExperienceLevel DeterminePlayerExperience()
+    {
+        int totalShown = shownOnceMessages.Count;
+        
+        if (totalShown < 5) return PlayerExperienceLevel.Beginner;
+        if (totalShown < 15) return PlayerExperienceLevel.Intermediate;
+        if (totalShown < 30) return PlayerExperienceLevel.Advanced;
+        return PlayerExperienceLevel.Expert;
+    }
+
+    /// <summary>
+    /// Build current player capabilities for relevance filtering
+    /// </summary>
+    private PlayerCapabilities BuildPlayerCapabilities()
+    {
+        var capabilities = new PlayerCapabilities
+        {
+            ExperienceLevel = DeterminePlayerExperience()
+        };
+        
+        // Determine capabilities from player action manager
+        if (playerActionManager != null)
+        {
+            capabilities.CanUseLightMarkers = playerActionManager.maxLightMarkerCharges > 0;
+            capabilities.CanUseHeavyMarkers = playerActionManager.maxHeavyMarkerCharges > 0;
+            capabilities.CanUsePrimeMarkers = playerActionManager.maxPrimeMarkerCharges > 0;
+            capabilities.CanUseCubeMarkers = playerActionManager.GetCurrentCubeMarkers() > 0;
+        }
+        
+        return capabilities;
     }
     #endregion
 
@@ -633,6 +774,121 @@ public class TutorialMessageManager : MonoBehaviour, IMessageSystem, IManagerDeb
         }
         return currentContext;
     }
+
+    /// <summary>
+    /// Preview how a message will be formatted with current context
+    /// </summary>
+    public MessagePreview PreviewMessage(TutorialMessage message)
+    {
+        if (message == null) return null;
+        
+        var progressiveContext = BuildProgressiveDisclosureContext(message);
+        return MessageFormatter.GeneratePreview(message, currentContext, progressiveContext);
+    }
+
+    /// <summary>
+    /// Get formatted version of any message text with current game context
+    /// </summary>
+    public string FormatMessageText(string messageText, bool enforceActionOriented = true)
+    {
+        if (string.IsNullOrEmpty(messageText)) return messageText;
+        
+        // Process dynamic variables
+        string processed = MessageFormatter.ProcessDynamicContent(messageText, currentContext);
+        
+        // Apply action-oriented formatting if requested
+        if (enforceActionOriented && !MessageFormatter.IsActionOriented(processed))
+        {
+            processed = MessageFormatter.MakeActionOriented(processed);
+        }
+        
+        // Enforce line limits
+        return MessageFormatter.EnforceTwoLineLimit(processed);
+    }
+
+    /// <summary>
+    /// Validate all messages in the database for formatting compliance
+    /// </summary>
+    public void ValidateAllMessages()
+    {
+        if (messageDatabase == null)
+        {
+            DebugLog("ValidateAllMessages", "No message database assigned");
+            return;
+        }
+        
+        int totalMessages = 0;
+        int invalidMessages = 0;
+        var issues = new List<string>();
+        
+        foreach (MessageCategory category in System.Enum.GetValues(typeof(MessageCategory)))
+        {
+            var messages = messageDatabase.GetMessagesByCategory(category);
+            foreach (var message in messages)
+            {
+                totalMessages++;
+                var validation = message.ValidateFormatting();
+                
+                if (!validation.IsValid)
+                {
+                    invalidMessages++;
+                    issues.Add($"{message.messageId} ({category}): {validation.ErrorMessage}");
+                }
+            }
+        }
+        
+        DebugLog("ValidateAllMessages", 
+            $"Validation complete: {invalidMessages}/{totalMessages} messages need formatting fixes");
+        
+        if (issues.Count > 0 && enableDebugLogs)
+        {
+            Debug.LogWarning($"MessageFormatter Issues:\n{string.Join("\n", issues)}");
+        }
+    }
+
+    /// <summary>
+    /// Get statistics about message formatting in the database
+    /// </summary>
+    public MessageFormattingStats GetFormattingStats()
+    {
+        var stats = new MessageFormattingStats();
+        
+        if (messageDatabase == null) return stats;
+        
+        foreach (MessageCategory category in System.Enum.GetValues(typeof(MessageCategory)))
+        {
+            var messages = messageDatabase.GetMessagesByCategory(category);
+            foreach (var message in messages)
+            {
+                stats.TotalMessages++;
+                
+                var validation = message.ValidateFormatting();
+                if (validation.IsValid)
+                {
+                    stats.ValidMessages++;
+                    if (validation.IsActionOriented)
+                        stats.ActionOrientedMessages++;
+                }
+                else
+                {
+                    switch (validation.ErrorType)
+                    {
+                        case MessageValidationError.TooManyLines:
+                            stats.TooManyLinesCount++;
+                            break;
+                        case MessageValidationError.LineTooLong:
+                            stats.LineTooLongCount++;
+                            break;
+                        case MessageValidationError.NotActionOriented:
+                            stats.NotActionOrientedCount++;
+                            break;
+                    }
+                }
+            }
+        }
+        
+        return stats;
+    }
     #endregion
 
     #region Cleanup
@@ -676,6 +932,8 @@ public class TutorialMessageManager : MonoBehaviour, IMessageSystem, IManagerDeb
 
     public Dictionary<string, object> GetDebugData()
     {
+        var formattingStats = GetFormattingStats();
+        
         return new Dictionary<string, object>
         {
             ["Is Processing Queue"] = isProcessingQueue,
@@ -698,7 +956,12 @@ public class TutorialMessageManager : MonoBehaviour, IMessageSystem, IManagerDeb
             ["Trigger Manager Active"] = triggerManager != null,
             ["Progress Tracker Active"] = progressTracker != null,
             ["Progress Tracker Status"] = progressTracker?.GetDebugStatus() ?? "Not Available",
-            ["Manager References Valid"] = (waveManager != null) && (gridManager != null) && (playerManager != null)
+            ["Manager References Valid"] = (waveManager != null) && (gridManager != null) && (playerManager != null),
+            ["Player Experience Level"] = DeterminePlayerExperience().ToString(),
+            ["Formatting Stats"] = formattingStats.ToString(),
+            ["Valid Messages"] = formattingStats.ValidMessages,
+            ["Action-Oriented Messages"] = formattingStats.ActionOrientedMessages,
+            ["Formatting Issues"] = formattingStats.TooManyLinesCount + formattingStats.LineTooLongCount + formattingStats.NotActionOrientedCount
         };
     }
 

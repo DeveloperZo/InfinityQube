@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using TMPro;
+using static Enumerations;
 
 public class GameUI : MonoBehaviour
 {
@@ -322,6 +323,16 @@ public class GameUI : MonoBehaviour
     {
         if (playerManager == null) return "";
 
+        // Use TutorialMessageManager for enhanced dynamic content if available
+        var tutorialManager = TutorialMessageManager.Instance;
+        if (tutorialManager != null)
+        {
+            string enhancedTip = GetEnhancedDynamicTip(tutorialManager);
+            if (!string.IsNullOrEmpty(enhancedTip))
+                return enhancedTip;
+        }
+
+        // Fallback to original dynamic tip logic
         // 1. Marker availability checks (highest priority)
         if (playerActionManager != null)
         {
@@ -411,6 +422,81 @@ public class GameUI : MonoBehaviour
         }
 
         return "";
+    }
+
+    /// <summary>
+    /// Get enhanced dynamic tip using TutorialMessageManager formatting
+    /// </summary>
+    private string GetEnhancedDynamicTip(TutorialMessageManager tutorialManager)
+    {
+        // Build context-aware tip messages using the new formatting system
+        var context = tutorialManager.GetCurrentContext();
+        
+        // Priority-based tip generation with dynamic variables
+        
+        // 1. Immediate danger/urgency (highest priority)
+        if (context.nearestCubeDistance <= 2f)
+        {
+            string urgentTip = "Move quickly! Cube {cubeDistance:F1} tiles away";
+            return tutorialManager.FormatMessageText(urgentTip);
+        }
+        
+        // 2. Marker availability with action guidance
+        if (playerActionManager != null)
+        {
+            if (playerActionManager.GetCurrentLightCharges() == 0)
+            {
+                string rechargeTip = "Wait for markers to recharge ({markers} available)";
+                return tutorialManager.FormatMessageText(rechargeTip);
+            }
+            
+            if (playerActionManager.CanPlaceLightMarker())
+            {
+                string placeTip = "Place light marker at ({playerX},{playerY}) with F key";
+                return tutorialManager.FormatMessageText(placeTip);
+            }
+        }
+        
+        // 3. Wave state guidance
+        if (waveManager != null)
+        {
+            if (!waveManager.waveActive && context.availableMarkers > 0)
+            {
+                string startTip = "Start wave with ENTER - {markers} markers ready";
+                return tutorialManager.FormatMessageText(startTip);
+            }
+            
+            if (waveManager.waveActive && context.currentMoveStep > 0)
+            {
+                string progressTip = "Wave step {step} - stay alert for cubes";
+                return tutorialManager.FormatMessageText(progressTip);
+            }
+        }
+        
+        // 4. Cube type specific guidance
+        if (context.activeCubeTypes.Count > 0)
+        {
+            if (context.activeCubeTypes.Contains(CubeType.Recursion))
+            {
+                string recursionTip = "Avoid recursion cubes! Use heavy markers";
+                return tutorialManager.FormatMessageText(recursionTip);
+            }
+            
+            if (context.activeCubeTypes.Contains(CubeType.Infinity))
+            {
+                string infinityTip = "Target infinity cubes for detonations";
+                return tutorialManager.FormatMessageText(infinityTip);
+            }
+        }
+        
+        // 5. General guidance based on experience
+        if (context.currentMoveStep == 0)
+        {
+            string readyTip = "Press ENTER when ready to start";
+            return tutorialManager.FormatMessageText(readyTip);
+        }
+        
+        return string.Empty;
     }
 
     private Texture2D MakeTexture(int width, int height, Color color)

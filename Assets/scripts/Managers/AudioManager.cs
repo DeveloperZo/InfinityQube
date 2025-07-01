@@ -2435,6 +2435,33 @@ public class AudioManager : MonoBehaviour, IManagerDebugInterface
                 }
                 break;
                 
+            case Enumerations.GameAudioEvent.MessageShow:
+                // Play message show audio feedback
+                PlayUIClickSound(); // Placeholder - could be enhanced with message-specific sounds
+                if (enableDebugLogs && logAudioEvents)
+                {
+                    DebugLog($"Message show event triggered at {eventData.worldPosition}");
+                }
+                break;
+                
+            case Enumerations.GameAudioEvent.MessageHide:
+                // Play message hide audio feedback (subtle)
+                if (enableDebugLogs && logAudioEvents)
+                {
+                    DebugLog($"Message hide event triggered at {eventData.worldPosition}");
+                }
+                // Note: Intentionally subtle/silent for normal message dismissal
+                break;
+                
+            case Enumerations.GameAudioEvent.MessageSkip:
+                // Play message skip audio feedback
+                PlayUIClickSound(); // Placeholder - could be distinct skip sound
+                if (enableDebugLogs && logAudioEvents)
+                {
+                    DebugLog($"Message skip event triggered at {eventData.worldPosition}");
+                }
+                break;
+                
             default:
                 if (enableDebugLogs)
                 {

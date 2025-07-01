@@ -551,15 +551,8 @@ public class PlayerMarkerSystem : MonoBehaviour
 
         if (cube.type == CubeType.Prime)
         {
-            // Create cube marker based on the marker type that captured the prime cube
-            CubeMarkerType cubeMarkerType = markerType switch
-            {
-                MarkerType.Light => CubeMarkerType.Light,
-                MarkerType.Heavy => CubeMarkerType.Heavy,
-                MarkerType.Prime => CubeMarkerType.Prime,
-                _ => CubeMarkerType.Cube
-            };
-            CreateCubeMarker(position, cubeMarkerType);
+
+            CreateCubeMarker(position, CubeMarkerType.Prime);
         }
 
         // Notify statistics manager about cube capture

@@ -1,0 +1,84 @@
+# .shrimp.toml – InfinityQube Unity Project Configuration
+# Keep this minimal; detailed rules stay in shrimp-rules.md
+
+[custom_fields]
+# Project organization fields for better task management
+scene       = "enum:Main,Tutorial,GamePlay,UI,Settings,Loading"  # Which scene this task affects
+subsystem   = "enum:Gameplay,UI,Build,Testing,Documentation,Audio"  # System category
+priority    = "enum:Critical,High,Medium,Low"  # Task priority level
+build_ok    = "bool"          # Set by build script - indicates if build passes
+tested      = "bool"          # Set manually - indicates if task was tested
+complexity  = "enum:Simple,Medium,Complex"  # Effort estimation
+
+# InfinityQube specific fields
+affects_manager = "string"    # Which manager class this touches (GridManager, PlayerManager, etc.)
+breaks_saves    = "bool"      # Does this change break existing save files?
+needs_approval  = "bool"      # Requires architectural approval per shrimp-rules.md
+
+# Analytics & Stop-on-Red tracking
+build_time_ms   = "int"       # Build duration in milliseconds (set by script)
+test_time_ms    = "int"       # Test duration in milliseconds (set by script)
+failure_reason  = "string"    # Why did this task fail? (for analytics)
+self_healed     = "bool"      # Did the build script auto-fix issues?
+healthy_streak  = "int"       # Consecutive successful builds (for analytics)
+last_red_at     = "string"    # Timestamp when build last failed (ISO format)
+
+[hooks]
+# Git workflow integration
+on_start = "git checkout -B task-${TASK_ID} && echo 'Starting task ${TASK_ID}' >> .shrimp/task_log.txt"
+
+# Build and test automation (Windows)
+on_done  = "shrimpScripts\\build_and_test.bat ${TASK_ID} ${TASK_RESULT_JSON}"
+
+# Optional: Clean up on task completion
+# on_complete = "git branch -d task-${TASK_ID} 2>/dev/null || true"
+
+[rules]
+# InfinityQube development constraints
+max_file_size = 600           # Lines - matches shrimp-rules.md standard
+require_debug_logs = true     # All managers must have debug logging
+unity_version = "2022.3.21f1" # Lock Unity version for consistency
+
+[notifications]
+# Ready for rich analytics & notifications (uncomment when ready)
+# slack_webhook = "your-webhook-url"      # Team build status
+# discord_webhook = "your-webhook-url"    # Community updates  
+# email_on_red = "your-email@domain.com"  # Critical failure alerts
+# dashboard_url = "http://localhost:3000" # Analytics dashboard
+
+# Stop-on-red notification triggers
+# notify_on_red = true                     # Alert when build breaks
+# notify_on_green_after_red = true         # Alert when build fixes
+# notify_on_streak = 10                    # Alert on healthy streaks
+
+[build]
+# Unity build configuration
+unity_path = "/c/Program Files/Unity/Hub/Editor/2022.3.21f1/Editor/Unity.exe"
+project_path = "C:\\Users\\awill\\Unity\\InfinityQube"
+build_target = "Win64"
+output_path = "Builds"
+
+# Build validation
+require_tests = true          # Must run tests before marking complete
+fail_on_warnings = false     # Allow warnings but require zero errors
+auto_version_bump = false    # Manual version control for now
+
+[testing]
+# Test configuration
+run_integration_tests = true  # Use FinalIntegrationTest.cs
+test_timeout = 300           # 5 minutes max for test runs
+test_scenes = ["Assets/Scenes/Main.unity"]
+
+# Coverage requirements (aspirational)
+min_coverage = 70            # Target code coverage percentage
+critical_paths = ["PlayerManager", "GridManager", "WaveManager"]
+
+[development]
+# Development workflow preferences
+auto_format = false          # Manual code formatting
+strict_mode = true           # Enforce all rules strictly
+poc_allowed = true           # POC code is acceptable per rules
+
+# File watching (optional - for auto-builds)
+watch_patterns = ["Assets/**/*.cs", "Assets/**/*.unity"]
+ignore_patterns = ["Temp/**", "Library/**", "Logs/**"]

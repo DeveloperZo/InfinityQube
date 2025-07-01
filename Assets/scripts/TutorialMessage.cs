@@ -42,15 +42,65 @@ public class TutorialMessage : WaveMessage
     public bool useShortMessageOnRepeat = false;
 
     /// <summary>
-    /// Get the appropriate message text based on repeat status
+    /// Get the appropriate message text based on repeat status and context
     /// </summary>
-    public string GetDisplayMessage(bool isRepeat = false)
+    public string GetDisplayMessage(bool isRepeat = false, GameContext context = null, bool enforceFormatting = true)
     {
+        string message;
+        
         if (isRepeat && useShortMessageOnRepeat && !string.IsNullOrEmpty(shortMessage))
         {
-            return shortMessage;
+            message = shortMessage;
         }
-        return Message;
+        else
+        {
+            message = Message;
+        }
+
+        // Apply dynamic content processing if context provided
+        if (context != null)
+        {
+            message = MessageFormatter.ProcessDynamicContent(message, context);
+        }
+
+        // Enforce formatting constraints if requested
+        if (enforceFormatting)
+        {
+            message = MessageFormatter.EnforceTwoLineLimit(message);
+        }
+
+        return message;
+    }
+
+    /// <summary>
+    /// Get formatted message with full progressive disclosure and validation
+    /// </summary>
+    public string GetFormattedMessage(ProgressiveDisclosureContext progressiveContext, bool enforceActionOriented = true)
+    {
+        string message = MessageFormatter.CreateProgressiveVersion(this, progressiveContext);
+        
+        if (enforceActionOriented && !MessageFormatter.IsActionOriented(message))
+        {
+            message = MessageFormatter.MakeActionOriented(message);
+        }
+        
+        return MessageFormatter.EnforceTwoLineLimit(message);
+    }
+
+    /// <summary>
+    /// Validate this message meets formatting requirements
+    /// </summary>
+    public MessageValidationResult ValidateFormatting()
+    {
+        return MessageFormatter.ValidateMessage(Message);
+    }
+
+    /// <summary>
+    /// Check if this message is immediately relevant given player capabilities
+    /// </summary>
+    public bool IsImmediatelyRelevant(GameContext context, PlayerCapabilities capabilities)
+    {
+        return MessageFormatter.IsImmediatelyRelevant(this, context, capabilities);
     }
 
     /// <summary>

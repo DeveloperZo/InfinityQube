@@ -323,8 +323,7 @@ WaveData Properties:
 | **Trigger Light** | R | PlayerActionManager | Activate light markers |
 | **Trigger Heavy** | Y | PlayerActionManager | Activate heavy markers |
 | **Trigger Prime** | T | PlayerActionManager | Activate prime markers |
-| **Trigger Cube Marker** | Q | PlayerActionManager | Direct cube detonation |
-| **Power Up Cube Marker** | E | PlayerActionManager | Enhance cube marker |
+| **Trigger Cube Marker** | Q | PlayerActionManager | Detonate next available cube marker |
 | **Start Wave** | ENTER | WaveManager | Begin wave progression |
 | **Restart Level** | P | Game System | Reset current stage |
 | **Quit Game** | ESC | Game System | Exit application |

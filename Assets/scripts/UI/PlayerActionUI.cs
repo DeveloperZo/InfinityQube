@@ -9,6 +9,7 @@ public class PlayerActionUI : MonoBehaviour
     [SerializeField] private Image[] heavyMarkerSegments = new Image[6];
     [SerializeField] private Image[] primeMarkerSegments = new Image[6];
     [SerializeField] private Image[] cubeMarkerSegments = new Image[6];
+    [SerializeField] private Image[] modeIndicatorSegments = new Image[3];
     [SerializeField] private TextMeshProUGUI lightChargeText;
     [SerializeField] private TextMeshProUGUI heavyChargeText;
     [SerializeField] private TextMeshProUGUI primeChargeText;
@@ -22,9 +23,16 @@ public class PlayerActionUI : MonoBehaviour
     [SerializeField] private Color heavyMarkerColor = new Color(1f, 0.3f, 0.3f, 1f);      // Red for heavy markers
     [SerializeField] private Color primeMarkerColor = new Color(0.8f, 0.2f, 1f, 1f);      // Purple for prime markers
     [SerializeField] private Color cubeMarkerColor = new Color(0.2f, 1f, 0.2f, 1f);       // Green for cube markers
+    [SerializeField] private Color[] modeColors = new Color[3] 
+    {
+        new Color(1f, 0.3f, 0.3f, 1f),      // Red for Light mode (index 0 = Light=1)
+        new Color(0.8f, 0.2f, 1f, 1f),      // Purple for Prime mode (index 1 = Prime=2)
+        new Color(0.6f, 0.1f, 0.1f, 1f)     // Dark Red for Heavy mode (index 2 = Heavy=3)
+    };
 
     [Header("Cooldown Settings")]
     [SerializeField] private PlayerActionManager playerActionManager;
+    [SerializeField] private AnimationTriggerManager animationTriggerManager;
     public float lightMarkerCooldownTime = 2f;
     public float heavyMarkerCooldownTime = 5f;
     public float primeMarkerCooldownTime = 4f;
@@ -43,6 +51,7 @@ public class PlayerActionUI : MonoBehaviour
     void Start()
     {
         playerActionManager = FindAnyObjectByType<PlayerActionManager>();
+        animationTriggerManager = FindAnyObjectByType<AnimationTriggerManager>();
 
         if (playerActionManager != null)
         {
@@ -66,6 +75,12 @@ public class PlayerActionUI : MonoBehaviour
 
     public void UpdateCharges(int currentLightCharges, int currentHeavyCharges, int currentPrimeCharges, int currentCubeCharges)
     {
+        // Check if charges have changed to trigger animations
+        bool chargesChanged = (lightCharges != currentLightCharges) || 
+                             (heavyCharges != currentHeavyCharges) || 
+                             (primeCharges != currentPrimeCharges) || 
+                             (cubeCharges != currentCubeCharges);
+
         lightCharges = currentLightCharges;
         heavyCharges = currentHeavyCharges;
         primeCharges = currentPrimeCharges;
@@ -87,6 +102,12 @@ public class PlayerActionUI : MonoBehaviour
         if (cubeMaxCharges == 0)
         {
             cubeMaxCharges = 10; // Default value for cube markers
+        }
+
+        // Trigger animation for UI update if charges changed
+        if (chargesChanged)
+        {
+            TriggerUIUpdateAnimation();
         }
     }
 
@@ -114,6 +135,32 @@ public class PlayerActionUI : MonoBehaviour
     public void OnMarkerPlaced(bool isLightMarker)
     {
         Debug.Log($"Marker placed - {(isLightMarker ? "Individual" : "Area")}");
+    }
+
+    /// <summary>
+    /// Shows action feedback to the player
+    /// </summary>
+    /// <param name="message">The message to display</param>
+    /// <param name="isError">Whether this is an error message or success message</param>
+    public void ShowActionFeedback(string message, bool isError)
+    {
+        // For now, use Debug.Log to show the message
+        // In a full implementation, this could show a temporary UI popup or notification
+        if (isError)
+        {
+            Debug.LogWarning($"[Action Error] {message}");
+        }
+        else
+        {
+            Debug.Log($"[Action Success] {message}");
+        }
+        
+        // TODO: Implement visual feedback UI elements
+        // This could include:
+        // - Temporary text popup near the UI
+        // - Color-coded feedback indicators
+        // - Flashing charge indicators for relevant marker type
+        // - Screen shake or other visual effects for errors
     }
 
     private void UpdateDisplay()
@@ -181,6 +228,12 @@ public class PlayerActionUI : MonoBehaviour
 
         // Update Cube Marker UI
         UpdateCubeMarkerUI();
+
+        // Update Mode Indicator UI
+        if (playerActionManager != null)
+        {
+            UpdateModeIndicator(playerActionManager.GetCurrentMode());
+        }
     }
 
     private float CalculateCooldownProgress(int charges, int maxCharges, float cooldownRemaining, float cooldownTime)
@@ -285,6 +338,48 @@ public class PlayerActionUI : MonoBehaviour
         }
     }
 
+    private void UpdateModeIndicator(Enumerations.MarkerMode currentMode)
+    {
+        if (modeIndicatorSegments == null || modeIndicatorSegments.Length != 3) return;
+
+        // Check if mode has changed to trigger animation
+        bool modeChanged = false;
+        
+        // Update mode indicator segments - highlight current active mode
+        for (int i = 0; i < modeIndicatorSegments.Length; i++)
+        {
+            if (modeIndicatorSegments[i] == null) continue;
+
+            // Calculate which mode this segment represents (Light=1, Prime=2, Heavy=3)
+            Enumerations.MarkerMode segmentMode = (Enumerations.MarkerMode)(i + 1);
+
+            if (segmentMode == currentMode)
+            {
+                // Check if this segment wasn't active before (mode change)
+                if (modeIndicatorSegments[i].color == segmentEmptyColor)
+                {
+                    modeChanged = true;
+                }
+                
+                // Active mode - use mode-specific color
+                modeIndicatorSegments[i].color = modeColors[i];
+            }
+            else
+            {
+                // Inactive mode - use empty color
+                modeIndicatorSegments[i].color = segmentEmptyColor;
+            }
+
+            modeIndicatorSegments[i].gameObject.SetActive(true);
+        }
+        
+        // Trigger animation for mode change
+        if (modeChanged)
+        {
+            TriggerModeChangeAnimation(currentMode);
+        }
+    }
+
     // Public getters for UI state
     public float GetLightCooldownProgress()
     {
@@ -350,4 +445,51 @@ public class PlayerActionUI : MonoBehaviour
         lightMaxCharges = maxLight;
         primeMaxCharges = maxArea;
     }
+
+    // Public method to update mode indicator from external calls
+    public void UpdateModeIndicatorDisplay(Enumerations.MarkerMode currentMode)
+    {
+        UpdateModeIndicator(currentMode);
+    }
+
+    #region Animation Trigger Integration
+
+    /// <summary>
+    /// Triggers animation for UI updates (charge changes, cooldown updates)
+    /// </summary>
+    private void TriggerUIUpdateAnimation()
+    {
+        if (animationTriggerManager != null)
+        {
+            // Use UI center position as reference point for animations
+            Vector3 uiPosition = transform.position;
+            var context = AnimationTriggerContext.Create(uiPosition, 0.5f);
+            context.additionalData = "UI charge update";
+            context.duration = 0.3f; // Quick UI update animation
+            animationTriggerManager.TriggerAnimation(AnimationTriggerPoint.UIUpdate, context);
+        }
+    }
+
+    /// <summary>
+    /// Triggers animation for mode changes in the UI
+    /// </summary>
+    /// <param name="newMode">The new active mode</param>
+    private void TriggerModeChangeAnimation(Enumerations.MarkerMode newMode)
+    {
+        if (animationTriggerManager != null)
+        {
+            // Use mode indicator position as reference point
+            Vector3 modeIndicatorPosition = modeIndicatorSegments != null && modeIndicatorSegments.Length > 0 && modeIndicatorSegments[0] != null
+                ? modeIndicatorSegments[0].transform.position
+                : transform.position;
+                
+            var context = AnimationTriggerContext.Create(modeIndicatorPosition, 1.0f);
+            context.markerMode = newMode;
+            context.additionalData = $"Mode changed to {newMode}";
+            context.duration = 0.5f; // Mode change animation duration
+            animationTriggerManager.TriggerAnimation(AnimationTriggerPoint.UIUpdate, context);
+        }
+    }
+
+    #endregion
 }
