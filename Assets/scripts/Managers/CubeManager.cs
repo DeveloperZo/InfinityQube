@@ -561,22 +561,7 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
         {
             transform.position = end;
             transform.rotation = Quaternion.identity;
-            
-            // Play cube landing sound using integrated audio system
-            if (GetEffectiveType() == CubeType.Infinity)
-            {
-                // Play special effect sound for infinity cubes
-                PlaySpecialEffectSound();
-                
-                // Also play the named special effect if available through AudioManager
-                AudioManager.Instance?.PlayNamedSpecialEffect("sfx_cosmic_infinity_grid", transform.position);
-                Debug.Log($"Infinity cube cosmic sound triggered at position {transform.position}");
-            }
-            else
-            {
-                // Play standard cube landing sound using CubeAudioConfiguration
-                PlayLandingSound();
-            }
+            PlayLandingSound();
         }
 
         if (isDestroyed) yield break;
@@ -630,8 +615,6 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
         {
             case FaceStatus.Corrupted:
                 return CubeType.Infinity;
-            case FaceStatus.Enhanced:
-                return type == CubeType.Unit ? CubeType.Prime : type;
             default:
                 return type;
         }

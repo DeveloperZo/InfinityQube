@@ -201,24 +201,139 @@ private int corruptionDuration = 5;
 
 ---
 
-## 8. Tracking and Review Process
+## 8. File Size Violations (Medium Priority)
 
-### 8.1 Regular Technical Debt Review
+### 8.1 Large File Refactoring Opportunities
+
+**Issue**: Two core files have grown beyond maintainable size limits, indicating opportunities for subsystem extraction.
+
+#### 8.1.1 Tile.cs - Face Painting Subsystem Extraction
+
+**Current Status**: 1,114 lines (36,109 bytes)  
+**Recommended Threshold**: ~400 lines  
+**Priority**: Medium  
+**Extraction Opportunity**: Face Painting and Corruption subsystems
+
+**Potential Extraction**:
+```csharp
+// New class: TileFacePaintingController.cs (~300 lines)
+public class TileFacePaintingController
+{
+    // Extract face painting logic:
+    // - SetupFacePainting(), TryPaintCube(), PaintCube()
+    // - Face painting visual effects and state management
+    // - Paint duration tracking and cleanup
+    // - Integration with FacePaintingManager
+}
+
+// New class: TileCorruptionController.cs (~200 lines)  
+public class TileCorruptionController
+{
+    // Extract corruption logic:
+    // - CorruptTile(), CleanseCorruption(), ProcessCorruptionDecay()
+    // - Corruption visual effects and countdown system
+    // - Corruption interaction tracking
+    // - Corruption state persistence
+}
+```
+
+**Benefits**:
+- Cleaner separation of concerns
+- Easier testing of face painting mechanics
+- Reduced cognitive load when maintaining core tile functionality
+- Better reusability of painting logic across different tile types
+
+**Estimated Effort**: 2-3 days  
+**Risk Level**: Low (well-defined subsystem boundaries)
+
+#### 8.1.2 GridManager.cs - Object Pooling Subsystem Extraction
+
+**Current Status**: 1,279 lines (35,242 bytes)  
+**Recommended Threshold**: ~500 lines  
+**Priority**: Medium  
+**Extraction Opportunity**: Object Pooling and Batch Operations subsystems
+
+**Potential Extraction**:
+```csharp
+// New class: GridObjectPool.cs (~150 lines)
+public class GridObjectPool
+{
+    // Extract object pooling logic:
+    // - InitializeTilePool(), GetPooledTile(), ReturnTileToPool()
+    // - Pool management and cleanup
+    // - Pool size optimization and monitoring
+}
+
+// New class: GridBatchOperations.cs (~250 lines)
+public class GridBatchOperations  
+{
+    // Extract batch operations:
+    // - BatchSetTileStates(), BatchSetMarkers(), BatchTransformTiles()
+    // - Pattern application and preset management
+    // - Bulk tile state operations and optimization
+}
+```
+
+**Benefits**:
+- Simplified core GridManager responsibilities
+- Reusable object pooling for other systems
+- More focused testing for batch operations
+- Performance optimizations can be isolated
+
+**Estimated Effort**: 3-4 days  
+**Risk Level**: Low-Medium (requires careful dependency management)
+
+### 8.2 Implementation Strategy
+
+**Phase 1: Analysis and Planning**
+- Create detailed dependency mapping
+- Identify integration points and interfaces
+- Plan backward compatibility approach
+
+**Phase 2: Incremental Extraction**
+- Extract one subsystem at a time
+- Maintain all existing functionality during transition
+- Comprehensive testing at each step
+
+**Phase 3: Integration and Optimization**
+- Optimize new subsystem interfaces
+- Remove redundant code from original files
+- Performance validation and tuning
+
+### 8.3 Success Metrics
+
+**Target File Sizes**:
+- Tile.cs: Reduce to ~600 lines (45% reduction)
+- GridManager.cs: Reduce to ~800 lines (37% reduction)
+
+**Quality Improvements**:
+- Improved maintainability scores
+- Reduced cognitive complexity
+- Better test coverage for extracted subsystems
+- Cleaner architecture with single responsibility principle
+
+**Timeline**: 1-2 weeks for both extractions (can be done independently)
+
+---
+
+## 9. Tracking and Review Process
+
+### 9.1 Regular Technical Debt Review
 **Frequency**: Monthly  
 **Participants**: Development team  
 **Agenda**: Review progress, prioritize new items, plan cleanup sprints
 
-### 8.2 Code Quality Metrics
+### 9.2 Code Quality Metrics
 **Tools**: Static analysis, test coverage  
 **Monitoring**: Track complexity trends, test coverage percentage
 
-### 8.3 Performance Monitoring
+### 9.3 Performance Monitoring
 **Metrics**: Frame rate, memory usage, marker system performance  
 **Alerts**: Regression detection, performance threshold warnings
 
 ---
 
-## 9. Cleanup Timeline
+## 10. Cleanup Timeline
 
 ### Phase 1: COMPLETED ✅ (June 23-27, 2025)
 - [x] Monitor for obsolete method usage - NO ISSUES
@@ -237,7 +352,7 @@ private int corruptionDuration = 5;
 
 ---
 
-**Last Updated**: June 27, 2025 - Phase 1 Completion Status Update  
+**Last Updated**: July 01, 2025 - File Size Violations Documented  
 **Next Review**: July 23, 2025  
 **Maintained By**: Development Team
 
@@ -267,7 +382,7 @@ private int corruptionDuration = 5;
 - **Documentation**: Updated and comprehensive
 
 ---
-*Last Updated: June 27, 2025*  
+*Last Updated: July 01, 2025*  
 *Next Milestone Review: July 30, 2025*  
 *Critical Path Status: ON TRACK*
 

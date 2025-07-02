@@ -106,10 +106,35 @@ Comprehensive marker and detonation management:
 
 #### Cube Markers
 - **Trigger Key**: Q
-- **Power Up Key**: E
-- **Generation**: Created by capturing Prime cubes
-- **Direct Detonation**: Immediate cube destruction
-- **Strategic Resource**: Finite and valuable
+- **Generation**: **ONLY** created by capturing Prime cubes with any marker type
+- **No Cooldowns**: Cube markers have no cooldown restrictions
+- **No Placement**: Cannot be manually placed - only generated from Prime cube captures
+- **Direct Detonation**: Immediate 3x3 area effect upon triggering
+- **Strategic Resource**: Finite and valuable - use strategically
+- **Generation Rule**: Each Prime cube captured = 1 Cube marker created at capture position
+
+##### Cube Marker Generation Mechanic
+**CRITICAL**: Cube markers are **EXCLUSIVELY** generated when capturing Prime cubes. They cannot be created any other way.
+
+**Generation Process**:
+1. Any marker type (Light/Heavy/Prime) hits a Prime cube
+2. Prime cube is destroyed
+3. Cube marker is automatically created at the Prime cube's position
+4. Cube marker type matches the capturing marker type
+5. Cube marker is added to player's available cube markers queue
+
+**Usage Rules**:
+- No placement phase - cube markers appear where Prime cubes were captured
+- No cooldowns - can be triggered immediately when available
+- FIFO queue - first cube marker created is first to be triggered with Q key
+- Power-up with E key enhances the next cube marker in queue
+- Each cube marker provides 3x3 area detonation when triggered
+
+**Strategic Implications**:
+- Prime cubes become dual-value targets: immediate capture + future cube marker
+- Positioning when capturing Prime cubes matters - cube marker location is fixed
+- Cube marker availability depends entirely on finding and capturing Prime cubes
+
 
 ### Heavy Marker Strategic Documentation
 
@@ -143,14 +168,6 @@ Heavy markers operate within the complete marker ecosystem:
 - Optimal placement can achieve single-detonation Recursion cube capture
 - Critical for waves containing 3+ Recursion cubes
 
-**Timing Window Optimization**:
-```
-Recursion Cube Approach Pattern:
-1. Identify incoming Recursion cubes (3-4 tiles ahead)
-2. Place heavy marker in optimal intercept position
-3. Coordinate with movement prediction algorithms
-4. Execute detonation at precise timing window
-5. Confirm capture before cooldown management
 ```
 
 **Strategic Positioning Matrices**:
@@ -163,6 +180,7 @@ Recursion Cube Approach Pattern:
 
 **Synergistic Marker Combinations**:
 
+**TBD START**
 1. **Heavy-Prime Synergy**:
    - Place Prime marker (3x3 area) in high-traffic zone
    - Position Heavy marker at Prime area edge for Recursion cube overlap
@@ -177,6 +195,7 @@ Recursion Cube Approach Pattern:
    - Generate Cube markers through Prime cube captures
    - Use Heavy markers to soften Recursion cubes
    - Finish with Cube markers for guaranteed capture
+**TBD END**
 
 4. **Sequential Deployment Patterns**:
    ```
@@ -280,7 +299,8 @@ Heavy Marker Resource Algorithm:
 ### Player Statistics
 Comprehensive tracking system:
 - **Cube Captures**: By type (Unit, Prime, Infinity attempts, Recursion)
-- **Marker Usage**: Four-tier marker placement/triggers (Light, Heavy, Prime, Cube)
+- **Marker Usage**: Three-tier marker placement/triggers (Light, Heavy, Prime)
+- **Cube Marker**: Marker appears after capturing prime cube (Cube)
 - **Detonation Metrics**: Efficiency and timing across all marker types
 - **Movement Tracking**: Distance and time
 - **Death/Respawn**: Player mortality events

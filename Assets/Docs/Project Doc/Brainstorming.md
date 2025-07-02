@@ -17,6 +17,8 @@ Unit Cubes fall smash through grid in random grid.
             this causes them to constantly needed to be filled
     makes letting unit cubes fall over grid deadly
 
-**Last Updated:** December 20, 2024  
+Overlapping marker placement can amplify markers (make the first marker placed the base marker)
+
+**Last Updated:** June 27, 2025  
 **Purpose:** Capture and explore the unique mechanical innovations that differentiate Infinity Cube  
 **Next Steps:** Use these insights for MDA analysis and future development planning
