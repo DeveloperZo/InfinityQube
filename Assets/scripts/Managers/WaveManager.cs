@@ -81,6 +81,7 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
     {
         FindReferences();
         InitializeState();
+        EnableDebugLogs = true;
     }
 
     private void Update()
@@ -109,9 +110,9 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
 
     private void ValidateReferences()
     {
-        if (grid == null) Debug.LogError("WaveManager: GridManager not found!");
-        if (cubePrefabs == null || cubePrefabs.Length < 3) Debug.LogError("WaveManager: Need at least 3 cube prefabs!");
-        if (audioManager == null) Debug.LogWarning("WaveManager: AudioManager not found! Audio events will not be triggered.");
+        if (grid == null) this.LogError("GridManager not found!");
+        if (cubePrefabs == null || cubePrefabs.Length < 3) this.LogError("Need at least 3 cube prefabs!");
+        if (audioManager == null) this.LogWarning("AudioManager not found! Audio events will not be triggered.", showDebugInfo);
     }
 
     private void InitializeState()
@@ -297,14 +298,14 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
         int prefabIndex = (int)cubeData.type;
         if (prefabIndex < 0 || prefabIndex >= cubePrefabs.Length)
         {
-            Debug.LogError($"Invalid prefab index {prefabIndex} for cube type {cubeData.type}");
+            this.LogError($"Invalid prefab index {prefabIndex} for cube type {cubeData.type}");
             return;
         }
         var waveHeight = waveConfiguration.Count > 0 ? waveConfiguration[currentWaveIndex].GridHeight : waveSize;
         var gridLocalHeight = grid.Height - (waveHeight - cubeData.position.y);
         cubeData.position.y = gridLocalHeight;
         Vector3 spawnPos = grid.GridToWorldPosition(cubeData.position.x, cubeData.position.y, 2f);
-        Debug.Log($"Spawning {cubeData.type} cube at grid ({cubeData.position.x}, {cubeData.position.y}) -> world {spawnPos}");
+        this.Log($"Spawning {cubeData.type} cube at grid ({cubeData.position.x}, {cubeData.position.y}) -> world {spawnPos}", showDebugInfo);
 
         GameObject cubeObj = Instantiate(cubePrefabs[prefabIndex], spawnPos, Quaternion.identity);
 
@@ -314,7 +315,7 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
         cube.Init(grid, cubeData, 2f);
         activeCubes.Add(cube);
 
-        Debug.Log($"Cube spawned successfully. Active cubes: {activeCubes.Count}");
+        this.Log($"Cube spawned successfully. Active cubes: {activeCubes.Count}", showDebugInfo);
     }
 
     private CubeData CreateRandomCubeData(int x, int z)
@@ -581,7 +582,7 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
         // Replace the grid reduction call with row removal
         if (cubeType == Enumerations.CubeType.Unit)
         {
-            Debug.Log($"Normal cube escaped - triggering bottom row removal");
+            this.Log($"Normal cube escaped - triggering bottom row removal", showDebugInfo);
             grid.RemoveBottomRow();
         }
     }
@@ -781,7 +782,7 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
 
     private void DebugLog(string message)
     {
-        if (showDebugInfo) Debug.Log($"[WaveManager] {message}");
+        this.Log(message, showDebugInfo);
     }
     #endregion
 
@@ -795,7 +796,7 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
     {
         if (CurrentWave == null)
         {
-            Debug.LogError("No active wave configuration to add a cube.");
+            this.LogError("No active wave configuration to add a cube.");
             return;
         }
 
@@ -811,7 +812,7 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
     {
         if (CurrentWave == null)
         {
-            Debug.LogError("No active wave configuration to remove a cube.");
+            this.LogError("No active wave configuration to remove a cube.");
             return;
         }
 
@@ -829,7 +830,7 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
 
     #region IManagerDebugInterface Implementation
 
-    public bool EnableDebugLogs { get; set; } = false;
+    public bool EnableDebugLogs { get; set; } = true;
 
     public string GetDebugStatus()
     {
@@ -894,21 +895,21 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
             messagePanel.SetActive(false);
         
         if (EnableDebugLogs)
-            Debug.Log("[WaveManager] Reset to defaults completed");
+            this.Log("Reset to defaults completed", EnableDebugLogs);
     }
 
     public void LoadConfiguration(string configName)
     {
         // TODO: Implement configuration loading for wave settings
         if (EnableDebugLogs)
-            Debug.Log($"[WaveManager] Loading configuration: {configName} (not yet implemented)");
+            this.Log($"Loading configuration: {configName} (not yet implemented)", EnableDebugLogs);
     }
 
     public void SaveConfiguration(string configName)
     {
         // TODO: Implement configuration saving for wave settings
         if (EnableDebugLogs)
-            Debug.Log($"[WaveManager] Saving configuration: {configName} (not yet implemented)");
+            this.Log($"Saving configuration: {configName} (not yet implemented)", EnableDebugLogs);
     }
 
     #endregion

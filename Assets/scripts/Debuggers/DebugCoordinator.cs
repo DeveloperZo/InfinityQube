@@ -14,7 +14,7 @@ public class DebugCoordinator : MonoBehaviour
 
     #region Inspector Configuration
     [Header("Debug Coordinator Settings")]
-    [SerializeField] private bool enableDebugLogs = true;
+    [SerializeField] private bool EnableDebugLogs = true;
     [SerializeField] private bool autoDiscoverManagers = true;
     [SerializeField] private float operationTimeout = 5.0f;
 
@@ -544,7 +544,7 @@ public class DebugCoordinator : MonoBehaviour
             try
             {
                 manager.ResetToDefaults();
-                manager.EnableDebugLogs = enableDebugLogs;
+                manager.EnableDebugLogs = EnableDebugLogs;
             }
             catch (System.Exception e)
             {
@@ -623,7 +623,7 @@ public class DebugCoordinator : MonoBehaviour
             ["Current Operation"] = currentOperationName,
             ["Operation In Progress"] = isOperationInProgress,
             ["Total Operations"] = operationCounts.Values.Sum(),
-            ["Debug Logs Enabled"] = enableDebugLogs,
+            ["Debug Logs Enabled"] = EnableDebugLogs,
             ["Auto Discover"] = autoDiscoverManagers,
             ["Operation Timeout"] = operationTimeout
         };
@@ -892,7 +892,7 @@ public class DebugCoordinator : MonoBehaviour
     #region Utility Methods
     private void DebugLog(string message)
     {
-        if (enableDebugLogs)
+        if (EnableDebugLogs)
         {
             Debug.Log($"[DebugCoordinator] {message}");
         }

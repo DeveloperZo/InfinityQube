@@ -24,7 +24,6 @@ public class StageManager : MonoBehaviour, IManagerDebugInterface
     [SerializeField] private bool restartOnFailure = true;
 
     [Header("Debug")]
-    [SerializeField] private bool enableDebugLogs = true;
     [SerializeField] private bool showStageInfo = false;
     #endregion
 
@@ -55,6 +54,7 @@ public class StageManager : MonoBehaviour, IManagerDebugInterface
     {
         FindReferences();
         InitializeStageDatabase();
+        EnableDebugLogs = true;
     }
 
     private void Start()
@@ -83,13 +83,13 @@ public class StageManager : MonoBehaviour, IManagerDebugInterface
             stageDatabase = Resources.Load<StageDB>("StageDatabase");
             if (stageDatabase == null)
             {
-                Debug.LogError("StageDatabase not found in Resources!");
+                this.LogError("StageDatabase not found in Resources!");
                 stageDatabase = CreateFallbackDatabase();
             }
         }
 
         stageDatabase.Initialize();
-        DebugLog("Stage database initialized");
+        this.Log("Stage database initialized", EnableDebugLogs);
     }
 
     private StageDB CreateFallbackDatabase()
@@ -161,7 +161,7 @@ public class StageManager : MonoBehaviour, IManagerDebugInterface
         StageData stage = stageDatabase.GetStage(stageNumber);
         if (stage == null)
         {
-            Debug.LogError($"Stage {stageNumber} not found!");
+            this.LogError($"Stage {stageNumber} not found!");
             yield break;
         }
 
@@ -441,18 +441,13 @@ public class StageManager : MonoBehaviour, IManagerDebugInterface
 
     private void DebugLog(string message)
     {
-        if (enableDebugLogs)
-            Debug.Log($"[StageManager] {message}");
+        this.Log(message, EnableDebugLogs);
     }
     #endregion
 
     #region IManagerDebugInterface Implementation
 
-    public bool EnableDebugLogs 
-    { 
-        get => enableDebugLogs; 
-        set => enableDebugLogs = value; 
-    }
+    public bool EnableDebugLogs { get; set; } = true;
 
     public string GetDebugStatus()
     {
@@ -513,22 +508,19 @@ public class StageManager : MonoBehaviour, IManagerDebugInterface
             LoadStage(startingStageIndex);
         }
         
-        if (EnableDebugLogs)
-            Debug.Log("[StageManager] Reset to defaults completed");
+        this.Log("Reset to defaults completed", EnableDebugLogs);
     }
 
     public void LoadConfiguration(string configName)
     {
         // TODO: Implement configuration loading for stage settings
-        if (EnableDebugLogs)
-            Debug.Log($"[StageManager] Loading configuration: {configName} (not yet implemented)");
+        this.Log($"Loading configuration: {configName} (not yet implemented)", EnableDebugLogs);
     }
 
     public void SaveConfiguration(string configName)
     {
         // TODO: Implement configuration saving for stage settings
-        if (EnableDebugLogs)
-            Debug.Log($"[StageManager] Saving configuration: {configName} (not yet implemented)");
+        this.Log($"Saving configuration: {configName} (not yet implemented)", EnableDebugLogs);
     }
 
     #endregion

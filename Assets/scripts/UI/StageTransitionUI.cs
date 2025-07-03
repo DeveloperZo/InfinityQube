@@ -23,7 +23,7 @@ public class StageTransitionUI : MonoBehaviour
     [SerializeField] private float fadeOutDuration = 0.5f;
     
     [Header("Debug")]
-    [SerializeField] private bool enableDebugLogs = true;
+    [SerializeField] private bool EnableDebugLogs = true;
     #endregion
 
     #region Runtime State
@@ -255,7 +255,7 @@ public class StageTransitionUI : MonoBehaviour
     
     private void DebugLog(string methodName, string message)
     {
-        if (enableDebugLogs)
+        if (EnableDebugLogs)
         {
             Debug.Log($"[StageTransitionUI] {methodName}: {message}");
         }

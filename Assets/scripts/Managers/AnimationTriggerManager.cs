@@ -456,17 +456,13 @@ public class AnimationTriggerManager : MonoBehaviour, IManagerDebugInterface
             default: return Color.gray;
         }
     }
-    
+
     #endregion
-    
+
     #region IManagerDebugInterface Implementation
-    
-    public bool EnableDebugLogs 
-    { 
-        get => showDebugLogs; 
-        set => showDebugLogs = value; 
-    }
-    
+
+    public bool EnableDebugLogs { get; set; } = true;
+
     public string GetDebugStatus()
     {
         int totalTriggers = triggerCounts.Values.Sum();

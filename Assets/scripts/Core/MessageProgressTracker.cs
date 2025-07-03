@@ -34,7 +34,6 @@ public class MessageProgressTracker : MonoBehaviour, IManagerDebugInterface
     private bool essentialBypassLimits = true;
     
     [Header("Debug")]
-    public bool enableDebugLogs = true;
     public bool showProgressDetails = false;
     #endregion
 
@@ -78,6 +77,7 @@ public class MessageProgressTracker : MonoBehaviour, IManagerDebugInterface
 
     private void Start()
     {
+        EnableDebugLogs = true;
         LoadProgress();
         StartAutoSave();
     }
@@ -628,17 +628,13 @@ public class MessageProgressTracker : MonoBehaviour, IManagerDebugInterface
     #region Utility Methods
     private void DebugLog(string methodName, string message)
     {
-        if (enableDebugLogs)
+        if (EnableDebugLogs)
             Debug.Log($"[MessageProgressTracker] {methodName}: {message}");
     }
     #endregion
 
     #region IManagerDebugInterface Implementation
-    public bool EnableDebugLogs 
-    { 
-        get => enableDebugLogs; 
-        set => enableDebugLogs = value; 
-    }
+    public bool EnableDebugLogs { get; set; } = true;
 
     public string GetDebugStatus()
     {

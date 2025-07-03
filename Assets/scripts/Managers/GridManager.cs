@@ -29,7 +29,6 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
 
     [Header("Debug")]
     public bool showGridGizmos = false;
-    public bool enableDebugLogs = true;
     public Color gizmoColor = Color.cyan;
     #endregion
 
@@ -69,6 +68,7 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
 
     private void Start()
     {
+        EnableDebugLogs = true;
         GenerateGrid();
     }
 
@@ -95,7 +95,7 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
         }
         else if (Instance != this)
         {
-            Debug.LogWarning("Multiple GridManagers found! Destroying duplicate.");
+            this.LogWarning("Multiple GridManagers found! Destroying duplicate.", EnableDebugLogs);
             Destroy(gameObject);
             return;
         }
@@ -105,14 +105,14 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
     {
         if (tilePrefab == null)
         {
-            Debug.LogError("Tile prefab is not assigned in GridManager!");
+            this.LogError("Tile prefab is not assigned in GridManager!");
             enabled = false;
             return;
         }
 
         if (cubeTypeDefinitions == null)
         {
-            Debug.LogWarning("CubeTypeDefinitions not assigned - some features may not work");
+            this.LogWarning("CubeTypeDefinitions not assigned - some features may not work", EnableDebugLogs);
         }
 
         // Ensure reasonable bounds
@@ -680,7 +680,7 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
     {
         if (cubeTypeDefinitions == null)
         {
-            Debug.LogWarning("CubeTypeDefinitions not assigned!");
+            this.LogWarning("CubeTypeDefinitions not assigned!", EnableDebugLogs);
             return null;
         }
 
@@ -741,8 +741,8 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
 
     private void DebugLog(string message)
     {
-        if (enableDebugLogs)
-            Debug.Log($"[GridManager] {message}");
+        if (EnableDebugLogs)
+            this.Log(message, EnableDebugLogs);
     }
     #endregion
 
@@ -1136,11 +1136,7 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
 
     #region IManagerDebugInterface Implementation
 
-    public bool EnableDebugLogs 
-    { 
-        get => enableDebugLogs; 
-        set => enableDebugLogs = value; 
-    }
+    public bool EnableDebugLogs { get; set; } = true;
 
     public string GetDebugStatus()
     {
@@ -1211,21 +1207,21 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
         GenerateGrid();
         
         if (EnableDebugLogs)
-            Debug.Log("[GridManager] Reset to defaults completed");
+            this.Log("Reset to defaults completed", EnableDebugLogs);
     }
 
     public void LoadConfiguration(string configName)
     {
         // TODO: Implement configuration loading for grid settings
         if (EnableDebugLogs)
-            Debug.Log($"[GridManager] Loading configuration: {configName} (not yet implemented)");
+            this.Log($"Loading configuration: {configName} (not yet implemented)", EnableDebugLogs);
     }
 
     public void SaveConfiguration(string configName)
     {
         // TODO: Implement configuration saving for grid settings
         if (EnableDebugLogs)
-            Debug.Log($"[GridManager] Saving configuration: {configName} (not yet implemented)");
+            this.Log($"Saving configuration: {configName} (not yet implemented)", EnableDebugLogs);
     }
 
     #endregion

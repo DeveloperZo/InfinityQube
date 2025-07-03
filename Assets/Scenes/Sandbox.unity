@@ -814,7 +814,7 @@ MonoBehaviour:
   maxSimultaneousSounds: 8
   useAudioSourcePooling: 1
   soundCleanupInterval: 5
-  enableDebugLogs: 1
+  EnableDebugLogs: 1
   showAudioGizmos: 0
   logAudioEvents: 0
   testingVolume: 0.8
@@ -9872,7 +9872,7 @@ MonoBehaviour:
   enablePatternPreviews: 1
   previewMaterial: {fileID: 0}
   previewAlpha: 0.5
-  enableDebugLogs: 1
+  EnableDebugLogs: 1
 --- !u!1 &1922694877
 GameObject:
   m_ObjectHideFlags: 0
@@ -11008,7 +11008,7 @@ MonoBehaviour:
   autoAdvanceStages: 1
   stageTransitionDelay: 2
   restartOnFailure: 1
-  enableDebugLogs: 1
+  EnableDebugLogs: 1
   showStageInfo: 0
 --- !u!4 &1918197466871702463
 Transform:
@@ -11051,7 +11051,7 @@ MonoBehaviour:
   useObjectPooling: 0
   pooledTileCount: 100
   showGridGizmos: 0
-  enableDebugLogs: 1
+  EnableDebugLogs: 1
   gizmoColor: {r: 0, g: 1, b: 1, a: 1}
 --- !u!4 &1986112192492535162
 Transform:
@@ -12194,7 +12194,7 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 4294967295
   collisionCheckRadius: 0.5
-  enableDebugLogs: 0
+  EnableDebugLogs: 0
   showTileInfo: 0
   currentTilePosition: {x: 0, y: 0}
   isDead: 0
@@ -12287,7 +12287,7 @@ MonoBehaviour:
   enableDetailedTracking: 1
   autoSaveOnCompletion: 1
   emergencySaveOnQuit: 1
-  enableDebugLogs: 0
+  EnableDebugLogs: 0
   showCollectionStatus: 0
 --- !u!4 &7705285898521335331
 Transform:

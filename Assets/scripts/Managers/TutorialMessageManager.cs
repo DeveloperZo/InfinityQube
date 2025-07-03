@@ -34,7 +34,6 @@ public class TutorialMessageManager : MonoBehaviour, IMessageSystem, IManagerDeb
     private GameObject continuePrompt;
     
     [Header("Debug")]
-    public bool enableDebugLogs = true;
     public bool enableContextualMessages = true;
     public bool showTestMessages = false;
     #endregion
@@ -87,6 +86,7 @@ public class TutorialMessageManager : MonoBehaviour, IMessageSystem, IManagerDeb
 
     private void Start()
     {
+        EnableDebugLogs = true;
         CacheManagerReferences();
         InitializeMessageSystem();
         StartContextMonitoring();
@@ -322,7 +322,7 @@ public class TutorialMessageManager : MonoBehaviour, IMessageSystem, IManagerDeb
 
         // Validate message formatting (optional strict mode)
         var validation = message.ValidateFormatting();
-        if (!validation.IsValid && enableDebugLogs)
+        if (!validation.IsValid && EnableDebugLogs)
         {
             DebugLog("ShouldDisplayMessage", $"Message {message.messageId} has formatting issues: {validation.ErrorMessage}");
             // Note: Still allow display but with formatting applied
@@ -488,7 +488,7 @@ public class TutorialMessageManager : MonoBehaviour, IMessageSystem, IManagerDeb
         var preview = MessageFormatter.GeneratePreview(message, currentContext, progressiveContext);
         
         // Log formatting information if debug enabled
-        if (enableDebugLogs && preview.ValidationResult != null)
+        if (EnableDebugLogs && preview.ValidationResult != null)
         {
             if (!preview.ValidationResult.IsValid)
             {
@@ -840,7 +840,7 @@ public class TutorialMessageManager : MonoBehaviour, IMessageSystem, IManagerDeb
         DebugLog("ValidateAllMessages", 
             $"Validation complete: {invalidMessages}/{totalMessages} messages need formatting fixes");
         
-        if (issues.Count > 0 && enableDebugLogs)
+        if (issues.Count > 0 && EnableDebugLogs)
         {
             Debug.LogWarning($"MessageFormatter Issues:\n{string.Join("\n", issues)}");
         }
@@ -911,17 +911,13 @@ public class TutorialMessageManager : MonoBehaviour, IMessageSystem, IManagerDeb
     #region Debug Support
     private void DebugLog(string methodName, string message)
     {
-        if (enableDebugLogs)
+        if (EnableDebugLogs)
             Debug.Log($"[TutorialMessageManager] {methodName}: {message}");
     }
     #endregion
 
     #region IManagerDebugInterface Implementation
-    public bool EnableDebugLogs 
-    { 
-        get => enableDebugLogs; 
-        set => enableDebugLogs = value; 
-    }
+    public bool EnableDebugLogs { get; set; } = true;
 
     public string GetDebugStatus()
     {

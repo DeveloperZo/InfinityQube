@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.IO;
+using static Enumerations;
 
 /// <summary>
 /// Debug panel for monitoring and controlling file logging
@@ -8,7 +9,7 @@ public class LoggingDebugPanel : DebugPanelBase
 {
     #region Properties
     public override string PanelName => "Logging";
-    public override string Group => "System";
+    public override DebugPanelGroup Group => DebugPanelGroup.Testing;
     #endregion
 
     #region Runtime State
@@ -22,7 +23,7 @@ public class LoggingDebugPanel : DebugPanelBase
     #endregion
 
     #region Initialization
-    protected override void OnInitialize()
+    public override void Initialize()
     {
         // Initial setup if needed
         UpdateLogInfo();
@@ -61,7 +62,7 @@ public class LoggingDebugPanel : DebugPanelBase
     #region UI Sections
     private void DrawNoLoggerUI()
     {
-        DrawSectionHeader("File Logger Not Active");
+        GUILayout.Label("File Logger Not Active", GUI.skin.box);
         
         if (GUILayout.Button("Create FileLogger Instance", GUILayout.Height(30)))
         {
@@ -75,8 +76,7 @@ public class LoggingDebugPanel : DebugPanelBase
 
     private void DrawLoggerStatusSection()
     {
-        DrawSectionHeader("Logger Status");
-        
+        GUILayout.Label("Logger Status", GUI.skin.box);
         FileLogger logger = FileLogger.Instance;
         bool isEnabled = IsLoggerEnabled(logger);
         
@@ -97,7 +97,7 @@ public class LoggingDebugPanel : DebugPanelBase
 
     private void DrawLoggerControlsSection()
     {
-        DrawSectionHeader("Logger Controls");
+        GUILayout.Label("Logger Controls", GUI.skin.box);
         
         FileLogger logger = FileLogger.Instance;
         
@@ -147,7 +147,7 @@ public class LoggingDebugPanel : DebugPanelBase
 
     private void DrawLogFileInfoSection()
     {
-        DrawSectionHeader("Log File Information");
+        GUILayout.Label("Log File Information", GUI.skin.box);
         
         UpdateLogInfo();
         
@@ -189,7 +189,7 @@ public class LoggingDebugPanel : DebugPanelBase
 
     private void DrawTestLoggingSection()
     {
-        DrawSectionHeader("Test Logging");
+        GUILayout.Label("Test Logging", GUI.skin.box);
         
         GUILayout.BeginHorizontal();
         
@@ -231,7 +231,8 @@ public class LoggingDebugPanel : DebugPanelBase
 
     private void DrawRecentLogsSection()
     {
-        DrawSectionHeader($"Recent Log Entries (Last {maxRecentLines} lines)");
+        GUILayout.Label($"Recent Log Entries (Last {maxRecentLines} lines)", GUI.skin.box);
+
         
         recentLogsScroll = GUILayout.BeginScrollView(recentLogsScroll, GUILayout.Height(200));
         

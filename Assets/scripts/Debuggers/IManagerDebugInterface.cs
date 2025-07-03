@@ -10,7 +10,7 @@ public interface IManagerDebugInterface
 {
     /// <summary>
     /// Gets or sets whether debug logging is enabled for this manager.
-    /// Standardizes the existing enableDebugLogs pattern found across managers.
+    /// Standardizes the existing EnableDebugLogs pattern found across managers.
     /// </summary>
     bool EnableDebugLogs { get; set; }
     

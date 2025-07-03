@@ -102,6 +102,7 @@ public class PlayerMarkerSystem : MonoBehaviour
 
     void Awake()
     {
+        
         actionManager = FindFirstObjectByType<PlayerActionManager>();
     }
     public void Initialize(PlayerActionManager parent)

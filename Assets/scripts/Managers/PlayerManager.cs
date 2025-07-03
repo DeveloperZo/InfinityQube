@@ -30,7 +30,6 @@ public class PlayerManager : MonoBehaviour, IManagerDebugInterface
     public float collisionCheckRadius = 0.5f;
 
     [Header("Debug")]
-    public bool enableDebugLogs = false;
     public bool showTileInfo = false;
     #endregion
 
@@ -88,6 +87,7 @@ public class PlayerManager : MonoBehaviour, IManagerDebugInterface
     #region Unity Lifecycle
     private void Start()
     {
+        EnableDebugLogs = true;
         InitializePlayer();
     }
 
@@ -129,7 +129,7 @@ public class PlayerManager : MonoBehaviour, IManagerDebugInterface
             grid = GridManager.Instance ?? FindObjectOfType<GridManager>();
             if (grid == null)
             {
-                Debug.LogError("PlayerManager requires GridManager!");
+                this.LogError("PlayerManager requires GridManager!");
                 enabled = false;
                 return;
             }
@@ -138,7 +138,7 @@ public class PlayerManager : MonoBehaviour, IManagerDebugInterface
         playerActionManager = FindObjectOfType<PlayerActionManager>();
         if (playerActionManager == null)
         {
-            Debug.LogWarning("PlayerActionManager not found - player actions features limited");
+            this.LogWarning("PlayerActionManager not found - player actions features limited", EnableDebugLogs);
         }
     }
 
@@ -643,17 +643,13 @@ public class PlayerManager : MonoBehaviour, IManagerDebugInterface
 
     private void DebugLog(string message)
     {
-        if (enableDebugLogs) Debug.Log($"[PlayerManager] {message}");
+        this.Log(message, EnableDebugLogs);
     }
     #endregion
 
     #region IManagerDebugInterface Implementation
 
-    public bool EnableDebugLogs 
-    { 
-        get => enableDebugLogs; 
-        set => enableDebugLogs = value; 
-    }
+    public bool EnableDebugLogs { get; set; } = true;
 
     public string GetDebugStatus()
     {
@@ -717,21 +713,21 @@ public class PlayerManager : MonoBehaviour, IManagerDebugInterface
         }
         
         if (EnableDebugLogs)
-            Debug.Log("[PlayerManager] Reset to defaults completed");
+            this.Log("Reset to defaults completed", EnableDebugLogs);
     }
 
     public void LoadConfiguration(string configName)
     {
         // TODO: Implement configuration loading for player settings
         if (EnableDebugLogs)
-            Debug.Log($"[PlayerManager] Loading configuration: {configName} (not yet implemented)");
+            this.Log($"Loading configuration: {configName} (not yet implemented)", EnableDebugLogs);
     }
 
     public void SaveConfiguration(string configName)
     {
         // TODO: Implement configuration saving for player settings
         if (EnableDebugLogs)
-            Debug.Log($"[PlayerManager] Saving configuration: {configName} (not yet implemented)");
+            this.Log($"Saving configuration: {configName} (not yet implemented)", EnableDebugLogs);
     }
 
     #endregion

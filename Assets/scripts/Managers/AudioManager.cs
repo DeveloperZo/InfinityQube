@@ -84,7 +84,6 @@ public class AudioManager : MonoBehaviour, IManagerDebugInterface
     public float soundCleanupInterval = 5f;
 
     [Header("Debug Options")]
-    public bool enableDebugLogs = true;
     public bool showAudioGizmos = false;
     public bool logAudioEvents = false;
     
@@ -202,6 +201,7 @@ public class AudioManager : MonoBehaviour, IManagerDebugInterface
     private void Start()
     {
         SetupAudioSystem();
+        EnableDebugLogs = true;
     }
 
     private void Update()
@@ -269,7 +269,7 @@ public class AudioManager : MonoBehaviour, IManagerDebugInterface
         systemAudioVolume = Mathf.Clamp01(systemAudioVolume);
         waveCompositionVolume = Mathf.Clamp01(waveCompositionVolume);
         
-        if (enableDebugLogs)
+        if (EnableDebugLogs)
         {
             DebugLog($"Volume validation complete - Master: {masterVolume:F2}, SFX: {soundEffectsVolume:F2}, CubeImpact: {cubeImpactVolume:F2}, CubeDestruction: {cubeDestructionVolume:F2}, Background: {backgroundAudioVolume:F2}, System: {systemAudioVolume:F2}, WaveComposition: {waveCompositionVolume:F2}");
         }
@@ -425,7 +425,7 @@ public class AudioManager : MonoBehaviour, IManagerDebugInterface
         lastWaveStepTime = Time.time;
         CreateWaveComposition(stepNumber);
         
-        if (enableDebugLogs)
+        if (EnableDebugLogs)
         {
             DebugLog($"Wave step {stepNumber} detected - creating composition with {lastPlayedCubeSounds.Count} cube types");
         }
@@ -622,7 +622,7 @@ public class AudioManager : MonoBehaviour, IManagerDebugInterface
             
             activeCompositionLayers.Add(layer);
             
-            if (enableDebugLogs)
+            if (EnableDebugLogs)
             {
                 DebugLog($"Wave composition layer {i + 1} started: {clips[i].name} at volume {volumes[i]:F2}");
             }
@@ -1045,7 +1045,7 @@ public class AudioManager : MonoBehaviour, IManagerDebugInterface
         float finalVolume = volume * masterVolume;
         PlayAudioClip(clip, finalVolume, position, 1f);
         
-        if (enableDebugLogs && logAudioEvents)
+        if (EnableDebugLogs && logAudioEvents)
         {
             DebugLog($"System feedback sound played: {clip.name} at volume {finalVolume:F2} at position {position}");
         }
@@ -1467,7 +1467,7 @@ public class AudioManager : MonoBehaviour, IManagerDebugInterface
     {
         if (clips == null || clips.Length == 0)
         {
-            if (enableDebugLogs)
+            if (EnableDebugLogs)
             {
                 DebugLog("GetRandomAudioClip called with null or empty clips array");
             }
@@ -1475,7 +1475,7 @@ public class AudioManager : MonoBehaviour, IManagerDebugInterface
         }
         
         AudioClip selectedClip = clips[Random.Range(0, clips.Length)];
-        if (enableDebugLogs && logAudioEvents)
+        if (EnableDebugLogs && logAudioEvents)
         {
             DebugLog($"Selected random audio clip: {selectedClip?.name ?? "null"} from array of {clips.Length} clips");
         }
@@ -1503,7 +1503,7 @@ public class AudioManager : MonoBehaviour, IManagerDebugInterface
         // Check if we've exceeded max simultaneous sounds
         if (activeAudioSources.Count >= maxSimultaneousSounds)
         {
-            if (enableDebugLogs)
+            if (EnableDebugLogs)
             {
                 DebugLog($"Maximum simultaneous sounds ({maxSimultaneousSounds}) reached. Skipping cube landing sound for {cubeType}");
             }
@@ -1524,7 +1524,7 @@ public class AudioManager : MonoBehaviour, IManagerDebugInterface
                 volume = settings.volume * masterVolume * sfxVolume;
                 pitch = settings.pitch;
                 
-                if (enableDebugLogs && logAudioEvents)
+                if (EnableDebugLogs && logAudioEvents)
                 {
                     DebugLog($"Using configured cube landing sound for {cubeType}: {selectedClip.name} at position {position} (Volume: {volume:F2}, Pitch: {pitch:F2})");
                 }
@@ -1535,7 +1535,7 @@ public class AudioManager : MonoBehaviour, IManagerDebugInterface
         if (selectedClip == null)
         {
             selectedClip = GetRandomAudioClip(cubeImpactSounds);
-            if (enableDebugLogs && logAudioEvents)
+            if (EnableDebugLogs && logAudioEvents)
             {
                 DebugLog($"Using fallback cube impact sound for {cubeType}: {selectedClip?.name ?? "null"} at position {position}");
             }
@@ -1552,14 +1552,14 @@ public class AudioManager : MonoBehaviour, IManagerDebugInterface
                 lastPlayedCubeSounds[cubeType] = selectedClip;
             }
             
-            if (enableDebugLogs && logAudioEvents)
+            if (EnableDebugLogs && logAudioEvents)
             {
                 DebugLog($"Successfully played cube landing sound for {cubeType} at position {position}");
             }
         }
         else
         {
-            if (enableDebugLogs)
+            if (EnableDebugLogs)
             {
                 DebugLog($"No audio clip available for cube landing sound (type: {cubeType})");
             }
@@ -1665,7 +1665,7 @@ public class AudioManager : MonoBehaviour, IManagerDebugInterface
     {
         if (string.IsNullOrEmpty(clipName))
         {
-            if (enableDebugLogs)
+            if (EnableDebugLogs)
             {
                 DebugLog("PlayNamedSpecialEffect called with null or empty clip name");
             }
@@ -1692,14 +1692,14 @@ public class AudioManager : MonoBehaviour, IManagerDebugInterface
             float playVolume = volume >= 0f ? volume : soundEffectsVolume;
             PlayAudioClip(foundClip, playVolume, position);
             
-            if (enableDebugLogs && logAudioEvents)
+            if (EnableDebugLogs && logAudioEvents)
             {
                 DebugLog($"Played named special effect: {clipName} at position {position} with volume {playVolume:F2}");
             }
         }
         else
         {
-            if (enableDebugLogs)
+            if (EnableDebugLogs)
             {
                 DebugLog($"Named special effect sound '{clipName}' not found in specialEffectSounds array");
             }
@@ -1844,7 +1844,7 @@ public class AudioManager : MonoBehaviour, IManagerDebugInterface
     {
         if (clip == null)
         {
-            if (enableDebugLogs)
+            if (EnableDebugLogs)
             {
                 DebugLog("Attempted to play null AudioClip!");
             }
@@ -1853,7 +1853,7 @@ public class AudioManager : MonoBehaviour, IManagerDebugInterface
 
         if (!IsInitialized)
         {
-            if (enableDebugLogs)
+            if (EnableDebugLogs)
             {
                 DebugLog("AudioManager not initialized! Cannot play sound.");
             }
@@ -1863,7 +1863,7 @@ public class AudioManager : MonoBehaviour, IManagerDebugInterface
         // Check if we've exceeded max simultaneous sounds
         if (activeAudioSources.Count >= maxSimultaneousSounds)
         {
-            if (enableDebugLogs)
+            if (EnableDebugLogs)
             {
                 DebugLog($"Maximum simultaneous sounds ({maxSimultaneousSounds}) reached. Skipping sound: {clip.name}");
             }
@@ -1879,7 +1879,7 @@ public class AudioManager : MonoBehaviour, IManagerDebugInterface
         AudioSource audioSource = GetAudioSource();
         if (audioSource == null)
         {
-            if (enableDebugLogs)
+            if (EnableDebugLogs)
             {
                 DebugLog("Failed to get AudioSource for playback!");
             }
@@ -1905,7 +1905,7 @@ public class AudioManager : MonoBehaviour, IManagerDebugInterface
         // Schedule return to pool after clip finishes playing
         StartCoroutine(ReturnAudioSourceAfterPlayback(audioSource, clip.length / pitch));
         
-        if (enableDebugLogs && logAudioEvents)
+        if (EnableDebugLogs && logAudioEvents)
         {
             DebugLog($"Playing audio clip: {clip.name} at position {position} with volume {finalVolume:F2} and pitch {pitch:F2}");
         }
@@ -2134,7 +2134,7 @@ public class AudioManager : MonoBehaviour, IManagerDebugInterface
             }
         }
         
-        if (enableDebugLogs && activeCompositionLayers.Count > 0)
+        if (EnableDebugLogs && activeCompositionLayers.Count > 0)
         {
             DebugLog($"Updated {activeCompositionLayers.Count} wave composition layer volumes");
         }
@@ -2251,9 +2251,9 @@ public class AudioManager : MonoBehaviour, IManagerDebugInterface
     #region Debug & Utility
     private void DebugLog(string message)
     {
-        if (enableDebugLogs)
+        if (EnableDebugLogs)
         {
-            Debug.Log($"[AudioManager] {message}");
+            this.Log(message, EnableDebugLogs);
         }
     }
 
@@ -2335,7 +2335,7 @@ public class AudioManager : MonoBehaviour, IManagerDebugInterface
             return;
         }
         
-        if (enableDebugLogs && logAudioEvents)
+        if (EnableDebugLogs && logAudioEvents)
         {
             DebugLog($"Processing audio event: {eventData}");
         }
@@ -2386,7 +2386,7 @@ public class AudioManager : MonoBehaviour, IManagerDebugInterface
                 
             case Enumerations.GameAudioEvent.CubeEscaped:
                 // TODO: Implement cube escape sound when audio clips are available
-                if (enableDebugLogs && logAudioEvents)
+                if (EnableDebugLogs && logAudioEvents)
                 {
                     DebugLog($"Cube escape event triggered for {eventData.cubeType} at {eventData.worldPosition} (no audio implementation yet)");
                 }
@@ -2394,7 +2394,7 @@ public class AudioManager : MonoBehaviour, IManagerDebugInterface
                 
             case Enumerations.GameAudioEvent.PlayerMoved:
                 // TODO: Implement player movement sound when audio clips are available
-                if (enableDebugLogs && logAudioEvents)
+                if (EnableDebugLogs && logAudioEvents)
                 {
                     DebugLog($"Player moved event triggered at {eventData.worldPosition} (no audio implementation yet)");
                 }
@@ -2413,7 +2413,7 @@ public class AudioManager : MonoBehaviour, IManagerDebugInterface
             case Enumerations.GameAudioEvent.MarkerTriggered:
                 // For now, play a generic marker trigger sound - could be enhanced with marker type info
                 PlayUIClickSound(); // Placeholder until we have marker trigger event with type info
-                if (enableDebugLogs && logAudioEvents)
+                if (EnableDebugLogs && logAudioEvents)
                 {
                     DebugLog($"Marker triggered event at {eventData.worldPosition}");
                 }
@@ -2429,7 +2429,7 @@ public class AudioManager : MonoBehaviour, IManagerDebugInterface
                 
             case Enumerations.GameAudioEvent.ResourceRegeneration:
                 // TODO: Implement resource regeneration sound when audio clips are available
-                if (enableDebugLogs && logAudioEvents)
+                if (EnableDebugLogs && logAudioEvents)
                 {
                     DebugLog($"Resource regeneration event triggered at {eventData.worldPosition} (no audio implementation yet)");
                 }
@@ -2438,7 +2438,7 @@ public class AudioManager : MonoBehaviour, IManagerDebugInterface
             case Enumerations.GameAudioEvent.MessageShow:
                 // Play message show audio feedback
                 PlayUIClickSound(); // Placeholder - could be enhanced with message-specific sounds
-                if (enableDebugLogs && logAudioEvents)
+                if (EnableDebugLogs && logAudioEvents)
                 {
                     DebugLog($"Message show event triggered at {eventData.worldPosition}");
                 }
@@ -2446,7 +2446,7 @@ public class AudioManager : MonoBehaviour, IManagerDebugInterface
                 
             case Enumerations.GameAudioEvent.MessageHide:
                 // Play message hide audio feedback (subtle)
-                if (enableDebugLogs && logAudioEvents)
+                if (EnableDebugLogs && logAudioEvents)
                 {
                     DebugLog($"Message hide event triggered at {eventData.worldPosition}");
                 }
@@ -2456,29 +2456,25 @@ public class AudioManager : MonoBehaviour, IManagerDebugInterface
             case Enumerations.GameAudioEvent.MessageSkip:
                 // Play message skip audio feedback
                 PlayUIClickSound(); // Placeholder - could be distinct skip sound
-                if (enableDebugLogs && logAudioEvents)
+                if (EnableDebugLogs && logAudioEvents)
                 {
                     DebugLog($"Message skip event triggered at {eventData.worldPosition}");
                 }
                 break;
                 
             default:
-                if (enableDebugLogs)
+                if (EnableDebugLogs)
                 {
                     DebugLog( $"Unknown audio event type: {eventData.eventType}");
                 }
                 break;
         }
     }
-    
+
     #endregion
 
     #region IManagerDebugInterface Implementation
-    public bool EnableDebugLogs 
-    { 
-        get => enableDebugLogs; 
-        set => enableDebugLogs = value; 
-    }
+    public bool EnableDebugLogs { get; set; } = true;
 
     public string GetDebugStatus()
     {
@@ -2656,7 +2652,7 @@ public class AudioManager : MonoBehaviour, IManagerDebugInterface
         soundCleanupInterval = 5f;
         
         // Reset debug settings
-        enableDebugLogs = true;
+        EnableDebugLogs = true;
         showAudioGizmos = false;
         logAudioEvents = false;
         
@@ -2702,7 +2698,7 @@ public class AudioManager : MonoBehaviour, IManagerDebugInterface
         
         if (EnableDebugLogs)
         {
-            Debug.Log("[AudioManager] Reset to defaults completed");
+            this.Log("Reset to defaults completed", EnableDebugLogs);
         }
     }
 
@@ -2711,7 +2707,7 @@ public class AudioManager : MonoBehaviour, IManagerDebugInterface
         // TODO: Implement configuration loading for audio settings
         if (EnableDebugLogs)
         {
-            Debug.Log($"[AudioManager] Loading configuration: {configName} (not yet implemented)");
+            this.Log($"Loading configuration: {configName} (not yet implemented)", EnableDebugLogs);
         }
     }
 
@@ -2720,7 +2716,7 @@ public class AudioManager : MonoBehaviour, IManagerDebugInterface
         // TODO: Implement configuration saving for audio settings
         if (EnableDebugLogs)
         {
-            Debug.Log($"[AudioManager] Saving configuration: {configName} (not yet implemented)");
+            this.Log($"Saving configuration: {configName} (not yet implemented)", EnableDebugLogs);
         }
     }
     #endregion

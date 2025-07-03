@@ -111,11 +111,11 @@ public class ExampleManager : MonoBehaviour
 ### Required Debug Configuration
 ```csharp
 [Header("Debug")]
-public bool enableDebugLogs = true;
+public bool EnableDebugLogs = true;
 
 private void DebugLog(string methodName, string message) 
 {
-    if (enableDebugLogs) 
+    if (EnableDebugLogs) 
         Debug.Log($"[{GetType().Name}] {methodName}: {message}");
 }
 
@@ -213,11 +213,11 @@ public class ExampleManager : MonoBehaviour
     
     #region Debug
     [Header("Debug")]
-    public bool enableDebugLogs = true;
+    public bool EnableDebugLogs = true;
     
     private void DebugLog(string methodName, string message) 
     {
-        if (enableDebugLogs) 
+        if (EnableDebugLogs) 
             Debug.Log($"[{GetType().Name}] {methodName}: {message}");
     }
     #endregion

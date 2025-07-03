@@ -21,8 +21,6 @@ public class FacePaintingManager : MonoBehaviour, IManagerDebugInterface
     [SerializeField] private Material previewMaterial;
     [SerializeField] private float previewAlpha = 0.5f;
 
-    [Header("Debug")]
-    [SerializeField] private bool enableDebugLogs = true;
     #endregion
 
     #region Runtime State
@@ -40,13 +38,9 @@ public class FacePaintingManager : MonoBehaviour, IManagerDebugInterface
     public bool IsFacePaintingEnabled => enableFacePainting;
     public int ActivePatternsCount => activePatterns.Count;
     public int FacePaintingTilesCount => facePaintingTiles.Count;
-    
+
     // IManagerDebugInterface Properties
-    public bool EnableDebugLogs 
-    { 
-        get => enableDebugLogs; 
-        set => enableDebugLogs = value; 
-    }
+    public bool EnableDebugLogs { get; set; } = true;
     #endregion
 
     #region Unity Lifecycle
@@ -54,6 +48,7 @@ public class FacePaintingManager : MonoBehaviour, IManagerDebugInterface
     {
         InitializeSingleton();
         InitializePreviewMaterial();
+        EnableDebugLogs = true;
     }
 
     private void Start()
@@ -580,7 +575,7 @@ public class FacePaintingManager : MonoBehaviour, IManagerDebugInterface
         var debugData = new Dictionary<string, object>
         {
             ["Manager Enabled"] = enableFacePainting,
-            ["Debug Logs Enabled"] = enableDebugLogs,
+            ["Debug Logs Enabled"] = EnableDebugLogs,
             ["Show Preview Effects"] = showPreviewEffects,
             ["Enable Pattern Previews"] = enablePatternPreviews,
             ["Default Paint Color"] = defaultPaintColor,
@@ -638,7 +633,7 @@ public class FacePaintingManager : MonoBehaviour, IManagerDebugInterface
         defaultPaintDuration = 3;
         enablePatternPreviews = true;
         previewAlpha = 0.5f;
-        enableDebugLogs = true;
+        EnableDebugLogs = true;
         
         // Reinitialize preview material with defaults
         InitializePreviewMaterial();
@@ -830,7 +825,7 @@ public class FacePaintingManager : MonoBehaviour, IManagerDebugInterface
     
     private void DebugLog(string message)
     {
-        if (enableDebugLogs)
+        if (EnableDebugLogs)
             Debug.Log($"[FacePaintingManager] {message}");
     }
     

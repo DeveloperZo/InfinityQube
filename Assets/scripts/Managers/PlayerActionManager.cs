@@ -126,6 +126,7 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
 
     private void Start()
     {
+        EnableDebugLogs = true;
         InitializeReferences();
         InitializeCharges();
         InitializeMarkerMode();
@@ -176,11 +177,11 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
     {
         if (audioManager == null)
         {
-            Debug.LogWarning("[PlayerActionManager] AudioManager not found! Audio events will not be triggered.");
+            this.LogWarning("AudioManager not found! Audio events will not be triggered.", EnableDebugLogs);
         }
         else if (!audioManager.IsInitialized)
         {
-            Debug.LogWarning("[PlayerActionManager] AudioManager found but not initialized. Audio events may not work correctly.");
+            this.LogWarning("AudioManager found but not initialized. Audio events may not work correctly.", EnableDebugLogs);
         }
     }
 
@@ -188,11 +189,11 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
     {
         if (inputFeedbackManager == null)
         {
-            Debug.LogWarning("[PlayerActionManager] InputFeedbackManager not found! Input feedback hooks will not be triggered.");
+            this.LogWarning("InputFeedbackManager not found! Input feedback hooks will not be triggered.", EnableDebugLogs);
         }
         else if (EnableDebugLogs)
         {
-            Debug.Log($"[PlayerActionManager] InputFeedbackManager found with {inputFeedbackManager.GetRegisteredHookCount()} hooks registered.");
+            this.Log($"InputFeedbackManager found with {inputFeedbackManager.GetRegisteredHookCount()} hooks registered.", EnableDebugLogs);
         }
     }
 
@@ -200,11 +201,11 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
     {
         if (animationTriggerManager == null)
         {
-            Debug.LogWarning("[PlayerActionManager] AnimationTriggerManager not found! Animation triggers will not be fired.");
+            this.LogWarning("AnimationTriggerManager not found! Animation triggers will not be fired.", EnableDebugLogs);
         }
         else if (EnableDebugLogs)
         {
-            Debug.Log($"[PlayerActionManager] AnimationTriggerManager found with {animationTriggerManager.GetTotalReceiverCount()} receivers registered.");
+            this.Log($"AnimationTriggerManager found with {animationTriggerManager.GetTotalReceiverCount()} receivers registered.", EnableDebugLogs);
         }
     }
 
@@ -222,7 +223,7 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
         
         if (EnableDebugLogs)
         {
-            Debug.Log($"[PlayerActionManager] Marker mode initialized to: {currentMarkerMode}");
+            this.Log($"Marker mode initialized to: {currentMarkerMode}", EnableDebugLogs);
         }
     }
 
@@ -245,7 +246,7 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
         }
         else if (EnableDebugLogs)
         {
-            Debug.LogWarning($"[PlayerActionManager] Cannot trigger mode switch animation - AnimationTriggerManager not available");
+            this.LogWarning($"Cannot trigger mode switch animation - AnimationTriggerManager not available", EnableDebugLogs);
         }
     }
 
@@ -264,7 +265,7 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
         }
         else if (EnableDebugLogs)
         {
-            Debug.LogWarning($"[PlayerActionManager] Cannot trigger marker place animation - AnimationTriggerManager not available");
+            this.LogWarning($"Cannot trigger marker place animation - AnimationTriggerManager not available", EnableDebugLogs);
         }
     }
 
@@ -283,7 +284,7 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
         }
         else if (EnableDebugLogs)
         {
-            Debug.LogWarning($"[PlayerActionManager] Cannot trigger marker trigger animation - AnimationTriggerManager not available");
+            this.LogWarning($"Cannot trigger marker trigger animation - AnimationTriggerManager not available", EnableDebugLogs);
         }
     }
 
@@ -303,7 +304,7 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
         }
         else if (EnableDebugLogs)
         {
-            Debug.LogWarning($"[PlayerActionManager] Cannot trigger cube marker animation - AnimationTriggerManager not available");
+            this.LogWarning($"Cannot trigger cube marker animation - AnimationTriggerManager not available", EnableDebugLogs);
         }
     }
 
@@ -322,7 +323,7 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
         }
         else if (EnableDebugLogs)
         {
-            Debug.LogWarning($"[PlayerActionManager] Cannot trigger action failed animation - AnimationTriggerManager not available");
+            this.LogWarning($"Cannot trigger action failed animation - AnimationTriggerManager not available", EnableDebugLogs);
         }
     }
 
@@ -341,7 +342,7 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
         }
         else if (EnableDebugLogs)
         {
-            Debug.LogWarning($"[PlayerActionManager] Cannot trigger action success animation - AnimationTriggerManager not available");
+            this.LogWarning($"Cannot trigger action success animation - AnimationTriggerManager not available", EnableDebugLogs);
         }
     }
 
@@ -361,7 +362,7 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
         }
         else if (EnableDebugLogs)
         {
-            Debug.LogWarning($"[PlayerActionManager] Cannot trigger resource regeneration animation - AnimationTriggerManager not available");
+            this.LogWarning($"Cannot trigger resource regeneration animation - AnimationTriggerManager not available", EnableDebugLogs);
         }
     }
 
@@ -431,7 +432,7 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
 
                 if (EnableDebugLogs)
                 {
-                    Debug.Log($"[PlayerActionManager] Mode switched to {targetMode} via number key input");
+                    this.Log($"Mode switched to {targetMode} via number key input", EnableDebugLogs);
                 }
             }
         }
@@ -440,7 +441,7 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
             // User pressed key for current mode - provide feedback but don't switch
             if (EnableDebugLogs)
             {
-                Debug.Log($"[PlayerActionManager] Already in {targetMode} mode - no switch needed");
+                this.Log($"Already in {targetMode} mode - no switch needed", EnableDebugLogs);
             }
         }
     }
@@ -491,7 +492,7 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
                         
                         if (EnableDebugLogs)
                         {
-                            Debug.LogWarning($"[PlayerActionManager] Light marker placement failed: {errorMessage}");
+                            this.LogWarning($"Light marker placement failed: {errorMessage}", EnableDebugLogs);
                         }
                     }
                     break;
@@ -529,7 +530,7 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
                         
                         if (EnableDebugLogs)
                         {
-                            Debug.LogWarning($"[PlayerActionManager] Heavy marker placement failed: {errorMessage}");
+                            this.LogWarning($"Heavy marker placement failed: {errorMessage}", EnableDebugLogs);
                         }
                     }
                     break;
@@ -567,7 +568,7 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
                         
                         if (EnableDebugLogs)
                         {
-                            Debug.LogWarning($"[PlayerActionManager] Prime marker placement failed: {errorMessage}");
+                            this.LogWarning($"Prime marker placement failed: {errorMessage}", EnableDebugLogs);
                         }
                     }
                     break;
@@ -575,7 +576,7 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
                 default:
                     if (EnableDebugLogs)
                     {
-                        Debug.LogWarning($"[PlayerActionManager] Unhandled marker mode in unified place input: {GetCurrentMode()}");
+                        this.LogWarning($"Unhandled marker mode in unified place input: {GetCurrentMode()}", EnableDebugLogs);
                     }
                     break;
             }
@@ -660,7 +661,7 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
                         
                         if (EnableDebugLogs)
                         {
-                            Debug.LogWarning($"[PlayerActionManager] Light marker trigger failed: {errorMessage}");
+                            this.LogWarning($"Light marker trigger failed: {errorMessage}", EnableDebugLogs);
                         }
                     }
                     else
@@ -689,7 +690,7 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
                         
                         if (EnableDebugLogs)
                         {
-                            Debug.LogWarning($"[PlayerActionManager] Heavy marker trigger failed: {errorMessage}");
+                            this.LogWarning($"Heavy marker trigger failed: {errorMessage}", EnableDebugLogs);
                         }
                     }
                     else
@@ -717,7 +718,7 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
                         
                         if (EnableDebugLogs)
                         {
-                            Debug.LogWarning($"[PlayerActionManager] Prime marker trigger failed: {errorMessage}");
+                            this.LogWarning($"Prime marker trigger failed: {errorMessage}", EnableDebugLogs);
                         }
                     }
                     else
@@ -738,7 +739,7 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
                 default:
                     if (EnableDebugLogs)
                     {
-                        Debug.LogWarning($"[PlayerActionManager] Unhandled marker mode in unified trigger input: {GetCurrentMode()}");
+                        this.LogWarning($"Unhandled marker mode in unified trigger input: {GetCurrentMode()}", EnableDebugLogs);
                     }
                     break;
             }
@@ -885,7 +886,7 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
 
         if (EnableDebugLogs)
         {
-            Debug.Log($"[PlayerActionManager] Error feedback shown: {errorMessage}");
+            this.Log($"Error feedback shown: {errorMessage}", EnableDebugLogs);
         }
     }
 
@@ -910,7 +911,7 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
 
         if (EnableDebugLogs)
         {
-            Debug.Log($"[PlayerActionManager] Success feedback shown: {successMessage}");
+            this.Log($"Success feedback shown: {successMessage}", EnableDebugLogs);
         }
     }
 
@@ -932,12 +933,12 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
             
             if (EnableDebugLogs)
             {
-                Debug.Log($"[PlayerActionManager] Triggered audio event: {eventType} at position {worldPosition} with intensity {intensity:F2}");
+                this.Log($"Triggered audio event: {eventType} at position {worldPosition} with intensity {intensity:F2}", EnableDebugLogs);
             }
         }
         else if (EnableDebugLogs)
         {
-            Debug.LogWarning($"[PlayerActionManager] Cannot trigger audio event {eventType} - AudioManager not available or initialized");
+            this.LogWarning($"Cannot trigger audio event {eventType} - AudioManager not available or initialized", EnableDebugLogs);
         }
     }
 
@@ -975,7 +976,7 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
         }
         else if (EnableDebugLogs)
         {
-            Debug.LogWarning($"[PlayerActionManager] Cannot trigger mode switch feedback - InputFeedbackManager not available");
+            this.LogWarning($"Cannot trigger mode switch feedback - InputFeedbackManager not available", EnableDebugLogs);
         }
     }
 
@@ -993,7 +994,7 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
         }
         else if (EnableDebugLogs)
         {
-            Debug.LogWarning($"[PlayerActionManager] Cannot trigger marker place feedback - InputFeedbackManager not available");
+            this.LogWarning($"Cannot trigger marker place feedback - InputFeedbackManager not available", EnableDebugLogs);
         }
     }
 
@@ -1011,7 +1012,7 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
         }
         else if (EnableDebugLogs)
         {
-            Debug.LogWarning($"[PlayerActionManager] Cannot trigger marker trigger feedback - InputFeedbackManager not available");
+            this.LogWarning($"Cannot trigger marker trigger feedback - InputFeedbackManager not available", EnableDebugLogs);
         }
     }
 
@@ -1029,7 +1030,7 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
         }
         else if (EnableDebugLogs)
         {
-            Debug.LogWarning($"[PlayerActionManager] Cannot trigger cube marker feedback - InputFeedbackManager not available");
+            this.LogWarning($"Cannot trigger cube marker feedback - InputFeedbackManager not available", EnableDebugLogs);
         }
     }
 
@@ -1048,7 +1049,7 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
         }
         else if (EnableDebugLogs)
         {
-            Debug.LogWarning($"[PlayerActionManager] Cannot trigger action failed feedback - InputFeedbackManager not available");
+            this.LogWarning($"Cannot trigger action failed feedback - InputFeedbackManager not available", EnableDebugLogs);
         }
     }
 
@@ -1076,7 +1077,7 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
         {
             if (EnableDebugLogs)
             {
-                Debug.LogWarning($"[PlayerActionManager] Cannot switch to mode {mode} - validation failed");
+                this.LogWarning($"Cannot switch to mode {mode} - validation failed", EnableDebugLogs);
             }
             return false;
         }
@@ -1093,7 +1094,7 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
 
         if (EnableDebugLogs)
         {
-            Debug.Log($"[PlayerActionManager] Mode switched from {previousMode} to {currentMarkerMode}");
+            this.Log($"Mode switched from {previousMode} to {currentMarkerMode}", EnableDebugLogs);
         }
 
         return true;
@@ -1262,7 +1263,7 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
                 // Trigger animation for resource regeneration
                 TriggerAnimationResourceRegeneration(playerWorldPos, "Light marker charge");
                 
-                Debug.Log($"Light marker charge regenerated. Charges: {currentLightMarkerCharges}/{maxLightMarkerCharges}");
+                this.Log($"Light marker charge regenerated. Charges: {currentLightMarkerCharges}/{maxLightMarkerCharges}", EnableDebugLogs);
                 return true;
             }
         }
@@ -1286,7 +1287,7 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
                 // Trigger animation for resource regeneration
                 TriggerAnimationResourceRegeneration(playerWorldPos, "Heavy marker charge");
                 
-                Debug.Log($"Heavy marker charge regenerated. Charges: {currentHeavyMarkerCharges}/{maxHeavyMarkerCharges}");
+                this.Log($"Heavy marker charge regenerated. Charges: {currentHeavyMarkerCharges}/{maxHeavyMarkerCharges}", EnableDebugLogs);
                 return true;
             }
         }
@@ -1310,7 +1311,7 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
                 // Trigger animation for resource regeneration
                 TriggerAnimationResourceRegeneration(playerWorldPos, "Prime marker charge");
                 
-                Debug.Log($"Prime marker charge regenerated. Charges: {currentPrimeMarkerCharges}/{maxPrimeMarkerCharges}");
+                this.Log($"Prime marker charge regenerated. Charges: {currentPrimeMarkerCharges}/{maxPrimeMarkerCharges}", EnableDebugLogs);
                 return true;
             }
         }
@@ -1423,14 +1424,14 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
     public int GetCurrentLightCharges() => currentLightMarkerCharges;
     public int GetCurrentHeavyCharges() => currentHeavyMarkerCharges;
     public int GetCurrentPrimeCharges() => currentPrimeMarkerCharges;
-    
+
 
 
     #endregion
 
     #region IManagerDebugInterface Implementation
 
-    public bool EnableDebugLogs { get; set; } = false;
+    public bool EnableDebugLogs { get; set; } = true;
 
     public string GetDebugStatus()
     {
@@ -1529,21 +1530,21 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
         UpdateUI();
         
         if (EnableDebugLogs)
-            Debug.Log("[PlayerActionManager] Reset to defaults completed");
+            this.Log("Reset to defaults completed", EnableDebugLogs);
     }
 
     public void LoadConfiguration(string configName)
     {
         // TODO: Implement configuration loading from ScriptableObject or JSON
         if (EnableDebugLogs)
-            Debug.Log($"[PlayerActionManager] Loading configuration: {configName} (not yet implemented)");
+            this.Log($"Loading configuration: {configName} (not yet implemented)", EnableDebugLogs);
     }
 
     public void SaveConfiguration(string configName)
     {
         // TODO: Implement configuration saving to ScriptableObject or JSON
         if (EnableDebugLogs)
-            Debug.Log($"[PlayerActionManager] Saving configuration: {configName} (not yet implemented)");
+            this.Log($"Saving configuration: {configName} (not yet implemented)", EnableDebugLogs);
     }
 
     #endregion

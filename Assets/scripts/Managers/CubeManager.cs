@@ -58,6 +58,7 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
 
     public void Init(GridManager gridManager, CubeData cubeData, float spawnHeight = 2f)
     {
+        EnableDebugLogs = true;
         grid = gridManager;
         tileSize = grid.TileSize;
 
@@ -77,13 +78,13 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
         if (material == null && grid != null)
         {
             material = grid.GetCubeTypeMaterial(type);
-            Debug.Log($"Used fallback material for {type} cube from GridManager");
+            this.Log($"Used fallback material for {type} cube from GridManager", EnableDebugLogs);
         }
         
         // Final check and warning if material is still null
         if (material == null)
         {
-            Debug.LogWarning($"No material found for {type} cube - visual effects may not work correctly");
+            this.LogWarning($"No material found for {type} cube - visual effects may not work correctly", EnableDebugLogs);
         }
 
         transform.localScale = new Vector3(tileSize, tileSize, tileSize);
@@ -91,7 +92,7 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
         Vector3 worldPos = grid.GridToWorldPosition(position.x, position.y, spawnHeight);
         transform.position = worldPos;
 
-        Debug.Log($"Cube {type} initialized at grid ({position.x}, {position.y}) -> world {worldPos}, HP: {currentHitPoints}/{maxHitPoints}");
+        this.Log($"Cube {type} initialized at grid ({position.x}, {position.y}) -> world {worldPos}, HP: {currentHitPoints}/{maxHitPoints}", EnableDebugLogs);
 
         playerActionManager = FindAnyObjectByType<PlayerActionManager>();
         gameObject.name = name;
@@ -104,7 +105,7 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
         
         // Fire spawn event
         GameEvents.FireCubeSpawn(position, type);
-        Debug.Log($"Fired GameEvents.OnCubeSpawn for {type} cube at ({position.x}, {position.y})");
+        this.Log($"Fired GameEvents.OnCubeSpawn for {type} cube at ({position.x}, {position.y})", EnableDebugLogs);
     }
 
     public bool TakeDamage(int damage = 1)
@@ -112,7 +113,7 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
         if (isDestroyed) return false;
 
         currentHitPoints -= damage;
-        Debug.Log($"{type} cube at ({position.x}, {position.y}) took {damage} damage. HP: {currentHitPoints}/{maxHitPoints}");
+        this.Log($"{type} cube at ({position.x}, {position.y}) took {damage} damage. HP: {currentHitPoints}/{maxHitPoints}", EnableDebugLogs);
 
         UpdateDamageVisual();
 
@@ -164,7 +165,7 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
                 
                 cubeRenderer.material = damagedMaterial;
                 
-                Debug.Log($"Recursion cube at ({position.x}, {position.y}) visual damage updated: {damageRatio:F2} health ratio");
+                this.Log($"Recursion cube at ({position.x}, {position.y}) visual damage updated: {damageRatio:F2} health ratio", EnableDebugLogs);
             }
         }
         else if (material != null)
@@ -189,7 +190,7 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
         }
 
         cubeCollider.isTrigger = false;
-        Debug.Log($"Collider setup complete for {name} cube");
+        this.Log($"Collider setup complete for {name} cube", EnableDebugLogs);
     }
 
     /// <summary>
@@ -218,11 +219,11 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
             if (AudioManager.Instance != null && AudioManager.Instance.cubeAudioConfiguration != null)
             {
                 cubeAudioConfig = AudioManager.Instance.cubeAudioConfiguration;
-                Debug.Log($"[CubeManager] Using CubeAudioConfiguration from AudioManager for {type} cube");
+                this.Log($"Using CubeAudioConfiguration from AudioManager for {type} cube", EnableDebugLogs);
             }
             else
             {
-                Debug.LogWarning($"[CubeManager] No CubeAudioConfiguration available for {type} cube - audio will not play");
+                this.LogWarning($"No CubeAudioConfiguration available for {type} cube - audio will not play", EnableDebugLogs);
             }
         }
         
@@ -232,11 +233,11 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
             var audioData = cubeAudioConfig.GetAudioData(type);
             if (audioData == null || !audioData.HasAnyAudioClips())
             {
-                Debug.LogWarning($"[CubeManager] No audio clips configured for cube type {type} in CubeAudioConfiguration");
+                this.LogWarning($"No audio clips configured for cube type {type} in CubeAudioConfiguration", EnableDebugLogs);
             }
         }
         
-        Debug.Log($"[CubeManager] Audio system setup complete for {type} cube (AudioSource: {cubeAudioSource != null}, Config: {cubeAudioConfig != null})");
+        this.Log($"Audio system setup complete for {type} cube (AudioSource: {cubeAudioSource != null}, Config: {cubeAudioConfig != null})", EnableDebugLogs);
     }
     
     /// <summary>
@@ -324,11 +325,11 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
             cubeAudioSource.pitch = finalPitch;
             cubeAudioSource.Play();
             
-            Debug.Log($"[CubeManager] Played {soundCategory} audio for {effectiveType} cube: {audioClip.name} (Vol: {finalVolume:F2}, Pitch: {finalPitch:F2})");
+            this.Log($"Played {soundCategory} audio for {effectiveType} cube: {audioClip.name} (Vol: {finalVolume:F2}, Pitch: {finalPitch:F2})", EnableDebugLogs);
         }
         else
         {
-            Debug.Log($"[CubeManager] No {soundCategory} audio available for {effectiveType} cube (fallback also checked)");
+            this.Log($"No {soundCategory} audio available for {effectiveType} cube (fallback also checked)", EnableDebugLogs);
         }
     }
     
@@ -374,10 +375,10 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
         
         // Fire captured event
         GameEvents.FireCubeCaptured(position, GetEffectiveType());
-        Debug.Log($"Fired GameEvents.OnCubeCaptured for {GetEffectiveType()} cube at ({position.x}, {position.y})");
+        this.Log($"Fired GameEvents.OnCubeCaptured for {GetEffectiveType()} cube at ({position.x}, {position.y})", EnableDebugLogs);
         
         // Add any additional capture effects here if needed
-        Debug.Log($"[CubeManager] Cube {GetEffectiveType()} captured at ({position.x}, {position.y}) - capture audio triggered");
+        this.Log($"Cube {GetEffectiveType()} captured at ({position.x}, {position.y}) - capture audio triggered", EnableDebugLogs);
     }
     
     /// <summary>
@@ -467,11 +468,11 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
     {
         if (isMoving || isDestroyed) return true;
 
-        Debug.Log($"Moving cube {GetEffectiveType()} from ({position.x}, {position.y}) forward");
+        this.Log($"Moving cube {GetEffectiveType()} from ({position.x}, {position.y}) forward", EnableDebugLogs);
 
         if (position.y < 0 || position.x < 0 || position.x >= grid.Width)
         {
-            Debug.Log($"Cube {GetEffectiveType()} at ({position.x}, {position.y}) is off-grid. Grid bounds: {grid.Width}x{grid.Height}");
+            this.Log($"Cube {GetEffectiveType()} at ({position.x}, {position.y}) is off-grid. Grid bounds: {grid.Width}x{grid.Height}", EnableDebugLogs);
 
             if (!isRainingCube || moveCountRemaining <= 0)
             {
@@ -479,7 +480,7 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
 
                 if (effectiveType == CubeType.Infinity)
                 {
-                    Debug.Log("Cube with corrupted face escaped (acts as infinity)");
+                    this.Log("Cube with corrupted face escaped (acts as infinity)", EnableDebugLogs);
                 }
                 else
                 {
@@ -492,9 +493,9 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
                     
                     // Fire escaped event before destruction
                     GameEvents.FireCubeEscaped(position, effectiveType);
-                    Debug.Log($"Fired GameEvents.OnCubeEscaped for {effectiveType} cube at ({position.x}, {position.y})");
+                    this.Log($"Fired GameEvents.OnCubeEscaped for {effectiveType} cube at ({position.x}, {position.y})", EnableDebugLogs);
                     
-                    Debug.Log($"Cube with {effectiveType} behavior escaped");
+                    this.Log($"Cube with {effectiveType} behavior escaped", EnableDebugLogs);
                 }
 
                 Destroy(gameObject);
@@ -515,7 +516,7 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
 
         oldPosition = new Vector2Int(position.x, position.y + 1); // Previous position for face painting
         
-        Debug.Log($"Cube moved to ({position.x}, {position.y}), move count: {moveCount}");
+        this.Log($"Cube moved to ({position.x}, {position.y}), move count: {moveCount}", EnableDebugLogs);
 
         // Notify FacePaintingManager of movement
         FacePaintingManager facePaintingManager = FindObjectOfType<FacePaintingManager>();
@@ -545,7 +546,7 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
         Vector3 start = transform.position;
         Vector3 end = grid.GridToWorldPosition(newPos.x, newPos.y, 2f);
 
-        Debug.Log($"Animating cube from {start} to {end} (grid pos {newPos})");
+        this.Log($"Animating cube from {start} to {end} (grid pos {newPos})", EnableDebugLogs);
 
         WaveManager waveManager = FindObjectOfType<WaveManager>();
         float actualMoveDuration = moveDuration;
@@ -671,7 +672,7 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
             PlayerStatisticsManager.Instance.OnFacePainted(position, face, status);
         }
         
-        Debug.Log($"Painted {face} of cube at ({position.x}, {position.y}) with {status} status, duration: {duration}");
+        this.Log($"Painted {face} of cube at ({position.x}, {position.y}) with {status} status, duration: {duration}", EnableDebugLogs);
     }
 
     public void PaintCurrentDownFace(FaceStatus status, Color color, int duration = -1)
@@ -694,7 +695,7 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
                     faceColors[i] = Color.white;
                     anyChanged = true;
                     faceIndicators[i].SetActive(false);
-                    Debug.Log($"Face {(CubeFace)i} paint status expired on cube at ({position.x}, {position.y})");
+                    this.Log($"Face {(CubeFace)i} paint status expired on cube at ({position.x}, {position.y})", EnableDebugLogs);
                 }
             }
         }
@@ -934,7 +935,7 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
     {
         Color color = status == FaceStatus.Corrupted ? Color.black : Color.blue;
         PaintFace(face, status, color, 5);
-        Debug.Log($"Test painted {face} with {status} status");
+        this.Log($"Test painted {face} with {status} status", EnableDebugLogs);
     }
 
     public void DebugShowAllFaces()
@@ -949,18 +950,18 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
             PaintFace((CubeFace)i, testStatuses[i], testColors[i], -1);
         }
 
-        Debug.Log($"Debug: All faces painted with different colors. Current down face: {GetCurrentDownFace()}");
+        this.Log($"Debug: All faces painted with different colors. Current down face: {GetCurrentDownFace()}", EnableDebugLogs);
     }
 
     public void DebugPrintFaceMapping()
     {
-        Debug.Log($"Face Mapping for cube at ({position.x}, {position.y}):");
-        Debug.Log($"  Bottom position: {currentFaceMapping[0]}");
-        Debug.Log($"  Top position: {currentFaceMapping[1]}");
-        Debug.Log($"  Front position: {currentFaceMapping[2]}");
-        Debug.Log($"  Back position: {currentFaceMapping[3]}");
-        Debug.Log($"  Current down face: {GetCurrentDownFace()}");
-        Debug.Log($"  Active face status: {GetActiveFaceStatus()}");
+        this.Log($"Face Mapping for cube at ({position.x}, {position.y}):", EnableDebugLogs);
+        this.Log($"  Bottom position: {currentFaceMapping[0]}", EnableDebugLogs);
+        this.Log($"  Top position: {currentFaceMapping[1]}", EnableDebugLogs);
+        this.Log($"  Front position: {currentFaceMapping[2]}", EnableDebugLogs);
+        this.Log($"  Back position: {currentFaceMapping[3]}", EnableDebugLogs);
+        this.Log($"  Current down face: {GetCurrentDownFace()}", EnableDebugLogs);
+        this.Log($"  Active face status: {GetActiveFaceStatus()}", EnableDebugLogs);
     }
 
     private void InitializeFaceMapping()
@@ -971,7 +972,7 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
         currentFaceMapping[2] = CubeFace.Front;   // Front position has original front face
         currentFaceMapping[3] = CubeFace.Back;    // Back position has original back face
 
-        Debug.Log($"Face mapping initialized for cube at ({position.x}, {position.y})");
+        this.Log($"Face mapping initialized for cube at ({position.x}, {position.y})", EnableDebugLogs);
     }
 
     private void RotateFaceMapping()
@@ -983,7 +984,7 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
         currentFaceMapping[1] = currentFaceMapping[2]; // Front moves to Top
         currentFaceMapping[2] = temp;                  // Bottom moves to Front
 
-        Debug.Log($"Face mapping rotated: Bottom={currentFaceMapping[0]}, Top={currentFaceMapping[1]}, Front={currentFaceMapping[2]}, Back={currentFaceMapping[3]}");
+        this.Log($"Face mapping rotated: Bottom={currentFaceMapping[0]}, Top={currentFaceMapping[1]}, Front={currentFaceMapping[2]}, Back={currentFaceMapping[3]}", EnableDebugLogs);
 
         // Update visuals immediately after rotation to ensure proper orientation
         UpdateFaceVisuals();
@@ -1019,7 +1020,7 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
             faceDurations[i] = 0;
         }
         UpdateFaceVisuals();
-        Debug.Log($"Cleared all face statuses on cube at ({position.x}, {position.y})");
+        this.Log($"Cleared all face statuses on cube at ({position.x}, {position.y})", EnableDebugLogs);
     }
 
     #endregion
@@ -1036,7 +1037,7 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
             CubeFace topFace = GetTopFace();
             PaintFace(topFace, FaceStatus.Corrupted, Color.black, -1);
             CreateMarkerHitEffect();
-            Debug.Log($"Infinity cube at ({position.x}, {position.y}) hit by marker - top face painted for corruption");
+            this.Log($"Infinity cube at ({position.x}, {position.y}) hit by marker - top face painted for corruption", EnableDebugLogs);
         }
     }
 
@@ -1120,7 +1121,7 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
     {
         // This method provides the coordination point for tile corruption
         // The actual tile corruption logic will be implemented in the Tile.cs task
-        Debug.Log($"Infinity cube at ({position.x}, {position.y}) preparing corruption for tile - ready for Tile.cs implementation");
+        this.Log($"Infinity cube at ({position.x}, {position.y}) preparing corruption for tile - ready for Tile.cs implementation", EnableDebugLogs);
         
         // Mark cube as having triggered corruption
         // Additional corruption state tracking can be added here if needed
@@ -1144,7 +1145,7 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
 
     #region IManagerDebugInterface Implementation
 
-    public bool EnableDebugLogs { get; set; } = false;
+    public bool EnableDebugLogs { get; set; } = true;
 
     public string GetDebugStatus()
     {
@@ -1237,21 +1238,21 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
         UpdateFaceVisuals();
         
         if (EnableDebugLogs)
-            Debug.Log($"[CubeManager] Cube at ({position.x}, {position.y}) reset to defaults");
+            this.Log($"Cube at ({position.x}, {position.y}) reset to defaults", EnableDebugLogs);
     }
 
     public void LoadConfiguration(string configName)
     {
         // TODO: Implement configuration loading for cube settings
         if (EnableDebugLogs)
-            Debug.Log($"[CubeManager] Loading configuration: {configName} (not yet implemented)");
+            this.Log($"Loading configuration: {configName} (not yet implemented)", EnableDebugLogs);
     }
 
     public void SaveConfiguration(string configName)
     {
         // TODO: Implement configuration saving for cube settings
         if (EnableDebugLogs)
-            Debug.Log($"[CubeManager] Saving configuration: {configName} (not yet implemented)");
+            this.Log($"Saving configuration: {configName} (not yet implemented)", EnableDebugLogs);
     }
 
     #endregion
