@@ -101,6 +101,10 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
         SetupPhysics();
         SetupAudioSystem();
         UpdateDamageVisual();
+        
+        // Fire spawn event
+        GameEvents.FireCubeSpawn(position, type);
+        Debug.Log($"Fired GameEvents.OnCubeSpawn for {type} cube at ({position.x}, {position.y})");
     }
 
     public bool TakeDamage(int damage = 1)
@@ -368,6 +372,10 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
     {
         PlayCaptureSound();
         
+        // Fire captured event
+        GameEvents.FireCubeCaptured(position, GetEffectiveType());
+        Debug.Log($"Fired GameEvents.OnCubeCaptured for {GetEffectiveType()} cube at ({position.x}, {position.y})");
+        
         // Add any additional capture effects here if needed
         Debug.Log($"[CubeManager] Cube {GetEffectiveType()} captured at ({position.x}, {position.y}) - capture audio triggered");
     }
@@ -481,6 +489,11 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
                         waveManager.OnNonBlackCubeProcessed(effectiveType, false);
                         waveManager.OnCubeEscaped(effectiveType);
                     }
+                    
+                    // Fire escaped event before destruction
+                    GameEvents.FireCubeEscaped(position, effectiveType);
+                    Debug.Log($"Fired GameEvents.OnCubeEscaped for {effectiveType} cube at ({position.x}, {position.y})");
+                    
                     Debug.Log($"Cube with {effectiveType} behavior escaped");
                 }
 
@@ -489,14 +502,18 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
             }
         }
 
+        Vector2Int oldPosition = position;
         position.y -= 1;
         moveCount++;
 
+        // Fire move event
+        GameEvents.FireCubeMove(oldPosition, position, type);
+        
         RotateFaceMapping();
         ProcessFaceDurations();
         UpdateFaceRotationTracking(); // Enhanced face rotation tracking
 
-        Vector2Int oldPosition = new Vector2Int(position.x, position.y + 1); // Previous position
+        oldPosition = new Vector2Int(position.x, position.y + 1); // Previous position for face painting
         
         Debug.Log($"Cube moved to ({position.x}, {position.y}), move count: {moveCount}");
 

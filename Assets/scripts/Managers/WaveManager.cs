@@ -139,6 +139,10 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
             DebugLog("🔊 Audio: Wave start event triggered");
         }
         
+        // Fire GameEvents
+        GameEvents.FireWaveStart(currentWaveIndex, CurrentWave);
+        DebugLog($"Fired GameEvents.OnWaveStart for wave {currentWaveIndex}");
+        
         waveCoroutine = StartCoroutine(RunWaveCoroutine());
     }
 
@@ -234,6 +238,10 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
             audioManager.TriggerAudioEvent(Enumerations.GameAudioEvent.WaveCompleted, Vector3.zero);
             DebugLog("🔊 Audio: Wave completion event triggered");
         }
+
+        // Fire GameEvents
+        GameEvents.FireWaveComplete(currentWaveIndex);
+        DebugLog($"Fired GameEvents.OnWaveComplete for wave {currentWaveIndex}");
 
         ProcessEndMessages();
         AdvanceToNextWave();
@@ -354,6 +362,16 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
             }
         }
         MoveStep++;
+        
+        // Fire GameEvents
+        GameEvents.FireWaveStep(currentWaveIndex, MoveStep);
+        
+        // Calculate and fire progress event
+        if (totalNonBlackCubes > 0)
+        {
+            float progress = (processedNonBlackCubes / (float)totalNonBlackCubes) * 100f;
+            GameEvents.FireWaveProgress(currentWaveIndex, progress);
+        }
         
         // Notify AudioManager about wave step completion for composition
         if (audioManager != null)

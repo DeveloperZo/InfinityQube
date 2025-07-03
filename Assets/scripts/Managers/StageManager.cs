@@ -191,6 +191,10 @@ public class StageManager : MonoBehaviour, IManagerDebugInterface
 
         // Fire events
         OnStageStarted?.Invoke(stage);
+        
+        // Fire GameEvents
+        GameEvents.FireStageStart(stageNumber, stage);
+        DebugLog($"Fired GameEvents.OnStageStart for stage {stageNumber}");
 
         DebugLog($"Stage {stageNumber}: '{stage.stageName}' loaded successfully (Attempt #{stageAttempts[stageNumber]})");
 
@@ -354,6 +358,10 @@ public class StageManager : MonoBehaviour, IManagerDebugInterface
 
         // Fire events
         OnStageCompleted?.Invoke(CurrentStage, success);
+        
+        // Fire GameEvents
+        GameEvents.FireStageComplete(CurrentStageIndex, success);
+        DebugLog($"Fired GameEvents.OnStageComplete for stage {CurrentStageIndex}, success: {success}");
 
         if (success)
         {
@@ -419,6 +427,11 @@ public class StageManager : MonoBehaviour, IManagerDebugInterface
         if (restartOnFailure)
         {
             OnStageRestarted?.Invoke(CurrentStage);
+            
+            // Fire GameEvents
+            GameEvents.FireStageRestart(CurrentStageIndex);
+            DebugLog($"Fired GameEvents.OnStageRestart for stage {CurrentStageIndex}");
+            
             RestartCurrentStage();
         }
     }

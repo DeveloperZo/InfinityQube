@@ -161,6 +161,9 @@ public class DebugSystem : MonoBehaviour
             // 6. Cross-system testing and scenarios
             RegisterPanel(new TestingDebugPanel());   // Integration testing, scenarios
             
+            // 7. Logging and diagnostics
+            RegisterPanel(new LoggingDebugPanel());   // File logging control and monitoring
+            
             Debug.Log($"DebugSystem: Successfully registered {debugPanels.Count} panels");
         }
         catch (System.Exception e)
