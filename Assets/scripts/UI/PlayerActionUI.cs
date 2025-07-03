@@ -8,7 +8,8 @@ public class PlayerActionUI : MonoBehaviour
     [SerializeField] private Image[] lightMarkerSegments = new Image[6];
     [SerializeField] private Image[] heavyMarkerSegments = new Image[6];
     [SerializeField] private Image[] primeMarkerSegments = new Image[6];
-    [SerializeField] private Image[] cubeMarkerSegments = new Image[6];
+    [SerializeField] private GameObject LightMarkerUI;
+    [SerializeField] private GameObject PrimeMarkerUI;
     [SerializeField] private Image[] modeIndicatorSegments = new Image[3];
     [SerializeField] private TextMeshProUGUI lightChargeText;
     [SerializeField] private TextMeshProUGUI heavyChargeText;
@@ -58,7 +59,6 @@ public class PlayerActionUI : MonoBehaviour
             lightMaxCharges = playerActionManager.maxLightMarkerCharges;
             heavyMaxCharges = playerActionManager.maxHeavyMarkerCharges;
             primeMaxCharges = playerActionManager.maxPrimeMarkerCharges;
-            cubeMaxCharges = 10; // Default value for cube markers
             lightMarkerCooldownTime = playerActionManager.lightMarkerCooldown;
             heavyMarkerCooldownTime = playerActionManager.heavyMarkerCooldown;
             primeMarkerCooldownTime = playerActionManager.primeMarkerCooldown;
@@ -99,10 +99,7 @@ public class PlayerActionUI : MonoBehaviour
         {
             primeMaxCharges = playerActionManager.maxPrimeMarkerCharges;
         }
-        if (cubeMaxCharges == 0)
-        {
-            cubeMaxCharges = 10; // Default value for cube markers
-        }
+
 
         // Trigger animation for UI update if charges changed
         if (chargesChanged)
@@ -216,18 +213,26 @@ public class PlayerActionUI : MonoBehaviour
             heavyMarkerColor
         );
 
-        // Update Prime Marker UI
-        UpdateMarkerUI(
-            primeCharges,
-            primeMaxCharges,
-            primeCooldownProgress,
-            primeMarkerSegments,
-            primeChargeText,
-            primeMarkerColor
-        );
+        // Update Prime Marker UI - only show if prime markers are available
+        bool primeMarkersAvailable = primeMaxCharges > 0;
+        if (primeMarkersAvailable)
+        {
+            PrimeMarkerUI.SetActive(true);
+            UpdateMarkerUI(
+                primeCharges,
+                primeMaxCharges,
+                primeCooldownProgress,
+                primeMarkerSegments,
+                primeChargeText,
+                primeMarkerColor
+            );
+        }
+        else
+        {
+            // Hide prime marker UI elements when unavailable
+            PrimeMarkerUI.SetActive(false);
+        }
 
-        // Update Cube Marker UI
-        UpdateCubeMarkerUI();
 
         // Update Mode Indicator UI
         if (playerActionManager != null)
@@ -308,35 +313,7 @@ public class PlayerActionUI : MonoBehaviour
         }
     }
 
-    private void UpdateCubeMarkerUI()
-    {
-        // Get current cube marker count from PlayerActionManager
-        int currentCubeMarkers = playerActionManager != null ? playerActionManager.GetCurrentCubeMarkers() : 0;
-        cubeCharges = currentCubeMarkers;
 
-        // Update cube charge text
-        if (cubeChargeText != null)
-            cubeChargeText.text = cubeCharges.ToString();
-
-        // Update cube marker segments - show active markers
-        for (int i = 0; i < cubeMarkerSegments.Length; i++)
-        {
-            if (cubeMarkerSegments[i] == null) continue;
-
-            if (i < cubeCharges)
-            {
-                // Active cube marker
-                cubeMarkerSegments[i].color = cubeMarkerColor;
-            }
-            else
-            {
-                // Inactive cube marker slot
-                cubeMarkerSegments[i].color = segmentEmptyColor;
-            }
-
-            cubeMarkerSegments[i].gameObject.SetActive(true);
-        }
-    }
 
     private void UpdateModeIndicator(Enumerations.MarkerMode currentMode)
     {
@@ -345,6 +322,9 @@ public class PlayerActionUI : MonoBehaviour
         // Check if mode has changed to trigger animation
         bool modeChanged = false;
         
+        // Check if prime markers are available
+        bool primeMarkersAvailable = primeMaxCharges > 0;
+        
         // Update mode indicator segments - highlight current active mode
         for (int i = 0; i < modeIndicatorSegments.Length; i++)
         {
@@ -352,6 +332,13 @@ public class PlayerActionUI : MonoBehaviour
 
             // Calculate which mode this segment represents (Light=1, Prime=2, Heavy=3)
             Enumerations.MarkerMode segmentMode = (Enumerations.MarkerMode)(i + 1);
+
+            // Hide prime mode indicator if prime markers aren't available
+            if (segmentMode == Enumerations.MarkerMode.Prime && !primeMarkersAvailable)
+            {
+                modeIndicatorSegments[i].gameObject.SetActive(false);
+                continue;
+            }
 
             if (segmentMode == currentMode)
             {

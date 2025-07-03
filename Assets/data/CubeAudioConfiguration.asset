@@ -16,7 +16,7 @@ MonoBehaviour:
   - cubeType: 0
     landingSounds:
       clips:
-      - {fileID: 8300000, guid: ea067b6492bd0ef4aaa347a99d789f38, type: 3}
+      - {fileID: 8300000, guid: 4604e9b790391824e915f0da7b73775f, type: 3}
       minPitch: 0.9
       maxPitch: 1.1
       volume: 1
@@ -50,7 +50,7 @@ MonoBehaviour:
   - cubeType: 1
     landingSounds:
       clips:
-      - {fileID: 0}
+      - {fileID: 8300000, guid: bf4872fc28708f146bab0f5e5f4ad619, type: 3}
       minPitch: 0
       maxPitch: 0
       volume: 1
@@ -84,7 +84,7 @@ MonoBehaviour:
   - cubeType: 2
     landingSounds:
       clips:
-      - {fileID: 8300000, guid: 06db626c424a1774ebfdd4aba3bda1ad, type: 3}
+      - {fileID: 8300000, guid: e919322f73a035b4183e5e9452ba5278, type: 3}
       minPitch: 0.9
       maxPitch: 1.1
       volume: 1
@@ -117,7 +117,8 @@ MonoBehaviour:
       volumeVariationRange: 0.1
   - cubeType: 3
     landingSounds:
-      clips: []
+      clips:
+      - {fileID: 8300000, guid: 141fb6293f52bb14ea4001192e4fbaf0, type: 3}
       minPitch: 0.9
       maxPitch: 1.1
       volume: 1
@@ -180,6 +181,6 @@ MonoBehaviour:
     enablePitchVariation: 1
     enableVolumeVariation: 0
     volumeVariationRange: 0.1
-  globalCubeAudioVolume: 0.8
+  globalCubeAudioVolume: 1
   globalPitchModifier: 1
   enableAudioDebugLogs: 0

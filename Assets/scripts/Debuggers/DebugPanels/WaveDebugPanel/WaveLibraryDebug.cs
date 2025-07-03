@@ -54,11 +54,10 @@ namespace WaveDebugSystem
                 waveCopy.moveInterval = wave.moveInterval;
                 waveCopy.fastMoveInterval = wave.fastMoveInterval;
                 waveCopy.waveStartDelay = wave.waveStartDelay;
-                waveCopy.limitMarkers = wave.limitMarkers;
-                waveCopy.maxIndividualMarkerCount = wave.maxIndividualMarkerCount;
-                waveCopy.maxIndividualMarkerCharge = wave.maxIndividualMarkerCharge;
-                waveCopy.maxAreaMarkerCount = wave.maxAreaMarkerCount;
-                waveCopy.maxAreaMarkerCharge = wave.maxAreaMarkerCharge;
+                waveCopy.maxLightMarkerCount = wave.maxLightMarkerCount;
+                waveCopy.maxLightMarkerCharge = wave.maxLightMarkerCharge;
+                waveCopy.maxPrimeMarkerCount = wave.maxPrimeMarkerCount;
+                waveCopy.maxPrimeMarkerCharge = wave.maxPrimeMarkerCharge;
 
                 foreach (var cube in wave.CubesData)
                 {
@@ -248,11 +247,10 @@ namespace WaveDebugSystem
             advancedWave.moveInterval = 1.5f;
             advancedWave.fastMoveInterval = 0.1f;
             advancedWave.waveStartDelay = 0.75f;
-            advancedWave.limitMarkers = true;
-            advancedWave.maxIndividualMarkerCount = 3;
-            advancedWave.maxIndividualMarkerCharge = 2;
-            advancedWave.maxAreaMarkerCount = 3;
-            advancedWave.maxAreaMarkerCharge = 2;
+            advancedWave.maxLightMarkerCount = 3;
+            advancedWave.maxLightMarkerCharge = 2;
+            advancedWave.maxPrimeMarkerCount = 3;
+            advancedWave.maxPrimeMarkerCharge = 2;
             advancedWave.CubesData = new List<CubeData>();
 
             // Add mixed cube types

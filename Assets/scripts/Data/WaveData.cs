@@ -12,29 +12,37 @@ public class WaveData : ScriptableObject
     [Header("Cube Configuration")]
     public List<CubeData> CubesData = new List<CubeData>();
 
-    [Header("Wave Settings")]
-    public bool limitMarkers = false;
-    public int maxIndividualMarkerCharge = 2;
-    public int maxIndividualMarkerCount = 10;
+    [Header("Marker Settings")]
+    [Tooltip("0 = Light markers disabled")]
+    public int maxLightMarkerCharge;
+    public int maxLightMarkerCount;
 
-    public int maxAreaMarkerCharge = 1;
-    public int maxAreaMarkerCount = 5;
-    public float waveStartDelay = 0.75f;
-    public float moveInterval = 0.75f;
-    public float fastMoveInterval = 0.1f;
+    [Tooltip("0 = Prime markers disabled")]
+    public int maxPrimeMarkerCharge;
+    public int maxPrimeMarkerCount;
+
+    [Tooltip("0 = Heavy markers disabled")]
+    public int maxHeavyMarkerCharge;
+    public int maxHeavyMarkerCount;
+
+    [Header("Wave Timing")]
+    public float waveStartDelay;
+    public float moveInterval;
+    public float fastMoveInterval;
 
     [Header("Success Criteria")]
     public bool hasOwnSuccessCriteria = false;
-    public int requiredCaptureCount = 0;
-    public int maxAllowedEscapes = 0;
+    public int requiredCaptureCount;
+    public int maxAllowedEscapes;
 
     [Header("Messages")]
     public List<WaveMessage> messages = new List<WaveMessage>();
 
     [Header("Statistics")]
-    public int normalCubesCaptured = 0;
-    public int blueCubesCaptured = 0;
-    public int cubesEscaped = 0;
-    public int markersPlaced = 0;
-    public int detonationsUsed = 0;
+    public int unitCubesCaptured;
+    public int primeCubesCaptured;
+    public int infinityCubesEscaped;
+    public int recursionCubesCaptured;
+    public int markersPlaced;
+    public int detonationsUsed;
 }

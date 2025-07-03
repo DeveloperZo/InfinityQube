@@ -810,13 +810,55 @@ MonoBehaviour:
   soundEffectsVolume: 1
   cubeImpactVolume: 1
   cubeDestructionVolume: 0.6
+  backgroundAudioVolume: 0.3
+  systemAudioVolume: 0.7
   audioSourcePoolSize: 10
   maxSimultaneousSounds: 8
   useAudioSourcePooling: 1
   soundCleanupInterval: 5
-  EnableDebugLogs: 1
   showAudioGizmos: 0
   logAudioEvents: 0
+  backgroundAmbientTracks: []
+  enableBackgroundMusic: 1
+  shufflePlaylist: 1
+  trackTransitionTime: 2
+  waveStartSound: {fileID: 0}
+  waveCompleteSound: {fileID: 0}
+  uiClickSound: {fileID: 0}
+  lightMarkerPlaceSound: {fileID: 0}
+  heavyMarkerPlaceSound: {fileID: 0}
+  primeMarkerPlaceSound: {fileID: 0}
+  lightMarkerTriggerSound: {fileID: 0}
+  heavyMarkerTriggerSound: {fileID: 0}
+  primeMarkerTriggerSound: {fileID: 0}
+  enableWaveComposition: 1
+  compositionLayerDelay: 0.3
+  maxCompositionLayers: 5
+  volumeFalloffCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 0.2
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  waveCompositionVolume: 0.6
   testingVolume: 0.8
   showTestingInstructions: 1
 --- !u!1 &363589261
@@ -2765,6 +2807,52 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1020758100}
   m_CullTransparentMesh: 0
+--- !u!1 &1044077101
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1044077103}
+  - component: {fileID: 1044077102}
+  m_Layer: 0
+  m_Name: Logger
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1044077102
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1044077101}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fd465267c2bc4794993ad4857264166f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  autoInitialize: 1
+  showLogPathOnStart: 1
+--- !u!4 &1044077103
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1044077101}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 911.33887, y: 566.57074, z: -75.062805}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1065313932
 GameObject:
   m_ObjectHideFlags: 0
@@ -9872,7 +9960,6 @@ MonoBehaviour:
   enablePatternPreviews: 1
   previewMaterial: {fileID: 0}
   previewAlpha: 0.5
-  EnableDebugLogs: 1
 --- !u!1 &1922694877
 GameObject:
   m_ObjectHideFlags: 0
@@ -11008,7 +11095,6 @@ MonoBehaviour:
   autoAdvanceStages: 1
   stageTransitionDelay: 2
   restartOnFailure: 1
-  EnableDebugLogs: 1
   showStageInfo: 0
 --- !u!4 &1918197466871702463
 Transform:
@@ -11051,7 +11137,6 @@ MonoBehaviour:
   useObjectPooling: 0
   pooledTileCount: 100
   showGridGizmos: 0
-  EnableDebugLogs: 1
   gizmoColor: {r: 0, g: 1, b: 1, a: 1}
 --- !u!4 &1986112192492535162
 Transform:
@@ -12194,7 +12279,6 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 4294967295
   collisionCheckRadius: 0.5
-  EnableDebugLogs: 0
   showTileInfo: 0
   currentTilePosition: {x: 0, y: 0}
   isDead: 0
@@ -12287,7 +12371,6 @@ MonoBehaviour:
   enableDetailedTracking: 1
   autoSaveOnCompletion: 1
   emergencySaveOnQuit: 1
-  EnableDebugLogs: 0
   showCollectionStatus: 0
 --- !u!4 &7705285898521335331
 Transform:
@@ -12455,6 +12538,9 @@ MonoBehaviour:
   waveManager: {fileID: 4327591077324849160}
   actionUI: {fileID: 8656265648072650658}
   markerSystem: {fileID: 8656265648072650657}
+  audioManager: {fileID: 0}
+  inputFeedbackManager: {fileID: 0}
+  animationTriggerManager: {fileID: 0}
   maxLightMarkers: 3
   lightMarkersPlaced: 0
   currentLightMarkers: 0
@@ -12488,7 +12574,7 @@ MonoBehaviour:
   triggerHeavyKey: 121
   triggerPrimeKey: 116
   triggerCubeMarkerKey: 113
-  powerUpCubeMarkerKey: 284
+  currentMarkerMode: 1
 --- !u!114 &8656265648072650657
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -12547,6 +12633,10 @@ MonoBehaviour:
   - {fileID: 0}
   - {fileID: 0}
   - {fileID: 0}
+  modeIndicatorSegments:
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
   lightChargeText: {fileID: 585395268}
   heavyChargeText: {fileID: 0}
   primeChargeText: {fileID: 622622456}
@@ -12558,7 +12648,12 @@ MonoBehaviour:
   heavyMarkerColor: {r: 1, g: 0.3, b: 0.3, a: 1}
   primeMarkerColor: {r: 0.8, g: 0.2, b: 1, a: 1}
   cubeMarkerColor: {r: 0.2, g: 1, b: 0.2, a: 1}
+  modeColors:
+  - {r: 1, g: 0.3, b: 0.3, a: 1}
+  - {r: 0.8, g: 0.2, b: 1, a: 1}
+  - {r: 0.6, g: 0.1, b: 0.1, a: 1}
   playerActionManager: {fileID: 8656265648072650656}
+  animationTriggerManager: {fileID: 0}
   lightMarkerCooldownTime: 3
   heavyMarkerCooldownTime: 5
   primeMarkerCooldownTime: 4
@@ -12641,3 +12736,4 @@ SceneRoots:
   m_Roots:
   - {fileID: 239699829}
   - {fileID: 115667896}
+  - {fileID: 1044077103}

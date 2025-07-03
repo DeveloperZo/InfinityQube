@@ -306,12 +306,6 @@ namespace WaveDebugSystem
                 var wave = waveManager.CurrentWave;
                 GUILayout.Label($"Grid: {wave.GridWidth}x{wave.GridHeight} | Cubes: {wave.CubesData.Count}");
                 GUILayout.Label($"Timing: {wave.moveInterval:F1}s / {wave.fastMoveInterval:F1}s");
-
-                if (wave.limitMarkers)
-                {
-                    GUILayout.Label($"Marker Indiv Limit: {wave.maxIndividualMarkerCount} (charge: {wave.maxIndividualMarkerCharge})");
-                    GUILayout.Label($"Marker Area Limit: {wave.maxAreaMarkerCount} (charge: {wave.maxAreaMarkerCharge})");
-                }
             }
         }
 

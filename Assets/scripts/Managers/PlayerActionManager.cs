@@ -67,35 +67,35 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
     [SerializeField] private AnimationTriggerManager animationTriggerManager;
 
     [Header("Light Marker Settings")]
-    [SerializeField] public int maxLightMarkers = 3;
-    [SerializeField] public int lightMarkersPlaced = 0;
-    [SerializeField] public int currentLightMarkers = 0;
-    [SerializeField] public int maxLightMarkerCharges = 2;
+    [SerializeField] public int maxLightMarkers;
+    [SerializeField] public int lightMarkersPlaced;
+    [SerializeField] public int currentLightMarkers;
+    [SerializeField] public int maxLightMarkerCharges;
     [SerializeField] private int currentLightMarkerCharges;
-    [SerializeField] public float lightMarkerCooldown = 2f;
+    [SerializeField] public float lightMarkerCooldown;
     [SerializeField] public Material lightMarkerMaterial;
-    [SerializeField] public float lastLightMarkerTime = 0f;
+    [SerializeField] public float lastLightMarkerTime;
 
     [Header("Heavy Marker Settings")]
-    [SerializeField] public int maxHeavyMarkers = 2;
-    [SerializeField] public int heavyMarkersPlaced = 0;
-    [SerializeField] public int currentHeavyMarkers = 0;
-    [SerializeField] public int maxHeavyMarkerCharges = 1;
+    [SerializeField] public int maxHeavyMarkers;
+    [SerializeField] public int heavyMarkersPlaced;
+    [SerializeField] public int currentHeavyMarkers;
+    [SerializeField] public int maxHeavyMarkerCharges;
     [SerializeField] private int currentHeavyMarkerCharges;
-    [SerializeField] public float heavyMarkerCooldown = 5f;
+    [SerializeField] public float heavyMarkerCooldown;
     [SerializeField] public Material heavyMarkerMaterial;
-    [SerializeField] public float lastHeavyMarkerTime = 0f;
+    [SerializeField] public float lastHeavyMarkerTime;
 
     [Header("Prime Marker Settings")]
-    [SerializeField] public int maxPrimeMarkers = 2;
-    [SerializeField] public int primeMarkersPlaced = 0;
-    [SerializeField] public int currentPrimeMarkers = 0;
-    [SerializeField] public int maxPrimeMarkerCharges = 2;
+    [SerializeField] public int maxPrimeMarkers;
+    [SerializeField] public int primeMarkersPlaced;
+    [SerializeField] public int currentPrimeMarkers;
+    [SerializeField] public int maxPrimeMarkerCharges;
     [SerializeField] private int currentPrimeMarkerCharges;
-    [SerializeField] public float primeMarkerCooldown = 4f;
-    [SerializeField] public float lastPrimeMarkerTime = 0f;
-    [SerializeField] public int primeMarkerSize = 2;
-    [SerializeField] public int primeMarkerOnGridLimit = 1;
+    [SerializeField] public float primeMarkerCooldown;
+    [SerializeField] public float lastPrimeMarkerTime;
+    [SerializeField] public int primeMarkerSize;
+    [SerializeField] public int primeMarkerOnGridLimit;
     [SerializeField] public Material primeMarkerMaterial;
 
     [Header("Input Settings")]
@@ -114,8 +114,8 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
     [SerializeField] private Enumerations.MarkerMode currentMarkerMode = Enumerations.MarkerMode.Light;
 
     // Statistics
-    private int cubeMarkersTriggered = 0;
-    private int perfectTimingHits = 0;
+    private int cubeMarkersTriggered;
+    private int perfectTimingHits;
     private bool inputEnabled = false;
 
     public GridManager GridManager => gridManager;
@@ -1113,8 +1113,14 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
             return false;
         }
 
-        // Allow switching to any valid mode (no restrictions for now)
-        // Future restrictions could be added here (e.g., based on game state, unlocks, etc.)
+        // Prevent switching to Prime mode if prime markers are not available
+        if (mode == Enumerations.MarkerMode.Prime && maxPrimeMarkerCharges <= 0)
+        {
+            ShowActionErrorFeedback("Prime markers are not available in this wave.");
+            return false;
+        }
+
+        // Allow switching to any other valid mode
         return true;
     }
 
@@ -1493,6 +1499,26 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
         }
 
         return debugData;
+    }
+
+    /// <summary>
+    /// Validates and adjusts current mode based on available marker types
+    /// Called when wave configuration changes
+    /// </summary>
+    public void ValidateCurrentMode()
+    {
+        // If currently in Prime mode but prime markers are not available, switch to Light mode
+        if (currentMarkerMode == Enumerations.MarkerMode.Prime && maxPrimeMarkerCharges <= 0)
+        {
+            SetMode(Enumerations.MarkerMode.Light);
+            if (EnableDebugLogs)
+            {
+                this.Log("Prime mode was active but prime markers are not available. Switched to Light mode.", EnableDebugLogs);
+            }
+        }
+        
+        // Update UI to reflect any changes
+        UpdateUI();
     }
 
     public void ResetToDefaults()

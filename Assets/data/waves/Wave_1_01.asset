@@ -58,72 +58,34 @@ MonoBehaviour:
   requiredCaptureCount: 0
   maxAllowedEscapes: 0
   messages:
-  - Message: 'Welcome to InfinityQube! Use WASD keys to move around
-
-      Observe
-      the cubes and prepare for action'
+  - Message: '[F] marks tiles ahead [R] triggers marked tiles'
     DisplayMoveStep: 0
     RequirePause: 0
-    AutoHideDelay: 3
+    AutoHideDelay: 6
     HighlightTile: 0
     highlightTiles: []
     highlightColor: {r: 1, g: 1, b: 0, a: 1}
-  - Message: Press K to advanced dialog when paused
-    DisplayMoveStep: 0
-    RequirePause: 1
-    AutoHideDelay: 3
-    HighlightTile: 0
-    highlightTiles: []
-    highlightColor: {r: 1, g: 1, b: 0, a: 1}
-  - Message: 'Press F to place Light Markers
-
-      These help you track cube movements'
-    DisplayMoveStep: 0
-    RequirePause: 0
-    AutoHideDelay: 3
-    HighlightTile: 0
-    highlightTiles: []
-    highlightColor: {r: 1, g: 1, b: 0, a: 1}
-  - Message: 'Press R to trigger Light Markers
-
-      This captures cubes within
-      marker range!'
+  - Message: Press [1] or [2] to change mode
     DisplayMoveStep: 1
-    RequirePause: 1
+    RequirePause: 0
     AutoHideDelay: 5
     HighlightTile: 0
     highlightTiles: []
     highlightColor: {r: 1, g: 1, b: 0, a: 1}
-  - Message: 'Press G to place Prime Markers
-
-      Prime markers have enhanced capture
-      abilities'
+  - Message: Beware of the cubes approaching
     DisplayMoveStep: 2
     RequirePause: 0
-    AutoHideDelay: 3
+    AutoHideDelay: 4
     HighlightTile: 0
     highlightTiles: []
     highlightColor: {r: 1, g: 1, b: 0, a: 1}
-  - Message: 'Press T to trigger Prime Markers
-
-      Use them strategically for
-      maximum captures!'
-    DisplayMoveStep: 2
-    RequirePause: 1
+  - Message: 'Black cubes can''t be captured. I wonder where they go? '
+    DisplayMoveStep: 15
+    RequirePause: 0
     AutoHideDelay: 5
     HighlightTile: 0
     highlightTiles: []
-    highlightColor: {r: 1, g: 1, b: 0, a: 1}
-  - Message: 'Excellent work! You''ve mastered the basics
-
-      Ready for the next
-      challenge?'
-    DisplayMoveStep: -1
-    RequirePause: 0
-    AutoHideDelay: 3
-    HighlightTile: 0
-    highlightTiles: []
-    highlightColor: {r: 1, g: 1, b: 0, a: 1}
+    highlightColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   normalCubesCaptured: 0
   blueCubesCaptured: 0
   cubesEscaped: 0

@@ -716,12 +716,14 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
         if (player != null && !debugMode)
         {
             player.enabled = true;
-            playerActionManager.maxLightMarkers = waveConfiguration[currentWaveIndex].maxIndividualMarkerCount;
-            playerActionManager.maxLightMarkerCharges = waveConfiguration[currentWaveIndex].maxIndividualMarkerCharge;
+            playerActionManager.maxLightMarkers = waveConfiguration[currentWaveIndex].maxLightMarkerCount;
+            playerActionManager.maxLightMarkerCharges = waveConfiguration[currentWaveIndex].maxLightMarkerCharge;
 
-            playerActionManager.maxPrimeMarkers = waveConfiguration[currentWaveIndex].maxAreaMarkerCount;
-            playerActionManager.maxPrimeMarkerCharges = waveConfiguration[currentWaveIndex].maxAreaMarkerCharge;
-
+            playerActionManager.maxPrimeMarkers = waveConfiguration[currentWaveIndex].maxPrimeMarkerCount;
+            playerActionManager.maxPrimeMarkerCharges = waveConfiguration[currentWaveIndex].maxPrimeMarkerCharge;
+            
+            // Validate and adjust current mode based on available marker types
+            playerActionManager.ValidateCurrentMode();
         }
 
         //playerActionManager.ConfigureUI();

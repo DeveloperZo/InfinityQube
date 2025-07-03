@@ -206,48 +206,41 @@ namespace WaveDebugSystem
 
                 // Marker limits
                 GUILayout.BeginHorizontal();
-                bool newLimitMarkers = GUILayout.Toggle(currentEditingWave.limitMarkers, "Limit Markers");
-                if (newLimitMarkers != currentEditingWave.limitMarkers)
+
+                       
+                GUILayout.Label("Light Max:", GUILayout.Width(30));
+                string maxIndividualStr = GUILayout.TextField(currentEditingWave.maxLightMarkerCount.ToString(), GUILayout.Width(30));
+                if (int.TryParse(maxIndividualStr, out int newIndividualMax) && newIndividualMax != currentEditingWave.maxLightMarkerCount)
                 {
-                    currentEditingWave.limitMarkers = newLimitMarkers;
+                    currentEditingWave.maxLightMarkerCount = Mathf.Max(1, newIndividualMax);
                     MarkAsChanged();
                 }
 
-                if (currentEditingWave.limitMarkers)
+                GUILayout.Label("Individual Charge:", GUILayout.Width(45));
+                string chargeIndividualStr = GUILayout.TextField(currentEditingWave.maxLightMarkerCharge.ToString(), GUILayout.Width(30));
+                if (int.TryParse(chargeIndividualStr, out int newIndividualCharge) && newIndividualCharge != currentEditingWave.maxLightMarkerCharge)
                 {
-                    GUILayout.Label("Individual Max:", GUILayout.Width(30));
-                    string maxIndividualStr = GUILayout.TextField(currentEditingWave.maxIndividualMarkerCount.ToString(), GUILayout.Width(30));
-                    if (int.TryParse(maxIndividualStr, out int newIndividualMax) && newIndividualMax != currentEditingWave.maxIndividualMarkerCount)
-                    {
-                        currentEditingWave.maxIndividualMarkerCount = Mathf.Max(1, newIndividualMax);
-                        MarkAsChanged();
-                    }
-
-                    GUILayout.Label("Individual Charge:", GUILayout.Width(45));
-                    string chargeIndividualStr = GUILayout.TextField(currentEditingWave.maxIndividualMarkerCharge.ToString(), GUILayout.Width(30));
-                    if (int.TryParse(chargeIndividualStr, out int newIndividualCharge) && newIndividualCharge != currentEditingWave.maxIndividualMarkerCharge)
-                    {
-                        currentEditingWave.maxIndividualMarkerCharge = Mathf.Max(1, newIndividualCharge);
-                        MarkAsChanged();
-                    }
-
-                    GUILayout.Label("Max Area:", GUILayout.Width(30));
-                    string maxAreaStr = GUILayout.TextField(currentEditingWave.maxAreaMarkerCount.ToString(), GUILayout.Width(30));
-                    if (int.TryParse(maxAreaStr, out int newAreaMax) && newAreaMax != currentEditingWave.maxAreaMarkerCount)
-                    {
-                        currentEditingWave.maxAreaMarkerCount = Mathf.Max(1, newAreaMax);
-                        MarkAsChanged();
-                    }
-                    GUILayout.Label("Area Charge:", GUILayout.Width(45));
-                    string chargeAreaStr = GUILayout.TextField(currentEditingWave.maxIndividualMarkerCharge.ToString(), GUILayout.Width(30));
-                    if (int.TryParse(chargeAreaStr, out int newAreaCharge) && newAreaCharge != currentEditingWave.maxAreaMarkerCharge)
-                    {
-                        currentEditingWave.maxAreaMarkerCharge = Mathf.Max(1, newAreaCharge);
-                        MarkAsChanged();
-                    }
-
-
+                    currentEditingWave.maxLightMarkerCharge = Mathf.Max(1, newIndividualCharge);
+                    MarkAsChanged();
                 }
+
+                GUILayout.Label("Prime Max:", GUILayout.Width(30));
+                string maxAreaStr = GUILayout.TextField(currentEditingWave.maxPrimeMarkerCount.ToString(), GUILayout.Width(30));
+                if (int.TryParse(maxAreaStr, out int newAreaMax) && newAreaMax != currentEditingWave.maxPrimeMarkerCount)
+                {
+                    currentEditingWave.maxPrimeMarkerCount = Mathf.Max(1, newAreaMax);
+                    MarkAsChanged();
+                }
+                GUILayout.Label("Prime Charges:", GUILayout.Width(45));
+                string chargeAreaStr = GUILayout.TextField(currentEditingWave.maxPrimeMarkerCharge.ToString(), GUILayout.Width(30));
+                if (int.TryParse(chargeAreaStr, out int newAreaCharge) && newAreaCharge != currentEditingWave.maxPrimeMarkerCharge)
+                {
+                    currentEditingWave.maxPrimeMarkerCharge = Mathf.Max(1, newAreaCharge);
+                    MarkAsChanged();
+                }
+
+
+                
                 GUILayout.EndHorizontal();
 
                 GUILayout.EndVertical();
@@ -423,11 +416,10 @@ namespace WaveDebugSystem
                 currentEditingWave.fastMoveInterval = 0.1f;
                 currentEditingWave.waveStartDelay = 0.75f;
                 currentEditingWave.CubesData = new List<CubeData>();
-                currentEditingWave.limitMarkers = false;
-                currentEditingWave.maxIndividualMarkerCount = 3;
-                currentEditingWave.maxIndividualMarkerCharge = 1;
-                currentEditingWave.maxAreaMarkerCount = 5;
-                currentEditingWave.maxAreaMarkerCharge = 1;
+                currentEditingWave.maxLightMarkerCount = 3;
+                currentEditingWave.maxLightMarkerCharge = 1;
+                currentEditingWave.maxPrimeMarkerCount = 5;
+                currentEditingWave.maxPrimeMarkerCharge = 1;
                 
                 hasUnsavedChanges = false;
 
@@ -458,11 +450,10 @@ namespace WaveDebugSystem
                 currentEditingWave.moveInterval = wave.moveInterval;
                 currentEditingWave.fastMoveInterval = wave.fastMoveInterval;
                 currentEditingWave.waveStartDelay = wave.waveStartDelay;
-                currentEditingWave.limitMarkers = wave.limitMarkers;
-                currentEditingWave.maxIndividualMarkerCount = wave.maxIndividualMarkerCount;
-                currentEditingWave.maxIndividualMarkerCharge = wave.maxIndividualMarkerCharge;
-                currentEditingWave.maxAreaMarkerCount = wave.maxAreaMarkerCount;
-                currentEditingWave.maxAreaMarkerCharge = wave.maxAreaMarkerCharge;
+                currentEditingWave.maxLightMarkerCharge = wave.maxLightMarkerCount;
+                currentEditingWave.maxLightMarkerCharge = wave.maxLightMarkerCharge;
+                currentEditingWave.maxPrimeMarkerCount = wave.maxPrimeMarkerCount;
+                currentEditingWave.maxPrimeMarkerCharge = wave.maxPrimeMarkerCharge;
 
                 // Deep copy CubesData
                 currentEditingWave.CubesData = new List<CubeData>();
