@@ -818,8 +818,6 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
                         return "No light marker charges available. Wait for cooldown.";
                     if (currentLightMarkers >= maxLightMarkerCharges)
                         return "Maximum light markers already placed on grid.";
-                    if (lightMarkersPlaced > maxLightMarkers)
-                        return "Light marker placement limit reached for this stage.";
                     break;
 
                 case Enumerations.MarkerMode.Heavy:
@@ -827,8 +825,6 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
                         return "No heavy marker charges available. Wait for cooldown.";
                     if (currentHeavyMarkers >= maxHeavyMarkerCharges)
                         return "Maximum heavy markers already placed on grid.";
-                    if (heavyMarkersPlaced > maxHeavyMarkers)
-                        return "Heavy marker placement limit reached for this stage.";
                     break;
 
                 case Enumerations.MarkerMode.Prime:
@@ -836,8 +832,6 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
                         return "No prime marker charges available. Wait for cooldown.";
                     if (currentPrimeMarkers >= primeMarkerOnGridLimit)
                         return "Maximum prime markers already placed on grid.";
-                    if (primeMarkersPlaced > maxPrimeMarkers)
-                        return "Prime marker placement limit reached for this stage.";
                     break;
             }
         }
@@ -1131,22 +1125,22 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
     public bool CanPlaceLightMarker()
     {
         return currentLightMarkerCharges > 0 &&
-               currentLightMarkers < maxLightMarkerCharges &&
-               lightMarkersPlaced <= maxLightMarkers;
+               currentLightMarkers < maxLightMarkerCharges;
+               // Note: lightMarkersPlaced is for statistics only, not for limiting placement
     }
 
     public bool CanPlaceHeavyMarker()
     {
         return currentHeavyMarkerCharges > 0 &&
-               currentHeavyMarkers < maxHeavyMarkerCharges &&
-               heavyMarkersPlaced <= maxHeavyMarkers;
+               currentHeavyMarkers < maxHeavyMarkerCharges;
+               // Note: heavyMarkersPlaced is for statistics only, not for limiting placement
     }
 
     public bool CanPlacePrimeMarker()
     {
         return currentPrimeMarkerCharges > 0 &&
-               currentPrimeMarkers < primeMarkerOnGridLimit &&
-               primeMarkersPlaced <= maxPrimeMarkers;
+               currentPrimeMarkers < primeMarkerOnGridLimit;
+               // Note: primeMarkersPlaced is for statistics only, not for limiting placement
     }
 
     public void ConsumeLightCharge()
@@ -1237,6 +1231,67 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
     public void ReleasePrimeMarker()
     {
         currentPrimeMarkers--;
+    }
+
+    // Methods to handle marker removal (unmarking)
+    public void OnLightMarkerRemoved()
+    {
+        // Decrement the placement counter when a marker is removed
+        if (lightMarkersPlaced > 0)
+        {
+            lightMarkersPlaced--;
+        }
+        
+        // Notify statistics manager about marker removal
+        if (PlayerStatisticsManager.Instance != null)
+        {
+            PlayerStatisticsManager.Instance.OnMarkerRemoved(playerManager.currentTilePosition, "light");
+        }
+        
+        if (EnableDebugLogs)
+        {
+            this.Log($"Light marker removed. Total placed: {lightMarkersPlaced}", EnableDebugLogs);
+        }
+    }
+
+    public void OnHeavyMarkerRemoved()
+    {
+        // Decrement the placement counter when a marker is removed
+        if (heavyMarkersPlaced > 0)
+        {
+            heavyMarkersPlaced--;
+        }
+        
+        // Notify statistics manager about marker removal
+        if (PlayerStatisticsManager.Instance != null)
+        {
+            PlayerStatisticsManager.Instance.OnMarkerRemoved(playerManager.currentTilePosition, "heavy");
+        }
+        
+        if (EnableDebugLogs)
+        {
+            this.Log($"Heavy marker removed. Total placed: {heavyMarkersPlaced}", EnableDebugLogs);
+        }
+    }
+
+    public void OnPrimeMarkerRemoved()
+    {
+        // Decrement the placement counter when a marker is removed
+        if (primeMarkersPlaced > 0)
+        {
+            primeMarkersPlaced--;
+        }
+        
+        // Notify statistics manager about marker removal
+        if (PlayerStatisticsManager.Instance != null)
+        {
+            PlayerStatisticsManager.Instance.OnMarkerRemoved(playerManager.currentTilePosition, "prime");
+        }
+        
+        if (EnableDebugLogs)
+        {
+            this.Log($"Prime marker removed. Total placed: {primeMarkersPlaced}", EnableDebugLogs);
+        }
     }
 
     private void RegenerateCharges()

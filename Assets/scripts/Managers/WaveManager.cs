@@ -13,6 +13,7 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
     [SerializeField] public GameObject[] cubePrefabs;
     [SerializeField] public PlayerManager player;
     [SerializeField] public PlayerActionManager playerActionManager;
+    [SerializeField] public GameUI gameUI;
     private AudioManager audioManager;
 
 
@@ -142,6 +143,7 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
         
         // Fire GameEvents
         GameEvents.FireWaveStart(currentWaveIndex, CurrentWave);
+        gameUI.ToggleWaveIcon(currentWaveIndex, true);
         DebugLog($"Fired GameEvents.OnWaveStart for wave {currentWaveIndex}");
         
         waveCoroutine = StartCoroutine(RunWaveCoroutine());

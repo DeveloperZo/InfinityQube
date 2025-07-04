@@ -452,7 +452,48 @@ public class PlayerStatisticsManager : MonoBehaviour, IManagerDebugInterface
         
         DebugLog($"📍 {markerType} marker placed at {position}");
     }
-    
+
+    public void OnMarkerRemoved(Vector2Int position, string markerType)
+    {
+        if (!isCollecting) return;
+
+        MarkerPlacementEvent placementEvent = null;
+
+        switch (markerType.ToLower())
+        {
+            case "light":
+                placementEvent = currentSession.markerData.lightMarkerPlacements.FirstOrDefault(x => x.position == position);
+                if (placementEvent != null)
+                {
+                    currentSession.markerData.lightMarkerPlacements.Remove(placementEvent);
+                }
+                break;
+            case "heavy":
+                placementEvent = currentSession.markerData.heavyMarkerPlacements.FirstOrDefault(x => x.position == position);
+                if (placementEvent != null)
+                {
+                    currentSession.markerData.heavyMarkerPlacements.Remove(placementEvent);
+                }
+                break;
+            case "prime":
+                placementEvent = currentSession.markerData.primeMarkerPlacements.FirstOrDefault(x => x.position == position);
+                if (placementEvent != null)
+                {
+                    currentSession.markerData.primeMarkerPlacements.Remove(placementEvent);
+                }
+                break;
+        }
+
+        string markerKey = $"{markerType}_{position.x}_{position.y}";
+        activeMarkers.Remove(markerKey);
+
+        // Add strategic analysis
+        RecordStrategicDecision("marker_removal", position, markerType);
+        RecordAction("marker_removal");
+
+        DebugLog($"🗑️ {markerType} marker removed at {position}");
+    }
+
     public void OnMarkerTriggered(Vector2Int position, string markerType, bool hitTarget, int cubesAffected)
     {
         if (!isCollecting) return;

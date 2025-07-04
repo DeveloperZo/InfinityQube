@@ -152,6 +152,7 @@ public class PlayerMarkerSystem : MonoBehaviour
             {
                 DestroyMarkerVisual(marker.visualObject);
                 actionManager.ReleaseLightMarker();
+                actionManager.OnLightMarkerRemoved(); // Decrement placement counter
                 removed = true;
                 Debug.Log($"Removed light marker at ({position.x}, {position.y})");
             }
@@ -248,6 +249,7 @@ public class PlayerMarkerSystem : MonoBehaviour
             {
                 DestroyMarkerVisual(marker.visualObject);
                 actionManager.ReleaseHeavyMarker();
+                actionManager.OnHeavyMarkerRemoved(); // Decrement placement counter
                 removed = true;
                 Debug.Log($"Removed heavy marker at ({position.x}, {position.y})");
             }
@@ -348,6 +350,7 @@ public class PlayerMarkerSystem : MonoBehaviour
                     DestroyMarkerVisual(visual);
                 }
                 actionManager.ReleasePrimeMarker();
+                actionManager.OnPrimeMarkerRemoved(); // Decrement placement counter
                 removed = true;
                 Debug.Log($"Removed prime marker at ({centerPosition.x}, {centerPosition.y})");
             }

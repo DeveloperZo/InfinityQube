@@ -43,12 +43,6 @@ public class StageManager : MonoBehaviour, IManagerDebugInterface
     private Dictionary<int, int> stageAttempts = new Dictionary<int, int>();
     #endregion
 
-    #region Events
-    public event Action<StageData> OnStageStarted;
-    public event Action<StageData, bool> OnStageCompleted; // stage, success
-    public event Action<StageData> OnStageRestarted;
-    #endregion
-
     #region Unity Lifecycle
     private void Awake()
     {
@@ -189,8 +183,6 @@ public class StageManager : MonoBehaviour, IManagerDebugInterface
         // Mark stage as started
         IsStageInProgress = true;
 
-        // Fire events
-        OnStageStarted?.Invoke(stage);
         
         // Fire GameEvents
         GameEvents.FireStageStart(stageNumber, stage);
@@ -356,9 +348,7 @@ public class StageManager : MonoBehaviour, IManagerDebugInterface
             completedStages.Add(CurrentStageIndex);
         }
 
-        // Fire events
-        OnStageCompleted?.Invoke(CurrentStage, success);
-        
+
         // Fire GameEvents
         GameEvents.FireStageComplete(CurrentStageIndex, success);
         DebugLog($"Fired GameEvents.OnStageComplete for stage {CurrentStageIndex}, success: {success}");
@@ -426,8 +416,7 @@ public class StageManager : MonoBehaviour, IManagerDebugInterface
 
         if (restartOnFailure)
         {
-            OnStageRestarted?.Invoke(CurrentStage);
-            
+
             // Fire GameEvents
             GameEvents.FireStageRestart(CurrentStageIndex);
             DebugLog($"Fired GameEvents.OnStageRestart for stage {CurrentStageIndex}");

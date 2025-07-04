@@ -498,6 +498,9 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
                     this.Log($"Cube with {effectiveType} behavior escaped", EnableDebugLogs);
                 }
 
+                // [POC] Spawn simple escape visual effect
+                SpawnEscapeEffect();
+                
                 Destroy(gameObject);
                 return false;
             }
@@ -1147,6 +1150,50 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
 
     public bool EnableDebugLogs { get; set; } = true;
 
+    /// <summary>
+    /// [POC] Spawns a simple visual effect when cube escapes
+    /// </summary>
+    private void SpawnEscapeEffect()
+    {
+        // [POC] Create a simple particle effect or animated sprite to indicate escape
+        // For now, we'll create a simple shrinking/fading cube as placeholder
+        
+        GameObject escapeEffect = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        escapeEffect.name = "[POC] CubeEscapeEffect";
+        escapeEffect.transform.position = transform.position;
+        escapeEffect.transform.localScale = transform.localScale * 0.8f;
+        
+        // Remove collider so it doesn't interfere with gameplay
+        Destroy(escapeEffect.GetComponent<Collider>());
+        
+        // Apply a semi-transparent material
+        Renderer effectRenderer = escapeEffect.GetComponent<Renderer>();
+        if (effectRenderer != null && material != null)
+        {
+            // Create a copy of the cube's material and make it semi-transparent
+            Material effectMaterial = new Material(material);
+            effectMaterial.color = new Color(effectMaterial.color.r, effectMaterial.color.g, effectMaterial.color.b, 0.5f);
+            
+            // Enable transparency if not already
+            effectMaterial.SetFloat("_Mode", 3); // Transparent mode
+            effectMaterial.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
+            effectMaterial.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+            effectMaterial.SetInt("_ZWrite", 0);
+            effectMaterial.DisableKeyword("_ALPHATEST_ON");
+            effectMaterial.EnableKeyword("_ALPHABLEND_ON");
+            effectMaterial.DisableKeyword("_ALPHAPREMULTIPLY_ON");
+            effectMaterial.renderQueue = 3000;
+            
+            effectRenderer.material = effectMaterial;
+        }
+        
+        // Add auto-destroy component
+        EscapeEffectController effectController = escapeEffect.AddComponent<EscapeEffectController>();
+        effectController.Initialize(1.5f); // Effect lasts 1.5 seconds
+        
+        this.Log("[POC] Spawned escape visual effect", EnableDebugLogs);
+    }
+    
     public string GetDebugStatus()
     {
         string status = isDestroyed ? "DESTROYED" : (isMoving ? "MOVING" : "IDLE");

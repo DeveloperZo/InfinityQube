@@ -46,19 +46,22 @@ MonoBehaviour:
   - type: 0
     position: {x: 4, y: 1}
     level: 1
-  limitMarkers: 1
-  maxIndividualMarkerCharge: 2
-  maxIndividualMarkerCount: 10
-  maxAreaMarkerCharge: 1
-  maxAreaMarkerCount: 5
+  maxLightMarkerCharge: 2
+  maxLightMarkerCount: 10
+  maxPrimeMarkerCharge: 0
+  maxPrimeMarkerCount: 0
+  maxHeavyMarkerCharge: 0
+  maxHeavyMarkerCount: 0
   waveStartDelay: 0.8
   moveInterval: 2
   fastMoveInterval: 0.1
   hasOwnSuccessCriteria: 0
   requiredCaptureCount: 0
   maxAllowedEscapes: 0
-  normalCubesCaptured: 0
-  blueCubesCaptured: 0
-  cubesEscaped: 0
+  messages: []
+  unitCubesCaptured: 0
+  primeCubesCaptured: 0
+  infinityCubesEscaped: 0
+  recursionCubesCaptured: 0
   markersPlaced: 0
   detonationsUsed: 0

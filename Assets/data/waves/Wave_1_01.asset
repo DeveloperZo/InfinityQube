@@ -46,11 +46,12 @@ MonoBehaviour:
   - type: 0
     position: {x: 0, y: 1}
     level: 1
-  limitMarkers: 1
-  maxIndividualMarkerCharge: 4
-  maxIndividualMarkerCount: 10
-  maxAreaMarkerCharge: 3
-  maxAreaMarkerCount: 5
+  maxLightMarkerCharge: 2
+  maxLightMarkerCount: 10
+  maxPrimeMarkerCharge: 0
+  maxPrimeMarkerCount: 0
+  maxHeavyMarkerCharge: 0
+  maxHeavyMarkerCount: 0
   waveStartDelay: 2.5
   moveInterval: 3.5
   fastMoveInterval: 0.1
@@ -86,8 +87,9 @@ MonoBehaviour:
     HighlightTile: 0
     highlightTiles: []
     highlightColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
-  normalCubesCaptured: 0
-  blueCubesCaptured: 0
-  cubesEscaped: 0
+  unitCubesCaptured: 0
+  primeCubesCaptured: 0
+  infinityCubesEscaped: 0
+  recursionCubesCaptured: 0
   markersPlaced: 0
   detonationsUsed: 0

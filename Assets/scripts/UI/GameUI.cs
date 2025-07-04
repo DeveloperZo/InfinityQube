@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using TMPro;
 using static Enumerations;
+using UnityEngine.UI;
 
 public class GameUI : MonoBehaviour
 {
@@ -10,6 +11,7 @@ public class GameUI : MonoBehaviour
     [SerializeField] private bool showControlsAtStart = true;
     [SerializeField] private bool showTips = true;
     [SerializeField] private KeyCode toggleUIKey = KeyCode.Tab;
+    [SerializeField] private Image[] waveIcons;
 
     // References
     private PlayerManager playerManager;
@@ -104,6 +106,15 @@ public class GameUI : MonoBehaviour
         }
 #endif
     }
+
+    public void ToggleWaveIcon(int waveIndex, bool enable)
+    {
+        if (waveIndex > waveIcons.Length) return;
+
+        
+        waveIcons[waveIndex].color = enable ? Color.white : Color.black;
+    }
+
     private void ToggleUI()
     {
         controlsVisible = !controlsVisible;
