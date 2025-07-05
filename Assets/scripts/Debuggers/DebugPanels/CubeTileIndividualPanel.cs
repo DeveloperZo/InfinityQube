@@ -177,9 +177,8 @@ public class CubeTileIndividualPanel : DebugPanelBase
         }
         
         LogAudioTest("Validating audio configuration...");
-        audioManager.ValidateAudioClipAssignments();
-        audioManager.ValidateAudioFolderStructure();
-        
+        audioManager.ValidateAudioConfiguration();
+
         var debugData = audioManager.GetDebugData();
         LogAudioTest($"Configuration valid: {debugData.GetValueOrDefault("Configuration Valid", false)}");
         LogAudioTest($"Configured cube types: {debugData.GetValueOrDefault("Configured Cube Types", "0/0")}");
@@ -207,14 +206,13 @@ public class CubeTileIndividualPanel : DebugPanelBase
         }
         
         LogAudioTest($"Testing volume controls at {testAudioVolume:F2} volume");
-        audioManager.TestVolumeAdjustment();
+
         
         // Also test the AudioManager's testing volume control
         float originalTestingVolume = audioManager.testingVolume;
         audioManager.testingVolume = testAudioVolume;
-        audioManager.TestCubeLandingSound(selectedAudioCubeType);
         audioManager.testingVolume = originalTestingVolume;
-        
+        audioManager.TestAudioSystem();
         LogAudioTest("Volume control test completed");
     }
     

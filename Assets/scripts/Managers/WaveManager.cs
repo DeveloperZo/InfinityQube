@@ -376,11 +376,6 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
             GameEvents.FireWaveProgress(currentWaveIndex, progress);
         }
         
-        // Notify AudioManager about wave step completion for composition
-        if (audioManager != null)
-        {
-            audioManager.OnWaveStepDetected(MoveStep);
-        }
     } 
 
     public void ClearAllCubes()

@@ -1,0 +1,14 @@
+[
+    {
+        "key": "ctrl+shift+t",
+        "command": "workbench.action.tasks.runTask",
+        "args": "Unity: Validate Implementation",
+        "when": "!terminalFocus"
+    },
+    {
+        "key": "ctrl+shift+b",
+        "command": "workbench.action.tasks.runTask", 
+        "args": "Unity: Quick Build Check",
+        "when": "!terminalFocus"
+    }
+]

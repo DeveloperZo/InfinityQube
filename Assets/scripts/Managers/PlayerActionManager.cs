@@ -383,6 +383,7 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
         HandleUnifiedPlaceInput();
         HandleTriggerInputs();
         HandleCubeMarkerInputs();
+        HandleDebugInput(); // Add debug input handling
     }
 
     /// <summary>
@@ -785,7 +786,40 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
                 TriggerAnimationCubeMarkerAction(playerPos, "Standard cube marker effect");
             }
         }
+    }
 
+    /// <summary>
+    /// Handles debug input for development and testing purposes
+    /// </summary>
+    private void HandleDebugInput()
+    {
+        // H key: Hello World debug message
+        if (Input.GetKeyDown(KeyCode.H))
+        {
+            ShowHelloWorldMessage();
+        }
+    }
+
+    /// <summary>
+    /// Displays a Hello World debug message following project standards
+    /// </summary>
+    private void ShowHelloWorldMessage()
+    {
+        // Use established debug logging format: [ManagerName] method: message
+        if (EnableDebugLogs)
+        {
+            this.Log("Hello World from InfinityQube! Debug message system working.", EnableDebugLogs);
+        }
+        
+        // Also show success feedback using existing UI system
+        ShowActionSuccessFeedback("Hello World! Debug system active.");
+        
+        // Trigger audio event for feedback
+        Vector3 playerWorldPos = GetWorldPositionForAudio(playerManager.currentTilePosition);
+        TriggerAudioEvent(Enumerations.GameAudioEvent.ActionSuccess, playerWorldPos, 0.5f);
+        
+        // Trigger animation for feedback
+        TriggerAnimationActionSuccess(playerWorldPos, "Hello World debug message");
     }
 
     /// <summary>

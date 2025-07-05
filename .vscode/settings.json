@@ -1,3 +1,23 @@
 {
-    "dotnet.preferCSharpExtension": true
+    "files.associations": {
+        "*.cs": "csharp"
+    },
+    "omnisharp.enableRoslynAnalyzers": true,
+    "omnisharp.useModernNet": true,
+    "files.exclude": {
+        "**/.git": true,
+        "**/.DS_Store": true,
+        "**/Thumbs.db": true,
+        "**/validation_log.txt": false,
+        "**/quick_build_log.txt": false
+    },
+    "search.exclude": {
+        "**/node_modules": true,
+        "**/bower_components": true,
+        "**/*.code-search": true,
+        "**/Library": true,
+        "**/Temp": true,
+        "**/Logs": true
+    },
+    "terminal.integrated.defaultProfile.windows": "Command Prompt"
 }

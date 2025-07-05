@@ -1,0 +1,78 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Unity: Validate Implementation",
+            "type": "shell",
+            "command": "${workspaceFolder}/Assets/scripts/validate_implementation.bat",
+            "group": "test",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "new"
+            },
+            "problemMatcher": [],
+            "detail": "Run Unity validation pipeline after implementation",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            }
+        },
+        {
+            "label": "Unity: Quick Build Check",
+            "type": "shell",
+            "command": "C:/Program Files/Unity/Hub/Editor/2022.3.47f1/Editor/Unity.exe",
+            "args": [
+                "-batchmode",
+                "-quit",
+                "-projectPath",
+                "${workspaceFolder}",
+                "-executeMethod",
+                "InfinityQube.Testing.BuildValidationSystem.ValidateBuildOnly",
+                "-logFile",
+                "quick_build_log.txt"
+            ],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "new"
+            },
+            "problemMatcher": [],
+            "detail": "Quick compilation check without full validation"
+        },
+        {
+            "label": "Unity: Open Validation Results",
+            "type": "shell",
+            "command": "code",
+            "args": [
+                "${workspaceFolder}/Assets/Docs/Technical Doc/ValidationResults.md"
+            ],
+            "group": "test",
+            "presentation": {
+                "echo": false,
+                "reveal": "silent",
+                "focus": false,
+                "panel": "shared"
+            },
+            "detail": "Open current validation results in VS Code"
+        },
+        {
+            "label": "Unity: Open Handoff Report",
+            "type": "shell",
+            "command": "code",
+            "args": [
+                "${workspaceFolder}/Assets/Docs/Technical Doc/HandoffReport.md"
+            ],
+            "group": "test",
+            "presentation": {
+                "echo": false,
+                "reveal": "silent",
+                "focus": false,
+                "panel": "shared"
+            },
+            "detail": "Open current handoff report in VS Code"
+        }
+    ]
+}

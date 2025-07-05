@@ -616,13 +616,11 @@ public class CubeIndividualPanel : DebugPanelBase
             {
                 GUILayout.Space(5);
                 GUILayout.Label($"Tile at ({testPosition.x}, {testPosition.y}):");
-                GUILayout.Label($"Can Paint Cubes: {tile.canPaintCubes}");
-                if (tile.canPaintCubes)
+                GUILayout.Label($"Can Paint Cubes: {tile.CanPaintCubes}");
+                if (tile.CanPaintCubes)
                 {
-                    GUILayout.Label($"Paint Status: {tile.paintStatus}");
-                    GUILayout.Label($"Paint Duration: {tile.paintDuration}");
-                    GUILayout.Label($"On Landing: {tile.paintOnLanding}");
-                    GUILayout.Label($"On Exit: {tile.paintOnExit}");
+                    GUILayout.Label($"Paint Status: {tile.PaintStatus}");
+                    GUILayout.Label($"Paint Duration: {tile.PaintDuration}");
                 }
             }
         }

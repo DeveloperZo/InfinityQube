@@ -1,0 +1,14 @@
+{
+    "recommendations": [
+        "ms-dotnettools.csharp",
+        "ms-dotnettools.csdevkit",
+        "visualstudiotoolsforunity.vstuc",
+        "ms-vscode.vscode-json",
+        "redhat.vscode-yaml",
+        "ms-vscode.powershell",
+        "ms-vscode.hexeditor",
+        "formulahendry.auto-rename-tag",
+        "bradlc.vscode-tailwindcss",
+        "esbenp.prettier-vscode"
+    ]
+}

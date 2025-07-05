@@ -29,7 +29,7 @@ public class AudioEventTest : MonoBehaviour
         
         // Test with AudioEventData
         AudioEventData eventData = new AudioEventData(Enumerations.GameAudioEvent.WaveStarted, Vector3.zero, 0.8f);
-        AudioManager.Instance.TriggerAudioEvent(eventData);
+        AudioManager.Instance.TriggerAudioEvent(eventData.eventType, eventData.worldPosition);
         
         Debug.Log("[AudioEventTest] Test completed successfully!");
     }

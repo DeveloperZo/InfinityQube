@@ -1,0 +1,29 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Unity Editor",
+            "type": "unity",
+            "request": "launch",
+            "path": "${workspaceFolder}/Library/EditorInstance.json"
+        },
+        {
+            "name": "Unity Player (Windows)",
+            "type": "unity",
+            "request": "launch",
+            "path": "${workspaceFolder}/Library/EditorInstance.json",
+            "target": "player"
+        },
+        {
+            "name": "Attach to Unity Editor",
+            "type": "unity",
+            "request": "attach"
+        },
+        {
+            "name": "Unity Editor Debug (C# Script Debugging)",
+            "type": "coreclr",
+            "request": "attach",
+            "processId": "${command:pickProcess}"
+        }
+    ]
+}
