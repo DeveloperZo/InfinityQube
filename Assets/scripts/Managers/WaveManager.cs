@@ -823,7 +823,7 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
             playerActionManager.maxLightMarkerCharges = waveConfiguration[currentWaveIndex].maxLightMarkerCharge;
 
             playerActionManager.maxPrimeMarkers = waveConfiguration[currentWaveIndex].maxPrimeMarkerCount;
-            playerActionManager.maxPrimeMarkerCharges = waveConfiguration[currentWaveIndex].maxLightMarkerCharge;
+            playerActionManager.maxPrimeMarkerCharges = waveConfiguration[currentWaveIndex].maxPrimeMarkerCharge;
             
             // Validate and adjust current mode based on available marker types
             playerActionManager.ValidateCurrentMode();

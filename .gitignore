@@ -78,3 +78,27 @@ crashlytics-build.properties
 
 # Code Index MCP cache directory
 .code_indexer/
+
+# Execution Documentation (auto-generated)
+/Assets/Docs/Execution/
+*.ValidationResult.md
+*.SummaryReport.md
+
+# Build validation logs
+quick_build_log.txt
+validation_log.txt
+
+# Temporary script outputs
+shrimpScripts/temp/
+shrimpScripts/output/
+
+# Python cache and temp files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Local development files
+.local/
+.tmp/
+temp_*

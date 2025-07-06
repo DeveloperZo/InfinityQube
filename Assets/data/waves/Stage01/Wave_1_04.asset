@@ -47,9 +47,9 @@ MonoBehaviour:
     position: {x: 4, y: 1}
     level: 1
   maxLightMarkerCharge: 2
-  maxLightMarkerCount: 0
-  maxPrimeMarkerCharge: 0
-  maxPrimeMarkerCount: 0
+  maxLightMarkerCount: 10
+  maxPrimeMarkerCharge: 1
+  maxPrimeMarkerCount: 5
   maxHeavyMarkerCharge: 0
   maxHeavyMarkerCount: 0
   waveStartDelay: 0.8
@@ -59,20 +59,14 @@ MonoBehaviour:
   requiredCaptureCount: 0
   maxAllowedEscapes: 0
   messages:
-  - Message: 'DEV: Black cubes cannot be captured. Player should move to avoid collision.'
-    DisplayMoveStep: 2
-    RequirePause: 1
-    AutoHideDelay: 0
+  - Message: Prime Mode [2] can capture multiple cubes. Use wisely as cooldowns are
+      long.
+    DisplayMoveStep: 0
+    RequirePause: 0
+    AutoHideDelay: 5
     HighlightTile: 0
     highlightTiles: []
-    highlightColor: {r: 0, g: 0, b: 0, a: 0}
-  - Message: 'DEV: Black cube escape event'
-    DisplayMoveStep: -1
-    RequirePause: 1
-    AutoHideDelay: 0
-    HighlightTile: 0
-    highlightTiles: []
-    highlightColor: {r: 0, g: 0, b: 0, a: 0}
+    highlightColor: {r: 1, g: 1, b: 0, a: 1}
   unitCubesCaptured: 0
   primeCubesCaptured: 0
   infinityCubesEscaped: 0

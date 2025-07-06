@@ -34,9 +34,9 @@ public class PlayerActionUI : MonoBehaviour
     [Header("Cooldown Settings")]
     [SerializeField] private PlayerActionManager playerActionManager;
     [SerializeField] private AnimationTriggerManager animationTriggerManager;
-    public float lightMarkerCooldownTime = 2f;
-    public float heavyMarkerCooldownTime = 5f;
-    public float primeMarkerCooldownTime = 4f;
+    public float lightMarkerCooldownTime = 6f;
+    public float heavyMarkerCooldownTime = 8f;
+    public float primeMarkerCooldownTime = 12f;
     // Cube markers don't have cooldowns
 
     // Cached references
