@@ -591,11 +591,7 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
         {
             Vector2Int playerPos = playerManager.currentTilePosition;
 
-            if (markerSystem.HasLightMarkerAt(playerPos))
-            {
-                markerSystem.RemoveLightMarkerAt(playerPos);
-            }
-            else if (CanPlaceLightMarker())
+            if (CanPlaceLightMarker())
             {
                 markerSystem.PlaceLightMarker(playerPos);
             }
@@ -609,11 +605,7 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
         {
             Vector2Int playerPos = playerManager.currentTilePosition;
 
-            if (markerSystem.HasHeavyMarkerAt(playerPos))
-            {
-                markerSystem.RemoveHeavyMarkerAt(playerPos);
-            }
-            else if (CanPlaceHeavyMarker())
+            if (CanPlaceHeavyMarker())
             {
                 markerSystem.PlaceHeavyMarker(playerPos);
             }
@@ -627,11 +619,7 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
         {
             Vector2Int playerPos = playerManager.currentTilePosition;
 
-            if (markerSystem.HasPrimeMarkerAt(playerPos))
-            {
-                markerSystem.RemovePrimeMarkerAt(playerPos);
-            }
-            else if (CanPlacePrimeMarker())
+            if (CanPlacePrimeMarker())
             {
                 markerSystem.PlacePrimeMarker(playerPos, primeMarkerSize);
             }

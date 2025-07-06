@@ -201,10 +201,10 @@ MonoBehaviour:
   - {x: 0.4993727, y: 0.2260287}
   - {x: 0.7460445, y: 0.6894621}
   - {x: 0.49923542, y: 0.5756422}
-  - {x: 0.49903738, y: 0.22651695}
-  - {x: 0.2576531, y: 0.35807484}
-  - {x: 0.49838257, y: 0.5755771}
-  - {x: 0.25775173, y: 0.69080883}
+  - {x: 0.4980036, y: 0.22651695}
+  - {x: 0.2566193, y: 0.35807484}
+  - {x: 0.4973488, y: 0.5755771}
+  - {x: 0.25671795, y: 0.69080883}
   - {x: 0.7457936, y: 0.35417584}
   - {x: 0.49938342, y: 0.22602965}
   - {x: 0.7459348, y: 0.6895124}
@@ -257,7 +257,7 @@ MonoBehaviour:
   m_PreserveMeshAssetOnDestroy: 0
   assetGuid: 
   m_Mesh: {fileID: 0}
-  m_VersionIndex: 4113
+  m_VersionIndex: 4122
   m_IsSelectable: 1
   m_SelectedFaces: 
   m_SelectedEdges: []
@@ -383,6 +383,8 @@ MonoBehaviour:
   currentHitPoints: 1
   maxHitPoints: 1
   moveCount: 0
+  cubeAudioConfig: {fileID: 0}
+  cubeAudioSource: {fileID: 0}
   moveDuration: 0.25
   squashDuration: 0.25
   isRainingCube: 0

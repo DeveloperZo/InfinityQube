@@ -39,6 +39,13 @@
 - **Rating**: 9/10
 - **Notes**: Creates immediate vs delayed consequence decisions, uses existing systems cleverly
 
+### Marker Overwrite/Replace System
+- **Description**: Allow placing a marker over an existing marker to remove the old one
+- **Unique Value**: More intuitive than toggle - visually shows where marker will be placed/removed, maintains single-action simplicity
+- **Constraints**: Needs clear visual feedback to show what will happen
+- **Rating**: 7/10
+- **Notes**: Alternative to toggle system that feels more natural, could highlight existing markers when targeting
+
 ---
 
 **Last Updated:** July 04, 2025  

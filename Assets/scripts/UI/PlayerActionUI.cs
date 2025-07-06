@@ -14,7 +14,7 @@ public class PlayerActionUI : MonoBehaviour
     [SerializeField] private TextMeshProUGUI lightChargeText;
     [SerializeField] private TextMeshProUGUI heavyChargeText;
     [SerializeField] private TextMeshProUGUI primeChargeText;
-    [SerializeField] private TextMeshProUGUI cubeChargeText;
+    // Cube markers don't need UI elements
 
     [Header("UI Colors")]
     [SerializeField] private Color segmentFullColor = new Color(1f, 0.7f, 0.2f, 1f);     // Orange when charged
@@ -23,7 +23,7 @@ public class PlayerActionUI : MonoBehaviour
     [SerializeField] private Color segmentEmptyColor = new Color(0.3f, 0.3f, 0.3f, 0.3f);  // Gray when empty
     [SerializeField] private Color heavyMarkerColor = new Color(1f, 0.3f, 0.3f, 1f);      // Red for heavy markers
     [SerializeField] private Color primeMarkerColor = new Color(0.8f, 0.2f, 1f, 1f);      // Purple for prime markers
-    [SerializeField] private Color cubeMarkerColor = new Color(0.2f, 1f, 0.2f, 1f);       // Green for cube markers
+    // Cube markers don't need UI colors
     [SerializeField] private Color[] modeColors = new Color[3] 
     {
         new Color(1f, 0.3f, 0.3f, 1f),      // Red for Light mode (index 0 = Light=1)
@@ -37,7 +37,7 @@ public class PlayerActionUI : MonoBehaviour
     public float lightMarkerCooldownTime = 2f;
     public float heavyMarkerCooldownTime = 5f;
     public float primeMarkerCooldownTime = 4f;
-    public float cubeMarkerCooldownTime = 1f;
+    // Cube markers don't have cooldowns
 
     // Cached references
     public int lightCharges;
@@ -46,8 +46,7 @@ public class PlayerActionUI : MonoBehaviour
     public int heavyMaxCharges;
     public int primeCharges;
     public int primeMaxCharges;
-    public int cubeCharges;
-    public int cubeMaxCharges;
+    // Cube markers don't need cached charge values
 
     void Start()
     {
@@ -62,7 +61,7 @@ public class PlayerActionUI : MonoBehaviour
             lightMarkerCooldownTime = playerActionManager.lightMarkerCooldown;
             heavyMarkerCooldownTime = playerActionManager.heavyMarkerCooldown;
             primeMarkerCooldownTime = playerActionManager.primeMarkerCooldown;
-            cubeMarkerCooldownTime = 1f; // Default value for cube markers
+            // Cube markers don't need cooldown time
         }
 
         UpdateDisplay();
@@ -78,13 +77,13 @@ public class PlayerActionUI : MonoBehaviour
         // Check if charges have changed to trigger animations
         bool chargesChanged = (lightCharges != currentLightCharges) || 
                              (heavyCharges != currentHeavyCharges) || 
-                             (primeCharges != currentPrimeCharges) || 
-                             (cubeCharges != currentCubeCharges);
+                             (primeCharges != currentPrimeCharges);
+                             // Cube markers don't have UI updates
 
         lightCharges = currentLightCharges;
         heavyCharges = currentHeavyCharges;
         primeCharges = currentPrimeCharges;
-        cubeCharges = currentCubeCharges;
+        // Cube markers don't need to be cached for UI
 
         // Set max charges if not already set
         if (lightMaxCharges == 0 && playerActionManager != null)
@@ -119,7 +118,7 @@ public class PlayerActionUI : MonoBehaviour
         lightMarkerCooldownTime = lightCooldown;
         heavyMarkerCooldownTime = heavyCooldown;
         primeMarkerCooldownTime = primeCooldown;
-        cubeMarkerCooldownTime = cubeCooldown;
+        // Cube markers don't have cooldowns in UI
     }
 
     // Backward compatibility method
@@ -164,53 +163,90 @@ public class PlayerActionUI : MonoBehaviour
     {
         if (playerActionManager == null) return;
 
+        // Get current charges directly from PlayerActionManager for real-time display
+        int currentLightCharges = playerActionManager.GetCurrentLightCharges();
+        int currentHeavyCharges = playerActionManager.GetCurrentHeavyCharges();
+        int currentPrimeCharges = playerActionManager.GetCurrentPrimeCharges();
+        // Cube markers don't need UI updates
+
+        // Debug: Always log current values to see what's happening
+        Debug.Log($"[PlayerActionUI] Current values - Light: {currentLightCharges}/{lightMaxCharges}, Heavy: {currentHeavyCharges}/{heavyMaxCharges}, Prime: {currentPrimeCharges}/{primeMaxCharges}");
+
+        // Only log significant charge changes to avoid spam
+        if (currentLightCharges != lightCharges || currentHeavyCharges != heavyCharges || currentPrimeCharges != primeCharges)
+        {
+            // Only log when charges actually decrease (used) or when they go from 0 to 1 (regenerated)
+            if ((currentLightCharges < lightCharges) || (currentLightCharges > 0 && lightCharges == 0) ||
+                (currentHeavyCharges < heavyCharges) || (currentHeavyCharges > 0 && heavyCharges == 0) ||
+                (currentPrimeCharges < primeCharges) || (currentPrimeCharges > 0 && primeCharges == 0))
+            {
+                Debug.Log($"[PlayerActionUI] Charges updated - Light: {lightCharges}→{currentLightCharges}, Heavy: {heavyCharges}→{currentHeavyCharges}, Prime: {primeCharges}→{currentPrimeCharges}");
+            }
+        }
+
+        // Update cached values for other methods that might need them
+        lightCharges = currentLightCharges;
+        heavyCharges = currentHeavyCharges;
+        primeCharges = currentPrimeCharges;
+        // Cube markers don't need cached values
+
         // Calculate cooldown progress for UI segments
+        float lightCooldownRemaining = playerActionManager.GetLightMarkerCooldownRemaining();
+        float heavyCooldownRemaining = playerActionManager.GetHeavyMarkerCooldownRemaining();
+        float primeCooldownRemaining = playerActionManager.GetPrimeMarkerCooldownRemaining();
+
         float lightCooldownProgress = CalculateCooldownProgress(
-            lightCharges,
+            currentLightCharges,
             lightMaxCharges,
-            playerActionManager.GetLightMarkerCooldownRemaining(),
+            lightCooldownRemaining,
             lightMarkerCooldownTime
         );
 
         float heavyCooldownProgress = CalculateCooldownProgress(
-            heavyCharges,
+            currentHeavyCharges,
             heavyMaxCharges,
-            playerActionManager.GetHeavyMarkerCooldownRemaining(),
+            heavyCooldownRemaining,
             heavyMarkerCooldownTime
         );
 
         float primeCooldownProgress = CalculateCooldownProgress(
-            primeCharges,
+            currentPrimeCharges,
             primeMaxCharges,
-            playerActionManager.GetPrimeMarkerCooldownRemaining(),
+            primeCooldownRemaining,
             primeMarkerCooldownTime
         );
 
-        float cubeCooldownProgress = CalculateCooldownProgress(
-            cubeCharges,
-            cubeMaxCharges,
-            0f, // Cube markers don't have cooldowns in the same way
-            cubeMarkerCooldownTime
-        );
+        // Debug cooldown information only when cooldowns start (to avoid spam)
+        // This will only log once per cooldown cycle when cooldown is near max time
+        if ((lightCooldownRemaining > lightMarkerCooldownTime - 0.1f) ||
+            (heavyCooldownRemaining > heavyMarkerCooldownTime - 0.1f) ||
+            (primeCooldownRemaining > primeMarkerCooldownTime - 0.1f))
+        {
+            Debug.Log($"[PlayerActionUI] Cooldowns started - Light: {lightCooldownRemaining:F1}s, Heavy: {heavyCooldownRemaining:F1}s, Prime: {primeCooldownRemaining:F1}s");
+        }
+
+        // Cube markers don't need cooldown progress calculations
 
         // Update Light Marker UI
         UpdateMarkerUI(
-            lightCharges,
+            currentLightCharges,
             lightMaxCharges,
             lightCooldownProgress,
             lightMarkerSegments,
             lightChargeText,
-            segmentFullColor
+            segmentFullColor,
+            lightCooldownRemaining
         );
 
         // Update Heavy Marker UI
         UpdateMarkerUI(
-            heavyCharges,
+            currentHeavyCharges,
             heavyMaxCharges,
             heavyCooldownProgress,
             heavyMarkerSegments,
             heavyChargeText,
-            heavyMarkerColor
+            heavyMarkerColor,
+            heavyCooldownRemaining
         );
 
         // Update Prime Marker UI - only show if prime markers are available
@@ -219,12 +255,13 @@ public class PlayerActionUI : MonoBehaviour
         {
             PrimeMarkerUI.SetActive(true);
             UpdateMarkerUI(
-                primeCharges,
+                currentPrimeCharges,
                 primeMaxCharges,
                 primeCooldownProgress,
                 primeMarkerSegments,
                 primeChargeText,
-                primeMarkerColor
+                primeMarkerColor,
+                primeCooldownRemaining
             );
         }
         else
@@ -232,7 +269,6 @@ public class PlayerActionUI : MonoBehaviour
             // Hide prime marker UI elements when unavailable
             PrimeMarkerUI.SetActive(false);
         }
-
 
         // Update Mode Indicator UI
         if (playerActionManager != null)
@@ -243,14 +279,20 @@ public class PlayerActionUI : MonoBehaviour
 
     private float CalculateCooldownProgress(int charges, int maxCharges, float cooldownRemaining, float cooldownTime)
     {
-        // If at max charges, show as fully charged
+        // If at max charges, no charging in progress
         if (charges >= maxCharges)
         {
-            return 1f;
+            return 1f; // Fully charged
         }
 
         // If no cooldown time, show as ready
         if (cooldownTime <= 0f)
+        {
+            return 1f;
+        }
+
+        // If no cooldown remaining, charge is ready
+        if (cooldownRemaining <= 0f)
         {
             return 1f;
         }
@@ -261,59 +303,107 @@ public class PlayerActionUI : MonoBehaviour
     }
 
     private void UpdateMarkerUI(int charges, int maxCharges, float cooldownProgress,
-                               Image[] segments, TextMeshProUGUI chargeText, Color fullChargeColor)
+                               Image[] segments, TextMeshProUGUI chargeText, Color fullChargeColor,
+                               float cooldownRemaining)
     {
-        // Update charge text
-        if (chargeText != null)
-            chargeText.text = charges.ToString();
-
-        if (charges >= maxCharges)
+        // Check if segments array is properly assigned
+        if (segments == null || segments.Length == 0)
         {
-            // Full charges - all segments with marker-specific color
-            foreach (var segment in segments)
+            Debug.LogError($"[UpdateMarkerUI] Segments array is null or empty! Length: {(segments?.Length ?? 0)}");
+            return;
+        }
+
+        // Update charge text with cooldown information
+        if (chargeText != null)
+        {
+            if (charges >= maxCharges)
             {
-                if (segment != null)
+                chargeText.text = $"{charges}/{maxCharges}";
+            }
+            else
+            {
+                // Show cooldown remaining when not at max charges
+                if (cooldownRemaining > 0f)
                 {
-                    segment.color = fullChargeColor;
-                    segment.gameObject.SetActive(true);
+                    chargeText.text = $"{charges}/{maxCharges} ({cooldownRemaining:F1}s)";
+                }
+                else
+                {
+                    chargeText.text = $"{charges}/{maxCharges}";
                 }
             }
         }
-        else
+
+        if (charges >= maxCharges)
         {
-            // Charging state - show progress based on cooldown
-            int activeSegments = Mathf.FloorToInt(cooldownProgress * segments.Length);
-
-            // Determine charging color based on current charges
-            Color chargingColor = charges == 0 ? segmentFirstChargeColor : segmentChargingColor;
-
+            // At max charges - all segments should be full color (ColorA)
+            for (int i = 0; i < segments.Length; i++)
+            {
+                if (segments[i] != null)
+                {
+                    segments[i].color = fullChargeColor; // ColorA
+                    segments[i].gameObject.SetActive(true);
+                }
+            }
+        }
+        else if (cooldownRemaining > 0f)
+        {
+            // Charging state - segments fill proportionally based on cooldown progress
+            // cooldownProgress goes from 0 (just started) to 1 (almost ready)
+            float segmentProgress = cooldownProgress * segments.Length;
+            int filledSegments = Mathf.FloorToInt(segmentProgress);
+            float partialSegmentProgress = segmentProgress - filledSegments;
+            
+            // Empty segment color depends on current charge state
+            Color emptyColor = charges == 0 ? segmentFirstChargeColor : segmentChargingColor; // ColorC if 0 charges, ColorB if >0 charges
+            
             for (int i = 0; i < segments.Length; i++)
             {
                 if (segments[i] == null) continue;
 
-                if (i < activeSegments)
+                if (i < filledSegments)
                 {
-                    // Filled segments - use appropriate charging color
-                    segments[i].color = chargingColor;
+                    // Fully filled segments during cooldown use ColorA
+                    segments[i].color = fullChargeColor; // ColorA
                 }
-                else if (i == activeSegments && cooldownProgress < 1.0f)
+                else if (i == filledSegments && partialSegmentProgress > 0f)
                 {
-                    // Currently filling segment - lerp from empty to charging color
-                    float segmentProgress = (cooldownProgress * segments.Length) % 1;
-                    segments[i].color = Color.Lerp(segmentEmptyColor, chargingColor, segmentProgress);
+                    // Partially filled segment - lerp from empty color to ColorA
+                    segments[i].color = Color.Lerp(emptyColor, fullChargeColor, partialSegmentProgress);
                 }
                 else
                 {
-                    // Empty segments - gray
-                    segments[i].color = segmentEmptyColor;
+                    // Empty segments use ColorB or ColorC based on charge state
+                    segments[i].color = emptyColor;
+                }
+
+                segments[i].gameObject.SetActive(true);
+            }
+        }
+        else
+        {
+            // No cooldown but not at max charges - show existing charges as full color, rest empty
+            Color emptyColor = charges == 0 ? segmentFirstChargeColor : segmentChargingColor; // ColorC if 0 charges, ColorB if >0 charges
+            
+            for (int i = 0; i < segments.Length; i++)
+            {
+                if (segments[i] == null) continue;
+
+                if (i < charges)
+                {
+                    // Existing charges shown as full color (ColorA)
+                    segments[i].color = fullChargeColor; // ColorA
+                }
+                else
+                {
+                    // Empty segments use ColorB or ColorC based on charge state
+                    segments[i].color = emptyColor;
                 }
 
                 segments[i].gameObject.SetActive(true);
             }
         }
     }
-
-
 
     private void UpdateModeIndicator(Enumerations.MarkerMode currentMode)
     {
@@ -401,10 +491,7 @@ public class PlayerActionUI : MonoBehaviour
         );
     }
 
-    public float GetCubeCooldownProgress()
-    {
-        return 1f; // Cube markers are always ready when available
-    }
+    // Cube markers don't need cooldown progress getters
 
     // Backward compatibility getter
     public float GetAreaCooldownProgress() => GetPrimeCooldownProgress();
@@ -412,7 +499,7 @@ public class PlayerActionUI : MonoBehaviour
     public bool IsLightCharging() => lightCharges < lightMaxCharges;
     public bool IsHeavyCharging() => heavyCharges < heavyMaxCharges;
     public bool IsPrimeCharging() => primeCharges < primeMaxCharges;
-    public bool IsCubeCharging() => false; // Cube markers don't have traditional charging
+    // Cube markers don't need charging state checks
     
     // Backward compatibility property
     public bool IsAreaCharging() => IsPrimeCharging();
@@ -423,7 +510,7 @@ public class PlayerActionUI : MonoBehaviour
         lightMaxCharges = maxLight;
         heavyMaxCharges = maxHeavy;
         primeMaxCharges = maxPrime;
-        cubeMaxCharges = maxCube;
+        // Cube markers don't need max charges stored
     }
 
     // Backward compatibility method

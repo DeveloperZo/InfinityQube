@@ -59,28 +59,28 @@ MonoBehaviour:
   requiredCaptureCount: 0
   maxAllowedEscapes: 0
   messages:
-  - Message: '[F] marks tiles ahead [R] triggers marked tiles'
+  - Message: '[F] marks tiles you are standing on'
     DisplayMoveStep: 0
     RequirePause: 0
     AutoHideDelay: 6
     HighlightTile: 0
     highlightTiles: []
     highlightColor: {r: 1, g: 1, b: 0, a: 1}
-  - Message: Press [1] or [2] to change mode
-    DisplayMoveStep: 1
+  - Message: ' [R] triggers mark and can capture cubes'
+    DisplayMoveStep: 0
     RequirePause: 0
-    AutoHideDelay: 5
+    AutoHideDelay: 6
     HighlightTile: 0
     highlightTiles: []
     highlightColor: {r: 1, g: 1, b: 0, a: 1}
-  - Message: Beware of the cubes approaching
+  - Message: Avoid being crushed and capture the cubes
     DisplayMoveStep: 2
     RequirePause: 0
     AutoHideDelay: 4
     HighlightTile: 0
     highlightTiles: []
     highlightColor: {r: 1, g: 1, b: 0, a: 1}
-  - Message: 'Black cubes can''t be captured. I wonder where they go? '
+  - Message: 'Infinity cubes can''t be captured. '
     DisplayMoveStep: 15
     RequirePause: 0
     AutoHideDelay: 5

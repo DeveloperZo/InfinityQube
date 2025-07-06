@@ -1,0 +1,18 @@
+{
+
+    "servers": {
+    "shrimp-task-manager": {
+        "command": "node",
+            "args": [
+                "C:/Users/awill/shrimp-task-manager-ui/mcp-shrimp-task-manager/dist/index.js",
+                "--config", "C:/Users/awill/shrimp-task-manager-ui/mcp-shrimp-task-manager/data/shrimp.toml",
+                "--rules", "C:/Users/awill/shrimp-task-manager-ui/mcp-shrimp-task-manager/data/shrimp-rules.md"
+            ],
+            "env": {
+                "DATA_DIR": "C:/Users/awill/shrimp-task-manager-ui/mcp-shrimp-task-manager/data",
+                "TEMPLATES_USE": "infinityqube"
+            }
+        },
+    }
+    
+}

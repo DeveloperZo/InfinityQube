@@ -579,8 +579,7 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
         // Replace the grid reduction call with row removal
         if (cubeType == Enumerations.CubeType.Unit)
         {
-            this.Log($"Normal cube escaped - triggering bottom row removal", showDebugInfo);
-            grid.RemoveBottomRow();
+            this.Log($"Normal cube escaped", showDebugInfo);
         }
     }
 
