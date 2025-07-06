@@ -974,4 +974,5 @@ namespace InfinityQube.Testing
             return (successCount / 3.0f) * 100.0f;
         }
     }
+    #endregion
 }

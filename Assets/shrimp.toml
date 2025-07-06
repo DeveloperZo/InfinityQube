@@ -53,7 +53,7 @@ unity_version = "2022.3.21f1" # Lock Unity version for consistency
 
 [build]
 # Unity build configuration
-unity_path = "/c/Program Files/Unity/Hub/Editor/2022.3.21f1/Editor/Unity.exe"
+unity_path = "/c/PROGRA~1/Unity/Hub/Editor/2022.3.21f1/Editor/Unity.exe"
 project_path = "C:\\Users\\awill\\Unity\\InfinityQube"
 build_target = "Win64"
 output_path = "Builds"

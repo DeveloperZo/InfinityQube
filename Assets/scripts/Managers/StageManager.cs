@@ -331,16 +331,6 @@ public class StageManager : MonoBehaviour, IManagerDebugInterface
         CheckStageCompletion();
     }
 
-    public void OnCubeEscaped(Enumerations.CubeType cubeType)
-    {
-        if (!IsStageInProgress) return;
-
-        escapedCubeCount++;
-        DebugLog($"Cube escaped: {cubeType}. Total escapes: {escapedCubeCount}");
-
-        CheckStageCompletion();
-    }
-
     private void CheckStageCompletion()
     {
         if (CurrentStage == null) return;
@@ -354,11 +344,8 @@ public class StageManager : MonoBehaviour, IManagerDebugInterface
             success = true;
         }
 
-        // Check failure conditions
-        if (CurrentStage.maxAllowedEscapes >= 0 && escapedCubeCount > CurrentStage.maxAllowedEscapes)
-        {
-            failure = true;
-        }
+        // Note: Escape-based failure is now handled at Wave level
+        // Waves will trigger OnWaveFailed event if their escape limits are exceeded
 
         if (success && !failure)
         {
@@ -605,4 +592,35 @@ public class StageManager : MonoBehaviour, IManagerDebugInterface
         }
     }
     #endregion
+
+    /// <summary>
+    /// Shows feedback to the player when a cube escapes.
+    /// Uses the existing WaveManager message system for consistent UI.
+    /// </summary>
+    /// <param name="cubeType">Type of cube that escaped</param>
+    private void ShowEscapeFeedback(Enumerations.CubeType cubeType)
+    {
+        if (waveManager == null || !waveManager.showMessages) return;
+
+        int remaining = CurrentStage.maxAllowedEscapes - escapedCubeCount;
+        string feedbackMessage = "";
+
+        if (remaining > 0)
+        {
+            feedbackMessage = $"⚠️ Cube Escaped!\n{cubeType} cube fell off the grid.\n\nEscapes: {escapedCubeCount}/{CurrentStage.maxAllowedEscapes}\nRemaining: {remaining}";
+        }
+        else
+        {
+            feedbackMessage = $"🚨 STAGE FAILED!\nToo many cubes escaped!\n\nFinal count: {escapedCubeCount}/{CurrentStage.maxAllowedEscapes}";
+        }
+
+        var escapeMessage = new WaveMessage
+        {
+            Message = feedbackMessage,
+
+        };
+
+        waveManager.ShowMessage(escapeMessage);
+        DebugLog($"📢 Escape feedback shown: {feedbackMessage.Replace('\n', ' ')}");
+    }
 }

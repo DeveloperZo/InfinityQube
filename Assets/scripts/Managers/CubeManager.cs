@@ -464,15 +464,24 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
         }
     }
 
+    /// <summary>
+    /// Moves the cube forward (down) by one position. This is the core movement logic.
+    /// CUBE ESCAPE MECHANIC: When a cube moves below grid bounds (position.y < 0), it "escapes".
+    /// Escape triggers failure conditions and affects stage progression.
+    /// </summary>
+    /// <returns>True if cube continues moving, false if cube escapes or is destroyed</returns>
     public bool MoveForward()
     {
         if (isMoving || isDestroyed) return true;
 
         this.Log($"Moving cube {GetEffectiveType()} from ({position.x}, {position.y}) forward", EnableDebugLogs);
 
+        // CUBE ESCAPE CONDITION: Check if cube is outside grid bounds
+        // Primary escape condition: position.y < 0 (below grid)
+        // Secondary escape conditions: position.x < 0 or position.x >= grid.Width (outside horizontal bounds)
         if (position.y < 0 || position.x < 0 || position.x >= grid.Width)
         {
-            this.Log($"Cube {GetEffectiveType()} at ({position.x}, {position.y}) is off-grid. Grid bounds: {grid.Width}x{grid.Height}", EnableDebugLogs);
+            this.Log($"🚨 CUBE ESCAPE: {GetEffectiveType()} at ({position.x}, {position.y}) is off-grid. Grid bounds: {grid.Width}x{grid.Height}", EnableDebugLogs);
 
             if (!isRainingCube || moveCountRemaining <= 0)
             {
@@ -480,29 +489,32 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
 
                 if (effectiveType == CubeType.Infinity)
                 {
-                    this.Log("Cube with corrupted face escaped (acts as infinity)", EnableDebugLogs);
+                    this.Log("🌟 Infinity cube escaped (special behavior - no penalty)", EnableDebugLogs);
                 }
                 else
                 {
+                    // CUBE ESCAPE PROCESSING: Notify Wave system of cube escape
+                    // Wave handles escape counting and failure conditions
                     WaveManager waveManager = FindObjectOfType<WaveManager>();
                     if (waveManager != null)
                     {
                         waveManager.OnNonBlackCubeProcessed(effectiveType, false);
-                        waveManager.OnCubeEscaped(effectiveType);
+                        waveManager.OnCubeEscaped(effectiveType); // Wave handles escape logic
                     }
                     
-                    // Fire escaped event before destruction
+                    // Fire escaped event for general game systems (audio, effects, statistics)
                     GameEvents.FireCubeEscaped(position, effectiveType);
-                    this.Log($"Fired GameEvents.OnCubeEscaped for {effectiveType} cube at ({position.x}, {position.y})", EnableDebugLogs);
+                    this.Log($"🔥 Fired GameEvents.OnCubeEscaped for {effectiveType} cube at ({position.x}, {position.y})", EnableDebugLogs);
                     
-                    this.Log($"Cube with {effectiveType} behavior escaped", EnableDebugLogs);
+                    this.Log($"❌ CUBE ESCAPED: {effectiveType} cube has left the play area", EnableDebugLogs);
                 }
 
                 // [POC] Spawn simple escape visual effect
                 SpawnEscapeEffect();
                 
+                // Destroy the escaped cube
                 Destroy(gameObject);
-                return false;
+                return false; // Cube has escaped - movement chain broken
             }
         }
 

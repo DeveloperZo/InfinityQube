@@ -21,7 +21,7 @@
         {
             "label": "Unity: Quick Build Check",
             "type": "shell",
-            "command": "C:/Program Files/Unity/Hub/Editor/2022.3.47f1/Editor/Unity.exe",
+            "command": "C:/PROGRA~1/Unity/Hub/Editor/2022.3.47f1/Editor/Unity.exe",
             "args": [
                 "-batchmode",
                 "-quit",

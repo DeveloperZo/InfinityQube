@@ -612,11 +612,21 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
         NotifyStageManager(sm => sm.OnCubeCaptured(cubeType));
     }
 
+    /// <summary>
+    /// CUBE ESCAPE HANDLER: Called when a cube escapes the play area.
+    /// This is where the escape mechanic is processed at the Wave level.
+    /// Wave determines if escape threshold is exceeded and triggers wave failure if needed.
+    /// </summary>
+    /// <param name="cubeType">Type of cube that escaped</param>
     public void OnCubeEscaped(Enumerations.CubeType cubeType)
     {
         // Find the cube that's escaping to get its position
         var escapingCube = activeCubes.FirstOrDefault(c => c != null && c.type == cubeType && c.position.y <= 0);
         Vector2Int escapePosition = escapingCube != null ? escapingCube.position : Vector2Int.zero;
+        
+        // INCREMENT WAVE ESCAPE COUNTER
+        cubesEscaped++;
+        DebugLog($"🚨 CUBE ESCAPE: {cubeType} escaped from wave {currentWaveIndex}. Total escapes: {cubesEscaped}");
         
         // Notify statistics manager about cube escape
         if (PlayerStatisticsManager.Instance != null)
@@ -632,11 +642,52 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
             DebugLog($"🔊 Audio: Cube escaped event triggered for {cubeType} at position {escapePosition}");
         }
         
-        // Replace the grid reduction call with row removal
+        // CHECK WAVE FAILURE CONDITION: Does this wave have escape limits?
+        if (CurrentWave != null && CurrentWave.hasOwnSuccessCriteria && CurrentWave.maxAllowedEscapes >= 0)
+        {
+            if (cubesEscaped > CurrentWave.maxAllowedEscapes)
+            {
+                DebugLog($"❌ WAVE FAILED: Too many escapes! ({cubesEscaped} > {CurrentWave.maxAllowedEscapes})");
+                TriggerWaveFailure("Too many cube escapes");
+                return;
+            }
+        }
+        
+        // Process as normal cube behavior for wave completion tracking
         if (cubeType == Enumerations.CubeType.Unit)
         {
-            this.Log($"Normal cube escaped", showDebugInfo);
+            OnNonBlackCubeProcessed(cubeType, false); // false = not captured
+            this.Log($"Normal cube escaped - wave completion check triggered", showDebugInfo);
         }
+    }
+
+    /// <summary>
+    /// WAVE FAILURE TRIGGER: Called when wave fails due to escape limit or other criteria.
+    /// Notifies Stage via event system that this wave has failed.
+    /// </summary>
+    /// <param name="reason">Reason for wave failure (for debugging/feedback)</param>
+    private void TriggerWaveFailure(string reason)
+    {
+        DebugLog($"🔴 WAVE FAILURE: {reason}");
+        
+        // Stop current wave
+        waveActive = false;
+        
+        // Show failure feedback to player
+        if (showMessages)
+        {
+            var failureMessage = new WaveMessage
+            {
+                Message = $"Wave Failed!\n{reason}",
+                AutoHideDelay = 3f,
+                RequirePause = true
+            };
+            ShowMessage(failureMessage);
+        }
+        
+        // Trigger wave failure event for StageManager
+        OnWaveFailed?.Invoke(currentWaveIndex);
+        DebugLog($"🎯 Triggered OnWaveFailed event for wave {currentWaveIndex}");
     }
 
     public void OnMarkerPlaced() => markersPlaced++;
@@ -772,7 +823,7 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
             playerActionManager.maxLightMarkerCharges = waveConfiguration[currentWaveIndex].maxLightMarkerCharge;
 
             playerActionManager.maxPrimeMarkers = waveConfiguration[currentWaveIndex].maxPrimeMarkerCount;
-            playerActionManager.maxPrimeMarkerCharges = waveConfiguration[currentWaveIndex].maxPrimeMarkerCharge;
+            playerActionManager.maxPrimeMarkerCharges = waveConfiguration[currentWaveIndex].maxLightMarkerCharge;
             
             // Validate and adjust current mode based on available marker types
             playerActionManager.ValidateCurrentMode();
