@@ -253,7 +253,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!114 &115667895
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -10397,12 +10397,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   target: {fileID: 4360115852523455648}
-  height: 20
-  distance: 25
+  height: 22.5
+  distance: 12.5
   positionSmoothTime: 0.25
   rotationSmoothTime: 0.2
-  offset: {x: -6, y: -2, z: 4}
-  rotationOffset: {x: 0, y: 15, z: -15}
+  offset: {x: 0, y: -7.5, z: -2.5}
+  rotationOffset: {x: -32.5, y: 0, z: 0}
 --- !u!1 &2046394294
 GameObject:
   m_ObjectHideFlags: 0
@@ -11624,6 +11624,15 @@ MonoBehaviour:
   messagePanel: {fileID: 1753889799}
   messageText: {fileID: 1883002200}
   continuePrompt: {fileID: 0}
+  OnWaveComplete:
+    m_PersistentCalls:
+      m_Calls: []
+  OnWaveFailed:
+    m_PersistentCalls:
+      m_Calls: []
+  OnAllWavesComplete:
+    m_PersistentCalls:
+      m_Calls: []
   activeCubes: []
   waveActive: 0
   MoveStep: 0
@@ -12622,8 +12631,8 @@ MonoBehaviour:
   currentPrimeMarkerCharges: 0
   primeMarkerCooldown: 12
   lastPrimeMarkerTime: 0
-  primeMarkerSize: 0
-  primeMarkerOnGridLimit: 0
+  primeMarkerSize: 2
+  primeMarkerOnGridLimit: 1
   primeMarkerMaterial: {fileID: 0}
   lightMarkerKey: 102
   heavyMarkerKey: 118

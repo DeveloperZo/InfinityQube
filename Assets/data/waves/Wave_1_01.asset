@@ -53,7 +53,7 @@ MonoBehaviour:
   maxHeavyMarkerCharge: 0
   maxHeavyMarkerCount: 0
   waveStartDelay: 2.5
-  moveInterval: 3.5
+  moveInterval: 4
   fastMoveInterval: 0.1
   hasOwnSuccessCriteria: 0
   requiredCaptureCount: 0
