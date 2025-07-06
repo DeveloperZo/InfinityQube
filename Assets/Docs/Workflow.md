@@ -77,6 +77,7 @@ The InfinityQube project employs a structured AI-assisted development workflow t
 - Verify performance requirements are met
 - Confirm feature functionality matches specifications
 - Generate validation reports and metrics
+- Update execution reports via BuildValidationSystem
 
 **Outputs**:
 - Build validation results
@@ -84,6 +85,7 @@ The InfinityQube project employs a structured AI-assisted development workflow t
 - Performance metrics and analysis
 - Feature verification confirmation
 - Deployment readiness assessment
+- Generic execution reports (SummaryReport.md, ValidationResult.md)
 
 ## Quality Gates
 
@@ -120,25 +122,85 @@ The InfinityQube project employs a structured AI-assisted development workflow t
 - **Automated Rollback**: Failed validation triggers investigation before deployment
 - **Audit Trail**: Complete change history and decision documentation
 
-## Integration Points
+## Execution Reporting System
 
-### Project Knowledge Base
+### Report Generation Mechanism
+- **BuildValidationSystem.cs**: Unity Editor script for generating task execution reports
+- **Location**: All reports generated in `Assets/Docs/Execution/` folder
+- **Files Generated**:
+  - `SummaryReport.md`: Generic summary of last completed task
+  - `ValidationResult.md`: Generic validation results of last completed task
+- **Overwrite Policy**: Reports are overwritten with each new task execution
+- **Integration**: Unity MenuItem system for manual execution, can be called from external scripts
+
+### Report Usage Pattern
+```csharp
+// On task completion
+ExecutionReportHooks.OnTaskCompleted(
+    taskName: "Audio System Integration",
+    taskDescription: "Integrated core audio functionality...",
+    filesModified: new[] { "AudioManager.cs", "SoundEffects.cs" },
+    implementationDetails: "Added spatial audio support...",
+    nextSteps: "Test audio in multiple environments"
+);
+
+// On task validation
+ExecutionReportHooks.OnTaskValidated(
+    taskName: "Audio System Integration",
+    overallScore: 95,
+    validationDetails: "All audio tests passed...",
+    testsExecuted: new[] { "Spatial Audio Test", "Performance Test" },
+    issuesFound: new[] { "Minor optimization opportunity" },
+    recommendations: new[] { "Consider audio pooling" }
+);
+```
+
+### Integration Points
+
+#### Project Knowledge Base
 - Claude Desktop maintains complete project context
 - All phases reference centralized documentation
 - Implementation decisions captured for future reference
+- Execution reports provide latest task context
 
-### Development Tools
+#### Development Tools
 - VS Code integration provides seamless debugging and testing
 - Unity pipeline automation ensures consistent validation
 - Task management system tracks progress and dependencies
+- ExecutionReportHooks integrate with verification workflow
 
-### Quality Systems
+#### Quality Systems
 - Automated build validation integrated into workflow
 - Performance monitoring and regression detection
 - Code quality metrics and standards enforcement
+- Generic execution reports track task completion metrics
 
 ---
 
-**Workflow Version**: 1.0  
-**Last Updated**: July 4, 2025  
-**Maintained By**: Development Team
+## Report File Structure
+
+### Execution Folder Contents
+```
+Assets/Docs/Execution/
+├── SummaryReport.md      # Generic task completion summary (overwritten)
+└── ValidationResult.md   # Generic validation results (overwritten)
+```
+
+### Report File Patterns
+- **Naming Convention**: Generic names that represent "last executed task"
+- **Content Structure**: Standardized markdown format with task details
+- **Lifecycle**: Overwritten completely with each new task execution
+- **Inspection Workflow**: Check Execution folder to see details of most recent work unit
+
+### Hook Integration Points
+- **Task Completion**: `ExecutionReportHooks.OnTaskCompleted()` generates SummaryReport.md
+- **Task Validation**: `ExecutionReportHooks.OnTaskValidated()` generates ValidationResult.md
+- **Task Failure**: `ExecutionReportHooks.OnTaskFailed()` generates failure SummaryReport.md
+- **Manual Cleanup**: `ExecutionReportHooks.ClearExecutionReports()` for testing/reset
+
+---
+
+**Workflow Version**: 1.1  
+**Last Updated**: July 6, 2025  
+**Maintained By**: Development Team  
+**Major Changes**: Added ExecutionReportHooks system and generic execution reporting

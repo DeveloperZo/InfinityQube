@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Events;
 using System.Linq;
 using static Enumerations;
 
@@ -46,6 +47,23 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
     public GameObject messagePanel;
     public TextMeshProUGUI messageText;
     public GameObject continuePrompt;
+
+    [Header("Events")]
+    /// <summary>
+    /// Event triggered when a wave completes successfully.
+    /// StageManager subscribes to this to control stage progression.
+    /// </summary>
+    [SerializeField] public UnityEngine.Events.UnityEvent<int> OnWaveComplete;
+    /// <summary>
+    /// Event triggered when a wave fails.
+    /// StageManager subscribes to this to handle failure cases.
+    /// </summary>
+    [SerializeField] public UnityEngine.Events.UnityEvent<int> OnWaveFailed;
+    /// <summary>
+    /// Event triggered when all waves in a stage are complete.
+    /// StageManager subscribes to this to finalize stage completion.
+    /// </summary>
+    [SerializeField] public UnityEngine.Events.UnityEvent OnAllWavesComplete;
     #endregion
 
     #region Runtime State
@@ -173,6 +191,29 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
         DebugLog("▶️ Wave Resumed");
     }
 
+    public void StartNextWave()
+    {
+        if (useWaveConfiguration && currentWaveIndex < waveConfiguration.Count)
+        {
+            StartCoroutine(DelayedWaveStart());
+        }
+        else
+        {
+            DebugLog("⚠️ No more waves to start");
+        }
+    }
+
+    public bool HasMoreWaves()
+    {
+        return useWaveConfiguration && currentWaveIndex < waveConfiguration.Count - 1;
+    }
+
+    public void ResetToFirstWave()
+    {
+        currentWaveIndex = 0;
+        DebugLog("🔄 Reset to first wave");
+    }
+
     public void StopWave()
     {
         CleanupWave();
@@ -247,7 +288,22 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
         DebugLog($"Fired GameEvents.OnWaveComplete for wave {currentWaveIndex}");
 
         ProcessEndMessages();
-        AdvanceToNextWave();
+
+        // Trigger wave completion event
+        OnWaveComplete?.Invoke(currentWaveIndex);
+        DebugLog($"🎯 Triggered OnWaveComplete event for wave {currentWaveIndex}");
+
+        // Check if all waves are complete
+        if (useWaveConfiguration && currentWaveIndex >= waveConfiguration.Count - 1)
+        {
+            OnAllWavesComplete?.Invoke();
+            DebugLog("🏁 Triggered OnAllWavesComplete event");
+        }
+        else
+        {
+            // Auto-advance to next wave (can be overridden by stage manager)
+            AdvanceToNextWave();
+        }
 
         DebugLog("✅ Wave Completed");
     }
@@ -741,15 +797,15 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
         if (!useWaveConfiguration) return;
 
         currentWaveIndex++;
-        if (currentWaveIndex < waveConfiguration.Count)
-        {
-            StartCoroutine(DelayedWaveStart());
-        }
+        DebugLog($"📈 Advanced to wave index {currentWaveIndex}");
+        
+        // Note: Wave starting is now controlled by StageManager via events
+        // The auto-start logic is removed to prevent circular dependencies
     }
 
     private IEnumerator DelayedWaveStart()
     {
-        yield return new WaitForSeconds(3f);
+        yield return new WaitForSeconds(waveStartDelay);
         StartWave();
     }
 

@@ -13,8 +13,8 @@ namespace InfinityQube.Testing
     /// </summary>
     public static class BuildValidationSystem
     {
-        private const string VALIDATION_LOG_PATH = "Assets/Docs/Technical Doc/ValidationResults.md";
-        private const string HANDOFF_REPORT_PATH = "Assets/Docs/Technical Doc/HandoffReport.md";
+        private const string VALIDATION_LOG_PATH = "Assets/Docs/Execution/ValidationResult.md";
+        private const string HANDOFF_REPORT_PATH = "Assets/Docs/Execution/SummaryReport.md";
         
         [MenuItem("InfinityQube/Run Full Validation Pipeline")]
         public static void RunFullValidationPipeline()
@@ -78,6 +78,374 @@ namespace InfinityQube.Testing
                     Debug.LogWarning("[BuildValidationSystem] ValidateBuildOnly: File size limit violations");
             }
         }
+        
+        #region Task-Specific Report Generation
+        
+        /// <summary>
+        /// Generates execution reports for a completed task (replaces generic reports)
+        /// </summary>
+        /// <param name="taskName">Name of the completed task</param>
+        /// <param name="taskDescription">Description of what the task accomplished</param>
+        /// <param name="filesModified">Array of file paths that were modified</param>
+        /// <param name="implementationDetails">Key implementation details and decisions</param>
+        /// <param name="nextSteps">Recommended next steps or follow-up actions</param>
+        public static void GenerateTaskCompletionReport(
+            string taskName, 
+            string taskDescription, 
+            string[] filesModified, 
+            string implementationDetails, 
+            string nextSteps = "")
+        {
+            try
+            {
+                EnsureExecutionFolderExists();
+                
+                string summaryContent = GenerateTaskSummaryReport(
+                    taskName, 
+                    taskDescription, 
+                    filesModified, 
+                    implementationDetails, 
+                    nextSteps
+                );
+                
+                File.WriteAllText(HANDOFF_REPORT_PATH, summaryContent);
+                
+                Debug.Log($"[BuildValidationSystem] Task completion report generated: {HANDOFF_REPORT_PATH}");
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError($"[BuildValidationSystem] Failed to generate task completion report: {e.Message}");
+            }
+        }
+        
+        /// <summary>
+        /// Generates validation results for a completed task (replaces generic validation)
+        /// </summary>
+        /// <param name="taskName">Name of the validated task</param>
+        /// <param name="overallScore">Overall validation score (0-100)</param>
+        /// <param name="validationDetails">Detailed validation results</param>
+        /// <param name="testsExecuted">List of tests that were executed</param>
+        /// <param name="issuesFound">Any issues or concerns identified</param>
+        /// <param name="recommendations">Recommendations for improvement or follow-up</param>
+        public static void GenerateTaskValidationReport(
+            string taskName,
+            int overallScore,
+            string validationDetails,
+            string[] testsExecuted,
+            string[] issuesFound,
+            string[] recommendations)
+        {
+            try
+            {
+                EnsureExecutionFolderExists();
+                
+                string validationContent = GenerateTaskValidationContent(
+                    taskName,
+                    overallScore,
+                    validationDetails,
+                    testsExecuted,
+                    issuesFound,
+                    recommendations
+                );
+                
+                File.WriteAllText(VALIDATION_LOG_PATH, validationContent);
+                
+                Debug.Log($"[BuildValidationSystem] Task validation report generated: {VALIDATION_LOG_PATH}");
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError($"[BuildValidationSystem] Failed to generate task validation report: {e.Message}");
+            }
+        }
+        
+        /// <summary>
+        /// Generates failure report for a task that encountered errors during execution
+        /// </summary>
+        /// <param name="taskName">Name of the failed task</param>
+        /// <param name="errorDetails">Details about the failure</param>
+        /// <param name="partialResults">Any partial progress or results</param>
+        /// <param name="recoverySteps">Steps to recover or retry the task</param>
+        public static void GenerateTaskFailureReport(
+            string taskName,
+            string errorDetails,
+            string partialResults = "",
+            string recoverySteps = "")
+        {
+            try
+            {
+                EnsureExecutionFolderExists();
+                
+                string failureContent = GenerateTaskFailureContent(
+                    taskName,
+                    errorDetails,
+                    partialResults,
+                    recoverySteps
+                );
+                
+                File.WriteAllText(HANDOFF_REPORT_PATH, failureContent);
+                
+                Debug.LogWarning($"[BuildValidationSystem] Task failure report generated: {HANDOFF_REPORT_PATH}");
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError($"[BuildValidationSystem] Failed to generate task failure report: {e.Message}");
+            }
+        }
+        
+        #endregion
+        
+        #region Task-Specific Report Content Generation
+        
+        private static string GenerateTaskSummaryReport(
+            string taskName, 
+            string taskDescription, 
+            string[] filesModified, 
+            string implementationDetails, 
+            string nextSteps)
+        {
+            string timestamp = System.DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+            
+            var report = new StringBuilder();
+            report.AppendLine("# Task Execution Summary Report");
+            report.AppendLine();
+            report.AppendLine($"> **Task**: {taskName}");
+            report.AppendLine($"> **Executed**: {timestamp}");
+            report.AppendLine($"> **Status**: ✅ COMPLETED");
+            report.AppendLine();
+            report.AppendLine("---");
+            report.AppendLine();
+            
+            report.AppendLine("## Task Overview");
+            report.AppendLine();
+            report.AppendLine(taskDescription);
+            report.AppendLine();
+            report.AppendLine("---");
+            report.AppendLine();
+            
+            report.AppendLine("## Implementation Summary");
+            report.AppendLine();
+            report.AppendLine(implementationDetails);
+            report.AppendLine();
+            report.AppendLine("---");
+            report.AppendLine();
+            
+            report.AppendLine("## Files Modified");
+            report.AppendLine();
+            if (filesModified?.Length > 0)
+            {
+                foreach (var file in filesModified)
+                {
+                    report.AppendLine($"- `{file}`");
+                }
+            }
+            else
+            {
+                report.AppendLine("- No files modified");
+            }
+            report.AppendLine();
+            report.AppendLine("---");
+            report.AppendLine();
+            
+            report.AppendLine("## Next Steps");
+            report.AppendLine();
+            if (string.IsNullOrEmpty(nextSteps))
+            {
+                report.AppendLine("No specific next steps identified.");
+            }
+            else
+            {
+                report.AppendLine(nextSteps);
+            }
+            report.AppendLine();
+            report.AppendLine("---");
+            report.AppendLine();
+            
+            report.AppendLine($"**Report Generated**: {timestamp}");
+            report.AppendLine("**Execution System**: InfinityQube Task Management Pipeline");
+            report.AppendLine("**Report Type**: Generic Summary (Overwritten per task)");
+            
+            return report.ToString();
+        }
+        
+        private static string GenerateTaskValidationContent(
+            string taskName,
+            int overallScore,
+            string validationDetails,
+            string[] testsExecuted,
+            string[] issuesFound,
+            string[] recommendations)
+        {
+            string timestamp = System.DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+            string status = overallScore >= 80 ? "✅ PASSED" : "⚠️ REQUIRES ATTENTION";
+            
+            var report = new StringBuilder();
+            report.AppendLine("# Task Validation Results");
+            report.AppendLine();
+            report.AppendLine($"> **Task**: {taskName}");
+            report.AppendLine($"> **Validated**: {timestamp}");
+            report.AppendLine($"> **Overall Score**: {overallScore}/100");
+            report.AppendLine($"> **Status**: {status}");
+            report.AppendLine();
+            report.AppendLine("---");
+            report.AppendLine();
+            
+            report.AppendLine("## Validation Summary");
+            report.AppendLine();
+            report.AppendLine(validationDetails);
+            report.AppendLine();
+            report.AppendLine("---");
+            report.AppendLine();
+            
+            report.AppendLine("## Tests Executed");
+            report.AppendLine();
+            if (testsExecuted?.Length > 0)
+            {
+                foreach (var test in testsExecuted)
+                {
+                    report.AppendLine($"- {test}");
+                }
+            }
+            else
+            {
+                report.AppendLine("- No specific tests executed");
+            }
+            report.AppendLine();
+            report.AppendLine("---");
+            report.AppendLine();
+            
+            report.AppendLine("## Issues Identified");
+            report.AppendLine();
+            if (issuesFound?.Length > 0)
+            {
+                foreach (var issue in issuesFound)
+                {
+                    report.AppendLine($"- ⚠️ {issue}");
+                }
+            }
+            else
+            {
+                report.AppendLine("- No issues identified");
+            }
+            report.AppendLine();
+            report.AppendLine("---");
+            report.AppendLine();
+            
+            report.AppendLine("## Recommendations");
+            report.AppendLine();
+            if (recommendations?.Length > 0)
+            {
+                foreach (var rec in recommendations)
+                {
+                    report.AppendLine($"- {rec}");
+                }
+            }
+            else
+            {
+                report.AppendLine("- No specific recommendations");
+            }
+            report.AppendLine();
+            report.AppendLine("---");
+            report.AppendLine();
+            
+            report.AppendLine("**Validation Score Breakdown**:");
+            report.AppendLine($"- Requirements Compliance: {(overallScore >= 80 ? "✅" : "⚠️")}");
+            report.AppendLine($"- Technical Quality: {(overallScore >= 80 ? "✅" : "⚠️")}");
+            report.AppendLine($"- Integration Compatibility: {(overallScore >= 80 ? "✅" : "⚠️")}");
+            report.AppendLine($"- Performance Impact: {(overallScore >= 80 ? "✅" : "⚠️")}");
+            report.AppendLine();
+            report.AppendLine("---");
+            report.AppendLine();
+            
+            report.AppendLine($"**Report Generated**: {timestamp}");
+            report.AppendLine("**Validation System**: Unity + Shrimp Task Manager Pipeline");
+            report.AppendLine("**Report Type**: Generic Validation (Overwritten per task)");
+            
+            return report.ToString();
+        }
+        
+        private static string GenerateTaskFailureContent(
+            string taskName,
+            string errorDetails,
+            string partialResults,
+            string recoverySteps)
+        {
+            string timestamp = System.DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+            
+            var report = new StringBuilder();
+            report.AppendLine("# Task Execution Failure Report");
+            report.AppendLine();
+            report.AppendLine($"> **Task**: {taskName}");
+            report.AppendLine($"> **Failed**: {timestamp}");
+            report.AppendLine($"> **Status**: ❌ FAILED");
+            report.AppendLine();
+            report.AppendLine("---");
+            report.AppendLine();
+            
+            report.AppendLine("## Failure Details");
+            report.AppendLine();
+            report.AppendLine(errorDetails);
+            report.AppendLine();
+            report.AppendLine("---");
+            report.AppendLine();
+            
+            report.AppendLine("## Partial Progress");
+            report.AppendLine();
+            if (string.IsNullOrEmpty(partialResults))
+            {
+                report.AppendLine("No partial progress to report.");
+            }
+            else
+            {
+                report.AppendLine(partialResults);
+            }
+            report.AppendLine();
+            report.AppendLine("---");
+            report.AppendLine();
+            
+            report.AppendLine("## Recovery Steps");
+            report.AppendLine();
+            if (string.IsNullOrEmpty(recoverySteps))
+            {
+                report.AppendLine("No specific recovery steps identified.");
+            }
+            else
+            {
+                report.AppendLine(recoverySteps);
+            }
+            report.AppendLine();
+            report.AppendLine("---");
+            report.AppendLine();
+            
+            report.AppendLine("## Next Actions");
+            report.AppendLine();
+            report.AppendLine("1. Review failure details and error logs");
+            report.AppendLine("2. Implement recovery steps if available");
+            report.AppendLine("3. Consider task breakdown or alternative approach");
+            report.AppendLine("4. Retry task execution after addressing root cause");
+            report.AppendLine();
+            report.AppendLine("---");
+            report.AppendLine();
+            
+            report.AppendLine($"**Report Generated**: {timestamp}");
+            report.AppendLine("**Execution System**: InfinityQube Task Management Pipeline");
+            report.AppendLine("**Report Type**: Generic Failure Report (Overwritten per task)");
+            
+            return report.ToString();
+        }
+        
+        private static void EnsureExecutionFolderExists()
+        {
+            string executionFolderPath = "Assets/Docs/Execution";
+            if (!Directory.Exists(executionFolderPath))
+            {
+                Directory.CreateDirectory(executionFolderPath);
+                Debug.Log($"[BuildValidationSystem] Created execution folder: {executionFolderPath}");
+            }
+        }
+        
+        #endregion
+        
+        #region Original Validation System
         
         private static BuildValidationResult ValidateBuildCompilation()
         {

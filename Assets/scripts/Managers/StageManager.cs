@@ -53,10 +53,54 @@ public class StageManager : MonoBehaviour, IManagerDebugInterface
 
     private void Start()
     {
+        // Subscribe to wave manager events
+        if (waveManager != null)
+        {
+            // Subscribe to private UnityEvents via reflection or add public accessors
+            SubscribeToWaveEvents();
+        }
+
         if (startingStageIndex != -1)
         {
             LoadStage(startingStageIndex);
         }
+    }
+
+    private void OnDestroy()
+    {
+        // Unsubscribe from wave manager events
+        if (waveManager != null)
+        {
+            UnsubscribeFromWaveEvents();
+        }
+    }
+
+    private void SubscribeToWaveEvents()
+    {
+        if (waveManager.OnWaveComplete == null)
+            waveManager.OnWaveComplete = new UnityEngine.Events.UnityEvent<int>();
+        if (waveManager.OnWaveFailed == null)
+            waveManager.OnWaveFailed = new UnityEngine.Events.UnityEvent<int>();
+        if (waveManager.OnAllWavesComplete == null)
+            waveManager.OnAllWavesComplete = new UnityEngine.Events.UnityEvent();
+
+        waveManager.OnWaveComplete.AddListener(OnWaveCompleted);
+        waveManager.OnWaveFailed.AddListener(OnWaveFailed);
+        waveManager.OnAllWavesComplete.AddListener(OnAllWavesCompleted);
+
+        DebugLog("Subscribed to WaveManager events");
+    }
+
+    private void UnsubscribeFromWaveEvents()
+    {
+        if (waveManager.OnWaveComplete != null)
+            waveManager.OnWaveComplete.RemoveListener(OnWaveCompleted);
+        if (waveManager.OnWaveFailed != null)
+            waveManager.OnWaveFailed.RemoveListener(OnWaveFailed);
+        if (waveManager.OnAllWavesComplete != null)
+            waveManager.OnAllWavesComplete.RemoveListener(OnAllWavesCompleted);
+
+        DebugLog("Unsubscribed from WaveManager events");
     }
 
     #endregion
@@ -190,10 +234,11 @@ public class StageManager : MonoBehaviour, IManagerDebugInterface
 
         DebugLog($"Stage {stageNumber}: '{stage.stageName}' loaded successfully (Attempt #{stageAttempts[stageNumber]})");
 
-        // Start the first wave
+        // Start the first wave via event system (no direct call)
         if (waveManager != null)
         {
             yield return new WaitForSeconds(0.1f); // Brief delay to ensure everything is ready
+            waveManager.ResetToFirstWave(); // Ensure we start from wave 0
             waveManager.StartWave();
         }
     }
@@ -293,14 +338,6 @@ public class StageManager : MonoBehaviour, IManagerDebugInterface
         escapedCubeCount++;
         DebugLog($"Cube escaped: {cubeType}. Total escapes: {escapedCubeCount}");
 
-        CheckStageCompletion();
-    }
-
-    public void OnWaveCompleted()
-    {
-        if (!IsStageInProgress) return;
-
-        DebugLog("Wave completed, checking stage completion...");
         CheckStageCompletion();
     }
 
@@ -512,5 +549,60 @@ public class StageManager : MonoBehaviour, IManagerDebugInterface
         this.Log($"Saving configuration: {configName} (not yet implemented)", EnableDebugLogs);
     }
 
+    #endregion
+
+    #region Wave Event Handlers
+    /// <summary>
+    /// Event handler for when a wave completes successfully.
+    /// This method replaces the direct call pattern to avoid circular dependencies.
+    /// Flow: WaveManager.CompleteWave() → OnWaveComplete event → this method
+    /// </summary>
+    /// <param name="waveIndex">Index of the completed wave</param>
+    private void OnWaveCompleted(int waveIndex)
+    {
+        DebugLog($"🎯 Wave {waveIndex} completed via event");
+        
+        if (!IsStageInProgress) return;
+
+        // Check if there are more waves in this stage
+        if (waveManager != null && waveManager.HasMoreWaves())
+        {
+            DebugLog("Starting next wave...");
+            StartCoroutine(DelayedNextWave());
+        }
+        else
+        {
+            DebugLog("All waves completed, checking stage completion...");
+            CheckStageCompletion();
+        }
+    }
+
+    private void OnWaveFailed(int waveIndex)
+    {
+        DebugLog($"❌ Wave {waveIndex} failed via event");
+        
+        if (!IsStageInProgress) return;
+
+        // Handle wave failure - could restart wave or fail stage
+        CompleteStage(false);
+    }
+
+    private void OnAllWavesCompleted()
+    {
+        DebugLog("🏁 All waves completed via event");
+        
+        if (!IsStageInProgress) return;
+
+        CheckStageCompletion();
+    }
+
+    private IEnumerator DelayedNextWave()
+    {
+        yield return new WaitForSeconds(stageTransitionDelay);
+        if (waveManager != null)
+        {
+            waveManager.StartNextWave();
+        }
+    }
     #endregion
 }
