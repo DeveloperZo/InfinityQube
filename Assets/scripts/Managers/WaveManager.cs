@@ -289,6 +289,9 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
 
         ProcessEndMessages();
 
+        // POC: Show wave completion message before advancing
+        ShowWaveCompletionMessage();
+
         // Trigger wave completion event
         OnWaveComplete?.Invoke(currentWaveIndex);
         DebugLog($"🎯 Triggered OnWaveComplete event for wave {currentWaveIndex}");
@@ -513,6 +516,41 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
         {
             ShowMessage(message);
         }
+    }
+
+    /// <summary>
+    /// POC: Show wave completion feedback message with progress and statistics.
+    /// For Stage 1 tutorial, all waves pause for player input.
+    /// </summary>
+    private void ShowWaveCompletionMessage()
+    {
+        if (!showMessages) return;
+
+        int waveNum = currentWaveIndex + 1;
+        int totalWaves = waveConfiguration != null && waveConfiguration.Count > 0 ? waveConfiguration.Count : 1;
+        
+        // Simple, minimal message
+        string message = $"Wave {waveNum}/{totalWaves}\n\n";
+        
+        // Add statistics only if there were failures
+        int totalCaptured = normalCubesCaptured + blueCubesCaptured + reinforcedCubesCaptured;
+        if (cubesEscaped > 0)
+        {
+            message += $"Captured: {totalCaptured}\nEscaped: {cubesEscaped}\n\n";
+        }
+        
+        // Simple prompt
+        message += "Press K to continue";
+        
+        var completionMsg = new WaveMessage
+        {
+            Message = message,
+            RequirePause = true, // POC: All tutorial waves pause for feedback
+            AutoHideDelay = 0f
+        };
+
+        ShowMessage(completionMsg);
+        DebugLog($"ShowWaveCompletionMessage: Wave {waveNum}/{totalWaves} - Captured: {totalCaptured}, Escaped: {cubesEscaped}");
     }
 
     public void ShowMessage(WaveMessage message)

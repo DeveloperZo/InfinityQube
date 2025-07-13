@@ -58,15 +58,7 @@ MonoBehaviour:
   hasOwnSuccessCriteria: 0
   requiredCaptureCount: 0
   maxAllowedEscapes: 0
-  messages:
-  - Message: Prime Mode [2] can capture multiple cubes. Use wisely as cooldowns are
-      long.
-    DisplayMoveStep: 0
-    RequirePause: 0
-    AutoHideDelay: 5
-    HighlightTile: 0
-    highlightTiles: []
-    highlightColor: {r: 1, g: 1, b: 0, a: 1}
+  messages: []
   unitCubesCaptured: 0
   primeCubesCaptured: 0
   infinityCubesEscaped: 0

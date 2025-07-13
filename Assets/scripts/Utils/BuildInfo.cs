@@ -4,8 +4,8 @@ using UnityEngine;
 public class BuildInfo : MonoBehaviour
 {
     [Header("Build Information")]
-    public string buildVersion = "0.2.623-alpha";
-    public string buildDate;
+    public string buildVersion = "0.3.708-alpha";
+    public string buildDate = "2025-07-08";
 
     // Add to BuildInfo.cs around line 15
     private void Awake()
@@ -13,9 +13,7 @@ public class BuildInfo : MonoBehaviour
         // Show build info in development builds
         if (Debug.isDebugBuild)
         {
-            buildDate = System.DateTime.Now.ToString("yyyy-MM-dd HH:mm");
             DontDestroyOnLoad(gameObject);
-
         }
     }
 
@@ -24,7 +22,7 @@ public class BuildInfo : MonoBehaviour
         if (Debug.isDebugBuild)
         {
             GUI.Label(new Rect(10, Screen.height - 60, 400, 40),
-                     $"Build: {buildVersion} | {buildDate}\nFriend Test Build");
+                     $"Build: {buildVersion} | {buildDate}\nDemo Build");
         }
     }
 }

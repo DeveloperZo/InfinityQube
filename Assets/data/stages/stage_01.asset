@@ -24,6 +24,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 52039f55bbc24df458bee29ef04e1a6e, type: 2}
   - {fileID: 11400000, guid: 26a86d8b588967f45b04cdf43bc15c49, type: 2}
   - {fileID: 11400000, guid: 5650d342772b2074e8001895b067c673, type: 2}
+  - {fileID: 11400000, guid: f4cdbe06ad71e7948b9b79a0bac8b24b, type: 2}
   requireAllCubesDestroyed: 0
   requiredCaptureCount: 0
   maxAllowedEscapes: 6

@@ -281,12 +281,20 @@ public class StageManager : MonoBehaviour, IManagerDebugInterface
     {
         if (waveManager == null || stage.waveConfigurations.Count == 0) return;
 
-        DebugLog($"Configuring {stage.waveConfigurations.Count} waves");
+        DebugLog($"ConfigureWaveManager: Configuring {stage.waveConfigurations.Count} waves for stage '{stage.stageName}'");
 
-
+        // Ensure wave manager is in clean state
+        waveManager.StopWave();
         waveManager.waveConfiguration = stage.waveConfigurations;
         waveManager.useWaveConfiguration = true;
         waveManager.currentWaveIndex = 0; // Reset to first wave
+        
+        // Log wave configuration for debugging
+        for (int i = 0; i < stage.waveConfigurations.Count && i < 3; i++)
+        {
+            var wave = stage.waveConfigurations[i];
+            DebugLog($"ConfigureWaveManager: Wave {i + 1} - {wave.CubesData.Count} cubes");
+        }
     }
 
     private void ConfigurePlayer(StageData stage)
@@ -318,6 +326,58 @@ public class StageManager : MonoBehaviour, IManagerDebugInterface
             playerActionManager.ClearAllActions();
         }
     }
+
+    /// <summary>
+    /// Comprehensive cleanup before scene changes to handle DontDestroyOnLoad objects
+    /// </summary>
+    private void CleanupBeforeSceneChange()
+    {
+        DebugLog("CleanupBeforeSceneChange: Starting comprehensive cleanup...");
+        
+        // First do normal stage cleanup
+        CleanupCurrentStage();
+        
+        // Destroy specific DontDestroyOnLoad managers
+        var objectsToDestroy = new List<string>()
+        {
+            "MessageProgressTracker",
+            "DebugCoordinator", 
+            "PlayerStatisticsManager",
+            "AudioManager",
+            "BuildInfo",
+            "FileLogger",
+            "PlayerManager",
+            "UI"
+        };
+        
+        foreach (string objName in objectsToDestroy)
+        {
+            GameObject obj = GameObject.Find(objName);
+            if (obj != null)
+            {
+                DebugLog($"CleanupBeforeSceneChange: Destroying DontDestroyOnLoad object - {objName}");
+                Destroy(obj);
+            }
+        }
+        
+        // Also find and destroy the game grid and other core game objects
+        GameObject grid = GameObject.Find("Grid");
+        if (grid != null) 
+        {
+            DebugLog("CleanupBeforeSceneChange: Destroying Grid");
+            Destroy(grid);
+        }
+        
+        // Destroy all managers in the current scene
+        foreach (var manager in FindObjectsOfType<MonoBehaviour>())
+        {
+            if (manager.GetType().Name.EndsWith("Manager") && manager.gameObject.scene.name != null)
+            {
+                DebugLog($"CleanupBeforeSceneChange: Destroying {manager.GetType().Name}");
+                Destroy(manager.gameObject);
+            }
+        }
+    }
     #endregion
 
     #region Stage Completion Logic
@@ -333,15 +393,28 @@ public class StageManager : MonoBehaviour, IManagerDebugInterface
 
     private void CheckStageCompletion()
     {
-        if (CurrentStage == null) return;
+        if (CurrentStage == null || !IsStageInProgress) 
+        {
+            DebugLog("CheckStageCompletion: Stage not active or null, skipping check");
+            return;
+        }
 
         bool success = false;
         bool failure = false;
 
-        // Check success conditions
-        if (CurrentStage.requiredCaptureCount > 0 && capturedCubeCount >= CurrentStage.requiredCaptureCount)
+        // For Stage 1 demo, DON'T check completion here - it's handled by OnAllWavesCompleted
+        if (CurrentStageIndex == 0)
         {
-            success = true;
+            // Stage 1 demo should ONLY complete when OnAllWavesCompleted is called
+            // This method is called after individual cube captures, so we should NOT complete here
+            DebugLog("CheckStageCompletion: Stage 1 demo - skipping check (will complete via OnAllWavesCompleted)");
+            return;
+        }
+        else if (CurrentStage.requiredCaptureCount > 0)
+        {
+            // Other stages may have capture requirements
+            success = capturedCubeCount >= CurrentStage.requiredCaptureCount;
+            DebugLog($"CheckStageCompletion: Capture requirement check - {capturedCubeCount}/{CurrentStage.requiredCaptureCount}");
         }
 
         // Note: Escape-based failure is now handled at Wave level
@@ -349,10 +422,12 @@ public class StageManager : MonoBehaviour, IManagerDebugInterface
 
         if (success && !failure)
         {
+            DebugLog("CheckStageCompletion: Stage success criteria met, completing stage");
             CompleteStage(true);
         }
         else if (failure)
         {
+            DebugLog("CheckStageCompletion: Stage failure criteria met, failing stage");
             CompleteStage(false);
         }
     }
@@ -389,32 +464,60 @@ public class StageManager : MonoBehaviour, IManagerDebugInterface
 
     private IEnumerator HandleStageSuccess()
     {
+        DebugLog($"HandleStageSuccess: Stage {CurrentStageIndex} completed successfully");
+        
+        // Brief pause before showing completion message
         yield return new WaitForSeconds(stageTransitionDelay);
 
         // Check if this is Stage 1 (CurrentStageIndex == 0) - Demo completion
         if (CurrentStageIndex == 0)
         {
-            DebugLog("Demo completed! Showing completion message and returning to splash screen.");
+            DebugLog("HandleStageSuccess: Demo stage detected, preparing completion sequence");
             
             // Show demo completion message
-            if (waveManager != null)
+            if (waveManager != null && waveManager.showMessages)
             {
+                // Calculate final statistics
+                float totalTime = Time.time - stageStartTime;
+                string timeStr = $"{Mathf.FloorToInt(totalTime / 60)}:{(totalTime % 60):00.0}";
+                
                 var completionMessage = new WaveMessage
                 {
-                    Message = "Congratulations!\n\nYou've completed the InfinityQube demo!\n\nThank you for playing!",
+                    Message = "Demo Complete\n\n" +
+                             $"Time: {timeStr}\n" +
+                             $"Cubes Captured: {capturedCubeCount}\n\n" +
+                             "Press K to return to menu",
                     RequirePause = true,
                     AutoHideDelay = 0f
                 };
                 
+                DebugLog($"HandleStageSuccess: Showing completion message with stats - Time: {timeStr}, Captured: {capturedCubeCount}");
                 waveManager.ShowMessage(completionMessage);
                 
-                // Wait for message to be dismissed
-                yield return new WaitForSeconds(1f);
+                // Wait for player to dismiss message
+                while (waveManager.messagePanel != null && waveManager.messagePanel.activeSelf)
+                {
+                    yield return null;
+                }
+                
+                DebugLog("HandleStageSuccess: Completion message dismissed by player");
+            }
+            else
+            {
+                DebugLog("HandleStageSuccess: WARNING - WaveManager or messages disabled, skipping completion message");
+                // Still wait a bit before transitioning
+                yield return new WaitForSeconds(2f);
             }
             
             // Transition back to Splash scene
-            DebugLog("Transitioning back to Splash scene...");
-            UnityEngine.SceneManagement.SceneManager.LoadScene("Splash");
+            DebugLog("HandleStageSuccess: Loading Splash scene...");
+            
+            // Do comprehensive cleanup before scene change
+            CleanupBeforeSceneChange();
+            
+            // Load splash scene with Single mode to ensure current scene is unloaded
+            SceneManager.LoadScene("Splash", LoadSceneMode.Single);
+            DebugLog("HandleStageSuccess: Scene load initiated");
         }
         else
         {
@@ -549,17 +652,26 @@ public class StageManager : MonoBehaviour, IManagerDebugInterface
     {
         DebugLog($"🎯 Wave {waveIndex} completed via event");
         
-        if (!IsStageInProgress) return;
+        if (!IsStageInProgress) 
+        {
+            DebugLog($"OnWaveCompleted: Stage not in progress, ignoring wave {waveIndex} completion");
+            return;
+        }
+
+        // Log wave transition state for debugging
+        int currentWave = waveIndex + 1;
+        int totalWaves = CurrentStage?.waveConfigurations?.Count ?? 0;
+        DebugLog($"OnWaveCompleted: Wave {currentWave}/{totalWaves} complete. Has more waves: {waveManager?.HasMoreWaves() ?? false}");
 
         // Check if there are more waves in this stage
         if (waveManager != null && waveManager.HasMoreWaves())
         {
-            DebugLog("Starting next wave...");
+            DebugLog($"OnWaveCompleted: Transitioning to next wave after {stageTransitionDelay}s delay...");
             StartCoroutine(DelayedNextWave());
         }
         else
         {
-            DebugLog("All waves completed, checking stage completion...");
+            DebugLog("OnWaveCompleted: All waves completed, checking stage completion criteria...");
             CheckStageCompletion();
         }
     }
@@ -578,17 +690,50 @@ public class StageManager : MonoBehaviour, IManagerDebugInterface
     {
         DebugLog("🏁 All waves completed via event");
         
-        if (!IsStageInProgress) return;
+        if (!IsStageInProgress) 
+        {
+            DebugLog("OnAllWavesCompleted: Stage not in progress, ignoring event");
+            return;
+        }
 
-        CheckStageCompletion();
+        // For Stage 1 demo, this is when we complete the stage
+        if (CurrentStageIndex == 0)
+        {
+            DebugLog("OnAllWavesCompleted: Stage 1 demo - all waves complete, marking stage as success");
+            CompleteStage(true);
+        }
+        else
+        {
+            // For other stages, check normal completion criteria
+            CheckStageCompletion();
+        }
     }
 
     private IEnumerator DelayedNextWave()
     {
-        yield return new WaitForSeconds(stageTransitionDelay);
+        DebugLog($"DelayedNextWave: Starting {stageTransitionDelay}s transition delay...");
+        
+        // POC: Ensure minimum transition time for tutorial readability
+        float adjustedDelay = stageTransitionDelay;
+        if (CurrentStageIndex == 0) // Tutorial stage
+        {
+            adjustedDelay = Mathf.Max(stageTransitionDelay, 3f); // At least 3 seconds for tutorial
+            if (adjustedDelay != stageTransitionDelay)
+            {
+                DebugLog($"DelayedNextWave: Adjusted delay for tutorial from {stageTransitionDelay}s to {adjustedDelay}s");
+            }
+        }
+        
+        yield return new WaitForSeconds(adjustedDelay);
+        
         if (waveManager != null)
         {
+            DebugLog($"DelayedNextWave: Transition complete, starting wave {waveManager.currentWaveIndex + 1}");
             waveManager.StartNextWave();
+        }
+        else
+        {
+            DebugLog("DelayedNextWave: ERROR - WaveManager is null, cannot start next wave!");
         }
     }
     #endregion

@@ -203,18 +203,9 @@ public class GameUI : MonoBehaviour
         // Essential controls
         GUILayout.Label("K      Skip/Close Dialog", textStyle);
         GUILayout.Label("WASD  Move Player", textStyle);
-        GUILayout.Label("F      Light Marker", textStyle);
-        GUILayout.Label("R      Trigger Light", textStyle);
-
-        //GUILayout.Label("V      Heavy Marker", textStyle);
-        //GUILayout.Label("Y      Trigger Heavy", textStyle);
-
-        GUILayout.Label("G      Prime Marker", textStyle);
-        GUILayout.Label("T      Trigger Prime", textStyle);
-        
-        //GUILayout.Label("Q      Trigger Cube Marker", textStyle);
-        //GUILayout.Label("E      Power Up Cube Marker", textStyle);
-
+        GUILayout.Label("1/2      Change Mode", textStyle);
+        GUILayout.Label("F      Place Marker", textStyle);
+        GUILayout.Label("R      Trigger Marker", textStyle);
 
         GUILayout.Space(5);
 

@@ -313,6 +313,8 @@ Comprehensive tracking system:
 - **Step-Based Movement**: Discrete cube advancement
 - **Configurable Timing**: Per-wave `moveInterval` settings
 - **Speed Control**: Normal/fast movement modes
+- **Wave Completion Messages**: Shows progress (e.g., "Wave 1/3") with captured/escaped statistics ✅
+- **Tutorial Pause System**: Press K to continue after wave completion messages ✅
 - **Debug Features**: Manual step control and inspection
 
 ### Wave Configuration
@@ -329,7 +331,12 @@ WaveData Properties:
 ### Active Wave Management
 - **Cube Tracking**: Live cube count and positions
 - **State Management**: Active/paused/completed states
-- **Event System**: Wave start/end notifications
+- **Event System**: 
+  - OnWaveComplete: Triggered when wave completes successfully ✅
+  - OnWaveFailed: Triggered when escape limit exceeded ✅
+  - OnAllWavesComplete: Triggered when all waves in stage complete ✅
+  - Wave start/end notifications with audio triggers ✅
+- **Wave-to-Wave Transitions**: Smooth transitions with configurable delays ✅
 - **Debug Controls**: Manual progression and inspection
 
 ## 3.5 Input System
@@ -361,6 +368,10 @@ WaveData Properties:
 - **Progressive Difficulty**: Structured learning curve
 - **Multi-Wave Composition**: Complex stage structures
 - **Completion Tracking**: Win/loss conditions
+- **Stage Success Transitions**: 
+  - Demo completion message with statistics ✅
+  - Smooth return to splash screen for Stage 1 ✅
+  - Comprehensive cleanup before scene transitions ✅
 - **Restart Functionality**: Reset capability
 
 ### Stage Types
@@ -398,7 +409,12 @@ DetonationType Enum:
 ### Visual/Audio Feedback
 - **Placement Indicators**: Clear marker visualization
 - **Detonation Effects**: Particle systems and animations
-- **Audio Cues**: Sound feedback for all actions
+- **Audio System Foundation** ✅:
+  - AudioManager singleton with subsystem architecture
+  - Event-driven audio triggers for game events
+  - Cube-specific audio events (landing, capture, escape)
+  - Volume category management system
+  - Debug testing tools for audio validation
 - **UI Updates**: Real-time charge and count display
 
 ## 3.8 Debug System
@@ -416,8 +432,8 @@ Comprehensive debugging infrastructure:
 - **Scenario Testing**: Rapid iteration tools
 
 ---
-**Last Updated:** June 27, 2025  
-**Implementation Status:** Production-ready with four-tier marker system complete  
+**Last Updated:** July 13, 2025  
+**Implementation Status:** Production-ready with four-tier marker system complete, wave feedback and audio foundation implemented  
 **Related Documents:**
 - [Game Design Document](GameDesignDocument.md)
 - [Game Overview](2_GameOverview.md)
