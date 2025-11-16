@@ -448,7 +448,7 @@ namespace WaveDebugSystem
         private Dictionary<Vector2Int, CubeManager> GetActiveCubesDict()
         {
             var dict = new Dictionary<Vector2Int, CubeManager>();
-            var allCubes = Object.FindObjectsOfType<CubeManager>();
+            var allCubes = Object.FindObjectsByType<CubeManager>(FindObjectsSortMode.None);
             foreach (var cube in allCubes)
             {
                 if (cube != null && !cube.isDestroyed)

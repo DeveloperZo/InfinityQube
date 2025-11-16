@@ -119,9 +119,9 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
     #region Initialization
     private void FindReferences()
     {
-        if (grid == null) grid = FindObjectOfType<GridManager>();
-        if (player == null) player = FindObjectOfType<PlayerManager>();
-        if (playerActionManager == null) playerActionManager = FindObjectOfType<PlayerActionManager>();
+        if (grid == null) grid = FindAnyObjectByType<GridManager>();
+        if (player == null) player = FindAnyObjectByType<PlayerManager>();
+        if (playerActionManager == null) playerActionManager = FindAnyObjectByType<PlayerActionManager>();
         if (audioManager == null) audioManager = AudioManager.Instance;
 
         ValidateReferences();
@@ -877,7 +877,7 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
 
     private void NotifyStageManager(System.Action<StageManager> action)
     {
-        var stageManager = FindObjectOfType<StageManager>();
+        var stageManager = FindAnyObjectByType<StageManager>();
         if (stageManager != null) action(stageManager);
     }
 

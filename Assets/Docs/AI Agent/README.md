@@ -1,276 +1,150 @@
 # AI Agent Documentation System
 
-> **Purpose**: Overview of the complete AI Agent documentation structure for InfinityQube  
-> **Audience**: All AI agents, human developers, and project stakeholders  
-> **Authority**: This is the master reference for AI agent operation within the project
+---
+**Last Updated**: November 15, 2024  
+**Document Version**: 2.0 - Restructured and consolidated  
+**Authority Level**: MASTER REFERENCE  
+**Review Cycle**: Monthly  
+**Enforcement**: MANDATORY - All agents must comply  
 
 ---
 
-## **Documentation Structure Overview**
+## Purpose
+This documentation system defines the complete operational framework for AI agents working on InfinityQube. It establishes clear boundaries, communication protocols, and quality standards to enable efficient autonomous development while maintaining code integrity.
 
-### **Core AI Agent Documents**
-```
-Assets/Docs/AI Agent/
-├── core-constraints.md          # Fundamental behavioral rules (CRITICAL)
-├── approval-gates.md            # What requires human approval (MANDATORY)
-├── safe-modification-zones.md   # What can be modified autonomously (OPERATIONAL)
-├── context-composition.md       # How to assemble relevant context (GUIDANCE)
-├── handoff-protocols.md         # Agent-to-agent communication (OPERATIONAL)
-├── scope-definitions.md         # Agent types and boundaries (ORGANIZATIONAL)
-└── task-templates/             # Reusable task patterns
-    ├── code-refactoring.md
-    ├── feature-implementation.md
-    └── documentation-update.md
-```
+## Document Hierarchy
 
-### **Authority Levels**
-- **CRITICAL**: These constraints override all other instructions
-- **MANDATORY**: These gates cannot be bypassed
-- **OPERATIONAL**: These patterns enable autonomous development
-- **GUIDANCE**: These patterns optimize agent effectiveness
-- **ORGANIZATIONAL**: These definitions establish clear operational roles
+### Core Rules (CRITICAL - Override all other instructions)
+1. **[01-core-constraints.md](01-core-constraints.md)** - Fundamental behavioral rules that cannot be violated
+2. **[02-approval-gates.md](02-approval-gates.md)** - Actions requiring mandatory human approval
+3. **[03-file-standards.md](03-file-standards.md)** - File size limits, organization, and structure rules
+
+### Development Standards (MANDATORY - Required patterns)
+4. **[04-code-patterns.md](04-code-patterns.md)** - Unity patterns, debug standards, POC marking
+5. **[05-safe-zones.md](05-safe-zones.md)** - What can be modified autonomously
+6. **[06-validation-rules.md](06-validation-rules.md)** - Build validation, testing, quality gates
+
+### Operational Protocols (OPERATIONAL - Workflow guidance)
+7. **[07-context-assembly.md](07-context-assembly.md)** - How to gather and use project context
+8. **[08-handoff-protocols.md](08-handoff-protocols.md)** - Agent-to-agent coordination
+9. **[09-scope-boundaries.md](09-scope-boundaries.md)** - Agent types, roles, and capabilities
+
+### Task Templates (GUIDANCE - Reusable patterns)
+- **[task-templates/](task-templates/)** - Structured approaches for common tasks
+
+## Quick Start for New Agents
+
+### First Time Setup
+1. Read **01-core-constraints.md** - Understand what you CANNOT do
+2. Read **02-approval-gates.md** - Know when to request human approval
+3. Read **09-scope-boundaries.md** - Understand your role and limits
+
+### Before Any Task
+1. Check **05-safe-zones.md** - Confirm you can modify the target files
+2. Review **03-file-standards.md** - Ensure compliance with size/structure rules
+3. Apply **04-code-patterns.md** - Use correct Unity and debug patterns
+
+### During Development
+1. Follow **06-validation-rules.md** - Run required validation checks
+2. Use **07-context-assembly.md** - Gather appropriate context
+3. Apply **task-templates/** - Use proven patterns for common tasks
+
+### Task Handoff
+1. Follow **08-handoff-protocols.md** - Proper agent coordination
+2. Document per **06-validation-rules.md** - Required documentation
+3. Validate per **09-scope-boundaries.md** - Stay within role limits
+
+## Authority Levels Explained
+
+- **CRITICAL**: Violations will break the system or violate core principles
+- **MANDATORY**: Required for all agents, no exceptions
+- **OPERATIONAL**: Standard operating procedures for efficiency
+- **GUIDANCE**: Best practices and recommendations
+
+## Enforcement Mechanisms
+
+### Automatic Checks
+- File size validation before commits
+- Build validation via `build_and_test.bat`
+- Complexity scoring via `score_complexity.bat`
+
+### Manual Gates
+- Human approval for complexity ≥ 7
+- Human approval for architectural changes
+- Human approval for new documentation
+
+### Continuous Mode Stops
+- `needs_review = true` on any task
+- `validation_status = failed` on any task
+- Multiple sequential failures (>3)
+
+## Integration Points
+
+### With Development Tools
+- **VS Code/Cursor**: Uses 01-05 for code modification rules
+- **Shrimp Task Manager**: Uses 06-09 for task coordination
+- **Unity**: Validation per 06, patterns per 04
+
+### With Project Documentation
+- References GameDesignDocument.md for project context
+- Aligns with TechnicalDebt.md for current priorities
+- Follows patterns in existing code architecture
+
+## Maintenance Schedule
+
+### Daily
+- Agents self-check against core constraints
+- Validation runs on all changes
+
+### Weekly
+- Review approval gate triggers
+- Update safe zones based on stability
+
+### Monthly
+- Full documentation review
+- Rule effectiveness assessment
+- Update based on common violations
+
+## Emergency Procedures
+
+### When Stuck
+1. Document the blocker in task notes
+2. Set `needs_approval` flag
+3. Generate approval request per template
+4. Wait for human intervention
+
+### On Validation Failure
+1. Auto-create fix task with priority 0
+2. Pause continuous mode
+3. Document failure cause
+4. Await fix completion
+
+## Version History
+
+- **2.0** (Nov 15, 2024) - Complete restructure and consolidation
+- **1.0** (Jul 4, 2025) - Initial implementation (archived)
+
+## Quick Reference Card
+
+```
+NEVER DO:
+- Split existing manager files
+- Create new singletons
+- Modify Enumerations.cs
+- Change Unity lifecycle
+- Create new documentation
+- FindObjectOfType in Update()
+
+ALWAYS DO:
+- Check file size limits
+- Run validation tests
+- Use debug logging
+- Request approval for complexity ≥ 7
+- Follow Unity patterns
+- Cache manager references
+```
 
 ---
 
-## **Integration with Development Loop**
-
-### **Tool Chain Integration**
-```
-Claude Desktop (Strategic) → Shrimp (Structured) → VS Code (Implementation) → Unity (Validation)
-       ↓                         ↓                      ↓                      ↓
-AI Agent/scope-definitions    AI Agent/task-templates   AI Agent/core-constraints  AI Agent/handoff-protocols
-AI Agent/context-composition AI Agent/handoff-protocols AI Agent/safe-zones        AI Agent/approval-gates
-```
-
-### **Context Assembly by Tool**
-
-**Claude Desktop Context**:
-- All Project Doc/* (design and concepts)
-- AI Agent/scope-definitions.md (role boundaries)
-- AI Agent/context-composition.md (strategic context guidelines)
-- Technical Doc/TechnicalDebt.md (current state awareness)
-
-**VS Code MCP Context**:
-- AI Agent/core-constraints.md (behavioral rules)
-- AI Agent/safe-modification-zones.md (operational boundaries)
-- AI Agent/approval-gates.md (what requires approval)
-- Target files for modification + minimal related documentation
-
-**Shrimp Task Manager Context**:
-- AI Agent/task-templates/* (structured approaches)
-- AI Agent/handoff-protocols.md (workflow coordination)
-- AI Agent/scope-definitions.md (agent capabilities)
-- Current milestone and priority context
-
----
-
-## **Document Relationships and Dependencies**
-
-### **Constraint Hierarchy**
-```
-core-constraints.md (Base behavioral rules)
-    ↓
-approval-gates.md (Human approval requirements)
-    ↓
-safe-modification-zones.md (Autonomous operation zones)
-    ↓
-scope-definitions.md (Agent role boundaries)
-```
-
-### **Operational Flow**
-```
-context-composition.md (How to gather information)
-    ↓
-scope-definitions.md (What each agent can do)
-    ↓
-handoff-protocols.md (How agents coordinate)
-    ↓
-task-templates/* (How to structure specific work)
-```
-
----
-
-## **Configuration Integration**
-
-### **MCP Configuration Alignment**
-Based on your MCP config:
-```json
-"shrimp-task-manager": {
-  "args": [
-    "--config", "C:/Users/awill/shrimp-task-manager-ui/mcp-shrimp-task-manager/data/shrimp.toml",
-    "--rules", "C:/Users/awill/shrimp-task-manager-ui/mcp-shrimp-task-manager/data/shrimp-rules.md"
-  ],
-  "env": {
-    "TEMPLATES_USE": "infinityqube"
-  }
-}
-```
-
-### **Context References**
-- **shrimp-rules.md**: Now extracted into AI Agent/core-constraints.md
-- **infinityqube templates**: Now structured in AI Agent/task-templates/
-- **Data integration**: AI Agent docs provide structured context for Shrimp operations
-
----
-
-## **Usage Guidelines by Agent Type**
-
-### **Strategic Planning Agent (Claude Desktop)**
-**Required Reading**:
-1. AI Agent/scope-definitions.md (understand role boundaries)
-2. AI Agent/context-composition.md (strategic context assembly)
-3. All Project Doc/* (comprehensive project understanding)
-
-**Prohibited Actions**:
-- Direct code modification
-- Detailed implementation decisions
-- Bypassing approval gates
-
-**Handoff Deliverables**:
-- Strategic analysis with problem definition
-- Solution approach and rationale
-- Context summary for task structuring
-- Success criteria and validation requirements
-
-### **Task Structuring Agent (Shrimp)**
-**Required Reading**:
-1. AI Agent/task-templates/* (structured task patterns)
-2. AI Agent/handoff-protocols.md (workflow coordination)
-3. AI Agent/scope-definitions.md (agent capabilities)
-
-**Key Responsibilities**:
-- Transform strategic plans into detailed specifications
-- Apply appropriate task templates
-- Manage dependencies and sequencing
-- Coordinate handoffs to implementation agents
-
-**Quality Gates**:
-- Complexity scoring and approval requirements
-- Template compliance validation
-- Handoff completeness verification
-
-### **Implementation Agent (VS Code/Cursor)**
-**Required Reading**:
-1. AI Agent/core-constraints.md (fundamental behavioral rules)
-2. AI Agent/safe-modification-zones.md (what can be modified)
-3. AI Agent/approval-gates.md (what requires human approval)
-
-**Operating Boundaries**:
-- File size limits and modification scopes
-- Architectural constraint compliance
-- Integration pattern following
-- Safety validation requirements
-
-**Validation Requirements**:
-- Build compilation verification
-- Integration testing
-- Performance impact assessment
-- Documentation updates
-
-### **Validation Agent (Unity + Testing)**
-**Required Reading**:
-1. AI Agent/handoff-protocols.md (validation procedures)
-2. AI Agent/core-constraints.md (quality standards)
-3. Task-specific validation requirements
-
-**Validation Scope**:
-- Functional correctness verification
-- Integration compatibility testing
-- Performance impact assessment
-- Quality standards compliance
-
----
-
-## **Maintenance and Evolution**
-
-### **Document Update Procedures**
-1. **Core constraints changes** → Human approval required
-2. **Approval gate modifications** → Human approval required
-3. **Template improvements** → Can be updated autonomously within guidelines
-4. **Handoff protocol refinements** → Test with stakeholders before implementation
-
-### **Quality Assurance**
-- **Regular review cycles** - Monthly validation of constraint effectiveness
-- **Usage monitoring** - Track how well agents follow guidelines
-- **Continuous improvement** - Refine based on real-world usage patterns
-- **Feedback integration** - Incorporate lessons learned from agent operations
-
-### **Version Control**
-- **Document versioning** - Track changes and rationale
-- **Change impact assessment** - Understand how changes affect agent behavior
-- **Rollback procedures** - Ability to revert problematic changes
-- **Cross-document consistency** - Ensure changes maintain coherent system
-
----
-
-## **Integration with Existing Project Documentation**
-
-### **Document Cross-References**
-```
-AI Agent Documents ↔ Project Documents:
-- core-constraints.md references Project Doc/GameDesignDocument.md (project context)
-- scope-definitions.md references Technical Doc/TechnicalDebt.md (current priorities)
-- task-templates/ reference Project Doc/3_GameplayMechanics.md (implementation context)
-
-AI Agent Documents ↔ Technical Documents:
-- safe-modification-zones.md references Technical Doc/TechnicalDebt.md (file status)
-- approval-gates.md references Technical Doc/DevelopmentVelocity.md (complexity patterns)
-- handoff-protocols.md references Technical Doc/FinalIntegrationTestReport.md (validation)
-```
-
-### **Context Flow Management**
-- **Project → AI**: Design intent flows from Project docs to AI operational guidelines
-- **Technical → AI**: Implementation constraints flow from Technical docs to AI safety rules
-- **AI → Implementation**: AI guidelines shape how work gets executed
-- **Implementation → Validation**: AI protocols ensure quality and consistency
-
----
-
-## **Success Metrics and Validation**
-
-### **Agent Effectiveness Metrics**
-- **Constraint compliance** - How well agents follow behavioral rules
-- **Approval efficiency** - Appropriate use of approval gates
-- **Handoff quality** - Successful transitions between agents
-- **Output quality** - Quality of work produced by agent system
-
-### **System Health Indicators**
-- **Build success rate** - Percentage of agent-produced changes that compile
-- **Integration success** - Percentage of changes that pass integration tests
-- **Performance stability** - No degradation in system performance
-- **Documentation accuracy** - Alignment between docs and actual implementation
-
-### **Continuous Improvement Process**
-- **Weekly agent performance review** - Assess effectiveness and identify issues
-- **Monthly constraint review** - Evaluate and refine behavioral rules
-- **Quarterly system evolution** - Major improvements and capability expansion
-- **Annual architecture review** - Comprehensive assessment and strategic planning
-
----
-
-**Last Updated**: July 4, 2025  
-**Document Version**: 1.0 - Initial AI Agent documentation system implementation  
-**Authority Level**: MASTER REFERENCE - This document coordinates the entire AI agent system
-
----
-
-## **Quick Reference**
-
-### **For New AI Agents**
-1. Start with `core-constraints.md` - Understand fundamental rules
-2. Read `scope-definitions.md` - Understand your role and boundaries  
-3. Study `approval-gates.md` - Know what requires human approval
-4. Review `safe-modification-zones.md` - Understand autonomous operation zones
-5. Apply `task-templates/*` - Use structured approaches for common work
-
-### **For Human Developers**
-1. Review `scope-definitions.md` - Understand what each agent type can do
-2. Monitor `approval-gates.md` - Know when agents will request approval
-3. Use `handoff-protocols.md` - Understand agent coordination processes
-4. Reference `task-templates/*` - Understand how agents structure work
-
-### **For Tool Integration**
-1. Configure context assembly per `context-composition.md`
-2. Implement handoff procedures per `handoff-protocols.md`
-3. Enforce constraints per `core-constraints.md`
-4. Validate scope boundaries per `scope-definitions.md`
+**Next Review**: December 15, 2024  
+**Feedback**: Report issues in task notes with tag #ai-agent-rules

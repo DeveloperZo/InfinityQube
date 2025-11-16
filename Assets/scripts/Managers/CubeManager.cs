@@ -441,7 +441,7 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
         }
 
         // Notify FacePaintingManager that cube is leaving
-        FacePaintingManager facePaintingManager = FindObjectOfType<FacePaintingManager>();
+        FacePaintingManager facePaintingManager = FindAnyObjectByType<FacePaintingManager>();
         if (facePaintingManager != null)
         {
             facePaintingManager.OnCubeLeft(position);
@@ -495,7 +495,7 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
                 {
                     // CUBE ESCAPE PROCESSING: Notify Wave system of cube escape
                     // Wave handles escape counting and failure conditions
-                    WaveManager waveManager = FindObjectOfType<WaveManager>();
+                    WaveManager waveManager = FindAnyObjectByType<WaveManager>();
                     if (waveManager != null)
                     {
                         waveManager.OnNonBlackCubeProcessed(effectiveType, false);
@@ -534,7 +534,7 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
         this.Log($"Cube moved to ({position.x}, {position.y}), move count: {moveCount}", EnableDebugLogs);
 
         // Notify FacePaintingManager of movement
-        FacePaintingManager facePaintingManager = FindObjectOfType<FacePaintingManager>();
+        FacePaintingManager facePaintingManager = FindAnyObjectByType<FacePaintingManager>();
         if (facePaintingManager != null)
         {
             facePaintingManager.OnCubeMoved(this, oldPosition, position);
@@ -563,7 +563,7 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
 
         this.Log($"Animating cube from {start} to {end} (grid pos {newPos})", EnableDebugLogs);
 
-        WaveManager waveManager = FindObjectOfType<WaveManager>();
+        WaveManager waveManager = FindAnyObjectByType<WaveManager>();
         float actualMoveDuration = moveDuration;
 
         if (waveManager != null)
@@ -1238,7 +1238,7 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
         // Reset physics state
         if (cubeRigidbody != null)
         {
-            cubeRigidbody.velocity = Vector3.zero;
+            cubeRigidbody.linearVelocity = Vector3.zero;
             cubeRigidbody.angularVelocity = Vector3.zero;
         }
         

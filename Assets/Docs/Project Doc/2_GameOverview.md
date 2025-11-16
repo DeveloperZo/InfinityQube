@@ -1,89 +1,88 @@
-# Game Overview
+﻿# Game Overview
 
 > This document details the Game Overview section of Infinity Cube's Game Design Document. For full project documentation, see [Game Design Document](GameDesignDocument.md).
 
 ## Purpose
-Defines the core gameplay loop, setting, and primary gameplay elements through the lens of "Intelligent Mastery of Cube Rhythms with Cosmic Wanderlust."
+Defines the core gameplay loop, setting, and primary gameplay elements through the lens of "A modern and cosmic take on the classic intelligence qube formula"
 
 ## 2.1 Concept
 
 ### The Cosmic Dance
-Players navigate a grid where geometric perfection meets cosmic chaos. Cubes advance in perfect rhythm - a universal drumbeat that players must learn, internalize, and eventually conduct. But flowing through this mathematical certainty are cosmic liquids that transform, disrupt, and create beautiful chaos.
+Players navigate various cubes traversing a grid. Players must learn how the cubes and various markers interact. 
 
-### The Core Duality
-- **Cubes**: Rhythmic certainty, predictable patterns, the cosmic metronome
-- **Paint**: Liquid chaos, transformative forces, the cosmic improvisation
+### The Core 
+- **Cubes**: Cube types include Unit, Prime, Infinity, and Recursion cubes, each with unique behaviors and interactions.
+- **Face Status System**: Cube faces can be painted with two status types: Corrupted (acts like Infinity cubes) or Enhanced (creates detonations)
+- **Marker Modes**: Three marker modes (Light, Prime, Heavy) plus special Cube markers from captured Prime cubes
 
 ### The Player's Journey
-From learning the beat to conducting cosmic jazz - players evolve from pattern recognition to creative expression, using both precision and chaos as instruments in their strategic symphony.
+The player starts off with simple puzzles and limited amount of cube types. As the player progresses, they will encounter more complex cube behaviors, paint mechanics, and other challenges.
 
-## 2.2 Core Gameplay Loop - The Rhythm of Play
+## 2.2 Core Gameplay Loop 
 
-### 1. **Wave Initiation - Starting the Beat**
-- Player presses ENTER, beginning the cosmic rhythm
-- Cubes spawn in formation, ready to march to the universal tempo
-- The metronome is set, the performance begins
+### Overview
+The player progresses through stages. Each stages consists of multiple waves. Each wave consists of multiple cubes moving across a grid with the goal of only allowing infinity qubes to fall over the edge
 
-### 2. **Reading the Rhythm - Pattern Recognition**
-- **Movement**: WASD navigation in sync with the beat
-- **Observation**: Learning which cubes follow which patterns
-- **Anticipation**: Predicting where the rhythm will take them
-- **Threat Assessment**: Infinity cubes as dangerous discord
+### 1. **Wave Initiation **
+- Player input to start the initial wave
+- Cubes spawn in unique formations that determine where and how you can place markers as they march forward in unison
 
-### 3. **Marker Placement - Conducting the Orchestra**
-- **Light Markers** (F): Precise notes in the cosmic score
-- **Prime Markers** (G): Harmonic zones creating chord progressions
-- **Timing Windows**: Placing markers in rhythm with cube advancement
-- **Resource Tempo**: Managing regeneration cycles
+### 2. **Strategizing with constraints**
+- Each level will impose limits on marker count, type, and cooldowns for markers
+- Players should strategize in real time on how to best handle the wave with the constraints given
 
-### 4. **Paint Transformation - Cosmic Jazz**
-- **Face Painting**: Tiles apply cosmic liquids to cube faces
-- **Corruption Effects**: Dark matter breaks the rhythm
-- **Enhancement Effects**: Stellar plasma amplifies the beat
-- **Rotation Drama**: Painted faces activate as cubes roll
+### 3. **Marker Placement**
+- **Light Markers** (Key: 1): Standard single-tile captures for Unit cubes
+- **Prime Markers** (Key: 2): Area captures creating 2x2 zones
+- **Heavy Markers** (Key: 3): Enhanced markers designed for Recursion cube engagement
 
-### 5. **Active Performance - The Dance**
-- **Cube Advancement**: The steady beat continues
-- **Capture Moments**: Successful hits create musical feedback
-- **Prime Cube Crescendos**: High-value captures generate cube markers
-- **Detonation Symphony**: Chain reactions as climactic moments
+### 4. **Face Status Transformation** (CURRENTLY IMPLEMENTED)
+- **Face Painting System**: Cube faces can have status effects (managed by FacePaintingManager)
+    - **Corrupted Status**: When a corrupted face touches the grid, the cube acts like an Infinity cube (cannot be captured)
+        - Visual: Black paint effect on face
+        - Duration: Can be temporary or permanent based on configuration
+        - Tiles can be configured to paint cubes on landing or exit
+    
+    - **Enhanced Status**: When an enhanced face touches the grid, it creates detonation effects when captured
+        - Visual: Blue paint effect on face  
+        - Creates additional capture zones or bonus effects
+        - Works with the detonation system for chain reactions
+    
+    **Implementation Note**: The system uses FaceStatus enum (None/Corrupted/Enhanced) instead of separate paint types. Face painting can be applied via patterns, batch operations, or individual tile configuration.
 
-### 6. **Dynamic Improvisation - Adapting to Chaos**
-- **Rhythm Breaks**: When painted cubes behave unexpectedly
-- **Recovery Beats**: Adjusting strategy to new patterns
-- **Resource Jazz**: Using chaos-generated opportunities
-- **Flow State**: Finding harmony between order and disorder
 
-### 7. **Wave Resolution - The Final Note**
-- **Performance Complete**: Wave ends with success or learning
-- **Rhythm Analysis**: Statistics reveal timing precision
-- **Pattern Mastery**: Understanding deepens for next performance
-- **Evolution**: From student to conductor to jazz master
+### 5. **Wave Resolution** (CURRENT IMPLEMENTATION)
+- Wave completes when all non-Infinity cubes are processed (captured or escaped)
+- Each wave tracks:
+    - Cubes captured by type (Unit/Prime/Recursion)
+    - Cubes escaped (triggers failure if exceeds maxAllowedEscapes)
+    - Markers placed and detonations used
+- Wave failure conditions:
+    - Too many cube escapes (configurable per wave)
+    - Custom success criteria not met (hasOwnSuccessCriteria flag)
+- Wave completion triggers events for StageManager integration
+
 
 ## 2.3 Setting - The Cosmic Stage
 
 ### A Universe of Rhythm and Chaos
 
-#### **The Grid - A Stellar Orchestra Pit**
-- Clean geometric perfection representing cosmic order
-- Each tile a note in the universal score
-- Height variations showing cosmic energy states
-- The stage where certainty and chaos perform together
+#### **The Grid**
+- A X by Y grid that allows cubes to move in unison (just like intelligence qube)
 
-#### **Visual Language of Duality**
-- **Geometric Precision**: Cubes as mathematical constants
-- **Liquid Chaos**: Paint as flowing cosmic forces
-- **Color Symphony**: 
-  - Gray = Neutral rhythm
-  - Blue = Harmonic opportunity
-  - Black = Discordant danger
-  - Paint effects = Cosmic transformation
+#### **Visual Language of Duality** (AS IMPLEMENTED)
 
-#### **Atmospheric Resonance**
-- **Background**: Deep space suggesting infinite possibilities
+- **Cube Type Colors**: 
+  - Gray = Unit (basic cube type)
+  - Blue = Prime (area coverage type)
+  - Black = Infinity (corruption type, cannot be captured)
+  - [Material TBD] = Recursion (enhanced durability type)
+
+
+#### **Atmosphere**
+- **Background**: Deep space and cosmic phenomena
 - **Particle Effects**: Cosmic dust dancing to the rhythm
-- **Light Play**: Illumination following the beat
-- **Scale**: Each grid a microcosm of universal forces
+
 
 ## 2.4 Gameplay Elements - Instruments of Order and Chaos
 
@@ -96,12 +95,13 @@ From learning the beat to conducting cosmic jazz - players evolve from pattern r
 | **Infinity** | Dangerous discord, break rhythm | Cannot be transformed | Avoidance choreography |
 | **Recursion** | Strong beats, require multiple hits | Resist transformation | Extended engagement |
 
-### The Chaos Bringers - Paint System
+### The Chaos Bringers - Face Status System (IMPLEMENTED)
 
-| Paint Type | Cosmic Force | Rhythm Effect | Visual Poetry |
-|------------|--------------|---------------|---------------|
-| **Corruption** | Dark matter liquid | Turns order into chaos | Reality-warping black flow |
-| **Enhancement** | Stellar plasma | Amplifies the rhythm | Glowing energy streams |
+| Face Status | Implementation | Effect When Active | Visual Indicator |
+|-------------|----------------|-------------------|------------------|
+| **Corrupted** | FaceStatus.Corrupted | Acts like Infinity cube - cannot be captured | Black paint on cube face |
+| **Enhanced** | FaceStatus.Enhanced | Creates detonation effects when captured | Blue paint on cube face |
+| **None** | FaceStatus.None | Normal cube behavior | No visual effect |
 
 ### The Transformation Mechanics
 - **Face Painting**: Cubes have four faces that can hold paint
@@ -109,50 +109,105 @@ From learning the beat to conducting cosmic jazz - players evolve from pattern r
 - **Duration Dynamics**: Temporary vs permanent rhythm changes
 - **Compound Chaos**: Multiple paint types create complex behaviors
 
-### The Conductor's Tools - Markers
+### The Conductor's Tools - Marker System (IMPLEMENTED)
 
-#### **Light Markers (F/R)**
-- Single-tile precision instruments
-- Create focused capture moments
-- Limited charges require rhythmic timing
+#### **Marker Mode System**
+The game uses a unified MarkerMode enum with numeric key switching:
+- Press 1: Switch to Light marker mode
+- Press 2: Switch to Prime marker mode  
+- Press 3: Switch to Heavy marker mode
 
-#### **Prime Markers (G/T)**
-- 2x2 harmonic zones
-- Capture multiple cubes in chord progressions
-- Cooldown creates rhythmic availability
+#### **Light Markers (Mode 1)**
+- Single-tile precision targeting
+- Basic capture for Unit cubes
+- Configurable charges and count limits per wave
 
-#### **Cube Markers (Q)**
-- Generated from Prime cube captures
+#### **Prime Markers (Mode 2)**
+- 2x2 area coverage zones
+- Capture multiple cubes simultaneously
+- Configurable charges and count limits per wave
+
+#### **Heavy Markers (Mode 3)**
+- Enhanced single-tile markers
+- Specifically designed for Recursion cube capture
+- Requires multiple hits to capture durable cubes
+
+#### **Cube Markers (Special)**
+- Generated from successful Prime cube captures
 - Direct detonation capabilities
-- Crescendo moments of power
+- Not part of the mode switching system
+- Exploring cube markers mechanic for recursion cube (may drop if no suitable mechanic found)
 
 ## 2.5 The Player's Evolution
 
-### From Metronome to Maestro
 
-1. **Rhythm Student**: Learning basic patterns, avoiding Infinity cubes
-2. **Beat Reader**: Anticipating cube movements, basic marker timing
-3. **Pattern Conductor**: Managing multiple cube types, resource optimization
-4. **Chaos Apprentice**: Discovering paint mechanics, controlled disruption
-5. **Cosmic Jazz Artist**: Mastering the interplay of rhythm and chaos
-6. **Universal Composer**: Creating unique solutions through creative expression
 
 ## 2.6 Design Principles
 
 ### **Rhythmic Clarity**
-Every mechanic follows predictable patterns that can be learned and mastered.
+The wave-based progression with configurable timing intervals creates a clear rhythm of gameplay. Players can control pacing with speed-up mechanics.
 
-### **Chaotic Beauty**
-Disruption creates opportunity, not just difficulty - chaos is a tool, not just an obstacle.
+### **Cosmic Wanderlust**
+The cosmic theme permeates the visual design with space backgrounds and particle effects representing cosmic dust.
 
-### **Emergent Jazz**
-Simple rules combine to create complex, beautiful, and unique strategic performances.
+### **Yugen (幽玄)**
+
 
 ### **Accessible Depth**
-Easy to hear the rhythm, challenging to conduct the orchestra, lifetime to master the jazz.
+
+
+
+## 2.7 Implementation Status & Clarifying Questions
+
+### ✅ Currently Implemented
+- **Cube Types**: All four types (Unit, Prime, Infinity, Recursion) with basic behaviors
+- **Face Status System**: Corrupted and Enhanced face painting mechanics via FacePaintingManager
+- **Marker Modes**: Three-mode system (Light/Prime/Heavy) with numeric key switching
+- **Wave System**: Complete wave management with configurable parameters per wave
+- **Grid System**: Functional grid with tile states and marker placement
+- **Audio Events**: Event-driven audio system for all major game actions
+- **Tutorial System**: Message display with pause/auto-hide functionality
+
+### ⚠️ Partially Implemented or Unclear
+- **Recursion Cubes**: Core functionality exists but visual representation needs definition
+- **Detonation System**: Referenced in code but full chain reaction mechanics unclear
+- **Cube Markers**: Mentioned as generated from Prime captures but activation method undefined
+- **Face Rotation**: System tracks faces but rotation mechanics during movement need clarification
+
+### ❓ Clarifying Questions for Design Team
+
+#### Gameplay Mechanics
+1. **Recursion Cube Visuals**: What should the visual representation be for Recursion cubes? Current code supports them but material/color undefined.
+
+2. **Heavy Marker Mechanics**: How many hits should be required to capture a Recursion cube with Heavy markers? Is there a visual feedback system for partial damage?
+
+3. **Cube Markers**: How are Cube markers activated after being generated from Prime cube captures? Is there a separate key binding or automatic trigger?
+
+4. **Face Rotation Rules**: When cubes move forward, do they rotate (tumble)? If so, which face becomes the new bottom face?
+
+5. **Detonation Chains**: How do detonations propagate? What determines the size and pattern of chain reactions?
+
+#### Visual Design
+1. **Grid Dimensions**: What are the intended default grid dimensions (X by Y)? Current implementation is configurable but needs baseline.
+
+2. **Recursion Cube Appearance**: Should they have a unique color/texture or use special effects to indicate durability?
+
+3. **Paint Duration Visuals**: How should temporary vs permanent face status be visually distinguished?
+
+#### Balance & Progression
+1. **Wave Failure Recovery**: When a wave fails due to escapes, does the player retry the same wave or continue with penalties?
+
+2. **Resource Regeneration**: Are marker charges regenerated between waves, over time, or through specific actions?
+
+3. **Difficulty Scaling**: How should wave complexity increase? More cube types, faster movement, or more complex patterns?
+
+### 📝 Notes for Future Development
+- The paint system has been refactored from separate paint types to a unified FaceStatus system
+- Wave completion is event-driven, allowing flexible integration with stage progression
+- The marker system uses a mode-switching approach rather than separate key bindings per marker type
+- Tutorial messages can be configured per wave with specific timing and pause requirements
 
 ---
-**Last Updated:** June 28, 2025  
+**Last Updated:** November 15, 2025  
 **Core Theme:** Intelligent Mastery of Cube Rhythms with Cosmic Wanderlust  
-**Design Philosophy:** Where Mathematical Precision Dances with Cosmic Chaos  
-**Cross-Reference Status:** ✅ Updated for production four-tier marker system
+**Design Philosophy:** Where Mathematical Precision Dances with Cosmic Chaos

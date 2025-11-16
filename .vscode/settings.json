@@ -37,4 +37,5 @@
             },
         }
     },
+    "dotnet.preferCSharpExtension": true,
 }

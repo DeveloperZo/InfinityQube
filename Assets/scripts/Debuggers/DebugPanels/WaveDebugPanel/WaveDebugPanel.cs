@@ -13,6 +13,7 @@ public class WaveDebugPanel : DebugPanelBase
     private WaveEditorDebug waveEditorPanel;
     private CubeToolsDebug cubeToolsPanel;
     private WaveLibraryDebug waveLibraryPanel;
+    private WaveGeneratorDebugPanel waveGeneratorPanel;
 
     // References
     private WaveManager waveManager;
@@ -23,6 +24,7 @@ public class WaveDebugPanel : DebugPanelBase
     private bool showWaveEditor = true;
     private bool showCubeTools = true;
     private bool showWaveLibrary = true;
+    private bool showWaveGenerator = false;
     
     // Fast Testing Mode
     private bool fastTestingMode = false;
@@ -48,6 +50,9 @@ public class WaveDebugPanel : DebugPanelBase
 
         cubeToolsPanel = new CubeToolsDebug();
         cubeToolsPanel.Initialize(waveManager, gridManager);
+        
+        waveGeneratorPanel = new WaveGeneratorDebugPanel();
+        waveGeneratorPanel.Initialize(waveManager, gridManager);
     }
 
     public override void Update()
@@ -74,6 +79,9 @@ public class WaveDebugPanel : DebugPanelBase
 
         if (showCubeTools)
             cubeToolsPanel?.DrawPanel(waveEditorPanel?.CurrentEditingWave, OnSyncToGrid, OnCubeAdded, OnCubeRemoved);
+            
+        if (showWaveGenerator)
+            waveGeneratorPanel?.DrawPanel(OnWaveChanged);
     }
 
     private void DrawFastTestingControls()
@@ -126,15 +134,18 @@ public class WaveDebugPanel : DebugPanelBase
         bool oldControls = showWaveControls;
         bool oldEditor = showWaveEditor;
         bool oldCubes = showCubeTools;
+        bool oldGenerator = showWaveGenerator;
         
         showWaveLibrary = DrawSimpleToggle("Library", showWaveLibrary);
         showWaveControls = DrawSimpleToggle("Controls", showWaveControls);
         showWaveEditor = DrawSimpleToggle("Editor", showWaveEditor);
         showCubeTools = DrawSimpleToggle("Cubes", showCubeTools);
+        showWaveGenerator = DrawSimpleToggle("Generator", showWaveGenerator);
         
         // Mark dirty if any toggle changed
         if (oldLibrary != showWaveLibrary || oldControls != showWaveControls ||
-            oldEditor != showWaveEditor || oldCubes != showCubeTools)
+            oldEditor != showWaveEditor || oldCubes != showCubeTools ||
+            oldGenerator != showWaveGenerator)
         {
             MarkDirty();
         }
