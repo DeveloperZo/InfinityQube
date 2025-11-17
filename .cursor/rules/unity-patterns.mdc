@@ -1,0 +1,45 @@
+---
+description: To ensure development is specialized towards unity platform
+alwaysApply: false
+---
+# Unity-Specific Patterns
+
+## MonoBehaviour Setup
+- Use `[Header("Section Name")]` for Inspector organization
+- Cache component references in Awake() or Start()
+- Use `[SerializeField]` for private fields exposed in Inspector
+- Implement IManagerDebugInterface for managers when possible
+
+## Coroutines
+- Always store coroutine reference to allow stopping
+- Stop coroutines in OnDestroy()
+- Use `yield return null` for frame delays, `WaitForSeconds` for timed delays
+
+## Events
+- Use UnityEvent for Inspector-configurable events
+- Use C# events for code-only subscriptions
+- Always null-check before invoking: `OnEvent?.Invoke()`
+
+## ScriptableObjects
+- Place in `Assets/data/` directory
+- Use `[CreateAssetMenu]` attribute
+- Validate data in `OnValidate()` method
+
+## Naming Conventions
+- Managers: `[Function]Manager.cs` (e.g., WaveManager.cs, GridManager.cs)
+- Components: Descriptive noun (e.g., Tile.cs, CubeManager.cs)
+- Data: `[Type]Data.cs` (e.g., WaveData.cs, StageData.cs)
+- Utilities: `[Function]Utils.cs` or `[Function]Helper.cs`
+- Interfaces: `I[Capability].cs` (e.g., IManagerDebugInterface.cs)
+- Inspector variables: `[SerializeField] private GameObject targetPrefab;`
+- Public properties: `public bool IsActive { get; private set; }`
+- Private fields: `private float currentSpeed;` (camelCase)
+- Constants: `private const float MAX_SPEED = 10f;` (UPPER_CASE)
+
+## Project Structure
+- Managers: `Assets/scripts/Managers/`
+- Components: `Assets/scripts/Components/`
+- Data: `Assets/scripts/Data/` and `Assets/data/`
+- Utils: `Assets/scripts/Utils/`
+- Enumerations: `Assets/scripts/Utils/Enumerations.cs`
+- Debuggers: `Assets/scripts/Debuggers/`

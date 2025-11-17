@@ -1,213 +1,254 @@
-﻿# Game Overview
+# Game Overview
 
 > This document details the Game Overview section of Infinity Cube's Game Design Document. For full project documentation, see [Game Design Document](GameDesignDocument.md).
 
 ## Purpose
-Defines the core gameplay loop, setting, and primary gameplay elements through the lens of "A modern and cosmic take on the classic intelligence qube formula"
+Defines the core gameplay loop, setting, and primary gameplay elements of InfinityQube - a strategic cube-capture game built on symmetrical wave collision mechanics.
 
 ## 2.1 Concept
 
-### The Cosmic Dance
-Players navigate various cubes traversing a grid. Players must learn how the cubes and various markers interact. 
+### Core Mechanics
+Players strategically place markers on a grid to intercept advancing cube waves. The game's signature mechanic is the **Symmetrical Wave System**, where placed markers transform into cubes that move backward toward incoming waves, creating dynamic collision-based captures.
 
-### The Core 
-- **Cubes**: Cube types include Unit, Prime, Infinity, and Recursion cubes, each with unique behaviors and interactions.
-- **Face Status System**: Cube faces can be painted with two status types: Corrupted (acts like Infinity cubes) or Enhanced (creates detonations)
-- **Marker Modes**: Three marker modes (Light, Prime, Heavy) plus special Cube markers from captured Prime cubes
+### Primary Systems
+- **Cubes**: Four distinct cube types (Unit, Prime, Infinity, and Recursion), each with unique capture requirements and strategic value
+- **Face Status System**: Cube faces can be modified with Corrupted (prevents capture) or Enhanced (creates bonus effects) status effects
+- **Marker System**: Four marker types (Light, Heavy, Prime, Cube) provide different capture capabilities
+- **Symmetrical Wave System**: The game's defining mechanic - markers become backward-moving cubes that collide with forward-moving waves
 
-### The Player's Journey
-The player starts off with simple puzzles and limited amount of cube types. As the player progresses, they will encounter more complex cube behaviors, paint mechanics, and other challenges.
+### Progression Structure
+Players advance through increasingly complex stages featuring diverse cube formations, status effect patterns, and resource constraints. Success requires mastering the timing and positioning of marker-to-cube transformations.
 
-## 2.2 Core Gameplay Loop 
+## 2.2 Core Gameplay Loop
 
 ### Overview
-The player progresses through stages. Each stages consists of multiple waves. Each wave consists of multiple cubes moving across a grid with the goal of only allowing infinity qubes to fall over the edge
+Players progress through stages composed of multiple waves. Each wave presents a formation of cubes moving across a grid. The objective is to capture all non-Infinity cubes while allowing Infinity cubes to pass through.
 
-### 1. **Wave Initiation **
-- Player input to start the initial wave
-- Cubes spawn in unique formations that determine where and how you can place markers as they march forward in unison
+### 1. **Wave Initialization**
+- Player triggers wave start through input
+- Cube formations spawn at grid edge and begin forward movement
+- Wave-specific constraints (marker limits, cooldowns, cube types) become active
 
-### 2. **Strategizing with constraints**
-- Each level will impose limits on marker count, type, and cooldowns for markers
-- Players should strategize in real time on how to best handle the wave with the constraints given
+### 2. **Strategic Analysis**
+- Assess cube formation patterns and movement speed
+- Identify high-priority targets (Prime cubes for resources, dangerous Recursion cubes)
+- Plan marker placement considering backward movement trajectories
+- Account for face status effects that modify cube behavior
 
-### 3. **Marker Placement**
-- **Light Markers** (Key: 1): Standard single-tile captures for Unit cubes
-- **Prime Markers** (Key: 2): Area captures creating 2x2 zones
-- **Heavy Markers** (Key: 3): Enhanced markers designed for Recursion cube engagement
+### 3. **Marker Placement & Transformation**
+- **Light Markers** (Key: F): Single-tile markers that transform into backward-moving Light cubes
+- **Heavy Markers** (Key: V): Enhanced markers that become Heavy cubes for Recursion capture
+- **Prime Markers** (Key: G): Area-effect markers creating 3x3 capture zones when transformed
+- **Cube Markers** (Key: Q): Special markers generated from Prime cube captures
+- **Transformation Process**: Upon placement, markers immediately convert to cubes and begin backward movement
 
-### 4. **Face Status Transformation** (CURRENTLY IMPLEMENTED)
-- **Face Painting System**: Cube faces can have status effects (managed by FacePaintingManager)
-    - **Corrupted Status**: When a corrupted face touches the grid, the cube acts like an Infinity cube (cannot be captured)
-        - Visual: Black paint effect on face
-        - Duration: Can be temporary or permanent based on configuration
-        - Tiles can be configured to paint cubes on landing or exit
+### 4. **Bidirectional Movement Phase**
+- **Wave Cubes**: Continue forward movement at configured speed
+- **Player Cubes**: Move backward from marker placement positions
+- **Collision Calculation**: System continuously tracks approaching collision points
+- **Strategic Timing**: Distance and timing determine where collisions occur on the grid
+
+### 5. **Collision Resolution**
+- **Capture Collisions**: When player cube meets compatible wave cube, capture occurs
+- **Type Matching**: Light/Heavy cubes capture Unit/Recursion respectively
+- **Area Effects**: Prime cube collisions affect 3x3 zones
+- **Same-Type Interactions**: Matching cube types (Prime-Prime, Recursion-Recursion) generate marker resources
+- **Conversion Tactics**: Unit cubes can revert to markers mid-movement for tactical advantages
+
+### 6. **Face Status Processing** (CURRENTLY IMPLEMENTED)
+- **Face Status System**: Each cube face can hold status effects affecting behavior
+    - **Corrupted Status**: Makes cube uncapturable while active
+        - Visual: Black effect on affected face
+        - Activates when corrupted face contacts grid
+        - Duration: Configurable as temporary or permanent
     
-    - **Enhanced Status**: When an enhanced face touches the grid, it creates detonation effects when captured
-        - Visual: Blue paint effect on face  
-        - Creates additional capture zones or bonus effects
-        - Works with the detonation system for chain reactions
+    - **Enhanced Status**: Triggers bonus effects upon capture
+        - Visual: Blue effect on affected face
+        - Creates detonation zones or chain reactions
+        - Integrates with scoring multipliers
     
-    **Implementation Note**: The system uses FaceStatus enum (None/Corrupted/Enhanced) instead of separate paint types. Face painting can be applied via patterns, batch operations, or individual tile configuration.
+    **Technical Note**: Implemented via FaceStatus enum with efficient face tracking per cube.
 
+### 7. **Wave Completion**
+- Wave ends when all mobile cubes are resolved (captured or escaped)
+- System tracks:
+    - Capture count by cube type
+    - Escape count (failure if exceeds threshold)
+    - Resource usage and generation
+    - Performance metrics for scoring
+- Failure triggers wave retry or stage penalty based on configuration
+- Success advances to next wave with potential resource rewards
 
-### 5. **Wave Resolution** (CURRENT IMPLEMENTATION)
-- Wave completes when all non-Infinity cubes are processed (captured or escaped)
-- Each wave tracks:
-    - Cubes captured by type (Unit/Prime/Recursion)
-    - Cubes escaped (triggers failure if exceeds maxAllowedEscapes)
-    - Markers placed and detonations used
-- Wave failure conditions:
-    - Too many cube escapes (configurable per wave)
-    - Custom success criteria not met (hasOwnSuccessCriteria flag)
-- Wave completion triggers events for StageManager integration
+## 2.3 Setting - The Grid Arena
 
-
-## 2.3 Setting - The Cosmic Stage
-
-### A Universe of Rhythm and Chaos
+### Spatial Framework
 
 #### **The Grid**
-- A X by Y grid that allows cubes to move in unison (just like intelligence qube)
+- Configurable X by Y tile grid serving as the primary play space
+- Tiles support marker placement and cube movement
+- Edge boundaries define escape zones and spawn points
 
-#### **Visual Language of Duality** (AS IMPLEMENTED)
+#### **Visual Design System** (AS IMPLEMENTED)
 
-- **Cube Type Colors**: 
-  - Gray = Unit (basic cube type)
-  - Blue = Prime (area coverage type)
-  - Black = Infinity (corruption type, cannot be captured)
-  - [Material TBD] = Recursion (enhanced durability type)
+- **Cube Type Identification**: 
+  - Gray = Unit (standard capture target)
+  - Blue = Prime (resource-generating type)
+  - Black = Infinity (uncapturable obstacle)
+  - [Pending] = Recursion (multi-hit requirement)
 
+#### **Environmental Design**
+- **Background**: Deep space environments with cosmic elements
+- **Effects**: Particle systems for captures and collisions
+- **Grid Highlighting**: Dynamic tile states for strategic feedback
 
-#### **Atmosphere**
-- **Background**: Deep space and cosmic phenomena
-- **Particle Effects**: Cosmic dust dancing to the rhythm
+## 2.4 Gameplay Elements - Core Components
 
+### Cube Types - Strategic Targets
 
-## 2.4 Gameplay Elements - Instruments of Order and Chaos
+| Cube Type | Mechanical Role | Capture Method | Strategic Value |
+|-----------|-----------------|----------------|-----------------|
+| **Unit** | Standard target | Single collision with Light cube | Basic scoring, conversion potential |
+| **Prime** | Resource generator | Requires Prime marker collision | Generates Cube markers, area clearing |
+| **Infinity** | Obstacle | Cannot be captured | Must be avoided or bypassed |
+| **Recursion** | Durable target | Multiple Heavy cube collisions | High score value, challenge element |
 
-### The Rhythm Makers - Cube Types
+### Face Status System - Behavioral Modifiers (IMPLEMENTED)
 
-| Cube Type | Rhythm Role | Chaos Interaction | Player Response |
-|-----------|-------------|-------------------|-----------------|
-| **Unit** | Basic beat, steady tempo | Can be corrupted or enhanced | Standard capture timing |
-| **Prime** | Valuable notes, create crescendos | Generate detonation resources | Aggressive pursuit |
-| **Infinity** | Dangerous discord, break rhythm | Cannot be transformed | Avoidance choreography |
-| **Recursion** | Strong beats, require multiple hits | Resist transformation | Extended engagement |
+| Face Status | System Implementation | Mechanical Effect | Visual Feedback |
+|-------------|----------------------|-------------------|-----------------|
+| **Corrupted** | FaceStatus.Corrupted | Prevents capture while active | Black face effect |
+| **Enhanced** | FaceStatus.Enhanced | Triggers bonus effects on capture | Blue face effect |
+| **None** | FaceStatus.None | Standard cube behavior | No modification |
 
-### The Chaos Bringers - Face Status System (IMPLEMENTED)
+### Status Mechanics
+- **Face Application**: Each cube tracks status on four faces
+- **Activation Trigger**: Status activates when painted face contacts grid
+- **Duration System**: Temporary effects decay over time, permanent effects persist
+- **Compound Effects**: Multiple status types create complex behavioral patterns
 
-| Face Status | Implementation | Effect When Active | Visual Indicator |
-|-------------|----------------|-------------------|------------------|
-| **Corrupted** | FaceStatus.Corrupted | Acts like Infinity cube - cannot be captured | Black paint on cube face |
-| **Enhanced** | FaceStatus.Enhanced | Creates detonation effects when captured | Blue paint on cube face |
-| **None** | FaceStatus.None | Normal cube behavior | No visual effect |
+### Marker System - Player Tools (IMPLEMENTED)
 
-### The Transformation Mechanics
-- **Face Painting**: Cubes have four faces that can hold paint
-- **Rotation Activation**: Effects trigger when painted face touches grid
-- **Duration Dynamics**: Temporary vs permanent rhythm changes
-- **Compound Chaos**: Multiple paint types create complex behaviors
+#### **Four-Tier Marker Framework**
+Dedicated input system for rapid marker deployment:
+- F Key: Deploy Light marker
+- V Key: Deploy Heavy marker
+- G Key: Deploy Prime marker
+- Q Key: Activate Cube marker
 
-### The Conductor's Tools - Marker System (IMPLEMENTED)
+#### **Light Markers (F Key)**
+- Single-tile precision placement
+- Transform into backward-moving Light cubes
+- Optimal for Unit cube interception
+- Resource-efficient standard tool
 
-#### **Marker Mode System**
-The game uses a unified MarkerMode enum with numeric key switching:
-- Press 1: Switch to Light marker mode
-- Press 2: Switch to Prime marker mode  
-- Press 3: Switch to Heavy marker mode
-
-#### **Light Markers (Mode 1)**
-- Single-tile precision targeting
-- Basic capture for Unit cubes
-- Configurable charges and count limits per wave
-
-#### **Prime Markers (Mode 2)**
-- 2x2 area coverage zones
-- Capture multiple cubes simultaneously
-- Configurable charges and count limits per wave
-
-#### **Heavy Markers (Mode 3)**
+#### **Heavy Markers (V Key)**
 - Enhanced single-tile markers
-- Specifically designed for Recursion cube capture
-- Requires multiple hits to capture durable cubes
+- Become Heavy cubes upon transformation
+- Required for Recursion cube capture
+- Higher resource cost than Light markers
 
-#### **Cube Markers (Special)**
-- Generated from successful Prime cube captures
-- Direct detonation capabilities
-- Not part of the mode switching system
-- Exploring cube markers mechanic for recursion cube (may drop if no suitable mechanic found)
+#### **Prime Markers (G Key)**
+- 3x3 area coverage capability
+- Transform into large Prime cubes
+- Capture multiple targets simultaneously
+- Generate Cube markers from successful Prime captures
 
-## 2.5 The Player's Evolution
+#### **Cube Markers (Q Key)**
+- Special markers from Prime cube captures
+- Instant detonation capability
+- Strategic resource for emergency situations
+- Limited availability based on Prime success rate
 
+### Symmetrical Wave System - Core Innovation
 
+#### **Fundamental Concept**
+The game creates an infinity symbol (∞) through gameplay:
+- Forward loop: Wave cubes advancing toward grid edge
+- Backward loop: Player cubes moving from placement points
+- Intersection: Collision points where captures occur
+
+#### **Strategic Mechanics**
+- **Trajectory Planning**: Backward movement distance equals forward interception range
+- **Timing Windows**: Early placement + far position = late-stage collision
+- **Pattern Matching**: Success requires mirroring wave formations in reverse
+- **Dynamic Conversion**: Transform Unit cubes to markers for tactical repositioning
+- **Resource Loops**: Same-type collisions generate new marker resources
+
+## 2.5 Player Skill Development
+
+### Progression of Mastery
+1. **Foundation**: Understanding basic collision mechanics and marker transformation
+2. **Advancement**: Managing face status effects and resource constraints
+3. **Expertise**: Optimizing collision points and conversion strategies
+4. **Mastery**: Perfect wave clearance through precise symmetrical positioning
 
 ## 2.6 Design Principles
 
-### **Rhythmic Clarity**
-The wave-based progression with configurable timing intervals creates a clear rhythm of gameplay. Players can control pacing with speed-up mechanics.
+### **Mechanical Clarity**
+Every system interaction has clear, predictable outcomes. Collision physics follow consistent rules.
 
-### **Cosmic Wanderlust**
-The cosmic theme permeates the visual design with space backgrounds and particle effects representing cosmic dust.
+### **Strategic Depth**
+Simple placement mechanics create complex tactical decisions through movement vectors and timing.
 
-### **Yugen (幽玄)**
+### **Visual Communication**
+All gameplay elements use distinct visual language for instant recognition during fast-paced waves.
 
+### **Accessible Complexity**
+Core mechanics are immediately understandable while mastery requires deep strategic thinking.
 
-### **Accessible Depth**
-
-
-
-## 2.7 Implementation Status & Clarifying Questions
+## 2.7 Implementation Status & Technical Details
 
 ### ✅ Currently Implemented
-- **Cube Types**: All four types (Unit, Prime, Infinity, Recursion) with basic behaviors
-- **Face Status System**: Corrupted and Enhanced face painting mechanics via FacePaintingManager
-- **Marker Modes**: Three-mode system (Light/Prime/Heavy) with numeric key switching
-- **Wave System**: Complete wave management with configurable parameters per wave
-- **Grid System**: Functional grid with tile states and marker placement
-- **Audio Events**: Event-driven audio system for all major game actions
-- **Tutorial System**: Message display with pause/auto-hide functionality
+- **Cube Types**: All four types with distinct behaviors and capture requirements
+- **Face Status System**: Complete implementation via FacePaintingManager
+- **Marker System**: Four-tier system with dedicated key bindings
+- **Wave Management**: Configurable wave parameters and progression tracking
+- **Grid Infrastructure**: Full tile system with state management
+- **Audio Integration**: Event-driven sound system for all actions
+- **Tutorial Framework**: Contextual message system with pause capabilities
 
-### ⚠️ Partially Implemented or Unclear
-- **Recursion Cubes**: Core functionality exists but visual representation needs definition
-- **Detonation System**: Referenced in code but full chain reaction mechanics unclear
-- **Cube Markers**: Mentioned as generated from Prime captures but activation method undefined
-- **Face Rotation**: System tracks faces but rotation mechanics during movement need clarification
+### 🚧 To Be Implemented
+- **Symmetrical Wave System**: Marker-to-cube transformation mechanics
+- **Backward Movement**: Reverse cube trajectories from marker positions
+- **Collision Detection**: Bidirectional collision resolution system
+- **Conversion System**: Unit cube to marker transformation mid-flight
+- **Resource Generation**: Same-type collision marker dropping
 
-### ❓ Clarifying Questions for Design Team
+### ⚠️ Partially Implemented
+- **Recursion Cubes**: Logic complete, visual representation pending
+- **Detonation Chains**: System referenced but propagation rules undefined
+- **Cube Marker Generation**: Creation from Prime captures needs activation logic
+- **Face Rotation**: Tracking implemented but movement rotation needs specification
 
-#### Gameplay Mechanics
-1. **Recursion Cube Visuals**: What should the visual representation be for Recursion cubes? Current code supports them but material/color undefined.
+### ❓ Technical Specifications Needed
 
-2. **Heavy Marker Mechanics**: How many hits should be required to capture a Recursion cube with Heavy markers? Is there a visual feedback system for partial damage?
+#### Collision System
+1. **Collision Detection Range**: Pixel-perfect or tile-based collision boundaries?
+2. **Simultaneous Collisions**: Resolution order for multiple simultaneous impacts?
+3. **Collision Feedback**: Visual/audio requirements for different collision types?
 
-3. **Cube Markers**: How are Cube markers activated after being generated from Prime cube captures? Is there a separate key binding or automatic trigger?
+#### Movement Mechanics  
+1. **Movement Speed**: Uniform speed or type-specific velocities?
+2. **Rotation During Movement**: Do cubes rotate/tumble while moving?
+3. **Path Deviation**: Strictly linear or curve support for advanced waves?
 
-4. **Face Rotation Rules**: When cubes move forward, do they rotate (tumble)? If so, which face becomes the new bottom face?
+#### Visual Requirements
+1. **Grid Dimensions**: Default grid size for standard gameplay?
+2. **Recursion Appearance**: Visual differentiation from other cube types?
+3. **Status Duration Indicators**: How to show temporary vs permanent effects?
 
-5. **Detonation Chains**: How do detonations propagate? What determines the size and pattern of chain reactions?
+#### Balance Parameters
+1. **Collision Timing Windows**: Frame-perfect or generous collision detection?
+2. **Resource Regeneration**: Marker recharge rates between waves?
+3. **Difficulty Scaling**: Progressive complexity through speed, patterns, or constraints?
 
-#### Visual Design
-1. **Grid Dimensions**: What are the intended default grid dimensions (X by Y)? Current implementation is configurable but needs baseline.
-
-2. **Recursion Cube Appearance**: Should they have a unique color/texture or use special effects to indicate durability?
-
-3. **Paint Duration Visuals**: How should temporary vs permanent face status be visually distinguished?
-
-#### Balance & Progression
-1. **Wave Failure Recovery**: When a wave fails due to escapes, does the player retry the same wave or continue with penalties?
-
-2. **Resource Regeneration**: Are marker charges regenerated between waves, over time, or through specific actions?
-
-3. **Difficulty Scaling**: How should wave complexity increase? More cube types, faster movement, or more complex patterns?
-
-### 📝 Notes for Future Development
-- The paint system has been refactored from separate paint types to a unified FaceStatus system
-- Wave completion is event-driven, allowing flexible integration with stage progression
-- The marker system uses a mode-switching approach rather than separate key bindings per marker type
-- Tutorial messages can be configured per wave with specific timing and pause requirements
+### 📝 Development Notes
+- FaceStatus system provides efficient status tracking per cube face
+- Wave system uses event-driven architecture for flexible stage integration
+- Marker mode switching enables rapid tactical decisions
+- Tutorial system supports wave-specific instructional content
 
 ---
-**Last Updated:** November 15, 2025  
-**Core Theme:** Intelligent Mastery of Cube Rhythms with Cosmic Wanderlust  
-**Design Philosophy:** Where Mathematical Precision Dances with Cosmic Chaos
+**Last Updated:** November 16, 2025  
+**Core System:** Symmetrical Wave Collision Mechanics  
+**Design Focus:** Strategic depth through bidirectional movement and collision-based gameplay

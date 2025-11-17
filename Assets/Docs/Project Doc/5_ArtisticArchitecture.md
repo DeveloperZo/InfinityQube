@@ -2,45 +2,52 @@
 
 > **Part of:** [Game Design Document](GameDesignDocument.md) (v3.1)  
 > **Related:** [Sound Architecture](6_SoundArchitecture.md) • [All Project Documents](GameDesignDocument.md#architecture-documentation)  
-> Comprehensive visual identity framework supporting external graphics, animation, and sound design teams with actionable guidance for implementing the core aesthetic vision of "Intelligent Mastery of Cube Rhythms with Cosmic Wanderlust."
+> Visual identity framework supporting external graphics, animation, and sound design teams with technical specifications for implementing mathematical symmetry and cosmic aesthetics.
 
 ---
 
 ## 📐 VISUAL IDENTITY SYSTEM
 
 ### Core Aesthetic Principle
-**"Geometric Precision meets Cosmic Chaos"**
+**"Mathematical Symmetry in Cosmic Space"**
 
-The visual identity of Infinity Cube balances mathematical clarity with cosmic wonder, creating a universe where perfect geometric forms dance with flowing cosmic liquids in an eternal rhythm of order and transformation.
+Infinity Cube's visual identity emphasizes mathematical precision and cosmic depth. Perfect geometric forms maintain symmetrical balance while cosmic elements provide depth and atmosphere.
 
 ---
 
 ## ∞ INFINITY CUBE VISUAL SPECIFICATIONS
 
-### The Premier Cube - Elite Focus Design
+### The Infinity Cube - Mathematical Symbol Carrier
 
-The Infinity Cube stands as the premier cube type, designed to command attention and respect through sophisticated material complexity rather than loud visual effects.
+The Infinity Cube serves as the primary symbol carrier, displaying the mathematical infinity symbol (∞) as its core visual identity.
 
 #### **Core Infinity Cube Identity**
 ```
 Geometric Foundation:
 - Perfect cube geometry with subtle beveled edges (0.05 unit radius)
-- Minimalist form emphasizing mathematical perfection
-- 1x1x1 Unity unit scale for precise grid alignment
-- Surface designed for complex material presentation
+- Mathematical precision in 1x1x1 Unity unit scale
+- Grid-aligned positioning for symmetrical arrangements
+- Surface optimized for infinity symbol display
 
-Material Composition (Luscious Black & White Cosmic Dust):
-- Base: Deep luscious black with subtle cosmic texture variation
-- Highlights: Various washes of white creating natural focus points
-- Depth: Rich undertones suggesting infinite dimensional space
-- Complexity: Simple color range with sophisticated material layering
+Infinity Symbol (∞) Visualization:
+- Symbol Position: Centered on each face of the cube
+- Symbol Size: 0.6 units wide, 0.3 units tall
+- Symbol Rendering: Emissive white outline on deep black base
+- Symbol Animation: Gentle pulse synchronized to 120 BPM rhythm
+- Symbol Material: Self-illuminated to ensure visibility
+
+Material Composition:
+- Base: Deep black with cosmic texture
+- Symbol: Bright white emissive material for infinity symbol
+- Depth: Layered materials creating dimensional depth
+- Contrast: High contrast between base and symbol for clarity
 ```
 
 #### **Infinity Cube Distinctive Features**
-1. **Elite Material Complexity**: Simple palette with sophisticated presentation depth
-2. **Focus Command**: White washes strategically placed to draw player attention
-3. **Cosmic Dust Texture**: Subtle particulate effects suggesting stellar formation
-4. **Infinite Depth Illusion**: Layered materials creating dimensional complexity within simple forms
+1. **Infinity Symbol Display**: Clear ∞ symbol on all faces for immediate recognition
+2. **Mathematical Precision**: Perfect symmetry and geometric alignment
+3. **Cosmic Background**: Deep space texture providing infinite depth
+4. **Symbol Illumination**: Self-lit infinity symbol ensuring visibility at all angles
 
 #### **Cube-Type Material System Integration**
 ```
@@ -57,99 +64,211 @@ Extended Cube Palette (To Create):
 └── RecursionHoney.mat      → Layered honey-caramel transitioning to red-purple
 ```
 
-### Four Cube Aesthetic Hierarchy
+### Cube Type Visual Hierarchy
 
-Each cube type serves a distinct visual and gameplay role, creating a sophisticated aesthetic ecosystem where attention flows naturally through the visual hierarchy.
+Four cube types with distinct visual properties for gameplay identification.
 
-#### **1. Infinity Cube - The Premier Elite**
+#### **1. Infinity Cube - Symbol Carrier**
 ```
-Visual Role: Command attention and respect
-Aesthetic Strategy: Sophisticated complexity in simple palette
-Material Focus: Luscious black base with white cosmic dust highlights
-Attention Level: Maximum focus through elegant complexity
-Design Philosophy: "Elite minimalism with infinite depth"
-```
-
-#### **2. Unit Cube - The Harmonious Standard**
-```
-Visual Role: Provide pleasing foundation that directs attention elsewhere
-Aesthetic Strategy: Functional beauty optimized for group viewing
-Material Focus: Adaptive gray-blue base that shifts across levels
-Attention Level: Minimal individual focus, maximum group harmony
-Design Philosophy: "Beautiful standard that enhances special moments"
+Visual Role: Primary special cube with infinity symbol
+Material: Black base with white ∞ symbol
+Visibility: Maximum contrast for symbol clarity
+Attention Level: Highest priority
+Identifier: Infinity symbol on all faces
 ```
 
-#### **3. Prime Cube - The Playful Ocean**
+#### **2. Unit Cube - Standard Block**
 ```
-Visual Role: Provide dynamic energy and living motion
-Aesthetic Strategy: Nebula-inspired animation with gentle illumination
-Material Focus: Vibrant ocean blue with wave foam brightness
-Attention Level: Active but not overwhelming attraction
-Design Philosophy: "Living water energy with cosmic playfulness"
+Visual Role: Basic building block for waves
+Material: Gray-blue metallic finish
+Visibility: Medium contrast
+Attention Level: Low individual focus
+Identifier: Smooth surface without symbols
 ```
 
-#### **4. Recursion Cube - The Warm Anchor**
+#### **3. Prime Cube - Number Marker**
 ```
-Visual Role: Provide warm contrast and layered complexity
-Aesthetic Strategy: Rich depth through honey-caramel gradient layering
-Material Focus: Deep honey transitioning to red-purple depths
-Attention Level: Strong presence through warm color contrast
-Design Philosophy: "Earthly richness in cosmic environment"
+Visual Role: Prime number indicator
+Material: Ocean blue with soft glow
+Visibility: High through color differentiation
+Attention Level: Medium-high
+Identifier: Blue coloration and glow effect
+```
+
+#### **4. Recursion Cube - Special Function**
+```
+Visual Role: Recursive behavior indicator
+Material: Honey-caramel with gradient
+Visibility: High through warm colors
+Attention Level: Medium-high
+Identifier: Warm color spectrum
+```
+
+---
+
+## ∞ INFINITY SYMBOL IMPLEMENTATION
+
+### Technical Specifications for Infinity Symbol Display
+
+#### **Symbol Rendering Requirements**
+```
+Geometry Specifications:
+- Symbol Type: Mathematical infinity (∞) Unicode U+221E
+- Render Method: Texture-based or procedural mesh generation
+- Resolution: Minimum 512x256 pixels for texture approach
+- Anti-aliasing: 4x MSAA for smooth curves
+
+Placement on Cube Faces:
+- Position: Centered on each face (0.5, 0.5 in UV coordinates)
+- Size: 60% of face width, 30% of face height
+- Rotation: Horizontal orientation (0 degrees)
+- Depth: Raised 0.01 units from face surface
+```
+
+#### **Symbol Material Properties**
+```
+Base Symbol Material:
+- Shader: Unlit/Emissive for constant visibility
+- Base Color: Pure white (#FFFFFF)
+- Emission Intensity: 2.0 (HDR value)
+- Texture Format: PNG with alpha channel
+
+Animation Properties:
+- Pulse Rate: 0.5 Hz (synchronized to 120 BPM)
+- Pulse Amplitude: ±20% emission intensity
+- Rotation: Static (no rotation)
+- Scale Animation: None (maintains readability)
+```
+
+#### **Implementation Methods**
+```
+Option 1 - Texture-Based:
+├── InfinitySymbol.png (512x256, white on transparent)
+├── Apply as decal or secondary UV channel
+├── Use emission shader for glow effect
+└── Supports LOD with mipmapping
+
+Option 2 - Procedural Mesh:
+├── Generate Bézier curves for infinity shape
+├── Extrude to create 3D geometry
+├── Apply emissive material
+└── Higher performance cost but perfect scaling
+
+Option 3 - Shader-Based:
+├── Mathematical function in fragment shader
+├── Distance field rendering for perfect curves
+├── No texture memory required
+└── Best quality at any resolution
+```
+
+---
+
+## 🌊 BIDIRECTIONAL GAMEPLAY VISUAL DISTINCTION
+
+### Player Cubes vs Wave Cubes
+
+The bidirectional wave system requires clear visual distinction between player-controlled cubes and wave-generated cubes to ensure gameplay clarity.
+
+#### **Visual Distinction System**
+```
+Player-Controlled Cubes (Forward Direction):
+- Base Color: Standard cube colors per type (Black/Blue/Gray/Honey)
+- Edge Highlight: Bright cyan edge glow (0.2 unit width)
+- Movement Trail: Cyan particle trail following movement
+- Marker Response: Full brightness when markers applied
+- Direction Indicator: Forward-pointing arrow overlay when active
+
+Wave-Generated Cubes (Reverse Direction):
+- Base Color: Inverted/complementary colors to standard palette
+- Edge Highlight: Magenta edge glow (0.2 unit width)
+- Movement Trail: Magenta particle trail following movement
+- Marker Response: 70% brightness when markers applied
+- Direction Indicator: Backward-pointing arrow overlay when active
+```
+
+#### **Symmetrical Wave Visual Properties**
+```
+Bidirectional Flow Indicators:
+- Grid Lines: Dual-colored grid showing both flow directions
+- Wave Front: Visual wave effect with directional arrows
+- Collision Points: Bright flash when opposing cubes meet
+- Symmetry Lines: Visible axis lines showing mirror points
+
+Direction Switching Feedback:
+- Mode Switch Effect: Screen-wide directional flip animation
+- Color Transition: Smooth color inversion over 0.5 seconds
+- Particle Direction: All particles reverse flow direction
+- UI Indicators: Clear arrows showing active direction
+```
+
+#### **Material Differentiation**
+```
+Player Cube Materials:
+├── PlayerInfinity.mat    → Black base with cyan highlights
+├── PlayerPrime.mat       → Ocean blue with cyan accents
+├── PlayerUnit.mat        → Gray-blue with subtle cyan glow
+└── PlayerRecursion.mat   → Honey-caramel with cyan edges
+
+Wave Cube Materials:
+├── WaveInfinity.mat      → Inverted white base with magenta highlights
+├── WavePrime.mat         → Deep purple with magenta accents
+├── WaveUnit.mat          → Blue-gray with subtle magenta glow
+└── WaveRecursion.mat     → Purple-red with magenta edges
 ```
 
 ---
 
 ## 🎨 COSMIC/MATHEMATICAL AESTHETIC PRINCIPLES
 
-### Visual Philosophy: Sacred Geometry Meets Stellar Physics
+### Visual Philosophy: Mathematical Precision in Cosmic Space
 
-#### **1. Mathematical Harmony** (Order Component)
-- **Grid Precision**: Perfect geometric alignment with subtle guide lines
-- **Golden Ratio**: Interface proportions based on mathematical constants
-- **Symmetrical Balance**: Bilateral and radial symmetry in UI elements
-- **Clean Typography**: Geometric sans-serif fonts (Orbitron family recommended)
+#### **1. Mathematical Structure**
+- **Grid Alignment**: Exact geometric positioning on 10x10 grid
+- **Symmetrical Design**: Bilateral and radial symmetry throughout
+- **Mathematical Constants**: Golden ratio (1.618) for proportions
+- **Geometric Typography**: Sans-serif fonts with mathematical precision
 
-#### **2. Cosmic Fluidity** (Chaos Component)
-- **Flowing Elements**: Liquid animations suggesting cosmic currents
-- **Particle Systems**: Subtle stardust and energy field effects
-- **Color Transitions**: Smooth gradients mimicking nebula formations
-- **Depth Illusion**: Layered parallax creating infinite space sensation
+#### **2. Cosmic Depth Elements**
+- **Space Backgrounds**: Deep field star textures
+- **Particle Systems**: Star dust and cosmic particle effects
+- **Color Gradients**: Nebula-inspired color transitions
+- **Depth Layers**: Parallax scrolling for spatial depth
 
-#### **3. Rhythmic Visual Language** (Synthesis)
-- **Synchronized Motion**: All animations locked to global 120 BPM rhythm
-- **Visual Beats**: Subtle pulsing effects marking musical measures
-- **Progressive Intensity**: Visual complexity increasing with gameplay tension
-- **Harmonic Color**: Color relationships based on musical intervals
+#### **3. Rhythm Synchronization**
+- **120 BPM Base**: All animations synchronized to beat
+- **Beat Markers**: Visual pulses on rhythm intervals
+- **Intensity Scaling**: Effect intensity matches gameplay state
+- **Mathematical Timing**: Precise frame timing for all animations
 
 ### Color Palette Architecture
 
-#### **Cube-Driven Energy Spectrum**
-The visual energy of Infinity Cube flows directly from the four primary cube types, each defining a distinct aesthetic territory that influences all other visual elements.
+#### **Cube Type Color Specifications**
+Four primary cube types define the color palette with distinct visual properties for gameplay clarity.
 
 ```
-Infinity Cube Palette:
-- Luscious Black: Deep cosmic void with subtle texture variation
-- Cosmic White: Various washes and highlights creating focus points
-- Deep Hue Foundation: Rich undertones suggesting infinite depth
-- Complex Presentation: Simple color range with sophisticated material complexity
+Infinity Cube Colors:
+- Primary: Black base (#000000)
+- Secondary: White infinity symbol (#FFFFFF)
+- Emission: White glow for symbol visibility
+- Texture: Cosmic star field overlay
 
-Unit Cube Foundation (The Standard):
-- Functional Gray-Blue: Pleasing but non-attention-grabbing base tone
-- Adaptive Palette: Designed to shift tonally across different levels
-- Group Harmony: Optimized for visual pleasure when seen in multiples
-- Attention Direction: Ensures focus flows to special cube types
+Unit Cube Colors:
+- Primary: Gray-blue base (#4B5563)
+- Secondary: Adaptive tint per level
+- Emission: None (standard material)
+- Texture: Smooth metallic finish
 
-Prime Cube Energy (Playful Ocean):
-- Vibrant Ocean Blue: Lightly pulsating nebula-inspired core
-- Wave Foam Brightness: Gentle illumination on grid contact
-- Living Water: Dynamic but not flashlight-bright intensity
-- Nebula Texture: Cosmic cloud formations within blue spectrum
+Prime Cube Colors:
+- Primary: Ocean blue (#0EA5E9)
+- Secondary: Light blue highlights (#7DD3FC)
+- Emission: Soft blue glow
+- Texture: Nebula cloud overlay
 
-Recursion Cube Warmth (Layered Honey-Caramel):
-- Deep Honey Base: Rich caramel foundation tones
-- Purple Transition: Gradient flow to red-purple depths
-- Warm Contrast: Deliberate opposition to prime cube's cool energy
-- Layered Complexity: Multiple depth levels within warm spectrum
+Recursion Cube Colors:
+- Primary: Honey-caramel base (#F59E0B)
+- Secondary: Red-purple gradient (#A855F7)
+- Emission: Warm amber glow
+- Texture: Layered depth effect
 ```
 
 #### **Cube-Based Color Psychology**
@@ -162,10 +281,48 @@ Recursion Cube Warmth (Layered Honey-Caramel):
 
 ## 🎬 ANIMATION & MOTION PRINCIPLES
 
+### Event-Driven Animation System
+
+The visual system uses an event-driven architecture where game actions trigger specific animation events. This creates responsive visual feedback that synchronizes perfectly with player actions and game state changes.
+
+#### **Animation Trigger Points**
+
+The system recognizes multiple animation trigger points that correspond to different game actions:
+
+**Mode Switching Triggers:**
+- **ModeSwitch**: When players switch between marker modes (Light, Prime, Heavy)
+
+**Marker Action Triggers:**
+- **MarkerPlace**: When markers are placed on the grid
+- **MarkerTrigger**: When markers activate and affect cubes
+- **CubeMarkerAction**: When cube markers trigger special effects
+
+**UI and Feedback Triggers:**
+- **UIUpdate**: When interface elements update
+- **ActionSuccess**: When actions succeed successfully
+- **ActionFailed**: When actions fail and error feedback is shown
+- **ResourceRegeneration**: When marker charges regenerate
+
+#### **Animation Trigger Flow**
+
+When game actions occur, the system triggers animation events that:
+1. **Identify the Trigger Point**: Determines which visual response is appropriate
+2. **Provide Context**: Includes position, intensity, and duration information
+3. **Notify Receivers**: Sends animation events to registered visual systems
+4. **Coordinate Effects**: Synchronizes multiple visual effects for cohesive feedback
+
+#### **Visual Feedback Integration**
+
+The animation trigger system coordinates with multiple visual feedback systems:
+- **Particle Effects**: Triggered at specific positions with intensity-based parameters
+- **UI Animations**: Interface elements respond to game events
+- **Material Changes**: Visual materials update based on game state
+- **Color Flashes**: Temporary color changes provide immediate feedback
+
 ### Rhythmic Motion System
 
-#### **Core Animation Philosophy**
-All visual elements move in harmony with the underlying 120 BPM cosmic rhythm, creating a universe where mathematics and music unite in visual form.
+#### **Core Animation Timing**
+All animations synchronized to 120 BPM base rhythm for consistent visual feedback.
 
 #### **Primary Animation Categories**
 
@@ -208,6 +365,23 @@ Background Elements:
 - Atmospheric Effects: Subtle nebula-like gradients with slow color shifts
 ```
 
+**4. Event-Driven Visual Feedback**
+```
+Animation Triggers:
+- Mode switching animations with smooth transitions
+- Marker placement effects with position-based particles
+- Marker activation visual feedback with intensity scaling
+- Success/failure indicators with color-coded responses
+- Resource regeneration visual cues with pulsing effects
+
+Particle Effects:
+- Marker placement particles at grid positions
+- Cube interaction effects with cosmic particle trails
+- Paint application visual effects with color transitions
+- Face painting indicators with pulsing animations
+- Error feedback particles with warning colors
+```
+
 ### Technical Implementation Guidelines
 
 #### **Unity Animation System Integration**
@@ -216,62 +390,91 @@ Animation Framework:
 ├── Timeline-based cutscenes for major transitions
 ├── Animator Controllers for cube state machines
 ├── DOTween integration for UI and smooth interpolations
-└── Particle Systems for cosmic effects and feedback
+├── Particle Systems for cosmic effects and feedback
+└── Event-driven animation triggers for responsive feedback
+
+Animation Trigger System:
+├── AnimationTriggerManager coordinates all visual triggers
+├── Registered receivers respond to specific trigger points
+├── Context data provides position, intensity, and duration
+├── Unity Animator integration for state machine animations
+└── Visual debugging tools for trigger visualization
 
 Performance Considerations:
 - 60 FPS target with smooth frame pacing
 - Object pooling for particle effects
 - LOD system for distant cubic elements
 - Efficient material blending for paint effects
+- Event-driven system minimizes unnecessary updates
 ```
+
+#### **Visual Feedback Systems**
+
+**Input Feedback Manager:**
+- Coordinates visual feedback for player input events
+- Manages hook-based feedback system for extensibility
+- Provides intensity-based scaling for all feedback
+- Supports priority-based feedback ordering
+
+**Particle Effect System:**
+- Position-based particle spawning at trigger locations
+- Intensity-scaled particle parameters (speed, size, lifetime)
+- Color-coded particles for different event types
+- Automatic cleanup and pooling for performance
+
+**Visual Indicator System:**
+- Face painting indicators with pulsing animations
+- Marker placement visual feedback
+- Error feedback with warning colors
+- Success indicators with positive color responses
 
 ---
 
 ## 🎭 UI/UX VISUAL FRAMEWORK
 
-### Interface Design Philosophy
-**"Cosmic Control Panel"** - Interface elements appear as crystalline control surfaces floating in deep space, providing precise control over cosmic forces while maintaining the mystique of universal infinity.
+### Interface Design Specifications
+UI elements use transparent overlays with mathematical grid alignment for precise control and clear information display.
 
 #### **Primary Interface Components**
 
 **1. Information Displays**
 ```
 Statistics Panels:
-- Transparent crystalline surfaces with subtle cosmic backgrounds
-- Geometric bezels with mathematical precision
-- Text in cosmic blue (#2563EB) for primary information
-- Gold accents (#F59E0B) for highlighted values
-- Smooth slide-in animations from screen edges
+- Transparent overlays with star field backgrounds
+- Geometric borders with exact pixel alignment
+- Text in blue (#2563EB) for primary data
+- Gold (#F59E0B) for highlighted values
+- Slide animations at 0.3 second duration
 
 Resource Indicators:
-- Circular charge meters with cosmic liquid fill animations
-- Countdown timers using geometric progress arcs
-- Availability states shown through gentle pulsing glows
-- Color-coded states following cosmic palette
+- Circular charge meters with animated fill
+- Countdown timers with arc progress display
+- Availability states via pulsing indicators
+- Color-coded states per cube type palette
 ```
 
 **2. Interactive Elements**
 ```
 Control Surfaces:
-- Subtle hover states with enhanced cosmic glow
-- Press feedback through gentle scale transforms
-- Audio-visual harmony with cosmic sound design
-- Accessibility through clear visual state changes
+- Hover states with brightness increase (+20%)
+- Press feedback via scale transform (0.95x)
+- Synchronized audio-visual feedback
+- Clear state changes for accessibility
 
 Grid Overlay System:
-- Translucent guide lines for precise positioning
-- Subtle coordinate indicators using cosmic typography
-- Dynamic highlighting for valid placement zones
-- Rhythmic pulsing for time-sensitive placement windows
+- Semi-transparent grid lines (50% opacity)
+- Coordinate labels at grid intersections
+- Valid placement zones highlighted in cyan
+- Beat-synchronized pulse for timing windows
 ```
 
 #### **Responsive Visual Hierarchy**
 ```
 Priority Levels:
-1. Critical Information: High contrast, movement, cosmic gold highlighting
-2. Primary Controls: Clear definition, subtle glow, accessible interaction
-3. Secondary Data: Reduced opacity, cosmic blue tinting, minimal animation
-4. Background Elements: Deep transparency, slow movement, atmospheric only
+1. Critical Information: High contrast, animated, gold highlights (#F59E0B)
+2. Primary Controls: Clear borders, glow effects, accessible sizing
+3. Secondary Data: 70% opacity, blue tint (#2563EB), static display
+4. Background Elements: 30% opacity, slow parallax, decorative only
 ```
 
 ---
@@ -291,11 +494,30 @@ Visual Beat Mapping:
 - Measure Cycles (8.0s): Major state transitions, wave progressions
 ```
 
+#### **Event-Driven Audio-Visual Synchronization**
+
+The event-driven architecture ensures perfect synchronization between audio and visual feedback:
+
+**Synchronized Events:**
+- **Cube Landing**: Visual cube movement + audio impact sound at exact same moment
+- **Marker Placement**: Visual marker appearance + placement sound effect
+- **Marker Trigger**: Visual activation effect + trigger audio response
+- **Mode Switch**: Visual mode indicator change + mode switch sound
+- **Wave Events**: Visual wave transitions + wave audio events
+- **Error Feedback**: Visual error indicators + error audio cues
+
+**Intensity-Based Scaling:**
+- Visual effect intensity matches audio volume/intensity
+- Particle count scales with audio intensity levels
+- Animation speed synchronizes with audio tempo
+- Color intensity reflects audio prominence
+
 #### **Cross-Sensory Design Requirements**
-1. **Visual-Audio Synchronization**: Every visual effect paired with corresponding audio
+1. **Visual-Audio Synchronization**: Every visual effect paired with corresponding audio event
 2. **Rhythmic Consistency**: All motion locked to mathematical time divisions
 3. **Harmonic Color**: Color changes reflecting musical harmonic intervals
 4. **Spatial Audio Support**: Visual effects supporting 3D audio positioning
+5. **Event-Driven Coordination**: Animation triggers coordinate with audio events for unified feedback
 
 ---
 
@@ -449,8 +671,8 @@ Feedback Integration:
 
 ---
 
-**Document Version:** 1.0  
-**Last Updated:** June 23, 2025  
-**Core Aesthetic:** Intelligent Mastery of Cube Rhythms with Cosmic Wanderlust  
+**Document Version:** 2.0  
+**Last Updated:** November 16, 2025  
+**Core Aesthetic:** Mathematical Symmetry in Cosmic Space  
 **Target Integration:** Unity 3D with component-based architecture  
 **External Team Support:** Graphics, Animation, and Sound Design Teams

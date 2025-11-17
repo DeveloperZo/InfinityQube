@@ -6,10 +6,10 @@
 Provides a concise, strategic overview of Infinity Cube, defining the game's concept, unique value proposition, target audience, and current technical implementation status.
 
 ## 1.1 Project Overview
-Infinity Cube is a grid-based tactical puzzle game where players master the cosmic rhythm of advancing cube formations while wielding chaotic cosmic forces to transform mathematical certainty into strategic opportunity. Drawing inspiration from classic puzzle games like Intelligent Qube while incorporating a unique "cosmic jazz" aesthetic, Infinity Cube combines rhythmic precision, resource management, and the transformative power of cosmic liquids in a minimalist 3D environment where order and chaos dance together.
+Infinity Cube is a grid-based tactical puzzle game where players intercept advancing cube waves using a symmetrical marker system. Inspired by Intelligent Qube with a cosmic lo-fi aesthetic, the game combines precision timing, resource management, and pattern mirroring in a minimalist 3D environment.
 
 ### The Core Experience
-Players learn to read and conduct the universal rhythm of cube movement - a cosmic metronome of perfect geometric forms. But through the face painting system, they also wield ephemeral cosmic liquids that disrupt this certainty: dark matter that corrupts, stellar plasma that enhances. The game becomes a dance between mastering predictable rhythms and embracing beautiful chaos.
+Players place markers that transform into backward-moving cubes, creating symmetrical collisions with incoming waves. The infinity symbol (∞) becomes gameplay - two halves of a pattern meeting at calculated points.
 
 ## 1.2 Platform & Development Stage
 - **Platform:** PC (Windows) via Steam
@@ -19,85 +19,88 @@ Players learn to read and conduct the universal rhythm of cube movement - a cosm
 
 ## 1.3 Target Audience
 
-### **Primary Audience: Rhythm & Strategy Enthusiasts**
-- **Demographics:** Ages 18-45, players who appreciate both precision and creative expression
-- **Psychographics:** Those who find satisfaction in pattern mastery and controlled chaos
-- **Gaming Appeal:** "Easy to learn the rhythm, lifetime to master the jazz"
+### **Primary Audience: Strategy & Puzzle Enthusiasts**
+- **Demographics:** Ages 18-45, players who appreciate precision timing and pattern recognition
+- **Psychographics:** Those who find satisfaction in calculating optimal collision points
+- **Gaming Appeal:** Simple rules creating complex strategic decisions
 
-### **Secondary Audience: Cosmic Wonder Seekers**
-- **Profile:** Players drawn to games with mathematical beauty and cosmic themes
-- **Preferences:** Appreciate emergent complexity from simple rules
-- **Value Proposition:** Every playthrough creates a unique cosmic composition
+### **Secondary Audience: Mathematical Pattern Enthusiasts**
+- **Profile:** Players drawn to games with symmetry and mathematical themes
+- **Preferences:** Appreciate systems where timing and positioning create emergent strategies
+- **Value Proposition:** Every wave becomes a puzzle of symmetrical response
 
 ### **Tertiary Audience: Optimization Perfectionists**
-- **Crossover Appeal:** Players who enjoy perfecting efficiency while embracing variability
-- **Interest Drivers:** Deep statistics, multiple optimization paths, creative solutions
+- **Crossover Appeal:** Players who enjoy calculating perfect collision timings
+- **Interest Drivers:** Deep statistics, multiple capture strategies, efficiency optimization
 
 ## 1.4 Key Features
 
-### **Rhythmic Cube System**
-The heartbeat of the game - cubes advance in perfect synchronization:
-- **Cosmic Metronome**: Step-based movement creates predictable rhythm
-- **Multiple Voices**: Different cube types create polyrhythmic challenges
-- **Tempo Control**: Speed modulation adds pressure without breaking rhythm
+### **Step-Based Wave System**
+Cubes advance in synchronized steps toward the player:
+- **Predictable Movement**: Step-based advancement allows timing calculations
+- **Cube Types**: Unit, Prime, Infinity, and Recursion cubes require different strategies
+- **Speed Variation**: Configurable step intervals create pressure
 
-### **Cosmic Paint Mechanics**
-Where order meets chaos - tiles can paint cube faces with cosmic liquids:
-- **Dark Matter (Corruption)**: Transforms unit cubes into chaotic threats
-- **Stellar Plasma (Enhancement)**: Elevates simple cubes into valuable resources
-- **Temporal Effects**: Paint duration creates evolving rhythmic patterns
-- **Face Rotation**: Painted effects activate as cubes roll forward
 
-### **Multi-Layered Marker System**
-Tools for conducting the cosmic orchestra:
-- **Light Markers**: Precision beats in the cosmic rhythm
-- **Prime Markers**: Harmonic coverage creating chord progressions
-- **Cube Markers**: Crescendo moments generated from Prime cube captures
+### **Four-Tier Marker System**
+Resource-limited tools for cube capture:
+- **Light Markers**: Single-tile captures for Unit and Prime cubes
+- **Heavy Markers**: Multi-hit capability for Recursion cubes
+- **Prime Markers**: 3x3 area coverage for group captures
+- **Cube Markers**: Generated from Prime captures, used for direct detonation
 
-### **Progressive Rhythm Training**
-12-stage journey from simple beats to complex cosmic jazz:
-- **Act 1**: Learn the fundamental rhythm
-- **Act 2**: Discover cosmic disruption through paint
-- **Act 3**: Master the synthesis of order and chaos
-- **Act 4**: Express personal style through creative solutions
+### **Symmetrical Wave System**
+The infinity symbol (∞) as core gameplay:
+- **Moving Markers**: Placed markers transform into backward-moving cubes
+- **Pattern Mirroring**: Players duplicate wave patterns with inverse timing
+- **Collision Captures**: Player cubes and wave cubes collide for captures
+- **Mid-Flight Conversion**: Unit cubes convert back to markers for Infinity bypass
 
-### **Comprehensive Performance Tracking**
-Deep analytics revealing rhythmic mastery:
-- **Rhythm Metrics**: Timing precision, pattern recognition
-- **Chaos Management**: Paint usage efficiency, transformation strategies
-- **Optimization Scores**: Multiple paths to perfection
+### **Progressive Stage Design**
+12-stage progression teaching core mechanics:
+- **Act 1**: Basic marker placement and cube types
+- **Act 2**: Face painting and tile effects
+- **Act 3**: Symmetrical wave system and collision timing
+- **Act 4**: Combined mechanics and optimization challenges
+
+### **Performance Tracking**
+Detailed statistics for optimization:
+- **Capture Metrics**: Success rates by cube type
+- **Resource Efficiency**: Marker usage and regeneration timing
+- **Collision Accuracy**: Precision of symmetrical interceptions
 
 ## 1.5 Technical Foundation
 
-### **Proven Architecture**
-Built on Unity's component-based system with clear separation of concerns:
-- **Rhythm Engine**: Precise step-based movement system
-- **Paint System**: Modular face-tracking with rotation logic
-- **Resource Management**: Charge and cooldown systems creating gameplay tempo
+### **Technical Architecture**
+Unity-based component system:
+- **Step Engine**: Synchronized wave and player cube movement
+- **Collision System**: Bidirectional cube interaction handling
+- **Resource Management**: Marker charges, cooldowns, and regeneration
 - **Statistics Framework**: Comprehensive performance tracking
 
-### **Debug Symphony**
-Extensive tooling that could evolve into player features:
-- **Rhythm Analysis**: Real-time pattern inspection
-- **Paint Experimentation**: Test cosmic liquid combinations
-- **Performance Visualization**: See the music of your strategy
+### **Debug Tools**
+Development and testing infrastructure:
+- **Wave Inspector**: Real-time cube state examination
+- **Paint Testing**: Face painting scenario validation
+- **Performance Analysis**: Strategy efficiency metrics
 
 ## 1.6 Aesthetic Vision
 
-### **"Intelligent Mastery of Cube Rhythms with Cosmic Wanderlust"**
+### **"Cosmic Lo-fi Puzzle Strategy"**
 
-Infinity Cube delivers a unique dual aesthetic:
-- **Rhythmic Mastery**: The satisfaction of internalizing and conducting cosmic patterns
-- **Cosmic Wanderlust**: The awe of wielding chaotic forces that transform certainty
+Infinity Cube delivers a focused aesthetic:
+- **Mathematical Symmetry**: The infinity symbol embodied in gameplay
+- **Cosmic Atmosphere**: Minimalist visuals with cosmic backdrop
+- **Lo-fi Sensibility**: Calm, meditative audio design
 
-This creates an experience best described as "Cosmic Jazz" - where players learn to improvise with chaos while maintaining rhythmic precision.
+Players find flow in calculating collision points and creating perfect symmetrical responses to advancing threats.
 
 ## 1.7 Conclusion
 
-Infinity Cube delivers a unique puzzle experience that marries the satisfaction of rhythmic mastery with the wonder of cosmic chaos. The game transforms traditional grid-based puzzles into an interactive meditation on order and chaos, where players conduct a cosmic orchestra of geometric precision and chaotic beauty.
+Infinity Cube transforms the classic Intelligence Qube formula through its Symmetrical Wave System. Players don't just place static markers - they launch backward-moving cubes that create calculated collisions with advancing waves. This mirrors the infinity symbol (∞) in gameplay: two patterns meeting at their intersection point.
 
-The game's greatest strength lies in its core duality: cubes represent the knowable, predictable rhythm of the cosmos, while paint represents the unknowable forces that make the universe surprising and beautiful. This is not just a puzzle game - it's an interactive meditation on order and chaos, rhythm and improvisation, mastery and wonder.
+The game combines this core innovation with face painting mechanics and a four-tier marker system, creating layers of strategic depth. The cosmic lo-fi aesthetic provides atmospheric context without overwhelming the precise, mathematical nature of the gameplay.
 
 ---
-**Last Updated:** November 15, 2025  
-**Vision Statement:** Where Mathematical Precision Meets Cosmic Jazz
+**Last Updated:** 11/17/2025  
+**Core Innovation:** Symmetrical Wave System - markers that move backward to intercept threats

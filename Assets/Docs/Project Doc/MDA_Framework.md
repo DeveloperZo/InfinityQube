@@ -11,115 +11,122 @@
 
 ---
 
-## 🔧 MECHANICS (What Players Can Do)
+## 🔧 Mechanics (What Players Can Do)
 
-### Core Rhythm Mechanics
+### Core Symmetrical Wave System
 ```
-Cube Movement System (The Universal Rhythm):
-- Step-based advancement creating cosmic metronome
-- Predictable, synchronized cube progression
-- Manual wave control (ENTER) to start the rhythm
-- Speed modulation (Shift) to alter tempo
+Marker-to-Cube Transformation (The Infinity Symbol ∞):
+- Light Markers (F) → Light Cubes: Single-tile backward-moving interceptors
+- Heavy Markers (V) → Heavy Cubes: Multi-hit capable, Recursion destroyers
+- Prime Markers (G) → Prime Cubes: 3x3 area effect on collision
+- Cube Markers (Q): Direct detonation, no transformation needed
 
-Marker Placement (Conducting the Orchestra):
-- Individual Markers (F): Precision beats in the rhythm
-- Area Markers (G): Harmonic coverage zones
-- Cube Markers (Q): Crescendo moments from Blue captures
-- Timing windows align with cube rhythm
+Bidirectional Movement (Opposing Forces):
+- Wave cubes: Forward advancement toward escape line
+- Player cubes: Backward movement from marker positions
+- Collision points: Where patterns meet in calculated intersection
+- Mid-flight conversion: Unit cubes can revert to markers tactically
 
-Face Painting System (Cosmic Disruption):
-- Tiles paint cube faces with cosmic liquids
-- Corruption (Dark Matter): Breaks rhythm, creates discord
-- Enhancement (Stellar Plasma): Amplifies rhythm, creates harmony
-- Paint duration adds temporal complexity
+Face Status System (Cosmic Modification):
+- Corrupted Status: Makes cube uncapturable (black visual)
+- Enhanced Status: Triggers bonus effects on capture (blue visual)
+- Face orientation: Different faces activate different behaviors
+- Duration mechanics: Temporary or permanent modifications
 ```
 
-### Resource & Timing Mechanics
+### Resource & Collision Mechanics
 ```
-Resource Rhythm:
-- Charge regeneration follows predictable tempo
-- Cooldowns create rhythmic availability windows
-- Blue cube captures generate resource crescendos
+Charge System:
+- Light Charges: High quantity, fast regeneration
+- Heavy Charges: Medium quantity, medium regeneration  
+- Prime Charges: Low quantity, slow regeneration
+- Cube Markers: Generated from Prime cube captures only
 
-Information Flow:
-- Statistics track rhythmic precision
-- Performance metrics reveal timing optimization
-- Debug tools expose the underlying beat structure
+Collision Resolution:
+- Type matching determines capture success
+- Same-type collisions generate marker resources
+- Area effects from Prime cube collisions (3x3)
+- Pass-through mechanics for Infinity cubes
+
+Information Systems:
+- Statistics track capture efficiency by type
+- Performance metrics for optimization analysis
+- Wave progress feedback with completion messages
 ```
 
 ---
 
-## ⚡ DYNAMICS (What Emerges from Play)
+## ⚡ Dynamics (What Emerges from Play)
 
 ### The Dance Between Order and Chaos
 
-#### **Rhythmic Mastery Patterns**
-- **Learning the Beat**: Players internalize cube movement patterns
-- **Anticipating the Measure**: Predicting exact arrival times
-- **Conducting Multiple Voices**: Managing various cube types simultaneously
-- **Syncopation Through Paint**: Using cosmic liquids to create off-beats
+#### **Symmetrical Mastery Patterns**
+- **Pattern Mirroring**: Creating reverse patterns to intercept waves
+- **Trajectory Calculation**: Predicting collision points in space-time
+- **Type Management**: Matching marker types to cube types (Unit, Prime, Infinity, Recursion)
+- **Conversion Tactics**: Using mid-flight Unit cube conversions strategically
 
-#### **Cosmic Disruption Dynamics**
+#### **Face Status Dynamics**
 ```
-Paint as Jazz Improvisation:
-- Corruption transforms predictable Normal cubes into chaotic Black behavior
-- Enhancement elevates simple rhythms into complex Blue patterns
-- Multiple painted faces create polyrhythmic cube behaviors
-- Paint duration creates temporary vs permanent rhythm changes
+Status Effects as Game Changers:
+- Corrupted faces make cubes temporarily uncapturable like Infinity cubes
+- Enhanced faces trigger detonation zones or chain reactions on capture
+- Face orientation affects which status is active during collision
+- Status duration creates windows of opportunity or danger
 ```
 
-#### **Emergent Musical Structures**
-- **Wave Compositions**: Each wave becomes a unique musical phrase
-- **Strategic Melodies**: Marker placement creates capture sequences
-- **Harmonic Chains**: Blue cube captures cascade into detonation symphonies
-- **Dissonant Passages**: Black cube threats create tension sections
+#### **Emergent Collision Patterns**
+- **Wave Formations**: Each wave presents unique cube arrangements
+- **Collision Chains**: Strategic marker placement creates capture sequences
+- **Resource Loops**: Prime cube captures generate cube markers for area effects
+- **Recursion Challenges**: Multi-hit requirements create extended engagements
 
 ### Temporal Strategy Layers
 
-#### **Immediate Rhythm** (The Beat)
-- Marker placement synchronized with cube steps
-- Split-second decisions within the cosmic tempo
-- Reactive adjustments to rhythm breaks
+#### **Immediate Tactics** (The Placement)
+- Marker placement before wave step transformation
+- Split-second decisions on marker type and position
+- Reactive adjustments to Infinity cube threats
 
-#### **Phrase Planning** (The Measure)
-- Face painting for future rhythm modifications
-- Resource allocation across multiple beats
-- Anticipating pattern completions
+#### **Collision Planning** (The Calculation)
+- Distance-based collision timing predictions
+- Resource allocation across marker types
+- Pattern analysis for optimal interception
 
-#### **Movement Composition** (The Symphony)
-- Cross-wave strategic planning
-- Tile state management as instrument tuning
-- Building toward efficiency crescendos
+#### **Wave Strategy** (The Mastery)
+- Multi-wave resource management
+- Tile corruption avoidance and management
+- Building toward perfect capture efficiency
 
 ---
 
-## 🎨 AESTHETICS (What Players Feel)
+## 🎨 Aesthetics (What Players Feel)
 
 ### Core Aesthetic Identity
-**"Intelligent Mastery of Cube Rhythms with Cosmic Wanderlust"**
+**"Cosmic Lo-fi Puzzle Strategy"**
 
-The dual experience of conducting a cosmic orchestra with mathematical precision while being awed by the chaotic beauty of universal forces that transform certainty into wonder.
+The synthesis of mathematical symmetry and cosmic atmosphere - where the infinity symbol (∞) becomes gameplay through calculated collisions between opposing forces, all within a minimalist, meditative space.
 
 ### Primary Aesthetic Experiences
 
-#### **🎵 Rhythmic Mastery** (Core Mastery)
-**"The satisfaction of perfect cosmic timing"**
-- Internalizing the universal beat of cube progression
-- Achieving flow state through rhythmic prediction
-- Optimization as musical perfection
+#### ♾️ Symmetrical Mastery (Core Innovation)
+**"The satisfaction of perfect collision calculation"**
+- Understanding the infinity symbol through gameplay
+- Creating mirror patterns that intercept advancing threats
+- Optimization through trajectory prediction
 
 **Player Experience Arc:**
-1. Hearing the rhythm (recognizing patterns)
-2. Feeling the rhythm (internalizing timing)
-3. Conducting the rhythm (perfect execution)
-4. Transcending the rhythm (creative mastery)
+1. Understanding transformation (markers become cubes)
+2. Calculating trajectories (predicting collision points)
+3. Pattern matching (mirroring wave formations)
+4. Perfect interception (mastery of space-time)
 
-#### **🌌 Cosmic Disruption** (Core Wanderlust)
-**"The awe of chaos transforming order"**
-- Paint as liquid cosmos disrupting geometric certainty
-- Corruption as dark matter warping spacetime
-- Enhancement as stellar fusion creating new possibilities
-- Each painted cube tells a story of cosmic transformation
+#### 🌌 Cosmic Atmosphere (Environmental Aesthetic)
+**"The meditative flow of mathematical beauty"**
+- Face status effects as cosmic forces altering behavior
+- Corruption as dark matter blocking captures
+- Enhancement as stellar energy creating cascades
+- Each collision a calculated meeting of opposing forces
 
 **Player Experience Arc:**
 1. Discovering paint effects (surprise)
@@ -127,75 +134,81 @@ The dual experience of conducting a cosmic orchestra with mathematical precision
 3. Wielding chaos strategically (control)
 4. Dancing with uncertainty (transcendence)
 
-#### **🎭 The Synthesis: Cosmic Jazz**
-**"Where rhythm meets improvisation"**
-- Using paint to create controlled chaos within the rhythm
-- Finding harmony between predictability and surprise
-- The joy of conducting cosmic forces
-- Moments where perfect strategy meets beautiful chaos
+#### 🎭 The Synthesis: Mathematical Poetry
+**"Where calculation meets cosmic beauty"**
+- Using the Symmetrical Wave System to create infinity patterns
+- Finding optimal collision points through spatial reasoning
+- The satisfaction of perfect resource management
+- Moments where strategy creates visual symmetry
 
 ### Supporting Aesthetic Experiences
 
-#### **📊 Analytical Rhythm** (Mastery Support)
-- Statistics reveal rhythmic precision percentages
-- Optimization metrics as performance scores
-- Debug tools as musical analysis instruments
+#### 📊 Strategic Analysis (Mastery Support)
+- Statistics track capture rates by cube type
+- Efficiency metrics for resource optimization
+- Performance tracking for perfect waves
 
-#### **✨ Visual Poetry** (Wanderlust Support)
-- Liquid paint effects disrupting geometric perfection
-- Cube transformations as cosmic metamorphosis
-- Grid as stellar canvas for strategic art
+#### ✨ Visual Clarity (Communication Support)
+- Clean geometric shapes indicating cube types
+- Color-coded status effects for immediate recognition
+- Minimalist aesthetic focusing player attention
 
-#### **🌊 Flow State Meditation** (Synthesis)
-- The zen of perfect rhythmic execution
-- Cosmic forces in harmonious balance
-- Mathematical beauty meeting universal chaos
+#### 🌊 Lo-fi Flow State (Synthesis)
+- The meditative focus of collision calculation
+- Calm concentration in pattern recognition
+- Mathematical precision in a cosmic setting
 
 ### Aesthetic Conflicts & Resolutions
 
-#### **Predictability vs Surprise**
+#### Predictability vs Surprise
 - **Tension**: Rhythmic certainty vs chaotic transformation
 - **Resolution**: Paint creates controlled unpredictability
 
-#### **Mastery vs Wonder**
+#### Mastery vs Wonder
 - **Tension**: Optimization focus vs cosmic awe
 - **Resolution**: Perfect play creates beautiful moments
 
-#### **Control vs Chaos**
+#### Control vs Chaos
 - **Tension**: Strategic planning vs cosmic disruption
 - **Resolution**: Mastery includes chaos management
 
 ---
 
-## 🔄 PLAYER JOURNEY THROUGH RHYTHM & CHAOS
+## 🔄 Player Journey Through Rhythm & Chaos
 
-### Act 1: Learning the Cosmic Beat
-**Dominant Experience**: Pure rhythm recognition
-- Cubes move in perfect synchronization
-- Players learn the universal tempo
-- Success through pattern recognition
+### Act 1: Learning the Rules
+**Dominant Experience**: Core mechanics understanding
+- Understanding marker-to-cube transformation
+- Learning cube types (Unit, Prime, Infinity, Recursion)
+- Basic collision mechanics
 
-### Act 2: Discovering Cosmic Forces
-**Dominant Experience**: Chaos introduction
-- Paint mechanics reveal transformative power
-- Rhythms can be broken and reshaped
-- Wonder at emergent possibilities
+### Act 2: Efficiency Under Pressure
+**Dominant Experience**: Resource management
+- Limited charges force strategic decisions
+- Prime cube value recognition
+- Spatial efficiency optimization
 
-### Act 3: Conducting the Cosmic Orchestra
-**Dominant Experience**: Synthesis mastery
-- Using paint strategically within rhythm
-- Creating beautiful chaos purposefully
-- Transcendent moments of perfect imperfection
+### Act 3: Advanced Tactics
+**Dominant Experience**: Complex interactions
+- Face status system mastery
+- Recursion cube multi-hit strategies
+- Chain reactions and area effects
 
-### Act 4: Cosmic Jazz Master
-**Dominant Experience**: Creative expression
-- Personal style emerges from mechanics
-- Rhythm and chaos in perfect balance
-- Each playthrough a unique composition
+### Act 4: Environmental Hazards
+**Dominant Experience**: Dynamic adaptation
+- Tile corruption management
+- Risk/reward optimization
+- Adaptive strategy under changing conditions
+
+### Act 5: Mastery Test
+**Dominant Experience**: Complete synthesis
+- All systems working in harmony
+- Personal optimization style emerges
+- Each solution uniquely calculated
 
 ---
 
-## 📋 MDA SYNTHESIS: THE COSMIC RHYTHM
+## 📋 MDA Synthesis: The Cosmic Rhythm
 
 ### Unique Design Achievement
 Infinity Cube successfully merges two seemingly opposed aesthetics:
@@ -204,47 +217,59 @@ Infinity Cube successfully merges two seemingly opposed aesthetics:
 
 ### The Core Loop Reimagined
 ```
-Recognize Rhythm → Master the Beat → Discover Paint → 
-Break the Rhythm → Control the Chaos → Find New Harmony →
-Create Cosmic Jazz → Seek Greater Complexity
+Analyze Wave → Place Markers → Transform to Cubes → 
+Calculate Collisions → Capture Targets → Manage Resources →
+Optimize Efficiency → Master Symmetry → Seek Perfect Solutions
 ```
 
 ### Thematic Statement
-*"In the cosmic dance of Infinity Cube, perfect geometric forms follow the universal rhythm - predictable, masterable, certain. But flowing through space are cosmic liquids that transform this certainty into something new. Master the rhythm, embrace the chaos, conduct the cosmic symphony."*
+*"In Infinity Cube, the infinity symbol (∞) becomes gameplay - two opposing forces meeting at calculated points. Forward-moving threats meet backward-moving defenses in a dance of mathematical precision within a cosmic setting. Master the symmetry, calculate the collisions, achieve perfect interception."*
 
 ### Design Implications
 
-#### **What's Working**
-- Step-based movement creates perfect rhythm
-- Paint system provides meaningful disruption
-- Statistics track rhythmic mastery
-- Multiple solutions enable creative expression
+#### What's Working
+- Symmetrical Wave System creates unique gameplay identity
+- Four-tier marker system provides strategic depth
+- Face status effects add tactical complexity
+- Clear visual communication of mechanics
 
-#### **What Needs Enhancement**
-- **Audio**: Rhythmic soundtrack following cube movement
-- **Visual**: Liquid paint effects showing cosmic flow
-- **Feedback**: Musical tones for captures creating melodies
-- **Polish**: Rhythm break effects when paint activates
+#### What's Complete ✅
+- Four-tier marker system (Light/Heavy/Prime/Cube)
+- Face Status System with Corrupted/Enhanced states
+- Wave management with completion feedback
+- Comprehensive statistics tracking
 
-### Future Development Priorities
+#### Currently In Development 🚧
+- **Audio System**: Foundation complete, content creation needed
+- **UI Modernization**: OnGUI to Unity UI conversion
+- **Visual Polish**: Particle effects and game feel
+- **Cosmic Theme Integration**: Visual atmosphere enhancement
 
-**Phase 1: Rhythmic Foundation**
-- Audio system with cube-synced beats
-- Musical feedback for player actions
-- Visual rhythm indicators
+### Development Roadmap
 
-**Phase 2: Cosmic Enhancement**
-- Liquid flow animations for paint
-- Particle effects suggesting cosmic forces
-- Visual disruption when rhythm breaks
+**Current Phase (July 2025): Audio + UI + Polish**
+- Audio content creation and integration
+- UI system modernization
+- Visual effects and polish pass
+- Cosmic theme visual integration
 
-**Phase 3: Full Synthesis**
-- Dynamic music responding to gameplay
-- Visual/audio harmony in all systems
-- Cosmic narrative integration
+**Next Phase (August 2025): Content Expansion**
+- 6-8 additional stages
+- Meta-progression systems
+- Save/load functionality
+- Performance optimization
+
+**Release Phase (September 2025): Launch Preparation**
+- Steam platform integration
+- Final QA and polish
+- Marketing materials
+- Distribution preparation
 
 ---
 
-**Last Updated:** December 20, 2024  
-**Core Aesthetic:** Intelligent Mastery of Cube Rhythms with Cosmic Wanderlust  
-**Design Philosophy:** Where Mathematical Precision Meets Cosmic Chaos
+**Last Updated:** November 16, 2025  
+**Document Version:** 2.1 - Final Review and Polish Complete  
+**Core Aesthetic:** Cosmic Lo-fi Puzzle Strategy  
+**Design Philosophy:** Mathematical Symmetry in Cosmic Space  
+**Core Innovation:** Symmetrical Wave System - The Infinity Symbol as Gameplay  
+**Document Status:** Aligned with consolidated Game Design Document v4.1

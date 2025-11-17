@@ -46,6 +46,84 @@
 - **Rating**: 7/10
 - **Notes**: Alternative to toggle system that feels more natural, could highlight existing markers when targeting
 
+### Moving Cube Markers (Symmetrical Wave System)
+- **Description**: Markers transform into cubes that move backward toward incoming waves, creating a symmetrical gameplay system where players mirror the wave pattern with inverse timing. Collisions between player cubes and wave cubes function as captures.
+- **Unique Value**: Embodies the infinity symbol (∞) theme through actual gameplay symmetry. Transforms static defensive play into dynamic pattern mirroring. Creates visible, predictable collision points that clarify strategic planning.
+- **Constraints**: Maintains step-based movement rhythm. Resource costs follow existing marker system. Requires clear boundary line definition.
+- **Rating**: 9/10 (Strong thematic coherence + strategic depth)
+
+#### Core System Design
+- **Movement Pattern**: 
+  - Place marker → Next step converts to cube → Moves backward each step on wave rhythm
+  - All movement synchronized to wave step cadence
+  - Player cubes and wave cubes are two halves of the same pattern
+  
+- **Marker-Cube Equivalence**:
+  - Moving cube = mobile version of its marker type
+  - Light cube = Light marker capture behavior
+  - Heavy cube = Heavy marker (multi-hit for Recursion)
+  - Prime cube = Prime marker (area effect potential)
+  - Inherits all resource costs, cooldowns, and regeneration rules from marker system
+
+#### Strategic Depth
+- **Spatial-Temporal Trade-off**:
+  - Far marker placed early = late collision
+  - Close marker placed late = early collision
+  - Players must calculate collision points, not just positions
+  
+- **Pattern Mirroring**:
+  - Success requires duplicating wave patterns with markers
+  - Focus shifts from reactive placement to predictive mirroring
+  - Visible collision points provide strategic clarity
+  
+- **Boundary Line Significance**:
+  - Acts as axis of symmetry for the infinity theme
+  - Reinforces original IQ's boundary pressure
+  - Clear demarcation between player and wave space
+
+#### Thematic Integration
+- **Infinity Symbol (∞) as Gameplay**:
+  - Two loops meeting in the middle = wave and player cubes
+  - Symmetrical mechanics reflect mathematical infinity
+  - Boundary line where infinity folds on itself
+  - Converting cubes to markers = finding gaps in infinite loops
+  
+- **Visual Coherence**:
+  - Player literally creates mirror image of threats
+  - Collision points are where infinite loops complete
+  - Strategic mastery means perfect symmetrical play
+
+#### Key Interactions
+1. **Infinity Cube Bypass**: 
+   - Unit cube → travels backward → converts to marker before Infinity row
+   - Wave passes over marker → captures occur behind Infinity cubes
+   - Only Unit cubes can convert mid-flight (design decision)
+   
+2. **Same-Type Collisions**:
+   - Prime player cube + Prime wave cube = Prime marker dropped at collision
+   - Recursion player cube + Recursion wave cube = Heavy marker dropped
+   - Creates resource generation through successful interceptions
+   
+3. **Strategic Positioning**:
+   - Multiple markers at different distances = staggered interceptions
+   - Can create defensive walls or surgical strikes
+   - Timing of placement matters as much as position
+
+#### Simplified Design Decisions
+- **Resource Management**: Uses existing marker charge/cooldown system
+- **Collision Behavior**: Moving marker hitting cube = standard capture for that marker type
+- **Player Cube Interactions**: Pass through each other (no collision between player cubes)
+- **Conversion Rules**: Only Unit cubes can convert back to markers mid-flight
+- **Triggering**: Marker automatically becomes cube on next wave step (no manual trigger needed)
+
+#### Why This Works
+- **Not a new system**: Extension of existing markers with movement
+- **Thematically perfect**: Infinity symbol becomes core gameplay loop
+- **Strategic clarity**: Can see your plan executing in real-time
+- **Depth without complexity**: Simple rule (markers can move) creates emergent strategy
+- **Solves IQ's limitation**: Adds offensive play to defensive game
+- **Answers are in existing systems**: Most design questions resolve by following marker system logic
+
 ---
 
 **Last Updated:** July 04, 2025  

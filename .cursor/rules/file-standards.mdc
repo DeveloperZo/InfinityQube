@@ -1,0 +1,49 @@
+---
+description: To ensure standardize approach to code file structure
+alwaysApply: false
+---
+# File Standards
+
+## Required File Structure
+All classes must follow this region organization:
+```csharp
+#region Inspector Configuration
+#endregion
+
+#region Manager References
+#endregion
+
+#region Runtime State
+#endregion
+
+#region Properties
+#endregion
+
+#region Unity Lifecycle
+#endregion
+
+#region Public API
+#endregion
+
+#region Private Methods
+#endregion
+
+#region Debug
+#endregion
+```
+
+## Complete Unit Rule
+Modifications must be complete functional units:
+- Complete methods from signature to closing brace
+- Method clusters that work together cohesively
+- Complete properties including getters/setters
+- NOT partial method bodies
+- NOT incomplete control structures
+- NOT individual lines within complex methods
+
+## File Size Limits
+- Core Components: 600 lines max
+- Manager Classes: 400 lines max
+- Utility Classes: 300 lines max
+- Data Classes: 200 lines max
+- Interfaces: 100 lines max

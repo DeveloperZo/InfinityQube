@@ -122,20 +122,85 @@ Panels communicate through:
 - **Manager References**: Direct access to game managers
 - **DebugCoordinator**: Cross-system operations and scenario management
 
+## Debug Panel Groups
+
+The debug system organizes panels into logical groups for better organization and navigation:
+
+### Core Group
+- **Grid Debug Panel**: Grid state, tiles, and markers
+- **Game Control**: System-wide operations and coordination
+- **System Management**: Core system state and configuration
+
+### Wave Group
+- **Wave Manager Panel**: Wave control, cube spawning, and wave configuration
+- **Wave Testing**: Batch testing and rapid iteration workflows
+
+### Cube Group
+- **Cube-Tile Individual Panel**: Individual entity testing and lifecycle testing
+- **Cube Management**: Cube spawning, manipulation, and inspection
+
+### Gameplay Group
+- **Gameplay Debug Panel**: Overall game state and progression
+- **Wave Manager Panel**: Core gameplay loop control
+- **Player Actions Panel**: Player and action coordination
+
+### Content Group
+- **Grid Debug Panel**: Tiles and grid patterns
+- **Cube-Tile Individual Panel**: Cubes and cube interactions
+- **Player Actions Panel**: Action testing and coordination
+
+### Testing Group
+- **Testing Debug Panel**: Cross-system integration testing
+- **Face Painting**: Detailed face painting operations
+- **Scenarios**: Complex scenario testing and validation
+
+## IManagerDebugInterface Pattern
+
+The debug system uses a standardized interface pattern that all game managers implement. This provides consistent debug capabilities across all systems.
+
+### Interface Capabilities
+
+All managers implementing this pattern provide:
+- **Debug Status**: Human-readable string describing current manager state
+- **Debug Data**: Dictionary of key-value pairs containing manager state information
+- **Reset to Defaults**: Restore manager to initial configuration
+- **Configuration Management**: Save and load named configurations
+- **Debug Logging Control**: Enable or disable debug logging per manager
+
+### Manager Discovery
+
+The DebugCoordinator automatically discovers all managers implementing this interface in the scene. This allows:
+- **Automatic Integration**: Managers are automatically available for debug operations
+- **Cross-System Operations**: Reset all managers, enable/disable logging across all systems
+- **Unified Status Reports**: Get status from all managers in a single operation
+- **Scenario Management**: Save and restore complete system states
+
+### Using Manager Debug Interface
+
+When working with debug panels:
+- Managers automatically appear in debug panels when they implement the interface
+- Status information is displayed in real-time
+- Debug data can be inspected for detailed state information
+- Managers can be reset individually or as part of system-wide operations
+
 ## DebugCoordinator Integration
 
-The `DebugCoordinator` provides:
+The DebugCoordinator provides:
 - **Manager Discovery**: Automatic discovery of debug-capable managers
 - **Cross-System Operations**: Reset all, enable/disable logging, validation
 - **Scenario Management**: Save/load complete system states
 - **Performance Monitoring**: Operation timing and statistics
 - **Emergency Reset**: Safe system reset functionality
 
-### Key DebugCoordinator Methods
-- `ResetAllManagersToDefaults()` - Reset all systems
-- `SaveCurrentScenario()` / `LoadScenario()` - State management
-- `ValidateAllSystems()` - Comprehensive system validation
-- `GenerateSystemReport()` - Detailed system status report
+### Key DebugCoordinator Operations
+- **Reset All Managers to Defaults**: Reset all systems to initial state
+- **Save Current Scenario**: Capture complete system state for later restoration
+- **Load Scenario**: Restore previously saved system state
+- **Validate All Systems**: Comprehensive system validation across all managers
+- **Generate System Report**: Detailed system status report with performance metrics
+- **Cross-System Integration Test**: Test coordination between multiple systems
+- **Stress Test**: Rapid operation testing for performance validation
+- **System Health Report**: Comprehensive health check of all discovered managers
 
 ## Usage Guidelines
 
@@ -234,6 +299,113 @@ The `DebugCoordinator` provides:
 - Check panel initialization in DebugSystem
 - Ensure all dependencies are satisfied
 
+## Tutorial Message System
+
+The debug system integrates with the tutorial message system to provide comprehensive testing and monitoring capabilities.
+
+### Message Categories and Priorities
+
+Tutorial messages are organized by priority categories:
+
+- **Essential**: Critical messages that block gameplay until acknowledged. Highest priority (100).
+- **Important**: Important guidance that should be prominently displayed. High priority (75).
+- **Contextual**: Contextual hints that enhance understanding but don't interrupt flow. Medium priority (50).
+- **Debug**: Debug and development messages for testing. Lowest priority (25).
+
+### Message Priority System
+
+Messages are prioritized based on their category, with higher priority messages displayed first. The system ensures:
+- Essential messages always take precedence
+- Important messages are shown before contextual hints
+- Debug messages are shown only when appropriate
+- Messages are filtered and sorted by priority before display
+
+### Message Progress Tracking
+
+The MessageProgressTracker system provides:
+- **One-Time Message Tracking**: Tracks which messages have been shown once
+- **Cooldown Management**: Global and message-specific cooldowns prevent message spam
+- **Frequency Limiting**: Limits messages per minute (default: 8 messages/minute)
+- **Priority-Based Cooldowns**: Different cooldown multipliers per message category
+- **Progress Persistence**: Saves message progress using PlayerPrefs or JSON files
+- **Message Statistics**: Tracks message patterns, blocked messages, and completion rates
+
+### Message Filtering and Display
+
+The system filters messages based on:
+- **One-Time Status**: Messages marked as "show once" are only displayed once
+- **Global Cooldown**: Minimum time between any messages (default: 3 seconds)
+- **Message-Specific Cooldown**: Individual message cooldown periods
+- **Frequency Limits**: Maximum messages per minute (Essential messages can bypass)
+- **Priority Cooldowns**: Category-specific cooldown multipliers
+- **Context Relevance**: Messages are filtered based on current game context
+
+### Tutorial Message Manager Features
+
+The TutorialMessageManager provides:
+- **Contextual Message Triggering**: Messages triggered based on game state
+- **Message Queue Management**: Queues messages for sequential display
+- **Progressive Disclosure**: Messages adapt based on player experience level
+- **Message Formatting**: Automatic formatting for action-oriented, concise messages
+- **Player Capability Detection**: Messages filtered based on available player capabilities
+- **Statistics Integration**: Tracks message display and dismissal for analytics
+
+### Debug Integration
+
+The tutorial system integrates with debug panels to provide:
+- **Message Status Display**: Current message queue status and progress
+- **Message Statistics**: Display counts of shown, skipped, and queued messages
+- **Progress Tracking**: View one-time message progress and completion rates
+- **Context Monitoring**: View current game context and trigger conditions
+- **Message Validation**: Validate all messages for formatting compliance
+- **Progress Reset**: Clear all tutorial progress for testing
+
+## Debug Commands and Shortcuts
+
+### Activation
+- **F12**: Toggle the debug system on/off
+- **Tabbed Interface**: Switch between panels using tabs
+- **Panel State**: Panels maintain state when switching between tabs
+
+### Keyboard Shortcuts
+- **F12**: Toggle debug system visibility
+- **K**: Skip current tutorial message (when message is displayed)
+- **Tab Navigation**: Use mouse to switch between debug panels
+
+### Debug Panel Controls
+- **Toggle Buttons**: Enable/disable features and modes
+- **Fast Testing Mode**: Disable tutorial messages for rapid testing (Wave Manager Panel)
+- **Reset Operations**: Reset individual managers or all systems
+- **Scenario Management**: Save and load complete system states
+- **Validation Tools**: Run system validation and health checks
+
+### Common Debug Workflows
+
+#### Quick System Reset
+1. Open debug system (F12)
+2. Navigate to Testing Debug Panel
+3. Use "Reset All Managers" or "Emergency Reset"
+4. System returns to default state
+
+#### Save Test Scenario
+1. Configure desired game state using debug panels
+2. Navigate to Testing Debug Panel
+3. Use "Save Current Scenario" with a name
+4. Scenario can be loaded later for consistent testing
+
+#### Monitor System Health
+1. Open debug system (F12)
+2. Navigate to Testing Debug Panel
+3. Use "Generate System Report" or "System Health Report"
+4. Review manager statuses and performance metrics
+
+#### Rapid Wave Testing
+1. Open debug system (F12)
+2. Navigate to Wave Manager Panel
+3. Enable "Fast Testing Mode" (disables tutorial messages)
+4. Configure and test waves rapidly
+5. Disable Fast Testing Mode when done
+
 ## Technical Notes
 
 ### Activation
@@ -245,11 +417,20 @@ The `DebugCoordinator` provides:
 - All panels require their respective managers to be present
 - Shared utilities provide fallback behavior for missing dependencies
 - DebugCoordinator handles manager discovery automatically
+- Tutorial system requires MessageDatabase and UI components
 
 ### Performance
 - Shared utilities minimize code duplication
 - Fast Testing Mode reduces UI overhead
 - Performance monitoring tracks operation costs
 - Emergency reset provides quick recovery
+- Message progress tracking uses efficient data structures
+
+### Integration Points
+- **DebugCoordinator**: Central coordination for all debug operations
+- **IManagerDebugInterface**: Standardized interface for manager debug capabilities
+- **TutorialMessageManager**: Message system integration and monitoring
+- **MessageProgressTracker**: Progress tracking and message filtering
+- **Debug Panels**: Specialized panels for different testing scenarios
 
 This refined debug system provides comprehensive testing capabilities while maintaining clear separation of concerns and efficient workflows for different testing scenarios.

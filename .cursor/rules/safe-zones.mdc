@@ -1,0 +1,37 @@
+---
+alwaysApply: false
+---
+# Safe Modification Zones
+
+## Green Zone (Full Autonomy)
+- All files in `Assets/scripts/Debuggers/`
+- `Assets/scripts/UI/` (except core GameUI.cs)
+- ScriptableObject assets in `Assets/data/`
+- Wave/Stage data files
+- Test files in `Assets/scripts/Testing/`
+- Debug panels and visualization
+
+## Yellow Zone (Conditional Autonomy)
+Safe to Modify:
+- Adding new private methods to existing managers
+- Optimizing existing methods
+- Adding debug features
+- Improving error handling
+- Adding validation
+
+Requires Approval:
+- Changing public API
+- Modifying interfaces
+- Altering communication patterns
+- Changing initialization
+
+## Red Zone (No Autonomy - Requires Approval)
+- `Assets/scripts/Utils/Enumerations.cs`
+- Unity lifecycle methods (Awake, Start, Update)
+- Singleton implementations
+- Manager communication patterns
+- GridManager.cs (core methods)
+- WaveManager.cs (wave progression)
+- PlayerActionManager.cs (input handling)
+- StageManager.cs (progression logic)
+- PlayerManager.cs (core player logic)

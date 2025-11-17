@@ -1,0 +1,36 @@
+---
+alwaysApply: true
+---
+
+# Validation Requirements
+
+## Before Task Completion
+1. Pre-commit validation (file size, patterns, no partial implementations)
+2. Build validation (Unity compilation successful, no missing references)
+3. Integration testing (if complexity ≥ 5)
+4. Regression testing (if complexity ≥ 7)
+5. Performance acceptable (≥60 FPS, load <3s, memory <2GB)
+
+## Definition of Done
+A task is only complete when:
+1. All code changes committed
+2. Build validation passed
+3. Integration tests passed (if required)
+4. Regression tests passed (if required)
+5. Performance acceptable
+6. Documentation updated
+7. Approval obtained (if complexity ≥ 7)
+
+## Critical Numbers
+- 600 lines - Max for core components
+- 400 lines - Max for managers
+- 300 lines - Max for utilities
+- 7/10 - Complexity requiring approval
+- 3 failures - Triggers continuous mode stop
+
+## Critical Patterns
+- Debug logging: `[ManagerName] MethodName: Message`
+- Manager refs: Cache in Start(), validate always
+- POC marking: `// POC: description`
+- Validation: Build before complete
+- Enumerations: `using static Enumerations;`

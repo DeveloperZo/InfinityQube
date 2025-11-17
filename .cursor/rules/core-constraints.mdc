@@ -1,0 +1,39 @@
+---
+alwaysApply: true
+---
+
+# Core Constraints
+
+## NEVER DO
+- NEVER use Cursor's todo system for project planning - ALWAYS use Shrimp Task Manager MCP commands
+- NEVER split existing manager files (GridManager.cs, PlayerManager.cs, WaveManager.cs, StageManager.cs, etc.) without explicit approval
+- NEVER introduce new singleton patterns without approval
+- NEVER modify `Assets/scripts/Utils/Enumerations.cs` without approval
+- NEVER change Unity lifecycle patterns (Awake, Start, Update sequences)
+- NEVER create new documentation files without approval
+- NEVER include technical implementation details in Project Doc files (see documentation-standards.mdc)
+- NEVER use FindObjectOfType<>() in Update() or repeating methods
+- NEVER create unbounded loops without exit conditions
+- NEVER allocate large arrays in frequently called methods
+- NEVER use reflection in gameplay code
+- NEVER commit partial method implementations
+- NEVER leave incomplete control structures (if/for/while)
+- NEVER remove debug logging from critical operations
+- NEVER bypass validation checks
+
+## ALWAYS DO
+- ALWAYS use Shrimp Task Manager MCP commands for planning and task management (see workflow-planning.mdc)
+- ALWAYS execute tasks one at a time via Shrimp (never parallel execution)
+- ALWAYS run build validation before marking task complete
+- ALWAYS check file size limits before modifications:
+  - Core Components: 600 lines max
+  - Manager Classes: 400 lines max
+  - Utility Classes: 300 lines max
+  - Data Classes: 200 lines max
+  - Interfaces: 100 lines max
+- ALWAYS score complexity after planning (≥7 requires approval)
+- ALWAYS validate manager references in Start()
+- ALWAYS use the standard debug pattern
+- ALWAYS follow the manager reference pattern (cache in Start(), not Update())
+- ALWAYS handle null references gracefully
+- ALWAYS follow documentation standards: Project Doc = design focus, Technical Doc = implementation focus (see documentation-standards.mdc)

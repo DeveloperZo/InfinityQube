@@ -1,0 +1,112 @@
+---
+description: Help to establish coding pattern to ensure work is consistent
+alwaysApply: false
+---
+# Code Patterns
+
+## Standard Debug Pattern (REQUIRED)
+Managers implement IManagerDebugInterface. For components without interface:
+```csharp
+#region Debug
+[Header("Debug")]
+[SerializeField] private bool enableDebugLogs = true;
+
+private void DebugLog(string methodName, string message)
+{
+    if (enableDebugLogs)
+        Debug.Log($"[{GetType().Name}] {methodName}: {message}");
+}
+
+private void DebugWarning(string methodName, string message)
+{
+    if (enableDebugLogs)
+        Debug.LogWarning($"[{GetType().Name}] {methodName}: {message}");
+}
+
+private void DebugError(string methodName, string message)
+{
+    // Errors always log regardless of flag
+    Debug.LogError($"[{GetType().Name}] {methodName}: {message}");
+}
+#endregion
+```
+
+## Manager Reference Pattern
+```csharp
+#region Manager References
+private WaveManager waveManager;
+private GridManager gridManager;
+#endregion
+
+private void Start()
+{
+    // Prefer singleton when available
+    gridManager = GridManager.Instance;
+    
+    // Or FindObjectOfType in Start() only
+    waveManager = FindObjectOfType<WaveManager>();
+    
+    // Always validate
+    ValidateReferences();
+}
+
+private void ValidateReferences()
+{
+    if (waveManager == null)
+        DebugLog("ValidateReferences", "WaveManager not found - features limited");
+}
+```
+
+## Singleton Pattern (When Approved)
+```csharp
+#region Properties
+public static ManagerName Instance { get; private set; }
+#endregion
+
+#region Unity Lifecycle
+private void Awake()
+{
+    if (Instance == null)
+    {
+        Instance = this;
+    }
+    else if (Instance != this)
+    {
+        Debug.LogWarning($"Multiple {GetType().Name} found! Destroying duplicate.");
+        Destroy(gameObject);
+        return;
+    }
+}
+
+private void OnDestroy()
+{
+    if (Instance == this)
+    {
+        Instance = null;
+    }
+}
+#endregion
+```
+
+## Enumerations Usage
+Always use static import for Enumerations:
+```csharp
+using static Enumerations;
+
+// Then use directly:
+CubeType.Unit
+MarkerMode.Light
+GameAudioEvent.WaveStarted
+```
+
+## POC (Proof of Concept) Marking
+```csharp
+// POC: Quick implementation for testing - may need refinement
+public void TemporaryFeature()
+{
+    // Functional but not optimized
+}
+```
+- POC code must be functional even if not optimized
+- POC code must be marked with `// POC:` comment
+- POC code has no upgrade requirement - if it works, it works

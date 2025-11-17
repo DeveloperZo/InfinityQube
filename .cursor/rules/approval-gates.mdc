@@ -1,0 +1,30 @@
+---
+alwaysApply: false
+---
+# Approval Gates
+
+## Automatic Approval Triggers
+After every task planning:
+1. Run complexity scoring (1-10 scale)
+2. If score ≥ 7 → needs_review = true
+3. If priority = Critical → needs_review = true
+4. If cross-system impact → needs_review = true
+
+## Complexity Scoring Guide
+- 1-3: Single file, localized, well-understood patterns
+- 4-6: Multiple files, moderate complexity, established patterns
+- 7-8: Cross-system changes, new patterns, coordination required
+- 9-10: Architectural impact, multiple systems, high risk
+
+## Mandatory Approval Required For
+- Architectural changes (system redesigns, new managers, core pattern modifications)
+- File structure changes (splitting files, creating new managers, directory restructuring)
+- Core system modifications (Enumerations.cs, Unity lifecycle, manager communication patterns)
+- Documentation changes (creating new documentation files)
+
+## Pre-Approved Patterns (No Approval Needed)
+- Adding debug logging to existing methods
+- Creating POC implementations (marked appropriately)
+- Optimizing existing code without changing interfaces
+- Adding validation checks
+- Improving error handling

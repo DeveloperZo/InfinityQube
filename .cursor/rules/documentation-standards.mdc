@@ -1,0 +1,71 @@
+---
+alwaysApply: true
+---
+
+# Documentation Standards
+
+## Project Documents vs Technical Documents
+
+### Project Documents (`Assets/Docs/Project Doc/`)
+**Purpose**: Design-focused documentation for gameplay, mechanics, and player experience
+
+**Content Guidelines**:
+- Focus on gameplay design and player-facing behavior
+- Describe what players experience and how systems behave
+- Include strategic guidance and decision matrices
+- Explain rules, mechanics, and interactions from a design perspective
+- **DO NOT include**:
+  - Code snippets or programming examples
+  - Class names, method names, or implementation details
+  - Technical architecture or system internals
+  - C# code, enum definitions, or API references
+  - Implementation-specific terminology
+
+**Examples of Appropriate Content**:
+- "Players press F to place Light markers"
+- "Cubes move down the grid toward escape"
+- "Heavy markers are optimized for Recursion cubes"
+
+**Examples of Inappropriate Content**:
+- "PlayerActionManager.HandleUnifiedPlaceInput() places markers"
+- "GridManager.IsValidGridPosition() validates movement"
+- "CubeType enum defines cube types"
+
+### Technical Documents (`Assets/Docs/Technical Doc/`)
+**Purpose**: Implementation-focused documentation for developers
+
+**Content Guidelines**:
+- Include code examples and implementation details
+- Reference specific classes, methods, and APIs
+- Explain technical architecture and system design
+- Document how systems are implemented
+- Include technical specifications and constraints
+
+## Documentation Rules
+
+### When Editing Project Documents
+1. **Remove technical references**: Replace class/method names with gameplay descriptions
+2. **Remove code snippets**: Replace with gameplay behavior descriptions
+3. **Focus on player experience**: Describe what players see and do
+4. **Use design language**: Talk about mechanics, not implementation
+5. **Keep strategic content**: Maintain gameplay guidance and decision matrices
+
+### When Editing Technical Documents
+1. **Include implementation details**: Class names, methods, code examples are appropriate
+2. **Document architecture**: Explain how systems are built
+3. **Reference codebase**: Link to specific files and implementations
+4. **Technical accuracy**: Ensure code examples are correct and current
+
+## Quick Reference
+
+**Project Doc = Design Focus**:
+- What players experience
+- How gameplay works
+- Strategic guidance
+- Rules and mechanics
+
+**Technical Doc = Implementation Focus**:
+- How code works
+- System architecture
+- Code examples
+- Technical specifications

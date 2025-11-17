@@ -1,442 +1,365 @@
 # Gameplay Mechanics
 
-> This document details the core mechanical systems of Infinity Cube. For full project documentation, see [Game Design Document](GameDesignDocument.md).
+> This document details the core mechanical systems of InfinityQube from a gameplay design perspective. For technical implementation details, see the Technical Documentation folder.
 
 ## Purpose
-Details the functional rules and systemic interactions, clearly outlining the behavior of grid, cubes, markers, detonation systems, and wave progression as currently implemented.
+Outlines the functional rules, player interactions, and systemic behaviors that define InfinityQube's gameplay experience. This document focuses on what players experience and how game systems behave, rather than technical implementation details.
 
 ## 3.1 Grid System
+
 ### Core Structure
-- **Configurable Dimensions**: Per-stage grid sizing (e.g., 5x20, 8x15)
-- **Singleton Management**: GridManager handles all grid operations
-- **World Space Mapping**: Vector2Int grid coordinates to 3D world positions
-- **Boundary Enforcement**: Automatic player clamping to grid bounds
-- **Fallen Row Tracking**: Dynamic reduction of playable area
+The game takes place on a grid-based battlefield where cubes move in opposing directions - wave cubes advancing toward escape and player cubes moving backward to intercept them. Each stage features a configurable grid that defines the playable area.
+
+- **Grid Dimensions**: Vary per stage, creating different tactical challenges
+- **Tile-Based Movement**: All entities (player, cubes) move in discrete grid steps
+- **Boundary Enforcement**: Movement is constrained to valid grid positions
+- **Bidirectional Flow**: Grid supports both forward (wave) and backward (player) cube movement
 
 ### Tile States
+Tiles can exist in different states that affect gameplay:
+
 | State | Behavior | Visual Indicator | Player Interaction |
 |-------|----------|------------------|-------------------|
-| Normal | Default state | Base height | Can place markers |
-| Transformed | Modified by cube interaction | Height variation | Modified marker behavior |
-
-### Grid Operations
-- **IsValidGridPosition()**: Boundary validation
-- **GridToWorldPosition()**: Coordinate conversion
-- **GetPlayableRowCount()**: Dynamic area calculation
-- **Height/Width Properties**: Runtime grid dimensions
+| Normal | Default state | Base appearance | Can place markers freely |
+| Corrupted | Modified by Infinity cube | Corruption visual | Cannot place markers |
+| Occupied | Contains marker awaiting transformation | Marker visual | Cannot place additional marker |
 
 ## 3.2 Cube System
+
 ### Core Cube Types
-| Type | Visual | Movement | Capture Behavior | Special Properties |
-|------|--------|----------|------------------|-------------------|
-| **Unit** | Gray | Standard step movement | Capturable via markers | Basic scoring |
-| **Prime** | Blue | Standard step movement | Creates detonation markers | Generates cube markers on capture |
-| **Infinity** | Black | Standard step movement | **Uncapturable** | Can generate corrupted tiles |
-| **Recursion** | Darker/Metallic | Standard step movement | Requires multiple hits | Increased durability |
+Four distinct cube types create varied tactical challenges:
+
+| Type | Movement | Capture Behavior | Special Properties |
+|------|----------|------------------|-------------------|
+| **Unit** | Standard step movement | Single collision capture | Basic scoring, mid-flight conversion capability |
+| **Prime** | Standard step movement | Single collision capture | Generates cube markers when captured |
+| **Infinity** | Standard step movement | Cannot be captured | Corrupts tiles, player cubes pass through |
+| **Recursion** | Standard step movement | Multiple hits required | High durability, requires Heavy cube collisions |
 
 ### Movement System
-- **Step-Based Progression**: Discrete grid movement per wave step
-- **Consistent Timing**: Configurable `moveInterval` per wave
-- **Forward Only**: Cubes move down the grid toward escape
-- **Speed Variants**: Normal and fast movement modes
-- **Collision Detection**: With player and grid boundaries
+- **Step-Based Progression**: All cubes move in discrete steps
+- **Directional Flow**: Wave cubes move forward, player cubes move backward
+- **Consistent Timing**: Movement occurs at regular intervals per wave step
+- **Speed Variants**: Normal and fast movement modes available
+- **Collision Detection**: Cubes interact when occupying same tile
 
 ### Face Painting System
-Advanced cube state modification system that dynamically alters cube behavior:
-```
-FaceStatus Enum:
-- None: Standard behavior
-- Corrupted: Acts like Infinity cube when active
-- Enhanced: Creates detonation when captured
-```
+An advanced system that dynamically modifies cube behavior based on which face of the cube is active:
 
-#### Corruption Mechanics
-- **Infinity Cube Interaction**: When markers hit Infinity cubes, their top face is painted with Corrupted status
-- **Tile Corruption**: Infinity cubes with Corrupted faces corrupt tiles they land on
-- **Corrupted Tile Behavior**: Corrupted tiles reject marker placement and paint non-Infinity cubes
-- **Duration System**: Corrupted tiles have limited interaction counts and duration timers
-- **Cleansing**: Corrupted tiles can be cleansed through time expiration or interaction limits
-
-#### Enhanced Face Mechanics
-- **Detonation Generation**: Enhanced faces create detonation markers when captured
-- **Strategic Timing**: Enhanced faces provide tactical opportunities for chain reactions
-- **Temporary Effect**: Enhanced faces typically have limited duration
-
-Face painting affects cube behavior dynamically based on cube orientation and face state, creating complex tactical scenarios.
-
-### Cube Properties
-- **Position Tracking**: Vector2Int grid coordinates
-- **World Position**: 3D transform synchronization
-- **Type Inheritance**: Base CubeType with specialized behaviors
-- **Capture State**: Tracking capture eligibility
-- **Movement State**: Active/paused/destroyed states
-
-## 3.3 Player System
-### Movement Mechanics
-- **Analog Input**: WASD/Arrow keys for smooth movement
-- **Grid-Based**: Movement within grid boundaries
-- **Collision System**: CharacterController-based physics
-- **Smooth Animation**: Velocity-based movement with acceleration/deceleration
-- **Rotation**: Faces movement direction dynamically
-
-### Action System (PlayerActionManager)
-Comprehensive marker and detonation management:
-
-#### Light Markers (formerly Individual)
-- **Placement Key**: F
-- **Trigger Key**: R  
-- **Charge System**: Limited uses with regeneration
-- **Visual Feedback**: Placement indicators and charge display
-
-#### Heavy Markers
-- **Placement Key**: V
-- **Trigger Key**: Y
-- **Primary Target**: Enhanced marker specifically designed for Recursion cubes
-- **Charge System**: Maximum 2 markers, limited charges with 5-second cooldown
-- **Enhanced Power**: Optimized for multi-hit Recursion cube interactions
-- **Universal Compatibility**: Works on all cube types with enhanced effectiveness
-- **Strategic Value**: Critical for efficient Recursion cube management
-
-#### Prime Markers (formerly Area)
-- **Placement Key**: G
-- **Trigger Key**: T
-- **Coverage**: 3x3 grid area
-- **Cooldown System**: Time-based restrictions
-- **Resource Limits**: Configurable maximum on-grid count
-
-#### Cube Markers
-- **Trigger Key**: Q
-- **Generation**: **ONLY** created by capturing Prime cubes with any marker type
-- **No Cooldowns**: Cube markers have no cooldown restrictions
-- **No Placement**: Cannot be manually placed - only generated from Prime cube captures
-- **Direct Detonation**: Immediate 3x3 area effect upon triggering
-- **Strategic Resource**: Finite and valuable - use strategically
-- **Generation Rule**: Each Prime cube captured = 1 Cube marker created at capture position
-
-##### Cube Marker Generation Mechanic
-**CRITICAL**: Cube markers are **EXCLUSIVELY** generated when capturing Prime cubes. They cannot be created any other way.
-
-**Generation Process**:
-1. Any marker type (Light/Heavy/Prime) hits a Prime cube
-2. Prime cube is destroyed
-3. Cube marker is automatically created at the Prime cube's position
-4. Cube marker type matches the capturing marker type
-5. Cube marker is added to player's available cube markers queue
-
-**Usage Rules**:
-- No placement phase - cube markers appear where Prime cubes were captured
-- No cooldowns - can be triggered immediately when available
-- FIFO queue - first cube marker created is first to be triggered with Q key
-- Power-up with E key enhances the next cube marker in queue
-- Each cube marker provides 3x3 area detonation when triggered
+**Face Status Types**:
+- **None**: Standard cube behavior
+- **Corrupted**: Acts like Infinity cube when active (blocks capture)
+- **Enhanced**: Creates additional effects when captured
 
 **Strategic Implications**:
-- Prime cubes become dual-value targets: immediate capture + future cube marker
-- Positioning when capturing Prime cubes matters - cube marker location is fixed
-- Cube marker availability depends entirely on finding and capturing Prime cubes
+- Cube orientation affects collision outcomes
+- Face status can change cube behavior mid-movement
+- Creates complex tactical scenarios requiring adaptive strategies
 
+#### Corruption Mechanics
+Infinity cubes interact with the environment in unique ways:
 
-### Heavy Marker Strategic Documentation
+- **Tile Corruption**: Infinity cubes corrupt tiles they pass through
+- **Corrupted Tile Behavior**: 
+  - Rejects marker placement
+  - Can paint faces of cubes that land on them
+  - Visual indicators show corruption state
+- **Cleansing**: Corrupted tiles return to normal after time or interaction limits
 
-#### Overview
-Heavy markers represent the specialized tier-2 marker system designed specifically for enhanced cube management, particularly targeting high-durability Recursion cubes. As part of the four-tier marker optimization system (Light/Heavy/Prime/Cube), heavy markers provide strategic depth through enhanced damage output and tactical positioning options.
+### Cube Properties
+- **Position Tracking**: Cubes exist at specific grid coordinates
+- **Type System**: Each cube has a base type that determines collision behavior
+- **Capture Eligibility**: Some cubes cannot be captured (Infinity type, Corrupted faces)
+- **Movement State**: Cubes progress through the grid during wave steps
 
-#### Core Strategic Framework
+## 3.3 Symmetrical Wave System (Core Mechanic)
 
-##### Primary Function
-Heavy markers serve as the critical bridge between basic light markers and area-effect prime markers, offering:
-- **Enhanced Damage Output**: Significantly increased effectiveness against all cube types
-- **Recursion Cube Specialization**: Optimized specifically for multi-hit Recursion cube interactions
-- **Resource Efficiency**: Maximum impact per charge in high-value scenarios
-- **Strategic Positioning**: Precise placement for maximum tactical advantage
+### Fundamental Concept
+The Symmetrical Wave System is the core gameplay mechanic where players place markers that transform into backward-moving cubes to intercept forward-moving wave cubes. This creates an infinity symbol (∞) pattern of opposing forces meeting at calculated collision points.
 
-##### Four-Tier System Integration
-Heavy markers operate within the complete marker ecosystem:
+### Marker-to-Cube Transformation
 
-**Tier 1 - Light Markers**: Basic cube capture, high quantity, short cooldown
-**Tier 2 - Heavy Markers**: Enhanced damage, limited quantity, medium cooldown  
-**Tier 3 - Prime Markers**: Area coverage, strategic positioning, long cooldown
-**Tier 4 - Cube Markers**: Direct targeting, generated resource, immediate effect
+#### Marker Types and Their Moving Cube Forms
 
-#### Advanced Strategic Implementation
+**Light Markers → Light Cubes**
+- **Placement**: Press F to place Light marker at current position
+- **Transformation**: Converts to Light cube on next wave step
+- **Collision Behavior**: Standard capture on collision with wave cubes
+- **Resource Cost**: Consumes one Light charge
+- **Regeneration**: Charges regenerate automatically after cooldown
 
-##### Recursion Cube Interaction Mastery
+**Heavy Markers → Heavy Cubes**
+- **Placement**: Press V to place Heavy marker at current position
+- **Transformation**: Converts to Heavy cube on next wave step
+- **Collision Behavior**: Enhanced damage, effective against Recursion cubes
+- **Resource Cost**: Consumes one Heavy charge
+- **Regeneration**: Longer cooldown than Light markers
 
-**Multi-Hit Reduction Strategy**:
-- Standard markers require 3-4 hits for Recursion cube capture
-- Heavy markers reduce requirement to 1-2 hits through enhanced damage
-- Optimal placement can achieve single-detonation Recursion cube capture
-- Critical for waves containing 3+ Recursion cubes
+**Prime Markers → Prime Cubes**
+- **Placement**: Press G to place Prime marker at current position
+- **Transformation**: Converts to Prime cube on next wave step
+- **Collision Behavior**: 3x3 area effect at collision point
+- **Resource Cost**: Consumes one Prime charge
+- **Regeneration**: Longest cooldown period
 
-```
+**Cube Markers (Special Case)**
+- **Generation**: Created exclusively when capturing Prime cubes
+- **Activation**: Press Q to detonate immediately (does not transform)
+- **Behavior**: Direct detonation at placement location
+- **No Transformation**: Remains static, provides instant area effect
 
-**Strategic Positioning Matrices**:
-- **Lane Control**: Heavy markers in central lanes maximize multi-cube potential
-- **Convergence Points**: Place at natural cube path intersections
-- **Escape Prevention**: Position 2-3 tiles from grid edge for last-chance captures
-- **Corridor Blocking**: Use in narrow sections to guarantee cube interaction
+### Movement Mechanics
 
-##### Four-Tier System Optimization Techniques
+#### Player Cube Movement
+- **Backward Movement**: Player cubes move backward at one tile per wave step
+- **Synchronized Timing**: Movement matches wave cube progression exactly
+- **Grid Boundaries**: Player cubes vanish when reaching grid edge
+- **Pass-Through**: Player cubes pass through each other without collision
 
-**Synergistic Marker Combinations**:
+#### Wave Cube Movement
+- **Forward Movement**: Wave cubes advance toward escape line
+- **Step Progression**: One tile per wave step
+- **Escape Boundary**: Reaching bottom of grid counts as escape
+- **Collision Priority**: Wave cubes interact with player cubes when paths cross
 
-**TBD START**
-1. **Heavy-Prime Synergy**:
-   - Place Prime marker (3x3 area) in high-traffic zone
-   - Position Heavy marker at Prime area edge for Recursion cube overlap
-   - Results in dual-detonation scenarios with maximum coverage
+### Collision System
 
-2. **Light-Heavy Coordination**:
-   - Use Light markers for Unit cube clusters (high quantity, low durability)
-   - Reserve Heavy markers exclusively for Recursion cubes
-   - Maintain 3:1 Light:Heavy ratio for optimal resource allocation
+#### Collision Detection
+- **Spatial Overlap**: Collision occurs when cubes occupy same tile
+- **Step-Based Resolution**: Collisions checked each wave step
+- **Type Matching**: Outcome depends on cube type combinations
+- **Simultaneous Processing**: Multiple collisions resolved in single step
 
-3. **Heavy-Cube Escalation**:
-   - Generate Cube markers through Prime cube captures
-   - Use Heavy markers to soften Recursion cubes
-   - Finish with Cube markers for guaranteed capture
-**TBD END**
+#### Collision Outcomes
 
-4. **Sequential Deployment Patterns**:
-   ```
-   Pattern A - "Cascade Control":
-   Wave Start → Light markers for early Unit cubes
-   Mid-Wave → Heavy markers for approaching Recursion cubes  
-   Late-Wave → Prime markers for final cube clusters
-   Emergency → Cube markers for escapees
-   
-   Pattern B - "Preemptive Strike":
-   Pre-Wave → Heavy markers in predicted Recursion paths
-   Wave Start → Light markers for immediate threats
-   Mid-Wave → Prime markers for area control
-   Cleanup → Cube markers for remaining targets
-   ```
+| Player Cube | Wave Cube | Result |
+|------------|-----------|---------|
+| Light | Unit | Unit captured, both cubes removed |
+| Light | Prime | Prime captured, cube marker generated, both removed |
+| Light | Recursion | Partial damage to Recursion, Light removed |
+| Light | Infinity | No effect, Light passes through |
+| Heavy | Unit | Unit captured, both cubes removed |
+| Heavy | Prime | Prime captured, cube marker generated, both removed |
+| Heavy | Recursion | Major damage (2-3 hits worth), both removed |
+| Heavy | Infinity | No effect, Heavy passes through |
+| Prime | Any (3x3) | Area capture at collision point |
 
-##### Advanced Tactical Applications
+#### Same-Type Collision Mechanics
+Special resource generation when matching cube types collide:
 
-**Multi-Wave Strategic Planning**:
-- Analyze upcoming wave compositions during current wave
-- Pre-position Heavy markers for known Recursion cube patterns
-- Coordinate cooldown timing with wave transition periods
-- Maintain strategic reserves for unexpected cube configurations
+- **Prime + Prime**: Both destroyed, Prime marker dropped at collision point
+- **Heavy + Recursion**: Heavy deals damage, if Recursion destroyed, Heavy marker dropped
+- **Resource Recycling**: Generated markers available after cooldown
 
-**Resource Management Optimization**:
-```
-Heavy Marker Resource Algorithm:
-1. Count Recursion cubes in incoming wave
-2. Calculate required Heavy marker charges (Recursion count ÷ 2)
-3. Plan placement timing based on 5-second cooldown
-4. Reserve emergency charge for unexpected Recursion spawns
-5. Coordinate with Prime marker availability for area support
-```
+### Mid-Flight Conversion (Unit Cubes)
 
-**Critical Decision Matrix**:
+#### Conversion Mechanics
+- **Exclusive to Unit Cubes**: Only Light cubes from Unit markers can convert
+- **Timing**: Can convert at any point during backward movement
+- **Result**: Cube becomes static Light marker at current position
+- **Strategic Use**: Bypass Infinity cubes or create delayed traps
 
-| Scenario | Heavy Marker Priority | Alternative Strategy |
-|----------|----------------------|---------------------|
-| Single Recursion Cube | **HIGH** - Immediate placement | Light marker backup |
-| Multiple Recursion Cubes | **CRITICAL** - Precise timing | Prime marker support |
-| Mixed cube composition | **MEDIUM** - Selective targeting | Four-tier coordination |
-| Unit cube heavy wave | **LOW** - Reserve for emergencies | Light marker focus |
-| Prime cube cluster | **MEDIUM** - Support area capture | Cube marker generation |
+#### Conversion Process
+1. Light cube moving backward (from Unit marker)
+2. Player initiates conversion (contextual command)
+3. Cube transforms to Light marker at current tile
+4. Marker awaits next wave for potential collision
+5. No charge refund (strategic cost for flexibility)
 
-##### Performance Optimization Strategies
+### Strategic Depth
 
-**Efficiency Metrics**:
-- **Capture Rate**: Target 85%+ Recursion cube capture with Heavy markers
-- **Resource Utilization**: Achieve 1.5+ cube captures per Heavy marker charge
-- **Timing Accuracy**: Maintain <0.3 second deviation from optimal detonation timing
-- **Strategic Value**: Generate 150%+ point value compared to Light marker usage
+#### Spatial-Temporal Planning
+- **Distance Calculation**: Far markers = late collisions, near markers = early collisions
+- **Pattern Recognition**: Analyze wave patterns to predict collision points
+- **Resource Allocation**: Balance marker types for optimal coverage
+- **Timing Windows**: Place markers before wave step to ensure transformation
 
-**Advanced Timing Techniques**:
-1. **Predictive Placement**: Calculate cube movement patterns and pre-position markers
-2. **Perfect Timing Windows**: Execute detonations at exact cube center positioning
-3. **Chain Reaction Coordination**: Trigger Heavy markers to initiate larger detonation sequences
-4. **Cooldown Synchronization**: Align Heavy marker regeneration with wave progression
+#### Infinity Symbol (∞) Gameplay
+- **Two Loops**: Forward waves and backward player cubes form infinity
+- **Meeting Points**: Strategic placement creates calculated intersections
+- **Pattern Mirroring**: Success requires reverse-engineering wave patterns
+- **Continuous Flow**: Endless cycle of placement, transformation, collision
 
-**Error Recovery Protocols**:
-- **Missed Detonation**: Immediately assess alternative cube targets
-- **Resource Depletion**: Switch to Light-Prime coordination strategies
-- **Timing Failure**: Implement emergency Cube marker protocols
-- **Multiple Recursion Crisis**: Execute containment strategies with available resources
+## 3.4 Player System
 
-#### Competitive Strategic Applications
+### Movement Controls
+- **Grid Navigation**: WASD/Arrow keys for player movement
+- **Free Movement**: Player can move independently of wave timing
+- **Positioning Strategy**: Choose optimal positions for marker placement
+- **No Direct Combat**: Player cannot directly destroy cubes
 
-**High-Level Play Optimization**:
-- Master frame-perfect timing for maximum efficiency
-- Develop muscle memory for common Recursion cube patterns
-- Practice rapid decision-making for dynamic wave compositions
-- Integrate Heavy marker usage into overall strategic flow
+### Marker Mode Selection
+- **Press 1**: Switch to Light marker mode
+- **Press 2**: Switch to Prime marker mode
+- **Press 3**: Switch to Heavy marker mode
+- **Visual Indicator**: Current mode displayed in UI
 
-**Meta-Strategic Considerations**:
-- Analyze map-specific Heavy marker placement opportunities
-- Develop stage-specific Recursion cube management strategies
-- Create contingency plans for various cube composition scenarios
-- Master the psychological pressure management of limited Heavy marker resources
+### Resource Management
 
-#### Implementation Guidelines
+#### Charge System
+- **Light Charges**: High quantity, fast regeneration
+- **Heavy Charges**: Medium quantity, medium regeneration
+- **Prime Charges**: Low quantity, slow regeneration
+- **Cube Markers**: Generated through Prime cube captures
 
-**Training Progression**:
-1. **Basic Proficiency**: Consistent Recursion cube targeting
-2. **Intermediate Tactics**: Four-tier system coordination
-3. **Advanced Strategy**: Predictive placement and timing mastery
-4. **Expert Application**: Meta-strategic integration and adaptation
+#### Regeneration Mechanics
+- **Automatic Recovery**: Charges regenerate over time
+- **Independent Timers**: Each marker type has separate cooldown
+- **Maximum Capacity**: Cannot exceed starting charge limits
+- **Continuous Process**: Regeneration occurs during wave progression
 
-**Common Mistakes to Avoid**:
-- Using Heavy markers on Unit cubes (resource waste)
-- Poor timing leading to missed Recursion cube captures
-- Inadequate cooldown management causing resource gaps
-- Failing to coordinate with other marker tiers
-- Reactive rather than proactive placement strategies
+### Player Statistics Tracking
+- **Cube Captures**: Tracked by type (Unit, Prime, Recursion)
+- **Marker Placements**: Total markers placed per type
+- **Collision Success Rate**: Percentage of successful interceptions
+- **Resource Efficiency**: Captures per marker placed
+- **Perfect Timing**: Optimal collision achievements
 
-**Success Indicators**:
-- Consistent Recursion cube capture rates above 80%
-- Efficient resource utilization across all marker tiers
-- Smooth integration of Heavy markers into overall strategy
-- Adaptive response to varying wave compositions
-- Mastery of timing windows and positioning optimization
+## 3.5 Wave Management System
 
-### Player Statistics
-Comprehensive tracking system:
-- **Cube Captures**: By type (Unit, Prime, Infinity attempts, Recursion)
-- **Marker Usage**: Three-tier marker placement/triggers (Light, Heavy, Prime)
-- **Cube Marker**: Marker appears after capturing prime cube (Cube)
-- **Detonation Metrics**: Efficiency and timing across all marker types
-- **Movement Tracking**: Distance and time
-- **Death/Respawn**: Player mortality events
-- **Performance Metrics**: Success rates and efficiency per marker type
-- **Heavy Marker Analytics**: Recursion cube interaction effectiveness
-
-## 3.4 Wave Management System
 ### Wave Progression
-- **Manual Control**: ENTER to start waves
-- **Step-Based Movement**: Discrete cube advancement
-- **Configurable Timing**: Per-wave `moveInterval` settings
-- **Speed Control**: Normal/fast movement modes
-- **Wave Completion Messages**: Shows progress (e.g., "Wave 1/3") with captured/escaped statistics ✅
-- **Tutorial Pause System**: Press K to continue after wave completion messages ✅
-- **Debug Features**: Manual step control and inspection
+- **Manual Start**: Press ENTER to begin wave
+- **Step-Based Movement**: Discrete advancement for all cubes
+- **Transformation Trigger**: Placed markers convert on first step
+- **Continuous Flow**: Cubes move until captured or escaped
 
 ### Wave Configuration
-```
-WaveData Properties:
-- GridWidth/Height: Grid dimensions
-- moveInterval: Time between steps
-- fastMoveInterval: Accelerated timing
-- waveStartDelay: Initial delay
-- CubesData: List of cube definitions
-- Marker Limits: Resource constraints per wave
-```
+- **Cube Composition**: Types and quantities of wave cubes
+- **Movement Timing**: Speed of wave progression
+- **Grid Dimensions**: Playable area for the wave
+- **Escape Threshold**: Maximum allowed escapes
 
-### Active Wave Management
-- **Cube Tracking**: Live cube count and positions
-- **State Management**: Active/paused/completed states
-- **Event System**: 
-  - OnWaveComplete: Triggered when wave completes successfully ✅
-  - OnWaveFailed: Triggered when escape limit exceeded ✅
-  - OnAllWavesComplete: Triggered when all waves in stage complete ✅
-  - Wave start/end notifications with audio triggers ✅
-- **Wave-to-Wave Transitions**: Smooth transitions with configurable delays ✅
-- **Debug Controls**: Manual progression and inspection
+### Wave States
+- **Preparation**: Markers can be placed, no movement
+- **Active**: Cubes moving, collisions occurring
+- **Completed**: All cubes captured or escaped
+- **Failed**: Escape limit exceeded
 
-## 3.5 Input System
+## 3.6 Input System
+
 ### Core Controls
-| Action | Input | System | Effect |
-|--------|-------|--------|--------|
-| **Movement** | WASD/Arrows | PlayerManager | Grid navigation |
-| **Light Marker** | F | PlayerActionManager | Place single marker |
-| **Heavy Marker** | V | PlayerActionManager | Place enhanced marker |
-| **Prime Marker** | G | PlayerActionManager | Place 3x3 area marker |
-| **Trigger Light** | R | PlayerActionManager | Activate light markers |
-| **Trigger Heavy** | Y | PlayerActionManager | Activate heavy markers |
-| **Trigger Prime** | T | PlayerActionManager | Activate prime markers |
-| **Trigger Cube Marker** | Q | PlayerActionManager | Detonate next available cube marker |
-| **Start Wave** | ENTER | WaveManager | Begin wave progression |
-| **Restart Level** | P | Game System | Reset current stage |
-| **Quit Game** | ESC | Game System | Exit application |
-| **Toggle UI** | TAB | GameUI | Show/hide interface |
+| Action | Input | Description |
+|--------|-------|-------------|
+| **Movement** | WASD/Arrows | Navigate grid |
+| **Place Light Marker** | F | Place Light marker (transforms next step) |
+| **Place Heavy Marker** | V | Place Heavy marker (transforms next step) |
+| **Place Prime Marker** | G | Place Prime marker (transforms next step) |
+| **Detonate Cube Marker** | Q | Instantly detonate cube marker |
+| **Select Light Mode** | 1 | Switch to Light marker mode |
+| **Select Prime Mode** | 2 | Switch to Prime marker mode |
+| **Select Heavy Mode** | 3 | Switch to Heavy marker mode |
+| **Start Wave** | ENTER | Begin wave progression |
+| **Restart Level** | P | Reset current stage |
+| **Quit Game** | ESC | Exit application |
 
 ### Advanced Controls
-| Action | Input | System | Effect |
-|--------|-------|--------|--------|
-| **Close Dialog** | K | UI System | Dismiss messages |
-| **Send Feedback** | F12 | FeedbackCollector | Open email feedback |
+| Action | Input | Effect |
+|--------|-------|--------|
+| **Continue** | K | Dismiss messages/continue |
+| **Toggle UI** | TAB | Show/hide interface |
+| **Send Feedback** | F12 | Open feedback system |
 
-## 3.6 Stage System
-### Stage Management
-- **ScriptableObject Configuration**: Data-driven stage definitions
-- **Progressive Difficulty**: Structured learning curve
-- **Multi-Wave Composition**: Complex stage structures
-- **Completion Tracking**: Win/loss conditions
-- **Stage Success Transitions**: 
-  - Demo completion message with statistics ✅
-  - Smooth return to splash screen for Stage 1 ✅
-  - Comprehensive cleanup before scene transitions ✅
-- **Restart Functionality**: Reset capability
+## 3.7 Stage System
+
+### Stage Structure
+- **Multi-Wave Composition**: Stages contain multiple waves
+- **Progressive Difficulty**: Increasing complexity through stages
+- **Learning Curve**: Introduces mechanics gradually
+- **Win Conditions**: Specific capture requirements per stage
 
 ### Stage Types
-```
-StageType Enum:
-- Tutorial: Teaching-focused stages
-- Standard: Normal gameplay stages  
-- Challenge: Difficult condition stages
-- Bonus: Special rule stages
-```
+- **Tutorial**: Teaches core mechanics step-by-step
+- **Standard**: Normal gameplay with balanced difficulty
+- **Challenge**: Special conditions and restrictions
+- **Endless**: Continuous waves for high scores
 
 ### Stage Properties
-- **Grid Dimensions**: Per-stage grid sizing
-- **Player Start Position**: Initial placement
-- **Wave Configurations**: List of wave data references
-- **Objective Text**: Clear success criteria
-- **Completion Requirements**: Capture counts, escape limits
+- **Grid Size**: Defines playable area
+- **Wave Count**: Number of waves in stage
+- **Resource Limits**: Starting charges for markers
+- **Objectives**: Clear success criteria
 
-## 3.7 Detonation System
-### Detonation Types
-```
-DetonationType Enum:
-- Large: 3x3 area effect
-- Standard: 3x3 area effect  
-- Small: 2x2 area effect
-- Single: Single tile effect
-```
+## 3.8 Collision and Capture System
 
-### Activation Methods
-1. **Marker-Based**: Cubes pass through marked tiles
-2. **Manual Trigger**: Player-activated marker detonation
-3. **Cube Marker**: Direct cube targeting
-4. **Prime Cube Capture**: Automatic marker generation
+### Collision Processing
 
-### Visual/Audio Feedback
-- **Placement Indicators**: Clear marker visualization
-- **Detonation Effects**: Particle systems and animations
-- **Audio System Foundation** ✅:
-  - AudioManager singleton with subsystem architecture
-  - Event-driven audio triggers for game events
-  - Cube-specific audio events (landing, capture, escape)
-  - Volume category management system
-  - Debug testing tools for audio validation
-- **UI Updates**: Real-time charge and count display
+#### Detection Phase
+1. **Position Check**: Compare all cube positions each step
+2. **Type Resolution**: Determine collision outcome by types
+3. **Effect Application**: Apply capture, damage, or special effects
+4. **Cleanup**: Remove destroyed cubes from grid
 
-## 3.8 Debug System
-### Debug Panels
-Comprehensive debugging infrastructure:
-- **Gameplay Panel**: Stage, wave, player debugging  
-- **Testing Panel**: Face painting and scenario testing
-- **Wave Debug Panel**: Cube inspection and wave controls
-- **Cube Inspector**: Individual cube state examination
+#### Capture Mechanics
+- **Standard Capture**: Unit and Prime cubes destroyed on collision
+- **Multi-Hit System**: Recursion cubes require multiple hits
+- **Immunity**: Infinity cubes cannot be captured
+- **Area Effects**: Prime cube collisions affect 3x3 area
 
-### Debug Features
-- **Real-Time Inspection**: Live value monitoring
-- **Manual Controls**: Override automatic systems
-- **State Manipulation**: Direct property modification
-- **Scenario Testing**: Rapid iteration tools
+### Visual and Audio Feedback
+
+#### Visual Systems
+- **Marker Indicators**: Show placement positions
+- **Transformation Effects**: Marker-to-cube conversion animation
+- **Movement Trails**: Indicate cube movement direction
+- **Collision Impact**: Clear feedback when cubes collide
+- **Capture Effects**: Distinct visuals for successful captures
+
+#### Audio Design (Cosmic Lo-fi)
+- **Ambient Soundscape**: Meditative background atmosphere
+- **Placement Tones**: Soft confirmation sounds
+- **Transformation Audio**: Subtle conversion effects
+- **Collision Sounds**: Harmonic impact feedback
+- **Success Indicators**: Positive reinforcement audio
+
+## 3.9 Resource Management and Regeneration
+
+### Charge Management
+
+#### Initial Resources
+- **Starting Charges**: Each marker type begins at maximum
+- **Stage Variations**: Different stages may have different limits
+- **No Pickups**: Resources regenerate only through time
+
+#### Regeneration System
+- **Automatic Process**: No player action required
+- **Time-Based**: Fixed cooldown periods per type
+- **Independent Cycles**: Each marker type regenerates separately
+- **Continuous**: Occurs during all game states
+
+### Strategic Resource Usage
+- **Conservation**: Save charges for critical moments
+- **Spam Prevention**: Cooldowns enforce strategic placement
+- **Type Balancing**: Mix marker types for optimal coverage
+- **Recovery Planning**: Account for regeneration timing
+
+## 3.10 Advanced Strategies
+
+### Tactical Patterns
+
+#### Interception Strategies
+- **Single-Point**: Target specific high-value cubes
+- **Multi-Layer**: Create depth with staggered markers
+- **Area Denial**: Use Prime cubes to control zones
+- **Resource Farming**: Generate markers through same-type collisions
+
+#### Timing Optimization
+- **Wave Analysis**: Study patterns before placing
+- **Predictive Placement**: Calculate future collision points
+- **Rhythm Mastery**: Synchronize with wave step timing
+- **Efficiency Focus**: Maximize captures per marker
+
+### Skill Progression
+1. **Beginner**: Understanding transformation mechanics
+2. **Intermediate**: Timing collisions correctly
+3. **Advanced**: Pattern prediction and resource management
+4. **Expert**: Same-type collision farming
+5. **Master**: Dynamic adaptation to complex patterns
 
 ---
-**Last Updated:** July 13, 2025  
-**Implementation Status:** Production-ready with four-tier marker system complete, wave feedback and audio foundation implemented  
+**Last Updated:** November 16, 2024  
+**Document Type:** Project Design Document  
 **Related Documents:**
 - [Game Design Document](GameDesignDocument.md)
 - [Game Overview](2_GameOverview.md)
 - [Level Design](4_LevelDesign.md)
-- [Technical Debt](../TechnicalDebt.md)
-- [Final Integration Test Report](../FinalIntegrationTestReport.md)
+- Technical Documentation (see Technical Doc folder)

@@ -1,0 +1,166 @@
+---
+alwaysApply: true
+---
+
+# Workflow and Planning Rules
+
+## MANDATORY: Use Shrimp Task Manager for All Planning
+
+**CRITICAL**: This project uses Shrimp Task Manager for all task planning and orchestration. Cursor's built-in todo system MUST NOT be used for project planning.
+
+## Planning Workflow
+
+### When Planning is Needed
+When asked to plan, break down features, or create tasks, you MUST:
+1. Use Shrimp Task Manager MCP commands (NOT Cursor's todo system)
+2. Follow the established workflow: Strategic Analysis → Shrimp Planning → Implementation
+3. Never create Cursor todos for project tasks
+
+### Required Shrimp MCP Commands for Planning
+
+#### For Initial Planning
+Use `mcp_shrimp-task-manager_plan_task` to create a planning request:
+- Provides task planning guidance
+- Returns step-by-step instructions
+- Must be followed strictly
+
+#### For Task Breakdown
+Use `mcp_shrimp-task-manager_split_tasks` to break down complex tasks:
+- Converts strategies into actionable tasks
+- Establishes dependencies
+- Assigns complexity scores
+- Sets priorities
+
+#### For Task Analysis
+Use `mcp_shrimp-task-manager_analyze_task` for deep analysis:
+- Examines codebase systematically
+- Assesses technical feasibility
+- Identifies risks
+
+#### For Task Reflection
+Use `mcp_shrimp-task-manager_reflect_task` for solution review:
+- Reviews analysis results
+- Assesses completeness
+- Identifies optimizations
+
+### Task Execution Workflow
+
+#### Step 1: Get Task from Shrimp
+Use `mcp_shrimp-task-manager_list_tasks` to see available tasks:
+- Check for pending tasks
+- Review task details
+- Identify next task to execute
+
+#### Step 2: Execute Single Task
+Use `mcp_shrimp-task-manager_execute_task` with task ID:
+- Retrieves task instructions
+- Follows step-by-step guidance
+- Completes ONE task at a time
+
+#### Step 3: Verify Task Completion
+Use `mcp_shrimp-task-manager_verify_task` after implementation:
+- Comprehensive check against requirements
+- Scores task completion (0-100)
+- Provides feedback and suggestions
+
+### Prohibited Actions
+
+**NEVER**:
+- Create Cursor todos for project planning
+- Use Cursor's todo_write tool for project tasks
+- Plan without using Shrimp MCP commands
+- Execute multiple tasks simultaneously
+- Skip Shrimp task verification
+
+**ALWAYS**:
+- Use Shrimp MCP commands for all planning
+- Execute one task at a time via Shrimp
+- Verify tasks through Shrimp before marking complete
+- Follow Shrimp task instructions exactly
+
+## Workflow Phases
+
+### Phase 1: Strategic Analysis (Optional - if needed)
+- Analyze requirements
+- Review architecture
+- Assess feasibility
+- Generate implementation strategy
+
+### Phase 2: Shrimp Task Planning (MANDATORY)
+- Use `mcp_shrimp-task-manager_plan_task` or `mcp_shrimp-task-manager_split_tasks`
+- Create structured task breakdown
+- Set dependencies and priorities
+- Define acceptance criteria
+
+### Phase 3: Task Execution (MANDATORY)
+- Use `mcp_shrimp-task-manager_list_tasks` to find next task
+- Use `mcp_shrimp-task-manager_execute_task` with task ID
+- Follow task instructions step-by-step
+- Implement code changes
+- **CRITICAL**: When working on Project Doc files (in `Assets/Docs/Project Doc/`):
+  - Focus on gameplay design and player experience
+  - Avoid technical implementation details (code snippets, class names, method names)
+  - Do NOT include C# code, enum definitions, or implementation specifics
+  - Describe what players experience, not how it's coded
+  - Technical details belong in Technical Doc folder, not Project Doc
+
+### Phase 4: Task Verification (MANDATORY)
+- Use `mcp_shrimp-task-manager_verify_task` with task ID
+- Address any issues found
+- Ensure score ≥ 80 before proceeding
+
+## Example Workflow
+
+```
+User: "Plan a feature to add save/load functionality"
+
+1. Use mcp_shrimp-task-manager_plan_task with feature description
+2. Shrimp returns planning guidance
+3. Use mcp_shrimp-task-manager_split_tasks to break into subtasks
+4. Shrimp creates task list with dependencies
+5. Use mcp_shrimp-task-manager_list_tasks to see created tasks
+6. Use mcp_shrimp-task-manager_execute_task with first task ID
+7. Implement code per task instructions
+8. Use mcp_shrimp-task-manager_verify_task to verify completion
+9. Repeat steps 6-8 for each task sequentially
+```
+
+## Integration Points
+
+### Shrimp MCP Server
+- Configured in `.vscode/mcp.json` and `.vscode/settings.json`
+- Server name: `shrimp-task-manager`
+- All MCP commands prefixed with `mcp_shrimp-task-manager_`
+
+### Project Configuration
+- Shrimp config: `Assets/shrimp.toml`
+- Shrimp rules: `Assets/shrimp-rules.md`
+- Task templates: `Assets/Docs/AI Agent/task-templates/`
+
+### Build Hooks
+- Shrimp automatically runs build validation on task completion
+- Hooks configured in `Assets/shrimp.toml` → `[hooks]` section
+- Build scripts in `shrimpScripts/` directory
+
+## Quick Reference
+
+**Planning Commands**:
+- `mcp_shrimp-task-manager_plan_task` - Get planning guidance
+- `mcp_shrimp-task-manager_split_tasks` - Break down into tasks
+- `mcp_shrimp-task-manager_analyze_task` - Deep analysis
+- `mcp_shrimp-task-manager_reflect_task` - Review solution
+
+**Task Management**:
+- `mcp_shrimp-task-manager_list_tasks` - List all tasks
+- `mcp_shrimp-task-manager_get_task_detail` - Get task details
+- `mcp_shrimp-task-manager_query_task` - Search tasks
+
+**Execution**:
+- `mcp_shrimp-task-manager_execute_task` - Execute single task
+- `mcp_shrimp-task-manager_verify_task` - Verify completion
+- `mcp_shrimp-task-manager_update_task` - Update task info
+
+**DO NOT USE**:
+- `todo_write` (Cursor's todo system) - Use Shrimp instead
+- Creating manual task lists - Use Shrimp instead
+- Parallel task execution - Execute one at a time via Shrimp

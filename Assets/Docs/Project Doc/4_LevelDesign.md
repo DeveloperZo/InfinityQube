@@ -18,28 +18,218 @@ Outlines the structured learning progression, stage composition, and difficulty 
 - **Resource Pressure**: Scarcity forces efficiency
 - **Escalating Stakes**: Increasing consequences for mistakes
 
-## 4.2 Current Implementation Status
-### Implemented Stages
-- **Stage 01**: Tutorial basics (5x20 grid)
-- **Stage 03**: Prime cube mechanics (5x20 grid) 
-- **Additional stages**: In development
+## 4.2 Stage System Architecture
 
-### Stage Configuration System
-```
-StageData Properties:
-- stageNumber: Sequential identifier
-- stageName: Display name
-- description: Learning goals and context
-- objective: Clear success criteria
-- gridWidth/Height: Dimensions
-- playerStartPosition: Initial placement
-- waveConfigurations: List of WaveData references
-- requireAllCubesDestroyed: Completion condition
-- requiredCaptureCount: Minimum captures needed
-- maxAllowedEscapes: Failure threshold
-```
+### Stage Types
+The game features four distinct stage types, each serving different purposes in the player experience:
 
-## 4.3 Progression Structure
+#### Tutorial Stages
+- **Purpose**: Teaching-focused stages that introduce core mechanics
+- **Characteristics**: 
+  - Focused on single mechanic introduction
+  - Generous resource allocation for learning
+  - Clear objectives and feedback
+  - Forgiving failure conditions
+- **Progression**: Tutorial stages unlock standard stages
+- **Examples**: Stage 0 (Pure Fundamentals), Stage 1 (Death Exists), Stage 2 (Prime Introduction)
+
+#### Standard Stages
+- **Purpose**: Normal gameplay with balanced difficulty progression
+- **Characteristics**:
+  - Balanced resource allocation
+  - Progressive complexity increases
+  - Standard win/loss conditions
+  - Core gameplay loop emphasis
+- **Progression**: Standard stages form the main campaign path
+- **Examples**: Most stages in Acts 2-5 follow standard progression
+
+#### Challenge Stages
+- **Purpose**: Difficult stages with special conditions and constraints
+- **Characteristics**:
+  - Restricted resources or special limitations
+  - Higher difficulty thresholds
+  - Unique win conditions
+  - Test mastery of specific mechanics
+- **Progression**: Challenge stages provide optional difficulty spikes
+- **Examples**: Resource-limited stages, precision-timing challenges, survival scenarios
+
+#### Bonus Stages
+- **Purpose**: Special stages with unique rules and mechanics
+- **Characteristics**:
+  - Unique gameplay variations
+  - Experimental mechanics
+  - Special rewards or achievements
+  - Non-standard progression rules
+- **Progression**: Bonus stages offer alternative gameplay experiences
+- **Examples**: Speed challenges, puzzle variations, special rule stages
+
+### Stage Configuration Options
+Each stage can be configured with the following parameters:
+
+- **Grid Dimensions**: Width and height determine playable area size
+- **Player Start Position**: Initial player placement on the grid
+- **Wave Configurations**: List of waves that compose the stage
+- **Success Conditions**: 
+  - Require all cubes destroyed (strict completion)
+  - Minimum capture count (flexible completion)
+  - Maximum allowed escapes (failure threshold)
+- **Stage Identity**: Name, description, and objective text displayed to players
+
+### Stage Progression Flow
+Stages follow a structured progression pattern:
+
+1. **Stage Loading**: When a stage begins, the grid is configured to the stage's dimensions, the player is positioned at the start location, and all systems are reset
+2. **Wave Sequence**: Stages consist of multiple waves that play sequentially. Each wave spawns cubes and presents a new challenge
+3. **Wave Completion**: As each wave completes, players see progress feedback showing which wave they're on (e.g., "Wave 2/5") along with capture statistics
+4. **Stage Completion**: When all waves in a stage are completed successfully, the stage is marked as complete. Players can then advance to the next stage automatically or manually
+5. **Failure Handling**: If a wave fails (too many escapes, player death), the stage can be configured to restart automatically or return to the menu
+
+### Progression Mechanics
+Stages advance through a structured progression system:
+
+- **Automatic Advancement**: Stages can automatically advance to the next stage upon completion
+- **Manual Control**: Players can restart stages or select specific stages for practice
+- **Transition Delays**: Configurable delays between stage transitions for pacing
+- **Failure Handling**: Stages can be configured to restart on failure or return to menu
+- **Completion Tracking**: System tracks stage attempts, completions, and statistics
+
+### Wave Generation Patterns
+Waves can be created through two primary methods:
+
+#### Pre-Configured Waves
+- **Manual Design**: Carefully crafted wave compositions for specific learning goals
+- **Precision Control**: Exact cube placement and timing for teaching moments
+- **Narrative Integration**: Waves designed to support stage themes and objectives
+- **Use Cases**: Tutorial stages, key learning moments, story-critical encounters
+
+#### Procedural Generation
+- **Pattern-Based**: Uses predefined patterns that can be combined and modified
+- **Difficulty Scaling**: Automatically adjusts cube composition based on stage difficulty
+- **Cube Distribution**: Configurable percentages for each cube type (Unit, Prime, Infinity, Recursion)
+- **Spacing Control**: Maintains appropriate spacing between cubes for playability
+- **Solvability Analysis**: System ensures generated waves are solvable
+- **Use Cases**: Replayability, varied challenges, dynamic difficulty adjustment
+
+#### Wave Generation Parameters
+Procedural generation can be configured with:
+- **Grid Constraints**: Minimum and maximum grid dimensions
+- **Cube Distribution**: Percentage allocation for each cube type
+- **Difficulty Multiplier**: Scales overall wave difficulty
+- **Base Cube Count**: Starting number of cubes per wave
+- **Cube Spacing**: Minimum and maximum spacing between cubes
+- **Pattern Selection**: Available wave patterns for generation
+
+### Wave Configuration Per Stage
+Each wave within a stage can be individually configured:
+
+- **Cube Placement**: Exact positions where cubes spawn at the start of the wave
+- **Marker Availability**: Each wave can specify how many marker charges and counts are available (Light, Heavy, Prime markers)
+- **Timing Settings**: Wave-specific movement speeds and start delays
+- **Success Criteria**: Waves can have their own completion requirements (capture counts, escape limits)
+- **Instructional Messages**: Waves can display messages at specific movement steps to guide players
+
+### Grid Configuration Per Stage
+Stages can configure grid dimensions to create different tactical challenges:
+
+- **Small Grids (5x20)**: Focused encounters, limited space for maneuvering
+- **Medium Grids (7x25)**: Balanced gameplay with room for strategy
+- **Large Grids (9x30+)**: Complex scenarios requiring spatial awareness
+- **Wide Grids**: Emphasize horizontal positioning and lane management
+- **Tall Grids**: Emphasize forward planning and cube progression timing
+
+Grid size directly impacts:
+- Player movement options
+- Marker placement strategies
+- Cube path complexity
+- Spatial awareness requirements
+- Resource efficiency demands
+
+## 4.3 Tutorial Stage Structure
+
+### Tutorial Design Principles
+Tutorial stages follow a specific structure to maximize learning effectiveness:
+
+#### Introduction Phase
+- **Single Mechanic Focus**: Each tutorial introduces one new concept
+- **Clear Instructions**: Objectives explicitly state what players should learn
+- **Generous Resources**: Extra charges and forgiving conditions allow experimentation
+- **Immediate Feedback**: Visual and audio cues reinforce correct actions
+
+#### Practice Phase
+- **Reinforcement**: Same mechanic repeated with slight variations
+- **Gradual Complexity**: Subtle increases in difficulty within the same mechanic
+- **Safe Failure**: Mistakes don't immediately end the stage
+- **Pattern Recognition**: Players begin to see optimal strategies
+
+#### Mastery Phase
+- **Integration**: New mechanic combined with previously learned concepts
+- **Resource Constraints**: Slightly reduced resources encourage efficiency
+- **Success Requirement**: Must demonstrate understanding to progress
+- **Confidence Building**: Players feel capable before moving forward
+
+### Tutorial Stage Examples
+
+#### Stage 0: Pure Fundamentals
+- **Type**: Tutorial
+- **Mechanics Introduced**: Movement, marker placement, basic cube capture
+- **Grid**: 5x20 (standard starting size)
+- **Resources**: 2 Light marker charges with standard cooldown
+- **Cubes**: Unit cubes and Infinity cubes
+- **Learning Goals**: 
+  - Grid navigation and positioning
+  - Marker placement timing
+  - Understanding Infinity cube danger
+  - Basic capture mechanics
+
+#### Stage 1: The First Rule - Death Exists
+- **Type**: Tutorial
+- **Mechanics Introduced**: Infinity cube avoidance, death mechanics
+- **Grid**: 5x20
+- **Resources**: 2 Light marker charges
+- **Cubes**: Unit cubes and Infinity cubes
+- **Learning Goals**:
+  - Infinity cubes cannot be captured
+  - Infinity cubes cause player death on contact
+  - Spatial awareness for danger avoidance
+  - Strategic positioning to avoid Infinity cubes
+
+#### Stage 2: Dancing with Danger
+- **Type**: Tutorial
+- **Mechanics Introduced**: Prime cube capture, cube marker generation
+- **Grid**: 5x20
+- **Resources**: 2 Light marker charges
+- **Cubes**: Unit, Infinity, and Prime cubes
+- **Learning Goals**:
+  - Prime cubes can be captured
+  - Prime cube capture generates cube markers
+  - Cube markers provide tactical advantages
+  - Value hierarchy: Infinity = avoid, Prime = pursue
+
+### Symmetrical Wave System Tutorial Progression
+
+After basic mechanics are established, the game introduces its core innovation: the Symmetrical Wave System. This system teaches players to think about collisions, timing, and spatial relationships.
+
+#### Phase 1: Collision Fundamentals (Stages 3-5)
+- **Static Marker Collisions**: Players learn that markers can intercept cubes at any point in their descent
+- **Collision Timing Windows**: Introduction to the concept of optimal collision timing
+- **Basic Spatial Awareness**: Understanding collision points on the grid
+
+#### Phase 2: Dynamic Collisions (Stages 6-8)
+- **Moving Cube Markers**: Cube markers from Prime captures can move and collide
+- **Collision Prediction**: Learning to anticipate where collisions will occur
+- **Mid-Flight Conversions**: Converting Infinity cubes by colliding Unit cubes into them
+
+#### Phase 3: Symmetrical Patterns (Stages 9-10)
+- **Mirror Mechanics**: Waves spawn in symmetrical patterns requiring matching responses
+- **Collision Chains**: Setting up cascading collision sequences
+- **Spatial-Temporal Mastery**: Balancing immediate needs with future collision setup
+
+#### Phase 4: Advanced Orchestration (Stages 11-12)
+- **Dynamic Collision Zones**: Collision points that move during waves
+- **Infinity Patterns**: Waves forming infinity symbol shapes
+- **Complete System Mastery**: All collision mechanics combined
+
+## 4.4 Progression Structure
 
 ### Act 1: Learn the Rules (Stages 0-2)
 **Focus**: Establishing core loop and primary danger
@@ -188,28 +378,136 @@ StageData Properties:
 - **Wave 2: "The Swarm"** - Overwhelming density requiring perfect blue cube usage
 - **Wave 3: "The Dance"** - Everything in elegant, brutal harmony
 
-## 4.4 Design Patterns
+## 4.5 Challenge and Bonus Stage Variations
 
-### Scaffolding Pattern
-Each stage builds on previous knowledge:
-1. **Isolation**: New mechanic introduced alone
-2. **Integration**: Combined with previous mechanics
-3. **Pressure**: Tested under increasing difficulty
-4. **Mastery**: Required for progression
+### Challenge Stage Design Patterns
 
-### Resource Arc Pattern
+#### Resource Constraint Challenges
+- **Limited Charges**: Severely restricted marker charges force perfect efficiency
+- **No Regeneration**: Charges don't regenerate, requiring careful planning
+- **Single-Use Tools**: Each marker type can only be used once per stage
+- **Learning Goal**: Master resource optimization and strategic planning
+
+#### Precision Timing Challenges
+- **Tight Windows**: Very short timing windows for optimal marker placement
+- **Perfect Timing Required**: Success depends on frame-perfect execution
+- **No Margin for Error**: Mistakes immediately fail the challenge
+- **Learning Goal**: Develop muscle memory and timing precision
+
+#### Survival Challenges
+- **Endless Waves**: Continuous waves until failure
+- **Escalating Difficulty**: Each wave increases in complexity
+- **Score-Based**: Success measured by survival time or cubes captured
+- **Learning Goal**: Adapt to increasing pressure and maintain composure
+
+#### Puzzle Challenges
+- **Specific Solutions**: Stages with exact solution paths
+- **Limited Options**: Very few valid strategies
+- **Logic-Based**: Requires understanding of cube interactions
+- **Learning Goal**: Deep understanding of game mechanics and interactions
+
+### Bonus Stage Design Patterns
+
+#### Speed Challenges
+- **Time Limits**: Complete stages within time constraints
+- **Fast Movement**: Cubes move at accelerated pace
+- **Rapid Decision Making**: Quick strategic choices required
+- **Reward**: Achievement or special recognition for completion
+
+#### Puzzle Variations
+- **Unique Rules**: Special mechanics not found in standard stages
+- **Experimental Gameplay**: Test new concepts and interactions
+- **Creative Solutions**: Multiple valid approaches encouraged
+- **Reward**: Unlock special content or cosmetics
+
+#### Special Rule Stages
+- **Modified Mechanics**: Standard rules altered in interesting ways
+- **Power-Ups**: Temporary advantages or special abilities
+- **Environmental Effects**: Dynamic board states or special conditions
+- **Reward**: Alternative progression paths or bonus content
+
+## 4.6 Design Patterns
+
+### Collision Learning Pattern
+Progressive collision mechanic introduction:
+1. **Static Collisions**: Fixed markers intercepting cubes
+2. **Moving Collisions**: Cube markers with predictable movement
+3. **Conversion Collisions**: Mid-flight Infinity cube conversions
+4. **Chain Collisions**: Multiple collision cascades
+5. **Symmetrical Collisions**: Perfect mirrored collision patterns
+
+### Spatial-Temporal Trade-off Pattern
 ```
-Learning Arc:
-Tutorial → Abundance → Scarcity → Optimization → Mastery
+Complexity Progression:
+Immediate Placement → Delayed Timing → Predictive Positioning → Chain Planning → Symmetrical Orchestration
 ```
 
-### Difficulty Curve Principles
-- **Gentle Introduction**: New mechanics start easy
-- **Rapid Acceleration**: Quick ramp to meaningful challenge
-- **Plateau Periods**: Time to internalize before next complexity
-- **Spike Management**: Difficulty spikes are intentional teaching moments
+### Collision Difficulty Metrics
+- **Timing Precision**: Window size for successful collisions (measured in milliseconds)
+- **Collision Count**: Number of simultaneous collisions required
+- **Chain Length**: Sequential collisions needed for success
+- **Symmetry Accuracy**: Deviation tolerance from perfect symmetry
+- **Temporal Complexity**: Number of future states to consider
 
-## 4.5 Current Development Priorities
+## 4.7 Wave Progression Mechanics
+
+### Wave Timing and Pacing
+Waves progress through configurable timing systems:
+
+- **Movement Intervals**: Time between cube movement steps (typically 1.75 seconds)
+- **Fast Movement Mode**: Accelerated timing for faster gameplay (typically 0.1 seconds)
+- **Wave Start Delay**: Brief pause before wave begins (typically 0.75 seconds)
+- **Speed Control**: Players can toggle between normal and fast movement modes by holding a key (typically Left Shift)
+
+### Wave Lifecycle
+Each wave follows a structured sequence:
+
+1. **Wave Start**: After a brief delay, cubes spawn at their configured positions on the grid
+2. **Movement Phase**: Cubes move forward one step at a time at regular intervals. Players can speed up this process
+3. **Active Play**: Players place markers, capture cubes, and manage threats as cubes advance
+4. **Completion Check**: The wave continuously monitors whether completion conditions are met
+5. **Wave End**: When complete, the wave shows completion feedback and prepares for the next wave
+
+### Wave Completion Conditions
+Waves complete when:
+
+- **All Capturable Cubes Processed**: All Unit, Prime, and Recursion cubes have been either captured or have escaped. The wave ends when no capturable cubes remain active
+- **Escape Limit Exceeded**: If a wave has an escape limit configured, exceeding that limit immediately fails the wave
+- **Player Death**: If the player is killed by an Infinity cube, the wave fails immediately
+
+### Wave-to-Wave Transitions
+Smooth transitions between waves maintain gameplay flow:
+
+- **Completion Messages**: After each wave, players see a progress message showing which wave they completed (e.g., "Wave 2/5") along with capture and escape statistics
+- **Transition Delays**: A configurable pause occurs between waves, giving players time to process the previous wave's results
+- **State Reset**: All markers are cleared from the grid, preparing a clean slate for the next wave
+- **Resource Regeneration**: Marker charges continue regenerating between waves, so players start each new wave with refreshed resources
+- **Player Reset**: The player remains in position, ready for the next wave's challenge
+
+### Wave Success Criteria
+Waves can have individual success criteria that differ from the stage's overall requirements:
+
+- **Wave-Specific Escape Limits**: A wave can fail if too many cubes escape, even if the stage allows more escapes overall
+- **Wave-Specific Capture Requirements**: A wave might require capturing a minimum number of cubes to succeed
+- **Default Behavior**: If a wave doesn't specify its own criteria, it uses the stage's success conditions
+
+### Wave Message System
+Waves can display instructional messages to guide players:
+
+- **Initial Messages**: Shown when the wave starts, providing context or instructions
+- **Step Messages**: Displayed at specific movement steps to highlight important moments
+- **Completion Messages**: Shown when the wave completes, providing feedback and statistics
+- **Pause on Messages**: Important messages can pause the wave, requiring player confirmation before continuing
+
+### Wave Event System
+Waves trigger events that affect stage progression:
+
+- **Wave Complete**: Successful wave completion advances to the next wave in the sequence
+- **Wave Failed**: Failure triggers stage failure handling (restart or return to menu)
+- **All Waves Complete**: When the final wave in a stage completes, the stage is marked as successful
+- **Audio Feedback**: Wave events trigger appropriate audio cues to enhance player feedback
+
+## 4.8 Current Development Priorities
 
 ### ✅ Completed Foundation Systems (June 2025)
 - **Four-Tier Marker System**: Light/Heavy/Prime/Cube markers fully implemented and integrated
@@ -219,11 +517,12 @@ Tutorial → Abundance → Scarcity → Optimization → Mastery
 - **Technical Infrastructure**: Debug systems, analytics, and integration testing complete
 
 ### 🔄 Phase 2 Active Priorities (July-August 2025)
-1. **Audio System Integration** ⭐ **HIGHEST PRIORITY** - Currently in progress
-   - Core action sounds (marker placement, cube capture, detonation)
-   - System feedback audio (wave events, resource regeneration)
-   - Cosmic atmospheric ambience
-   - Dynamic audio scaling with gameplay intensity
+1. **Cosmic Lo-fi Audio System** ⭐ **HIGHEST PRIORITY** - Currently in progress
+   - Meditative marker placement tones
+   - Harmonic capture feedback
+   - Ambient cosmic soundscape
+   - Rhythmic wave progression audio
+   - Collision resonance for symmetrical waves
 
 2. **UI Modernization & Polish**
    - OnGUI → Unity UI conversion for stage interface
@@ -233,16 +532,20 @@ Tutorial → Abundance → Scarcity → Optimization → Mastery
 
 3. **Stage Design Enhancement**
    - Leverage completed four-tier system for advanced stage concepts
-   - Refine difficulty progression using production-ready mechanics
-   - Create stages that showcase Heavy and Prime marker strategic depth
-   - Implement Cube marker tactical scenarios
+   - Implement Symmetrical Wave System progression (Acts 4-5)
+   - Create stages showcasing marker-to-cube transformation
+   - Design collision-based puzzles and timing challenges
+   - Integrate infinity symbol theme into level geometry
 
 ### Stage Design Focus Areas
 - **Four-Tier Mastery Stages**: Dedicated levels teaching optimal marker type selection
 - **Recursion Cube Scenarios**: Strategic multi-hit encounters requiring Heavy markers
 - **Prime Marker Techniques**: Stages emphasizing precision timing and positioning
 - **Cube Marker Tactics**: Advanced detonation strategy implementation
-- **Audio-Driven Experience**: Stage pacing synchronized with audio feedback
+- **Symmetrical Wave Training**: Stages introducing moving cube markers and collision mechanics
+- **Infinity Bypass Puzzles**: Scenarios requiring Unit cube conversion tactics
+- **Pattern Mirroring Challenges**: Complex waves requiring perfect symmetrical responses
+- **Cosmic Lo-fi Experience**: Stage pacing synchronized with meditative audio feedback
 
 ### Testing and Iteration Focus
 - **Four-Tier System Validation**: Ensure all marker types feel distinct and valuable
@@ -251,12 +554,10 @@ Tutorial → Abundance → Scarcity → Optimization → Mastery
 - **Performance Optimization**: Maintain 60 FPS with enhanced audio-visual systems
 
 ---
-**Last Updated**: June 28, 2025  
-**Implementation Status**: Four-tier marker system complete, core infrastructure operational, Phase 2 audio and UI enhancement active  
-**Cross-Reference Status**: ✅ Updated for production four-tier marker system and current cube terminology  
+**Last Updated**: November 16, 2024  
+**Document Type**: Project Design Document  
 **Related Documents:**
 - [Game Design Document](GameDesignDocument.md)
 - [Gameplay Mechanics](3_GameplayMechanics.md)
 - [Game Overview](2_GameOverview.md)
-- [Technical Debt](../TechnicalDebt.md)
-- [Final Integration Test Report](../FinalIntegrationTestReport.md)
+- Technical Documentation (see Technical Doc folder)
