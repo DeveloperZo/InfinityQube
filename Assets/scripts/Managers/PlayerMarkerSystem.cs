@@ -27,6 +27,9 @@ public class PlayerMarkerSystem : MonoBehaviour
     [SerializeField] public Queue<PrimeMarker> primeMarkers = new Queue<PrimeMarker>();
     public List<CubeMarker> cubeMarkers = new List<CubeMarker>();
 
+    // Player cube tracking
+    public List<CubeManager> playerCubes = new List<CubeManager>();
+
     // Preview system
     private List<GameObject> previewObjects = new List<GameObject>();
     private bool showingPreview = false;
@@ -136,6 +139,9 @@ public class PlayerMarkerSystem : MonoBehaviour
         lightMarkers.Enqueue(marker);
         actionManager.ConsumeLightCharge();
 
+        // Record marker position for paired wave system
+        RecordMarkerForPairedWave(position, Enumerations.MarkerMode.Light);
+
         Debug.Log($"Light marker placed at ({position.x}, {position.y})");
         return true;
     }
@@ -232,6 +238,9 @@ public class PlayerMarkerSystem : MonoBehaviour
 
         heavyMarkers.Enqueue(marker);
         actionManager.ConsumeHeavyCharge();
+
+        // Record marker position for paired wave system
+        RecordMarkerForPairedWave(position, Enumerations.MarkerMode.Heavy);
 
         Debug.Log($"Heavy marker placed at ({position.x}, {position.y})");
         return true;
@@ -330,6 +339,9 @@ public class PlayerMarkerSystem : MonoBehaviour
 
         primeMarkers.Enqueue(newMarker);
         actionManager.ConsumePrimeCharge();
+
+        // Record marker position for paired wave system (record center position)
+        RecordMarkerForPairedWave(centerPosition, Enumerations.MarkerMode.Prime);
 
         Debug.Log($"Prime marker placed at ({centerPosition.x}, {centerPosition.y})");
         return true;
@@ -602,6 +614,352 @@ public class PlayerMarkerSystem : MonoBehaviour
     private void NotifyWaveManager(System.Action<WaveManager> action)
     {
         if (actionManager.WaveManager != null) action(actionManager.WaveManager);
+    }
+
+    #endregion
+
+    #region Player Cube System
+
+    /// <summary>
+    /// Spawns player cubes at positions where light markers exist.
+    /// Called during wave step forward movement to spawn Unit cubes from light markers.
+    /// </summary>
+    public void SpawnPlayerCubes()
+    {
+        if (actionManager == null || actionManager.WaveManager == null || actionManager.GridManager == null)
+        {
+            Debug.LogWarning("[PlayerMarkerSystem] Cannot spawn player cubes - missing references");
+            return;
+        }
+
+        var waveManager = actionManager.WaveManager;
+        var grid = actionManager.GridManager;
+
+        // Check if cube prefabs are available
+        if (waveManager.cubePrefabs == null || (int)CubeType.Unit >= waveManager.cubePrefabs.Length)
+        {
+            Debug.LogWarning("[PlayerMarkerSystem] Cannot spawn player cubes - cube prefabs not available");
+            return;
+        }
+
+        int spawnedCount = 0;
+
+        // Create a list of markers to process (to avoid modifying queue during iteration)
+        var markersToProcess = new List<LightMarker>();
+        var markersArray = lightMarkers.ToArray();
+        
+        foreach (var marker in markersArray)
+        {
+            if (marker != null)
+            {
+                markersToProcess.Add(marker);
+            }
+        }
+
+        // Process each marker: spawn cube and remove marker
+        foreach (var marker in markersToProcess)
+        {
+            Vector2Int position = marker.position;
+
+            // Create cube data for Unit cube
+            var cubeData = new CubeData
+            {
+                type = CubeType.Unit,
+                position = position,
+                level = 1
+            };
+
+            // Calculate world position
+            Vector3 spawnPos = grid.GridToWorldPosition(position.x, position.y, 2f);
+
+            // Instantiate cube prefab
+            GameObject cubeObj = Instantiate(waveManager.cubePrefabs[(int)CubeType.Unit], spawnPos, Quaternion.identity);
+
+            // Get or add CubeManager component
+            var cube = cubeObj.GetComponent<CubeManager>();
+            if (cube == null)
+            {
+                cube = cubeObj.AddComponent<CubeManager>();
+            }
+
+            // Initialize the cube
+            cube.Init(grid, cubeData, 2f);
+
+            // Mark as player cube
+            cube.isPlayerCube = true;
+            cube.usePhysics = false;
+            // Configure physics to allow player to pass through
+            cube.ConfigurePlayerCubePhysics();
+
+            // Make cube translucent
+            MakeCubeTranslucent(cube);
+
+            // Add to player cubes list (not to WaveManager.activeCubes)
+            playerCubes.Add(cube);
+
+            spawnedCount++;
+
+            Debug.Log($"[PlayerMarkerSystem] Spawned player cube at ({position.x}, {position.y}) from light marker");
+
+            // Remove the marker after spawning cube
+            RemoveLightMarkerAt(position);
+        }
+
+        if (spawnedCount > 0)
+        {
+            Debug.Log($"[PlayerMarkerSystem] Spawned {spawnedCount} player cubes from light markers");
+        }
+    }
+
+    /// <summary>
+    /// Makes a cube translucent by modifying its material alpha.
+    /// </summary>
+    private void MakeCubeTranslucent(CubeManager cube)
+    {
+        if (cube == null) return;
+
+        Renderer renderer = cube.GetComponent<Renderer>();
+        if (renderer == null) return;
+
+        Material originalMaterial = renderer.material;
+        if (originalMaterial == null) return;
+
+        // Create a new material instance to avoid affecting other cubes
+        Material translucentMaterial = new Material(originalMaterial);
+        
+        // Set alpha to make it translucent (0.35 = 35% opacity for better visibility)
+        Color color = translucentMaterial.color;
+        color.a = 0.35f;
+        translucentMaterial.color = color;
+
+        // Enable transparency rendering mode
+        if (translucentMaterial.HasProperty("_Mode"))
+        {
+            translucentMaterial.SetFloat("_Mode", 3); // Transparent mode
+            translucentMaterial.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
+            translucentMaterial.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+            translucentMaterial.SetInt("_ZWrite", 0);
+            translucentMaterial.DisableKeyword("_ALPHATEST_ON");
+            translucentMaterial.EnableKeyword("_ALPHABLEND_ON");
+            translucentMaterial.DisableKeyword("_ALPHAPREMULTIPLY_ON");
+            translucentMaterial.renderQueue = 3000;
+        }
+
+        renderer.material = translucentMaterial;
+    }
+
+    /// <summary>
+    /// Moves all player cubes backward (increasing Y position) toward wave cubes.
+    /// Removes destroyed cubes from the playerCubes list.
+    /// </summary>
+    public void MovePlayerCubesBackward()
+    {
+        if (playerCubes == null || playerCubes.Count == 0) return;
+
+        int movedCount = 0;
+
+        // Iterate in reverse to safely remove items during iteration
+        for (int i = playerCubes.Count - 1; i >= 0; i--)
+        {
+            if (i >= playerCubes.Count) continue;
+
+            var cube = playerCubes[i];
+            if (cube == null)
+            {
+                playerCubes.RemoveAt(i);
+                continue;
+            }
+
+            // Only move cubes that aren't currently animating (atomic movement)
+            if (!cube.isMoving)
+            {
+                cube.ResetMovementState();
+                bool stillAlive = cube.MoveBackward();
+
+                if (!stillAlive)
+                {
+                    playerCubes.RemoveAt(i);
+                }
+                else
+                {
+                    movedCount++;
+                }
+            }
+        }
+
+        if (movedCount > 0)
+        {
+            Debug.Log($"[PlayerMarkerSystem] Moved {movedCount} player cubes backward");
+        }
+    }
+
+    /// <summary>
+    /// Checks for collisions between player cubes and wave cubes.
+    /// Handles both same-tile collisions and adjacent cubes moving toward each other.
+    /// </summary>
+    public void CheckPlayerCubeCollisions()
+    {
+        if (playerCubes == null || playerCubes.Count == 0) return;
+        if (actionManager?.GridManager == null) return;
+
+        int collisionCount = 0;
+        var gridManager = actionManager.GridManager;
+
+        // Iterate through all player cubes
+        for (int i = playerCubes.Count - 1; i >= 0; i--)
+        {
+            if (i >= playerCubes.Count) continue;
+
+            var playerCube = playerCubes[i];
+            if (playerCube == null || playerCube.isDestroyed)
+            {
+                playerCubes.RemoveAt(i);
+                continue;
+            }
+
+            Vector2Int playerPos = playerCube.position;
+            
+            // Validate position bounds
+            if (!IsValidPosition(playerPos, gridManager))
+            {
+                continue;
+            }
+            
+            // Check collision at current position (normal case)
+            if (ProcessCollisionAtPosition(playerCube, playerPos, ref collisionCount, ref i))
+            {
+                continue; // Collision handled, move to next player cube
+            }
+            
+            // Check collision at previous position (adjacent cubes passing through)
+            // Example: Wave at (x, y+1) → (x, y), Player at (x, y) → (x, y+1)
+            // They collide at (x, y) - player's previous position
+            Vector2Int playerPreviousPos = new Vector2Int(playerPos.x, playerPos.y - 1);
+            if (IsValidPosition(playerPreviousPos, gridManager))
+            {
+                ProcessPassThroughCollision(playerCube, playerPos, playerPreviousPos, ref collisionCount, ref i);
+            }
+        }
+
+        if (collisionCount > 0)
+        {
+            this.Log($"CheckPlayerCubeCollisions: Processed {collisionCount} collisions", true);
+        }
+    }
+    
+    /// <summary>
+    /// Checks for collision at a specific position and processes it if found.
+    /// Returns true if collision was found and processed.
+    /// </summary>
+    private bool ProcessCollisionAtPosition(CubeManager playerCube, Vector2Int position, ref int collisionCount, ref int playerCubeIndex)
+    {
+        var cubesAtPosition = FindAllCubesAt(position);
+        
+        foreach (var cube in cubesAtPosition)
+        {
+            if (cube == null || cube.isDestroyed || cube.isPlayerCube) continue;
+            
+            if (ProcessCubeCapture(cube, position, MarkerType.Light, null))
+            {
+                HandlePlayerCubeDestruction(playerCube, ref collisionCount, ref playerCubeIndex);
+                return true;
+            }
+        }
+        
+        return false;
+    }
+    
+    /// <summary>
+    /// Handles collision detection for adjacent cubes moving toward each other.
+    /// Verifies the wave cube came from where the player cube is now.
+    /// </summary>
+    private void ProcessPassThroughCollision(CubeManager playerCube, Vector2Int playerPos, Vector2Int playerPreviousPos, 
+        ref int collisionCount, ref int playerCubeIndex)
+    {
+        var cubesAtPreviousPos = FindAllCubesAt(playerPreviousPos);
+        
+        foreach (var cube in cubesAtPreviousPos)
+        {
+            if (cube == null || cube.isDestroyed || cube.isPlayerCube) continue;
+            
+            // Verify wave cube came from player's current position (confirms they passed through)
+            // Wave cubes move forward: if at (x, y), came from (x, y+1)
+            Vector2Int waveCubeSourcePos = new Vector2Int(cube.position.x, cube.position.y + 1);
+            if (waveCubeSourcePos == playerPos)
+            {
+                if (ProcessCubeCapture(cube, playerPreviousPos, MarkerType.Light, null))
+                {
+                    HandlePlayerCubeDestruction(playerCube, ref collisionCount, ref playerCubeIndex);
+                    return;
+                }
+            }
+        }
+    }
+    
+    /// <summary>
+    /// Destroys player cube and removes it from tracking list.
+    /// </summary>
+    private void HandlePlayerCubeDestruction(CubeManager playerCube, ref int collisionCount, ref int playerCubeIndex)
+    {
+        collisionCount++;
+        if (playerCube != null && playerCube.gameObject != null)
+        {
+            Destroy(playerCube.gameObject);
+        }
+        playerCubes.RemoveAt(playerCubeIndex);
+    }
+    
+    /// <summary>
+    /// Validates if a position is within grid bounds.
+    /// </summary>
+    private bool IsValidPosition(Vector2Int position, GridManager gridManager)
+    {
+        return position.x >= 0 && position.x < gridManager.Width &&
+               position.y >= 0 && position.y < gridManager.Height;
+    }
+
+    /// <summary>
+    /// Clears all player cubes, destroying their GameObjects and clearing the tracking list.
+    /// Called during wave completion to prevent orphaned cubes between waves.
+    /// </summary>
+    public void ClearPlayerCubes()
+    {
+        if (playerCubes == null) return;
+
+        int clearedCount = playerCubes.Count;
+
+        // Destroy all player cube GameObjects
+        foreach (var cube in playerCubes)
+        {
+            if (cube != null && cube.gameObject != null)
+            {
+                Destroy(cube.gameObject);
+            }
+        }
+
+        // Clear the list
+        playerCubes.Clear();
+
+        if (clearedCount > 0)
+        {
+            Debug.Log($"[PlayerMarkerSystem] Cleared {clearedCount} player cubes");
+        }
+    }
+
+    #endregion
+
+    #region Paired Wave System Integration
+
+    /// <summary>
+    /// Records marker position for paired wave inheritance system.
+    /// Always records markers during any wave - they will be used when the wave is mirrored.
+    /// </summary>
+    private void RecordMarkerForPairedWave(Vector2Int position, Enumerations.MarkerMode markerType)
+    {
+        if (actionManager?.WaveManager == null) return;
+
+        // Always record marker positions - they will be used when the wave is mirrored
+        actionManager.WaveManager.RecordMarkerPosition(position, markerType);
     }
 
     #endregion

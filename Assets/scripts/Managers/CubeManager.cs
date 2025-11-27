@@ -32,7 +32,7 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
     public bool isRainingCube = false;
 
     [Header("Physics")]
-    [SerializeField] private bool usePhysics = true;
+    [SerializeField] public bool usePhysics = true;
     [SerializeField] private Rigidbody cubeRigidbody;
     [SerializeField] private Collider cubeCollider;
 
@@ -48,6 +48,7 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
     private PlayerActionManager playerActionManager;
     public bool isMoving = false;
     public bool isDestroyed = false;
+    public bool isPlayerCube = false;
     public float rainSpeed = 3f;
     public float rainHeight = 5f;
     public int targetRow = -1;
@@ -189,8 +190,46 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
             cubeCollider = gameObject.AddComponent<BoxCollider>();
         }
 
-        cubeCollider.isTrigger = false;
-        this.Log($"Collider setup complete for {name} cube", EnableDebugLogs);
+        // Player cubes should be triggers to allow player to pass through
+        // MeshColliders require convex to be true to be triggers
+        if (isPlayerCube)
+        {
+            if (cubeCollider is MeshCollider meshCollider)
+            {
+                meshCollider.convex = true;
+            }
+            cubeCollider.isTrigger = true;
+        }
+        else
+        {
+            cubeCollider.isTrigger = false;
+        }
+        
+        this.Log($"Collider setup complete for {name} cube (isTrigger: {cubeCollider.isTrigger})", EnableDebugLogs);
+    }
+
+    /// <summary>
+    /// Configures physics for player cubes - makes collider a trigger so player can pass through.
+    /// Should be called after isPlayerCube is set to true.
+    /// </summary>
+    public void ConfigurePlayerCubePhysics()
+    {
+        //if (!usePhysics) return;
+
+        cubeCollider = GetComponent<Collider>();
+        if (cubeCollider == null)
+        {
+            cubeCollider = gameObject.AddComponent<BoxCollider>();
+        }
+
+        // MeshColliders require convex to be true to be triggers
+        if (cubeCollider is MeshCollider meshCollider)
+        {
+            meshCollider.convex = true;
+        }
+
+        cubeCollider.isTrigger = true;
+        this.Log($"Player cube collider configured as trigger for {name} (convex: {(cubeCollider is MeshCollider mc ? mc.convex.ToString() : "N/A")})", EnableDebugLogs);
     }
 
     /// <summary>
@@ -532,6 +571,63 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
         oldPosition = new Vector2Int(position.x, position.y + 1); // Previous position for face painting
         
         this.Log($"Cube moved to ({position.x}, {position.y}), move count: {moveCount}", EnableDebugLogs);
+
+        // Notify FacePaintingManager of movement
+        FacePaintingManager facePaintingManager = FindAnyObjectByType<FacePaintingManager>();
+        if (facePaintingManager != null)
+        {
+            facePaintingManager.OnCubeMoved(this, oldPosition, position);
+        }
+
+        StartCoroutine(AnimateMove(position));
+
+        if (position.y >= 0 && position.x >= 0 && position.x < grid.Width)
+        {
+            Tile landingTile = grid.tiles[position.x, position.y];
+            if (landingTile != null && !isDestroyed)
+            {
+                landingTile.HandleCubeLanding(this);
+            }
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// Moves the cube backward (up) by one position. Used for player-spawned cubes moving toward wave cubes.
+    /// Player cubes are destroyed when reaching the top of the grid (position.y >= grid.Height).
+    /// </summary>
+    /// <returns>True if cube continues moving, false if cube is destroyed</returns>
+    public bool MoveBackward()
+    {
+        if (isMoving || isDestroyed) return true;
+
+        this.Log($"Moving player cube {GetEffectiveType()} from ({position.x}, {position.y}) backward", EnableDebugLogs);
+
+        // Check if cube is at top of grid (boundary for backward movement)
+        if (position.y >= grid.Height || position.x < 0 || position.x >= grid.Width)
+        {
+            this.Log($"🚨 PLAYER CUBE BOUNDARY: {GetEffectiveType()} at ({position.x}, {position.y}) reached grid boundary. Grid bounds: {grid.Width}x{grid.Height}", EnableDebugLogs);
+
+            // Destroy the player cube when it reaches the top
+            Destroy(gameObject);
+            return false; // Cube destroyed - movement chain broken
+        }
+
+        Vector2Int oldPosition = position;
+        position.y += 1; // Move backward (increasing Y)
+        moveCount++;
+
+        // Fire move event
+        GameEvents.FireCubeMove(oldPosition, position, type);
+        
+        RotateFaceMapping();
+        ProcessFaceDurations();
+        UpdateFaceRotationTracking(); // Enhanced face rotation tracking
+
+        oldPosition = new Vector2Int(position.x, position.y - 1); // Previous position for face painting
+
+        this.Log($"Player cube moved to ({position.x}, {position.y}), move count: {moveCount}", EnableDebugLogs);
 
         // Notify FacePaintingManager of movement
         FacePaintingManager facePaintingManager = FindAnyObjectByType<FacePaintingManager>();

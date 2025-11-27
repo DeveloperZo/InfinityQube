@@ -262,6 +262,10 @@ public class PlayerManager : MonoBehaviour, IManagerDebugInterface
         foreach (var cube in allCubes)
         {
             if (cube == null || cube.isDestroyed) continue;
+            
+            // Skip player cubes - player can pass through them
+            if (cube.isPlayerCube) continue;
+            
             if (cube.position.x == gridPos.x && cube.position.y == gridPos.y)
             {
                 return true;
@@ -454,6 +458,9 @@ public class PlayerManager : MonoBehaviour, IManagerDebugInterface
         foreach (var cube in allCubes)
         {
             if (cube == null || cube.isDestroyed) continue;
+
+            // Skip player cubes - player can pass through them unharmed
+            if (cube.isPlayerCube) continue;
 
             if (cube.position.x == currentTilePosition.x && cube.position.y == currentTilePosition.y)
             {

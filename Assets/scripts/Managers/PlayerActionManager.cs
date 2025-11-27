@@ -121,6 +121,7 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
     public GridManager GridManager => gridManager;
     public PlayerManager PlayerManager => playerManager;
     public WaveManager WaveManager => waveManager;
+    public PlayerMarkerSystem MarkerSystem => markerSystem;
 
     #region Unity Lifecycle
 

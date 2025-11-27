@@ -37,7 +37,7 @@ on_done  = "shrimpScripts\\build_and_test.bat ${TASK_ID} ${TASK_RESULT_JSON}"
 # InfinityQube development constraints
 max_file_size = 600           # Lines - matches shrimp-rules.md standard
 require_debug_logs = true     # All managers must have debug logging
-unity_version = "2022.3.21f1" # Lock Unity version for consistency
+
 
 [notifications]
 # Ready for rich analytics & notifications (uncomment when ready)

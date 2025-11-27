@@ -25,6 +25,10 @@ public class WaveDebugPanel : DebugPanelBase
     private bool showCubeTools = true;
     private bool showWaveLibrary = true;
     private bool showWaveGenerator = false;
+    private bool showPairedWaveTesting = true;
+    
+    // Paired Wave Testing Settings
+    private bool autoMirrorOnComplete = true;
     
     // Fast Testing Mode
     private bool fastTestingMode = false;
@@ -82,6 +86,9 @@ public class WaveDebugPanel : DebugPanelBase
             
         if (showWaveGenerator)
             waveGeneratorPanel?.DrawPanel(OnWaveChanged);
+            
+        if (showPairedWaveTesting)
+            DrawPairedWaveTestingSection();
     }
 
     private void DrawFastTestingControls()
@@ -141,6 +148,7 @@ public class WaveDebugPanel : DebugPanelBase
         showWaveEditor = DrawSimpleToggle("Editor", showWaveEditor);
         showCubeTools = DrawSimpleToggle("Cubes", showCubeTools);
         showWaveGenerator = DrawSimpleToggle("Generator", showWaveGenerator);
+        showPairedWaveTesting = DrawSimpleToggle("Paired", showPairedWaveTesting);
         
         // Mark dirty if any toggle changed
         if (oldLibrary != showWaveLibrary || oldControls != showWaveControls ||
@@ -382,6 +390,123 @@ public class WaveDebugPanel : DebugPanelBase
         }
         
         return true;
+    }
+    
+    private void DrawPairedWaveTestingSection()
+    {
+        if (waveManager == null) return;
+        
+        GUILayout.BeginVertical(GUI.skin.box);
+        GUILayout.Label("PAIRED WAVE TESTING", GUI.skin.box);
+        
+        // Auto-Mirror toggle
+        autoMirrorOnComplete = GUILayout.Toggle(autoMirrorOnComplete, "Auto-Mirror on Complete");
+        if (autoMirrorOnComplete)
+        {
+            GUILayout.Label("(Mirrored version will spawn automatically when wave completes)", GUI.skin.label);
+        }
+        
+        DebugUIHelpers.Space(5);
+        
+        // Current mirror state display
+        if (waveManager.CurrentWave != null)
+        {
+            bool hasBeenMirrored = waveManager.GetHasBeenMirrored(waveManager.CurrentWave);
+            GUILayout.BeginHorizontal();
+            GUILayout.Label("Mirror State:", GUILayout.Width(100));
+            GUI.backgroundColor = hasBeenMirrored ? Color.green : Color.yellow;
+            GUILayout.Label(hasBeenMirrored ? "MIRRORED" : "NORMAL", GUI.skin.box);
+            GUI.backgroundColor = Color.white;
+            GUILayout.EndHorizontal();
+            
+            // Marker recording status
+            var recordedMarkers = waveManager.GetPreviousWaveMarkers();
+            if (recordedMarkers != null && recordedMarkers.GetTotalMarkerCount() > 0)
+            {
+                GUILayout.BeginHorizontal();
+                GUILayout.Label("Markers Recorded:", GUILayout.Width(100));
+                GUILayout.Label($"L:{recordedMarkers.lightMarkerPositions.Count} H:{recordedMarkers.heavyMarkerPositions.Count} P:{recordedMarkers.primeMarkerPositions.Count} I:{recordedMarkers.infinityMarkerPositions.Count} (Total: {recordedMarkers.GetTotalMarkerCount()})");
+                GUILayout.EndHorizontal();
+            }
+            else
+            {
+                GUILayout.Label("No markers recorded yet");
+            }
+            
+            // Next spawn indicator
+            GUILayout.BeginHorizontal();
+            GUILayout.Label("Next Spawn:", GUILayout.Width(100));
+            string nextSpawnType = hasBeenMirrored ? "Next Wave" : "Mirrored Version";
+            GUILayout.Label(nextSpawnType, GUI.skin.box);
+            GUILayout.EndHorizontal();
+        }
+        
+        DebugUIHelpers.Space(5);
+        
+        // Quick test buttons
+        GUILayout.BeginHorizontal();
+        
+        GUI.backgroundColor = Color.cyan;
+        if (GUILayout.Button("Quick Test Pair", GUILayout.Width(120)))
+        {
+            QuickTestWavePair();
+        }
+        
+        GUI.backgroundColor = Color.yellow;
+        if (GUILayout.Button("Reset Mirror State", GUILayout.Width(120)))
+        {
+            ResetMirrorState();
+        }
+        
+        GUI.backgroundColor = Color.white;
+        GUILayout.EndHorizontal();
+        
+        GUILayout.EndVertical();
+    }
+    
+    private void QuickTestWavePair()
+    {
+        if (waveManager?.CurrentWave == null)
+        {
+            Debug.LogWarning("No current wave to test");
+            return;
+        }
+        
+        Debug.Log("🧪 Quick Test Pair: Starting wave pair test...");
+        
+        // Reset mirror state
+        waveManager.SetHasBeenMirrored(waveManager.CurrentWave, false);
+        
+        // Stop current wave if active
+        if (waveManager.waveActive)
+        {
+            waveManager.StopWave();
+        }
+        
+        // Clear previous markers
+        waveManager.ClearPreviousWaveMarkers();
+        
+        // Start the wave
+        waveManager.StartWave();
+        
+        Debug.Log("🧪 Quick Test Pair: Wave started. Place markers, then complete wave to see mirrored version spawn.");
+    }
+    
+    private void ResetMirrorState()
+    {
+        if (waveManager == null)
+        {
+            Debug.LogWarning("WaveManager not available");
+            return;
+        }
+        
+        // Clear all mirror states
+        waveManager.ClearAllMirrorStates();
+        
+        // Clear recorded markers
+        waveManager.ClearPreviousWaveMarkers();
+        
+        Debug.Log("🔄 Reset all mirror states and recorded markers");
     }
 }
 

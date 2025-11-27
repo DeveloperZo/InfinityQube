@@ -11,7 +11,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 78c3fb7cc917307469018838241693f1, type: 3}
   m_Name: Template_Basic
-  m_EditorClassIdentifier: 
+  m_EditorClassIdentifier: Assembly-CSharp::WaveData
   Index: 0
   GridHeight: 3
   GridWidth: 5
@@ -25,11 +25,12 @@ MonoBehaviour:
   - type: 0
     position: {x: 4, y: 2}
     level: 1
-  limitMarkers: 0
-  maxIndividualMarkerCharge: 2
-  maxIndividualMarkerCount: 10
-  maxAreaMarkerCharge: 1
-  maxAreaMarkerCount: 5
+  maxLightMarkerCharge: 0
+  maxLightMarkerCount: 0
+  maxPrimeMarkerCharge: 0
+  maxPrimeMarkerCount: 0
+  maxHeavyMarkerCharge: 0
+  maxHeavyMarkerCount: 0
   waveStartDelay: 1
   moveInterval: 2
   fastMoveInterval: 0.1
@@ -37,8 +38,16 @@ MonoBehaviour:
   requiredCaptureCount: 0
   maxAllowedEscapes: 0
   messages: []
-  normalCubesCaptured: 0
-  blueCubesCaptured: 0
-  cubesEscaped: 0
+  unitCubesCaptured: 0
+  primeCubesCaptured: 0
+  infinityCubesEscaped: 0
+  recursionCubesCaptured: 0
   markersPlaced: 0
   detonationsUsed: 0
+  markerSpawnRules:
+    lightSpawnsUnit: 1
+    heavySpawnsRecursion: 1
+    primeSpawnsPrime: 1
+    infinitySpawnsInfinity: 1
+    allowOverlap: 0
+  inheritanceDelay: 0

@@ -45,4 +45,37 @@ public class WaveData : ScriptableObject
     public int recursionCubesCaptured;
     public int markersPlaced;
     public int detonationsUsed;
+
+    [Header("Paired Wave System")]
+    [Tooltip("Rules for how markers from the previous wave spawn cubes in this wave when mirrored. Only used when HasBeenMirrored is true.")]
+    public MarkerSpawnRules markerSpawnRules = new MarkerSpawnRules();
+    
+    [Tooltip("Delay before inherited cubes spawn (in seconds). Allows base spawns to appear first.")]
+    public float inheritanceDelay = 0f;
+    
+    // Runtime-only: Tracks if this wave instance has been mirrored (spawned with marker-based cubes)
+    [System.NonSerialized]
+    public bool HasBeenMirrored = false;
+}
+
+/// <summary>
+/// Defines rules for how markers from the previous wave spawn cubes in the mirrored version of this wave
+/// </summary>
+[System.Serializable]
+public class MarkerSpawnRules
+{
+    [Tooltip("If true, Light markers from the previous wave spawn Unit cubes in the mirrored wave")]
+    public bool lightSpawnsUnit = true;
+    
+    [Tooltip("If true, Heavy markers from the previous wave spawn Recursion cubes in the mirrored wave")]
+    public bool heavySpawnsRecursion = true;
+    
+    [Tooltip("If true, Prime markers from the previous wave spawn Prime cubes in the mirrored wave")]
+    public bool primeSpawnsPrime = true;
+    
+    [Tooltip("If true, Infinity markers from the previous wave spawn Infinity cubes in the mirrored wave")]
+    public bool infinitySpawnsInfinity = true;
+    
+    [Tooltip("If true, inherited spawns can overlap with base spawns. If false, inherited spawns replace base spawns at same positions.")]
+    public bool allowOverlap = false;
 }

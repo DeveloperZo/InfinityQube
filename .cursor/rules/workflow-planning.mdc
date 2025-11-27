@@ -1,7 +1,6 @@
 ---
-alwaysApply: true
+alwaysApply: false
 ---
-
 # Workflow and Planning Rules
 
 ## MANDATORY: Use Shrimp Task Manager for All Planning
