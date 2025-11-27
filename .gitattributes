@@ -59,10 +59,10 @@
 *.aac   binary
 *.flac  binary
 
-# Unity asset files (binary format)
+# Unity asset files
+# Note: .mat files are YAML text, NOT binary - keep as text
 *.prefab binary
 *.asset  binary
-*.mat    binary
 *.anim   binary
 *.controller binary
 *.fbx    binary
