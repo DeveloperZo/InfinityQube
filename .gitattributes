@@ -36,23 +36,65 @@
 #*.wwaproj   merge=binary
 
 ###############################################################################
-# behavior for image files
-#
-# image files are treated as binary by default.
+# Unity Binary Assets - treat as binary to prevent corruption
+# These files must be stored as binary to work correctly across different machines
 ###############################################################################
-#*.jpg   binary
-#*.png   binary
-#*.gif   binary
 
-###############################################################################
-# Audio files - treat as binary to prevent corruption
-###############################################################################
+# Image files
+*.jpg   binary
+*.jpeg  binary
+*.png   binary
+*.gif   binary
+*.tga   binary
+*.tiff  binary
+*.bmp   binary
+*.psd   binary
+*.exr   binary
+
+# Audio files
 *.mp3   binary
 *.wav   binary
 *.ogg   binary
 *.m4a   binary
 *.aac   binary
 *.flac  binary
+
+# Unity asset files (binary format)
+*.prefab binary
+*.asset  binary
+*.mat    binary
+*.anim   binary
+*.controller binary
+*.fbx    binary
+*.dae    binary
+*.3ds    binary
+*.blend  binary
+*.blend1 binary
+*.max    binary
+*.ma     binary
+*.mb     binary
+*.unity  binary
+*.unitypackage binary
+*.cubemap binary
+*.rendertexture binary
+*.spriteatlas binary
+*.physicmaterial binary
+*.physicmaterial2d binary
+*.guiskin binary
+*.fontsettings binary
+*.shadervariants binary
+*.terrainlayer binary
+*.signal binary
+*.playable binary
+*.preset binary
+*.mask binary
+*.brush binary
+*.giparams binary
+*.flare binary
+*.lighting binary
+*.navmesh binary
+*.asset.meta binary
+*.prefab.meta binary
 
 ###############################################################################
 # diff behavior for common document formats
