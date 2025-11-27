@@ -45,6 +45,16 @@
 #*.gif   binary
 
 ###############################################################################
+# Audio files - treat as binary to prevent corruption
+###############################################################################
+*.mp3   binary
+*.wav   binary
+*.ogg   binary
+*.m4a   binary
+*.aac   binary
+*.flac  binary
+
+###############################################################################
 # diff behavior for common document formats
 # 
 # Convert binary document formats to text before diffing them. This feature
