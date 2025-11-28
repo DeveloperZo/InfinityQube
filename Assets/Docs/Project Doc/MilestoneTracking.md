@@ -51,12 +51,12 @@
 | Documentation Update | ✅ Complete | Updated velocity, tech debt, added architectural critiques |
 | File Size Audit | ✅ Complete | 10 violations identified |
 
-### Upcoming (December 2025)
-| Item | Priority | Complexity | Dependencies |
-|------|----------|------------|--------------|
-| Paired Wave System (implementation) | 🔴 Critical | 6 points | None |
-| WaveManager Refactoring | 🔴 High | 4 points | Can parallel with above |
-| Infinity Markers | 🟡 High | 3 points | Needs paired waves |
+### Upcoming (Next Active Sprints)
+| Item | Priority | Complexity | Effort | Dependencies |
+|------|----------|------------|--------|--------------|
+| Paired Wave System (implementation) | 🔴 Critical | 6 points | 1-2 weeks | None |
+| WaveManager Refactoring | 🔴 High | 4 points | ~2 weeks | Can parallel |
+| Infinity Markers | 🟡 High | 3 points | ~1 week | Needs paired waves |
 
 ### Development Velocity Summary
 | Metric | Value | Source |

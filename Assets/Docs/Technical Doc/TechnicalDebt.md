@@ -308,20 +308,20 @@ GridManager.cs (600 lines - core grid)
 
 ### 8.3 Implementation Strategy
 
-**Phase 1: WaveManager & PlayerActionManager (December 2025)**
+**Phase 1: WaveManager & PlayerActionManager** (~2 weeks active)
 - These are most over-limit and core to gameplay
 - Extract in parallel if resources allow
-- Estimated: 2 weeks
+- **Prerequisite**: None (can start immediately)
 
-**Phase 2: CubeManager & GridManager (January 2026)**
+**Phase 2: CubeManager & GridManager** (~1.5 weeks active)
 - Secondary priority
 - Can proceed after Phase 1 stabilizes
-- Estimated: 1.5 weeks
+- **Prerequisite**: Phase 1 complete
 
-**Phase 3: Remaining Files (February 2026)**
+**Phase 3: Remaining Files** (~1 week active)
 - Lower risk extractions
 - Can be done incrementally
-- Estimated: 1 week
+- **Prerequisite**: Phase 2 complete (or can be parallelized)
 
 ### 8.4 Success Metrics
 
@@ -412,7 +412,7 @@ GridManager.cs (600 lines - core grid)
 ---
 
 **Last Updated**: November 28, 2025 - Comprehensive file size audit completed  
-**Next Review**: December 15, 2025  
+**Next Review**: After file size refactoring begins  
 **Related Documents**: [Architectural Critiques](ArchitecturalCritiques.md), [Development Velocity](DevelopmentVelocity.md)  
 **Maintained By**: Development Team
 
@@ -443,9 +443,9 @@ GridManager.cs (600 lines - core grid)
 
 ---
 *Last Updated: November 28, 2025*  
-*Next Review: December 15, 2025*  
+*Next Review: After file size refactoring begins*  
 *Critical Path Status: IN PROGRESS - Post-hiatus resumption*  
-*File Size Status: 10 VIOLATIONS - Requires immediate attention*  
+*File Size Status: 10 VIOLATIONS - Requires attention (~4-5 weeks effort)*  
 *Related: See [Architectural Critiques](ArchitecturalCritiques.md) for detailed analysis*
 
 ## (END OF DOCUMENT)

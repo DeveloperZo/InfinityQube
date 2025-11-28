@@ -175,21 +175,27 @@
 
 **Total Remaining**: ~44 complexity points
 
-### **Velocity-Based Timeline Projections**
+### **Effort-Based Timeline Projections**
 
-#### **Conservative Estimate (15 points/month)**:
-- **Remaining Work**: 44 points
-- **Timeline**: ~3 months of active development
-- **Target Completion**: March 2026 (with consistent effort)
+#### **Remaining Work Estimates**
+| Priority | Work Item | Effort Estimate |
+|----------|-----------|-----------------|
+| Critical | Paired Wave System | 1-2 weeks active |
+| High | File Size Refactoring | 2-3 weeks active |
+| High | Infinity Markers | 1 week active |
+| Medium | Stage Content (12-13 stages) | 3-4 weeks active |
+| Medium | Visual Polish | 1-2 weeks active |
+| Low | Steam Integration | 1-2 weeks active |
 
-#### **Realistic Estimate (20 points/month)**:
-- **Remaining Work**: 44 points
-- **Timeline**: ~2.2 months of active development
-- **Target Completion**: February 2026 (with consistent effort)
+#### **Total Active Development Estimate**
+- **Remaining Work**: ~44 complexity points
+- **At 15 points/month**: ~3 months of active development
+- **At 20 points/month**: ~2.2 months of active development
+- **Note**: Calendar time will vary based on availability
 
 ### **Key Dependencies**
 1. **Paired Wave System** blocks stage content creation
-2. **Stage Content** blocks tutorial system
+2. **Stage Content** blocks tutorial system  
 3. **Core Systems** should be stable before Steam integration
 
 ---
@@ -300,20 +306,22 @@
 
 ## Next Steps & Action Items
 
-### **Immediate Priority (December 2025)**
-1. **Paired Wave System**: Implement marker inheritance mechanics
+### **Immediate Priority** (Next Active Sprint)
+1. **Paired Wave System**: Implement marker inheritance mechanics (~1-2 weeks)
 2. **File Size Audit**: Begin WaveManager refactoring (1949 → 600 lines target)
-3. **Velocity Tracking**: Establish weekly checkpoint routine
 
-### **Short-term (Q1 2026)**
-1. **Complete Paired Wave System**: Full implementation with testing
-2. **Infinity Markers**: Implementation after paired waves
-3. **Stage Content Creation**: Begin 12-13 stage pipeline
+### **Following Sprint** (After Paired Waves)
+1. **File Size Refactoring**: Complete WaveManager, start PlayerActionManager (~2 weeks)
+2. **Infinity Markers**: Implementation after paired waves (~1 week)
+
+### **Content Phase** (After Core Systems Stable)
+1. **Stage Content Creation**: 12-13 stages with paired wave mechanics (~3-4 weeks)
+2. **Tutorial System**: Interactive paired wave teaching (~1-2 weeks)
 
 ### **Quality Gates**
-1. **Weekly Velocity Check**: Every Friday
-2. **Monthly Tech Debt Review**: First of each month
-3. **File Size Compliance**: Check before each major feature
+1. **Per-Session Check**: Review progress against current milestone
+2. **Per-Milestone Review**: Tech debt assessment before starting next milestone
+3. **File Size Compliance**: Verify before each major feature
 
 ---
 
@@ -340,7 +348,7 @@
 ---
 
 *Last Updated: November 28, 2025*  
-*Next Velocity Review: December 6, 2025*  
-*Methodology Version: 3.0 - Post-Hiatus Analysis with Commit Tracking*
+*Next Review: After next active sprint*  
+*Methodology Version: 3.0 - Effort-Based Analysis with Commit Tracking*
 
 ## (END OF DOCUMENT)

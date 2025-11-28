@@ -45,10 +45,12 @@ This roadmap outlines the development path from current production-ready state t
 
 ## Phase 1: Core Innovation & Content (Current Phase)
 **Goal**: Implement core paired wave system and complete foundational content
+**Estimated Total Effort**: 6-8 weeks active development
 
 ### Milestone 1.1: Paired Wave System Implementation - HIGHEST PRIORITY
 - **Target**: Implement marker inheritance system where Wave A marker placements become Wave B cube spawns
 - **Complexity**: 6 points
+- **Effort Estimate**: 1-2 weeks active development
 - **Status**: 🔴 CRITICAL - Core innovation mechanic, designed but not implemented
 - **Dependencies**: None (foundational system)
 - **Tasks**:
@@ -79,6 +81,7 @@ This roadmap outlines the development path from current production-ready state t
 ### Milestone 1.2: Infinity Markers Implementation
 - **Target**: Complete Infinity marker system (placement, triggering, wave inheritance)
 - **Complexity**: 3 points
+- **Effort Estimate**: ~1 week active development
 - **Status**: Designed but not implemented
 - **Dependencies**: Milestone 1.1 (needs paired wave system for inheritance)
 - **Tasks**:
@@ -114,6 +117,7 @@ This roadmap outlines the development path from current production-ready state t
 ### Milestone 1.4: StageDB Enhancement & Migration
 - **Target**: Update StageDB system to fully support paired waves and migrate existing content
 - **Complexity**: 3 points
+- **Effort Estimate**: ~1 week active development
 - **Dependencies**: Milestone 1.1 (needs paired wave system implemented first)
 - **Tasks**:
   - [ ] Extend StageDB validation to check paired wave integrity
@@ -137,6 +141,7 @@ This roadmap outlines the development path from current production-ready state t
 ### Milestone 1.5: Stage Content Creation
 - **Target**: 12-13 stages defined with waves, 4-5 complete stages with progression
 - **Complexity**: 7 points
+- **Effort Estimate**: 3-4 weeks active development
 - **Dependencies**: Milestone 1.1, 1.4 (needs paired waves and StageDB tools)
 - **Tasks**:
   - [ ] Design remaining 9-10 stages with paired wave mechanics
@@ -163,6 +168,7 @@ This roadmap outlines the development path from current production-ready state t
 ### Milestone 1.6: RPG/Progression Ideation
 - **Target**: Establish framework to deliver progression and RPG vibes for player
 - **Complexity**: 4 points
+- **Effort Estimate**: 1-2 weeks active development
 - **Tasks**:
   - [ ] Brainstorm and design RPG elements and progression
   - [ ] Design hub area concept and layout
@@ -172,6 +178,7 @@ This roadmap outlines the development path from current production-ready state t
 ### Milestone 1.7: Visual Polish Pass
 - **Target**: Enhanced game feel and visual feedback
 - **Complexity**: 2 points
+- **Effort Estimate**: 1-2 weeks active development
 - **Tasks**:
   - [ ] Improved particle effects for all major actions
   - [ ] Screen shake and juice for impacts
@@ -185,10 +192,12 @@ This roadmap outlines the development path from current production-ready state t
 
 ## Phase 2: Content Completion & First Polish Pass
 **Goal**: Complete all content and achieve first polish level
+**Estimated Total Effort**: 8-10 weeks active development
 
 ### Milestone 2.1: Complete Stage Content
 - **Target**: Finish all 12-13 stages with full wave pairs
 - **Complexity**: 5 points
+- **Effort Estimate**: 2-3 weeks active development
 - **Dependencies**: Milestone 1.5 (builds on initial stage content)
 - **Tasks**:
   - [ ] Complete remaining stage designs and implementations
@@ -211,6 +220,7 @@ This roadmap outlines the development path from current production-ready state t
 ### Milestone 2.2: Save/Load & Progress Persistence
 - **Target**: Complete save/load system for game progress
 - **Complexity**: 3 points
+- **Effort Estimate**: 1-2 weeks active development
 - **Dependencies**: Milestone 2.1 (needs stages to save progress for)
 - **Tasks**:
   - [ ] Design save data structure (stage progress, unlocks, statistics)
@@ -235,6 +245,7 @@ This roadmap outlines the development path from current production-ready state t
 ### Milestone 2.3: Settings & Options System
 - **Target**: Complete settings menu with persistence
 - **Complexity**: 2 points
+- **Effort Estimate**: ~1 week active development
 - **Tasks**:
   - [ ] Create settings menu UI (graphics, audio, controls, gameplay)
   - [ ] Implement settings persistence (PlayerPrefs/JSON)
@@ -247,6 +258,7 @@ This roadmap outlines the development path from current production-ready state t
 ### Milestone 2.4: Interactive Tutorial System
 - **Target**: Comprehensive tutorial teaching all mechanics including paired waves
 - **Complexity**: 4 points
+- **Effort Estimate**: 1-2 weeks active development
 - **Dependencies**: Milestone 1.1, 1.5 (needs paired waves and stages)
 - **Tasks**:
   - [ ] Design tutorial flow for all mechanics
@@ -332,6 +344,7 @@ This roadmap outlines the development path from current production-ready state t
 
 ## Phase 3: Polish, Refinement & QA
 **Goal**: Achieve commercial polish level through iterative refinement
+**Estimated Total Effort**: 4-6 weeks active development
 
 ### Milestone 3.1: Second Polish Pass - Balance & Tuning
 - **Target**: Comprehensive balance pass and difficulty tuning
@@ -400,6 +413,7 @@ This roadmap outlines the development path from current production-ready state t
 
 ## Phase 4: Steam Integration & Release Preparation
 **Goal**: Platform integration and commercial release readiness
+**Estimated Total Effort**: 4-5 weeks active development
 
 ### Milestone 4.1: Steam SDK Integration
 - **Target**: Integrate Steamworks SDK
@@ -614,20 +628,29 @@ Milestones are ordered to minimize dependencies, but some key paths:
 
 ## Development Velocity Dashboard
 
-### **Current Metrics** (November 28, 2025):
+### **Current Metrics**:
 - **Measured Velocity**: ~22 complexity points/month (active periods)
-- **Development Period**: April 29, 2025 - Present (~7 months, 3 active)
 - **Completed Complexity**: 49 points
 - **Remaining Work**: ~44 complexity points (across remaining phases)
-- **Estimated Completion**: 2-3 months of active development
+- **Estimated Total Effort**: ~10-15 weeks of active development
+
+### **Effort Summary by Phase**:
+| Phase | Focus | Effort Estimate |
+|-------|-------|-----------------|
+| Phase 1 | Core Innovation & Content | 6-8 weeks active |
+| Phase 2 | Content Completion & Polish | 8-10 weeks active |
+| Phase 3 | Polish, Refinement & QA | 4-6 weeks active |
+| Phase 4 | Steam Integration & Release | 4-5 weeks active |
+
+**Note**: Phases can overlap; some work can be parallelized.
 
 ### **Priority Tracking**:
-| Priority | Item | Status | Complexity |
-|----------|------|--------|------------|
-| 🔴 Critical | Paired Wave System Implementation | In Design | 6 points |
-| 🔴 High | File Size Refactoring (WaveManager) | Planned | 4 points |
-| 🟡 High | Infinity Markers Implementation | Designed | 3 points |
-| 🟡 Medium | Stage Content Creation | Not Started | 7 points |
+| Priority | Item | Status | Effort |
+|----------|------|--------|--------|
+| 🔴 Critical | Paired Wave System Implementation | In Design | 1-2 weeks |
+| 🔴 High | File Size Refactoring (WaveManager) | Planned | 2-3 weeks |
+| 🟡 High | Infinity Markers Implementation | Designed | ~1 week |
+| 🟡 Medium | Stage Content Creation | Not Started | 3-4 weeks |
 
 ### **System Status**:
 | System | Status | Notes |
@@ -640,7 +663,7 @@ Milestones are ordered to minimize dependencies, but some key paths:
 
 ### **Critical Path**:
 ```
-Paired Wave System → Infinity Markers → Stage Content → Tutorial → Polish → Release
+Paired Wave System (1-2 wks) → Infinity Markers (1 wk) → Stage Content (3-4 wks) → Tutorial (1-2 wks) → Polish (2-4 wks) → Release
 ```
 
 ---
@@ -654,5 +677,4 @@ Paired Wave System → Infinity Markers → Stage Content → Tutorial → Polis
 ---
 
 *Last Updated: November 28, 2025*  
-*Development Phase: Phase 1 - Paired Wave System Implementation*  
-*Next Review: December 6, 2025*
+*Development Phase: Phase 1 - Paired Wave System Implementation*
