@@ -24,6 +24,12 @@ public class WavePrototyper : PrototypingPanelBase
     private bool showCubeSpawning = true;
     private bool showActiveCubes = false;
     
+    public override void Update()
+    {
+        // Sync pause state with time scale
+        isPaused = Time.timeScale == 0f;
+    }
+    
     public override List<QuickAction> GetQuickActions()
     {
         return new List<QuickAction>
@@ -169,24 +175,48 @@ public class WavePrototyper : PrototypingPanelBase
     #region Actions
     private void RespawnWave()
     {
-        var current = waveManager?.CurrentWave;
-        if (current != null && waveManager != null)
-        {
-            waveManager.StopWave();
-            waveManager.ClearAllCubes();
-            waveManager.LoadWave(current);
-            waveManager.StartWave();
-            isPaused = false;
-            LogAction("Respawned wave");
-        }
+        if (waveManager == null) return;
+        
+        // Store current wave index before stopping
+        int currentIndex = waveManager.currentWaveIndex;
+        
+        // Stop and clear everything
+        waveManager.StopWave();
+        waveManager.ClearAllCubes();
+        
+        // Reset wave state
+        waveManager.MoveStep = 0;
+        isPaused = false;
+        
+        // Make sure we're on the same wave
+        waveManager.currentWaveIndex = currentIndex;
+        
+        // Clear grid markers
+        gridManager?.ClearAllMarkers();
+        
+        // Start fresh
+        waveManager.StartWave();
+        
+        LogAction($"Respawned wave {currentIndex}");
     }
     
     private void TogglePause()
     {
         if (waveManager == null) return;
         isPaused = !isPaused;
-        if (isPaused) waveManager.PauseWave();
-        else waveManager.ResumeWave();
+        
+        if (isPaused)
+        {
+            // Pause by setting time scale to 0
+            Time.timeScale = 0f;
+            LogAction("Wave paused");
+        }
+        else
+        {
+            // Resume by restoring time scale
+            Time.timeScale = 1f;
+            LogAction("Wave resumed");
+        }
     }
     
     private void NextWave()
@@ -208,6 +238,7 @@ public class WavePrototyper : PrototypingPanelBase
     {
         waveSpeed = speed;
         waveManager?.SetWaveSpeed(speed);
+        LogAction($"Wave speed: {speed}x");
     }
     
     private void SpawnCube(CubeType type)
@@ -273,13 +304,27 @@ public class WavePrototyper : PrototypingPanelBase
     
     private void MoveDown()
     {
-        waveManager?.ManualMoveWaveForward();
+        if (waveManager == null) return;
+        
+        // Enable debug mode temporarily to allow manual move
+        bool wasDebug = waveManager.debugMode;
+        waveManager.debugMode = true;
+        waveManager.ManualMoveWaveForward();
+        waveManager.debugMode = wasDebug;
     }
     
     private void DropAll()
     {
+        if (waveManager == null) return;
+        
+        // Enable debug mode temporarily
+        bool wasDebug = waveManager.debugMode;
+        waveManager.debugMode = true;
+        
         for (int i = 0; i < 5; i++)
-            waveManager?.ManualMoveWaveForward();
+            waveManager.ManualMoveWaveForward();
+        
+        waveManager.debugMode = wasDebug;
     }
     #endregion
 }
