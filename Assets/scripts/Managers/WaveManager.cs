@@ -226,6 +226,85 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
         CleanupWave();
         DebugLog("⏹️ Wave Stopped");
     }
+
+    /// <summary>
+    /// Loads a specific wave for play/testing.
+    /// </summary>
+    public void LoadWave(WaveData wave)
+    {
+        if (wave == null)
+        {
+            DebugLog("⚠️ Cannot load null wave");
+            return;
+        }
+        
+        // Stop any current wave
+        if (waveActive) StopWave();
+        
+        // Add wave to configuration if not present
+        if (!waveConfiguration.Contains(wave))
+        {
+            waveConfiguration.Insert(0, wave);
+        }
+        
+        // Set current wave index
+        currentWaveIndex = waveConfiguration.IndexOf(wave);
+        useWaveConfiguration = true;
+        
+        DebugLog($"📋 Loaded wave: {wave.name}");
+    }
+
+    /// <summary>
+    /// Gets list of available waves from configuration and resources.
+    /// </summary>
+    public List<WaveData> GetAvailableWaves()
+    {
+        var waves = new List<WaveData>();
+        
+        // Add configured waves
+        if (waveConfiguration != null)
+        {
+            waves.AddRange(waveConfiguration);
+        }
+        
+        return waves;
+    }
+
+    /// <summary>
+    /// Force completes the current wave (for testing/prototyping).
+    /// </summary>
+    public void ForceCompleteWave()
+    {
+        if (!waveActive && activeCubes.Count == 0)
+        {
+            DebugLog("⚠️ No active wave to complete");
+            return;
+        }
+        
+        DebugLog("⏭️ Force completing wave...");
+        
+        // Clear all cubes
+        ClearAllCubes();
+        
+        // Stop the wave coroutine
+        if (waveCoroutine != null)
+        {
+            StopCoroutine(waveCoroutine);
+            waveCoroutine = null;
+        }
+        
+        waveActive = false;
+        
+        // Fire completion event
+        GameEvents.FireWaveComplete(currentWaveIndex);
+        
+        // Advance to next wave if available
+        if (HasMoreWaves())
+        {
+            currentWaveIndex++;
+            DebugLog($"➡️ Advanced to wave {currentWaveIndex}");
+        }
+    }
     #endregion
 
     #region Wave Execution
@@ -1155,11 +1234,24 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
         isSpeedingUp = isSpeeding;
     }
 
+    /// <summary>
+    /// Sets the wave speed multiplier for prototyping tools.
+    /// 1.0 = normal speed, 2.0 = double speed, 0.5 = half speed.
+    /// </summary>
+    private float speedMultiplier = 1f;
+    public void SetWaveSpeed(float multiplier)
+    {
+        speedMultiplier = Mathf.Clamp(multiplier, 0.25f, 4f);
+        DebugLog($"Wave speed set to {speedMultiplier:F1}x");
+    }
+
     private float GetCurrentMoveInterval()
     {
         float normal = CurrentWave?.moveInterval ?? normalMoveInterval;
         float fast = CurrentWave?.fastMoveInterval ?? fastMoveInterval;
-        return isSpeedingUp ? fast : normal;
+        float baseInterval = isSpeedingUp ? fast : normal;
+        // Apply speed multiplier (higher multiplier = faster = shorter interval)
+        return baseInterval / speedMultiplier;
     }
 
     private float GetWaveStartDelay()
