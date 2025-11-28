@@ -785,18 +785,30 @@ CubeType cubeType = markerToCubeType[originalPos];
             this.LogError($"Invalid prefab index {prefabIndex} for cube type {cubeData.type}");
             return;
         }
+        
+        // Calculate grid position WITHOUT modifying original cubeData
         var waveHeight = waveConfiguration.Count > 0 ? waveConfiguration[currentWaveIndex].GridHeight : waveSize;
         var gridLocalHeight = grid.Height - (waveHeight - cubeData.position.y);
-        cubeData.position.y = gridLocalHeight;
-        Vector3 spawnPos = grid.GridToWorldPosition(cubeData.position.x, cubeData.position.y, 2f);
-        this.Log($"Spawning {cubeData.type} cube at grid ({cubeData.position.x}, {cubeData.position.y}) -> world {spawnPos}", showDebugInfo);
+        
+        // Use local position for spawning (preserve original wave data)
+        Vector2Int spawnPosition = new Vector2Int(cubeData.position.x, gridLocalHeight);
+        Vector3 spawnPos = grid.GridToWorldPosition(spawnPosition.x, spawnPosition.y, 2f);
+        this.Log($"Spawning {cubeData.type} cube at grid ({spawnPosition.x}, {spawnPosition.y}) -> world {spawnPos}", showDebugInfo);
 
         GameObject cubeObj = Instantiate(cubePrefabs[prefabIndex], spawnPos, Quaternion.identity);
 
         var cube = cubeObj.GetComponent<CubeManager>();
         if (cube == null) cube = cubeObj.AddComponent<CubeManager>();
 
-        cube.Init(grid, cubeData, 2f);
+        // Create a copy of cubeData with the calculated grid position
+        var spawnData = new CubeData
+        {
+            type = cubeData.type,
+            position = spawnPosition,
+            level = cubeData.level
+        };
+        
+        cube.Init(grid, spawnData, 2f);
         activeCubes.Add(cube);
 
         this.Log($"Cube spawned successfully. Active cubes: {activeCubes.Count}", showDebugInfo);
