@@ -198,20 +198,20 @@ public class Tile : MonoBehaviour
         // Handle cube type-specific behavior
         switch (effectiveType)
         {
-            case Enumerations.CubeType.Infinity:
+            case CubeType.Infinity:
                 Debug.Log($"Cube acting as black due to face status at ({x}, {y})");
-                NotifyPlayerCubeCapture(Enumerations.CubeType.Infinity);
+                NotifyPlayerCubeCapture(CubeType.Infinity);
                 break;
 
-            case Enumerations.CubeType.Prime:
+            case CubeType.Prime:
                 Debug.Log($"Prime cube captured at ({x}, {y}) - Creating prime cube marker");
-                NotifyPlayerCubeCapture(Enumerations.CubeType.Prime);
+                NotifyPlayerCubeCapture(CubeType.Prime);
                 PrimeTile();
                 Destroy(cubeToProcess.gameObject);
                 break;
 
-            case Enumerations.CubeType.Unit:
-                NotifyPlayerCubeCapture(Enumerations.CubeType.Unit);
+            case CubeType.Unit:
+                NotifyPlayerCubeCapture(CubeType.Unit);
                 if (cubeToProcess.ShouldCreateDetonation())
                 {
                     Debug.Log("Normal cube creating detonation due to face status!");
@@ -220,7 +220,7 @@ public class Tile : MonoBehaviour
                 Destroy(cubeToProcess.gameObject);
                 break;
 
-            case Enumerations.CubeType.Recursion:
+            case CubeType.Recursion:
                 HandleReinforcedCube(cubeToProcess);
                 break;
         }
@@ -329,13 +329,13 @@ public class Tile : MonoBehaviour
         UpdateTileVisuals();
     }
 
-    public void TransformTile(Enumerations.CubeType cubeType)
+    public void TransformTile(CubeType cubeType)
     {
-        if (currentState != Enumerations.TileState.Transformed)
+        if (currentState != TileState.Transformed)
         {
-            currentState = Enumerations.TileState.Transformed;
+            currentState = TileState.Transformed;
 
-            if (cubeType == Enumerations.CubeType.Infinity)
+            if (cubeType == CubeType.Infinity)
             {
                 BlackenTile();
             }
@@ -344,7 +344,7 @@ public class Tile : MonoBehaviour
 
     public void TransformToPaintingTile(FaceStatus status, Color color, int duration = -1)
     {
-        currentState = Enumerations.TileState.Transformed;
+        currentState = TileState.Transformed;
         SetupFacePainting(status, color, duration);
         Debug.Log($"Tile ({x},{y}) transformed to paint cubes with {status} status");
     }
@@ -464,7 +464,7 @@ public class Tile : MonoBehaviour
         }
         
         // Handle transformed tile behavior
-        if (currentState == Enumerations.TileState.Transformed && IsBlackened)
+        if (currentState == TileState.Transformed && IsBlackened)
         {
             tileFacePainting?.UpdateForTransformedState(IsBlackened);
         }
@@ -483,12 +483,12 @@ public class Tile : MonoBehaviour
         if (wasDestroyed)
         {
             Debug.Log($"Reinforced cube destroyed at ({x}, {y}) after taking damage");
-            NotifyPlayerCubeCapture(Enumerations.CubeType.Recursion);
+            NotifyPlayerCubeCapture(CubeType.Recursion);
             
             WaveManager waveManager = FindObjectOfType<WaveManager>();
             if (waveManager != null)
             {
-                waveManager.OnNonBlackCubeProcessed(Enumerations.CubeType.Recursion, true);
+                waveManager.OnNonBlackCubeProcessed(CubeType.Recursion, true);
             }
             
             Destroy(cube.gameObject);
@@ -499,7 +499,7 @@ public class Tile : MonoBehaviour
         }
     }
 
-    private void NotifyPlayerCubeCapture(Enumerations.CubeType cubeType)
+    private void NotifyPlayerCubeCapture(CubeType cubeType)
     {
         WaveManager waveManager = FindObjectOfType<WaveManager>();
         if (waveManager != null)

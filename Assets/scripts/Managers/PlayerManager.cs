@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
 using System;
@@ -72,6 +72,7 @@ public class PlayerManager : MonoBehaviour, IManagerDebugInterface
 
     // Internal State
     private PlayerActionManager playerActionManager;
+    private WaveManager waveManager;
     private static readonly int IsRunningHash = Animator.StringToHash("IsRunning");
     private bool isInitialized = false;
     private Vector2Int lastPosition;
@@ -139,6 +140,12 @@ public class PlayerManager : MonoBehaviour, IManagerDebugInterface
         if (playerActionManager == null)
         {
             this.LogWarning("PlayerActionManager not found - player actions features limited", EnableDebugLogs);
+        }
+
+        waveManager = FindObjectOfType<WaveManager>();
+        if (waveManager == null)
+        {
+            this.LogWarning("WaveManager not found - cube collision features limited", EnableDebugLogs);
         }
     }
 
@@ -257,9 +264,10 @@ public class PlayerManager : MonoBehaviour, IManagerDebugInterface
         Tile tile = grid.GetTileAt(gridPos.x, gridPos.y);
         if (tile == null || !tile.IsPlayable) return true;
 
-        // Check for cubes at this position
-        var allCubes = FindObjectsOfType<CubeManager>();
-        foreach (var cube in allCubes)
+        // Check for cubes at this position using cached WaveManager reference
+        if (waveManager?.activeCubes == null) return false;
+        
+        foreach (var cube in waveManager.activeCubes)
         {
             if (cube == null || cube.isDestroyed) continue;
             
@@ -454,8 +462,10 @@ public class PlayerManager : MonoBehaviour, IManagerDebugInterface
     {
         if (isDead || respawnInvulnerabilityTimer > 0f) return;
 
-        var allCubes = FindObjectsOfType<CubeManager>();
-        foreach (var cube in allCubes)
+        // Use cached WaveManager reference instead of FindObjectsOfType every frame
+        if (waveManager?.activeCubes == null) return;
+        
+        foreach (var cube in waveManager.activeCubes)
         {
             if (cube == null || cube.isDestroyed) continue;
 
@@ -632,12 +642,6 @@ public class PlayerManager : MonoBehaviour, IManagerDebugInterface
 
         Tile tile = grid.GetTileAt(pos.x, pos.y);
         return tile != null && tile.IsPlayable;
-    }
-
-    private void NotifyWaveManager(System.Action<WaveManager> action)
-    {
-        var waveManager = FindObjectOfType<WaveManager>();
-        if (waveManager != null) action(waveManager);
     }
 
     private void CleanupPlayer()

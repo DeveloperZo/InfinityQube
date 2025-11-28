@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using static Enumerations;
 
 /// <summary>
 /// Interface defining polish integration points for message display system.
@@ -15,7 +16,7 @@ public interface IMessagePolishHooks
     /// <param name="messageId">Unique identifier for the message</param>
     /// <param name="messageText">The text content of the message</param>
     /// <param name="category">Category/importance level of the message</param>
-    void OnMessageShowAnimationHook(string messageId, string messageText, Enumerations.MessageCategory category);
+    void OnMessageShowAnimationHook(string messageId, string messageText, MessageCategory category);
     
     /// <summary>
     /// Called when a message is about to be hidden - hook for exit animations
@@ -39,7 +40,7 @@ public interface IMessagePolishHooks
     /// <param name="messageId">Unique identifier for the message</param>
     /// <param name="category">Category/importance level affecting audio choice</param>
     /// <param name="position">Optional world position for spatial audio</param>
-    void OnMessageAudioEvent(string messageId, Enumerations.MessageCategory category, Vector3 position = default);
+    void OnMessageAudioEvent(string messageId, MessageCategory category, Vector3 position = default);
     
     /// <summary>
     /// Called when user skips a message - hook for skip audio feedback
@@ -94,7 +95,7 @@ public interface IMessagePolishHooks
     /// </summary>
     /// <param name="category">Message category affecting timing</param>
     /// <returns>Duration in seconds for smooth transitions</returns>
-    float GetRecommendedAnimationDuration(Enumerations.MessageCategory category);
+    float GetRecommendedAnimationDuration(MessageCategory category);
     #endregion
 
     #region Polish Configuration

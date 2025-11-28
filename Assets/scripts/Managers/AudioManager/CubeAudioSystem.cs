@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using static Enumerations;
 
 /// <summary>
 /// Manages all cube-specific audio functionality for the AudioManager system.
@@ -27,12 +28,12 @@ public class CubeAudioSystem : MonoBehaviour
     #endregion
 
     #region Runtime State
-    private Dictionary<Enumerations.CubeType, AudioClip> lastPlayedCubeSounds = new Dictionary<Enumerations.CubeType, AudioClip>();
+    private Dictionary<CubeType, AudioClip> lastPlayedCubeSounds = new Dictionary<CubeType, AudioClip>();
     #endregion
 
     #region Properties
     public bool IsInitialized { get; private set; }
-    public Dictionary<Enumerations.CubeType, AudioClip> LastPlayedCubeSounds => lastPlayedCubeSounds;
+    public Dictionary<CubeType, AudioClip> LastPlayedCubeSounds => lastPlayedCubeSounds;
     #endregion
 
     #region Initialization
@@ -81,7 +82,7 @@ public class CubeAudioSystem : MonoBehaviour
     /// <summary>
     /// Plays cube landing sound for a specific cube type with spatial positioning
     /// </summary>
-    public void PlayCubeLandingSound(Enumerations.CubeType cubeType, Vector3 position)
+    public void PlayCubeLandingSound(CubeType cubeType, Vector3 position)
     {
         if (!ValidatePlayback("PlayCubeLandingSound"))
             return;
@@ -144,7 +145,7 @@ public class CubeAudioSystem : MonoBehaviour
     /// <summary>
     /// Plays cube capture sound for a specific cube type
     /// </summary>
-    public void PlayCubeCaptureSound(Enumerations.CubeType cubeType, Vector3 position = default)
+    public void PlayCubeCaptureSound(CubeType cubeType, Vector3 position = default)
     {
         if (!ValidatePlayback("PlayCubeCaptureSound"))
             return;
@@ -176,7 +177,7 @@ public class CubeAudioSystem : MonoBehaviour
     /// <summary>
     /// Plays cube destruction sound for a specific cube type
     /// </summary>
-    public void PlayCubeDestructionSound(Enumerations.CubeType cubeType, Vector3 position = default)
+    public void PlayCubeDestructionSound(CubeType cubeType, Vector3 position = default)
     {
         if (!ValidatePlayback("PlayCubeDestructionSound"))
             return;
@@ -230,7 +231,7 @@ public class CubeAudioSystem : MonoBehaviour
     /// <summary>
     /// Plays cube special effect sound for a specific cube type
     /// </summary>
-    public void PlayCubeSpecialEffectSound(Enumerations.CubeType cubeType, Vector3 position = default)
+    public void PlayCubeSpecialEffectSound(CubeType cubeType, Vector3 position = default)
     {
         if (!ValidatePlayback("PlayCubeSpecialEffectSound"))
             return;
@@ -263,7 +264,7 @@ public class CubeAudioSystem : MonoBehaviour
     /// [POC] Plays cube escape sound for a specific cube type
     /// Currently uses destruction sound as placeholder until specific escape sounds are available
     /// </summary>
-    public void PlayCubeEscapeSound(Enumerations.CubeType cubeType, Vector3 position = default)
+    public void PlayCubeEscapeSound(CubeType cubeType, Vector3 position = default)
     {
         if (!ValidatePlayback("PlayCubeEscapeSound"))
             return;
@@ -317,7 +318,7 @@ public class CubeAudioSystem : MonoBehaviour
     /// <summary>
     /// Convenience method for playing cube landing sounds at specific positions
     /// </summary>
-    public void PlayCubeLandingSoundAtPosition(Enumerations.CubeType cubeType, Vector3 worldPosition, float customVolume = -1f)
+    public void PlayCubeLandingSoundAtPosition(CubeType cubeType, Vector3 worldPosition, float customVolume = -1f)
     {
         if (customVolume >= 0f)
         {

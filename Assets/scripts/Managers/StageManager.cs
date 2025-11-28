@@ -4,6 +4,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System;
 using System.Linq;
+using static Enumerations;
 
 public class StageManager : MonoBehaviour, IManagerDebugInterface
 {
@@ -381,7 +382,7 @@ public class StageManager : MonoBehaviour, IManagerDebugInterface
     #endregion
 
     #region Stage Completion Logic
-    public void OnCubeCaptured(Enumerations.CubeType cubeType)
+    public void OnCubeCaptured(CubeType cubeType)
     {
         if (!IsStageInProgress) return;
 
@@ -743,7 +744,7 @@ public class StageManager : MonoBehaviour, IManagerDebugInterface
     /// Uses the existing WaveManager message system for consistent UI.
     /// </summary>
     /// <param name="cubeType">Type of cube that escaped</param>
-    private void ShowEscapeFeedback(Enumerations.CubeType cubeType)
+    private void ShowEscapeFeedback(CubeType cubeType)
     {
         if (waveManager == null || !waveManager.showMessages) return;
 
