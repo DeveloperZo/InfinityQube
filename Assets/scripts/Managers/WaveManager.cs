@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
@@ -162,7 +162,7 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
         // Trigger wave start audio event
         if (audioManager != null)
         {
-            audioManager.TriggerAudioEvent(Enumerations.GameAudioEvent.WaveStarted, Vector3.zero);
+            audioManager.TriggerAudioEvent(GameAudioEvent.WaveStarted, Vector3.zero);
             DebugLog("🔊 Audio: Wave start event triggered");
         }
         
@@ -379,7 +379,7 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
         // Trigger wave completion audio event
         if (audioManager != null)
         {
-            audioManager.TriggerAudioEvent(Enumerations.GameAudioEvent.WaveCompleted, Vector3.zero);
+            audioManager.TriggerAudioEvent(GameAudioEvent.WaveCompleted, Vector3.zero);
             DebugLog("🔊 Audio: Wave completion event triggered");
         }
 
@@ -503,14 +503,14 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
         // Collect all marker positions and normalize them together
         // This ensures markers are mapped to wave rows based on their relative Y positions
         List<Vector2Int> allMarkerPositions = new List<Vector2Int>();
-        Dictionary<Vector2Int, Enumerations.CubeType> markerToCubeType = new Dictionary<Vector2Int, Enumerations.CubeType>();
+        Dictionary<Vector2Int, CubeType> markerToCubeType = new Dictionary<Vector2Int, CubeType>();
         
         if (rules.lightSpawnsUnit)
         {
             foreach (var pos in recordedPositions.lightMarkerPositions)
             {
                 allMarkerPositions.Add(new Vector2Int(pos.x, pos.y));
-                markerToCubeType[pos] = Enumerations.CubeType.Unit;
+                markerToCubeType[pos] = CubeType.Unit;
             }
         }
         if (rules.heavySpawnsRecursion)
@@ -518,7 +518,7 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
             foreach (var pos in recordedPositions.heavyMarkerPositions)
             {
                 allMarkerPositions.Add(new Vector2Int(pos.x, pos.y));
-                markerToCubeType[pos] = Enumerations.CubeType.Recursion;
+                markerToCubeType[pos] = CubeType.Recursion;
             }
         }
         if (rules.primeSpawnsPrime)
@@ -526,7 +526,7 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
             foreach (var pos in recordedPositions.primeMarkerPositions)
             {
                 allMarkerPositions.Add(new Vector2Int(pos.x, pos.y));
-                markerToCubeType[pos] = Enumerations.CubeType.Prime;
+                markerToCubeType[pos] = CubeType.Prime;
             }
         }
         if (rules.infinitySpawnsInfinity)
@@ -534,7 +534,7 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
             foreach (var pos in recordedPositions.infinityMarkerPositions)
             {
                 allMarkerPositions.Add(new Vector2Int(pos.x, pos.y));
-                markerToCubeType[pos] = Enumerations.CubeType.Infinity;
+                markerToCubeType[pos] = CubeType.Infinity;
             }
         }
 
@@ -564,7 +564,7 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
                 DebugLog($"[PairedWave] Position collision at wave ({normalizedPos.x}, {normalizedPos.y}), but allowing overlap to preserve marker count");
             }
 
-            Enumerations.CubeType cubeType = markerToCubeType[originalPos];
+CubeType cubeType = markerToCubeType[originalPos];
             if (SpawnInheritedCubeAtNormalizedPosition(normalizedPos, cubeType, true)) // Always allow overlap to preserve count
             {
                 inheritedCount++;
@@ -593,7 +593,7 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
     /// Position is already normalized to wave coordinates (0 to GridHeight-1).
     /// SpawnCube will convert this to grid coordinates and spawn at top of grid.
     /// </summary>
-    private bool SpawnInheritedCubeAtNormalizedPosition(Vector2Int normalizedPosition, Enumerations.CubeType cubeType, bool allowOverlap)
+    private bool SpawnInheritedCubeAtNormalizedPosition(Vector2Int normalizedPosition, CubeType cubeType, bool allowOverlap)
     {
         var wave = CurrentWave;
         if (wave == null || grid == null)
@@ -853,7 +853,7 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
                 if (stillAlive && audioManager != null && grid != null)
                 {
                     Vector3 cubeWorldPosition = grid.GridToWorldPosition(cube.position.x, cube.position.y, 2f);
-                    audioManager.TriggerCubeAudioEvent(Enumerations.GameAudioEvent.CubeLanded, cube.type, cubeWorldPosition);
+                    audioManager.TriggerCubeAudioEvent(GameAudioEvent.CubeLanded, cube.type, cubeWorldPosition);
                     DebugLog($"🔊 Audio: Cube landing event triggered for {cube.type} at position {cube.position}");
                 }
 
@@ -1070,13 +1070,13 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
     #endregion
 
     #region Statistics & Events
-    public void OnCubeCaptured(Enumerations.CubeType cubeType)
+    public void OnCubeCaptured(CubeType cubeType)
     {
         switch (cubeType)
         {
-            case Enumerations.CubeType.Unit: normalCubesCaptured++; break;
-            case Enumerations.CubeType.Prime: blueCubesCaptured++; break;
-            case Enumerations.CubeType.Recursion: reinforcedCubesCaptured++; break;
+            case CubeType.Unit: normalCubesCaptured++; break;
+            case CubeType.Prime: blueCubesCaptured++; break;
+            case CubeType.Recursion: reinforcedCubesCaptured++; break;
         }
 
         // Trigger cube captured audio event
@@ -1089,7 +1089,7 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
             {
                 cubePosition = grid.GridToWorldPosition(capturedCube.position.x, capturedCube.position.y, 2f);
             }
-            audioManager.TriggerCubeAudioEvent(Enumerations.GameAudioEvent.CubeCaptured, cubeType, cubePosition);
+            audioManager.TriggerCubeAudioEvent(GameAudioEvent.CubeCaptured, cubeType, cubePosition);
             DebugLog($"🔊 Audio: Cube captured event triggered for {cubeType}");
         }
 
@@ -1102,7 +1102,7 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
     /// Wave determines if escape threshold is exceeded and triggers wave failure if needed.
     /// </summary>
     /// <param name="cubeType">Type of cube that escaped</param>
-    public void OnCubeEscaped(Enumerations.CubeType cubeType)
+    public void OnCubeEscaped(CubeType cubeType)
     {
         // Find the cube that's escaping to get its position
         var escapingCube = activeCubes.FirstOrDefault(c => c != null && c.type == cubeType && c.position.y <= 0);
@@ -1122,7 +1122,7 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
         if (audioManager != null && grid != null)
         {
             Vector3 escapeWorldPosition = grid.GridToWorldPosition(escapePosition.x, escapePosition.y, 2f);
-            audioManager.TriggerCubeAudioEvent(Enumerations.GameAudioEvent.CubeEscaped, cubeType, escapeWorldPosition);
+            audioManager.TriggerCubeAudioEvent(GameAudioEvent.CubeEscaped, cubeType, escapeWorldPosition);
             DebugLog($"🔊 Audio: Cube escaped event triggered for {cubeType} at position {escapePosition}");
         }
         
@@ -1138,7 +1138,7 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
         }
         
         // Process as normal cube behavior for wave completion tracking
-        if (cubeType == Enumerations.CubeType.Unit)
+        if (cubeType == CubeType.Unit)
         {
             OnNonBlackCubeProcessed(cubeType, false); // false = not captured
             this.Log($"Normal cube escaped - wave completion check triggered", showDebugInfo);
@@ -1178,9 +1178,9 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
 
     public void OnDetonationUsed() => detonationsUsed++;
 
-    public void OnNonBlackCubeProcessed(Enumerations.CubeType cubeType, bool wasCaptured)
+    public void OnNonBlackCubeProcessed(CubeType cubeType, bool wasCaptured)
     {
-        if (cubeType == Enumerations.CubeType.Infinity) return;
+        if (cubeType == CubeType.Infinity) return;
 
         processedNonBlackCubes++;
         DebugLog($"📊 Non-black cube processed: {processedNonBlackCubes}/{totalNonBlackCubes}");
@@ -1276,17 +1276,17 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
         return activeCubes.Count > 0 && !debugMode;
     }
 
-    private Enumerations.CubeType GetRandomCubeType()
+    private CubeType GetRandomCubeType()
     {
         float random = Random.value;
-        if (random < normalCubeChance) return Enumerations.CubeType.Unit;
-        if (random < normalCubeChance + blueCubeChance) return Enumerations.CubeType.Prime;
-        return Enumerations.CubeType.Infinity;
+        if (random < normalCubeChance) return CubeType.Unit;
+        if (random < normalCubeChance + blueCubeChance) return CubeType.Prime;
+        return CubeType.Infinity;
     }
 
     private void CountNonBlackCubes()
     {
-        totalNonBlackCubes = activeCubes.Count(c => c != null && c.type != Enumerations.CubeType.Infinity);
+        totalNonBlackCubes = activeCubes.Count(c => c != null && c.type != CubeType.Infinity);
         processedNonBlackCubes = 0;
     }
 
@@ -1457,14 +1457,14 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
 
         // Collect all marker positions that will spawn cubes
         List<Vector2Int> allMarkerPositions = new List<Vector2Int>();
-        Dictionary<Vector2Int, Enumerations.CubeType> markerToCubeType = new Dictionary<Vector2Int, Enumerations.CubeType>();
+        Dictionary<Vector2Int, CubeType> markerToCubeType = new Dictionary<Vector2Int, CubeType>();
         
         if (rules.lightSpawnsUnit)
         {
             foreach (var pos in recordedPositions.lightMarkerPositions)
             {
                 allMarkerPositions.Add(pos);
-                markerToCubeType[pos] = Enumerations.CubeType.Unit;
+                markerToCubeType[pos] = CubeType.Unit;
             }
         }
         if (rules.heavySpawnsRecursion)
@@ -1472,7 +1472,7 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
             foreach (var pos in recordedPositions.heavyMarkerPositions)
             {
                 allMarkerPositions.Add(pos);
-                markerToCubeType[pos] = Enumerations.CubeType.Recursion;
+                markerToCubeType[pos] = CubeType.Recursion;
             }
         }
         if (rules.primeSpawnsPrime)
@@ -1480,7 +1480,7 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
             foreach (var pos in recordedPositions.primeMarkerPositions)
             {
                 allMarkerPositions.Add(pos);
-                markerToCubeType[pos] = Enumerations.CubeType.Prime;
+                markerToCubeType[pos] = CubeType.Prime;
             }
         }
         if (rules.infinitySpawnsInfinity)
@@ -1488,7 +1488,7 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
             foreach (var pos in recordedPositions.infinityMarkerPositions)
             {
                 allMarkerPositions.Add(pos);
-                markerToCubeType[pos] = Enumerations.CubeType.Infinity;
+                markerToCubeType[pos] = CubeType.Infinity;
             }
         }
 
@@ -1689,7 +1689,7 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
     /// Records marker positions from the current wave for inheritance by the mirrored version.
     /// Called when markers are placed during any wave.
     /// </summary>
-    public void RecordMarkerPosition(Vector2Int position, Enumerations.MarkerMode markerType)
+    public void RecordMarkerPosition(Vector2Int position, MarkerMode markerType)
     {
         if (previousWaveMarkers == null)
         {
@@ -1779,19 +1779,19 @@ public class RecordedMarkerPositions
         // No initialization needed
     }
 
-    public void RecordMarker(Vector2Int position, Enumerations.MarkerMode markerType)
+    public void RecordMarker(Vector2Int position, MarkerMode markerType)
     {
         switch (markerType)
         {
-            case Enumerations.MarkerMode.Light:
+            case MarkerMode.Light:
                 if (!lightMarkerPositions.Contains(position))
                     lightMarkerPositions.Add(position);
                 break;
-            case Enumerations.MarkerMode.Heavy:
+            case MarkerMode.Heavy:
                 if (!heavyMarkerPositions.Contains(position))
                     heavyMarkerPositions.Add(position);
                 break;
-            case Enumerations.MarkerMode.Prime:
+            case MarkerMode.Prime:
                 if (!primeMarkerPositions.Contains(position))
                     primeMarkerPositions.Add(position);
                 break;
@@ -1813,5 +1813,5 @@ public class RecordedMarkerPositions
 public class GhostPreviewData
 {
     public Vector2Int position;
-    public Enumerations.CubeType cubeType;
+    public CubeType cubeType;
 }

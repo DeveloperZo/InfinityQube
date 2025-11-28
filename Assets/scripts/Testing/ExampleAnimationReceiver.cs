@@ -1,4 +1,5 @@
 using UnityEngine;
+using static Enumerations;
 
 /// <summary>
 /// Example implementation of IAnimationTriggerReceiver for testing animation trigger points.
@@ -557,13 +558,13 @@ public class ExampleAnimationReceiver : MonoBehaviour, IAnimationTriggerReceiver
     
     #region Utility Methods
     
-    private Color GetModeColor(Enumerations.MarkerMode mode)
+    private Color GetModeColor(MarkerMode mode)
     {
         switch (mode)
         {
-            case Enumerations.MarkerMode.Light: return Color.yellow;
-            case Enumerations.MarkerMode.Prime: return Color.magenta;
-            case Enumerations.MarkerMode.Heavy: return Color.red;
+            case MarkerMode.Light: return Color.yellow;
+            case MarkerMode.Prime: return Color.magenta;
+            case MarkerMode.Heavy: return Color.red;
             default: return Color.white;
         }
     }

@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using static Enumerations;
 
 /// <summary>
 /// Enumeration for different audio volume categories
@@ -211,7 +212,7 @@ public class AudioManager : MonoBehaviour, IManagerDebugInterface
     /// <summary>
     /// Triggers an audio event based on game events
     /// </summary>
-    public void TriggerAudioEvent(Enumerations.GameAudioEvent eventType, Vector3 worldPosition, float intensity = 1f)
+    public void TriggerAudioEvent(GameAudioEvent eventType, Vector3 worldPosition, float intensity = 1f)
     {
         if (!IsInitialized) return;
 
@@ -224,18 +225,18 @@ public class AudioManager : MonoBehaviour, IManagerDebugInterface
         // Handle specific events
         switch (eventType)
         {
-            case Enumerations.GameAudioEvent.WaveStarted:
-            case Enumerations.GameAudioEvent.WaveCompleted:
+            case GameAudioEvent.WaveStarted:
+            case GameAudioEvent.WaveCompleted:
                 // These would play system feedback sounds
                 break;
                 
-            case Enumerations.GameAudioEvent.PlayerMoved:
+            case GameAudioEvent.PlayerMoved:
                 // Could play movement sound
                 break;
                 
-            case Enumerations.GameAudioEvent.LightMarkerPlaced:
-            case Enumerations.GameAudioEvent.HeavyMarkerPlaced:
-            case Enumerations.GameAudioEvent.PrimeMarkerPlaced:
+            case GameAudioEvent.LightMarkerPlaced:
+            case GameAudioEvent.HeavyMarkerPlaced:
+            case GameAudioEvent.PrimeMarkerPlaced:
                 // These would play marker placement sounds
                 break;
         }
@@ -244,21 +245,21 @@ public class AudioManager : MonoBehaviour, IManagerDebugInterface
     /// <summary>
     /// Triggers a cube-specific audio event
     /// </summary>
-    public void TriggerCubeAudioEvent(Enumerations.GameAudioEvent eventType, Enumerations.CubeType cubeType, Vector3 worldPosition, float volume = 1f)
+    public void TriggerCubeAudioEvent(GameAudioEvent eventType, CubeType cubeType, Vector3 worldPosition, float volume = 1f)
     {
         if (!IsInitialized) return;
 
         switch (eventType)
         {
-            case Enumerations.GameAudioEvent.CubeLanded:
+            case GameAudioEvent.CubeLanded:
                 PlayCubeLandingSound(cubeType, worldPosition);
                 break;
                 
-            case Enumerations.GameAudioEvent.CubeCaptured:
+            case GameAudioEvent.CubeCaptured:
                 PlayCubeCaptureSound(cubeType, worldPosition);
                 break;
                 
-            case Enumerations.GameAudioEvent.CubeEscaped:
+            case GameAudioEvent.CubeEscaped:
                 PlayCubeEscapeSound(cubeType, worldPosition);
                 break;
         }
@@ -283,22 +284,22 @@ public class AudioManager : MonoBehaviour, IManagerDebugInterface
     #endregion
 
     #region Public API - Cube Audio (Delegated)
-    public void PlayCubeLandingSound(Enumerations.CubeType cubeType, Vector3 position)
+    public void PlayCubeLandingSound(CubeType cubeType, Vector3 position)
     {
         cubeAudioSystem?.PlayCubeLandingSound(cubeType, position);
     }
 
-    public void PlayCubeLandingSoundAtPosition(Enumerations.CubeType cubeType, Vector3 worldPosition, float customVolume = -1f)
+    public void PlayCubeLandingSoundAtPosition(CubeType cubeType, Vector3 worldPosition, float customVolume = -1f)
     {
         cubeAudioSystem?.PlayCubeLandingSoundAtPosition(cubeType, worldPosition, customVolume);
     }
 
-    public void PlayCubeCaptureSound(Enumerations.CubeType cubeType, Vector3 position = default)
+    public void PlayCubeCaptureSound(CubeType cubeType, Vector3 position = default)
     {
         cubeAudioSystem?.PlayCubeCaptureSound(cubeType, position);
     }
 
-    public void PlayCubeDestructionSound(Enumerations.CubeType cubeType, Vector3 position = default)
+    public void PlayCubeDestructionSound(CubeType cubeType, Vector3 position = default)
     {
         cubeAudioSystem?.PlayCubeDestructionSound(cubeType, position);
     }
@@ -308,12 +309,12 @@ public class AudioManager : MonoBehaviour, IManagerDebugInterface
         cubeAudioSystem?.PlayCubeDestructionSound(position);
     }
 
-    public void PlayCubeSpecialEffectSound(Enumerations.CubeType cubeType, Vector3 position = default)
+    public void PlayCubeSpecialEffectSound(CubeType cubeType, Vector3 position = default)
     {
         cubeAudioSystem?.PlayCubeSpecialEffectSound(cubeType, position);
     }
 
-    public void PlayCubeEscapeSound(Enumerations.CubeType cubeType, Vector3 position = default)
+    public void PlayCubeEscapeSound(CubeType cubeType, Vector3 position = default)
     {
         cubeAudioSystem?.PlayCubeEscapeSound(cubeType, position);
     }

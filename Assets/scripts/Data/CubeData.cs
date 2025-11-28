@@ -4,7 +4,7 @@ using static Enumerations;
 [System.Serializable]
 public class CubeData
 {
-    public Enumerations.CubeType type;
+    public CubeType type;
     public Vector2Int position;
     public int level = 1;
 

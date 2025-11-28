@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using static Enumerations;
 
 /// <summary>
 /// Central event system for all major game transitions and state changes.
@@ -50,22 +51,22 @@ public static class GameEvents
     /// <summary>
     /// Fired when a cube is spawned on the grid
     /// </summary>
-    public static event Action<Vector2Int, Enumerations.CubeType> OnCubeSpawn;
+    public static event Action<Vector2Int, CubeType> OnCubeSpawn;
     
     /// <summary>
     /// Fired when a cube moves from one position to another
     /// </summary>
-    public static event Action<Vector2Int, Vector2Int, Enumerations.CubeType> OnCubeMove; // oldPos, newPos, type
+    public static event Action<Vector2Int, Vector2Int, CubeType> OnCubeMove; // oldPos, newPos, type
     
     /// <summary>
     /// Fired when a cube is successfully captured by the player
     /// </summary>
-    public static event Action<Vector2Int, Enumerations.CubeType> OnCubeCaptured;
+    public static event Action<Vector2Int, CubeType> OnCubeCaptured;
     
     /// <summary>
     /// Fired when a cube escapes off the bottom of the grid
     /// </summary>
-    public static event Action<Vector2Int, Enumerations.CubeType> OnCubeEscaped;
+    public static event Action<Vector2Int, CubeType> OnCubeEscaped;
     #endregion
 
     #region Player Events
@@ -77,7 +78,7 @@ public static class GameEvents
     /// <summary>
     /// Fired when the player places any type of marker
     /// </summary>
-    public static event Action<Vector2Int, Enumerations.MarkerType> OnMarkerPlaced;
+    public static event Action<Vector2Int, MarkerType> OnMarkerPlaced;
     
     /// <summary>
     /// Fired when the player dies/fails
@@ -177,7 +178,7 @@ public static class GameEvents
     /// <summary>
     /// Fire cube spawn event with null checking and optional debug logging
     /// </summary>
-    public static void FireCubeSpawn(Vector2Int position, Enumerations.CubeType cubeType)
+    public static void FireCubeSpawn(Vector2Int position, CubeType cubeType)
     {
         if (debugEvents)
             Debug.Log($"[GameEvents] FireCubeSpawn: {cubeType} at ({position.x}, {position.y})");
@@ -188,7 +189,7 @@ public static class GameEvents
     /// <summary>
     /// Fire cube move event with null checking and optional debug logging
     /// </summary>
-    public static void FireCubeMove(Vector2Int oldPosition, Vector2Int newPosition, Enumerations.CubeType cubeType)
+    public static void FireCubeMove(Vector2Int oldPosition, Vector2Int newPosition, CubeType cubeType)
     {
         // Only log significant moves to reduce spam
         if (debugEvents && (oldPosition.y - newPosition.y > 1 || Mathf.Abs(oldPosition.x - newPosition.x) > 0))
@@ -200,7 +201,7 @@ public static class GameEvents
     /// <summary>
     /// Fire cube captured event with null checking and optional debug logging
     /// </summary>
-    public static void FireCubeCaptured(Vector2Int position, Enumerations.CubeType cubeType)
+    public static void FireCubeCaptured(Vector2Int position, CubeType cubeType)
     {
         if (debugEvents)
             Debug.Log($"[GameEvents] FireCubeCaptured: {cubeType} at ({position.x}, {position.y})");
@@ -211,7 +212,7 @@ public static class GameEvents
     /// <summary>
     /// Fire cube escaped event with null checking and optional debug logging
     /// </summary>
-    public static void FireCubeEscaped(Vector2Int position, Enumerations.CubeType cubeType)
+    public static void FireCubeEscaped(Vector2Int position, CubeType cubeType)
     {
         if (debugEvents)
             Debug.Log($"[GameEvents] FireCubeEscaped: {cubeType} at ({position.x}, {position.y})");
@@ -235,7 +236,7 @@ public static class GameEvents
     /// <summary>
     /// Fire marker placed event with null checking and optional debug logging
     /// </summary>
-    public static void FireMarkerPlaced(Vector2Int position, Enumerations.MarkerType markerType)
+    public static void FireMarkerPlaced(Vector2Int position, MarkerType markerType)
     {
         if (debugEvents)
             Debug.Log($"[GameEvents] FireMarkerPlaced: {markerType} at ({position.x}, {position.y})");

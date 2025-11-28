@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -140,7 +140,7 @@ public class PlayerMarkerSystem : MonoBehaviour
         actionManager.ConsumeLightCharge();
 
         // Record marker position for paired wave system
-        RecordMarkerForPairedWave(position, Enumerations.MarkerMode.Light);
+        RecordMarkerForPairedWave(position, MarkerMode.Light);
 
         Debug.Log($"Light marker placed at ({position.x}, {position.y})");
         return true;
@@ -194,7 +194,7 @@ public class PlayerMarkerSystem : MonoBehaviour
 
         // Trigger audio event for marker triggering
         Vector3 worldPosition = actionManager.GridManager.GridToWorldPosition(position.x, position.y);
-        TriggerMarkerAudioEvent(Enumerations.GameAudioEvent.MarkerTriggered, worldPosition);
+        TriggerMarkerAudioEvent(GameAudioEvent.MarkerTriggered, worldPosition);
 
         foreach (var cube in cubes)
         {
@@ -240,7 +240,7 @@ public class PlayerMarkerSystem : MonoBehaviour
         actionManager.ConsumeHeavyCharge();
 
         // Record marker position for paired wave system
-        RecordMarkerForPairedWave(position, Enumerations.MarkerMode.Heavy);
+        RecordMarkerForPairedWave(position, MarkerMode.Heavy);
 
         Debug.Log($"Heavy marker placed at ({position.x}, {position.y})");
         return true;
@@ -294,7 +294,7 @@ public class PlayerMarkerSystem : MonoBehaviour
 
         // Trigger audio event for marker triggering
         Vector3 worldPosition = actionManager.GridManager.GridToWorldPosition(position.x, position.y);
-        TriggerMarkerAudioEvent(Enumerations.GameAudioEvent.MarkerTriggered, worldPosition);
+        TriggerMarkerAudioEvent(GameAudioEvent.MarkerTriggered, worldPosition);
 
         foreach (var cube in cubes)
         {
@@ -341,7 +341,7 @@ public class PlayerMarkerSystem : MonoBehaviour
         actionManager.ConsumePrimeCharge();
 
         // Record marker position for paired wave system (record center position)
-        RecordMarkerForPairedWave(centerPosition, Enumerations.MarkerMode.Prime);
+        RecordMarkerForPairedWave(centerPosition, MarkerMode.Prime);
 
         Debug.Log($"Prime marker placed at ({centerPosition.x}, {centerPosition.y})");
         return true;
@@ -400,7 +400,7 @@ public class PlayerMarkerSystem : MonoBehaviour
 
         // Trigger audio event for marker triggering
         Vector3 centerWorldPosition = actionManager.GridManager.GridToWorldPosition(marker.centerPosition.x, marker.centerPosition.y);
-        TriggerMarkerAudioEvent(Enumerations.GameAudioEvent.MarkerTriggered, centerWorldPosition);
+        TriggerMarkerAudioEvent(GameAudioEvent.MarkerTriggered, centerWorldPosition);
 
         foreach (var visual in marker.visualObjects)
         {
@@ -476,7 +476,7 @@ public class PlayerMarkerSystem : MonoBehaviour
 
         // Trigger audio event for cube marker triggering
         Vector3 worldPosition = actionManager.GridManager.GridToWorldPosition(cubeMarker.position.x, cubeMarker.position.y);
-        TriggerMarkerAudioEvent(Enumerations.GameAudioEvent.MarkerTriggered, worldPosition, 1.2f);
+        TriggerMarkerAudioEvent(GameAudioEvent.MarkerTriggered, worldPosition, 1.2f);
         
         DestroyMarkerVisual(cubeMarker.visualObject);
 
@@ -526,7 +526,7 @@ public class PlayerMarkerSystem : MonoBehaviour
     /// <param name="eventType">The type of audio event to trigger</param>
     /// <param name="worldPosition">World position for spatial audio</param>
     /// <param name="intensity">Audio intensity/volume multiplier</param>
-    private void TriggerMarkerAudioEvent(Enumerations.GameAudioEvent eventType, Vector3 worldPosition, float intensity = 1f)
+    private void TriggerMarkerAudioEvent(GameAudioEvent eventType, Vector3 worldPosition, float intensity = 1f)
     {
         if (actionManager != null)
         {
@@ -587,10 +587,13 @@ public class PlayerMarkerSystem : MonoBehaviour
 
     private List<CubeManager> FindAllCubesAt(Vector2Int position)
     {
-        var allCubes = FindObjectsOfType<CubeManager>();
         var cubes = new List<CubeManager>();
+        
+        // Use cached WaveManager reference instead of FindObjectsOfType
+        var activeCubes = actionManager?.WaveManager?.activeCubes;
+        if (activeCubes == null) return cubes;
 
-        foreach (var cube in allCubes)
+        foreach (var cube in activeCubes)
         {
             if (cube != null && !cube.isDestroyed && 
                 cube.position.x == position.x && cube.position.y == position.y &&
@@ -954,7 +957,7 @@ public class PlayerMarkerSystem : MonoBehaviour
     /// Records marker position for paired wave inheritance system.
     /// Always records markers during any wave - they will be used when the wave is mirrored.
     /// </summary>
-    private void RecordMarkerForPairedWave(Vector2Int position, Enumerations.MarkerMode markerType)
+    private void RecordMarkerForPairedWave(Vector2Int position, MarkerMode markerType)
     {
         if (actionManager?.WaveManager == null) return;
 

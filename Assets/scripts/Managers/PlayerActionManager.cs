@@ -1,6 +1,7 @@
-﻿using UnityEngine;
+using UnityEngine;
 using System.Collections.Generic;
 using System;
+using static Enumerations;
 
 
 [System.Serializable]
@@ -111,7 +112,7 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
 
     // Marker Mode System
     [Header("Marker Mode System")]
-    [SerializeField] private Enumerations.MarkerMode currentMarkerMode = Enumerations.MarkerMode.Light;
+    [SerializeField] private MarkerMode currentMarkerMode = MarkerMode.Light;
 
     // Statistics
     private int cubeMarkersTriggered;
@@ -220,7 +221,7 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
 
     private void InitializeMarkerMode()
     {
-        currentMarkerMode = Enumerations.MarkerMode.Light;
+        currentMarkerMode = MarkerMode.Light;
         
         if (EnableDebugLogs)
         {
@@ -238,7 +239,7 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
     /// <param name="previousMode">The mode being switched from</param>
     /// <param name="newMode">The mode being switched to</param>
     /// <param name="playerPosition">Current player position</param>
-    private void TriggerAnimationModeSwitch(Enumerations.MarkerMode previousMode, Enumerations.MarkerMode newMode, Vector2Int playerPosition)
+    private void TriggerAnimationModeSwitch(MarkerMode previousMode, MarkerMode newMode, Vector2Int playerPosition)
     {
         if (animationTriggerManager != null)
         {
@@ -257,7 +258,7 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
     /// <param name="markerMode">Type of marker that was placed</param>
     /// <param name="position">Grid position where marker was placed</param>
     /// <param name="wasReplacement">True if this replaced an existing marker</param>
-    private void TriggerAnimationMarkerPlace(Enumerations.MarkerMode markerMode, Vector2Int position, bool wasReplacement)
+    private void TriggerAnimationMarkerPlace(MarkerMode markerMode, Vector2Int position, bool wasReplacement)
     {
         if (animationTriggerManager != null)
         {
@@ -276,7 +277,7 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
     /// <param name="markerMode">Type of marker that was triggered</param>
     /// <param name="position">Grid position of the triggered marker</param>
     /// <param name="targetCount">Number of targets affected by the trigger</param>
-    private void TriggerAnimationMarkerTrigger(Enumerations.MarkerMode markerMode, Vector2Int position, int targetCount)
+    private void TriggerAnimationMarkerTrigger(MarkerMode markerMode, Vector2Int position, int targetCount)
     {
         if (animationTriggerManager != null)
         {
@@ -392,34 +393,34 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
     /// </summary>
     private void HandleModeSwitchingInput()
     {
-        Enumerations.MarkerMode targetMode = currentMarkerMode;
-        Enumerations.GameAudioEvent audioEvent = Enumerations.GameAudioEvent.ModeSwitchedToLight;
+MarkerMode targetMode = currentMarkerMode;
+GameAudioEvent audioEvent = GameAudioEvent.ModeSwitchedToLight;
         bool modeSwitchRequested = false;
 
         // Check for number key presses
         if (Input.GetKeyDown(KeyCode.Alpha1))
         {
-            targetMode = Enumerations.MarkerMode.Light;
-            audioEvent = Enumerations.GameAudioEvent.ModeSwitchedToLight;
+            targetMode = MarkerMode.Light;
+            audioEvent = GameAudioEvent.ModeSwitchedToLight;
             modeSwitchRequested = true;
         }
         else if (Input.GetKeyDown(KeyCode.Alpha2))
         {
-            targetMode = Enumerations.MarkerMode.Prime;
-            audioEvent = Enumerations.GameAudioEvent.ModeSwitchedToPrime;
+            targetMode = MarkerMode.Prime;
+            audioEvent = GameAudioEvent.ModeSwitchedToPrime;
             modeSwitchRequested = true;
         }
         else if (Input.GetKeyDown(KeyCode.Alpha3))
         {
-            targetMode = Enumerations.MarkerMode.Heavy;
-            audioEvent = Enumerations.GameAudioEvent.ModeSwitchedToHeavy;
+            targetMode = MarkerMode.Heavy;
+            audioEvent = GameAudioEvent.ModeSwitchedToHeavy;
             modeSwitchRequested = true;
         }
 
         // Only process mode switch if a key was pressed and mode is different
         if (modeSwitchRequested && targetMode != currentMarkerMode)
         {
-            Enumerations.MarkerMode previousMode = currentMarkerMode;
+MarkerMode previousMode = currentMarkerMode;
             if (SetMode(targetMode))
             {
                 // Trigger audio feedback for successful mode switch
@@ -456,18 +457,18 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
         if (Input.GetKeyDown(KeyCode.F))
         {
             Vector2Int playerPos = playerManager.currentTilePosition;
-            Enumerations.MarkerMode currentMode = GetCurrentMode();
+MarkerMode currentMode = GetCurrentMode();
             bool actionSuccessful = false;
 
             switch (currentMode)
             {
-                case Enumerations.MarkerMode.Light:
+                case MarkerMode.Light:
                     if (markerSystem.HasLightMarkerAt(playerPos))
                     {
                         markerSystem.RemoveLightMarkerAt(playerPos);
                         actionSuccessful = true;
                         // Trigger feedback for marker removal (replacement)
-                        TriggerInputFeedbackMarkerPlace(Enumerations.MarkerMode.Light, playerPos, true);
+                        TriggerInputFeedbackMarkerPlace(MarkerMode.Light, playerPos, true);
                     }
                     else if (CanPlaceLightMarker())
                     {
@@ -475,10 +476,10 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
                         actionSuccessful = true;
                         
                         // Trigger feedback for new marker placement
-                        TriggerInputFeedbackMarkerPlace(Enumerations.MarkerMode.Light, playerPos, false);
+                        TriggerInputFeedbackMarkerPlace(MarkerMode.Light, playerPos, false);
                         
                         // Trigger animation for marker placement
-                        TriggerAnimationMarkerPlace(Enumerations.MarkerMode.Light, playerPos, false);
+                        TriggerAnimationMarkerPlace(MarkerMode.Light, playerPos, false);
                         
                         // Show success feedback for successful placement
                         ShowActionSuccessFeedback("Light marker placed successfully!");
@@ -499,13 +500,13 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
                     }
                     break;
 
-                case Enumerations.MarkerMode.Heavy:
+                case MarkerMode.Heavy:
                     if (markerSystem.HasHeavyMarkerAt(playerPos))
                     {
                         markerSystem.RemoveHeavyMarkerAt(playerPos);
                         actionSuccessful = true;
                         // Trigger feedback for marker removal (replacement)
-                        TriggerInputFeedbackMarkerPlace(Enumerations.MarkerMode.Heavy, playerPos, true);
+                        TriggerInputFeedbackMarkerPlace(MarkerMode.Heavy, playerPos, true);
                     }
                     else if (CanPlaceHeavyMarker())
                     {
@@ -513,10 +514,10 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
                         actionSuccessful = true;
                         
                         // Trigger feedback for new marker placement
-                        TriggerInputFeedbackMarkerPlace(Enumerations.MarkerMode.Heavy, playerPos, false);
+                        TriggerInputFeedbackMarkerPlace(MarkerMode.Heavy, playerPos, false);
                         
                         // Trigger animation for marker placement
-                        TriggerAnimationMarkerPlace(Enumerations.MarkerMode.Heavy, playerPos, false);
+                        TriggerAnimationMarkerPlace(MarkerMode.Heavy, playerPos, false);
                         
                         // Show success feedback for successful placement
                         ShowActionSuccessFeedback("Heavy marker placed successfully!");
@@ -537,13 +538,13 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
                     }
                     break;
 
-                case Enumerations.MarkerMode.Prime:
+                case MarkerMode.Prime:
                     if (markerSystem.HasPrimeMarkerAt(playerPos))
                     {
                         markerSystem.RemovePrimeMarkerAt(playerPos);
                         actionSuccessful = true;
                         // Trigger feedback for marker removal (replacement)
-                        TriggerInputFeedbackMarkerPlace(Enumerations.MarkerMode.Prime, playerPos, true);
+                        TriggerInputFeedbackMarkerPlace(MarkerMode.Prime, playerPos, true);
                     }
                     else if (CanPlacePrimeMarker())
                     {
@@ -551,10 +552,10 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
                         actionSuccessful = true;
                         
                         // Trigger feedback for new marker placement
-                        TriggerInputFeedbackMarkerPlace(Enumerations.MarkerMode.Prime, playerPos, false);
+                        TriggerInputFeedbackMarkerPlace(MarkerMode.Prime, playerPos, false);
                         
                         // Trigger animation for marker placement
-                        TriggerAnimationMarkerPlace(Enumerations.MarkerMode.Prime, playerPos, false);
+                        TriggerAnimationMarkerPlace(MarkerMode.Prime, playerPos, false);
                         
                         // Show success feedback for successful placement
                         ShowActionSuccessFeedback("Prime marker placed successfully!");
@@ -634,12 +635,12 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
     {
         if (Input.GetKeyDown(KeyCode.R))
         {
-            Enumerations.MarkerMode currentMode = GetCurrentMode();
+MarkerMode currentMode = GetCurrentMode();
             bool actionSuccessful = false;
 
             switch (currentMode)
             {
-                case Enumerations.MarkerMode.Light:
+                case MarkerMode.Light:
                     actionSuccessful = markerSystem.TriggerNextLightMarker();
                     if (!actionSuccessful)
                     {
@@ -658,17 +659,17 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
                     {
                         // Trigger feedback for successful marker trigger
                         // Note: We use player position as approximation since triggered marker position may vary
-                        TriggerInputFeedbackMarkerTrigger(Enumerations.MarkerMode.Light, GetCurrentPlayerPosition(), 1);
+                        TriggerInputFeedbackMarkerTrigger(MarkerMode.Light, GetCurrentPlayerPosition(), 1);
                         
                         // Trigger animation for marker trigger
-                        TriggerAnimationMarkerTrigger(Enumerations.MarkerMode.Light, GetCurrentPlayerPosition(), 1);
+                        TriggerAnimationMarkerTrigger(MarkerMode.Light, GetCurrentPlayerPosition(), 1);
                         
                         // Show success feedback for successful trigger
                         ShowActionSuccessFeedback("Light marker triggered successfully!");
                     }
                     break;
 
-                case Enumerations.MarkerMode.Heavy:
+                case MarkerMode.Heavy:
                     actionSuccessful = markerSystem.TriggerNextHeavyMarker();
                     if (!actionSuccessful)
                     {
@@ -686,17 +687,17 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
                     else
                     {
                         // Trigger feedback for successful marker trigger
-                        TriggerInputFeedbackMarkerTrigger(Enumerations.MarkerMode.Heavy, GetCurrentPlayerPosition(), 1);
+                        TriggerInputFeedbackMarkerTrigger(MarkerMode.Heavy, GetCurrentPlayerPosition(), 1);
                         
                         // Trigger animation for marker trigger
-                        TriggerAnimationMarkerTrigger(Enumerations.MarkerMode.Heavy, GetCurrentPlayerPosition(), 1);
+                        TriggerAnimationMarkerTrigger(MarkerMode.Heavy, GetCurrentPlayerPosition(), 1);
                         
                         // Show success feedback for successful trigger
                         ShowActionSuccessFeedback("Heavy marker triggered successfully!");
                     }
                     break;
 
-                case Enumerations.MarkerMode.Prime:
+                case MarkerMode.Prime:
                     actionSuccessful = markerSystem.TriggerNextPrimeMarker();
                     if (!actionSuccessful)
                     {
@@ -716,10 +717,10 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
                         // Trigger feedback for successful marker trigger
                         // Prime markers affect multiple targets, so we estimate area
                         int estimatedTargets = primeMarkerSize * primeMarkerSize;
-                        TriggerInputFeedbackMarkerTrigger(Enumerations.MarkerMode.Prime, GetCurrentPlayerPosition(), estimatedTargets);
+                        TriggerInputFeedbackMarkerTrigger(MarkerMode.Prime, GetCurrentPlayerPosition(), estimatedTargets);
                         
                         // Trigger animation for marker trigger
-                        TriggerAnimationMarkerTrigger(Enumerations.MarkerMode.Prime, GetCurrentPlayerPosition(), estimatedTargets);
+                        TriggerAnimationMarkerTrigger(MarkerMode.Prime, GetCurrentPlayerPosition(), estimatedTargets);
                         
                         // Show success feedback for successful trigger
                         ShowActionSuccessFeedback("Prime marker triggered successfully!");
@@ -805,7 +806,7 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
         
         // Trigger audio event for feedback
         Vector3 playerWorldPos = GetWorldPositionForAudio(playerManager.currentTilePosition);
-        TriggerAudioEvent(Enumerations.GameAudioEvent.ActionSuccess, playerWorldPos, 0.5f);
+        TriggerAudioEvent(GameAudioEvent.ActionSuccess, playerWorldPos, 0.5f);
         
         // Trigger animation for feedback
         TriggerAnimationActionSuccess(playerWorldPos, "Hello World debug message");
@@ -830,27 +831,27 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
     /// <param name="mode">The marker mode being used</param>
     /// <param name="actionType">The type of action being attempted ("place" or "trigger")</param>
     /// <returns>A descriptive error message explaining why the action failed</returns>
-    public string GetModeActionErrorMessage(Enumerations.MarkerMode mode, string actionType)
+    public string GetModeActionErrorMessage(MarkerMode mode, string actionType)
     {
         if (actionType == "place")
         {
             switch (mode)
             {
-                case Enumerations.MarkerMode.Light:
+                case MarkerMode.Light:
                     if (currentLightMarkerCharges <= 0)
                         return "No light marker charges available. Wait for cooldown.";
                     if (currentLightMarkers >= maxLightMarkerCharges)
                         return "Maximum light markers already placed on grid.";
                     break;
 
-                case Enumerations.MarkerMode.Heavy:
+                case MarkerMode.Heavy:
                     if (currentHeavyMarkerCharges <= 0)
                         return "No heavy marker charges available. Wait for cooldown.";
                     if (currentHeavyMarkers >= maxHeavyMarkerCharges)
                         return "Maximum heavy markers already placed on grid.";
                     break;
 
-                case Enumerations.MarkerMode.Prime:
+                case MarkerMode.Prime:
                     if (currentPrimeMarkerCharges <= 0)
                         return "No prime marker charges available. Wait for cooldown.";
                     if (currentPrimeMarkers >= primeMarkerOnGridLimit)
@@ -862,17 +863,17 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
         {
             switch (mode)
             {
-                case Enumerations.MarkerMode.Light:
+                case MarkerMode.Light:
                     if (markerSystem.LightMarkers.Count == 0)
                         return "No light markers available to trigger.";
                     break;
 
-                case Enumerations.MarkerMode.Heavy:
+                case MarkerMode.Heavy:
                     if (markerSystem.HeavyMarkers.Count == 0)
                         return "No heavy markers available to trigger.";
                     break;
 
-                case Enumerations.MarkerMode.Prime:
+                case MarkerMode.Prime:
                     if (markerSystem.PrimeMarkers.Count == 0)
                         return "No prime markers available to trigger.";
                     break;
@@ -896,7 +897,7 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
 
         // Trigger error feedback audio event
         Vector3 playerWorldPos = GetWorldPositionForAudio(playerManager.currentTilePosition);
-        TriggerAudioEvent(Enumerations.GameAudioEvent.ActionError, playerWorldPos, 0.7f);
+        TriggerAudioEvent(GameAudioEvent.ActionError, playerWorldPos, 0.7f);
 
         // Trigger animation for action failed
         TriggerAnimationActionFailed(playerWorldPos, errorMessage);
@@ -921,7 +922,7 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
 
         // Trigger success feedback audio event
         Vector3 playerWorldPos = GetWorldPositionForAudio(playerManager.currentTilePosition);
-        TriggerAudioEvent(Enumerations.GameAudioEvent.ActionSuccess, playerWorldPos, 0.8f);
+        TriggerAudioEvent(GameAudioEvent.ActionSuccess, playerWorldPos, 0.8f);
 
         // Trigger animation for action success
         TriggerAnimationActionSuccess(playerWorldPos, successMessage);
@@ -942,7 +943,7 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
     /// <param name="eventType">The type of audio event to trigger</param>
     /// <param name="worldPosition">World position for spatial audio</param>
     /// <param name="intensity">Audio intensity/volume multiplier</param>
-    private void TriggerAudioEvent(Enumerations.GameAudioEvent eventType, Vector3 worldPosition, float intensity = 1f)
+    private void TriggerAudioEvent(GameAudioEvent eventType, Vector3 worldPosition, float intensity = 1f)
     {
         if (audioManager != null && audioManager.IsInitialized)
         {
@@ -985,7 +986,7 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
     /// <param name="previousMode">The mode being switched from</param>
     /// <param name="newMode">The mode being switched to</param>
     /// <param name="playerPosition">Current player position</param>
-    private void TriggerInputFeedbackModeSwitch(Enumerations.MarkerMode previousMode, Enumerations.MarkerMode newMode, Vector2Int playerPosition)
+    private void TriggerInputFeedbackModeSwitch(MarkerMode previousMode, MarkerMode newMode, Vector2Int playerPosition)
     {
         if (inputFeedbackManager != null)
         {
@@ -1003,7 +1004,7 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
     /// <param name="markerMode">Type of marker that was placed</param>
     /// <param name="position">Grid position where marker was placed</param>
     /// <param name="wasReplacement">True if this replaced an existing marker</param>
-    private void TriggerInputFeedbackMarkerPlace(Enumerations.MarkerMode markerMode, Vector2Int position, bool wasReplacement)
+    private void TriggerInputFeedbackMarkerPlace(MarkerMode markerMode, Vector2Int position, bool wasReplacement)
     {
         if (inputFeedbackManager != null)
         {
@@ -1021,7 +1022,7 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
     /// <param name="markerMode">Type of marker that was triggered</param>
     /// <param name="position">Grid position of the triggered marker</param>
     /// <param name="targetCount">Number of targets affected by the trigger</param>
-    private void TriggerInputFeedbackMarkerTrigger(Enumerations.MarkerMode markerMode, Vector2Int position, int targetCount)
+    private void TriggerInputFeedbackMarkerTrigger(MarkerMode markerMode, Vector2Int position, int targetCount)
     {
         if (inputFeedbackManager != null)
         {
@@ -1078,7 +1079,7 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
     /// Gets the current active marker mode
     /// </summary>
     /// <returns>The currently active marker mode</returns>
-    public Enumerations.MarkerMode GetCurrentMode()
+    public MarkerMode GetCurrentMode()
     {
         return currentMarkerMode;
     }
@@ -1088,7 +1089,7 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
     /// </summary>
     /// <param name="mode">The desired marker mode</param>
     /// <returns>True if mode was successfully changed, false otherwise</returns>
-    public bool SetMode(Enumerations.MarkerMode mode)
+    public bool SetMode(MarkerMode mode)
     {
         if (!CanSwitchMode(mode))
         {
@@ -1099,7 +1100,7 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
             return false;
         }
 
-        Enumerations.MarkerMode previousMode = currentMarkerMode;
+MarkerMode previousMode = currentMarkerMode;
         currentMarkerMode = mode;
 
         // Update UI to reflect mode change
@@ -1122,16 +1123,16 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
     /// </summary>
     /// <param name="mode">The mode to validate</param>
     /// <returns>True if mode switch is valid, false otherwise</returns>
-    private bool CanSwitchMode(Enumerations.MarkerMode mode)
+    private bool CanSwitchMode(MarkerMode mode)
     {
         // Basic validation: ensure mode is defined
-        if (!System.Enum.IsDefined(typeof(Enumerations.MarkerMode), mode))
+        if (!System.Enum.IsDefined(typeof(MarkerMode), mode))
         {
             return false;
         }
 
         // Prevent switching to Prime mode if prime markers are not available
-        if (mode == Enumerations.MarkerMode.Prime && maxPrimeMarkerCharges <= 0)
+        if (mode == MarkerMode.Prime && maxPrimeMarkerCharges <= 0)
         {
             ShowActionErrorFeedback("Prime markers are not available in this wave.");
             return false;
@@ -1175,7 +1176,7 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
 
         // Trigger audio event for light marker placement
         Vector3 worldPosition = GetWorldPositionForAudio(playerManager.currentTilePosition);
-        TriggerAudioEvent(Enumerations.GameAudioEvent.LightMarkerPlaced, worldPosition);
+        TriggerAudioEvent(GameAudioEvent.LightMarkerPlaced, worldPosition);
 
         UpdateUI();
 
@@ -1200,7 +1201,7 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
 
         // Trigger audio event for heavy marker placement
         Vector3 worldPosition = GetWorldPositionForAudio(playerManager.currentTilePosition);
-        TriggerAudioEvent(Enumerations.GameAudioEvent.HeavyMarkerPlaced, worldPosition);
+        TriggerAudioEvent(GameAudioEvent.HeavyMarkerPlaced, worldPosition);
 
         UpdateUI();
 
@@ -1225,7 +1226,7 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
 
         // Trigger audio event for prime marker placement
         Vector3 worldPosition = GetWorldPositionForAudio(playerManager.currentTilePosition);
-        TriggerAudioEvent(Enumerations.GameAudioEvent.PrimeMarkerPlaced, worldPosition);
+        TriggerAudioEvent(GameAudioEvent.PrimeMarkerPlaced, worldPosition);
 
         UpdateUI();
 
@@ -1342,7 +1343,7 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
                 
                 // Trigger audio event for resource regeneration
                 Vector3 playerWorldPos = GetWorldPositionForAudio(playerManager.currentTilePosition);
-                TriggerAudioEvent(Enumerations.GameAudioEvent.ResourceRegeneration, playerWorldPos, 0.8f);
+                TriggerAudioEvent(GameAudioEvent.ResourceRegeneration, playerWorldPos, 0.8f);
                 
                 // Trigger animation for resource regeneration
                 TriggerAnimationResourceRegeneration(playerWorldPos, "Light marker charge");
@@ -1366,7 +1367,7 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
                 
                 // Trigger audio event for resource regeneration
                 Vector3 playerWorldPos = GetWorldPositionForAudio(playerManager.currentTilePosition);
-                TriggerAudioEvent(Enumerations.GameAudioEvent.ResourceRegeneration, playerWorldPos, 0.8f);
+                TriggerAudioEvent(GameAudioEvent.ResourceRegeneration, playerWorldPos, 0.8f);
                 
                 // Trigger animation for resource regeneration
                 TriggerAnimationResourceRegeneration(playerWorldPos, "Heavy marker charge");
@@ -1390,7 +1391,7 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
                 
                 // Trigger audio event for resource regeneration
                 Vector3 playerWorldPos = GetWorldPositionForAudio(playerManager.currentTilePosition);
-                TriggerAudioEvent(Enumerations.GameAudioEvent.ResourceRegeneration, playerWorldPos, 0.8f);
+                TriggerAudioEvent(GameAudioEvent.ResourceRegeneration, playerWorldPos, 0.8f);
                 
                 // Trigger animation for resource regeneration
                 TriggerAnimationResourceRegeneration(playerWorldPos, "Prime marker charge");
@@ -1586,9 +1587,9 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
     public void ValidateCurrentMode()
     {
         // If currently in Prime mode but prime markers are not available, switch to Light mode
-        if (currentMarkerMode == Enumerations.MarkerMode.Prime && maxPrimeMarkerCharges <= 0)
+        if (currentMarkerMode == MarkerMode.Prime && maxPrimeMarkerCharges <= 0)
         {
-            SetMode(Enumerations.MarkerMode.Light);
+            SetMode(MarkerMode.Light);
             if (EnableDebugLogs)
             {
                 this.Log("Prime mode was active but prime markers are not available. Switched to Light mode.", EnableDebugLogs);
@@ -1607,7 +1608,7 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
         currentPrimeMarkerCharges = maxPrimeMarkerCharges;
         
         // Reset marker mode
-        currentMarkerMode = Enumerations.MarkerMode.Light;
+        currentMarkerMode = MarkerMode.Light;
         
         // Clear all markers
         if (markerSystem != null)

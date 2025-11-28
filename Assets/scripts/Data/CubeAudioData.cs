@@ -1,11 +1,12 @@
 using System;
 using UnityEngine;
+using static Enumerations;
 
 [Serializable]
 public class CubeAudioData
 {
     [Header("Cube Type Configuration")]
-    public Enumerations.CubeType cubeType = Enumerations.CubeType.Unit;
+    public CubeType cubeType = CubeType.Unit;
     
     [Header("Landing Sounds")]
     public AudioClipSet landingSounds = new AudioClipSet();
