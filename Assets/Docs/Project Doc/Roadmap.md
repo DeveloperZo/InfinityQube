@@ -55,22 +55,17 @@ This roadmap outlines the development path from current production-ready state t
 - **Dependencies**: None (foundational system)
 - **Tasks**:
   - [ ] Extend WaveData ScriptableObject with paired wave fields (pairID, isPrimaryWave, markerSpawnRules, inheritanceDelay)
-  - [ ] **Update StageDB/StageData** to support paired wave configuration and validation
+  - [ ] Should be no need to **Update StageDB/StageData** to support paired wave configuration and validation
   - [ ] Implement marker position recording system in GridManager/PlayerActionManager
-  - [ ] Create wave inheritance system in WaveManager (convert marker positions to cube spawns)
+  - [ ] Ensure wave manager alternates between wave and mirror wave
   - [ ] Implement marker-to-cube conversion rules (Light→Unit, Heavy→Recursion, Prime→Prime, Infinity→Infinity)
-  - [ ] Add overlap resolution system for inherited vs base spawns
-  - [ ] Create ghost preview system for future spawn positions
   - [ ] Add visual feedback (placement echo, inheritance trail, type indicators)
   - [ ] Update debug panels for paired wave visualization
   - [ ] Integration testing with existing wave system
-  - [ ] **Migration path for existing stage data** (update existing 3 stages to paired wave format)
 - **Acceptance Criteria**:
-  - ✅ Can create WaveData with pairID and isPrimaryWave fields
   - ✅ Marker placements in Wave A are recorded and visible in debug panel
   - ✅ Wave B spawns cubes at recorded marker positions from Wave A
   - ✅ Marker-to-cube conversion works correctly (Light→Unit, Heavy→Recursion, Prime→Prime)
-  - ✅ Ghost previews show future spawn positions before Wave B starts
   - ✅ Visual feedback clearly shows inheritance connections
   - ✅ Existing 3 stages can be loaded and played with paired waves
 - **Playtesting Checkpoint**:

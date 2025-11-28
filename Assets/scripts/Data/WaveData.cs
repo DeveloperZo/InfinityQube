@@ -75,7 +75,4 @@ public class MarkerSpawnRules
     
     [Tooltip("If true, Infinity markers from the previous wave spawn Infinity cubes in the mirrored wave")]
     public bool infinitySpawnsInfinity = true;
-    
-    [Tooltip("If true, inherited spawns can overlap with base spawns. If false, inherited spawns replace base spawns at same positions.")]
-    public bool allowOverlap = false;
 }

@@ -560,16 +560,8 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
                 continue;
             }
 
-            // Check if this normalized position was already used (only if allowOverlap is false)
-            if (!rules.allowOverlap && spawnedPositions.Contains(normalizedPos))
-            {
-                // Position collision - but we still need to spawn this cube
-                // Allow overlap to preserve marker count
-                DebugLog($"[PairedWave] Position collision at wave ({normalizedPos.x}, {normalizedPos.y}), but allowing overlap to preserve marker count");
-            }
-
-CubeType cubeType = markerToCubeType[originalPos];
-            if (SpawnInheritedCubeAtNormalizedPosition(normalizedPos, cubeType, true)) // Always allow overlap to preserve count
+            CubeType cubeType = markerToCubeType[originalPos];
+            if (SpawnInheritedCubeAtNormalizedPosition(normalizedPos, cubeType))
             {
                 inheritedCount++;
                 spawnedPositions.Add(normalizedPos);
@@ -596,8 +588,9 @@ CubeType cubeType = markerToCubeType[originalPos];
     /// Spawns a single inherited cube at the normalized wave position.
     /// Position is already normalized to wave coordinates (0 to GridHeight-1).
     /// SpawnCube will convert this to grid coordinates and spawn at top of grid.
+    /// Always spawns cubes even if position overlaps with existing cubes (preserves 1:1 marker mapping).
     /// </summary>
-    private bool SpawnInheritedCubeAtNormalizedPosition(Vector2Int normalizedPosition, CubeType cubeType, bool allowOverlap)
+    private bool SpawnInheritedCubeAtNormalizedPosition(Vector2Int normalizedPosition, CubeType cubeType)
     {
         var wave = CurrentWave;
         if (wave == null || grid == null)
@@ -613,7 +606,7 @@ CubeType cubeType = markerToCubeType[originalPos];
             return false;
         }
 
-        // Check for overlap with existing cubes (check at the grid position where it will spawn)
+        // Calculate the final grid position where the cube will spawn
         // SpawnCube will convert wave Y to grid Y, so we need to calculate the final grid position
         // If normalizedPosition.y exceeds GridHeight, we need to calculate grid position differently
         var waveHeight = wave.GridHeight;
@@ -638,15 +631,6 @@ CubeType cubeType = markerToCubeType[originalPos];
         
         Vector2Int finalGridPosition = new Vector2Int(normalizedPosition.x, finalGridY);
         
-        bool hasOverlap = HasCubeAtPosition(finalGridPosition);
-        
-        if (hasOverlap && !allowOverlap)
-        {
-            // Overlap not allowed - skip this spawn
-            DebugLog($"[PairedWave] Skipping inherited cube at wave ({normalizedPosition.x}, {normalizedPosition.y}) -> final grid ({finalGridPosition.x}, {finalGridPosition.y}) due to overlap");
-            return false;
-        }
-
         // Create cube data with normalized wave coordinates
         // If position exceeds GridHeight, we need to spawn directly at calculated grid position
         // Otherwise, SpawnCube will handle the conversion
@@ -750,21 +734,6 @@ CubeType cubeType = markerToCubeType[originalPos];
 
         DebugLog($"[PairedWave] Normalized {markerPositions.Count} markers across {markersByColumn.Count} columns (wave GridHeight: {wave.GridHeight})");
         return normalizedMap;
-    }
-
-    /// <summary>
-    /// Checks if there's already a cube at the specified position.
-    /// </summary>
-    private bool HasCubeAtPosition(Vector2Int position)
-    {
-        foreach (var cube in activeCubes)
-        {
-            if (cube != null && cube.position == position)
-            {
-                return true;
-            }
-        }
-        return false;
     }
 
     private void SpawnRandomCubes()
@@ -1551,110 +1520,6 @@ CubeType cubeType = markerToCubeType[originalPos];
     public int CurrentWaveIndex => currentWaveIndex;
     #endregion
 
-    #region Paired Wave System - Ghost Preview
-
-    /// <summary>
-    /// Gets preview positions for inherited cubes that will spawn in the mirrored version of this wave.
-    /// Returns list of normalized positions (in wave coordinates) and cube types for visualization.
-    /// Positions are normalized to wave's GridHeight constraints, matching actual spawn behavior.
-    /// </summary>
-    public List<GhostPreviewData> GetGhostPreviewPositions()
-    {
-        var previews = new List<GhostPreviewData>();
-        
-        if (CurrentWave == null) return previews;
-        
-        // Only show previews if this wave hasn't been mirrored yet and has markers recorded
-        bool hasBeenMirrored = GetHasBeenMirrored(CurrentWave);
-        if (hasBeenMirrored) return previews;
-
-        // Get recorded marker positions from current wave
-        var recordedPositions = GetPreviousWaveMarkers();
-        if (recordedPositions == null || recordedPositions.GetTotalMarkerCount() == 0)
-        {
-            return previews;
-        }
-
-        // Use current wave's spawn rules for preview
-        var rules = CurrentWave.markerSpawnRules;
-
-        // Collect all marker positions that will spawn cubes
-        List<Vector2Int> allMarkerPositions = new List<Vector2Int>();
-        Dictionary<Vector2Int, CubeType> markerToCubeType = new Dictionary<Vector2Int, CubeType>();
-        
-        if (rules.lightSpawnsUnit)
-        {
-            foreach (var pos in recordedPositions.lightMarkerPositions)
-            {
-                allMarkerPositions.Add(pos);
-                markerToCubeType[pos] = CubeType.Unit;
-            }
-        }
-        if (rules.heavySpawnsRecursion)
-        {
-            foreach (var pos in recordedPositions.heavyMarkerPositions)
-            {
-                allMarkerPositions.Add(pos);
-                markerToCubeType[pos] = CubeType.Recursion;
-            }
-        }
-        if (rules.primeSpawnsPrime)
-        {
-            foreach (var pos in recordedPositions.primeMarkerPositions)
-            {
-                allMarkerPositions.Add(pos);
-                markerToCubeType[pos] = CubeType.Prime;
-            }
-        }
-        if (rules.infinitySpawnsInfinity)
-        {
-            foreach (var pos in recordedPositions.infinityMarkerPositions)
-            {
-                allMarkerPositions.Add(pos);
-                markerToCubeType[pos] = CubeType.Infinity;
-            }
-        }
-
-        // Normalize all positions to wave constraints (same logic as SpawnInheritedCubes)
-        Dictionary<Vector2Int, Vector2Int> normalizedPositions = NormalizeMarkerPositionsToWaveConstraints(allMarkerPositions, CurrentWave);
-
-        // Generate previews with normalized positions
-        foreach (var originalPos in allMarkerPositions)
-        {
-            if (normalizedPositions.TryGetValue(originalPos, out Vector2Int normalizedPos))
-            {
-                // Convert normalized wave position to final grid position for preview
-                // Use same logic as SpawnInheritedCubeAtNormalizedPosition
-                var waveHeight = CurrentWave.GridHeight;
-                int finalGridY;
-                
-                if (normalizedPos.y < waveHeight)
-                {
-                    // Normal case: within wave constraints
-                    finalGridY = grid != null ? grid.Height - (waveHeight - normalizedPos.y) : normalizedPos.y;
-                }
-                else
-                {
-                    // Extended case: beyond wave GridHeight
-                    int offsetFromTop = normalizedPos.y - waveHeight;
-                    finalGridY = grid != null ? grid.Height - 1 - offsetFromTop : normalizedPos.y;
-                    finalGridY = Mathf.Max(0, finalGridY);
-                }
-                
-                Vector2Int previewGridPos = new Vector2Int(normalizedPos.x, finalGridY);
-                
-                previews.Add(new GhostPreviewData 
-                { 
-                    position = previewGridPos, // Grid position for visualization
-                    cubeType = markerToCubeType[originalPos]
-                });
-            }
-        }
-
-        return previews;
-    }
-
-    #endregion
 
     #region Public Methods
     public void AddCube(Vector2Int wavePosition, CubeType type)
@@ -1974,12 +1839,3 @@ public class RecordedMarkerPositions
     }
 }
 
-/// <summary>
-/// Data structure for ghost preview visualization of future cube spawns.
-/// </summary>
-[System.Serializable]
-public class GhostPreviewData
-{
-    public Vector2Int position;
-    public CubeType cubeType;
-}
