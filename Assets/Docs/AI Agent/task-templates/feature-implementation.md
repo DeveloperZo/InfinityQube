@@ -320,7 +320,7 @@ feature_scope:
 
 implementation_plan:
   foundation_phase:
-    - Add HeavyMarker enum to MarkerType
+    - Add RecursionMarker enum to MarkerType
     - Create heavy marker data structures
     - Implement basic placement logic
     

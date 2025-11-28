@@ -381,8 +381,8 @@ public class GameUI : MonoBehaviour
             {
                 // Check if any markers are placed
                 if (playerActionManager != null && 
-                    (playerActionManager.GetCurrentLightMarkers() > 0 || 
-                     playerActionManager.GetCurrentHeavyMarkers() > 0 || 
+                    (playerActionManager.GetCurrentUnitMarkers() > 0 || 
+                     playerActionManager.GetCurrentRecursionMarkers() > 0 || 
                      playerActionManager.GetCurrentPrimeMarkers() > 0))
                 {
                     return "Press ENTER to start wave";

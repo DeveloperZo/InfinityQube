@@ -59,7 +59,7 @@ public class FinalIntegrationTest : MonoBehaviour
         yield return TestLightMarkerPlacement();
         
         // Test 3: Heavy marker functionality (NEW - for recursion cubes)
-        yield return TestHeavyMarkerFunctionality();
+        yield return TestRecursionMarkerFunctionality();
         
         // Test 4: Prime marker area coverage (was area)
         yield return TestPrimeMarkerAreaCoverage();
@@ -71,7 +71,7 @@ public class FinalIntegrationTest : MonoBehaviour
         yield return TestCubeTerminology();
         
         // Test 7: Heavy marker + recursion cube interaction
-        yield return TestHeavyMarkerRecursionCubeInteraction();
+        yield return TestRecursionMarkerRecursionCubeInteraction();
         
         // Test 8: Corruption mechanics
         yield return TestCorruptionMechanics();
@@ -151,7 +151,7 @@ public class FinalIntegrationTest : MonoBehaviour
         AssertTrue(hasMarker, "Light marker detected at position");
         
         // Test marker count
-        int currentMarkers = playerActionManager.GetCurrentLightMarkers();
+        int currentMarkers = playerActionManager.GetCurrentUnitMarkers();
         AssertTrue(currentMarkers > 0, "Light marker count increased");
         
         // Test marker removal
@@ -167,26 +167,26 @@ public class FinalIntegrationTest : MonoBehaviour
     #endregion
 
     #region Test 3: Heavy marker functionality (NEW)
-    private IEnumerator TestHeavyMarkerFunctionality()
+    private IEnumerator TestRecursionMarkerFunctionality()
     {
         Log("Testing heavy marker functionality (NEW feature)...");
         
         Vector2Int testPos = new Vector2Int(3, 5);
         
         // Test heavy marker placement
-        bool placed = playerActionManager.PlaceHeavyMarker(testPos);
+        bool placed = playerActionManager.PlaceRecursionMarker(testPos);
         AssertTrue(placed, "Heavy marker placed successfully");
         
         // Test marker detection
-        bool hasMarker = playerActionManager.HasHeavyMarkerAt(testPos);
+        bool hasMarker = playerActionManager.HasRecursionMarkerAt(testPos);
         AssertTrue(hasMarker, "Heavy marker detected at position");
         
         // Test heavy marker visual differences from light markers
-        var heavyMarkers = markerSystem.HeavyMarkers;
-        AssertTrue(heavyMarkers.Count > 0, "Heavy markers queue not empty");
+        var RecursionMarkers = markerSystem.RecursionMarkers;
+        AssertTrue(RecursionMarkers.Count > 0, "Heavy markers queue not empty");
         
         // Test heavy marker removal
-        bool removed = playerActionManager.RemoveHeavyMarkerAt(testPos);
+        bool removed = playerActionManager.RemoveRecursionMarkerAt(testPos);
         AssertTrue(removed, "Heavy marker removed successfully");
         
         yield return new WaitForSeconds(testDelay);
@@ -288,7 +288,7 @@ public class FinalIntegrationTest : MonoBehaviour
     #endregion
 
     #region Test 7: Heavy marker + recursion cube interaction
-    private IEnumerator TestHeavyMarkerRecursionCubeInteraction()
+    private IEnumerator TestRecursionMarkerRecursionCubeInteraction()
     {
         Log("Testing heavy marker + recursion cube interaction...");
         
@@ -302,15 +302,15 @@ public class FinalIntegrationTest : MonoBehaviour
         AssertTrue(recursionCube.type == CubeType.Recursion, "Cube type is Recursion");
         
         // Place heavy marker at cube position
-        bool heavyPlaced = playerActionManager.PlaceHeavyMarker(pos);
+        bool heavyPlaced = playerActionManager.PlaceRecursionMarker(pos);
         AssertTrue(heavyPlaced, "Heavy marker placed for recursion cube interaction");
         
         // Test heavy marker can interact with recursion cubes
-        bool hasHeavyMarker = playerActionManager.HasHeavyMarkerAt(pos);
-        AssertTrue(hasHeavyMarker, "Heavy marker detected at recursion cube position");
+        bool hasRecursionMarker = playerActionManager.HasRecursionMarkerAt(pos);
+        AssertTrue(hasRecursionMarker, "Heavy marker detected at recursion cube position");
         
         // Cleanup
-        playerActionManager.RemoveHeavyMarkerAt(pos);
+        playerActionManager.RemoveRecursionMarkerAt(pos);
         if (recursionCubeObj != null) Destroy(recursionCubeObj);
         
         yield return new WaitForSeconds(testDelay);

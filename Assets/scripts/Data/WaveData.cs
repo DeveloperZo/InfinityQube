@@ -22,8 +22,8 @@ public class WaveData : ScriptableObject
     public int maxPrimeMarkerCount;
 
     [Tooltip("0 = Heavy markers disabled")]
-    public int maxHeavyMarkerCharge;
-    public int maxHeavyMarkerCount;
+    public int maxRecursionMarkerCharge;
+    public int maxRecursionMarkerCount;
 
     [Header("Wave Timing")]
     public float waveStartDelay;

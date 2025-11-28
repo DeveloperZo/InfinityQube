@@ -201,7 +201,7 @@ public class WavePrototyper : PrototypingPanelBase
             {
                 GUILayout.Label($"  UnitMarker: {markers.lightMarkerPositions.Count} → Unit cubes");
                 GUILayout.Label($"  PrimeMarker: {markers.primeMarkerPositions.Count} → Prime cubes");
-                GUILayout.Label($"  RecursionMarker: {markers.heavyMarkerPositions.Count} → Recursion cubes");
+                GUILayout.Label($"  RecursionMarker: {markers.RecursionMarkerPositions.Count} → Recursion cubes");
                 GUILayout.Label($"  InfinityMarker: {markers.infinityMarkerPositions.Count} → Infinity cubes");
             }
             

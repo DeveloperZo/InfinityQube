@@ -194,7 +194,7 @@ PlayerActionManager requires:
 ```csharp
 public enum GameAudioEvent {
     CubeLanded, CubeCaptured, CubeEscaped,
-    LightMarkerPlaced, PrimeMarkerPlaced, HeavyMarkerPlaced,
+    LightMarkerPlaced, PrimeMarkerPlaced, RecursionMarkerPlaced,
     // etc.
 }
 ```
@@ -411,7 +411,7 @@ WaveManager, GridManager, PlayerManager, AudioManager, StageManager
 **Marker Classes**: Mixed naming
 ```csharp
 LightMarker // Class in PlayerActionManager.cs
-HeavyMarker // Class in PlayerActionManager.cs
+RecursionMarker // Class in PlayerActionManager.cs
 PrimeMarker // Class in PlayerActionManager.cs
 // But also:
 PlayerMarkerSystem // Separate manager

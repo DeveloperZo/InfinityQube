@@ -375,12 +375,20 @@ public class PlayerManager : MonoBehaviour, IManagerDebugInterface
 
         currentTilePosition = newPosition;
 
-        // Set hover on new tile
+        // Set hover on new tile with current marker mode color
         if (IsValidTilePosition(newPosition))
         {
             currentHoveredTile = grid.tiles[newPosition.x, newPosition.y];
             if (currentHoveredTile != null)
             {
+                // Set hover color based on current marker mode
+                var actionManager = FindFirstObjectByType<PlayerActionManager>();
+                if (actionManager != null)
+                {
+                    Color hoverColor = PlayerActionManager.GetMarkerModeColor(actionManager.GetCurrentMode());
+                    currentHoveredTile.SetHoverColor(hoverColor);
+                }
+                
                 currentHoveredTile.SetPlayerHover(true);
             }
         }

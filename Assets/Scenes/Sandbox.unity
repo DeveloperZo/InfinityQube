@@ -12608,22 +12608,22 @@ MonoBehaviour:
   audioManager: {fileID: 336190004}
   inputFeedbackManager: {fileID: 0}
   animationTriggerManager: {fileID: 0}
-  maxLightMarkers: 0
-  lightMarkersPlaced: 0
-  currentLightMarkers: 0
+  maxUnitMarkers: 0
+  UnitMarkersPlaced: 0
+  currentUnitMarkers: 0
   maxLightMarkerCharges: 0
   currentLightMarkerCharges: 0
   lightMarkerCooldown: 3
   lightMarkerMaterial: {fileID: 0}
   lastLightMarkerTime: 0
-  maxHeavyMarkers: 0
-  heavyMarkersPlaced: 0
-  currentHeavyMarkers: 0
-  maxHeavyMarkerCharges: 0
-  currentHeavyMarkerCharges: 0
-  heavyMarkerCooldown: 0
-  heavyMarkerMaterial: {fileID: 0}
-  lastHeavyMarkerTime: 0
+  maxRecursionMarkers: 0
+  RecursionMarkersPlaced: 0
+  currentRecursionMarkers: 0
+  maxRecursionMarkerCharges: 0
+  currentRecursionMarkerCharges: 0
+  RecursionMarkerCooldown: 0
+  RecursionMarkerMaterial: {fileID: 0}
+  lastRecursionMarkerTime: 0
   maxPrimeMarkers: 0
   primeMarkersPlaced: 0
   currentPrimeMarkers: 0
@@ -12635,7 +12635,7 @@ MonoBehaviour:
   primeMarkerOnGridLimit: 1
   primeMarkerMaterial: {fileID: 0}
   lightMarkerKey: 102
-  heavyMarkerKey: 118
+  RecursionMarkerKey: 118
   primeMarkerKey: 103
   triggerLightKey: 114
   triggerHeavyKey: 121
@@ -12672,14 +12672,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7f6f8018c7fc50349a90a75c1febe4d7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  lightMarkerSegments:
+  UnitMarkersegments:
   - {fileID: 1020758102}
   - {fileID: 1839016793}
   - {fileID: 1672014119}
   - {fileID: 1385391351}
   - {fileID: 1232276759}
   - {fileID: 697628132}
-  heavyMarkerSegments:
+  RecursionMarkerSegments:
   - {fileID: 0}
   - {fileID: 0}
   - {fileID: 0}
@@ -12706,7 +12706,7 @@ MonoBehaviour:
   segmentChargingColor: {r: 0.5, g: 0.5, b: 1, a: 0.8}
   segmentFirstChargeColor: {r: 0.7, g: 0.7, b: 1, a: 0.6}
   segmentEmptyColor: {r: 0.3, g: 0.3, b: 0.3, a: 0.3}
-  heavyMarkerColor: {r: 1, g: 0.3, b: 0.3, a: 1}
+  RecursionMarkerColor: {r: 1, g: 0.3, b: 0.3, a: 1}
   primeMarkerColor: {r: 0.8, g: 0.2, b: 1, a: 1}
   modeColors:
   - {r: 1, g: 0.3, b: 0.3, a: 1}
@@ -12715,7 +12715,7 @@ MonoBehaviour:
   playerActionManager: {fileID: 8656265648072650656}
   animationTriggerManager: {fileID: 0}
   lightMarkerCooldownTime: 3
-  heavyMarkerCooldownTime: 5
+  RecursionMarkerCooldownTime: 5
   primeMarkerCooldownTime: 4
   lightCharges: 0
   lightMaxCharges: 0

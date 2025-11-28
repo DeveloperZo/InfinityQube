@@ -37,7 +37,7 @@ public enum GameAudioEvent
     // === MARKER EVENTS ===
     LightMarkerPlaced,    // F key marker placement
     PrimeMarkerPlaced,    // G key marker placement  
-    HeavyMarkerPlaced,    // V key marker placement
+    RecursionMarkerPlaced,    // V key marker placement
     MarkerTriggered,      // When marker activates/detonates
     MarkerHit,            // When marker successfully hits cube
     MarkerMiss,           // When marker triggers but misses
@@ -269,12 +269,12 @@ public class PlayerActionManager : MonoBehaviour
     }
     
     // In existing TriggerMarkers method:
-    public void TriggerLightMarkers()
+    public void TriggerUnitMarkers()
     {
         // Existing trigger logic...
         
         // NEW: Trigger marker activation audio for each marker
-        foreach (var marker in lightMarkers)
+        foreach (var marker in UnitMarkers)
         {
             Vector3 worldPos = GridToWorldPosition(marker.position);
             AudioManager.Instance.TriggerAudioEvent(

@@ -218,7 +218,7 @@ public class WaveAnalyzer
         foreach (var cube in recursionCubes)
         {
             info.totalHitsRequired += cube.level; // Each level requires one hit
-            info.heavyMarkersRequired += Mathf.CeilToInt(cube.level / 2f); // Heavy markers do 2 damage
+            info.RecursionMarkersRequired += Mathf.CeilToInt(cube.level / 2f); // Heavy markers do 2 damage
         }
         
         return info;
@@ -236,7 +236,7 @@ public class WaveAnalyzer
         // Priority 1: Handle infinity cubes (they cause game over if they escape)
         foreach (var infinityCube in analysis.infinityCubes)
         {
-            strategy.lightMarkersForInfinity++;
+            strategy.UnitMarkersForInfinity++;
         }
         
         // Priority 2: Optimize prime cube captures for area clearing
@@ -256,29 +256,29 @@ public class WaveAnalyzer
             else
             {
                 // Use light marker on the prime cube itself
-                strategy.lightMarkersForPrime++;
+                strategy.UnitMarkersForPrime++;
             }
         }
         
         // Priority 3: Handle recursion cubes
-        strategy.heavyMarkersForRecursion = analysis.recursionCubeInfo.heavyMarkersRequired;
+        strategy.RecursionMarkersForRecursion = analysis.recursionCubeInfo.RecursionMarkersRequired;
         
         // Priority 4: Remaining unit cubes
         int unhandledUnits = analysis.unitCubes.Count - analysis.primeClearableUnits;
-        strategy.lightMarkersForUnits = Mathf.Max(0, unhandledUnits);
+        strategy.UnitMarkersForUnits = Mathf.Max(0, unhandledUnits);
         
         // Calculate totals
-        strategy.totalLightMarkers = strategy.lightMarkersForInfinity + 
-                                    strategy.lightMarkersForPrime + 
-                                    strategy.lightMarkersForUnits;
+        strategy.totalUnitMarkers = strategy.UnitMarkersForInfinity + 
+                                    strategy.UnitMarkersForPrime + 
+                                    strategy.UnitMarkersForUnits;
         strategy.totalPrimeMarkers = strategy.primeMarkersForArea;
-        strategy.totalHeavyMarkers = strategy.heavyMarkersForRecursion;
-        strategy.totalMarkersNeeded = strategy.totalLightMarkers + 
+        strategy.totalRecursionMarkers = strategy.RecursionMarkersForRecursion;
+        strategy.totalMarkersNeeded = strategy.totalUnitMarkers + 
                                     strategy.totalPrimeMarkers + 
-                                    strategy.totalHeavyMarkers;
+                                    strategy.totalRecursionMarkers;
         
         DebugLog("CalculateOptimalMarkerStrategy", 
-            $"Strategy - Light: {strategy.totalLightMarkers}, Prime: {strategy.totalPrimeMarkers}, Heavy: {strategy.totalHeavyMarkers}");
+            $"Strategy - Light: {strategy.totalUnitMarkers}, Prime: {strategy.totalPrimeMarkers}, Heavy: {strategy.totalRecursionMarkers}");
         
         return strategy;
     }
@@ -304,10 +304,10 @@ public class WaveAnalyzer
         capturedCubes += analysis.primeClearableUnits;
         
         // Prime cubes captured
-        capturedCubes += strategy.lightMarkersForPrime + strategy.primeMarkersForArea;
+        capturedCubes += strategy.UnitMarkersForPrime + strategy.primeMarkersForArea;
         
         // Infinity cubes captured (must use markers)
-        capturedCubes += strategy.lightMarkersForInfinity;
+        capturedCubes += strategy.UnitMarkersForInfinity;
         
         // Recursion cubes captured
         capturedCubes += analysis.recursionCubes.Count; // Assuming all are handled
@@ -336,7 +336,7 @@ public class WaveAnalyzer
         int availablePrimeCharges = PRIME_MARKER_BASE_CHARGE * 2; // Assume 2 prime markers max
         int availableHeavyCharges = HEAVY_MARKER_BASE_CHARGE * 1; // Assume 1 heavy marker max
         
-        if (strategy.totalLightMarkers > availableLightCharges)
+        if (strategy.totalUnitMarkers > availableLightCharges)
         {
             DebugLog("DetermineWaveSolvability", "Not enough light marker charges");
             return false;
@@ -348,7 +348,7 @@ public class WaveAnalyzer
             return false;
         }
         
-        if (strategy.totalHeavyMarkers > availableHeavyCharges)
+        if (strategy.totalRecursionMarkers > availableHeavyCharges)
         {
             DebugLog("DetermineWaveSolvability", "Not enough heavy marker charges");
             return false;
@@ -474,7 +474,7 @@ public class WaveAnalyzer
     private class RecursionCubeInfo
     {
         public int totalHitsRequired = 0;
-        public int heavyMarkersRequired = 0;
+        public int RecursionMarkersRequired = 0;
     }
     
     /// <summary>
@@ -483,20 +483,20 @@ public class WaveAnalyzer
     private class MarkerStrategy
     {
         // Light marker allocation
-        public int lightMarkersForUnits = 0;
-        public int lightMarkersForPrime = 0;
-        public int lightMarkersForInfinity = 0;
+        public int UnitMarkersForUnits = 0;
+        public int UnitMarkersForPrime = 0;
+        public int UnitMarkersForInfinity = 0;
         
         // Prime marker allocation
         public int primeMarkersForArea = 0;
         
         // Heavy marker allocation
-        public int heavyMarkersForRecursion = 0;
+        public int RecursionMarkersForRecursion = 0;
         
         // Totals
-        public int totalLightMarkers = 0;
+        public int totalUnitMarkers = 0;
         public int totalPrimeMarkers = 0;
-        public int totalHeavyMarkers = 0;
+        public int totalRecursionMarkers = 0;
         public int totalMarkersNeeded = 0;
     }
     #endregion

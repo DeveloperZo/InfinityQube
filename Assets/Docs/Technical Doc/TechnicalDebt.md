@@ -50,8 +50,8 @@ Assets/scripts/Managers/PlayerMarkerSystem.cs
 3. **Remove Obsolete Properties**:
    ```csharp
    // REMOVE after validation
-   [System.Obsolete("Use maxLightMarkers instead")]
-   public int maxIndividualMarkers => maxLightMarkers;
+   [System.Obsolete("Use maxUnitMarkers instead")]
+   public int maxIndividualMarkers => maxUnitMarkers;
    ```
 
 4. **Remove Obsolete Enum Aliases**:

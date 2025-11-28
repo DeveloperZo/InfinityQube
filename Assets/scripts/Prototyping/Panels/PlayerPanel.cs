@@ -132,7 +132,7 @@ public class PlayerPanel : PrototypingPanelBase
             DrawMarkerTypeSettings("UnitMarker", 
                 ref actionManager.maxLightMarkerCharges, 
                 ref actionManager.lightMarkerCooldown,
-                ref actionManager.maxLightMarkers,
+                ref actionManager.maxUnitMarkers,
                 actionManager.GetLightMarkerCooldownRemaining());
             
             // PrimeMarker settings
@@ -144,10 +144,10 @@ public class PlayerPanel : PrototypingPanelBase
             
             // RecursionMarker settings
             DrawMarkerTypeSettings("RecursionMarker", 
-                ref actionManager.maxHeavyMarkerCharges, 
-                ref actionManager.heavyMarkerCooldown,
-                ref actionManager.maxHeavyMarkers,
-                actionManager.GetHeavyMarkerCooldownRemaining());
+                ref actionManager.maxRecursionMarkerCharges, 
+                ref actionManager.RecursionMarkerCooldown,
+                ref actionManager.maxRecursionMarkers,
+                actionManager.GetRecursionMarkerCooldownRemaining());
             
             // InfinityMarker settings
             DrawMarkerTypeSettings("InfinityMarker", 
@@ -223,21 +223,21 @@ public class PlayerPanel : PrototypingPanelBase
         {
             // Store current values
             storedLightCooldown = actionManager.lightMarkerCooldown;
-            storedHeavyCooldown = actionManager.heavyMarkerCooldown;
+            storedHeavyCooldown = actionManager.RecursionMarkerCooldown;
             storedPrimeCooldown = actionManager.primeMarkerCooldown;
             storedLightCharges = actionManager.maxLightMarkerCharges;
-            storedHeavyCharges = actionManager.maxHeavyMarkerCharges;
+            storedHeavyCharges = actionManager.maxRecursionMarkerCharges;
             storedPrimeCharges = actionManager.maxPrimeMarkerCharges;
             
             // Set unlimited
             actionManager.lightMarkerCooldown = 0;
-            actionManager.heavyMarkerCooldown = 0;
+            actionManager.RecursionMarkerCooldown = 0;
             actionManager.primeMarkerCooldown = 0;
             actionManager.maxLightMarkerCharges = 99;
-            actionManager.maxHeavyMarkerCharges = 99;
+            actionManager.maxRecursionMarkerCharges = 99;
             actionManager.maxPrimeMarkerCharges = 99;
-            actionManager.maxLightMarkers = 99;
-            actionManager.maxHeavyMarkers = 99;
+            actionManager.maxUnitMarkers = 99;
+            actionManager.maxRecursionMarkers = 99;
             actionManager.maxPrimeMarkers = 99;
             
             RefillAllCharges();
@@ -247,10 +247,10 @@ public class PlayerPanel : PrototypingPanelBase
         {
             // Restore values
             actionManager.lightMarkerCooldown = storedLightCooldown;
-            actionManager.heavyMarkerCooldown = storedHeavyCooldown;
+            actionManager.RecursionMarkerCooldown = storedHeavyCooldown;
             actionManager.primeMarkerCooldown = storedPrimeCooldown;
             actionManager.maxLightMarkerCharges = storedLightCharges;
-            actionManager.maxHeavyMarkerCharges = storedHeavyCharges;
+            actionManager.maxRecursionMarkerCharges = storedHeavyCharges;
             actionManager.maxPrimeMarkerCharges = storedPrimeCharges;
             
             LogAction("Unlimited mode OFF");
@@ -261,7 +261,7 @@ public class PlayerPanel : PrototypingPanelBase
     {
         if (actionManager == null) return;
         actionManager.lightMarkerCooldown = value;
-        actionManager.heavyMarkerCooldown = value;
+        actionManager.RecursionMarkerCooldown = value;
         actionManager.primeMarkerCooldown = value;
         LogAction($"All cooldowns set to {value}");
     }
@@ -270,7 +270,7 @@ public class PlayerPanel : PrototypingPanelBase
     {
         if (actionManager == null) return;
         actionManager.RefillLightMarkerCharges();
-        actionManager.RefillHeavyMarkerCharges();
+        actionManager.RefillRecursionMarkerCharges();
         actionManager.RefillPrimeMarkerCharges();
         LogAction("All charges refilled");
     }
@@ -280,13 +280,13 @@ public class PlayerPanel : PrototypingPanelBase
         if (actionManager == null) return;
         unlimitedMode = false;
         actionManager.lightMarkerCooldown = 5f;
-        actionManager.heavyMarkerCooldown = 5f;
+        actionManager.RecursionMarkerCooldown = 5f;
         actionManager.primeMarkerCooldown = 5f;
         actionManager.maxLightMarkerCharges = 3;
-        actionManager.maxHeavyMarkerCharges = 2;
+        actionManager.maxRecursionMarkerCharges = 2;
         actionManager.maxPrimeMarkerCharges = 2;
-        actionManager.maxLightMarkers = 3;
-        actionManager.maxHeavyMarkers = 2;
+        actionManager.maxUnitMarkers = 3;
+        actionManager.maxRecursionMarkers = 2;
         actionManager.maxPrimeMarkers = 2;
         LogAction("Reset to defaults");
     }
@@ -377,7 +377,7 @@ public class PlayerPanel : PrototypingPanelBase
         switch (mode)
         {
             case MarkerMode.Unit: markerList = markers.lightMarkerPositions; break;
-            case MarkerMode.Recursion: markerList = markers.heavyMarkerPositions; break;
+            case MarkerMode.Recursion: markerList = markers.RecursionMarkerPositions; break;
             case MarkerMode.Prime: markerList = markers.primeMarkerPositions; break;
         }
         

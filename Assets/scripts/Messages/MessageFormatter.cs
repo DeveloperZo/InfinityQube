@@ -409,8 +409,8 @@ public static class MessageFormatter
         string messageText = message.Message.ToLower();
 
         // Check for marker-related messages
-        if (messageText.Contains("light marker") && !capabilities.CanUseLightMarkers) return false;
-        if (messageText.Contains("heavy marker") && !capabilities.CanUseHeavyMarkers) return false;
+        if (messageText.Contains("light marker") && !capabilities.CanUseUnitMarkers) return false;
+        if (messageText.Contains("heavy marker") && !capabilities.CanUseRecursionMarkers) return false;
         if (messageText.Contains("prime marker") && !capabilities.CanUsePrimeMarkers) return false;
         if (messageText.Contains("cube marker") && !capabilities.CanUseCubeMarkers) return false;
 
@@ -641,8 +641,8 @@ public class ProgressiveDisclosureContext
 public class PlayerCapabilities
 {
     public bool CanMove = true;
-    public bool CanUseLightMarkers = true;
-    public bool CanUseHeavyMarkers = false;
+    public bool CanUseUnitMarkers = true;
+    public bool CanUseRecursionMarkers = false;
     public bool CanUsePrimeMarkers = false;
     public bool CanUseCubeMarkers = false;
     public PlayerExperienceLevel ExperienceLevel = PlayerExperienceLevel.Beginner;

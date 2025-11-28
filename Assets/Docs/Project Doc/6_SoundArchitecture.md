@@ -121,7 +121,7 @@ The system recognizes multiple categories of audio events that correspond to dif
 **Marker Events:**
 - **LightMarkerPlaced**: When a light marker is placed on the grid
 - **PrimeMarkerPlaced**: When a prime marker is placed on the grid
-- **HeavyMarkerPlaced**: When a heavy marker is placed on the grid
+- **RecursionMarkerPlaced**: When a heavy marker is placed on the grid
 - **MarkerTriggered**: When any marker activates and affects cubes
 
 **Wave and Stage Events:**

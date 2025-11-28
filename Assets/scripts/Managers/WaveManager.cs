@@ -498,7 +498,7 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
         // Count total markers that should spawn cubes
         int totalMarkersToSpawn = 0;
         if (rules.lightSpawnsUnit) totalMarkersToSpawn += recordedPositions.lightMarkerPositions.Count;
-        if (rules.heavySpawnsRecursion) totalMarkersToSpawn += recordedPositions.heavyMarkerPositions.Count;
+        if (rules.heavySpawnsRecursion) totalMarkersToSpawn += recordedPositions.RecursionMarkerPositions.Count;
         if (rules.primeSpawnsPrime) totalMarkersToSpawn += recordedPositions.primeMarkerPositions.Count;
         if (rules.infinitySpawnsInfinity) totalMarkersToSpawn += recordedPositions.infinityMarkerPositions.Count;
         
@@ -519,7 +519,7 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
         }
         if (rules.heavySpawnsRecursion)
         {
-            foreach (var pos in recordedPositions.heavyMarkerPositions)
+            foreach (var pos in recordedPositions.RecursionMarkerPositions)
             {
                 allMarkerPositions.Add(new Vector2Int(pos.x, pos.y));
                 markerToCubeType[pos] = CubeType.Recursion;
@@ -1289,8 +1289,11 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
         if (player != null && !debugMode)
         {
             player.enabled = true;
-            playerActionManager.maxLightMarkers = waveConfiguration[currentWaveIndex].maxLightMarkerCount;
+            playerActionManager.maxUnitMarkers = waveConfiguration[currentWaveIndex].maxLightMarkerCount;
             playerActionManager.maxLightMarkerCharges = waveConfiguration[currentWaveIndex].maxLightMarkerCharge;
+
+            playerActionManager.maxRecursionMarkers = waveConfiguration[currentWaveIndex].maxRecursionMarkerCount;
+            playerActionManager.maxRecursionMarkerCharges = waveConfiguration[currentWaveIndex].maxRecursionMarkerCharge;
 
             playerActionManager.maxPrimeMarkers = waveConfiguration[currentWaveIndex].maxPrimeMarkerCount;
             playerActionManager.maxPrimeMarkerCharges = waveConfiguration[currentWaveIndex].maxPrimeMarkerCharge;
@@ -1392,7 +1395,7 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
         }
         
         // Recursion markers → Recursion cubes
-        foreach (var pos in markers.heavyMarkerPositions)
+        foreach (var pos in markers.RecursionMarkerPositions)
         {
             int spawnY = gridTop - NormalizeMarkerY(pos.y, markers);
             int spawnX = Mathf.Clamp(pos.x, 0, grid.Width - 1);
@@ -1433,7 +1436,7 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
         int maxY = int.MinValue;
         
         foreach (var pos in allMarkers.lightMarkerPositions) { minY = Mathf.Min(minY, pos.y); maxY = Mathf.Max(maxY, pos.y); }
-        foreach (var pos in allMarkers.heavyMarkerPositions) { minY = Mathf.Min(minY, pos.y); maxY = Mathf.Max(maxY, pos.y); }
+        foreach (var pos in allMarkers.RecursionMarkerPositions) { minY = Mathf.Min(minY, pos.y); maxY = Mathf.Max(maxY, pos.y); }
         foreach (var pos in allMarkers.primeMarkerPositions) { minY = Mathf.Min(minY, pos.y); maxY = Mathf.Max(maxY, pos.y); }
         foreach (var pos in allMarkers.infinityMarkerPositions) { minY = Mathf.Min(minY, pos.y); maxY = Mathf.Max(maxY, pos.y); }
         
@@ -1613,7 +1616,7 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
         if (recordedPositions != null)
         {
             debugData["Recorded Light Markers"] = recordedPositions.lightMarkerPositions.Count;
-            debugData["Recorded Heavy Markers"] = recordedPositions.heavyMarkerPositions.Count;
+            debugData["Recorded Heavy Markers"] = recordedPositions.RecursionMarkerPositions.Count;
             debugData["Recorded Prime Markers"] = recordedPositions.primeMarkerPositions.Count;
             debugData["Recorded Infinity Markers"] = recordedPositions.infinityMarkerPositions.Count;
             debugData["Total Recorded Markers"] = recordedPositions.GetTotalMarkerCount();
@@ -1783,7 +1786,7 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
 public class RecordedMarkerPositions
 {
     public List<Vector2Int> lightMarkerPositions = new List<Vector2Int>();
-    public List<Vector2Int> heavyMarkerPositions = new List<Vector2Int>();
+    public List<Vector2Int> RecursionMarkerPositions = new List<Vector2Int>();
     public List<Vector2Int> primeMarkerPositions = new List<Vector2Int>();
     public List<Vector2Int> infinityMarkerPositions = new List<Vector2Int>();
 
@@ -1801,8 +1804,8 @@ public class RecordedMarkerPositions
                     lightMarkerPositions.Add(position);
                 break;
             case MarkerMode.Recursion:
-                if (!heavyMarkerPositions.Contains(position))
-                    heavyMarkerPositions.Add(position);
+                if (!RecursionMarkerPositions.Contains(position))
+                    RecursionMarkerPositions.Add(position);
                 break;
             case MarkerMode.Prime:
                 if (!primeMarkerPositions.Contains(position))
@@ -1822,7 +1825,7 @@ public class RecordedMarkerPositions
             case MarkerMode.Unit:
                 return lightMarkerPositions.Remove(position);
             case MarkerMode.Recursion:
-                return heavyMarkerPositions.Remove(position);
+                return RecursionMarkerPositions.Remove(position);
             case MarkerMode.Prime:
                 return primeMarkerPositions.Remove(position);
             case MarkerMode.Infinity:
@@ -1834,7 +1837,7 @@ public class RecordedMarkerPositions
 
     public int GetTotalMarkerCount()
     {
-        return lightMarkerPositions.Count + heavyMarkerPositions.Count + 
+        return lightMarkerPositions.Count + RecursionMarkerPositions.Count + 
                primeMarkerPositions.Count + infinityMarkerPositions.Count;
     }
 }

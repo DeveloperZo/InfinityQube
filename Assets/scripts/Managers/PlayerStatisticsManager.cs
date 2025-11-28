@@ -436,7 +436,7 @@ public class PlayerStatisticsManager : MonoBehaviour, IManagerDebugInterface
                 currentSession.markerData.lightMarkerPlacements.Add(placementEvent);
                 break;
             case "heavy":
-                currentSession.markerData.heavyMarkerPlacements.Add(placementEvent);
+                currentSession.markerData.RecursionMarkerPlacements.Add(placementEvent);
                 break;
             case "prime":
                 currentSession.markerData.primeMarkerPlacements.Add(placementEvent);
@@ -469,10 +469,10 @@ public class PlayerStatisticsManager : MonoBehaviour, IManagerDebugInterface
                 }
                 break;
             case "heavy":
-                placementEvent = currentSession.markerData.heavyMarkerPlacements.FirstOrDefault(x => x.position == position);
+                placementEvent = currentSession.markerData.RecursionMarkerPlacements.FirstOrDefault(x => x.position == position);
                 if (placementEvent != null)
                 {
-                    currentSession.markerData.heavyMarkerPlacements.Remove(placementEvent);
+                    currentSession.markerData.RecursionMarkerPlacements.Remove(placementEvent);
                 }
                 break;
             case "prime":
@@ -1278,7 +1278,7 @@ public class PlayerStatisticsManager : MonoBehaviour, IManagerDebugInterface
             ["Session Duration"] = GetSessionDuration(),
             ["Positions Recorded"] = currentSession?.movementData?.positionHistory?.Count ?? 0,
             ["Markers Placed"] = (currentSession?.markerData?.lightMarkerPlacements?.Count ?? 0) +
-                               (currentSession?.markerData?.heavyMarkerPlacements?.Count ?? 0) +
+                               (currentSession?.markerData?.RecursionMarkerPlacements?.Count ?? 0) +
                                (currentSession?.markerData?.primeMarkerPlacements?.Count ?? 0),
             ["Cubes Captured"] = currentSession?.cubeData?.captureEvents?.Count ?? 0,
             ["Tutorial Messages"] = currentSession?.tutorialData?.messageEvents?.Count ?? 0,

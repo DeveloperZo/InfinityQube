@@ -37,6 +37,7 @@ public class Tile : MonoBehaviour
     [SerializeField] private bool isPlayerOnTile = false;
     [SerializeField] private GameObject softHighlightObject;
     [SerializeField] private Material playerHoverMaterial;
+    [SerializeField] private Color currentHoverColor = new Color(0.5f, 0.6f, 0.7f, 0.5f); // Default: Unit blue-gray
     #endregion
 
     #region Component Delegates
@@ -362,8 +363,6 @@ public class Tile : MonoBehaviour
     {
         if (isPlayerOnTile == isHovering) return;
 
-        Debug.Log($"Tile ({x},{y}): SetPlayerHover({isHovering}) - hasMarker={HasMarker}, isBlackened={isBlackened}, hasDetonationPoint={hasDetonationPoint}");
-
         isPlayerOnTile = isHovering;
 
         if (isHovering && !HasMarker && !isBlackened && !hasDetonationPoint && !IsCorrupted)
@@ -376,15 +375,31 @@ public class Tile : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Updates the hover highlight color based on current marker mode.
+    /// Call this when the player's selected marker mode changes.
+    /// </summary>
+    public void SetHoverColor(Color color)
+    {
+        currentHoverColor = color;
+        
+        // Update existing highlight if visible
+        if (softHighlightObject != null && softHighlightObject.activeSelf)
+        {
+            Renderer highlightRenderer = softHighlightObject.GetComponent<Renderer>();
+            if (highlightRenderer != null)
+            {
+                highlightRenderer.material.color = color;
+            }
+        }
+    }
+
     private void ShowSoftHighlight()
     {
         if (isBlackened || HasMarker || hasDetonationPoint || IsCorrupted)
         {
-            Debug.Log($"Tile ({x},{y}): Cannot show highlight - isBlackened={isBlackened}, hasMarker={HasMarker}, hasDetonationPoint={hasDetonationPoint}, isCorrupted={IsCorrupted}");
             return;
         }
-
-        Debug.Log($"Tile ({x},{y}): Showing soft highlight");
 
         if (softHighlightObject == null)
         {
@@ -401,18 +416,27 @@ public class Tile : MonoBehaviour
             }
 
             Renderer highlightRenderer = softHighlightObject.GetComponent<Renderer>();
-            if (highlightRenderer != null && playerHoverMaterial != null)
+            if (highlightRenderer != null)
             {
-                highlightRenderer.material = playerHoverMaterial;
+                // Create material with current hover color
+                Material hoverMat = new Material(Shader.Find("Standard"));
+                hoverMat.color = currentHoverColor;
+                highlightRenderer.material = hoverMat;
             }
-
-            Debug.Log($"Tile ({x},{y}): Created new soft highlight object");
+        }
+        else
+        {
+            // Update color on existing highlight
+            Renderer highlightRenderer = softHighlightObject.GetComponent<Renderer>();
+            if (highlightRenderer != null)
+            {
+                highlightRenderer.material.color = currentHoverColor;
+            }
         }
 
         if (softHighlightObject != null)
         {
             softHighlightObject.SetActive(true);
-            Debug.Log($"Tile ({x},{y}): Activated soft highlight object");
         }
     }
 

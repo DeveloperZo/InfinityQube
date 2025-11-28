@@ -128,7 +128,7 @@ public static class Enumerations
         // Marker Events
         LightMarkerPlaced,  // When a light marker is placed
         PrimeMarkerPlaced,  // When a prime marker is placed
-        HeavyMarkerPlaced,  // When a heavy marker is placed
+        RecursionMarkerPlaced,  // When a heavy marker is placed
         MarkerTriggered,    // When any marker is triggered
         
         // Wave Events

@@ -235,7 +235,7 @@ public class AudioManager : MonoBehaviour, IManagerDebugInterface
                 break;
                 
             case GameAudioEvent.LightMarkerPlaced:
-            case GameAudioEvent.HeavyMarkerPlaced:
+            case GameAudioEvent.RecursionMarkerPlaced:
             case GameAudioEvent.PrimeMarkerPlaced:
                 // These would play marker placement sounds
                 break;
