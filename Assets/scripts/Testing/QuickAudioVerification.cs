@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections;
+using static Enumerations;
 
 /// <summary>
 /// Quick verification test for WaveManager audio integration
@@ -37,25 +38,25 @@ public class QuickAudioVerification : MonoBehaviour
         
         // 3. Test wave start event
         Debug.Log("🧪 Testing wave start audio event...");
-        AudioManager.Instance.TriggerAudioEvent(Enumerations.GameAudioEvent.WaveStarted, Vector3.zero);
+        AudioManager.Instance.TriggerAudioEvent(GameAudioEvent.WaveStarted, Vector3.zero);
         
         yield return new WaitForSeconds(0.5f);
         
         // 4. Test cube landing event
         Debug.Log("🧪 Testing cube landing audio event...");
-        AudioManager.Instance.TriggerCubeAudioEvent(Enumerations.GameAudioEvent.CubeLanded, Enumerations.CubeType.Unit, transform.position);
+        AudioManager.Instance.TriggerCubeAudioEvent(GameAudioEvent.CubeLanded, CubeType.Unit, transform.position);
         
         yield return new WaitForSeconds(0.5f);
         
         // 5. Test cube capture event
         Debug.Log("🧪 Testing cube capture audio event...");
-        AudioManager.Instance.TriggerCubeAudioEvent(Enumerations.GameAudioEvent.CubeCaptured, Enumerations.CubeType.Prime, transform.position);
+        AudioManager.Instance.TriggerCubeAudioEvent(GameAudioEvent.CubeCaptured, CubeType.Prime, transform.position);
         
         yield return new WaitForSeconds(0.5f);
         
         // 6. Test wave complete event
         Debug.Log("🧪 Testing wave complete audio event...");
-        AudioManager.Instance.TriggerAudioEvent(Enumerations.GameAudioEvent.WaveCompleted, Vector3.zero);
+        AudioManager.Instance.TriggerAudioEvent(GameAudioEvent.WaveCompleted, Vector3.zero);
         
         Debug.Log("✅ Audio verification completed! Check console for audio event logs.");
         Debug.Log("✅ Audio functionality integrated and working correctly.");

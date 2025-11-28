@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
+using static Enumerations;
 
 /// <summary>
 /// Central manager for coordinating animation trigger events throughout the mode system.
@@ -197,7 +198,7 @@ public class AnimationTriggerManager : MonoBehaviour, IManagerDebugInterface
     /// <param name="fromMode">Previous marker mode</param>
     /// <param name="toMode">New marker mode</param>
     /// <param name="intensity">Intensity of the mode switch</param>
-    public void TriggerModeSwitch(Vector3 playerPosition, Enumerations.MarkerMode fromMode, Enumerations.MarkerMode toMode, float intensity = 1.0f)
+    public void TriggerModeSwitch(Vector3 playerPosition, MarkerMode fromMode, MarkerMode toMode, float intensity = 1.0f)
     {
         var context = AnimationTriggerContext.CreateModeSwitchContext(playerPosition, fromMode, toMode, intensity);
         TriggerAnimation(AnimationTriggerPoint.ModeSwitch, context);
@@ -210,7 +211,7 @@ public class AnimationTriggerManager : MonoBehaviour, IManagerDebugInterface
     /// <param name="markerMode">Type of marker that was placed</param>
     /// <param name="wasReplacement">Whether this replaced an existing marker</param>
     /// <param name="intensity">Intensity of the placement effect</param>
-    public void TriggerMarkerPlace(Vector3 markerPosition, Enumerations.MarkerMode markerMode, bool wasReplacement = false, float intensity = 1.0f)
+    public void TriggerMarkerPlace(Vector3 markerPosition, MarkerMode markerMode, bool wasReplacement = false, float intensity = 1.0f)
     {
         var context = AnimationTriggerContext.CreateMarkerContext(markerPosition, markerMode, intensity, defaultAnimationDuration);
         context.additionalData = wasReplacement ? "replacement" : "new";
@@ -224,7 +225,7 @@ public class AnimationTriggerManager : MonoBehaviour, IManagerDebugInterface
     /// <param name="markerMode">Type of marker that was triggered</param>
     /// <param name="targetCount">Number of targets affected</param>
     /// <param name="intensity">Intensity of the trigger effect</param>
-    public void TriggerMarkerTrigger(Vector3 markerPosition, Enumerations.MarkerMode markerMode, int targetCount = 1, float intensity = 1.0f)
+    public void TriggerMarkerTrigger(Vector3 markerPosition, MarkerMode markerMode, int targetCount = 1, float intensity = 1.0f)
     {
         var context = AnimationTriggerContext.CreateMarkerContext(markerPosition, markerMode, intensity, defaultAnimationDuration);
         context.additionalData = $"targets: {targetCount}";

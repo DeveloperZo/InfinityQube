@@ -1,4 +1,5 @@
 using UnityEngine;
+using static Enumerations;
 
 /// <summary>
 /// Example implementation of IInputFeedbackHook for testing and demonstration.
@@ -19,7 +20,7 @@ public class ExampleDebugFeedbackHook : MonoBehaviour, IInputFeedbackHook
 
     #region IInputFeedbackHook Implementation
 
-    public void OnModeSwitch(Enumerations.MarkerMode previousMode, Enumerations.MarkerMode newMode, Vector2Int playerPosition)
+    public void OnModeSwitch(MarkerMode previousMode, MarkerMode newMode, Vector2Int playerPosition)
     {
         if (!ShouldProcessEvent()) return;
 
@@ -34,7 +35,7 @@ public class ExampleDebugFeedbackHook : MonoBehaviour, IInputFeedbackHook
         // For now, just demonstrate hook execution with debug output
     }
 
-    public void OnMarkerPlace(Enumerations.MarkerMode markerMode, Vector2Int position, bool wasReplacement)
+    public void OnMarkerPlace(MarkerMode markerMode, Vector2Int position, bool wasReplacement)
     {
         if (!ShouldProcessEvent()) return;
 
@@ -56,7 +57,7 @@ public class ExampleDebugFeedbackHook : MonoBehaviour, IInputFeedbackHook
         // - Play spatial audio with position-based 3D sound
     }
 
-    public void OnMarkerTrigger(Enumerations.MarkerMode markerMode, Vector2Int position, int targetCount)
+    public void OnMarkerTrigger(MarkerMode markerMode, Vector2Int position, int targetCount)
     {
         if (!ShouldProcessEvent()) return;
 
@@ -259,7 +260,7 @@ public class ExampleDebugFeedbackHook : MonoBehaviour, IInputFeedbackHook
     [ContextMenu("Test Mode Switch")]
     private void TestModeSwitch()
     {
-        OnModeSwitch(Enumerations.MarkerMode.Light, Enumerations.MarkerMode.Heavy, new Vector2Int(5, 5));
+        OnModeSwitch(MarkerMode.Light, MarkerMode.Heavy, new Vector2Int(5, 5));
     }
 
     /// <summary>
@@ -268,7 +269,7 @@ public class ExampleDebugFeedbackHook : MonoBehaviour, IInputFeedbackHook
     [ContextMenu("Test Marker Place")]
     private void TestMarkerPlace()
     {
-        OnMarkerPlace(Enumerations.MarkerMode.Prime, new Vector2Int(3, 3), false);
+        OnMarkerPlace(MarkerMode.Prime, new Vector2Int(3, 3), false);
     }
 
     /// <summary>

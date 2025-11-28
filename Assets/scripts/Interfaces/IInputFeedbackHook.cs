@@ -1,5 +1,6 @@
 using UnityEngine;
 using System;
+using static Enumerations;
 
 /// <summary>
 /// Interface defining input feedback integration points for player actions.
@@ -16,7 +17,7 @@ public interface IInputFeedbackHook
     /// <param name="previousMode">The mode being switched from</param>
     /// <param name="newMode">The mode being switched to</param>
     /// <param name="playerPosition">Current player position for spatial feedback</param>
-    void OnModeSwitch(Enumerations.MarkerMode previousMode, Enumerations.MarkerMode newMode, Vector2Int playerPosition);
+    void OnModeSwitch(MarkerMode previousMode, MarkerMode newMode, Vector2Int playerPosition);
     #endregion
 
     #region Marker Placement Hooks
@@ -26,7 +27,7 @@ public interface IInputFeedbackHook
     /// <param name="markerMode">Type of marker that was placed</param>
     /// <param name="position">Grid position where marker was placed</param>
     /// <param name="wasReplacement">True if this replaced an existing marker</param>
-    void OnMarkerPlace(Enumerations.MarkerMode markerMode, Vector2Int position, bool wasReplacement);
+    void OnMarkerPlace(MarkerMode markerMode, Vector2Int position, bool wasReplacement);
     
     /// <summary>
     /// Called when a marker is successfully triggered by player input
@@ -34,7 +35,7 @@ public interface IInputFeedbackHook
     /// <param name="markerMode">Type of marker that was triggered</param>
     /// <param name="position">Grid position of the triggered marker</param>
     /// <param name="targetCount">Number of targets affected by the trigger</param>
-    void OnMarkerTrigger(Enumerations.MarkerMode markerMode, Vector2Int position, int targetCount);
+    void OnMarkerTrigger(MarkerMode markerMode, Vector2Int position, int targetCount);
     #endregion
 
     #region Cube Marker Hooks

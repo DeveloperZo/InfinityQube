@@ -1,6 +1,7 @@
-﻿using UnityEngine;
+using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using static Enumerations;
 
 public class PlayerActionUI : MonoBehaviour
 {
@@ -405,7 +406,7 @@ public class PlayerActionUI : MonoBehaviour
         }
     }
 
-    private void UpdateModeIndicator(Enumerations.MarkerMode currentMode)
+    private void UpdateModeIndicator(MarkerMode currentMode)
     {
         if (modeIndicatorSegments == null || modeIndicatorSegments.Length != 3) return;
 
@@ -421,10 +422,10 @@ public class PlayerActionUI : MonoBehaviour
             if (modeIndicatorSegments[i] == null) continue;
 
             // Calculate which mode this segment represents (Light=1, Prime=2, Heavy=3)
-            Enumerations.MarkerMode segmentMode = (Enumerations.MarkerMode)(i + 1);
+MarkerMode segmentMode = (MarkerMode)(i + 1);
 
             // Hide prime mode indicator if prime markers aren't available
-            if (segmentMode == Enumerations.MarkerMode.Prime && !primeMarkersAvailable)
+            if (segmentMode == MarkerMode.Prime && !primeMarkersAvailable)
             {
                 modeIndicatorSegments[i].gameObject.SetActive(false);
                 continue;
@@ -521,7 +522,7 @@ public class PlayerActionUI : MonoBehaviour
     }
 
     // Public method to update mode indicator from external calls
-    public void UpdateModeIndicatorDisplay(Enumerations.MarkerMode currentMode)
+    public void UpdateModeIndicatorDisplay(MarkerMode currentMode)
     {
         UpdateModeIndicator(currentMode);
     }
@@ -548,7 +549,7 @@ public class PlayerActionUI : MonoBehaviour
     /// Triggers animation for mode changes in the UI
     /// </summary>
     /// <param name="newMode">The new active mode</param>
-    private void TriggerModeChangeAnimation(Enumerations.MarkerMode newMode)
+    private void TriggerModeChangeAnimation(MarkerMode newMode)
     {
         if (animationTriggerManager != null)
         {

@@ -1,7 +1,8 @@
 // Simple test to verify audio event system works
-// Usage: AudioManager.Instance.TriggerCubeAudioEvent(Enumerations.GameAudioEvent.CubeLanded, Enumerations.CubeType.Unit, Vector3.zero);
+// Usage: AudioManager.Instance.TriggerCubeAudioEvent(GameAudioEvent.CubeLanded, CubeType.Unit, Vector3.zero);
 
 using UnityEngine;
+using static Enumerations;
 
 public class AudioEventTest : MonoBehaviour
 {
@@ -22,13 +23,13 @@ public class AudioEventTest : MonoBehaviour
         Debug.Log("[AudioEventTest] Testing simplified audio event system...");
         
         // Test basic event
-        AudioManager.Instance.TriggerAudioEvent(Enumerations.GameAudioEvent.PlayerMoved, transform.position);
+        AudioManager.Instance.TriggerAudioEvent(GameAudioEvent.PlayerMoved, transform.position);
         
         // Test cube event  
-        AudioManager.Instance.TriggerCubeAudioEvent(Enumerations.GameAudioEvent.CubeLanded, Enumerations.CubeType.Unit, transform.position);
+        AudioManager.Instance.TriggerCubeAudioEvent(GameAudioEvent.CubeLanded, CubeType.Unit, transform.position);
         
         // Test with AudioEventData
-        AudioEventData eventData = new AudioEventData(Enumerations.GameAudioEvent.WaveStarted, Vector3.zero, 0.8f);
+        AudioEventData eventData = new AudioEventData(GameAudioEvent.WaveStarted, Vector3.zero, 0.8f);
         AudioManager.Instance.TriggerAudioEvent(eventData.eventType, eventData.worldPosition);
         
         Debug.Log("[AudioEventTest] Test completed successfully!");
