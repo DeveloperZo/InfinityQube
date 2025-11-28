@@ -260,7 +260,7 @@ public class ExampleDebugFeedbackHook : MonoBehaviour, IInputFeedbackHook
     [ContextMenu("Test Mode Switch")]
     private void TestModeSwitch()
     {
-        OnModeSwitch(MarkerMode.Light, MarkerMode.Heavy, new Vector2Int(5, 5));
+        OnModeSwitch(MarkerMode.Unit, MarkerMode.Recursion, new Vector2Int(5, 5));
     }
 
     /// <summary>

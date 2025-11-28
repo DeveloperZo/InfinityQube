@@ -53,7 +53,20 @@ public class PrimeMarker
     }
 }
 
+[System.Serializable]
+public class InfinityMarker
+{
+    public Vector2Int position;
+    public float placementTime;
+    public GameObject visualObject;
+    public bool isPerfectTiming = false;
 
+    public InfinityMarker(Vector2Int pos, float time)
+    {
+        position = pos;
+        placementTime = time;
+    }
+}
 
 public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
 {
@@ -99,10 +112,21 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
     [SerializeField] public int primeMarkerOnGridLimit;
     [SerializeField] public Material primeMarkerMaterial;
 
+    [Header("Infinity Marker Settings")]
+    [SerializeField] public int maxInfinityMarkers = 2;
+    [SerializeField] public int infinityMarkersPlaced;
+    [SerializeField] public int currentInfinityMarkers;
+    [SerializeField] public int maxInfinityMarkerCharges = 1;
+    [SerializeField] private int currentInfinityMarkerCharges;
+    [SerializeField] public float infinityMarkerCooldown = 15f;
+    [SerializeField] public float lastInfinityMarkerTime;
+    [SerializeField] public Material infinityMarkerMaterial;
+
     [Header("Input Settings")]
     [SerializeField] private KeyCode lightMarkerKey = KeyCode.F;
     [SerializeField] private KeyCode heavyMarkerKey = KeyCode.V;
     [SerializeField] private KeyCode primeMarkerKey = KeyCode.G;
+    [SerializeField] private KeyCode infinityMarkerKey = KeyCode.H;
     [SerializeField] private KeyCode triggerLightKey = KeyCode.R;
     [SerializeField] private KeyCode triggerHeavyKey = KeyCode.Y;
     [SerializeField] private KeyCode triggerPrimeKey = KeyCode.T;
@@ -112,7 +136,7 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
 
     // Marker Mode System
     [Header("Marker Mode System")]
-    [SerializeField] private MarkerMode currentMarkerMode = MarkerMode.Light;
+    [SerializeField] private MarkerMode currentMarkerMode = MarkerMode.Unit;
 
     // Statistics
     private int cubeMarkersTriggered;
@@ -216,12 +240,13 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
         currentLightMarkerCharges = maxLightMarkerCharges;
         currentHeavyMarkerCharges = maxHeavyMarkerCharges;
         currentPrimeMarkerCharges = maxPrimeMarkerCharges;
+        currentInfinityMarkerCharges = maxInfinityMarkerCharges;
         inputEnabled = true;
     }
 
     private void InitializeMarkerMode()
     {
-        currentMarkerMode = MarkerMode.Light;
+        currentMarkerMode = MarkerMode.Unit;
         
         if (EnableDebugLogs)
         {
@@ -397,10 +422,10 @@ MarkerMode targetMode = currentMarkerMode;
 GameAudioEvent audioEvent = GameAudioEvent.ModeSwitchedToLight;
         bool modeSwitchRequested = false;
 
-        // Check for number key presses
+        // Check for number key presses (1-4 for marker types)
         if (Input.GetKeyDown(KeyCode.Alpha1))
         {
-            targetMode = MarkerMode.Light;
+            targetMode = MarkerMode.Unit;
             audioEvent = GameAudioEvent.ModeSwitchedToLight;
             modeSwitchRequested = true;
         }
@@ -412,8 +437,14 @@ GameAudioEvent audioEvent = GameAudioEvent.ModeSwitchedToLight;
         }
         else if (Input.GetKeyDown(KeyCode.Alpha3))
         {
-            targetMode = MarkerMode.Heavy;
+            targetMode = MarkerMode.Recursion;
             audioEvent = GameAudioEvent.ModeSwitchedToHeavy;
+            modeSwitchRequested = true;
+        }
+        else if (Input.GetKeyDown(KeyCode.Alpha4))
+        {
+            targetMode = MarkerMode.Infinity;
+            audioEvent = GameAudioEvent.ModeSwitchedToHeavy; // TODO: Add infinity audio event
             modeSwitchRequested = true;
         }
 
@@ -462,13 +493,13 @@ MarkerMode currentMode = GetCurrentMode();
 
             switch (currentMode)
             {
-                case MarkerMode.Light:
+                case MarkerMode.Unit:
                     if (markerSystem.HasLightMarkerAt(playerPos))
                     {
                         markerSystem.RemoveLightMarkerAt(playerPos);
                         actionSuccessful = true;
                         // Trigger feedback for marker removal (replacement)
-                        TriggerInputFeedbackMarkerPlace(MarkerMode.Light, playerPos, true);
+                        TriggerInputFeedbackMarkerPlace(MarkerMode.Unit, playerPos, true);
                     }
                     else if (CanPlaceLightMarker())
                     {
@@ -476,10 +507,10 @@ MarkerMode currentMode = GetCurrentMode();
                         actionSuccessful = true;
                         
                         // Trigger feedback for new marker placement
-                        TriggerInputFeedbackMarkerPlace(MarkerMode.Light, playerPos, false);
+                        TriggerInputFeedbackMarkerPlace(MarkerMode.Unit, playerPos, false);
                         
                         // Trigger animation for marker placement
-                        TriggerAnimationMarkerPlace(MarkerMode.Light, playerPos, false);
+                        TriggerAnimationMarkerPlace(MarkerMode.Unit, playerPos, false);
                         
                         // Show success feedback for successful placement
                         ShowActionSuccessFeedback("Light marker placed successfully!");
@@ -500,13 +531,13 @@ MarkerMode currentMode = GetCurrentMode();
                     }
                     break;
 
-                case MarkerMode.Heavy:
+                case MarkerMode.Recursion:
                     if (markerSystem.HasHeavyMarkerAt(playerPos))
                     {
                         markerSystem.RemoveHeavyMarkerAt(playerPos);
                         actionSuccessful = true;
                         // Trigger feedback for marker removal (replacement)
-                        TriggerInputFeedbackMarkerPlace(MarkerMode.Heavy, playerPos, true);
+                        TriggerInputFeedbackMarkerPlace(MarkerMode.Recursion, playerPos, true);
                     }
                     else if (CanPlaceHeavyMarker())
                     {
@@ -514,10 +545,10 @@ MarkerMode currentMode = GetCurrentMode();
                         actionSuccessful = true;
                         
                         // Trigger feedback for new marker placement
-                        TriggerInputFeedbackMarkerPlace(MarkerMode.Heavy, playerPos, false);
+                        TriggerInputFeedbackMarkerPlace(MarkerMode.Recursion, playerPos, false);
                         
                         // Trigger animation for marker placement
-                        TriggerAnimationMarkerPlace(MarkerMode.Heavy, playerPos, false);
+                        TriggerAnimationMarkerPlace(MarkerMode.Recursion, playerPos, false);
                         
                         // Show success feedback for successful placement
                         ShowActionSuccessFeedback("Heavy marker placed successfully!");
@@ -572,6 +603,35 @@ MarkerMode currentMode = GetCurrentMode();
                         if (EnableDebugLogs)
                         {
                             this.LogWarning($"Prime marker placement failed: {errorMessage}", EnableDebugLogs);
+                        }
+                    }
+                    break;
+
+                case MarkerMode.Infinity:
+                    if (markerSystem.HasInfinityMarkerAt(playerPos))
+                    {
+                        markerSystem.RemoveInfinityMarkerAt(playerPos);
+                        actionSuccessful = true;
+                        TriggerInputFeedbackMarkerPlace(MarkerMode.Infinity, playerPos, true);
+                    }
+                    else if (CanPlaceInfinityMarker())
+                    {
+                        markerSystem.PlaceInfinityMarker(playerPos);
+                        actionSuccessful = true;
+                        
+                        TriggerInputFeedbackMarkerPlace(MarkerMode.Infinity, playerPos, false);
+                        TriggerAnimationMarkerPlace(MarkerMode.Infinity, playerPos, false);
+                        ShowActionSuccessFeedback("Infinity marker placed successfully!");
+                    }
+                    else
+                    {
+                        string errorMessage = GetModeActionErrorMessage(currentMode, "place");
+                        ShowActionErrorFeedback(errorMessage);
+                        TriggerInputFeedbackActionFailed("place", errorMessage, playerPos, 0.7f);
+                        
+                        if (EnableDebugLogs)
+                        {
+                            this.LogWarning($"Infinity marker placement failed: {errorMessage}", EnableDebugLogs);
                         }
                     }
                     break;
@@ -640,7 +700,7 @@ MarkerMode currentMode = GetCurrentMode();
 
             switch (currentMode)
             {
-                case MarkerMode.Light:
+                case MarkerMode.Unit:
                     actionSuccessful = markerSystem.TriggerNextLightMarker();
                     if (!actionSuccessful)
                     {
@@ -659,17 +719,17 @@ MarkerMode currentMode = GetCurrentMode();
                     {
                         // Trigger feedback for successful marker trigger
                         // Note: We use player position as approximation since triggered marker position may vary
-                        TriggerInputFeedbackMarkerTrigger(MarkerMode.Light, GetCurrentPlayerPosition(), 1);
+                        TriggerInputFeedbackMarkerTrigger(MarkerMode.Unit, GetCurrentPlayerPosition(), 1);
                         
                         // Trigger animation for marker trigger
-                        TriggerAnimationMarkerTrigger(MarkerMode.Light, GetCurrentPlayerPosition(), 1);
+                        TriggerAnimationMarkerTrigger(MarkerMode.Unit, GetCurrentPlayerPosition(), 1);
                         
                         // Show success feedback for successful trigger
                         ShowActionSuccessFeedback("Light marker triggered successfully!");
                     }
                     break;
 
-                case MarkerMode.Heavy:
+                case MarkerMode.Recursion:
                     actionSuccessful = markerSystem.TriggerNextHeavyMarker();
                     if (!actionSuccessful)
                     {
@@ -687,10 +747,10 @@ MarkerMode currentMode = GetCurrentMode();
                     else
                     {
                         // Trigger feedback for successful marker trigger
-                        TriggerInputFeedbackMarkerTrigger(MarkerMode.Heavy, GetCurrentPlayerPosition(), 1);
+                        TriggerInputFeedbackMarkerTrigger(MarkerMode.Recursion, GetCurrentPlayerPosition(), 1);
                         
                         // Trigger animation for marker trigger
-                        TriggerAnimationMarkerTrigger(MarkerMode.Heavy, GetCurrentPlayerPosition(), 1);
+                        TriggerAnimationMarkerTrigger(MarkerMode.Recursion, GetCurrentPlayerPosition(), 1);
                         
                         // Show success feedback for successful trigger
                         ShowActionSuccessFeedback("Heavy marker triggered successfully!");
@@ -724,6 +784,27 @@ MarkerMode currentMode = GetCurrentMode();
                         
                         // Show success feedback for successful trigger
                         ShowActionSuccessFeedback("Prime marker triggered successfully!");
+                    }
+                    break;
+
+                case MarkerMode.Infinity:
+                    actionSuccessful = markerSystem.TriggerNextInfinityMarker();
+                    if (!actionSuccessful)
+                    {
+                        string errorMessage = GetModeActionErrorMessage(currentMode, "trigger");
+                        ShowActionErrorFeedback(errorMessage);
+                        TriggerInputFeedbackActionFailed("trigger", errorMessage, GetCurrentPlayerPosition(), 0.6f);
+                        
+                        if (EnableDebugLogs)
+                        {
+                            this.LogWarning($"Infinity marker trigger failed: {errorMessage}", EnableDebugLogs);
+                        }
+                    }
+                    else
+                    {
+                        TriggerInputFeedbackMarkerTrigger(MarkerMode.Infinity, GetCurrentPlayerPosition(), 1);
+                        TriggerAnimationMarkerTrigger(MarkerMode.Infinity, GetCurrentPlayerPosition(), 1);
+                        ShowActionSuccessFeedback("Infinity marker triggered successfully!");
                     }
                     break;
 
@@ -837,14 +918,14 @@ MarkerMode currentMode = GetCurrentMode();
         {
             switch (mode)
             {
-                case MarkerMode.Light:
+                case MarkerMode.Unit:
                     if (currentLightMarkerCharges <= 0)
                         return "No light marker charges available. Wait for cooldown.";
                     if (currentLightMarkers >= maxLightMarkerCharges)
                         return "Maximum light markers already placed on grid.";
                     break;
 
-                case MarkerMode.Heavy:
+                case MarkerMode.Recursion:
                     if (currentHeavyMarkerCharges <= 0)
                         return "No heavy marker charges available. Wait for cooldown.";
                     if (currentHeavyMarkers >= maxHeavyMarkerCharges)
@@ -857,18 +938,25 @@ MarkerMode currentMode = GetCurrentMode();
                     if (currentPrimeMarkers >= primeMarkerOnGridLimit)
                         return "Maximum prime markers already placed on grid.";
                     break;
+
+                case MarkerMode.Infinity:
+                    if (currentInfinityMarkerCharges <= 0)
+                        return "No infinity marker charges available. Wait for cooldown.";
+                    if (currentInfinityMarkers >= maxInfinityMarkers)
+                        return "Maximum infinity markers already placed on grid.";
+                    break;
             }
         }
         else if (actionType == "trigger")
         {
             switch (mode)
             {
-                case MarkerMode.Light:
+                case MarkerMode.Unit:
                     if (markerSystem.LightMarkers.Count == 0)
                         return "No light markers available to trigger.";
                     break;
 
-                case MarkerMode.Heavy:
+                case MarkerMode.Recursion:
                     if (markerSystem.HeavyMarkers.Count == 0)
                         return "No heavy markers available to trigger.";
                     break;
@@ -876,6 +964,11 @@ MarkerMode currentMode = GetCurrentMode();
                 case MarkerMode.Prime:
                     if (markerSystem.PrimeMarkers.Count == 0)
                         return "No prime markers available to trigger.";
+                    break;
+
+                case MarkerMode.Infinity:
+                    if (markerSystem.InfinityMarkers.Count == 0)
+                        return "No infinity markers available to trigger.";
                     break;
             }
         }
@@ -1167,6 +1260,12 @@ MarkerMode previousMode = currentMarkerMode;
                // Note: primeMarkersPlaced is for statistics only, not for limiting placement
     }
 
+    public bool CanPlaceInfinityMarker()
+    {
+        return currentInfinityMarkerCharges > 0 &&
+               currentInfinityMarkers < maxInfinityMarkers;
+    }
+
     public void ConsumeLightCharge()
     {
         currentLightMarkerCharges--;
@@ -1242,6 +1341,31 @@ MarkerMode previousMode = currentMarkerMode;
         }
     }
 
+    public void ConsumeInfinityCharge()
+    {
+        currentInfinityMarkerCharges--;
+        lastInfinityMarkerTime = Time.time;
+        currentInfinityMarkers++;
+        infinityMarkersPlaced++;
+
+        // Trigger audio event for infinity marker placement
+        Vector3 worldPosition = GetWorldPositionForAudio(playerManager.currentTilePosition);
+        TriggerAudioEvent(GameAudioEvent.PrimeMarkerPlaced, worldPosition); // TODO: Add infinity audio event
+
+        UpdateUI();
+
+        if (actionUI != null)
+        {
+            actionUI.OnMarkerPlaced(false);
+        }
+        
+        // Notify statistics manager
+        if (PlayerStatisticsManager.Instance != null)
+        {
+            PlayerStatisticsManager.Instance.OnMarkerPlaced(playerManager.currentTilePosition, "infinity");
+        }
+    }
+
     public void ReleaseLightMarker()
     {
         currentLightMarkers--;
@@ -1250,6 +1374,11 @@ MarkerMode previousMode = currentMarkerMode;
     public void ReleaseHeavyMarker()
     {
         currentHeavyMarkers--;
+    }
+
+    public void ReleaseInfinityMarker()
+    {
+        currentInfinityMarkers--;
     }
 
     public void ReleasePrimeMarker()
@@ -1324,6 +1453,7 @@ MarkerMode previousMode = currentMarkerMode;
         chargesChanged |= RegenerateLightCharges();
         chargesChanged |= RegenerateHeavyCharges();
         chargesChanged |= RegeneratePrimeCharges();
+        chargesChanged |= RegenerateInfinityCharges();
 
         if (chargesChanged)
         {
@@ -1403,6 +1533,30 @@ MarkerMode previousMode = currentMarkerMode;
         return false;
     }
 
+    private bool RegenerateInfinityCharges()
+    {
+        if (currentInfinityMarkerCharges < maxInfinityMarkerCharges)
+        {
+            float timeSinceLastUse = Time.time - lastInfinityMarkerTime;
+            if (timeSinceLastUse >= infinityMarkerCooldown)
+            {
+                currentInfinityMarkerCharges++;
+                lastInfinityMarkerTime = Time.time;
+                
+                // Trigger audio event for resource regeneration
+                Vector3 playerWorldPos = GetWorldPositionForAudio(playerManager.currentTilePosition);
+                TriggerAudioEvent(GameAudioEvent.ResourceRegeneration, playerWorldPos, 0.8f);
+                
+                // Trigger animation for resource regeneration
+                TriggerAnimationResourceRegeneration(playerWorldPos, "Infinity marker charge");
+                
+                this.Log($"Infinity marker charge regenerated. Charges: {currentInfinityMarkerCharges}/{maxInfinityMarkerCharges}", EnableDebugLogs);
+                return true;
+            }
+        }
+        return false;
+    }
+
     private void UpdateUI()
     {
         if (actionUI != null)
@@ -1447,6 +1601,12 @@ MarkerMode previousMode = currentMarkerMode;
     public bool HasPrimeMarkerAt(Vector2Int centerPosition) => markerSystem.HasPrimeMarkerAt(centerPosition);
     public bool TriggerNextPrimeMarker() => markerSystem.TriggerNextPrimeMarker();
 
+    // Infinity marker methods
+    public bool PlaceInfinityMarker(Vector2Int position) => markerSystem.PlaceInfinityMarker(position);
+    public bool RemoveInfinityMarkerAt(Vector2Int position) => markerSystem.RemoveInfinityMarkerAt(position);
+    public bool HasInfinityMarkerAt(Vector2Int position) => markerSystem.HasInfinityMarkerAt(position);
+    public bool TriggerNextInfinityMarker() => markerSystem.TriggerNextInfinityMarker();
+
     public void CreateCubeMarker(Vector2Int position, PlayerMarkerSystem.CubeMarkerType type = PlayerMarkerSystem.CubeMarkerType.Prime) => markerSystem.CreateCubeMarker(position, type);
     public bool TriggerNextCubeMarker() => markerSystem.TriggerNextCubeMarker();
     public bool PowerUpNextCubeMarker() => markerSystem.PowerUpNextCubeMarker();
@@ -1472,6 +1632,19 @@ MarkerMode previousMode = currentMarkerMode;
     public bool CanPlaceHeavyMarkerCheck() => CanPlaceHeavyMarker();
     public bool CanPlacePrimeMarkerCheck() => CanPlacePrimeMarker();
 
+    // Charge refill methods (for prototyping tools)
+    public void RefillLightMarkerCharges() => currentLightMarkerCharges = maxLightMarkerCharges;
+    public void RefillHeavyMarkerCharges() => currentHeavyMarkerCharges = maxHeavyMarkerCharges;
+    public void RefillPrimeMarkerCharges() => currentPrimeMarkerCharges = maxPrimeMarkerCharges;
+    public void RefillInfinityMarkerCharges() => currentInfinityMarkerCharges = maxInfinityMarkerCharges;
+    public void RefillAllCharges()
+    {
+        RefillLightMarkerCharges();
+        RefillHeavyMarkerCharges();
+        RefillPrimeMarkerCharges();
+        RefillInfinityMarkerCharges();
+    }
+
     // Cooldown information
     public float GetLightMarkerCooldownRemaining()
     {
@@ -1494,6 +1667,13 @@ MarkerMode previousMode = currentMarkerMode;
         return Mathf.Max(0f, primeMarkerCooldown - (Time.time - lastPrimeMarkerTime));
     }
 
+    public float GetInfinityMarkerCooldownRemaining()
+    {
+        if (currentInfinityMarkerCharges >= maxInfinityMarkerCharges)
+            return 0f;
+        return Mathf.Max(0f, infinityMarkerCooldown - (Time.time - lastInfinityMarkerTime));
+    }
+
     // Statistics
     public int GetLightMarkersPlaced() => lightMarkersPlaced;
     public int GetHeavyMarkersPlaced() => heavyMarkersPlaced;
@@ -1509,6 +1689,8 @@ MarkerMode previousMode = currentMarkerMode;
     public int GetCurrentLightCharges() => currentLightMarkerCharges;
     public int GetCurrentHeavyCharges() => currentHeavyMarkerCharges;
     public int GetCurrentPrimeCharges() => currentPrimeMarkerCharges;
+    public int GetCurrentInfinityCharges() => currentInfinityMarkerCharges;
+    public int GetCurrentInfinityMarkers() => currentInfinityMarkers;
 
 
 
@@ -1589,7 +1771,7 @@ MarkerMode previousMode = currentMarkerMode;
         // If currently in Prime mode but prime markers are not available, switch to Light mode
         if (currentMarkerMode == MarkerMode.Prime && maxPrimeMarkerCharges <= 0)
         {
-            SetMode(MarkerMode.Light);
+            SetMode(MarkerMode.Unit);
             if (EnableDebugLogs)
             {
                 this.Log("Prime mode was active but prime markers are not available. Switched to Light mode.", EnableDebugLogs);
@@ -1606,9 +1788,10 @@ MarkerMode previousMode = currentMarkerMode;
         currentLightMarkerCharges = maxLightMarkerCharges;
         currentHeavyMarkerCharges = maxHeavyMarkerCharges;
         currentPrimeMarkerCharges = maxPrimeMarkerCharges;
+        currentInfinityMarkerCharges = maxInfinityMarkerCharges;
         
         // Reset marker mode
-        currentMarkerMode = MarkerMode.Light;
+        currentMarkerMode = MarkerMode.Unit;
         
         // Clear all markers
         if (markerSystem != null)
@@ -1620,9 +1803,11 @@ MarkerMode previousMode = currentMarkerMode;
         lightMarkersPlaced = 0;
         heavyMarkersPlaced = 0;
         primeMarkersPlaced = 0;
+        infinityMarkersPlaced = 0;
         currentLightMarkers = 0;
         currentHeavyMarkers = 0;
         currentPrimeMarkers = 0;
+        currentInfinityMarkers = 0;
         cubeMarkersTriggered = 0;
         perfectTimingHits = 0;
         
@@ -1630,6 +1815,7 @@ MarkerMode previousMode = currentMarkerMode;
         lastLightMarkerTime = 0f;
         lastHeavyMarkerTime = 0f;
         lastPrimeMarkerTime = 0f;
+        lastInfinityMarkerTime = 0f;
         
         // Update UI
         UpdateUI();

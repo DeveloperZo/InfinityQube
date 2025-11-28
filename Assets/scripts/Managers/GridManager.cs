@@ -376,21 +376,23 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
 
     private void NotifyGridResized()
     {
+        // Recalculate world bounds with new dimensions
+        UpdateWorldBounds();
+        
         // Clamp player position to new grid bounds
         var playerManager = FindObjectOfType<PlayerManager>();
         if (playerManager != null)
         {
-            Vector2Int playerPos = playerManager.currentTilePosition;
+            // Get player's current world position and convert to grid position
+            Vector2Int worldGridPos = WorldToGridPosition(playerManager.transform.position);
             Vector2Int clampedPos = new Vector2Int(
-                Mathf.Clamp(playerPos.x, 0, width - 1),
-                Mathf.Clamp(playerPos.y, 0, height - 1)
+                Mathf.Clamp(worldGridPos.x, 0, width - 1),
+                Mathf.Clamp(worldGridPos.y, 0, height - 1)
             );
 
-            if (playerPos != clampedPos)
-            {
-                playerManager.SetPosition(clampedPos.x, clampedPos.y);
-                DebugLog($"Player position clamped from ({playerPos.x}, {playerPos.y}) to ({clampedPos.x}, {clampedPos.y})");
-            }
+            // Always update player position after resize to ensure they're on valid tile
+            playerManager.SetPosition(clampedPos.x, clampedPos.y);
+            DebugLog($"Player position set to ({clampedPos.x}, {clampedPos.y}) after grid resize to {width}x{height}");
         }
 
         // Update camera if it exists

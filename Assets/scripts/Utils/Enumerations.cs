@@ -102,12 +102,14 @@ public static class Enumerations
     /// </summary>
     public enum MarkerMode
     {
-        /// <summary>Light marker mode: Basic targeting (Key: 1)</summary>
-        Light = 1,
-        /// <summary>Prime marker mode: Area coverage targeting (Key: 2)</summary>
+        /// <summary>Unit marker: Spawns Unit cube in mirror wave (Key: 1)</summary>
+        Unit = 1,
+        /// <summary>Prime marker: Spawns Prime cube in mirror wave (Key: 2)</summary>
         Prime = 2,
-        /// <summary>Heavy marker mode: Enhanced targeting for recursion cubes (Key: 3)</summary>
-        Heavy = 3
+        /// <summary>Recursion marker: Spawns Recursion cube in mirror wave (Key: 3)</summary>
+        Recursion = 3,
+        /// <summary>Infinity marker: Spawns Infinity cube in mirror wave (Key: 4)</summary>
+        Infinity = 4
     }
 
     /// <summary>

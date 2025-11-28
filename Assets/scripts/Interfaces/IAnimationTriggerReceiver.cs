@@ -85,7 +85,7 @@ public struct AnimationTriggerContext
             secondaryPosition = Vector3.zero,
             intensity = Mathf.Clamp01(intensity),
             duration = 1.0f,
-            markerMode = MarkerMode.Light,
+            markerMode = MarkerMode.Unit,
             additionalData = string.Empty,
             dataReference = null
         };

@@ -6,48 +6,54 @@ using static Enumerations;
 public class PlayerActionUI : MonoBehaviour
 {
     [Header("UI References")]
-    [SerializeField] private Image[] lightMarkerSegments = new Image[6];
-    [SerializeField] private Image[] heavyMarkerSegments = new Image[6];
+    [SerializeField] private Image[] unitMarkerSegments = new Image[6];
+    [SerializeField] private Image[] recursionMarkerSegments = new Image[6];
     [SerializeField] private Image[] primeMarkerSegments = new Image[6];
-    [SerializeField] private GameObject LightMarkerUI;
+    [SerializeField] private Image[] infinityMarkerSegments = new Image[6];
+    [SerializeField] private GameObject UnitMarkerUI;
     [SerializeField] private GameObject PrimeMarkerUI;
-    [SerializeField] private Image[] modeIndicatorSegments = new Image[3];
-    [SerializeField] private TextMeshProUGUI lightChargeText;
-    [SerializeField] private TextMeshProUGUI heavyChargeText;
+    [SerializeField] private GameObject RecursionMarkerUI;
+    [SerializeField] private GameObject InfinityMarkerUI;
+    [SerializeField] private Image[] modeIndicatorSegments = new Image[4];
+    [SerializeField] private TextMeshProUGUI unitChargeText;
+    [SerializeField] private TextMeshProUGUI recursionChargeText;
     [SerializeField] private TextMeshProUGUI primeChargeText;
-    // Cube markers don't need UI elements
+    [SerializeField] private TextMeshProUGUI infinityChargeText;
 
     [Header("UI Colors")]
     [SerializeField] private Color segmentFullColor = new Color(1f, 0.7f, 0.2f, 1f);     // Orange when charged
     [SerializeField] private Color segmentChargingColor = new Color(0.5f, 0.5f, 1f, 0.8f); // Blue when charging
     [SerializeField] private Color segmentFirstChargeColor = new Color(0.7f, 0.7f, 1f, 0.6f); // Light blue when charging toward first charge
     [SerializeField] private Color segmentEmptyColor = new Color(0.3f, 0.3f, 0.3f, 0.3f);  // Gray when empty
-    [SerializeField] private Color heavyMarkerColor = new Color(1f, 0.3f, 0.3f, 1f);      // Red for heavy markers
-    [SerializeField] private Color primeMarkerColor = new Color(0.8f, 0.2f, 1f, 1f);      // Purple for prime markers
-    // Cube markers don't need UI colors
-    [SerializeField] private Color[] modeColors = new Color[3] 
+    [SerializeField] private Color unitMarkerColor = new Color(1f, 0.5f, 0.2f, 1f);       // Orange for unit markers
+    [SerializeField] private Color recursionMarkerColor = new Color(0.6f, 0.2f, 0.6f, 1f); // Purple for recursion markers
+    [SerializeField] private Color primeMarkerColor = new Color(0.2f, 0.5f, 0.8f, 1f);    // Blue for prime markers
+    [SerializeField] private Color infinityMarkerColor = new Color(0.3f, 0.8f, 0.9f, 1f); // Cyan for infinity markers
+    [SerializeField] private Color[] modeColors = new Color[4] 
     {
-        new Color(1f, 0.3f, 0.3f, 1f),      // Red for Light mode (index 0 = Light=1)
-        new Color(0.8f, 0.2f, 1f, 1f),      // Purple for Prime mode (index 1 = Prime=2)
-        new Color(0.6f, 0.1f, 0.1f, 1f)     // Dark Red for Heavy mode (index 2 = Heavy=3)
+        new Color(1f, 0.5f, 0.2f, 1f),      // Orange for Unit mode (index 0 = Unit=1)
+        new Color(0.2f, 0.5f, 0.8f, 1f),    // Blue for Prime mode (index 1 = Prime=2)
+        new Color(0.6f, 0.2f, 0.6f, 1f),    // Purple for Recursion mode (index 2 = Recursion=3)
+        new Color(0.3f, 0.8f, 0.9f, 1f)     // Cyan for Infinity mode (index 3 = Infinity=4)
     };
 
     [Header("Cooldown Settings")]
     [SerializeField] private PlayerActionManager playerActionManager;
     [SerializeField] private AnimationTriggerManager animationTriggerManager;
-    public float lightMarkerCooldownTime = 6f;
-    public float heavyMarkerCooldownTime = 8f;
+    public float unitMarkerCooldownTime = 6f;
+    public float recursionMarkerCooldownTime = 8f;
     public float primeMarkerCooldownTime = 12f;
-    // Cube markers don't have cooldowns
+    public float infinityMarkerCooldownTime = 15f;
 
     // Cached references
-    public int lightCharges;
-    public int lightMaxCharges;
-    public int heavyCharges;
-    public int heavyMaxCharges;
+    public int unitCharges;
+    public int unitMaxCharges;
+    public int recursionCharges;
+    public int recursionMaxCharges;
     public int primeCharges;
     public int primeMaxCharges;
-    // Cube markers don't need cached charge values
+    public int infinityCharges;
+    public int infinityMaxCharges;
 
     void Start()
     {
@@ -56,13 +62,13 @@ public class PlayerActionUI : MonoBehaviour
 
         if (playerActionManager != null)
         {
-            lightMaxCharges = playerActionManager.maxLightMarkerCharges;
-            heavyMaxCharges = playerActionManager.maxHeavyMarkerCharges;
+            unitMaxCharges = playerActionManager.maxLightMarkerCharges;
+            recursionMaxCharges = playerActionManager.maxHeavyMarkerCharges;
             primeMaxCharges = playerActionManager.maxPrimeMarkerCharges;
-            lightMarkerCooldownTime = playerActionManager.lightMarkerCooldown;
-            heavyMarkerCooldownTime = playerActionManager.heavyMarkerCooldown;
+            unitMarkerCooldownTime = playerActionManager.lightMarkerCooldown;
+            recursionMarkerCooldownTime = playerActionManager.heavyMarkerCooldown;
             primeMarkerCooldownTime = playerActionManager.primeMarkerCooldown;
-            // Cube markers don't need cooldown time
+            // TODO: Add infinity marker settings to PlayerActionManager
         }
 
         UpdateDisplay();
@@ -73,33 +79,32 @@ public class PlayerActionUI : MonoBehaviour
         UpdateDisplay();
     }
 
-    public void UpdateCharges(int currentLightCharges, int currentHeavyCharges, int currentPrimeCharges, int currentCubeCharges)
+    public void UpdateCharges(int currentUnitCharges, int currentRecursionCharges, int currentPrimeCharges, int currentInfinityCharges)
     {
         // Check if charges have changed to trigger animations
-        bool chargesChanged = (lightCharges != currentLightCharges) || 
-                             (heavyCharges != currentHeavyCharges) || 
-                             (primeCharges != currentPrimeCharges);
-                             // Cube markers don't have UI updates
+        bool chargesChanged = (unitCharges != currentUnitCharges) || 
+                             (recursionCharges != currentRecursionCharges) || 
+                             (primeCharges != currentPrimeCharges) ||
+                             (infinityCharges != currentInfinityCharges);
 
-        lightCharges = currentLightCharges;
-        heavyCharges = currentHeavyCharges;
+        unitCharges = currentUnitCharges;
+        recursionCharges = currentRecursionCharges;
         primeCharges = currentPrimeCharges;
-        // Cube markers don't need to be cached for UI
+        infinityCharges = currentInfinityCharges;
 
         // Set max charges if not already set
-        if (lightMaxCharges == 0 && playerActionManager != null)
+        if (unitMaxCharges == 0 && playerActionManager != null)
         {
-            lightMaxCharges = playerActionManager.maxLightMarkerCharges;
+            unitMaxCharges = playerActionManager.maxLightMarkerCharges;
         }
-        if (heavyMaxCharges == 0 && playerActionManager != null)
+        if (recursionMaxCharges == 0 && playerActionManager != null)
         {
-            heavyMaxCharges = playerActionManager.maxHeavyMarkerCharges;
+            recursionMaxCharges = playerActionManager.maxHeavyMarkerCharges;
         }
         if (primeMaxCharges == 0 && playerActionManager != null)
         {
             primeMaxCharges = playerActionManager.maxPrimeMarkerCharges;
         }
-
 
         // Trigger animation for UI update if charges changed
         if (chargesChanged)
@@ -109,23 +114,23 @@ public class PlayerActionUI : MonoBehaviour
     }
 
     // Backward compatibility method
-    public void UpdateCharges(int currentLightCharges, int currentAreaCharges)
+    public void UpdateCharges(int currentUnitCharges, int currentAreaCharges)
     {
-        UpdateCharges(currentLightCharges, 0, currentAreaCharges, 0);
+        UpdateCharges(currentUnitCharges, 0, currentAreaCharges, 0);
     }
 
-    public void UpdateCooldowns(float lightCooldown, float heavyCooldown, float primeCooldown, float cubeCooldown)
+    public void UpdateCooldowns(float unitCooldown, float recursionCooldown, float primeCooldown, float infinityCooldown)
     {
-        lightMarkerCooldownTime = lightCooldown;
-        heavyMarkerCooldownTime = heavyCooldown;
+        unitMarkerCooldownTime = unitCooldown;
+        recursionMarkerCooldownTime = recursionCooldown;
         primeMarkerCooldownTime = primeCooldown;
-        // Cube markers don't have cooldowns in UI
+        infinityMarkerCooldownTime = infinityCooldown;
     }
 
     // Backward compatibility method
     public void UpdateCooldowns(float individualCooldown, float areaCooldown)
     {
-        lightMarkerCooldownTime = individualCooldown;
+        unitMarkerCooldownTime = individualCooldown;
         primeMarkerCooldownTime = areaCooldown;
     }
 
@@ -165,49 +170,32 @@ public class PlayerActionUI : MonoBehaviour
         if (playerActionManager == null) return;
 
         // Get current charges directly from PlayerActionManager for real-time display
-        int currentLightCharges = playerActionManager.GetCurrentLightCharges();
-        int currentHeavyCharges = playerActionManager.GetCurrentHeavyCharges();
+        int currentUnitCharges = playerActionManager.GetCurrentLightCharges();
+        int currentRecursionCharges = playerActionManager.GetCurrentHeavyCharges();
         int currentPrimeCharges = playerActionManager.GetCurrentPrimeCharges();
-        // Cube markers don't need UI updates
-
-        // Debug: Always log current values to see what's happening
-        Debug.Log($"[PlayerActionUI] Current values - Light: {currentLightCharges}/{lightMaxCharges}, Heavy: {currentHeavyCharges}/{heavyMaxCharges}, Prime: {currentPrimeCharges}/{primeMaxCharges}");
-
-        // Only log significant charge changes to avoid spam
-        if (currentLightCharges != lightCharges || currentHeavyCharges != heavyCharges || currentPrimeCharges != primeCharges)
-        {
-            // Only log when charges actually decrease (used) or when they go from 0 to 1 (regenerated)
-            if ((currentLightCharges < lightCharges) || (currentLightCharges > 0 && lightCharges == 0) ||
-                (currentHeavyCharges < heavyCharges) || (currentHeavyCharges > 0 && heavyCharges == 0) ||
-                (currentPrimeCharges < primeCharges) || (currentPrimeCharges > 0 && primeCharges == 0))
-            {
-                Debug.Log($"[PlayerActionUI] Charges updated - Light: {lightCharges}→{currentLightCharges}, Heavy: {heavyCharges}→{currentHeavyCharges}, Prime: {primeCharges}→{currentPrimeCharges}");
-            }
-        }
 
         // Update cached values for other methods that might need them
-        lightCharges = currentLightCharges;
-        heavyCharges = currentHeavyCharges;
+        unitCharges = currentUnitCharges;
+        recursionCharges = currentRecursionCharges;
         primeCharges = currentPrimeCharges;
-        // Cube markers don't need cached values
 
         // Calculate cooldown progress for UI segments
-        float lightCooldownRemaining = playerActionManager.GetLightMarkerCooldownRemaining();
-        float heavyCooldownRemaining = playerActionManager.GetHeavyMarkerCooldownRemaining();
+        float unitCooldownRemaining = playerActionManager.GetLightMarkerCooldownRemaining();
+        float recursionCooldownRemaining = playerActionManager.GetHeavyMarkerCooldownRemaining();
         float primeCooldownRemaining = playerActionManager.GetPrimeMarkerCooldownRemaining();
 
-        float lightCooldownProgress = CalculateCooldownProgress(
-            currentLightCharges,
-            lightMaxCharges,
-            lightCooldownRemaining,
-            lightMarkerCooldownTime
+        float unitCooldownProgress = CalculateCooldownProgress(
+            currentUnitCharges,
+            unitMaxCharges,
+            unitCooldownRemaining,
+            unitMarkerCooldownTime
         );
 
-        float heavyCooldownProgress = CalculateCooldownProgress(
-            currentHeavyCharges,
-            heavyMaxCharges,
-            heavyCooldownRemaining,
-            heavyMarkerCooldownTime
+        float recursionCooldownProgress = CalculateCooldownProgress(
+            currentRecursionCharges,
+            recursionMaxCharges,
+            recursionCooldownRemaining,
+            recursionMarkerCooldownTime
         );
 
         float primeCooldownProgress = CalculateCooldownProgress(
@@ -217,59 +205,59 @@ public class PlayerActionUI : MonoBehaviour
             primeMarkerCooldownTime
         );
 
-        // Debug cooldown information only when cooldowns start (to avoid spam)
-        // This will only log once per cooldown cycle when cooldown is near max time
-        if ((lightCooldownRemaining > lightMarkerCooldownTime - 0.1f) ||
-            (heavyCooldownRemaining > heavyMarkerCooldownTime - 0.1f) ||
-            (primeCooldownRemaining > primeMarkerCooldownTime - 0.1f))
+        // Update Unit Marker UI
+        if (UnitMarkerUI != null)
         {
-            Debug.Log($"[PlayerActionUI] Cooldowns started - Light: {lightCooldownRemaining:F1}s, Heavy: {heavyCooldownRemaining:F1}s, Prime: {primeCooldownRemaining:F1}s");
+            UpdateMarkerUI(
+                currentUnitCharges,
+                unitMaxCharges,
+                unitCooldownProgress,
+                unitMarkerSegments,
+                unitChargeText,
+                unitMarkerColor,
+                unitCooldownRemaining
+            );
         }
 
-        // Cube markers don't need cooldown progress calculations
-
-        // Update Light Marker UI
-        UpdateMarkerUI(
-            currentLightCharges,
-            lightMaxCharges,
-            lightCooldownProgress,
-            lightMarkerSegments,
-            lightChargeText,
-            segmentFullColor,
-            lightCooldownRemaining
-        );
-
-        // Update Heavy Marker UI
-        UpdateMarkerUI(
-            currentHeavyCharges,
-            heavyMaxCharges,
-            heavyCooldownProgress,
-            heavyMarkerSegments,
-            heavyChargeText,
-            heavyMarkerColor,
-            heavyCooldownRemaining
-        );
+        // Update Recursion Marker UI
+        if (RecursionMarkerUI != null)
+        {
+            UpdateMarkerUI(
+                currentRecursionCharges,
+                recursionMaxCharges,
+                recursionCooldownProgress,
+                recursionMarkerSegments,
+                recursionChargeText,
+                recursionMarkerColor,
+                recursionCooldownRemaining
+            );
+        }
 
         // Update Prime Marker UI - only show if prime markers are available
         bool primeMarkersAvailable = primeMaxCharges > 0;
-        if (primeMarkersAvailable)
+        if (PrimeMarkerUI != null)
         {
-            PrimeMarkerUI.SetActive(true);
-            UpdateMarkerUI(
-                currentPrimeCharges,
-                primeMaxCharges,
-                primeCooldownProgress,
-                primeMarkerSegments,
-                primeChargeText,
-                primeMarkerColor,
-                primeCooldownRemaining
-            );
+            if (primeMarkersAvailable)
+            {
+                PrimeMarkerUI.SetActive(true);
+                UpdateMarkerUI(
+                    currentPrimeCharges,
+                    primeMaxCharges,
+                    primeCooldownProgress,
+                    primeMarkerSegments,
+                    primeChargeText,
+                    primeMarkerColor,
+                    primeCooldownRemaining
+                );
+            }
+            else
+            {
+                PrimeMarkerUI.SetActive(false);
+            }
         }
-        else
-        {
-            // Hide prime marker UI elements when unavailable
-            PrimeMarkerUI.SetActive(false);
-        }
+
+        // Update Infinity Marker UI (when implemented)
+        // TODO: Add infinity marker support to PlayerActionManager
 
         // Update Mode Indicator UI
         if (playerActionManager != null)
@@ -408,7 +396,7 @@ public class PlayerActionUI : MonoBehaviour
 
     private void UpdateModeIndicator(MarkerMode currentMode)
     {
-        if (modeIndicatorSegments == null || modeIndicatorSegments.Length != 3) return;
+        if (modeIndicatorSegments == null || modeIndicatorSegments.Length < 3) return;
 
         // Check if mode has changed to trigger animation
         bool modeChanged = false;
@@ -417,12 +405,13 @@ public class PlayerActionUI : MonoBehaviour
         bool primeMarkersAvailable = primeMaxCharges > 0;
         
         // Update mode indicator segments - highlight current active mode
-        for (int i = 0; i < modeIndicatorSegments.Length; i++)
+        // Segments: 0=Unit, 1=Prime, 2=Recursion, 3=Infinity
+        for (int i = 0; i < modeIndicatorSegments.Length && i < 4; i++)
         {
             if (modeIndicatorSegments[i] == null) continue;
 
-            // Calculate which mode this segment represents (Light=1, Prime=2, Heavy=3)
-MarkerMode segmentMode = (MarkerMode)(i + 1);
+            // Calculate which mode this segment represents (Unit=1, Prime=2, Recursion=3, Infinity=4)
+            MarkerMode segmentMode = (MarkerMode)(i + 1);
 
             // Hide prime mode indicator if prime markers aren't available
             if (segmentMode == MarkerMode.Prime && !primeMarkersAvailable)
@@ -440,7 +429,10 @@ MarkerMode segmentMode = (MarkerMode)(i + 1);
                 }
                 
                 // Active mode - use mode-specific color
-                modeIndicatorSegments[i].color = modeColors[i];
+                if (i < modeColors.Length)
+                {
+                    modeIndicatorSegments[i].color = modeColors[i];
+                }
             }
             else
             {
@@ -459,25 +451,25 @@ MarkerMode segmentMode = (MarkerMode)(i + 1);
     }
 
     // Public getters for UI state
-    public float GetLightCooldownProgress()
+    public float GetUnitCooldownProgress()
     {
         if (playerActionManager == null) return 0f;
         return CalculateCooldownProgress(
-            lightCharges,
-            lightMaxCharges,
+            unitCharges,
+            unitMaxCharges,
             playerActionManager.GetLightMarkerCooldownRemaining(),
-            lightMarkerCooldownTime
+            unitMarkerCooldownTime
         );
     }
 
-    public float GetHeavyCooldownProgress()
+    public float GetRecursionCooldownProgress()
     {
         if (playerActionManager == null) return 0f;
         return CalculateCooldownProgress(
-            heavyCharges,
-            heavyMaxCharges,
+            recursionCharges,
+            recursionMaxCharges,
             playerActionManager.GetHeavyMarkerCooldownRemaining(),
-            heavyMarkerCooldownTime
+            recursionMarkerCooldownTime
         );
     }
 
@@ -492,32 +484,33 @@ MarkerMode segmentMode = (MarkerMode)(i + 1);
         );
     }
 
-    // Cube markers don't need cooldown progress getters
-
-    // Backward compatibility getter
+    // Backward compatibility getters
+    public float GetLightCooldownProgress() => GetUnitCooldownProgress();
+    public float GetHeavyCooldownProgress() => GetRecursionCooldownProgress();
     public float GetAreaCooldownProgress() => GetPrimeCooldownProgress();
 
-    public bool IsLightCharging() => lightCharges < lightMaxCharges;
-    public bool IsHeavyCharging() => heavyCharges < heavyMaxCharges;
+    public bool IsUnitCharging() => unitCharges < unitMaxCharges;
+    public bool IsRecursionCharging() => recursionCharges < recursionMaxCharges;
     public bool IsPrimeCharging() => primeCharges < primeMaxCharges;
-    // Cube markers don't need charging state checks
     
-    // Backward compatibility property
+    // Backward compatibility properties
+    public bool IsLightCharging() => IsUnitCharging();
+    public bool IsHeavyCharging() => IsRecursionCharging();
     public bool IsAreaCharging() => IsPrimeCharging();
 
     // Set max charges explicitly
-    public void SetMaxCharges(int maxLight, int maxHeavy, int maxPrime, int maxCube)
+    public void SetMaxCharges(int maxUnit, int maxRecursion, int maxPrime, int maxInfinity)
     {
-        lightMaxCharges = maxLight;
-        heavyMaxCharges = maxHeavy;
+        unitMaxCharges = maxUnit;
+        recursionMaxCharges = maxRecursion;
         primeMaxCharges = maxPrime;
-        // Cube markers don't need max charges stored
+        infinityMaxCharges = maxInfinity;
     }
 
     // Backward compatibility method
-    public void SetMaxCharges(int maxLight, int maxArea)
+    public void SetMaxCharges(int maxUnit, int maxArea)
     {
-        lightMaxCharges = maxLight;
+        unitMaxCharges = maxUnit;
         primeMaxCharges = maxArea;
     }
 

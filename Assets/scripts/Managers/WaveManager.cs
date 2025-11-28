@@ -72,6 +72,9 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
     public bool waveActive = false;
     public int MoveStep = 0;
     public WaveData CurrentWave => useWaveConfiguration && currentWaveIndex < waveConfiguration.Count ? waveConfiguration[currentWaveIndex] : null;
+    
+    // Mirrored wave flag - when true, cubes are already spawned from markers
+    private bool isMirroredWaveActive = false;
 
     // Paired Wave System - Marker Position Recording
     // Stores marker positions from the previous wave for inheritance by the mirrored version
@@ -339,7 +342,15 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
     {
         if (!resume)
         {
-            SpawnWaveCubes();
+            // Skip spawning if mirrored wave (cubes already spawned from markers)
+            if (!isMirroredWaveActive)
+            {
+                SpawnWaveCubes();
+            }
+            else
+            {
+                DebugLog("[PairedWave] Mirrored wave - cubes already spawned from markers");
+            }
             ShowInitialMessages();
         }
 
@@ -396,28 +407,21 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
         OnWaveComplete?.Invoke(currentWaveIndex);
         DebugLog($"🎯 Triggered OnWaveComplete event for wave {currentWaveIndex}");
 
-        // Handle HasBeenMirrored logic: If wave hasn't been mirrored, flip flag and spawn mirrored version
-        if (CurrentWave != null)
+        // Handle paired wave logic
+        if (isMirroredWaveActive)
         {
-            bool hasBeenMirrored = GetHasBeenMirrored(CurrentWave);
+            // Mirrored wave just completed - reset flag and advance to next config wave
+            isMirroredWaveActive = false;
+            DebugLog("[PairedWave] Mirrored wave completed, advancing to next config wave");
+        }
+        else if (CurrentWave != null)
+        {
+            // Config wave completed - spawn mirrored wave from recorded markers
+            DebugLog("[PairedWave] Config wave completed, spawning mirrored wave from markers...");
             
-            if (!hasBeenMirrored)
-            {
-                // Wave completed for first time - flip flag and spawn mirrored version
-                // Note: Don't clear markers yet - they're needed for SpawnMirroredWave()
-                SetHasBeenMirrored(CurrentWave, true);
-                DebugLog($"[PairedWave] Wave completed, HasBeenMirrored flipped to true. Spawning mirrored version...");
-                
-                // Spawn the mirrored version of this wave (markers will be cleared after use)
-                StartCoroutine(SpawnMirroredWave());
-                return; // Don't advance to next wave yet - we're spawning the mirrored version
-            }
-            else
-            {
-                // Wave has been mirrored already - clear markers and advance to next wave
-                ClearPreviousWaveMarkers();
-                DebugLog("[PairedWave] Mirrored wave completed, advancing to next wave");
-            }
+            // Spawn the mirrored wave (markers will be cleared after use)
+            StartCoroutine(SpawnMirroredWave());
+            return; // Don't advance to next wave yet - we're spawning the mirrored version
         }
 
         // Check if all waves are complete
@@ -1352,9 +1356,9 @@ CubeType cubeType = markerToCubeType[originalPos];
     }
 
     /// <summary>
-    /// Spawns the mirrored version of the current wave using marker positions from the previous wave.
-    /// Called automatically when a wave completes for the first time (HasBeenMirrored = false).
-    /// Can also be called manually from debug panels.
+    /// Spawns the mirrored wave - cubes generated ONLY from previous wave's marker positions.
+    /// Called automatically when a config wave completes.
+    /// Mirrored waves contain only player-placed marker positions converted to cubes.
     /// </summary>
     public IEnumerator SpawnMirroredWave()
     {
@@ -1370,20 +1374,139 @@ CubeType cubeType = markerToCubeType[originalPos];
         ClearAllCubes();
         ResetPlayer();
         
-        // Spawn base cubes from wave configuration
-        SpawnConfigurationCubes();
+        // Get recorded marker positions
+        var recordedPositions = GetPreviousWaveMarkers();
+        if (recordedPositions == null || recordedPositions.GetTotalMarkerCount() == 0)
+        {
+            DebugLog("[PairedWave] No markers recorded - mirrored wave will be empty, skipping to next config wave");
+            isMirroredWaveActive = false;
+            ClearPreviousWaveMarkers();
+            AdvanceToNextWave();
+            yield break;
+        }
         
-        // Spawn inherited cubes from previous wave markers
-        SpawnInheritedCubes();
+        // Set mirrored wave flag BEFORE spawning (prevents SetupWave from spawning config cubes)
+        isMirroredWaveActive = true;
+        
+        // Spawn cubes ONLY from marker positions (no base config cubes)
+        SpawnCubesFromMarkers(recordedPositions);
         
         // Clear markers after they've been used for spawning
         ClearPreviousWaveMarkers();
         
         CountNonBlackCubes();
-        DebugLog($"[PairedWave] Mirrored wave spawned: {activeCubes.Count} cubes ({totalNonBlackCubes} non-black)");
+        DebugLog($"[PairedWave] Mirrored wave spawned: {activeCubes.Count} cubes from {recordedPositions.GetTotalMarkerCount()} markers");
         
-        // Start the mirrored wave
+        // Start the mirrored wave (SetupWave will skip spawning due to isMirroredWaveActive flag)
         StartWave();
+    }
+    
+    /// <summary>
+    /// Spawns cubes directly from recorded marker positions.
+    /// Each marker type maps to its corresponding cube type: Unit→Unit, Prime→Prime, Recursion→Recursion, Infinity→Infinity
+    /// Positions are normalized to spawn at top of grid with Y-axis mirroring.
+    /// </summary>
+    private void SpawnCubesFromMarkers(RecordedMarkerPositions markers)
+    {
+        if (grid == null) return;
+        
+        int gridTop = grid.Height - 1;
+        int spawnedCount = 0;
+        
+        // Unit markers → Unit cubes
+        foreach (var pos in markers.lightMarkerPositions)
+        {
+            int spawnY = gridTop - NormalizeMarkerY(pos.y, markers);
+            int spawnX = Mathf.Clamp(pos.x, 0, grid.Width - 1);
+            SpawnCubeDirectly(spawnX, spawnY, CubeType.Unit);
+            spawnedCount++;
+        }
+        
+        // Recursion markers → Recursion cubes
+        foreach (var pos in markers.heavyMarkerPositions)
+        {
+            int spawnY = gridTop - NormalizeMarkerY(pos.y, markers);
+            int spawnX = Mathf.Clamp(pos.x, 0, grid.Width - 1);
+            SpawnCubeDirectly(spawnX, spawnY, CubeType.Recursion);
+            spawnedCount++;
+        }
+        
+        // Prime markers → Prime cubes
+        foreach (var pos in markers.primeMarkerPositions)
+        {
+            int spawnY = gridTop - NormalizeMarkerY(pos.y, markers);
+            int spawnX = Mathf.Clamp(pos.x, 0, grid.Width - 1);
+            SpawnCubeDirectly(spawnX, spawnY, CubeType.Prime);
+            spawnedCount++;
+        }
+        
+        // Infinity markers → Infinity cubes
+        foreach (var pos in markers.infinityMarkerPositions)
+        {
+            int spawnY = gridTop - NormalizeMarkerY(pos.y, markers);
+            int spawnX = Mathf.Clamp(pos.x, 0, grid.Width - 1);
+            SpawnCubeDirectly(spawnX, spawnY, CubeType.Infinity);
+            spawnedCount++;
+        }
+        
+        DebugLog($"[PairedWave] Spawned {spawnedCount} cubes from markers");
+    }
+    
+    /// <summary>
+    /// Normalizes marker Y position to a row index (0 = top row of spawn area).
+    /// MIRRORS the Y axis: markers placed low (near player) spawn at top, markers placed high spawn lower.
+    /// This creates the paired wave challenge - your marker placements become incoming cubes.
+    /// </summary>
+    private int NormalizeMarkerY(int markerY, RecordedMarkerPositions allMarkers)
+    {
+        // Find the range of Y positions in all markers
+        int minY = int.MaxValue;
+        int maxY = int.MinValue;
+        
+        foreach (var pos in allMarkers.lightMarkerPositions) { minY = Mathf.Min(minY, pos.y); maxY = Mathf.Max(maxY, pos.y); }
+        foreach (var pos in allMarkers.heavyMarkerPositions) { minY = Mathf.Min(minY, pos.y); maxY = Mathf.Max(maxY, pos.y); }
+        foreach (var pos in allMarkers.primeMarkerPositions) { minY = Mathf.Min(minY, pos.y); maxY = Mathf.Max(maxY, pos.y); }
+        foreach (var pos in allMarkers.infinityMarkerPositions) { minY = Mathf.Min(minY, pos.y); maxY = Mathf.Max(maxY, pos.y); }
+        
+        if (minY == int.MaxValue) return 0;
+        
+        // MIRRORED: Lower Y markers (near player) spawn at top (row 0)
+        // Higher Y markers spawn further down
+        return markerY - minY;
+    }
+    
+    /// <summary>
+    /// Spawns a single cube directly at grid position (no wave-to-grid conversion).
+    /// </summary>
+    private void SpawnCubeDirectly(int gridX, int gridY, CubeType type)
+    {
+        if (grid == null || cubePrefabs == null) return;
+        
+        int prefabIndex = (int)type;
+        if (prefabIndex < 0 || prefabIndex >= cubePrefabs.Length) return;
+        
+        // Clamp to grid bounds
+        gridX = Mathf.Clamp(gridX, 0, grid.Width - 1);
+        gridY = Mathf.Clamp(gridY, 0, grid.Height - 1);
+        
+        Vector2Int position = new Vector2Int(gridX, gridY);
+        Vector3 worldPos = grid.GridToWorldPosition(gridX, gridY, 2f);
+        
+        GameObject cubeObj = Instantiate(cubePrefabs[prefabIndex], worldPos, Quaternion.identity);
+        var cube = cubeObj.GetComponent<CubeManager>();
+        if (cube == null) cube = cubeObj.AddComponent<CubeManager>();
+        
+        var cubeData = new CubeData
+        {
+            type = type,
+            position = position,
+            level = 1
+        };
+        
+        cube.Init(grid, cubeData, 2f);
+        activeCubes.Add(cube);
+        
+        DebugLog($"[PairedWave] Spawned {type} at ({gridX}, {gridY})");
     }
 
     private IEnumerator DelayedWaveStart()
@@ -1578,7 +1701,17 @@ CubeType cubeType = markerToCubeType[originalPos];
     {
         string status = waveActive ? "ACTIVE" : "STOPPED";
         string speedState = isSpeedingUp ? "FAST" : "NORMAL";
-        return $"Wave {currentWaveIndex}: {status} ({speedState}) Step:{MoveStep} Cubes:{activeCubes.Count} Mode:{(debugMode ? "DEBUG" : "NORMAL")}";
+        string waveLabel = GetWaveLabel();
+        return $"Wave {waveLabel}: {status} ({speedState}) Step:{MoveStep} Cubes:{activeCubes.Count}";
+    }
+    
+    /// <summary>
+    /// Gets the display label for the current wave (e.g., "1", "1M", "2", "2M")
+    /// </summary>
+    public string GetWaveLabel()
+    {
+        int displayIndex = currentWaveIndex + 1; // 1-based for display
+        return isMirroredWaveActive ? $"{displayIndex}M" : $"{displayIndex}";
     }
 
     public Dictionary<string, object> GetDebugData()
@@ -1609,22 +1742,20 @@ CubeType cubeType = markerToCubeType[originalPos];
         };
 
         // Add paired wave debug information
-        if (CurrentWave != null)
+        debugData["Is Mirrored Wave"] = isMirroredWaveActive;
+        
+        var recordedPositions = GetPreviousWaveMarkers();
+        if (recordedPositions != null)
         {
-            bool hasBeenMirrored = GetHasBeenMirrored(CurrentWave);
-            debugData["Has Been Mirrored"] = hasBeenMirrored;
-            
-            var recordedPositions = GetPreviousWaveMarkers();
-            if (recordedPositions != null)
-            {
-                debugData["Recorded Light Markers"] = recordedPositions.lightMarkerPositions.Count;
-                debugData["Recorded Heavy Markers"] = recordedPositions.heavyMarkerPositions.Count;
-                debugData["Recorded Prime Markers"] = recordedPositions.primeMarkerPositions.Count;
-                debugData["Total Recorded Markers"] = recordedPositions.GetTotalMarkerCount();
-            }
-            
-            var ghostPreviews = GetGhostPreviewPositions();
-            debugData["Ghost Preview Count"] = ghostPreviews.Count;
+            debugData["Recorded Light Markers"] = recordedPositions.lightMarkerPositions.Count;
+            debugData["Recorded Heavy Markers"] = recordedPositions.heavyMarkerPositions.Count;
+            debugData["Recorded Prime Markers"] = recordedPositions.primeMarkerPositions.Count;
+            debugData["Recorded Infinity Markers"] = recordedPositions.infinityMarkerPositions.Count;
+            debugData["Total Recorded Markers"] = recordedPositions.GetTotalMarkerCount();
+        }
+        else
+        {
+            debugData["Recorded Markers"] = "None";
         }
 
         return debugData;
@@ -1645,6 +1776,7 @@ CubeType cubeType = markerToCubeType[originalPos];
         debugMode = false;
         manualControl = false;
         isPaused = false;
+        isMirroredWaveActive = false;
         
         // Reset statistics
         ResetWaveStatistics();
@@ -1698,6 +1830,22 @@ CubeType cubeType = markerToCubeType[originalPos];
 
         previousWaveMarkers.RecordMarker(position, markerType);
         DebugLog($"[PairedWave] Recorded {markerType} marker at ({position.x}, {position.y}) for next mirrored wave");
+    }
+    
+    /// <summary>
+    /// Removes a recorded marker position (for undo functionality).
+    /// Returns true if marker was found and removed.
+    /// </summary>
+    public bool UnrecordMarkerPosition(Vector2Int position, MarkerMode markerType)
+    {
+        if (previousWaveMarkers == null) return false;
+        
+        bool removed = previousWaveMarkers.RemoveMarker(position, markerType);
+        if (removed)
+        {
+            DebugLog($"[PairedWave] Unrecorded {markerType} marker at ({position.x}, {position.y})");
+        }
+        return removed;
     }
 
     /// <summary>
@@ -1783,11 +1931,11 @@ public class RecordedMarkerPositions
     {
         switch (markerType)
         {
-            case MarkerMode.Light:
+            case MarkerMode.Unit:
                 if (!lightMarkerPositions.Contains(position))
                     lightMarkerPositions.Add(position);
                 break;
-            case MarkerMode.Heavy:
+            case MarkerMode.Recursion:
                 if (!heavyMarkerPositions.Contains(position))
                     heavyMarkerPositions.Add(position);
                 break;
@@ -1795,7 +1943,27 @@ public class RecordedMarkerPositions
                 if (!primeMarkerPositions.Contains(position))
                     primeMarkerPositions.Add(position);
                 break;
-            // Infinity markers not yet implemented, but structure is ready
+            case MarkerMode.Infinity:
+                if (!infinityMarkerPositions.Contains(position))
+                    infinityMarkerPositions.Add(position);
+                break;
+        }
+    }
+    
+    public bool RemoveMarker(Vector2Int position, MarkerMode markerType)
+    {
+        switch (markerType)
+        {
+            case MarkerMode.Unit:
+                return lightMarkerPositions.Remove(position);
+            case MarkerMode.Recursion:
+                return heavyMarkerPositions.Remove(position);
+            case MarkerMode.Prime:
+                return primeMarkerPositions.Remove(position);
+            case MarkerMode.Infinity:
+                return infinityMarkerPositions.Remove(position);
+            default:
+                return false;
         }
     }
 
