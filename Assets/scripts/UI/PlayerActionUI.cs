@@ -574,10 +574,6 @@ public class PlayerActionUI : MonoBehaviour
     public bool IsRecursionCharging() => recursionCharges < recursionMaxCharges;
     public bool IsPrimeCharging() => primeCharges < primeMaxCharges;
     
-    // Backward compatibility properties
-    public bool IsUnitCharging() => IsUnitCharging();
-    public bool IsRecursionCharging() => IsRecursionCharging();
-    public bool IsAreaCharging() => IsPrimeCharging();
 
     // Set max charges explicitly
     public void SetMaxCharges(int maxUnit, int maxRecursion, int maxPrime, int maxInfinity)
