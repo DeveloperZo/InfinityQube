@@ -432,10 +432,12 @@ public class PlayerStatisticsManager : MonoBehaviour, IManagerDebugInterface
         
         switch (markerType.ToLower())
         {
-            case "light":
+            case "unit":
+            case "light": // backward compatibility
                 currentSession.markerData.unitMarkerPlacements.Add(placementEvent);
                 break;
-            case "heavy":
+            case "recursion":
+            case "heavy": // backward compatibility
                 currentSession.markerData.RecursionMarkerPlacements.Add(placementEvent);
                 break;
             case "prime":
@@ -461,14 +463,16 @@ public class PlayerStatisticsManager : MonoBehaviour, IManagerDebugInterface
 
         switch (markerType.ToLower())
         {
-            case "light":
+            case "unit":
+            case "light": // backward compatibility
                 placementEvent = currentSession.markerData.unitMarkerPlacements.FirstOrDefault(x => x.position == position);
                 if (placementEvent != null)
                 {
                     currentSession.markerData.unitMarkerPlacements.Remove(placementEvent);
                 }
                 break;
-            case "heavy":
+            case "recursion":
+            case "heavy": // backward compatibility
                 placementEvent = currentSession.markerData.RecursionMarkerPlacements.FirstOrDefault(x => x.position == position);
                 if (placementEvent != null)
                 {

@@ -565,9 +565,7 @@ public class PlayerActionUI : MonoBehaviour
         );
     }
 
-    // Backward compatibility getters
-    public float GetUnitCooldownProgress() => GetUnitCooldownProgress();
-    public float GetRecursionCooldownProgress() => GetRecursionCooldownProgress();
+    // Alias for backward compatibility
     public float GetAreaCooldownProgress() => GetPrimeCooldownProgress();
 
     public bool IsUnitCharging() => unitCharges < unitMaxCharges;
