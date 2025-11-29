@@ -41,10 +41,10 @@ public static class Enumerations
     /// </summary>
     public enum MarkerType
     {
-        /// <summary>Light marker: Basic targeting (formerly Individual)</summary>
-        Light,
-        /// <summary>Heavy marker: Enhanced marker for recursion cubes (NEW)</summary>
-        Heavy,
+        /// <summary>Unit marker: Basic targeting (formerly Individual/Light)</summary>
+        Unit,
+        /// <summary>Recursion marker: Enhanced marker for recursion cubes (formerly Heavy)</summary>
+        Recursion,
         /// <summary>Prime marker: Area coverage marker (formerly Area)</summary>
         Prime,
         /// <summary>Cube marker: Generated from prime cube captures</summary>
@@ -126,9 +126,9 @@ public static class Enumerations
         PlayerMoved,        // When the player moves position
         
         // Marker Events
-        LightMarkerPlaced,  // When a light marker is placed
+        UnitMarkerPlaced,   // When a unit marker is placed
         PrimeMarkerPlaced,  // When a prime marker is placed
-        RecursionMarkerPlaced,  // When a heavy marker is placed
+        RecursionMarkerPlaced,  // When a recursion marker is placed
         MarkerTriggered,    // When any marker is triggered
         
         // Wave Events
@@ -139,9 +139,9 @@ public static class Enumerations
         ResourceRegeneration, // When resources regenerate
         
         // Mode Switching Events
-        ModeSwitchedToLight,  // When switching to Light marker mode
+        ModeSwitchedToUnit,   // When switching to Unit marker mode
         ModeSwitchedToPrime,  // When switching to Prime marker mode
-        ModeSwitchedToHeavy,  // When switching to Heavy marker mode
+        ModeSwitchedToRecursion, // When switching to Recursion marker mode
         
         // Message Polish Events
         MessageShow,         // When a tutorial/guidance message is shown

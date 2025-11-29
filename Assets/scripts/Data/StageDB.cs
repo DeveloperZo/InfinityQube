@@ -93,7 +93,7 @@ public class StageDB : ScriptableObject
 
                 // Check that waves with marker spawn rules have at least one rule enabled
                 var rules = wave.markerSpawnRules;
-                bool hasAnyRule = rules.lightSpawnsUnit || rules.heavySpawnsRecursion || 
+                bool hasAnyRule = rules.unitSpawnsUnit || rules.recursionSpawnsRecursion || 
                                  rules.primeSpawnsPrime || rules.infinitySpawnsInfinity;
                 
                 // Note: It's valid to have no rules if the wave won't be mirrored

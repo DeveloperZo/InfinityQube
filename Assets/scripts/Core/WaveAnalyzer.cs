@@ -16,9 +16,9 @@ public class WaveAnalyzer
     // Game mechanics constants
     private const int PRIME_AREA_SIZE = 3; // 3x3 area for prime cube captures
     private const int INFINITY_CORRUPTION_RADIUS = 1; // Adjacent tiles get corrupted
-    private const int LIGHT_MARKER_BASE_CHARGE = 3;
+    private const int UNIT_MARKER_BASE_CHARGE = 3;
     private const int PRIME_MARKER_BASE_CHARGE = 1;
-    private const int HEAVY_MARKER_BASE_CHARGE = 1;
+    private const int RECURSION_MARKER_BASE_CHARGE = 1;
     private const float MARKER_COOLDOWN = 1f; // 1 second cooldown between uses
     #endregion
     
@@ -218,7 +218,7 @@ public class WaveAnalyzer
         foreach (var cube in recursionCubes)
         {
             info.totalHitsRequired += cube.level; // Each level requires one hit
-            info.RecursionMarkersRequired += Mathf.CeilToInt(cube.level / 2f); // Heavy markers do 2 damage
+            info.RecursionMarkersRequired += Mathf.CeilToInt(cube.level / 2f); // Recursion markers do 2 damage
         }
         
         return info;
@@ -247,7 +247,7 @@ public class WaveAnalyzer
         
         foreach (var primeKvp in sortedPrimeCubes)
         {
-            // Check if prime marker is more efficient than individual light markers
+            // Check if prime marker is more efficient than individual unit markers
             int unitsCovered = primeKvp.Value.Count(c => c.type == CubeType.Unit);
             if (unitsCovered >= 2) // Prime marker is worth it if it clears 2+ units
             {
@@ -255,7 +255,7 @@ public class WaveAnalyzer
             }
             else
             {
-                // Use light marker on the prime cube itself
+                // Use unit marker on the prime cube itself
                 strategy.UnitMarkersForPrime++;
             }
         }
@@ -332,13 +332,13 @@ public class WaveAnalyzer
     private bool DetermineWaveSolvability(CubeAnalysis analysis, MarkerStrategy strategy, int minSlackSpace)
     {
         // Check if we have enough marker charges
-        int availableLightCharges = LIGHT_MARKER_BASE_CHARGE * 3; // Assume 3 light markers max
+        int availableUnitCharges = UNIT_MARKER_BASE_CHARGE * 3; // Assume 3 unit markers max
         int availablePrimeCharges = PRIME_MARKER_BASE_CHARGE * 2; // Assume 2 prime markers max
-        int availableHeavyCharges = HEAVY_MARKER_BASE_CHARGE * 1; // Assume 1 heavy marker max
+        int availableRecursionCharges = RECURSION_MARKER_BASE_CHARGE * 1; // Assume 1 recursion marker max
         
-        if (strategy.totalUnitMarkers > availableLightCharges)
+        if (strategy.totalUnitMarkers > availableUnitCharges)
         {
-            DebugLog("DetermineWaveSolvability", "Not enough light marker charges");
+            DebugLog("DetermineWaveSolvability", "Not enough unit marker charges");
             return false;
         }
         
@@ -348,14 +348,14 @@ public class WaveAnalyzer
             return false;
         }
         
-        if (strategy.totalRecursionMarkers > availableHeavyCharges)
+        if (strategy.totalRecursionMarkers > availableRecursionCharges)
         {
-            DebugLog("DetermineWaveSolvability", "Not enough heavy marker charges");
+            DebugLog("DetermineWaveSolvability", "Not enough recursion marker charges");
             return false;
         }
         
         // Check if infinity cubes can be handled
-        if (analysis.infinityCubes.Count > availableLightCharges)
+        if (analysis.infinityCubes.Count > availableUnitCharges)
         {
             DebugLog("DetermineWaveSolvability", "Too many infinity cubes to handle");
             return false;
@@ -482,7 +482,7 @@ public class WaveAnalyzer
     /// </summary>
     private class MarkerStrategy
     {
-        // Light marker allocation
+        // Unit marker allocation
         public int UnitMarkersForUnits = 0;
         public int UnitMarkersForPrime = 0;
         public int UnitMarkersForInfinity = 0;
@@ -490,7 +490,7 @@ public class WaveAnalyzer
         // Prime marker allocation
         public int primeMarkersForArea = 0;
         
-        // Heavy marker allocation
+        // Recursion marker allocation
         public int RecursionMarkersForRecursion = 0;
         
         // Totals

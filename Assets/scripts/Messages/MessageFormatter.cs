@@ -409,8 +409,8 @@ public static class MessageFormatter
         string messageText = message.Message.ToLower();
 
         // Check for marker-related messages
-        if (messageText.Contains("light marker") && !capabilities.CanUseUnitMarkers) return false;
-        if (messageText.Contains("heavy marker") && !capabilities.CanUseRecursionMarkers) return false;
+        if (messageText.Contains("unit marker") && !capabilities.CanUseUnitMarkers) return false;
+        if (messageText.Contains("recursion marker") && !capabilities.CanUseRecursionMarkers) return false;
         if (messageText.Contains("prime marker") && !capabilities.CanUsePrimeMarkers) return false;
         if (messageText.Contains("cube marker") && !capabilities.CanUseCubeMarkers) return false;
 

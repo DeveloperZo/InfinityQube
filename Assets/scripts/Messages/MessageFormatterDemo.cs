@@ -15,11 +15,11 @@ public class MessageFormatterDemo : MonoBehaviour
     [Header("Sample Messages for Testing")]
     [TextArea(3, 5)]
     [SerializeField] private string[] testMessages = {
-        "You should try to place a light marker near the cubes to capture them effectively",
+        "You should try to place a unit marker near the cubes to capture them effectively",
         "Move your player character to position ({playerX},{playerY}) and then press F to place a marker",
         "The wave has {activeCubeTypes} different cube types approaching your position",
-        "Recursion cubes are dangerous and should be avoided at all costs unless you have heavy markers",
-        "When you see infinity cubes, target them with light markers for maximum points and detonations"
+        "Recursion cubes are dangerous and should be avoided at all costs unless you have recursion markers",
+        "When you see infinity cubes, target them with unit markers for maximum points and detonations"
     };
 
     [Header("Mock Game Context")]
@@ -135,7 +135,7 @@ public class MessageFormatterDemo : MonoBehaviour
         // Create mock tutorial message
         var tutorialMessage = new TutorialMessage
         {
-            Message = "Place light markers in the path of infinity cubes to capture them and earn detonations",
+            Message = "Place unit markers in the path of infinity cubes to capture them and earn detonations",
             shortMessage = "Place markers for cubes",
             messageId = "test_progressive",
             useShortMessageOnRepeat = true,
@@ -212,7 +212,7 @@ public class MessageFormatterDemo : MonoBehaviour
         
         var tutorialMessage = new TutorialMessage
         {
-            Message = "You should move to position ({playerX},{playerY}) and place {markers} light markers to capture the approaching infinity cubes",
+            Message = "You should move to position ({playerX},{playerY}) and place {markers} unit markers to capture the approaching infinity cubes",
             messageId = "test_preview",
             category = MessageCategory.Important
         };

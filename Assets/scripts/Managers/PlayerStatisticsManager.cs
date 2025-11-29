@@ -433,7 +433,7 @@ public class PlayerStatisticsManager : MonoBehaviour, IManagerDebugInterface
         switch (markerType.ToLower())
         {
             case "light":
-                currentSession.markerData.lightMarkerPlacements.Add(placementEvent);
+                currentSession.markerData.unitMarkerPlacements.Add(placementEvent);
                 break;
             case "heavy":
                 currentSession.markerData.RecursionMarkerPlacements.Add(placementEvent);
@@ -462,10 +462,10 @@ public class PlayerStatisticsManager : MonoBehaviour, IManagerDebugInterface
         switch (markerType.ToLower())
         {
             case "light":
-                placementEvent = currentSession.markerData.lightMarkerPlacements.FirstOrDefault(x => x.position == position);
+                placementEvent = currentSession.markerData.unitMarkerPlacements.FirstOrDefault(x => x.position == position);
                 if (placementEvent != null)
                 {
-                    currentSession.markerData.lightMarkerPlacements.Remove(placementEvent);
+                    currentSession.markerData.unitMarkerPlacements.Remove(placementEvent);
                 }
                 break;
             case "heavy":
@@ -1277,7 +1277,7 @@ public class PlayerStatisticsManager : MonoBehaviour, IManagerDebugInterface
             ["Session ID"] = GetCurrentSessionId(),
             ["Session Duration"] = GetSessionDuration(),
             ["Positions Recorded"] = currentSession?.movementData?.positionHistory?.Count ?? 0,
-            ["Markers Placed"] = (currentSession?.markerData?.lightMarkerPlacements?.Count ?? 0) +
+            ["Markers Placed"] = (currentSession?.markerData?.unitMarkerPlacements?.Count ?? 0) +
                                (currentSession?.markerData?.RecursionMarkerPlacements?.Count ?? 0) +
                                (currentSession?.markerData?.primeMarkerPlacements?.Count ?? 0),
             ["Cubes Captured"] = currentSession?.cubeData?.captureEvents?.Count ?? 0,

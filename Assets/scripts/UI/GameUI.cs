@@ -252,7 +252,7 @@ public class GameUI : MonoBehaviour
         GUILayout.Label("• Place markers in cube paths", textStyle);
         GUILayout.Label("• Infinity cubes create detonations", textStyle);
         GUILayout.Label("• Avoid recursion cubes!", textStyle);
-        GUILayout.Label("• Heavy markers for recursion cubes", textStyle);
+        GUILayout.Label("• Recursion markers for recursion cubes", textStyle);
 
         // Dynamic tip based on game state
         string dynamicTip = GetDynamicTip();
@@ -338,16 +338,16 @@ public class GameUI : MonoBehaviour
         // 1. Marker availability checks (highest priority)
         if (playerActionManager != null)
         {
-            // Check if light markers are recharging
-            if (playerActionManager.GetCurrentLightCharges() == 0)
+            // Check if unit markers are recharging
+            if (playerActionManager.GetCurrentUnitCharges() == 0)
             {
-                return "Light markers recharging...";
+                return "Unit markers recharging...";
             }
 
-            // Suggest placing light markers if available
-            if (playerActionManager.CanPlaceLightMarker())
+            // Suggest placing unit markers if available
+            if (playerActionManager.CanPlaceUnitMarker())
             {
-                return "Press F to place light marker";
+                return "Press F to place unit marker";
             }
         }
 
@@ -446,15 +446,15 @@ public class GameUI : MonoBehaviour
         // 2. Marker availability with action guidance
         if (playerActionManager != null)
         {
-            if (playerActionManager.GetCurrentLightCharges() == 0)
+            if (playerActionManager.GetCurrentUnitCharges() == 0)
             {
                 string rechargeTip = "Wait for markers to recharge ({markers} available)";
                 return tutorialManager.FormatMessageText(rechargeTip);
             }
             
-            if (playerActionManager.CanPlaceLightMarker())
+            if (playerActionManager.CanPlaceUnitMarker())
             {
-                string placeTip = "Place light marker at ({playerX},{playerY}) with F key";
+                string placeTip = "Place unit marker at ({playerX},{playerY}) with F key";
                 return tutorialManager.FormatMessageText(placeTip);
             }
         }
@@ -480,7 +480,7 @@ public class GameUI : MonoBehaviour
         {
             if (context.activeCubeTypes.Contains(CubeType.Recursion))
             {
-                string recursionTip = "Avoid recursion cubes! Use heavy markers";
+                string recursionTip = "Avoid recursion cubes! Use recursion markers";
                 return tutorialManager.FormatMessageText(recursionTip);
             }
             

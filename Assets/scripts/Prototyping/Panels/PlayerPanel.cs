@@ -25,12 +25,12 @@ public class PlayerPanel : PrototypingPanelBase
     private bool unlimitedMode = false;
     
     // Stored values for restoring after unlimited mode
-    private float storedLightCooldown;
-    private float storedHeavyCooldown;
+    private float storedUnitCooldown;
+    private float storedRecursionCooldown;
     private float storedPrimeCooldown;
     private float storedInfinityCooldown;
-    private int storedLightCharges;
-    private int storedHeavyCharges;
+    private int storedUnitCharges;
+    private int storedRecursionCharges;
     private int storedPrimeCharges;
     private int storedInfinityCharges;
     private int storedPrimeMarkerOnGridLimit;
@@ -133,10 +133,10 @@ public class PlayerPanel : PrototypingPanelBase
             
             // UnitMarker settings
             DrawMarkerTypeSettings("UnitMarker", 
-                ref actionManager.maxLightMarkerCharges, 
-                ref actionManager.lightMarkerCooldown,
+                ref actionManager.maxUnitMarkerCharges, 
+                ref actionManager.unitMarkerCooldown,
                 ref actionManager.maxUnitMarkers,
-                actionManager.GetLightMarkerCooldownRemaining());
+                actionManager.GetUnitMarkerCooldownRemaining());
             
             // PrimeMarker settings
             DrawMarkerTypeSettings("PrimeMarker", 
@@ -148,7 +148,7 @@ public class PlayerPanel : PrototypingPanelBase
             // RecursionMarker settings
             DrawMarkerTypeSettings("RecursionMarker", 
                 ref actionManager.maxRecursionMarkerCharges, 
-                ref actionManager.RecursionMarkerCooldown,
+                ref actionManager.recursionMarkerCooldown,
                 ref actionManager.maxRecursionMarkers,
                 actionManager.GetRecursionMarkerCooldownRemaining());
             
@@ -225,22 +225,22 @@ public class PlayerPanel : PrototypingPanelBase
         if (unlimitedMode)
         {
             // Store current values
-            storedLightCooldown = actionManager.lightMarkerCooldown;
-            storedHeavyCooldown = actionManager.RecursionMarkerCooldown;
+            storedUnitCooldown = actionManager.unitMarkerCooldown;
+            storedRecursionCooldown = actionManager.recursionMarkerCooldown;
             storedPrimeCooldown = actionManager.primeMarkerCooldown;
             storedInfinityCooldown = actionManager.infinityMarkerCooldown;
-            storedLightCharges = actionManager.maxLightMarkerCharges;
-            storedHeavyCharges = actionManager.maxRecursionMarkerCharges;
+            storedUnitCharges = actionManager.maxUnitMarkerCharges;
+            storedRecursionCharges = actionManager.maxRecursionMarkerCharges;
             storedPrimeCharges = actionManager.maxPrimeMarkerCharges;
             storedInfinityCharges = actionManager.maxInfinityMarkerCharges;
             storedPrimeMarkerOnGridLimit = actionManager.primeMarkerOnGridLimit;
             
             // Set unlimited for all marker types
-            actionManager.lightMarkerCooldown = 0;
-            actionManager.RecursionMarkerCooldown = 0;
+            actionManager.unitMarkerCooldown = 0;
+            actionManager.recursionMarkerCooldown = 0;
             actionManager.primeMarkerCooldown = 0;
             actionManager.infinityMarkerCooldown = 0;
-            actionManager.maxLightMarkerCharges = 99;
+            actionManager.maxUnitMarkerCharges = 99;
             actionManager.maxRecursionMarkerCharges = 99;
             actionManager.maxPrimeMarkerCharges = 99;
             actionManager.maxInfinityMarkerCharges = 99;
@@ -256,12 +256,12 @@ public class PlayerPanel : PrototypingPanelBase
         else
         {
             // Restore values
-            actionManager.lightMarkerCooldown = storedLightCooldown;
-            actionManager.RecursionMarkerCooldown = storedHeavyCooldown;
+            actionManager.unitMarkerCooldown = storedUnitCooldown;
+            actionManager.recursionMarkerCooldown = storedRecursionCooldown;
             actionManager.primeMarkerCooldown = storedPrimeCooldown;
             actionManager.infinityMarkerCooldown = storedInfinityCooldown;
-            actionManager.maxLightMarkerCharges = storedLightCharges;
-            actionManager.maxRecursionMarkerCharges = storedHeavyCharges;
+            actionManager.maxUnitMarkerCharges = storedUnitCharges;
+            actionManager.maxRecursionMarkerCharges = storedRecursionCharges;
             actionManager.maxPrimeMarkerCharges = storedPrimeCharges;
             actionManager.maxInfinityMarkerCharges = storedInfinityCharges;
             actionManager.primeMarkerOnGridLimit = storedPrimeMarkerOnGridLimit;
@@ -273,8 +273,8 @@ public class PlayerPanel : PrototypingPanelBase
     private void SetAllCooldowns(float value)
     {
         if (actionManager == null) return;
-        actionManager.lightMarkerCooldown = value;
-        actionManager.RecursionMarkerCooldown = value;
+        actionManager.unitMarkerCooldown = value;
+        actionManager.recursionMarkerCooldown = value;
         actionManager.primeMarkerCooldown = value;
         actionManager.infinityMarkerCooldown = value;
         LogAction($"All cooldowns set to {value}");
@@ -283,7 +283,7 @@ public class PlayerPanel : PrototypingPanelBase
     private void RefillAllCharges()
     {
         if (actionManager == null) return;
-        actionManager.RefillLightMarkerCharges();
+        actionManager.RefillUnitMarkerCharges();
         actionManager.RefillRecursionMarkerCharges();
         actionManager.RefillPrimeMarkerCharges();
         actionManager.RefillInfinityMarkerCharges();
@@ -294,11 +294,11 @@ public class PlayerPanel : PrototypingPanelBase
     {
         if (actionManager == null) return;
         unlimitedMode = false;
-        actionManager.lightMarkerCooldown = 5f;
-        actionManager.RecursionMarkerCooldown = 5f;
+        actionManager.unitMarkerCooldown = 5f;
+        actionManager.recursionMarkerCooldown = 5f;
         actionManager.primeMarkerCooldown = 5f;
         actionManager.infinityMarkerCooldown = 15f;
-        actionManager.maxLightMarkerCharges = 3;
+        actionManager.maxUnitMarkerCharges = 3;
         actionManager.maxRecursionMarkerCharges = 2;
         actionManager.maxPrimeMarkerCharges = 2;
         actionManager.maxInfinityMarkerCharges = 1;
@@ -394,8 +394,8 @@ public class PlayerPanel : PrototypingPanelBase
         List<Vector2Int> markerList = null;
         switch (mode)
         {
-            case MarkerMode.Unit: markerList = markers.lightMarkerPositions; break;
-            case MarkerMode.Recursion: markerList = markers.RecursionMarkerPositions; break;
+            case MarkerMode.Unit: markerList = markers.unitMarkerPositions; break;
+            case MarkerMode.Recursion: markerList = markers.recursionMarkerPositions; break;
             case MarkerMode.Prime: markerList = markers.primeMarkerPositions; break;
         }
         

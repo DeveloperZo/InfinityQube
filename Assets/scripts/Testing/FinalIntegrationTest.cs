@@ -55,10 +55,10 @@ public class FinalIntegrationTest : MonoBehaviour
         // Test 1: Four-tier marker system terminology
         yield return TestFourTierMarkerTerminology();
         
-        // Test 2: Light marker functionality (was individual)
-        yield return TestLightMarkerPlacement();
+        // Test 2: Unit marker functionality (was individual)
+        yield return TestUnitMarkerPlacement();
         
-        // Test 3: Heavy marker functionality (NEW - for recursion cubes)
+        // Test 3: Recursion marker functionality (NEW - for recursion cubes)
         yield return TestRecursionMarkerFunctionality();
         
         // Test 4: Prime marker area coverage (was area)
@@ -70,7 +70,7 @@ public class FinalIntegrationTest : MonoBehaviour
         // Test 6: New cube terminology (unit/infinity/prime/recursion)
         yield return TestCubeTerminology();
         
-        // Test 7: Heavy marker + recursion cube interaction
+        // Test 7: Recursion marker + recursion cube interaction
         yield return TestRecursionMarkerRecursionCubeInteraction();
         
         // Test 8: Corruption mechanics
@@ -120,14 +120,14 @@ public class FinalIntegrationTest : MonoBehaviour
         Log("Testing four-tier marker system terminology...");
         
         // Test MarkerType enum exists and has correct values
-        AssertTrue(System.Enum.IsDefined(typeof(MarkerType), MarkerType.Light), "MarkerType.Light exists");
-        AssertTrue(System.Enum.IsDefined(typeof(MarkerType), MarkerType.Heavy), "MarkerType.Heavy exists (NEW)");
+        AssertTrue(System.Enum.IsDefined(typeof(MarkerType), MarkerType.Unit), "MarkerType.Unit exists");
+        AssertTrue(System.Enum.IsDefined(typeof(MarkerType), MarkerType.Recursion), "MarkerType.Recursion exists (NEW)");
         AssertTrue(System.Enum.IsDefined(typeof(MarkerType), MarkerType.Prime), "MarkerType.Prime exists");
         AssertTrue(System.Enum.IsDefined(typeof(MarkerType), MarkerType.Cube), "MarkerType.Cube exists");
         
         // Test CubeMarkerType enum exists and has correct values
-        AssertTrue(System.Enum.IsDefined(typeof(PlayerMarkerSystem.CubeMarkerType), PlayerMarkerSystem.CubeMarkerType.Light), "CubeMarkerType.Light exists");
-        AssertTrue(System.Enum.IsDefined(typeof(PlayerMarkerSystem.CubeMarkerType), PlayerMarkerSystem.CubeMarkerType.Heavy), "CubeMarkerType.Heavy exists (NEW)");
+        AssertTrue(System.Enum.IsDefined(typeof(PlayerMarkerSystem.CubeMarkerType), PlayerMarkerSystem.CubeMarkerType.Unit), "CubeMarkerType.Unit exists");
+        AssertTrue(System.Enum.IsDefined(typeof(PlayerMarkerSystem.CubeMarkerType), PlayerMarkerSystem.CubeMarkerType.Recursion), "CubeMarkerType.Recursion exists (NEW)");
         AssertTrue(System.Enum.IsDefined(typeof(PlayerMarkerSystem.CubeMarkerType), PlayerMarkerSystem.CubeMarkerType.Prime), "CubeMarkerType.Prime exists");
         AssertTrue(System.Enum.IsDefined(typeof(PlayerMarkerSystem.CubeMarkerType), PlayerMarkerSystem.CubeMarkerType.Cube), "CubeMarkerType.Cube exists");
         
@@ -135,59 +135,59 @@ public class FinalIntegrationTest : MonoBehaviour
     }
     #endregion
 
-    #region Test 2: Light marker functionality (was individual)
-    private IEnumerator TestLightMarkerPlacement()
+    #region Test 2: Unit marker functionality (was individual)
+    private IEnumerator TestUnitMarkerPlacement()
     {
-        Log("Testing light marker placement and triggering...");
+        Log("Testing unit marker placement and triggering...");
         
         Vector2Int testPos = new Vector2Int(2, 5);
         
-        // Test light marker placement
-        bool placed = playerActionManager.PlaceLightMarker(testPos);
-        AssertTrue(placed, "Light marker placed successfully");
+        // Test unit marker placement
+        bool placed = playerActionManager.PlaceUnitMarker(testPos);
+        AssertTrue(placed, "Unit marker placed successfully");
         
         // Test marker detection
-        bool hasMarker = playerActionManager.HasLightMarkerAt(testPos);
-        AssertTrue(hasMarker, "Light marker detected at position");
+        bool hasMarker = playerActionManager.HasUnitMarkerAt(testPos);
+        AssertTrue(hasMarker, "Unit marker detected at position");
         
         // Test marker count
         int currentMarkers = playerActionManager.GetCurrentUnitMarkers();
-        AssertTrue(currentMarkers > 0, "Light marker count increased");
+        AssertTrue(currentMarkers > 0, "Unit marker count increased");
         
         // Test marker removal
-        bool removed = playerActionManager.RemoveLightMarkerAt(testPos);
-        AssertTrue(removed, "Light marker removed successfully");
+        bool removed = playerActionManager.RemoveUnitMarkerAt(testPos);
+        AssertTrue(removed, "Unit marker removed successfully");
         
         // Test marker no longer detected
-        hasMarker = playerActionManager.HasLightMarkerAt(testPos);
-        AssertFalse(hasMarker, "Light marker no longer detected after removal");
+        hasMarker = playerActionManager.HasUnitMarkerAt(testPos);
+        AssertFalse(hasMarker, "Unit marker no longer detected after removal");
         
         yield return new WaitForSeconds(testDelay);
     }
     #endregion
 
-    #region Test 3: Heavy marker functionality (NEW)
+    #region Test 3: Recursion marker functionality (NEW)
     private IEnumerator TestRecursionMarkerFunctionality()
     {
-        Log("Testing heavy marker functionality (NEW feature)...");
+        Log("Testing recursion marker functionality (NEW feature)...");
         
         Vector2Int testPos = new Vector2Int(3, 5);
         
-        // Test heavy marker placement
+        // Test recursion marker placement
         bool placed = playerActionManager.PlaceRecursionMarker(testPos);
-        AssertTrue(placed, "Heavy marker placed successfully");
+        AssertTrue(placed, "Recursion marker placed successfully");
         
         // Test marker detection
         bool hasMarker = playerActionManager.HasRecursionMarkerAt(testPos);
-        AssertTrue(hasMarker, "Heavy marker detected at position");
+        AssertTrue(hasMarker, "Recursion marker detected at position");
         
-        // Test heavy marker visual differences from light markers
+        // Test recursion marker visual differences from unit markers
         var RecursionMarkers = markerSystem.RecursionMarkers;
-        AssertTrue(RecursionMarkers.Count > 0, "Heavy markers queue not empty");
+        AssertTrue(RecursionMarkers.Count > 0, "Recursion markers queue not empty");
         
-        // Test heavy marker removal
+        // Test recursion marker removal
         bool removed = playerActionManager.RemoveRecursionMarkerAt(testPos);
-        AssertTrue(removed, "Heavy marker removed successfully");
+        AssertTrue(removed, "Recursion marker removed successfully");
         
         yield return new WaitForSeconds(testDelay);
     }
@@ -287,10 +287,10 @@ public class FinalIntegrationTest : MonoBehaviour
     }
     #endregion
 
-    #region Test 7: Heavy marker + recursion cube interaction
+    #region Test 7: Recursion marker + recursion cube interaction
     private IEnumerator TestRecursionMarkerRecursionCubeInteraction()
     {
-        Log("Testing heavy marker + recursion cube interaction...");
+        Log("Testing recursion marker + recursion cube interaction...");
         
         Vector2Int pos = new Vector2Int(5, 7);
         
@@ -298,16 +298,16 @@ public class FinalIntegrationTest : MonoBehaviour
         GameObject recursionCubeObj = CreateTestCube(CubeType.Recursion, pos);
         CubeManager recursionCube = recursionCubeObj.GetComponent<CubeManager>();
         
-        AssertNotNull(recursionCube, "Recursion cube created for heavy marker test");
+        AssertNotNull(recursionCube, "Recursion cube created for recursion marker test");
         AssertTrue(recursionCube.type == CubeType.Recursion, "Cube type is Recursion");
         
-        // Place heavy marker at cube position
-        bool heavyPlaced = playerActionManager.PlaceRecursionMarker(pos);
-        AssertTrue(heavyPlaced, "Heavy marker placed for recursion cube interaction");
+        // Place recursion marker at cube position
+        bool recursionPlaced = playerActionManager.PlaceRecursionMarker(pos);
+        AssertTrue(recursionPlaced, "Recursion marker placed for recursion cube interaction");
         
-        // Test heavy marker can interact with recursion cubes
+        // Test recursion marker can interact with recursion cubes
         bool hasRecursionMarker = playerActionManager.HasRecursionMarkerAt(pos);
-        AssertTrue(hasRecursionMarker, "Heavy marker detected at recursion cube position");
+        AssertTrue(hasRecursionMarker, "Recursion marker detected at recursion cube position");
         
         // Cleanup
         playerActionManager.RemoveRecursionMarkerAt(pos);
@@ -403,15 +403,15 @@ public class FinalIntegrationTest : MonoBehaviour
 #pragma warning disable CS0618 // Disable obsolete warnings for testing
             
             // Test obsolete marker placement methods
-            bool individualPlaced = playerActionManager.PlaceLightMarker(pos);
-            Log($"Obsolete PlaceLightMarker still works: {individualPlaced}");
+            bool individualPlaced = playerActionManager.PlaceUnitMarker(pos);
+            Log($"Obsolete PlaceUnitMarker still works: {individualPlaced}");
             
-            bool hasIndividual = playerActionManager.HasLightMarkerAt(pos);
-            Log($"Obsolete HasLightMarkerAt still works: {hasIndividual}");
+            bool hasIndividual = playerActionManager.HasUnitMarkerAt(pos);
+            Log($"Obsolete HasUnitMarkerAt still works: {hasIndividual}");
             
             if (hasIndividual)
             {
-                playerActionManager.RemoveLightMarkerAt(pos);
+                playerActionManager.RemoveUnitMarkerAt(pos);
             }
             
             // Test obsolete area marker methods
@@ -446,7 +446,7 @@ public class FinalIntegrationTest : MonoBehaviour
         if (actionUI != null)
         {
             // Test UI can handle four-tier marker charges
-            actionUI.UpdateCharges(2, 1, 1, 0); // light, heavy, prime, cube
+            actionUI.UpdateCharges(2, 1, 1, 0); // unit, recursion, prime, cube
             Log("UI charge update for four-tier system successful");
             
             // Test UI cooldown display
@@ -471,13 +471,13 @@ public class FinalIntegrationTest : MonoBehaviour
         
         // Test PlayerActionManager debug interface
         string debugStatus = playerActionManager.GetDebugStatus();
-        AssertTrue(debugStatus.Contains("Light:"), "Debug status contains Light marker info");
-        AssertTrue(debugStatus.Contains("Heavy:"), "Debug status contains Heavy marker info");
+        AssertTrue(debugStatus.Contains("Unit:"), "Debug status contains Unit marker info");
+        AssertTrue(debugStatus.Contains("Recursion:"), "Debug status contains Recursion marker info");
         AssertTrue(debugStatus.Contains("Prime:"), "Debug status contains Prime marker info");
         
         var debugData = playerActionManager.GetDebugData();
-        AssertTrue(debugData.ContainsKey("Light Markers Placed"), "Debug data contains Light marker info");
-        AssertTrue(debugData.ContainsKey("Heavy Markers Placed"), "Debug data contains Heavy marker info");
+        AssertTrue(debugData.ContainsKey("Unit Markers Placed"), "Debug data contains Unit marker info");
+        AssertTrue(debugData.ContainsKey("Recursion Markers Placed"), "Debug data contains Recursion marker info");
         AssertTrue(debugData.ContainsKey("Prime Markers Placed"), "Debug data contains Prime marker info");
         
         Log("Debug system updates verified");

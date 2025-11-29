@@ -80,24 +80,24 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
     [SerializeField] private InputFeedbackManager inputFeedbackManager;
     [SerializeField] private AnimationTriggerManager animationTriggerManager;
 
-    [Header("Light Marker Settings")]
+    [Header("Unit Marker Settings")]
     [SerializeField] public int maxUnitMarkers;
-    [SerializeField] public int UnitMarkersPlaced;
+    [SerializeField] public int unitMarkersPlaced;
     [SerializeField] public int currentUnitMarkers;
-    [SerializeField] public int maxLightMarkerCharges;
-    [SerializeField] private int currentLightMarkerCharges;
-    [SerializeField] public float lightMarkerCooldown;
-    [SerializeField] public Material lightMarkerMaterial;
-    [SerializeField] public float lastLightMarkerTime;
+    [SerializeField] public int maxUnitMarkerCharges;
+    [SerializeField] private int currentUnitMarkerCharges;
+    [SerializeField] public float unitMarkerCooldown;
+    [SerializeField] public Material unitMarkerMaterial;
+    [SerializeField] public float lastUnitMarkerTime;
 
-    [Header("Heavy Marker Settings")]
+    [Header("Recursion Marker Settings")]
     [SerializeField] public int maxRecursionMarkers;
-    [SerializeField] public int RecursionMarkersPlaced;
+    [SerializeField] public int recursionMarkersPlaced;
     [SerializeField] public int currentRecursionMarkers;
     [SerializeField] public int maxRecursionMarkerCharges;
     [SerializeField] private int currentRecursionMarkerCharges;
-    [SerializeField] public float RecursionMarkerCooldown;
-    [SerializeField] public Material RecursionMarkerMaterial;
+    [SerializeField] public float recursionMarkerCooldown;
+    [SerializeField] public Material recursionMarkerMaterial;
     [SerializeField] public float lastRecursionMarkerTime;
 
     [Header("Prime Marker Settings")]
@@ -123,12 +123,12 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
     [SerializeField] public Material infinityMarkerMaterial;
 
     [Header("Input Settings")]
-    [SerializeField] private KeyCode lightMarkerKey = KeyCode.F;
-    [SerializeField] private KeyCode RecursionMarkerKey = KeyCode.V;
+    [SerializeField] private KeyCode unitMarkerKey = KeyCode.F;
+    [SerializeField] private KeyCode recursionMarkerKey = KeyCode.V;
     [SerializeField] private KeyCode primeMarkerKey = KeyCode.G;
     [SerializeField] private KeyCode infinityMarkerKey = KeyCode.H;
-    [SerializeField] private KeyCode triggerLightKey = KeyCode.R;
-    [SerializeField] private KeyCode triggerHeavyKey = KeyCode.Y;
+    [SerializeField] private KeyCode triggerUnitKey = KeyCode.R;
+    [SerializeField] private KeyCode triggerRecursionKey = KeyCode.Y;
     [SerializeField] private KeyCode triggerPrimeKey = KeyCode.T;
     [SerializeField] private KeyCode triggerCubeMarkerKey = KeyCode.Q;
     
@@ -237,7 +237,7 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
 
     private void InitializeCharges()
     {
-        currentLightMarkerCharges = maxLightMarkerCharges;
+        currentUnitMarkerCharges = maxUnitMarkerCharges;
         currentRecursionMarkerCharges = maxRecursionMarkerCharges;
         currentPrimeMarkerCharges = maxPrimeMarkerCharges;
         currentInfinityMarkerCharges = maxInfinityMarkerCharges;
@@ -419,14 +419,14 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
     private void HandleModeSwitchingInput()
     {
 MarkerMode targetMode = currentMarkerMode;
-GameAudioEvent audioEvent = GameAudioEvent.ModeSwitchedToLight;
+GameAudioEvent audioEvent = GameAudioEvent.ModeSwitchedToUnit;
         bool modeSwitchRequested = false;
 
         // Check for number key presses (1-4 for marker types)
         if (Input.GetKeyDown(KeyCode.Alpha1))
         {
             targetMode = MarkerMode.Unit;
-            audioEvent = GameAudioEvent.ModeSwitchedToLight;
+            audioEvent = GameAudioEvent.ModeSwitchedToUnit;
             modeSwitchRequested = true;
         }
         else if (Input.GetKeyDown(KeyCode.Alpha2))
@@ -438,13 +438,13 @@ GameAudioEvent audioEvent = GameAudioEvent.ModeSwitchedToLight;
         else if (Input.GetKeyDown(KeyCode.Alpha3))
         {
             targetMode = MarkerMode.Recursion;
-            audioEvent = GameAudioEvent.ModeSwitchedToHeavy;
+            audioEvent = GameAudioEvent.ModeSwitchedToRecursion;
             modeSwitchRequested = true;
         }
         else if (Input.GetKeyDown(KeyCode.Alpha4))
         {
             targetMode = MarkerMode.Infinity;
-            audioEvent = GameAudioEvent.ModeSwitchedToHeavy; // TODO: Add infinity audio event
+            audioEvent = GameAudioEvent.ModeSwitchedToRecursion; // TODO: Add infinity audio event
             modeSwitchRequested = true;
         }
 
@@ -494,16 +494,16 @@ MarkerMode currentMode = GetCurrentMode();
             switch (currentMode)
             {
                 case MarkerMode.Unit:
-                    if (markerSystem.HasLightMarkerAt(playerPos))
+                    if (markerSystem.HasUnitMarkerAt(playerPos))
                     {
-                        markerSystem.RemoveLightMarkerAt(playerPos);
+                        markerSystem.RemoveUnitMarkerAt(playerPos);
                         actionSuccessful = true;
                         // Trigger feedback for marker removal (replacement)
                         TriggerInputFeedbackMarkerPlace(MarkerMode.Unit, playerPos, true);
                     }
-                    else if (CanPlaceLightMarker())
+                    else if (CanPlaceUnitMarker())
                     {
-                        markerSystem.PlaceLightMarker(playerPos);
+                        markerSystem.PlaceUnitMarker(playerPos);
                         actionSuccessful = true;
                         
                         // Trigger feedback for new marker placement
@@ -647,15 +647,15 @@ MarkerMode currentMode = GetCurrentMode();
     }
 
     [System.Obsolete("Use HandleUnifiedPlaceInput() instead - individual marker input handlers are deprecated")]
-    private void HandleLightMarkerInput()
+    private void HandleUnitMarkerInput()
     {
-        if (Input.GetKeyDown(lightMarkerKey))
+        if (Input.GetKeyDown(unitMarkerKey))
         {
             Vector2Int playerPos = playerManager.currentTilePosition;
 
-            if (CanPlaceLightMarker())
+            if (CanPlaceUnitMarker())
             {
-                markerSystem.PlaceLightMarker(playerPos);
+                markerSystem.PlaceUnitMarker(playerPos);
             }
         }
     }
@@ -663,7 +663,7 @@ MarkerMode currentMode = GetCurrentMode();
     [System.Obsolete("Use HandleUnifiedPlaceInput() instead - individual marker input handlers are deprecated")]
     private void HandleRecursionMarkerInput()
     {
-        if (Input.GetKeyDown(RecursionMarkerKey))
+        if (Input.GetKeyDown(recursionMarkerKey))
         {
             Vector2Int playerPos = playerManager.currentTilePosition;
 
@@ -701,7 +701,7 @@ MarkerMode currentMode = GetCurrentMode();
             switch (currentMode)
             {
                 case MarkerMode.Unit:
-                    actionSuccessful = markerSystem.TriggerNextLightMarker();
+                    actionSuccessful = markerSystem.TriggerNextUnitMarker();
                     if (!actionSuccessful)
                     {
                         string errorMessage = GetModeActionErrorMessage(currentMode, "trigger");
@@ -824,12 +824,12 @@ MarkerMode currentMode = GetCurrentMode();
     [System.Obsolete("Use unified R key triggering instead - individual trigger keys are deprecated")]
     private void HandleLegacyTriggerInputs()
     {
-        if (Input.GetKeyDown(triggerLightKey))
+        if (Input.GetKeyDown(triggerUnitKey))
         {
-            markerSystem.TriggerNextLightMarker();
+            markerSystem.TriggerNextUnitMarker();
         }
 
-        if (Input.GetKeyDown(triggerHeavyKey))
+        if (Input.GetKeyDown(triggerRecursionKey))
         {
             markerSystem.TriggerNextRecursionMarker();
         }
@@ -919,7 +919,7 @@ MarkerMode currentMode = GetCurrentMode();
             switch (mode)
             {
                 case MarkerMode.Unit:
-                    if (currentLightMarkerCharges <= 0)
+                    if (currentUnitMarkerCharges <= 0)
                         return "No Unit marker charges available. Wait for cooldown.";
                     if (currentUnitMarkers >= maxUnitMarkers)
                         return "Maximum Unit markers already placed on grid.";
@@ -1261,7 +1261,7 @@ MarkerMode currentMode = GetCurrentMode();
         switch (mode)
         {
             case MarkerMode.Unit:
-                if (maxLightMarkerCharges <= 0)
+                if (maxUnitMarkerCharges <= 0)
                 {
                     ShowActionErrorFeedback("Unit markers are not available in this wave.");
                     return false;
@@ -1300,18 +1300,18 @@ MarkerMode currentMode = GetCurrentMode();
 
     #region Charge Management
 
-    public bool CanPlaceLightMarker()
+    public bool CanPlaceUnitMarker()
     {
-        return currentLightMarkerCharges > 0 &&
+        return currentUnitMarkerCharges > 0 &&
                currentUnitMarkers < maxUnitMarkers;
-               // Note: UnitMarkersPlaced is for statistics only, not for limiting placement
+               // Note: unitMarkersPlaced is for statistics only, not for limiting placement
     }
 
     public bool CanPlaceRecursionMarker()
     {
         return currentRecursionMarkerCharges > 0 &&
                currentRecursionMarkers < maxRecursionMarkers;
-               // Note: RecursionMarkersPlaced is for statistics only, not for limiting placement
+               // Note: recursionMarkersPlaced is for statistics only, not for limiting placement
     }
 
     public bool CanPlacePrimeMarker()
@@ -1327,16 +1327,16 @@ MarkerMode currentMode = GetCurrentMode();
                currentInfinityMarkers < maxInfinityMarkers;
     }
 
-    public void ConsumeLightCharge()
+    public void ConsumeUnitCharge()
     {
-        currentLightMarkerCharges--;
-        lastLightMarkerTime = Time.time;
+        currentUnitMarkerCharges--;
+        lastUnitMarkerTime = Time.time;
         currentUnitMarkers++;
-        UnitMarkersPlaced++;
+        unitMarkersPlaced++;
 
-        // Trigger audio event for light marker placement
+        // Trigger audio event for unit marker placement
         Vector3 worldPosition = GetWorldPositionForAudio(playerManager.currentTilePosition);
-        TriggerAudioEvent(GameAudioEvent.LightMarkerPlaced, worldPosition);
+        TriggerAudioEvent(GameAudioEvent.UnitMarkerPlaced, worldPosition);
 
         UpdateUI();
 
@@ -1348,18 +1348,18 @@ MarkerMode currentMode = GetCurrentMode();
         // Notify statistics manager
         if (PlayerStatisticsManager.Instance != null)
         {
-            PlayerStatisticsManager.Instance.OnMarkerPlaced(playerManager.currentTilePosition, "light");
+            PlayerStatisticsManager.Instance.OnMarkerPlaced(playerManager.currentTilePosition, "unit");
         }
     }
 
-    public void ConsumeHeavyCharge()
+    public void ConsumeRecursionCharge()
     {
         currentRecursionMarkerCharges--;
         lastRecursionMarkerTime = Time.time;
         currentRecursionMarkers++;
-        RecursionMarkersPlaced++;
+        recursionMarkersPlaced++;
 
-        // Trigger audio event for heavy marker placement
+        // Trigger audio event for recursion marker placement
         Vector3 worldPosition = GetWorldPositionForAudio(playerManager.currentTilePosition);
         TriggerAudioEvent(GameAudioEvent.RecursionMarkerPlaced, worldPosition);
 
@@ -1373,7 +1373,7 @@ MarkerMode currentMode = GetCurrentMode();
         // Notify statistics manager
         if (PlayerStatisticsManager.Instance != null)
         {
-            PlayerStatisticsManager.Instance.OnMarkerPlaced(playerManager.currentTilePosition, "heavy");
+            PlayerStatisticsManager.Instance.OnMarkerPlaced(playerManager.currentTilePosition, "recursion");
         }
     }
 
@@ -1427,7 +1427,7 @@ MarkerMode currentMode = GetCurrentMode();
         }
     }
 
-    public void ReleaseLightMarker()
+    public void ReleaseUnitMarker()
     {
         currentUnitMarkers--;
     }
@@ -1448,43 +1448,43 @@ MarkerMode currentMode = GetCurrentMode();
     }
 
     // Methods to handle marker removal (unmarking)
-    public void OnLightMarkerRemoved()
+    public void OnUnitMarkerRemoved()
     {
         // Decrement the placement counter when a marker is removed
-        if (UnitMarkersPlaced > 0)
+        if (unitMarkersPlaced > 0)
         {
-            UnitMarkersPlaced--;
+            unitMarkersPlaced--;
         }
         
         // Notify statistics manager about marker removal
         if (PlayerStatisticsManager.Instance != null)
         {
-            PlayerStatisticsManager.Instance.OnMarkerRemoved(playerManager.currentTilePosition, "light");
+            PlayerStatisticsManager.Instance.OnMarkerRemoved(playerManager.currentTilePosition, "unit");
         }
         
         if (EnableDebugLogs)
         {
-            this.Log($"Unit marker removed. Total placed: {UnitMarkersPlaced}", EnableDebugLogs);
+            this.Log($"Unit marker removed. Total placed: {unitMarkersPlaced}", EnableDebugLogs);
         }
     }
 
     public void OnRecursionMarkerRemoved()
     {
         // Decrement the placement counter when a marker is removed
-        if (RecursionMarkersPlaced > 0)
+        if (recursionMarkersPlaced > 0)
         {
-            RecursionMarkersPlaced--;
+            recursionMarkersPlaced--;
         }
         
         // Notify statistics manager about marker removal
         if (PlayerStatisticsManager.Instance != null)
         {
-            PlayerStatisticsManager.Instance.OnMarkerRemoved(playerManager.currentTilePosition, "heavy");
+            PlayerStatisticsManager.Instance.OnMarkerRemoved(playerManager.currentTilePosition, "recursion");
         }
         
         if (EnableDebugLogs)
         {
-            this.Log($"Recursion marker removed. Total placed: {RecursionMarkersPlaced}", EnableDebugLogs);
+            this.Log($"Recursion marker removed. Total placed: {recursionMarkersPlaced}", EnableDebugLogs);
         }
     }
 
@@ -1511,8 +1511,8 @@ MarkerMode currentMode = GetCurrentMode();
     private void RegenerateCharges()
     {
         bool chargesChanged = false;
-        chargesChanged |= RegenerateLightCharges();
-        chargesChanged |= RegenerateHeavyCharges();
+        chargesChanged |= RegenerateUnitCharges();
+        chargesChanged |= RegenerateRecursionCharges();
         chargesChanged |= RegeneratePrimeCharges();
         chargesChanged |= RegenerateInfinityCharges();
 
@@ -1522,15 +1522,15 @@ MarkerMode currentMode = GetCurrentMode();
         }
     }
 
-    private bool RegenerateLightCharges()
+    private bool RegenerateUnitCharges()
     {
-        if (currentLightMarkerCharges < maxLightMarkerCharges)
+        if (currentUnitMarkerCharges < maxUnitMarkerCharges)
         {
-            float timeSinceLastUse = Time.time - lastLightMarkerTime;
-            if (timeSinceLastUse >= lightMarkerCooldown)
+            float timeSinceLastUse = Time.time - lastUnitMarkerTime;
+            if (timeSinceLastUse >= unitMarkerCooldown)
             {
-                currentLightMarkerCharges++;
-                lastLightMarkerTime = Time.time;
+                currentUnitMarkerCharges++;
+                lastUnitMarkerTime = Time.time;
                 
                 // Trigger audio event for resource regeneration
                 Vector3 playerWorldPos = GetWorldPositionForAudio(playerManager.currentTilePosition);
@@ -1539,19 +1539,19 @@ MarkerMode currentMode = GetCurrentMode();
                 // Trigger animation for resource regeneration
                 TriggerAnimationResourceRegeneration(playerWorldPos, "Unit marker charge");
                 
-                this.Log($"Unit marker charge regenerated. Charges: {currentLightMarkerCharges}/{maxLightMarkerCharges}", EnableDebugLogs);
+                this.Log($"Unit marker charge regenerated. Charges: {currentUnitMarkerCharges}/{maxUnitMarkerCharges}", EnableDebugLogs);
                 return true;
             }
         }
         return false;
     }
 
-    private bool RegenerateHeavyCharges()
+    private bool RegenerateRecursionCharges()
     {
         if (currentRecursionMarkerCharges < maxRecursionMarkerCharges)
         {
             float timeSinceLastUse = Time.time - lastRecursionMarkerTime;
-            if (timeSinceLastUse >= RecursionMarkerCooldown)
+            if (timeSinceLastUse >= recursionMarkerCooldown)
             {
                 currentRecursionMarkerCharges++;
                 lastRecursionMarkerTime = Time.time;
@@ -1622,9 +1622,9 @@ MarkerMode currentMode = GetCurrentMode();
     {
         if (actionUI != null)
         {
-            actionUI.UpdateCharges(currentLightMarkerCharges, currentRecursionMarkerCharges, 
+            actionUI.UpdateCharges(currentUnitMarkerCharges, currentRecursionMarkerCharges, 
                                  currentPrimeMarkerCharges, GetCurrentCubeMarkers());
-            actionUI.UpdateCooldowns(lightMarkerCooldown, RecursionMarkerCooldown, 
+            actionUI.UpdateCooldowns(unitMarkerCooldown, recursionMarkerCooldown, 
                                    primeMarkerCooldown, 1f);
         }
     }
@@ -1634,23 +1634,23 @@ MarkerMode currentMode = GetCurrentMode();
     #region Public API (Delegates to MarkerSystem)
 
     // Next charge time for UI system
-    public float GetNextLightChargeTime() =>
-        currentLightMarkerCharges < maxLightMarkerCharges ?
-        lastLightMarkerTime + lightMarkerCooldown : Time.time;
-    public float GetNextHeavyChargeTime() =>
+    public float GetNextUnitChargeTime() =>
+        currentUnitMarkerCharges < maxUnitMarkerCharges ?
+        lastUnitMarkerTime + unitMarkerCooldown : Time.time;
+    public float GetNextRecursionChargeTime() =>
         currentRecursionMarkerCharges < maxRecursionMarkerCharges ?
-        lastRecursionMarkerTime + RecursionMarkerCooldown : Time.time;
+        lastRecursionMarkerTime + recursionMarkerCooldown : Time.time;
     public float GetNextPrimeChargeTime() =>
         currentPrimeMarkerCharges < maxPrimeMarkerCharges ?
         lastPrimeMarkerTime + primeMarkerCooldown : Time.time;
 
-    // Light marker methods
-    public bool PlaceLightMarker(Vector2Int position) => markerSystem.PlaceLightMarker(position);
-    public bool RemoveLightMarkerAt(Vector2Int position) => markerSystem.RemoveLightMarkerAt(position);
-    public bool HasLightMarkerAt(Vector2Int position) => markerSystem.HasLightMarkerAt(position);
-    public bool TriggerNextLightMarker() => markerSystem.TriggerNextLightMarker();
+    // Unit marker methods
+    public bool PlaceUnitMarker(Vector2Int position) => markerSystem.PlaceUnitMarker(position);
+    public bool RemoveUnitMarkerAt(Vector2Int position) => markerSystem.RemoveUnitMarkerAt(position);
+    public bool HasUnitMarkerAt(Vector2Int position) => markerSystem.HasUnitMarkerAt(position);
+    public bool TriggerNextUnitMarker() => markerSystem.TriggerNextUnitMarker();
 
-    // Heavy marker methods
+    // Recursion marker methods
     public bool PlaceRecursionMarker(Vector2Int position) => markerSystem.PlaceRecursionMarker(position);
     public bool RemoveRecursionMarkerAt(Vector2Int position) => markerSystem.RemoveRecursionMarkerAt(position);
     public bool HasRecursionMarkerAt(Vector2Int position) => markerSystem.HasRecursionMarkerAt(position);
@@ -1689,36 +1689,36 @@ MarkerMode currentMode = GetCurrentMode();
     #region Public Information Methods
 
     // Resource availability checks
-    public bool CanPlaceLightMarkerCheck() => CanPlaceLightMarker();
+    public bool CanPlaceUnitMarkerCheck() => CanPlaceUnitMarker();
     public bool CanPlaceRecursionMarkerCheck() => CanPlaceRecursionMarker();
     public bool CanPlacePrimeMarkerCheck() => CanPlacePrimeMarker();
 
     // Charge refill methods (for prototyping tools)
-    public void RefillLightMarkerCharges() => currentLightMarkerCharges = maxLightMarkerCharges;
+    public void RefillUnitMarkerCharges() => currentUnitMarkerCharges = maxUnitMarkerCharges;
     public void RefillRecursionMarkerCharges() => currentRecursionMarkerCharges = maxRecursionMarkerCharges;
     public void RefillPrimeMarkerCharges() => currentPrimeMarkerCharges = maxPrimeMarkerCharges;
     public void RefillInfinityMarkerCharges() => currentInfinityMarkerCharges = maxInfinityMarkerCharges;
     public void RefillAllCharges()
     {
-        RefillLightMarkerCharges();
+        RefillUnitMarkerCharges();
         RefillRecursionMarkerCharges();
         RefillPrimeMarkerCharges();
         RefillInfinityMarkerCharges();
     }
 
     // Cooldown information
-    public float GetLightMarkerCooldownRemaining()
+    public float GetUnitMarkerCooldownRemaining()
     {
-        if (currentLightMarkerCharges >= maxLightMarkerCharges)
+        if (currentUnitMarkerCharges >= maxUnitMarkerCharges)
             return 0f;
-        return Mathf.Max(0f, lightMarkerCooldown - (Time.time - lastLightMarkerTime));
+        return Mathf.Max(0f, unitMarkerCooldown - (Time.time - lastUnitMarkerTime));
     }
 
     public float GetRecursionMarkerCooldownRemaining()
     {
         if (currentRecursionMarkerCharges >= maxRecursionMarkerCharges)
             return 0f;
-        return Mathf.Max(0f, RecursionMarkerCooldown - (Time.time - lastRecursionMarkerTime));
+        return Mathf.Max(0f, recursionMarkerCooldown - (Time.time - lastRecursionMarkerTime));
     }
 
     public float GetPrimeMarkerCooldownRemaining()
@@ -1736,8 +1736,8 @@ MarkerMode currentMode = GetCurrentMode();
     }
 
     // Statistics
-    public int GetUnitMarkersPlaced() => UnitMarkersPlaced;
-    public int GetRecursionMarkersPlaced() => RecursionMarkersPlaced;
+    public int GetunitMarkersPlaced() => unitMarkersPlaced;
+    public int GetrecursionMarkersPlaced() => recursionMarkersPlaced;
     public int GetPrimeMarkersPlaced() => primeMarkersPlaced;
     public int GetCubeMarkersTriggered() => cubeMarkersTriggered;
     public int GetPerfectTimingHits() => perfectTimingHits;
@@ -1747,8 +1747,8 @@ MarkerMode currentMode = GetCurrentMode();
     public int GetCurrentRecursionMarkers() => currentRecursionMarkers;
     public int GetCurrentPrimeMarkers() => currentPrimeMarkers;
     public int GetCurrentCubeMarkers() => markerSystem?.cubeMarkers?.Count ?? 0;
-    public int GetCurrentLightCharges() => currentLightMarkerCharges;
-    public int GetCurrentHeavyCharges() => currentRecursionMarkerCharges;
+    public int GetCurrentUnitCharges() => currentUnitMarkerCharges;
+    public int GetCurrentRecursionCharges() => currentRecursionMarkerCharges;
     public int GetCurrentPrimeCharges() => currentPrimeMarkerCharges;
     public int GetCurrentInfinityCharges() => currentInfinityMarkerCharges;
     public int GetCurrentInfinityMarkers() => currentInfinityMarkers;
@@ -1763,7 +1763,7 @@ MarkerMode currentMode = GetCurrentMode();
 
     public string GetDebugStatus()
     {
-        return $"PlayerAction: Unit:{currentLightMarkerCharges}/{maxLightMarkerCharges} Recursion:{currentRecursionMarkerCharges}/{maxRecursionMarkerCharges} Prime:{currentPrimeMarkerCharges}/{maxPrimeMarkerCharges} OnGrid:{currentUnitMarkers}+{currentRecursionMarkers}+{currentPrimeMarkers} Cube:{GetCurrentCubeMarkers()}";
+        return $"PlayerAction: Unit:{currentUnitMarkerCharges}/{maxUnitMarkerCharges} Recursion:{currentRecursionMarkerCharges}/{maxRecursionMarkerCharges} Prime:{currentPrimeMarkerCharges}/{maxPrimeMarkerCharges} OnGrid:{currentUnitMarkers}+{currentRecursionMarkers}+{currentPrimeMarkers} Cube:{GetCurrentCubeMarkers()}";
     }
 
     public Dictionary<string, object> GetDebugData()
@@ -1771,11 +1771,11 @@ MarkerMode currentMode = GetCurrentMode();
         var debugData = new Dictionary<string, object>
         {
             ["Current Marker Mode"] = currentMarkerMode.ToString(),
-            ["Unit Markers Placed"] = UnitMarkersPlaced,
+            ["Unit Markers Placed"] = unitMarkersPlaced,
             ["Current Unit Markers"] = currentUnitMarkers,
-            ["Unit Charges"] = $"{currentLightMarkerCharges}/{maxLightMarkerCharges}",
-            ["Unit Cooldown Remaining"] = GetLightMarkerCooldownRemaining(),
-            ["Recursion Markers Placed"] = RecursionMarkersPlaced,
+            ["Unit Charges"] = $"{currentUnitMarkerCharges}/{maxUnitMarkerCharges}",
+            ["Unit Cooldown Remaining"] = GetUnitMarkerCooldownRemaining(),
+            ["Recursion Markers Placed"] = recursionMarkersPlaced,
             ["Current Recursion Markers"] = currentRecursionMarkers,
             ["Recursion Charges"] = $"{currentRecursionMarkerCharges}/{maxRecursionMarkerCharges}",
             ["Recursion Cooldown Remaining"] = GetRecursionMarkerCooldownRemaining(),
@@ -1787,7 +1787,7 @@ MarkerMode currentMode = GetCurrentMode();
             ["Perfect Timing Hits"] = perfectTimingHits,
             ["Cube Markers Triggered"] = cubeMarkersTriggered,
             ["Input Enabled"] = inputEnabled,
-            ["Can Place Unit"] = CanPlaceLightMarker(),
+            ["Can Place Unit"] = CanPlaceUnitMarker(),
             ["Can Place Recursion"] = CanPlaceRecursionMarker(),
             ["Can Place Prime"] = CanPlacePrimeMarker()
         };
@@ -1835,7 +1835,7 @@ MarkerMode currentMode = GetCurrentMode();
             MarkerMode previousMode = currentMarkerMode;
             
             // Try to switch to Unit mode first (most common)
-            if (maxLightMarkerCharges > 0)
+            if (maxUnitMarkerCharges > 0)
             {
                 SetMode(MarkerMode.Unit);
                 if (EnableDebugLogs)
@@ -1879,7 +1879,7 @@ MarkerMode currentMode = GetCurrentMode();
     public void ResetToDefaults()
     {
         // Reset charges to max
-        currentLightMarkerCharges = maxLightMarkerCharges;
+        currentUnitMarkerCharges = maxUnitMarkerCharges;
         currentRecursionMarkerCharges = maxRecursionMarkerCharges;
         currentPrimeMarkerCharges = maxPrimeMarkerCharges;
         currentInfinityMarkerCharges = maxInfinityMarkerCharges;
@@ -1894,8 +1894,8 @@ MarkerMode currentMode = GetCurrentMode();
         }
         
         // Reset counters
-        UnitMarkersPlaced = 0;
-        RecursionMarkersPlaced = 0;
+        unitMarkersPlaced = 0;
+        recursionMarkersPlaced = 0;
         primeMarkersPlaced = 0;
         infinityMarkersPlaced = 0;
         currentUnitMarkers = 0;
@@ -1906,7 +1906,7 @@ MarkerMode currentMode = GetCurrentMode();
         perfectTimingHits = 0;
         
         // Reset timers
-        lastLightMarkerTime = 0f;
+        lastUnitMarkerTime = 0f;
         lastRecursionMarkerTime = 0f;
         lastPrimeMarkerTime = 0f;
         lastInfinityMarkerTime = 0f;

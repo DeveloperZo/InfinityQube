@@ -62,12 +62,12 @@ public class PlayerActionUI : MonoBehaviour
 
         if (playerActionManager != null)
         {
-            unitMaxCharges = playerActionManager.maxLightMarkerCharges;
+            unitMaxCharges = playerActionManager.maxUnitMarkerCharges;
             recursionMaxCharges = playerActionManager.maxRecursionMarkerCharges;
             primeMaxCharges = playerActionManager.maxPrimeMarkerCharges;
             infinityMaxCharges = playerActionManager.maxInfinityMarkerCharges;
-            unitMarkerCooldownTime = playerActionManager.lightMarkerCooldown;
-            recursionMarkerCooldownTime = playerActionManager.RecursionMarkerCooldown;
+            unitMarkerCooldownTime = playerActionManager.unitMarkerCooldown;
+            recursionMarkerCooldownTime = playerActionManager.recursionMarkerCooldown;
             primeMarkerCooldownTime = playerActionManager.primeMarkerCooldown;
             infinityMarkerCooldownTime = playerActionManager.infinityMarkerCooldown;
         }
@@ -98,7 +98,7 @@ public class PlayerActionUI : MonoBehaviour
         {
             if (unitMaxCharges == 0)
             {
-                unitMaxCharges = playerActionManager.maxLightMarkerCharges;
+                unitMaxCharges = playerActionManager.maxUnitMarkerCharges;
             }
             if (recursionMaxCharges == 0)
             {
@@ -142,9 +142,9 @@ public class PlayerActionUI : MonoBehaviour
         primeMarkerCooldownTime = areaCooldown;
     }
 
-    public void OnMarkerPlaced(bool isLightMarker)
+    public void OnMarkerPlaced(bool isUnitMarker)
     {
-        Debug.Log($"Marker placed - {(isLightMarker ? "Individual" : "Area")}");
+        Debug.Log($"Marker placed - {(isUnitMarker ? "Unit" : "Area")}");
     }
 
     /// <summary>
@@ -178,13 +178,13 @@ public class PlayerActionUI : MonoBehaviour
         if (playerActionManager == null) return;
 
         // Get current charges directly from PlayerActionManager for real-time display
-        int currentUnitCharges = playerActionManager.GetCurrentLightCharges();
-        int currentRecursionCharges = playerActionManager.GetCurrentHeavyCharges();
+        int currentUnitCharges = playerActionManager.GetCurrentUnitCharges();
+        int currentRecursionCharges = playerActionManager.GetCurrentRecursionCharges();
         int currentPrimeCharges = playerActionManager.GetCurrentPrimeCharges();
         int currentInfinityCharges = playerActionManager.GetCurrentInfinityCharges();
 
         // Get max charges from PlayerActionManager (may be updated from wave configuration)
-        unitMaxCharges = playerActionManager.maxLightMarkerCharges;
+        unitMaxCharges = playerActionManager.maxUnitMarkerCharges;
         recursionMaxCharges = playerActionManager.maxRecursionMarkerCharges;
         primeMaxCharges = playerActionManager.maxPrimeMarkerCharges;
         infinityMaxCharges = playerActionManager.maxInfinityMarkerCharges;
@@ -196,7 +196,7 @@ public class PlayerActionUI : MonoBehaviour
         infinityCharges = currentInfinityCharges;
 
         // Calculate cooldown progress for UI segments
-        float unitCooldownRemaining = playerActionManager.GetLightMarkerCooldownRemaining();
+        float unitCooldownRemaining = playerActionManager.GetUnitMarkerCooldownRemaining();
         float recursionCooldownRemaining = playerActionManager.GetRecursionMarkerCooldownRemaining();
         float primeCooldownRemaining = playerActionManager.GetPrimeMarkerCooldownRemaining();
         float infinityCooldownRemaining = playerActionManager.GetInfinityMarkerCooldownRemaining();
@@ -538,7 +538,7 @@ public class PlayerActionUI : MonoBehaviour
         return CalculateCooldownProgress(
             unitCharges,
             unitMaxCharges,
-            playerActionManager.GetLightMarkerCooldownRemaining(),
+            playerActionManager.GetUnitMarkerCooldownRemaining(),
             unitMarkerCooldownTime
         );
     }
@@ -566,8 +566,8 @@ public class PlayerActionUI : MonoBehaviour
     }
 
     // Backward compatibility getters
-    public float GetLightCooldownProgress() => GetUnitCooldownProgress();
-    public float GetHeavyCooldownProgress() => GetRecursionCooldownProgress();
+    public float GetUnitCooldownProgress() => GetUnitCooldownProgress();
+    public float GetRecursionCooldownProgress() => GetRecursionCooldownProgress();
     public float GetAreaCooldownProgress() => GetPrimeCooldownProgress();
 
     public bool IsUnitCharging() => unitCharges < unitMaxCharges;
@@ -575,8 +575,8 @@ public class PlayerActionUI : MonoBehaviour
     public bool IsPrimeCharging() => primeCharges < primeMaxCharges;
     
     // Backward compatibility properties
-    public bool IsLightCharging() => IsUnitCharging();
-    public bool IsHeavyCharging() => IsRecursionCharging();
+    public bool IsUnitCharging() => IsUnitCharging();
+    public bool IsRecursionCharging() => IsRecursionCharging();
     public bool IsAreaCharging() => IsPrimeCharging();
 
     // Set max charges explicitly

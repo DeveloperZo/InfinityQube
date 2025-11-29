@@ -554,8 +554,8 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
         
         // Count total markers that should spawn cubes
         int totalMarkersToSpawn = 0;
-        if (rules.lightSpawnsUnit) totalMarkersToSpawn += recordedPositions.lightMarkerPositions.Count;
-        if (rules.heavySpawnsRecursion) totalMarkersToSpawn += recordedPositions.RecursionMarkerPositions.Count;
+        if (rules.unitSpawnsUnit) totalMarkersToSpawn += recordedPositions.unitMarkerPositions.Count;
+        if (rules.recursionSpawnsRecursion) totalMarkersToSpawn += recordedPositions.recursionMarkerPositions.Count;
         if (rules.primeSpawnsPrime) totalMarkersToSpawn += recordedPositions.primeMarkerPositions.Count;
         if (rules.infinitySpawnsInfinity) totalMarkersToSpawn += recordedPositions.infinityMarkerPositions.Count;
         
@@ -566,17 +566,17 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
         List<Vector2Int> allMarkerPositions = new List<Vector2Int>();
         Dictionary<Vector2Int, CubeType> markerToCubeType = new Dictionary<Vector2Int, CubeType>();
         
-        if (rules.lightSpawnsUnit)
+        if (rules.unitSpawnsUnit)
         {
-            foreach (var pos in recordedPositions.lightMarkerPositions)
+            foreach (var pos in recordedPositions.unitMarkerPositions)
             {
                 allMarkerPositions.Add(new Vector2Int(pos.x, pos.y));
                 markerToCubeType[pos] = CubeType.Unit;
             }
         }
-        if (rules.heavySpawnsRecursion)
+        if (rules.recursionSpawnsRecursion)
         {
-            foreach (var pos in recordedPositions.RecursionMarkerPositions)
+            foreach (var pos in recordedPositions.recursionMarkerPositions)
             {
                 allMarkerPositions.Add(new Vector2Int(pos.x, pos.y));
                 markerToCubeType[pos] = CubeType.Recursion;
@@ -856,7 +856,7 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
 
     private void MoveCubesForward()
     {
-        // Spawn player cubes from light markers before moving wave cubes
+        // Spawn player cubes from unit markers before moving wave cubes
         if (playerActionManager != null && playerActionManager.MarkerSystem != null)
         {
             playerActionManager.MarkerSystem.SpawnPlayerCubes();
@@ -1407,8 +1407,8 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
             if (useWaveConfiguration && waveConfiguration != null && currentWaveIndex >= 0 && currentWaveIndex < waveConfiguration.Count)
             {
                 var wave = waveConfiguration[currentWaveIndex];
-                playerActionManager.maxUnitMarkers = wave.maxLightMarkerCount;
-                playerActionManager.maxLightMarkerCharges = wave.maxLightMarkerCharge;
+                playerActionManager.maxUnitMarkers = wave.maxUnitMarkerCount;
+                playerActionManager.maxUnitMarkerCharges = wave.maxUnitMarkerCharge;
 
                 playerActionManager.maxRecursionMarkers = wave.maxRecursionMarkerCount;
                 playerActionManager.maxRecursionMarkerCharges = wave.maxRecursionMarkerCharge;
@@ -1498,8 +1498,9 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
     }
     
     /// <summary>
-    /// Spawns cubes directly from recorded marker positions.
-    /// Each marker type maps to its corresponding cube type: Unit→Unit, Prime→Prime, Recursion→Recursion, Infinity→Infinity
+    /// Spawns cubes directly from recorded marker positions for MIRRORED waves.
+    /// Respects MarkerSpawnRules configuration from current wave.
+    /// Used for replacement mode: spawns ONLY marker-based cubes (no base config cubes).
     /// Positions are normalized to spawn at top of grid with Y-axis mirroring.
     /// </summary>
     private void SpawnCubesFromMarkers(RecordedMarkerPositions markers)
@@ -1509,43 +1510,58 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
         int gridTop = grid.Height - 1;
         int spawnedCount = 0;
         
-        // Unit markers → Unit cubes
-        foreach (var pos in markers.lightMarkerPositions)
+        // Get spawn rules from current wave (use defaults if no wave configured)
+        var rules = CurrentWave?.markerSpawnRules ?? new MarkerSpawnRules();
+        
+        // Unit markers → Unit cubes (if rule enabled)
+        if (rules.unitSpawnsUnit)
         {
-            int spawnY = gridTop - NormalizeMarkerY(pos.y, markers);
-            int spawnX = Mathf.Clamp(pos.x, 0, grid.Width - 1);
-            SpawnCubeDirectly(spawnX, spawnY, CubeType.Unit);
-            spawnedCount++;
+            foreach (var pos in markers.unitMarkerPositions)
+            {
+                int spawnY = gridTop - NormalizeMarkerY(pos.y, markers);
+                int spawnX = Mathf.Clamp(pos.x, 0, grid.Width - 1);
+                SpawnCubeDirectly(spawnX, spawnY, CubeType.Unit);
+                spawnedCount++;
+            }
         }
         
-        // Recursion markers → Recursion cubes
-        foreach (var pos in markers.RecursionMarkerPositions)
+        // Recursion markers → Recursion cubes (if rule enabled)
+        if (rules.recursionSpawnsRecursion)
         {
-            int spawnY = gridTop - NormalizeMarkerY(pos.y, markers);
-            int spawnX = Mathf.Clamp(pos.x, 0, grid.Width - 1);
-            SpawnCubeDirectly(spawnX, spawnY, CubeType.Recursion);
-            spawnedCount++;
+            foreach (var pos in markers.recursionMarkerPositions)
+            {
+                int spawnY = gridTop - NormalizeMarkerY(pos.y, markers);
+                int spawnX = Mathf.Clamp(pos.x, 0, grid.Width - 1);
+                SpawnCubeDirectly(spawnX, spawnY, CubeType.Recursion);
+                spawnedCount++;
+            }
         }
         
-        // Prime markers → Prime cubes
-        foreach (var pos in markers.primeMarkerPositions)
+        // Prime markers → Prime cubes (if rule enabled)
+        if (rules.primeSpawnsPrime)
         {
-            int spawnY = gridTop - NormalizeMarkerY(pos.y, markers);
-            int spawnX = Mathf.Clamp(pos.x, 0, grid.Width - 1);
-            SpawnCubeDirectly(spawnX, spawnY, CubeType.Prime);
-            spawnedCount++;
+            foreach (var pos in markers.primeMarkerPositions)
+            {
+                int spawnY = gridTop - NormalizeMarkerY(pos.y, markers);
+                int spawnX = Mathf.Clamp(pos.x, 0, grid.Width - 1);
+                SpawnCubeDirectly(spawnX, spawnY, CubeType.Prime);
+                spawnedCount++;
+            }
         }
         
-        // Infinity markers → Infinity cubes
-        foreach (var pos in markers.infinityMarkerPositions)
+        // Infinity markers → Infinity cubes (if rule enabled)
+        if (rules.infinitySpawnsInfinity)
         {
-            int spawnY = gridTop - NormalizeMarkerY(pos.y, markers);
-            int spawnX = Mathf.Clamp(pos.x, 0, grid.Width - 1);
-            SpawnCubeDirectly(spawnX, spawnY, CubeType.Infinity);
-            spawnedCount++;
+            foreach (var pos in markers.infinityMarkerPositions)
+            {
+                int spawnY = gridTop - NormalizeMarkerY(pos.y, markers);
+                int spawnX = Mathf.Clamp(pos.x, 0, grid.Width - 1);
+                SpawnCubeDirectly(spawnX, spawnY, CubeType.Infinity);
+                spawnedCount++;
+            }
         }
         
-        DebugLog($"[PairedWave] Spawned {spawnedCount} cubes from markers");
+        DebugLog($"[PairedWave] Spawned {spawnedCount} cubes from markers (rules applied)");
     }
     
     /// <summary>
@@ -1559,8 +1575,8 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
         int minY = int.MaxValue;
         int maxY = int.MinValue;
         
-        foreach (var pos in allMarkers.lightMarkerPositions) { minY = Mathf.Min(minY, pos.y); maxY = Mathf.Max(maxY, pos.y); }
-        foreach (var pos in allMarkers.RecursionMarkerPositions) { minY = Mathf.Min(minY, pos.y); maxY = Mathf.Max(maxY, pos.y); }
+        foreach (var pos in allMarkers.unitMarkerPositions) { minY = Mathf.Min(minY, pos.y); maxY = Mathf.Max(maxY, pos.y); }
+        foreach (var pos in allMarkers.recursionMarkerPositions) { minY = Mathf.Min(minY, pos.y); maxY = Mathf.Max(maxY, pos.y); }
         foreach (var pos in allMarkers.primeMarkerPositions) { minY = Mathf.Min(minY, pos.y); maxY = Mathf.Max(maxY, pos.y); }
         foreach (var pos in allMarkers.infinityMarkerPositions) { minY = Mathf.Min(minY, pos.y); maxY = Mathf.Max(maxY, pos.y); }
         
@@ -1739,8 +1755,8 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
         var recordedPositions = GetPreviousWaveMarkers();
         if (recordedPositions != null)
         {
-            debugData["Recorded Light Markers"] = recordedPositions.lightMarkerPositions.Count;
-            debugData["Recorded Heavy Markers"] = recordedPositions.RecursionMarkerPositions.Count;
+            debugData["Recorded Unit Markers"] = recordedPositions.unitMarkerPositions.Count;
+            debugData["Recorded Recursion Markers"] = recordedPositions.recursionMarkerPositions.Count;
             debugData["Recorded Prime Markers"] = recordedPositions.primeMarkerPositions.Count;
             debugData["Recorded Infinity Markers"] = recordedPositions.infinityMarkerPositions.Count;
             debugData["Total Recorded Markers"] = recordedPositions.GetTotalMarkerCount();
@@ -1808,6 +1824,29 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
     #endregion
 
     #region Paired Wave System - Marker Position Recording
+    
+    // ============================================================================
+    // PAIRED WAVE SYSTEM - Two Distinct Wave Modes
+    // ============================================================================
+    //
+    // The paired wave system supports two distinct modes for spawning inherited cubes:
+    //
+    // 1. ADDITIVE MODE (SpawnInheritedCubes):
+    //    - Used during standard wave setup when HasBeenMirrored = true
+    //    - Spawns inherited cubes IN ADDITION TO base wave configuration cubes
+    //    - Respects MarkerSpawnRules configuration from WaveData
+    //    - Use case: Wave A has predefined cubes, plus inherited cubes from previous markers
+    //
+    // 2. REPLACEMENT MODE (SpawnMirroredWave -> SpawnCubesFromMarkers):
+    //    - Used for dedicated mirrored waves
+    //    - Spawns ONLY marker-inherited cubes (no base config cubes)
+    //    - Respects MarkerSpawnRules configuration from WaveData
+    //    - Use case: Wave B is entirely player-created from Wave A placements
+    //
+    // Both modes now respect the MarkerSpawnRules configuration, allowing designers
+    // to control which marker types spawn which cube types per wave.
+    //
+    // ============================================================================
 
     /// <summary>
     /// Records marker positions from the current wave for inheritance by the mirrored version.
@@ -1905,12 +1944,13 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
 
 /// <summary>
 /// Stores marker positions recorded during a wave for inheritance by the mirrored version.
+/// Marker types: Unit, Recursion, Prime, Infinity
 /// </summary>
 [System.Serializable]
 public class RecordedMarkerPositions
 {
-    public List<Vector2Int> lightMarkerPositions = new List<Vector2Int>();
-    public List<Vector2Int> RecursionMarkerPositions = new List<Vector2Int>();
+    public List<Vector2Int> unitMarkerPositions = new List<Vector2Int>();
+    public List<Vector2Int> recursionMarkerPositions = new List<Vector2Int>();
     public List<Vector2Int> primeMarkerPositions = new List<Vector2Int>();
     public List<Vector2Int> infinityMarkerPositions = new List<Vector2Int>();
 
@@ -1924,12 +1964,12 @@ public class RecordedMarkerPositions
         switch (markerType)
         {
             case MarkerMode.Unit:
-                if (!lightMarkerPositions.Contains(position))
-                    lightMarkerPositions.Add(position);
+                if (!unitMarkerPositions.Contains(position))
+                    unitMarkerPositions.Add(position);
                 break;
             case MarkerMode.Recursion:
-                if (!RecursionMarkerPositions.Contains(position))
-                    RecursionMarkerPositions.Add(position);
+                if (!recursionMarkerPositions.Contains(position))
+                    recursionMarkerPositions.Add(position);
                 break;
             case MarkerMode.Prime:
                 if (!primeMarkerPositions.Contains(position))
@@ -1947,9 +1987,9 @@ public class RecordedMarkerPositions
         switch (markerType)
         {
             case MarkerMode.Unit:
-                return lightMarkerPositions.Remove(position);
+                return unitMarkerPositions.Remove(position);
             case MarkerMode.Recursion:
-                return RecursionMarkerPositions.Remove(position);
+                return recursionMarkerPositions.Remove(position);
             case MarkerMode.Prime:
                 return primeMarkerPositions.Remove(position);
             case MarkerMode.Infinity:
@@ -1961,7 +2001,7 @@ public class RecordedMarkerPositions
 
     public int GetTotalMarkerCount()
     {
-        return lightMarkerPositions.Count + RecursionMarkerPositions.Count + 
+        return unitMarkerPositions.Count + recursionMarkerPositions.Count + 
                primeMarkerPositions.Count + infinityMarkerPositions.Count;
     }
 }
