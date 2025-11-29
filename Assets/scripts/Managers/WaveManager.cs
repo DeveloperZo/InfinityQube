@@ -177,6 +177,46 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
         waveCoroutine = StartCoroutine(RunWaveCoroutine());
     }
 
+    /// <summary>
+    /// Starts a wave without spawning new cubes (uses existing cubes in activeCubes).
+    /// Useful for starting custom waves that were already spawned.
+    /// </summary>
+    public void StartWaveWithoutSpawning()
+    {
+        if (waveActive) return;
+
+        if (activeCubes.Count == 0)
+        {
+            DebugLog("⚠️ No cubes to start - use StartWave() instead");
+            return;
+        }
+
+        DebugLog("🌊 Starting Wave (without spawning)...");
+
+        if (waveCoroutine != null) StopCoroutine(waveCoroutine);
+
+        ResetWaveStatistics();
+        
+        // Disable debug mode and manual control so wave runs automatically
+        debugMode = false;
+        manualControl = false;
+        
+        // Trigger wave start audio event
+        if (audioManager != null)
+        {
+            audioManager.TriggerAudioEvent(GameAudioEvent.WaveStarted, Vector3.zero);
+            DebugLog("🔊 Audio: Wave start event triggered");
+        }
+        
+        // Fire GameEvents
+        GameEvents.FireWaveStart(currentWaveIndex, CurrentWave);
+        if (gameUI != null) gameUI.ToggleWaveIcon(currentWaveIndex, true);
+        DebugLog($"Fired GameEvents.OnWaveStart for wave {currentWaveIndex}");
+        
+        // Start coroutine with skipSpawn flag - wave will run automatically
+        waveCoroutine = StartCoroutine(RunWaveCoroutine(skipSpawn: true));
+    }
+
     public void PauseWave()
     {
         if (!waveActive) return;
@@ -226,8 +266,17 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
 
     public void StopWave()
     {
-        CleanupWave();
-        DebugLog("⏹️ Wave Stopped");
+        // Stop the wave coroutine but don't clear cubes
+        if (waveCoroutine != null)
+        {
+            StopCoroutine(waveCoroutine);
+            waveCoroutine = null;
+        }
+        
+        waveActive = false;
+        // Enable debug mode so manual controls work
+        debugMode = true;
+        DebugLog("⏹️ Wave Stopped (cubes remain, debug mode enabled for manual control)");
     }
 
     /// <summary>
@@ -311,12 +360,12 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
     #endregion
 
     #region Wave Execution
-    private IEnumerator RunWaveCoroutine(bool resume = false)
+    private IEnumerator RunWaveCoroutine(bool resume = false, bool skipSpawn = false)
     {
         waveActive = true;
         if (!resume) MoveStep = 0;
 
-        SetupWave(resume);
+        SetupWave(resume, skipSpawn);
 
         yield return new WaitForSeconds(GetWaveStartDelay());
 
@@ -338,20 +387,28 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
         CompleteWave();
     }
 
-    private void SetupWave(bool resume)
+    private void SetupWave(bool resume, bool skipSpawn = false)
     {
         if (!resume)
         {
-            // Skip spawning if mirrored wave (cubes already spawned from markers)
-            if (!isMirroredWaveActive)
+            // Skip spawning if skipSpawn flag is set (custom waves already spawned)
+            // or if mirrored wave (cubes already spawned from markers)
+            if (skipSpawn)
+            {
+                DebugLog("SetupWave: Skipping spawn - using existing cubes");
+                CountNonBlackCubes(); // Count existing cubes for completion tracking
+                // Don't show messages for custom waves (no wave configuration)
+            }
+            else if (!isMirroredWaveActive)
             {
                 SpawnWaveCubes();
+                ShowInitialMessages(); // Only show messages for configured waves
             }
             else
             {
                 DebugLog("[PairedWave] Mirrored wave - cubes already spawned from markers");
+                ShowInitialMessages(); // Show messages for mirrored waves if configured
             }
-            ShowInitialMessages();
         }
 
         ConfigurePlayer();
@@ -870,14 +927,70 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
     #region Manual Control (for debugging)
     public void ManualMoveWaveForward()
     {
-        if (!debugMode) return;
+        // Allow manual movement when wave is stopped (debug mode) or when wave is active
+        if (!debugMode && !waveActive) return;
 
         MoveCubesForward();
         MoveStep++;
         ProcessStepMessages();
         NotifyStepComplete();
 
-        DebugLog($"🔧 Manual Step: {MoveStep}");
+        DebugLog($"🔧 Manual Step Forward: {MoveStep}");
+    }
+
+    /// <summary>
+    /// Manually moves all wave cubes backward (up) by one step.
+    /// Only works when wave is stopped (not active) or in debug mode.
+    /// </summary>
+    public void ManualMoveWaveBackward()
+    {
+        if (!debugMode && waveActive) return;
+
+        if (activeCubes.Count == 0)
+        {
+            DebugLog("⚠️ No cubes to move backward");
+            return;
+        }
+
+        // Move all cubes backward (up - increase Y)
+        for (int i = activeCubes.Count - 1; i >= 0; i--)
+        {
+            if (i >= activeCubes.Count) continue;
+            
+            var cube = activeCubes[i];
+            if (cube == null)
+            {
+                activeCubes.RemoveAt(i);
+                continue;
+            }
+
+            // Only move cubes that aren't currently animating
+            if (!cube.isMoving)
+            {
+                cube.ResetMovementState();
+                
+                // Move backward: increase Y (move up)
+                int nextY = cube.position.y + 1;
+                if (nextY < grid.Height && cube.position.x >= 0 && cube.position.x < grid.Width)
+                {
+                    Vector2Int oldPosition = cube.position;
+                    cube.position = new Vector2Int(cube.position.x, nextY);
+                    
+                    // Update cube's world position
+                    Vector3 worldPos = grid.GridToWorldPosition(cube.position.x, cube.position.y, 2f);
+                    cube.transform.position = worldPos;
+                    
+                    // Fire move event
+                    GameEvents.FireCubeMove(oldPosition, cube.position, cube.type);
+                }
+            }
+        }
+        
+        if (MoveStep > 0) MoveStep--;
+        ProcessStepMessages();
+        NotifyStepComplete();
+
+        DebugLog($"🔧 Manual Step Backward: {MoveStep}");
     }
 
     public void EnterDebugMode(bool manual)
@@ -1289,17 +1402,28 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
         if (player != null && !debugMode)
         {
             player.enabled = true;
-            playerActionManager.maxUnitMarkers = waveConfiguration[currentWaveIndex].maxLightMarkerCount;
-            playerActionManager.maxLightMarkerCharges = waveConfiguration[currentWaveIndex].maxLightMarkerCharge;
-
-            playerActionManager.maxRecursionMarkers = waveConfiguration[currentWaveIndex].maxRecursionMarkerCount;
-            playerActionManager.maxRecursionMarkerCharges = waveConfiguration[currentWaveIndex].maxRecursionMarkerCharge;
-
-            playerActionManager.maxPrimeMarkers = waveConfiguration[currentWaveIndex].maxPrimeMarkerCount;
-            playerActionManager.maxPrimeMarkerCharges = waveConfiguration[currentWaveIndex].maxPrimeMarkerCharge;
             
-            // Validate and adjust current mode based on available marker types
-            playerActionManager.ValidateCurrentMode();
+            // Only configure player if we have a valid wave configuration
+            if (useWaveConfiguration && waveConfiguration != null && currentWaveIndex >= 0 && currentWaveIndex < waveConfiguration.Count)
+            {
+                var wave = waveConfiguration[currentWaveIndex];
+                playerActionManager.maxUnitMarkers = wave.maxLightMarkerCount;
+                playerActionManager.maxLightMarkerCharges = wave.maxLightMarkerCharge;
+
+                playerActionManager.maxRecursionMarkers = wave.maxRecursionMarkerCount;
+                playerActionManager.maxRecursionMarkerCharges = wave.maxRecursionMarkerCharge;
+
+                playerActionManager.maxPrimeMarkers = wave.maxPrimeMarkerCount;
+                playerActionManager.maxPrimeMarkerCharges = wave.maxPrimeMarkerCharge;
+                
+                // Validate and adjust current mode based on available marker types
+                playerActionManager.ValidateCurrentMode();
+            }
+            else
+            {
+                // For custom waves without configuration, use default values or keep current settings
+                DebugLog("ConfigurePlayer: No wave configuration available, using current player settings");
+            }
         }
 
         //playerActionManager.ConfigureUI();

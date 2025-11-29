@@ -30,6 +30,12 @@ public class WavePrototyper : PrototypingPanelBase
     private float waveSpeed = 1f;
     private bool isPaused = false;
     
+    // Custom wave tracking
+    private bool hasCustomWave = false;
+    private CubeType?[,] lastSpawnedWave = null;
+    private int lastSpawnedWaveWidth = 0;
+    private int lastSpawnedWaveHeight = 0;
+    
     // Section toggles
     private bool showWaveEditor = true;
     private bool showWaveControls = true;
@@ -129,11 +135,47 @@ public class WavePrototyper : PrototypingPanelBase
         {
             DrawSection("", () =>
             {
+                // Wave status
+                string waveStatus = "";
+                if (hasCustomWave)
+                {
+                    waveStatus = $"Custom Wave | Cubes: {GetActiveCubes().Count}";
+                }
+                else if (waveManager?.useWaveConfiguration == true)
+                {
+                    string waveLabel = waveManager?.GetWaveLabel() ?? "?";
+                    int totalWaves = waveManager?.waveConfiguration?.Count ?? 0;
+                    waveStatus = $"Wave {waveLabel}/{totalWaves} (Configured)";
+                }
+                else
+                {
+                    waveStatus = "No wave configured";
+                }
+                DrawStatus(waveStatus);
+                
+                GUILayout.Space(3);
+                
+                // Main control buttons
                 DrawButtonRow(
+                    ("▶ Start", StartWave),
+                    ("⏸ Stop", StopWave),
                     ("⏮ Respawn", RespawnWave),
-                    (isPaused ? "▶ Resume" : "⏸ Pause", TogglePause),
-                    ("⏭ Next", NextWave)
+                    (isPaused ? "▶ Resume" : "⏸ Pause", TogglePause)
                 );
+                
+                // Manual step controls (only when wave is stopped)
+                bool waveStopped = waveManager != null && !waveManager.waveActive;
+                GUI.enabled = waveStopped && GetActiveCubes().Count > 0;
+                DrawButtonRow(
+                    ("◀ Step Back", StepBackward),
+                    ("Step Forward ▶", StepForward)
+                );
+                GUI.enabled = true;
+                
+                if (waveStopped && GetActiveCubes().Count > 0)
+                {
+                    DrawStatus($"Step: {waveManager?.MoveStep ?? 0} (Manual control enabled)");
+                }
                 
                 DrawButtonRow(
                     ("🗑 Clear", ClearCubes),
@@ -658,9 +700,24 @@ public class WavePrototyper : PrototypingPanelBase
             }
         }
         
+        // Track custom wave state
+        hasCustomWave = true;
+        lastSpawnedWaveWidth = waveWidth;
+        lastSpawnedWaveHeight = waveHeight;
+        
+        // Deep copy the wave grid for respawn
+        lastSpawnedWave = new CubeType?[waveWidth, waveHeight];
+        for (int x = 0; x < waveWidth; x++)
+        {
+            for (int y = 0; y < waveHeight; y++)
+            {
+                lastSpawnedWave[x, y] = waveGrid[x, y];
+            }
+        }
+        
         // Switch to track mode to see results
         currentMode = EditorMode.TrackBoard;
-        LogAction($"Spawned designed wave: {count} cubes");
+        LogAction($"Spawned designed wave: {count} cubes (not started - use Start button)");
     }
     
     private CubeManager SpawnCubeAt(int x, int y, CubeType type)
@@ -718,24 +775,117 @@ public class WavePrototyper : PrototypingPanelBase
     #endregion
     
     #region Wave Control Actions
+    private void StartWave()
+    {
+        if (waveManager == null) return;
+        
+        // If we have a custom wave spawned, start it without clearing
+        if (hasCustomWave && waveManager.activeCubes.Count > 0)
+        {
+            waveManager.StartWaveWithoutSpawning();
+            LogAction("Started custom wave");
+        }
+        else if (waveManager.useWaveConfiguration)
+        {
+            // Start configured wave (normal behavior)
+            waveManager.StartWave();
+            LogAction($"Started wave {waveManager.GetWaveLabel()}");
+        }
+        else if (waveManager.activeCubes.Count > 0)
+        {
+            // Cubes exist but no config - start anyway
+            waveManager.StartWaveWithoutSpawning();
+            LogAction("Started wave with existing cubes");
+        }
+        else
+        {
+            LogAction("No cubes to start - spawn a wave first");
+        }
+    }
+    
+    private void StopWave()
+    {
+        if (waveManager == null) return;
+        waveManager.StopWave();
+        LogAction("Stopped wave");
+    }
+    
+    private void StepForward()
+    {
+        if (waveManager == null) return;
+        waveManager.ManualMoveWaveForward();
+        LogAction($"Stepped wave forward to step {waveManager.MoveStep}");
+    }
+    
+    private void StepBackward()
+    {
+        if (waveManager == null) return;
+        waveManager.ManualMoveWaveBackward();
+        LogAction($"Stepped wave backward to step {waveManager.MoveStep}");
+    }
+    
     private void RespawnWave()
     {
         if (waveManager == null) return;
         
-        // Respawn current wave from configuration
-        int currentIndex = waveManager.currentWaveIndex;
+        if (hasCustomWave && lastSpawnedWave != null)
+        {
+            // Respawn custom wave from stored grid
+            waveManager.StopWave();
+            waveManager.ClearAllCubes();
+            SpawnWaveFromGrid(lastSpawnedWave, lastSpawnedWaveWidth, lastSpawnedWaveHeight);
+            LogAction("Respawned custom wave");
+        }
+        else if (waveManager.useWaveConfiguration)
+        {
+            // Original respawn logic for configured waves
+            int currentIndex = waveManager.currentWaveIndex;
+            
+            waveManager.StopWave();
+            waveManager.ClearAllCubes();
+            waveManager.MoveStep = 0;
+            isPaused = false;
+            Time.timeScale = 1f;
+            
+            waveManager.currentWaveIndex = currentIndex;
+            gridManager?.ClearAllMarkers();
+            waveManager.StartWave();
+            
+            LogAction($"Respawned wave {waveManager.GetWaveLabel()}");
+        }
+        else
+        {
+            LogAction("No wave to respawn - spawn or load a wave first");
+        }
+    }
+    
+    private void SpawnWaveFromGrid(CubeType?[,] grid, int width, int height)
+    {
+        if (waveManager == null || gridManager == null || grid == null) return;
         
-        waveManager.StopWave();
-        waveManager.ClearAllCubes();
-        waveManager.MoveStep = 0;
-        isPaused = false;
-        Time.timeScale = 1f;
+        int gridTop = gridManager.Height - 1;
+        int count = 0;
         
-        waveManager.currentWaveIndex = currentIndex;
-        gridManager?.ClearAllMarkers();
-        waveManager.StartWave();
+        for (int y = 0; y < height; y++)
+        {
+            for (int x = 0; x < width; x++)
+            {
+                if (grid[x, y].HasValue)
+                {
+                    int gridY = gridTop - (height - 1 - y);
+                    int gridX = x;
+                    
+                    if (gridX >= 0 && gridX < gridManager.Width && gridY >= 0 && gridY < gridManager.Height)
+                    {
+                        SpawnCubeAt(gridX, gridY, grid[x, y].Value);
+                        count++;
+                    }
+                }
+            }
+        }
         
-        LogAction($"Respawned wave {waveManager.GetWaveLabel()}");
+        hasCustomWave = true;
+        LogAction($"Respawned {count} cubes from stored wave");
     }
     
     private void TogglePause()
