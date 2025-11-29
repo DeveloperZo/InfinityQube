@@ -28,9 +28,12 @@ public class PlayerPanel : PrototypingPanelBase
     private float storedLightCooldown;
     private float storedHeavyCooldown;
     private float storedPrimeCooldown;
+    private float storedInfinityCooldown;
     private int storedLightCharges;
     private int storedHeavyCharges;
     private int storedPrimeCharges;
+    private int storedInfinityCharges;
+    private int storedPrimeMarkerOnGridLimit;
     
     public override void Initialize()
     {
@@ -225,23 +228,30 @@ public class PlayerPanel : PrototypingPanelBase
             storedLightCooldown = actionManager.lightMarkerCooldown;
             storedHeavyCooldown = actionManager.RecursionMarkerCooldown;
             storedPrimeCooldown = actionManager.primeMarkerCooldown;
+            storedInfinityCooldown = actionManager.infinityMarkerCooldown;
             storedLightCharges = actionManager.maxLightMarkerCharges;
             storedHeavyCharges = actionManager.maxRecursionMarkerCharges;
             storedPrimeCharges = actionManager.maxPrimeMarkerCharges;
+            storedInfinityCharges = actionManager.maxInfinityMarkerCharges;
+            storedPrimeMarkerOnGridLimit = actionManager.primeMarkerOnGridLimit;
             
-            // Set unlimited
+            // Set unlimited for all marker types
             actionManager.lightMarkerCooldown = 0;
             actionManager.RecursionMarkerCooldown = 0;
             actionManager.primeMarkerCooldown = 0;
+            actionManager.infinityMarkerCooldown = 0;
             actionManager.maxLightMarkerCharges = 99;
             actionManager.maxRecursionMarkerCharges = 99;
             actionManager.maxPrimeMarkerCharges = 99;
+            actionManager.maxInfinityMarkerCharges = 99;
             actionManager.maxUnitMarkers = 99;
             actionManager.maxRecursionMarkers = 99;
             actionManager.maxPrimeMarkers = 99;
+            actionManager.maxInfinityMarkers = 99;
+            actionManager.primeMarkerOnGridLimit = 99;
             
             RefillAllCharges();
-            LogAction("Unlimited mode ON");
+            LogAction("Unlimited mode ON - All marker types enabled");
         }
         else
         {
@@ -249,9 +259,12 @@ public class PlayerPanel : PrototypingPanelBase
             actionManager.lightMarkerCooldown = storedLightCooldown;
             actionManager.RecursionMarkerCooldown = storedHeavyCooldown;
             actionManager.primeMarkerCooldown = storedPrimeCooldown;
+            actionManager.infinityMarkerCooldown = storedInfinityCooldown;
             actionManager.maxLightMarkerCharges = storedLightCharges;
             actionManager.maxRecursionMarkerCharges = storedHeavyCharges;
             actionManager.maxPrimeMarkerCharges = storedPrimeCharges;
+            actionManager.maxInfinityMarkerCharges = storedInfinityCharges;
+            actionManager.primeMarkerOnGridLimit = storedPrimeMarkerOnGridLimit;
             
             LogAction("Unlimited mode OFF");
         }
@@ -263,6 +276,7 @@ public class PlayerPanel : PrototypingPanelBase
         actionManager.lightMarkerCooldown = value;
         actionManager.RecursionMarkerCooldown = value;
         actionManager.primeMarkerCooldown = value;
+        actionManager.infinityMarkerCooldown = value;
         LogAction($"All cooldowns set to {value}");
     }
     
@@ -272,6 +286,7 @@ public class PlayerPanel : PrototypingPanelBase
         actionManager.RefillLightMarkerCharges();
         actionManager.RefillRecursionMarkerCharges();
         actionManager.RefillPrimeMarkerCharges();
+        actionManager.RefillInfinityMarkerCharges();
         LogAction("All charges refilled");
     }
     
@@ -282,12 +297,15 @@ public class PlayerPanel : PrototypingPanelBase
         actionManager.lightMarkerCooldown = 5f;
         actionManager.RecursionMarkerCooldown = 5f;
         actionManager.primeMarkerCooldown = 5f;
+        actionManager.infinityMarkerCooldown = 15f;
         actionManager.maxLightMarkerCharges = 3;
         actionManager.maxRecursionMarkerCharges = 2;
         actionManager.maxPrimeMarkerCharges = 2;
+        actionManager.maxInfinityMarkerCharges = 1;
         actionManager.maxUnitMarkers = 3;
         actionManager.maxRecursionMarkers = 2;
         actionManager.maxPrimeMarkers = 2;
+        actionManager.maxInfinityMarkers = 2;
         LogAction("Reset to defaults");
     }
     #endregion

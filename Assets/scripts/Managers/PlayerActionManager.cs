@@ -921,14 +921,14 @@ MarkerMode currentMode = GetCurrentMode();
                 case MarkerMode.Unit:
                     if (currentLightMarkerCharges <= 0)
                         return "No Unit marker charges available. Wait for cooldown.";
-                    if (currentUnitMarkers >= maxLightMarkerCharges)
+                    if (currentUnitMarkers >= maxUnitMarkers)
                         return "Maximum Unit markers already placed on grid.";
                     break;
 
                 case MarkerMode.Recursion:
                     if (currentRecursionMarkerCharges <= 0)
                         return "No Recursion marker charges available. Wait for cooldown.";
-                    if (currentRecursionMarkers >= maxRecursionMarkerCharges)
+                    if (currentRecursionMarkers >= maxRecursionMarkers)
                         return "Maximum Recursion markers already placed on grid.";
                     break;
 
@@ -1257,14 +1257,42 @@ MarkerMode currentMode = GetCurrentMode();
             return false;
         }
 
-        // Prevent switching to Prime mode if prime markers are not available
-        if (mode == MarkerMode.Prime && maxPrimeMarkerCharges <= 0)
+        // Prevent switching to modes if markers are not available
+        switch (mode)
         {
-            ShowActionErrorFeedback("Prime markers are not available in this wave.");
-            return false;
+            case MarkerMode.Unit:
+                if (maxLightMarkerCharges <= 0)
+                {
+                    ShowActionErrorFeedback("Unit markers are not available in this wave.");
+                    return false;
+                }
+                break;
+                
+            case MarkerMode.Recursion:
+                if (maxRecursionMarkerCharges <= 0)
+                {
+                    ShowActionErrorFeedback("Recursion markers are not available in this wave.");
+                    return false;
+                }
+                break;
+                
+            case MarkerMode.Prime:
+                if (maxPrimeMarkerCharges <= 0)
+                {
+                    ShowActionErrorFeedback("Prime markers are not available in this wave.");
+                    return false;
+                }
+                break;
+                
+            case MarkerMode.Infinity:
+                if (maxInfinityMarkerCharges <= 0)
+                {
+                    ShowActionErrorFeedback("Infinity markers are not available in this wave.");
+                    return false;
+                }
+                break;
         }
 
-        // Allow switching to any other valid mode
         return true;
     }
 
@@ -1275,14 +1303,14 @@ MarkerMode currentMode = GetCurrentMode();
     public bool CanPlaceLightMarker()
     {
         return currentLightMarkerCharges > 0 &&
-               currentUnitMarkers < maxLightMarkerCharges;
+               currentUnitMarkers < maxUnitMarkers;
                // Note: UnitMarkersPlaced is for statistics only, not for limiting placement
     }
 
     public bool CanPlaceRecursionMarker()
     {
         return currentRecursionMarkerCharges > 0 &&
-               currentRecursionMarkers < maxRecursionMarkerCharges;
+               currentRecursionMarkers < maxRecursionMarkers;
                // Note: RecursionMarkersPlaced is for statistics only, not for limiting placement
     }
 
@@ -1801,13 +1829,46 @@ MarkerMode currentMode = GetCurrentMode();
     /// </summary>
     public void ValidateCurrentMode()
     {
-        // If currently in Prime mode but prime markers are not available, switch to Light mode
-        if (currentMarkerMode == MarkerMode.Prime && maxPrimeMarkerCharges <= 0)
+        // Check if current mode is still valid, if not switch to first available mode
+        if (!CanSwitchMode(currentMarkerMode))
         {
-            SetMode(MarkerMode.Unit);
-            if (EnableDebugLogs)
+            MarkerMode previousMode = currentMarkerMode;
+            
+            // Try to switch to Unit mode first (most common)
+            if (maxLightMarkerCharges > 0)
             {
-                this.Log("Prime mode was active but prime markers are not available. Switched to Light mode.", EnableDebugLogs);
+                SetMode(MarkerMode.Unit);
+                if (EnableDebugLogs)
+                {
+                    this.Log($"{previousMode} mode was active but markers are not available. Switched to Unit mode.", EnableDebugLogs);
+                }
+            }
+            // Fallback to Recursion if Unit not available
+            else if (maxRecursionMarkerCharges > 0)
+            {
+                SetMode(MarkerMode.Recursion);
+                if (EnableDebugLogs)
+                {
+                    this.Log($"{previousMode} mode was active but markers are not available. Switched to Recursion mode.", EnableDebugLogs);
+                }
+            }
+            // Fallback to Prime if Recursion not available
+            else if (maxPrimeMarkerCharges > 0)
+            {
+                SetMode(MarkerMode.Prime);
+                if (EnableDebugLogs)
+                {
+                    this.Log($"{previousMode} mode was active but markers are not available. Switched to Prime mode.", EnableDebugLogs);
+                }
+            }
+            // Fallback to Infinity if Prime not available
+            else if (maxInfinityMarkerCharges > 0)
+            {
+                SetMode(MarkerMode.Infinity);
+                if (EnableDebugLogs)
+                {
+                    this.Log($"{previousMode} mode was active but markers are not available. Switched to Infinity mode.", EnableDebugLogs);
+                }
             }
         }
         
@@ -1823,7 +1884,7 @@ MarkerMode currentMode = GetCurrentMode();
         currentPrimeMarkerCharges = maxPrimeMarkerCharges;
         currentInfinityMarkerCharges = maxInfinityMarkerCharges;
         
-        // Reset marker mode
+        // Reset marker mode (direct assignment for reset operation)
         currentMarkerMode = MarkerMode.Unit;
         
         // Clear all markers
