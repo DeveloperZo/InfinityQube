@@ -41,13 +41,13 @@ This audit identified **9 unique messages** across the wave configuration files,
    - **Analysis**: Critical action-consequence instruction
    - **Strengths**: Clear action-result relationship
 
-5. **"Press G to place Prime Markers\nPrime markers have enhanced capture abilities"**
+5. **"Press G to place Matrix Markers\nMatrix markers have enhanced capture abilities"**
    - **Category**: Important
    - **Trigger**: Move step 2
    - **Analysis**: Advanced mechanic introduction
    - **Gaps**: No explanation of "enhanced" abilities
 
-6. **"Press T to trigger Prime Markers\nUse them strategically for maximum captures!"**
+6. **"Press T to trigger Matrix Markers\nUse them strategically for maximum captures!"**
    - **Category**: Important
    - **Trigger**: Move step 2, requires pause
    - **Analysis**: Strategic guidance
@@ -104,11 +104,11 @@ This audit identified **9 unique messages** across the wave configuration files,
 
 1. **Resource Management**
    - "Unit Markers recharging - position for next wave"
-   - "Prime markers available - consider strategic placement"
+   - "Matrix markers available - consider strategic placement"
 
 2. **Tactical Guidance**
    - "Infinity cubes approaching - move to safe position"
-   - "Multiple cubes aligned - prime marker opportunity"
+   - "Multiple cubes aligned - Matrix marker opportunity"
 
 3. **Performance Feedback**
    - "Excellent positioning! Maximum capture efficiency"

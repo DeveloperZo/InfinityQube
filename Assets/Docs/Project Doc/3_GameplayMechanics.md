@@ -33,7 +33,7 @@ Details the functional rules and systemic interactions, clearly outlining the be
 | Type | Visual | Movement | Capture Behavior | Special Properties |
 |------|--------|----------|------------------|-------------------|
 | **Unit** | Gray | Standard step movement | Capturable via markers | Basic scoring |
-| **Prime** | Blue | Standard step movement | Creates detonation markers | Generates cube markers on capture |
+| **Matrix** | Blue | Standard step movement | Creates detonation markers | Generates cube markers on capture |
 | **Infinity** | Black | Standard/Paused movement | **Uncapturable** | Can pause, destroys colliding cubes, corrupts tiles |
 | **Recursion** | Darker/Metallic | Standard step movement | Requires multiple hits | Increased durability |
 
@@ -105,7 +105,7 @@ Comprehensive marker and detonation management using unified input system:
 #### Unified Input System
 - **Mode Selection**: Keys `1`, `2`, `3`, `4` switch between marker modes
   - `1` = Unit Marker mode
-  - `2` = Prime Marker mode
+  - `2` = Matrix Marker mode
   - `3` = Recursion Marker mode
   - `4` = Infinity Marker mode
 - **Placement Key**: `F` - places marker of current mode
@@ -129,11 +129,11 @@ Comprehensive marker and detonation management using unified input system:
 - **Enhanced Power**: Optimized for multi-hit Recursion cube interactions
 - **Wave Inheritance**: Position recorded for next wave cube spawn
 
-#### Prime Markers
+#### Matrix Markers
 - **Mode Key**: `2`
-- **Placement**: `F` when in Prime mode
-- **Automatic Spawning**: Spawns Prime cube when wave moves forward (2x2 area effect, 3x3 for Prime+Prime collisions)
-- **Coverage**: 2x2 grid area (from marker), 3x3 for Prime+Prime collisions
+- **Placement**: `F` when in Matrix mode
+- **Automatic Spawning**: Spawns Matrix cube when wave moves forward (2x2 area effect, 3x3 for Matrix+Matrix collisions)
+- **Coverage**: 2x2 grid area (from marker), 3x3 for Matrix+Matrix collisions
 - **Cooldown System**: Time-based restrictions
 - **Resource Limits**: Configurable maximum on-grid count
 - **Wave Inheritance**: Center position recorded for next wave cube spawn
@@ -142,13 +142,13 @@ Comprehensive marker and detonation management using unified input system:
 - **Trigger Key**: `R` (KeyCode.R)
 - **Power Up Key**: `E` (KeyCode.E) - powers up cube marker (if implemented)
 - **Generation**: Created automatically from collisions:
-  - Prime+Prime collision → Prime cube marker (3x3 area)
+  - Matrix+Matrix collision → Matrix cube marker (3x3 area)
   - Recursion+Recursion collision → Recursion cube marker (2x2 area)
-  - Prime captured by non-Prime → Prime cube marker (2x2 area)
+  - Matrix captured by non-Matrix → Matrix cube marker (2x2 area)
 - **Behavior**: When triggered with `R`, creates area effect that expands from cube marker position and captures all non-Infinity cubes in the area
-  - Prime+Prime cube marker: 3x3 area effect
+  - Matrix+Matrix cube marker: 3x3 area effect
   - Recursion+Recursion cube marker: 2x2 area effect
-  - Prime (non-matching) cube marker: 2x2 area effect
+  - Matrix (non-matching) cube marker: 2x2 area effect
 - **Strategic Resource**: Finite and valuable, generated from skillful matching
 - **No Wave Inheritance**: Direct action, not placement-based
 
@@ -163,7 +163,7 @@ Comprehensive marker and detonation management using unified input system:
 
 ### Player Statistics
 Comprehensive tracking system:
-- **Cube Captures**: By type (Unit, Prime, Infinity attempts, Recursion)
+- **Cube Captures**: By type (Unit, Matrix, Infinity attempts, Recursion)
 - **Marker Usage**: Five-tier marker placement/triggers
 - **Wave Pairing Performance**: Success rate across paired waves
 - **Strategic Placement**: Marker-to-cube conversion efficiency
@@ -182,7 +182,7 @@ Revolutionary wave pairing mechanic creating strategic continuity:
 - **Type Mapping**: Marker types influence spawned cube types:
   - Unit Marker → Unit Cube
   - Recursion Marker → Recursion Cube
-  - Prime Marker → Prime Cube (center of area)
+  - Matrix Marker → Matrix Cube (center of area)
   - Infinity Marker → Special/Infinity Cube
 - **Strategic Depth**: Players must balance immediate needs with future consequences
 
@@ -211,9 +211,9 @@ WaveData Structure:
 ### Marker-to-Cube Conversion Rules
 | Marker Type | Default Cube Spawn | Alternative Rules | Special Conditions |
 |-------------|-------------------|-------------------|-------------------|
-| Light | Unit Cube | Random Unit/Prime | Stage-specific |
+| Light | Unit Cube | Random Unit/Matrix | Stage-specific |
 | Heavy | Recursion Cube | Dense variant | Resource availability |
-| Prime | Prime Cube (center) | 3x3 Unit formation | Area overlap |
+| Matrix | Matrix Cube (center) | 3x3 Unit formation | Area overlap |
 | Infinity | Infinity Cube | Paused Infinity | Special wave events |
 
 ### Wave Progression
@@ -260,7 +260,7 @@ Enhanced marker system with future wave implications:
 #### Offensive Strategies
 - **Spawn Trapping**: Place markers to create difficult next-wave patterns
 - **Cascade Setup**: Position markers for chain reactions in next wave
-- **Resource Generation**: Strategic Prime marker placement for future Prime cubes
+- **Resource Generation**: Strategic Matrix marker placement for future Matrix cubes
 
 #### Defensive Strategies
 - **Safe Zones**: Avoid marker placement in critical defensive positions
@@ -291,7 +291,7 @@ Compressed Wave Format:
   inheritedMarkers: [
     {position: (2,5), type: "Light", delay: 0},
     {position: (4,8), type: "Heavy", delay: 1},
-    {position: (6,10), type: "Prime", delay: 2}
+    {position: (6,10), type: "Matrix", delay: 2}
   ],
   baseSpawns: [...],
   mergeStrategy: "Override|Combine|Offset"

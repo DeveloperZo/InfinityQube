@@ -557,7 +557,7 @@ public class TutorialMessageManager : MonoBehaviour, IMessageSystem, IManagerDeb
         {
             capabilities.CanUseUnitMarkers = playerActionManager.maxUnitMarkerCharges > 0;
             capabilities.CanUseRecursionMarkers = playerActionManager.maxRecursionMarkerCharges > 0;
-            capabilities.CanUsePrimeMarkers = playerActionManager.maxPrimeMarkerCharges > 0;
+            capabilities.CanUseMatrixMarkers = playerActionManager.maxMatrixMarkerCharges > 0;
             capabilities.CanUseCubeMarkers = playerActionManager.GetCurrentCubeMarkers() > 0;
         }
         
@@ -593,7 +593,7 @@ public class TutorialMessageManager : MonoBehaviour, IMessageSystem, IManagerDeb
         // Update marker context
         if (playerActionManager != null)
         {
-            currentContext.availableMarkers = playerActionManager.maxRecursionMarkerCharges + playerActionManager.maxUnitMarkerCharges + playerActionManager.maxPrimeMarkerCharges;
+            currentContext.availableMarkers = playerActionManager.maxRecursionMarkerCharges + playerActionManager.maxUnitMarkerCharges + playerActionManager.maxMatrixMarkerCharges;
         }
 
         // Update wave context

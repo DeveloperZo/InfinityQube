@@ -30,7 +30,7 @@ The Paired Wave System was functionally complete but had several behavioral inco
 **Problem**: Mixed terminology used throughout the codebase:
 - "Unit Markers" instead of "Unit markers"
 - "Recursion Markers" instead of "Recursion markers"
-- Inconsistent field casing (`RecursionMarkerPositions` vs `primeMarkerPositions`)
+- Inconsistent field casing (`RecursionMarkerPositions` vs `MatrixMarkerPositions`)
 
 **Impact**: Confusing codebase, harder to maintain.
 
@@ -90,7 +90,7 @@ The paired wave system supports two distinct modes:
 
 - ✅ Only ONE behavior for each wave mode (additive vs replacement)
 - ✅ `MarkerSpawnRules` configuration is respected in ALL scenarios
-- ✅ Consistent naming across all marker-related fields (Unit, Recursion, Prime, Infinity)
+- ✅ Consistent naming across all marker-related fields (Unit, Recursion, Matrix, Infinity)
 - ✅ Build passes with no errors
 - ✅ Existing stages remain compatible
 

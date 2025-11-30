@@ -61,13 +61,13 @@ public class FinalIntegrationTest : MonoBehaviour
         // Test 3: Recursion marker functionality (NEW - for recursion cubes)
         yield return TestRecursionMarkerFunctionality();
         
-        // Test 4: Prime marker area coverage (was area)
-        yield return TestPrimeMarkerAreaCoverage();
+        // Test 4: Matrix marker area coverage (was area)
+        yield return TestMatrixMarkerAreaCoverage();
         
-        // Test 5: Cube marker generation from prime cube captures
+        // Test 5: Cube marker generation from matrix cube captures
         yield return TestCubeMarkerGeneration();
         
-        // Test 6: New cube terminology (unit/infinity/prime/recursion)
+        // Test 6: New cube terminology (unit/infinity/matrix/recursion)
         yield return TestCubeTerminology();
         
         // Test 7: Recursion marker + recursion cube interaction
@@ -122,13 +122,13 @@ public class FinalIntegrationTest : MonoBehaviour
         // Test MarkerType enum exists and has correct values
         AssertTrue(System.Enum.IsDefined(typeof(MarkerType), MarkerType.Unit), "MarkerType.Unit exists");
         AssertTrue(System.Enum.IsDefined(typeof(MarkerType), MarkerType.Recursion), "MarkerType.Recursion exists (NEW)");
-        AssertTrue(System.Enum.IsDefined(typeof(MarkerType), MarkerType.Prime), "MarkerType.Prime exists");
+        AssertTrue(System.Enum.IsDefined(typeof(MarkerType), MarkerType.Matrix), "MarkerType.Matrix exists");
         AssertTrue(System.Enum.IsDefined(typeof(MarkerType), MarkerType.Cube), "MarkerType.Cube exists");
         
         // Test CubeMarkerType enum exists and has correct values
         AssertTrue(System.Enum.IsDefined(typeof(PlayerMarkerSystem.CubeMarkerType), PlayerMarkerSystem.CubeMarkerType.Unit), "CubeMarkerType.Unit exists");
         AssertTrue(System.Enum.IsDefined(typeof(PlayerMarkerSystem.CubeMarkerType), PlayerMarkerSystem.CubeMarkerType.Recursion), "CubeMarkerType.Recursion exists (NEW)");
-        AssertTrue(System.Enum.IsDefined(typeof(PlayerMarkerSystem.CubeMarkerType), PlayerMarkerSystem.CubeMarkerType.Prime), "CubeMarkerType.Prime exists");
+        AssertTrue(System.Enum.IsDefined(typeof(PlayerMarkerSystem.CubeMarkerType), PlayerMarkerSystem.CubeMarkerType.Matrix), "CubeMarkerType.Matrix exists");
         AssertTrue(System.Enum.IsDefined(typeof(PlayerMarkerSystem.CubeMarkerType), PlayerMarkerSystem.CubeMarkerType.Cube), "CubeMarkerType.Cube exists");
         
         yield return new WaitForSeconds(testDelay);
@@ -193,52 +193,52 @@ public class FinalIntegrationTest : MonoBehaviour
     }
     #endregion
 
-    #region Test 4: Prime marker area coverage (was area)
-    private IEnumerator TestPrimeMarkerAreaCoverage()
+    #region Test 4: Matrix marker area coverage (was area)
+    private IEnumerator TestMatrixMarkerAreaCoverage()
     {
-        Log("Testing prime marker area coverage functionality...");
+        Log("Testing matrix marker area coverage functionality...");
         
         Vector2Int centerPos = new Vector2Int(4, 6);
         int areaSize = 3; // 3x3 area
         
-        // Test prime marker placement
-        bool placed = playerActionManager.PlacePrimeMarker(centerPos, areaSize);
-        AssertTrue(placed, "Prime marker placed successfully");
+        // Test matrix marker placement
+        bool placed = playerActionManager.PlaceMatrixMarker(centerPos, areaSize);
+        AssertTrue(placed, "Matrix marker placed successfully");
         
         // Test area coverage calculation
-        var primeMarkers = markerSystem.PrimeMarkers;
-        AssertTrue(primeMarkers.Count > 0, "Prime markers queue not empty");
+        var matrixMarkers = markerSystem.MatrixMarkers;
+        AssertTrue(matrixMarkers.Count > 0, "Matrix markers queue not empty");
         
-        var marker = primeMarkers.Peek();
-        AssertTrue(marker.affectedPositions.Count > 1, "Prime marker affects multiple positions");
-        AssertTrue(marker.centerPosition == centerPos, "Prime marker center position correct");
-        AssertTrue(marker.size == areaSize, "Prime marker size correct");
+        var marker = matrixMarkers.Peek();
+        AssertTrue(marker.affectedPositions.Count > 1, "Matrix marker affects multiple positions");
+        AssertTrue(marker.centerPosition == centerPos, "Matrix marker center position correct");
+        AssertTrue(marker.size == areaSize, "Matrix marker size correct");
         
-        // Test prime marker removal
-        bool removed = playerActionManager.RemovePrimeMarkerAt(centerPos);
-        AssertTrue(removed, "Prime marker removed successfully");
+        // Test matrix marker removal
+        bool removed = playerActionManager.RemoveMatrixMarkerAt(centerPos);
+        AssertTrue(removed, "Matrix marker removed successfully");
         
         yield return new WaitForSeconds(testDelay);
     }
     #endregion
 
-    #region Test 5: Cube marker generation from prime cube captures
+    #region Test 5: Cube marker generation from matrix cube captures
     private IEnumerator TestCubeMarkerGeneration()
     {
-        Log("Testing cube marker generation from prime cube captures...");
+        Log("Testing cube marker generation from matrix cube captures...");
         
         Vector2Int cubePos = new Vector2Int(3, 7);
         
-        // Create a test prime cube
-        GameObject testCubeObj = CreateTestCube(CubeType.Prime, cubePos);
+        // Create a test matrix cube
+        GameObject testCubeObj = CreateTestCube(CubeType.Matrix, cubePos);
         CubeManager testCube = testCubeObj.GetComponent<CubeManager>();
         
-        // Test cube marker creation (simulating prime cube capture)
+        // Test cube marker creation (simulating matrix cube capture)
         int initialCubeMarkers = markerSystem.GetCurrentCubeMarkers();
-        markerSystem.CreateCubeMarker(cubePos, PlayerMarkerSystem.CubeMarkerType.Prime);
+        markerSystem.CreateCubeMarker(cubePos, PlayerMarkerSystem.CubeMarkerType.Matrix);
         
         int finalCubeMarkers = markerSystem.GetCurrentCubeMarkers();
-        AssertTrue(finalCubeMarkers > initialCubeMarkers, "Cube marker created from prime cube capture");
+        AssertTrue(finalCubeMarkers > initialCubeMarkers, "Cube marker created from matrix cube capture");
         
         // Test cube marker triggering
         bool triggered = markerSystem.TriggerNextCubeMarker();
@@ -254,12 +254,12 @@ public class FinalIntegrationTest : MonoBehaviour
     #region Test 6: New cube terminology
     private IEnumerator TestCubeTerminology()
     {
-        Log("Testing new cube terminology (unit/infinity/prime/recursion)...");
+        Log("Testing new cube terminology (unit/infinity/matrix/recursion)...");
         
         // Test CubeType enum has new values
         AssertTrue(System.Enum.IsDefined(typeof(CubeType), CubeType.Unit), "CubeType.Unit exists (was Normal)");
         AssertTrue(System.Enum.IsDefined(typeof(CubeType), CubeType.Infinity), "CubeType.Infinity exists (was Black)");
-        AssertTrue(System.Enum.IsDefined(typeof(CubeType), CubeType.Prime), "CubeType.Prime exists (was Blue)");
+        AssertTrue(System.Enum.IsDefined(typeof(CubeType), CubeType.Matrix), "CubeType.Matrix exists (was Blue)");
         AssertTrue(System.Enum.IsDefined(typeof(CubeType), CubeType.Recursion), "CubeType.Recursion exists (was Reinforced)");
         
         // Test cube creation with new types
@@ -271,8 +271,8 @@ public class FinalIntegrationTest : MonoBehaviour
         GameObject infinityCube = CreateTestCube(CubeType.Infinity, pos + Vector2Int.right);
         AssertNotNull(infinityCube, "Infinity cube created");
         
-        GameObject primeCube = CreateTestCube(CubeType.Prime, pos + Vector2Int.right * 2);
-        AssertNotNull(primeCube, "Prime cube created");
+        GameObject matrixCube = CreateTestCube(CubeType.Matrix, pos + Vector2Int.right * 2);
+        AssertNotNull(matrixCube, "Matrix cube created");
         
         GameObject recursionCube = CreateTestCube(CubeType.Recursion, pos + Vector2Int.right * 3);
         AssertNotNull(recursionCube, "Recursion cube created");
@@ -280,7 +280,7 @@ public class FinalIntegrationTest : MonoBehaviour
         // Cleanup
         if (unitCube != null) Destroy(unitCube);
         if (infinityCube != null) Destroy(infinityCube);
-        if (primeCube != null) Destroy(primeCube);
+        if (matrixCube != null) Destroy(matrixCube);
         if (recursionCube != null) Destroy(recursionCube);
         
         yield return new WaitForSeconds(testDelay);
@@ -415,12 +415,12 @@ public class FinalIntegrationTest : MonoBehaviour
             }
             
             // Test obsolete area marker methods
-            bool areaPlaced = playerActionManager.PlacePrimeMarker(pos, 2);
-            Log($"Obsolete PlacePrimeMarker still works: {areaPlaced}");
+            bool areaPlaced = playerActionManager.PlaceMatrixMarker(pos, 2);
+            Log($"Obsolete PlaceMatrixMarker still works: {areaPlaced}");
             
             if (areaPlaced)
             {
-                playerActionManager.RemovePrimeMarkerAt(pos);
+                playerActionManager.RemoveMatrixMarkerAt(pos);
             }
             
 #pragma warning restore CS0618
@@ -446,7 +446,7 @@ public class FinalIntegrationTest : MonoBehaviour
         if (actionUI != null)
         {
             // Test UI can handle four-tier marker charges
-            actionUI.UpdateCharges(2, 1, 1, 0); // unit, recursion, prime, cube
+            actionUI.UpdateCharges(2, 1, 1, 0); // unit, recursion, matrix, cube
             Log("UI charge update for four-tier system successful");
             
             // Test UI cooldown display
@@ -473,12 +473,12 @@ public class FinalIntegrationTest : MonoBehaviour
         string debugStatus = playerActionManager.GetDebugStatus();
         AssertTrue(debugStatus.Contains("Unit:"), "Debug status contains Unit marker info");
         AssertTrue(debugStatus.Contains("Recursion:"), "Debug status contains Recursion marker info");
-        AssertTrue(debugStatus.Contains("Prime:"), "Debug status contains Prime marker info");
+        AssertTrue(debugStatus.Contains("Matrix:"), "Debug status contains Matrix marker info");
         
         var debugData = playerActionManager.GetDebugData();
         AssertTrue(debugData.ContainsKey("Unit Markers Placed"), "Debug data contains Unit marker info");
         AssertTrue(debugData.ContainsKey("Recursion Markers Placed"), "Debug data contains Recursion marker info");
-        AssertTrue(debugData.ContainsKey("Prime Markers Placed"), "Debug data contains Prime marker info");
+        AssertTrue(debugData.ContainsKey("Matrix Markers Placed"), "Debug data contains Matrix marker info");
         
         Log("Debug system updates verified");
         

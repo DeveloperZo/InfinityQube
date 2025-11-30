@@ -11,9 +11,9 @@ Defines the core gameplay loop, setting, and primary gameplay elements of Infini
 Players strategically place markers on a grid to intercept advancing cube waves. The game's signature mechanic is the **Symmetrical Wave System**, where placed markers transform into cubes that move backward toward incoming waves, creating dynamic collision-based captures.
 
 ### Primary Systems
-- **Cubes**: Four distinct cube types (Unit, Prime, Infinity, and Recursion), each with unique capture requirements and strategic value
+- **Cubes**: Four distinct cube types (Unit, Matrix, Infinity, and Recursion), each with unique capture requirements and strategic value
 - **Face Status System**: Cube faces can be modified with Corrupted (prevents capture) or Enhanced (creates bonus effects) status effects
-- **Marker System**: Four marker types (Light, Heavy, Prime, Cube) provide different capture capabilities
+- **Marker System**: Four marker types (Light, Heavy, Matrix, Cube) provide different capture capabilities
 - **Symmetrical Wave System**: The game's defining mechanic - markers become backward-moving cubes that collide with forward-moving waves
 
 ### Progression Structure
@@ -31,15 +31,15 @@ Players progress through stages composed of multiple waves. Each wave presents a
 
 ### 2. **Strategic Analysis**
 - Assess cube formation patterns and movement speed
-- Identify high-priority targets (Prime cubes for resources, dangerous Recursion cubes)
+- Identify high-priority targets (Matrix cubes for resources, dangerous Recursion cubes)
 - Plan marker placement considering backward movement trajectories
 - Account for face status effects that modify cube behavior
 
 ### 3. **Marker Placement & Transformation**
 - **Unit Markers** (Key: F): Single-tile markers that transform into backward-moving Light cubes
 - **Recursion Markers** (Key: V): Enhanced markers that become Heavy cubes for Recursion capture
-- **Prime Markers** (Key: G): Area-effect markers creating 3x3 capture zones when transformed
-- **Cube Markers** (Key: Q): Special markers generated from Prime cube captures
+- **Matrix Markers** (Key: G): Area-effect markers creating 3x3 capture zones when transformed
+- **Cube Markers** (Key: Q): Special markers generated from Matrix cube captures
 - **Transformation Process**: Upon placement, markers immediately convert to cubes and begin backward movement
 
 ### 4. **Bidirectional Movement Phase**
@@ -51,8 +51,8 @@ Players progress through stages composed of multiple waves. Each wave presents a
 ### 5. **Collision Resolution**
 - **Capture Collisions**: When player cube meets compatible wave cube, capture occurs
 - **Type Matching**: Light/Heavy cubes capture Unit/Recursion respectively
-- **Area Effects**: Prime cube collisions affect 3x3 zones
-- **Same-Type Interactions**: Matching cube types (Prime-Prime, Recursion-Recursion) generate marker resources
+- **Area Effects**: Matrix cube collisions affect 3x3 zones
+- **Same-Type Interactions**: Matching cube types (Matrix-Matrix, Recursion-Recursion) generate marker resources
 - **Conversion Tactics**: Unit cubes can revert to markers mid-movement for tactical advantages
 
 ### 6. **Face Status Processing** (CURRENTLY IMPLEMENTED)
@@ -92,7 +92,7 @@ Players progress through stages composed of multiple waves. Each wave presents a
 
 - **Cube Type Identification**: 
   - Gray = Unit (standard capture target)
-  - Blue = Prime (resource-generating type)
+  - Blue = Matrix (resource-generating type)
   - Black = Infinity (uncapturable obstacle)
   - [Pending] = Recursion (multi-hit requirement)
 
@@ -108,7 +108,7 @@ Players progress through stages composed of multiple waves. Each wave presents a
 | Cube Type | Mechanical Role | Capture Method | Strategic Value |
 |-----------|-----------------|----------------|-----------------|
 | **Unit** | Standard target | Single collision with Light cube | Basic scoring, conversion potential |
-| **Prime** | Resource generator | Requires Prime marker collision | Generates Cube markers, area clearing |
+| **Matrix** | Resource generator | Requires Matrix marker collision | Generates Cube markers, area clearing |
 | **Infinity** | Obstacle | Cannot be captured | Must be avoided or bypassed |
 | **Recursion** | Durable target | Multiple Heavy cube collisions | High score value, challenge element |
 
@@ -132,7 +132,7 @@ Players progress through stages composed of multiple waves. Each wave presents a
 Dedicated input system for rapid marker deployment:
 - F Key: Deploy Unit Marker
 - V Key: Deploy Recursion Marker
-- G Key: Deploy Prime marker
+- G Key: Deploy Matrix marker
 - Q Key: Activate Cube marker
 
 #### **Unit Markers (F Key)**
@@ -147,17 +147,17 @@ Dedicated input system for rapid marker deployment:
 - Required for Recursion cube capture
 - Higher resource cost than Unit Markers
 
-#### **Prime Markers (G Key)**
+#### **Matrix Markers (G Key)**
 - 3x3 area coverage capability
-- Transform into large Prime cubes
+- Transform into large Matrix cubes
 - Capture multiple targets simultaneously
-- Generate Cube markers from successful Prime captures
+- Generate Cube markers from successful Matrix captures
 
 #### **Cube Markers (Q Key)**
-- Special markers from Prime cube captures
+- Special markers from Matrix cube captures
 - Instant detonation capability
 - Strategic resource for emergency situations
-- Limited availability based on Prime success rate
+- Limited availability based on Matrix success rate
 
 ### Symmetrical Wave System - Core Innovation
 
@@ -217,7 +217,7 @@ Core mechanics are immediately understandable while mastery requires deep strate
 ### ⚠️ Partially Implemented
 - **Recursion Cubes**: Logic complete, visual representation pending
 - **Detonation Chains**: System referenced but propagation rules undefined
-- **Cube Marker Generation**: Creation from Prime captures needs activation logic
+- **Cube Marker Generation**: Creation from Matrix captures needs activation logic
 - **Face Rotation**: Tracking implemented but movement rotation needs specification
 
 ### ❓ Technical Specifications Needed

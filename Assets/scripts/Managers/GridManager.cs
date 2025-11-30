@@ -831,7 +831,7 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
                     state = tile.currentState,
                     hasMarker = tile.HasMarker,
                     isBlackened = tile.IsBlackened,
-                    isPrimed = tile.IsPrimed
+                    isMatrixd = tile.IsMatrixd
                 });
             }
         }
@@ -1014,9 +1014,9 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
         {
             tile.BlackenTile();
         }
-        else if (entry.isPrimed)
+        else if (entry.isMatrixd)
         {
-            tile.PrimeTile();
+            tile.MatrixTile();
         }
         
         // Apply marker if needed
@@ -1271,7 +1271,7 @@ public class TileStateEntry
     public TileState state;
     public bool hasMarker;
     public bool isBlackened;
-    public bool isPrimed;
+    public bool isMatrixd;
     public int charges;
 }
 #endregion

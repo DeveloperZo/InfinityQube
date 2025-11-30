@@ -14,10 +14,10 @@ public class WaveAnalyzer
     private bool enableDebugLogs = true;
     
     // Game mechanics constants
-    private const int PRIME_AREA_SIZE = 3; // 3x3 area for prime cube captures
+    private const int MATRIX_AREA_SIZE = 3; // 3x3 area for matrix cube captures
     private const int INFINITY_CORRUPTION_RADIUS = 1; // Adjacent tiles get corrupted
     private const int UNIT_MARKER_BASE_CHARGE = 3;
-    private const int PRIME_MARKER_BASE_CHARGE = 1;
+    private const int MATRIX_MARKER_BASE_CHARGE = 1;
     private const int RECURSION_MARKER_BASE_CHARGE = 1;
     private const float MARKER_COOLDOWN = 1f; // 1 second cooldown between uses
     #endregion
@@ -91,8 +91,8 @@ public class WaveAnalyzer
                 case CubeType.Unit:
                     analysis.unitCubes.Add(cube);
                     break;
-                case CubeType.Prime:
-                    analysis.primeCubes.Add(cube);
+                case CubeType.Matrix:
+                    analysis.matrixCubes.Add(cube);
                     break;
                 case CubeType.Infinity:
                     analysis.infinityCubes.Add(cube);
@@ -103,52 +103,52 @@ public class WaveAnalyzer
             }
         }
         
-        // Analyze prime cube coverage
-        analysis.primeCoverageMap = CalculatePrimeCoverage(analysis.primeCubes, waveData);
+        // Analyze matrix cube coverage
+        analysis.matrixCoverageMap = CalculateMatrixCoverage(analysis.matrixCubes, waveData);
         
         // Analyze infinity cube danger zones
         analysis.infinityDangerZones = CalculateInfinityDangerZones(analysis.infinityCubes);
         
         // Calculate clearable cubes
         analysis.directlyClearableUnits = CountDirectlyClearableUnits(analysis.unitCubes, analysis.infinityDangerZones);
-        analysis.primeClearableUnits = CountPrimeClearableUnits(analysis.unitCubes, analysis.primeCoverageMap);
+        analysis.matrixClearableUnits = CountMatrixClearableUnits(analysis.unitCubes, analysis.matrixCoverageMap);
         
         // Analyze recursion cube requirements
         analysis.recursionCubeInfo = AnalyzeRecursionCubes(analysis.recursionCubes);
         
         DebugLog("AnalyzeCubePositions", 
-            $"Units: {analysis.unitCubes.Count}, Prime: {analysis.primeCubes.Count}, " +
+            $"Units: {analysis.unitCubes.Count}, Matrix: {analysis.matrixCubes.Count}, " +
             $"Infinity: {analysis.infinityCubes.Count}, Recursion: {analysis.recursionCubes.Count}");
         
         return analysis;
     }
     
     /// <summary>
-    /// Calculates 3x3 coverage areas for prime cubes
+    /// Calculates 3x3 coverage areas for matrix cubes
     /// </summary>
-    private Dictionary<Vector2Int, List<CubeData>> CalculatePrimeCoverage(List<CubeData> primeCubes, WaveData waveData)
+    private Dictionary<Vector2Int, List<CubeData>> CalculateMatrixCoverage(List<CubeData> matrixCubes, WaveData waveData)
     {
         Dictionary<Vector2Int, List<CubeData>> coverageMap = new Dictionary<Vector2Int, List<CubeData>>();
         
-        foreach (var primeCube in primeCubes)
+        foreach (var matrixCube in matrixCubes)
         {
-            // Calculate 3x3 area around prime cube
+            // Calculate 3x3 area around matrix cube
             for (int dx = -1; dx <= 1; dx++)
             {
                 for (int dy = -1; dy <= 1; dy++)
                 {
-                    Vector2Int coveragePos = primeCube.position + new Vector2Int(dx, dy);
+                    Vector2Int coveragePos = matrixCube.position + new Vector2Int(dx, dy);
                     
                     // Find cubes at this position
                     var cubesAtPos = waveData.CubesData.Where(c => c.position == coveragePos).ToList();
                     
                     if (cubesAtPos.Count > 0)
                     {
-                        if (!coverageMap.ContainsKey(primeCube.position))
+                        if (!coverageMap.ContainsKey(matrixCube.position))
                         {
-                            coverageMap[primeCube.position] = new List<CubeData>();
+                            coverageMap[matrixCube.position] = new List<CubeData>();
                         }
-                        coverageMap[primeCube.position].AddRange(cubesAtPos);
+                        coverageMap[matrixCube.position].AddRange(cubesAtPos);
                     }
                 }
             }
@@ -188,13 +188,13 @@ public class WaveAnalyzer
     }
     
     /// <summary>
-    /// Counts unit cubes that can be cleared by prime cube area effects
+    /// Counts unit cubes that can be cleared by matrix cube area effects
     /// </summary>
-    private int CountPrimeClearableUnits(List<CubeData> unitCubes, Dictionary<Vector2Int, List<CubeData>> primeCoverageMap)
+    private int CountMatrixClearableUnits(List<CubeData> unitCubes, Dictionary<Vector2Int, List<CubeData>> matrixCoverageMap)
     {
         HashSet<CubeData> clearableUnits = new HashSet<CubeData>();
         
-        foreach (var coverage in primeCoverageMap.Values)
+        foreach (var coverage in matrixCoverageMap.Values)
         {
             foreach (var cube in coverage)
             {
@@ -239,24 +239,24 @@ public class WaveAnalyzer
             strategy.UnitMarkersForInfinity++;
         }
         
-        // Priority 2: Optimize prime cube captures for area clearing
-        // Check which prime cubes provide best coverage
-        var sortedPrimeCubes = analysis.primeCoverageMap
+        // Priority 2: Optimize matrix cube captures for area clearing
+        // Check which matrix cubes provide best coverage
+        var sortedMatrixCubes = analysis.matrixCoverageMap
             .OrderByDescending(kvp => kvp.Value.Count(c => c.type == CubeType.Unit))
             .ToList();
         
-        foreach (var primeKvp in sortedPrimeCubes)
+        foreach (var matrixKvp in sortedMatrixCubes)
         {
-            // Check if prime marker is more efficient than individual unit markers
-            int unitsCovered = primeKvp.Value.Count(c => c.type == CubeType.Unit);
-            if (unitsCovered >= 2) // Prime marker is worth it if it clears 2+ units
+            // Check if matrix marker is more efficient than individual unit markers
+            int unitsCovered = matrixKvp.Value.Count(c => c.type == CubeType.Unit);
+            if (unitsCovered >= 2) // Matrix marker is worth it if it clears 2+ units
             {
-                strategy.primeMarkersForArea++;
+                strategy.matrixMarkersForArea++;
             }
             else
             {
-                // Use unit marker on the prime cube itself
-                strategy.UnitMarkersForPrime++;
+                // Use unit marker on the matrix cube itself
+                strategy.UnitMarkersForMatrix++;
             }
         }
         
@@ -264,21 +264,21 @@ public class WaveAnalyzer
         strategy.RecursionMarkersForRecursion = analysis.recursionCubeInfo.RecursionMarkersRequired;
         
         // Priority 4: Remaining unit cubes
-        int unhandledUnits = analysis.unitCubes.Count - analysis.primeClearableUnits;
+        int unhandledUnits = analysis.unitCubes.Count - analysis.matrixClearableUnits;
         strategy.UnitMarkersForUnits = Mathf.Max(0, unhandledUnits);
         
         // Calculate totals
         strategy.totalUnitMarkers = strategy.UnitMarkersForInfinity + 
-                                    strategy.UnitMarkersForPrime + 
+                                    strategy.UnitMarkersForMatrix + 
                                     strategy.UnitMarkersForUnits;
-        strategy.totalPrimeMarkers = strategy.primeMarkersForArea;
+        strategy.totalMatrixMarkers = strategy.matrixMarkersForArea;
         strategy.totalRecursionMarkers = strategy.RecursionMarkersForRecursion;
         strategy.totalMarkersNeeded = strategy.totalUnitMarkers + 
-                                    strategy.totalPrimeMarkers + 
+                                    strategy.totalMatrixMarkers + 
                                     strategy.totalRecursionMarkers;
         
         DebugLog("CalculateOptimalMarkerStrategy", 
-            $"Strategy - Light: {strategy.totalUnitMarkers}, Prime: {strategy.totalPrimeMarkers}, Heavy: {strategy.totalRecursionMarkers}");
+            $"Strategy - Light: {strategy.totalUnitMarkers}, Matrix: {strategy.totalMatrixMarkers}, Heavy: {strategy.totalRecursionMarkers}");
         
         return strategy;
     }
@@ -292,19 +292,19 @@ public class WaveAnalyzer
     {
         // Slack space = Total cubes that must be prevented from escaping
         int totalCubes = analysis.unitCubes.Count + 
-                        analysis.primeCubes.Count + 
+                        analysis.matrixCubes.Count + 
                         analysis.infinityCubes.Count + 
                         analysis.recursionCubes.Count;
         
         // Calculate cubes that will be captured
         int capturedCubes = 0;
         
-        // Units captured directly or by prime areas
+        // Units captured directly or by matrix areas
         capturedCubes += analysis.directlyClearableUnits;
-        capturedCubes += analysis.primeClearableUnits;
+        capturedCubes += analysis.matrixClearableUnits;
         
-        // Prime cubes captured
-        capturedCubes += strategy.UnitMarkersForPrime + strategy.primeMarkersForArea;
+        // Matrix cubes captured
+        capturedCubes += strategy.UnitMarkersForMatrix + strategy.matrixMarkersForArea;
         
         // Infinity cubes captured (must use markers)
         capturedCubes += strategy.UnitMarkersForInfinity;
@@ -333,7 +333,7 @@ public class WaveAnalyzer
     {
         // Check if we have enough marker charges
         int availableUnitCharges = UNIT_MARKER_BASE_CHARGE * 3; // Assume 3 unit markers max
-        int availablePrimeCharges = PRIME_MARKER_BASE_CHARGE * 2; // Assume 2 prime markers max
+        int availableMatrixCharges = MATRIX_MARKER_BASE_CHARGE * 2; // Assume 2 matrix markers max
         int availableRecursionCharges = RECURSION_MARKER_BASE_CHARGE * 1; // Assume 1 recursion marker max
         
         if (strategy.totalUnitMarkers > availableUnitCharges)
@@ -342,9 +342,9 @@ public class WaveAnalyzer
             return false;
         }
         
-        if (strategy.totalPrimeMarkers > availablePrimeCharges)
+        if (strategy.totalMatrixMarkers > availableMatrixCharges)
         {
-            DebugLog("DetermineWaveSolvability", "Not enough prime marker charges");
+            DebugLog("DetermineWaveSolvability", "Not enough matrix marker charges");
             return false;
         }
         
@@ -398,13 +398,13 @@ public class WaveAnalyzer
             warnings.Add($"High marker requirement ({strategy.totalMarkersNeeded} markers needed)");
         }
         
-        // Prime cube clustering
-        if (analysis.primeCoverageMap.Count >= 3)
+        // Matrix cube clustering
+        if (analysis.matrixCoverageMap.Count >= 3)
         {
-            bool hasOverlap = CheckPrimeCubeOverlap(analysis.primeCubes);
+            bool hasOverlap = CheckMatrixCubeOverlap(analysis.matrixCubes);
             if (hasOverlap)
             {
-                warnings.Add("Prime cubes have overlapping coverage areas - optimize placement");
+                warnings.Add("Matrix cubes have overlapping coverage areas - optimize placement");
             }
         }
         
@@ -419,15 +419,15 @@ public class WaveAnalyzer
     }
     
     /// <summary>
-    /// Checks if prime cubes have overlapping coverage
+    /// Checks if matrix cubes have overlapping coverage
     /// </summary>
-    private bool CheckPrimeCubeOverlap(List<CubeData> primeCubes)
+    private bool CheckMatrixCubeOverlap(List<CubeData> matrixCubes)
     {
-        for (int i = 0; i < primeCubes.Count; i++)
+        for (int i = 0; i < matrixCubes.Count; i++)
         {
-            for (int j = i + 1; j < primeCubes.Count; j++)
+            for (int j = i + 1; j < matrixCubes.Count; j++)
             {
-                float distance = Vector2Int.Distance(primeCubes[i].position, primeCubes[j].position);
+                float distance = Vector2Int.Distance(matrixCubes[i].position, matrixCubes[j].position);
                 if (distance < 3f) // Coverage areas overlap if distance < 3
                 {
                     return true;
@@ -455,15 +455,15 @@ public class WaveAnalyzer
     private class CubeAnalysis
     {
         public List<CubeData> unitCubes = new List<CubeData>();
-        public List<CubeData> primeCubes = new List<CubeData>();
+        public List<CubeData> matrixCubes = new List<CubeData>();
         public List<CubeData> infinityCubes = new List<CubeData>();
         public List<CubeData> recursionCubes = new List<CubeData>();
         
-        public Dictionary<Vector2Int, List<CubeData>> primeCoverageMap = new Dictionary<Vector2Int, List<CubeData>>();
+        public Dictionary<Vector2Int, List<CubeData>> matrixCoverageMap = new Dictionary<Vector2Int, List<CubeData>>();
         public List<Vector2Int> infinityDangerZones = new List<Vector2Int>();
         
         public int directlyClearableUnits = 0;
-        public int primeClearableUnits = 0;
+        public int matrixClearableUnits = 0;
         
         public RecursionCubeInfo recursionCubeInfo = new RecursionCubeInfo();
     }
@@ -484,18 +484,18 @@ public class WaveAnalyzer
     {
         // Unit marker allocation
         public int UnitMarkersForUnits = 0;
-        public int UnitMarkersForPrime = 0;
+        public int UnitMarkersForMatrix = 0;
         public int UnitMarkersForInfinity = 0;
         
-        // Prime marker allocation
-        public int primeMarkersForArea = 0;
+        // Matrix marker allocation
+        public int matrixMarkersForArea = 0;
         
         // Recursion marker allocation
         public int RecursionMarkersForRecursion = 0;
         
         // Totals
         public int totalUnitMarkers = 0;
-        public int totalPrimeMarkers = 0;
+        public int totalMatrixMarkers = 0;
         public int totalRecursionMarkers = 0;
         public int totalMarkersNeeded = 0;
     }

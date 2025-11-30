@@ -411,7 +411,7 @@ public static class MessageFormatter
         // Check for marker-related messages
         if (messageText.Contains("unit marker") && !capabilities.CanUseUnitMarkers) return false;
         if (messageText.Contains("recursion marker") && !capabilities.CanUseRecursionMarkers) return false;
-        if (messageText.Contains("prime marker") && !capabilities.CanUsePrimeMarkers) return false;
+        if (messageText.Contains("matrix marker") && !capabilities.CanUseMatrixMarkers) return false;
         if (messageText.Contains("cube marker") && !capabilities.CanUseCubeMarkers) return false;
 
         // Check for movement-related messages
@@ -643,7 +643,7 @@ public class PlayerCapabilities
     public bool CanMove = true;
     public bool CanUseUnitMarkers = true;
     public bool CanUseRecursionMarkers = false;
-    public bool CanUsePrimeMarkers = false;
+    public bool CanUseMatrixMarkers = false;
     public bool CanUseCubeMarkers = false;
     public PlayerExperienceLevel ExperienceLevel = PlayerExperienceLevel.Beginner;
 }

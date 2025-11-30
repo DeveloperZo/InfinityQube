@@ -79,7 +79,7 @@ public class GridDesigner : PrototypingPanelBase
                 GUI.backgroundColor = selectedState == TileState.Normal ? Color.cyan : Color.white;
                 if (GUILayout.Button("Normal")) selectedState = TileState.Normal;
                 GUI.backgroundColor = selectedState == TileState.Transformed ? Color.cyan : Color.white;
-                if (GUILayout.Button("Primed")) selectedState = TileState.Transformed;
+                if (GUILayout.Button("Matrixd")) selectedState = TileState.Transformed;
                 GUI.backgroundColor = Color.white;
                 GUILayout.EndHorizontal();
                 
@@ -139,7 +139,7 @@ public class GridDesigner : PrototypingPanelBase
         if (selectedState == TileState.Normal)
             tile.ResetTile();
         else
-            tile.PrimeTile();
+            tile.MatrixTile();
     }
     
     private void ApplyRow(int y)
@@ -170,7 +170,7 @@ public class GridDesigner : PrototypingPanelBase
         for (int x = 0; x < gridManager.Width; x++)
             for (int y = 0; y < gridManager.Height; y++)
                 if ((x + y) % 2 == 0)
-                    gridManager.GetTileAt(x, y)?.PrimeTile();
+                    gridManager.GetTileAt(x, y)?.MatrixTile();
     }
     
     private void Cross()
@@ -179,9 +179,9 @@ public class GridDesigner : PrototypingPanelBase
         int cx = gridManager.Width / 2;
         int cy = gridManager.Height / 2;
         for (int x = 0; x < gridManager.Width; x++)
-            gridManager.GetTileAt(x, cy)?.PrimeTile();
+            gridManager.GetTileAt(x, cy)?.MatrixTile();
         for (int y = 0; y < gridManager.Height; y++)
-            gridManager.GetTileAt(cx, y)?.PrimeTile();
+            gridManager.GetTileAt(cx, y)?.MatrixTile();
     }
     
     private void Border()
@@ -189,13 +189,13 @@ public class GridDesigner : PrototypingPanelBase
         if (gridManager == null) return;
         for (int x = 0; x < gridManager.Width; x++)
         {
-            gridManager.GetTileAt(x, 0)?.PrimeTile();
-            gridManager.GetTileAt(x, gridManager.Height - 1)?.PrimeTile();
+            gridManager.GetTileAt(x, 0)?.MatrixTile();
+            gridManager.GetTileAt(x, gridManager.Height - 1)?.MatrixTile();
         }
         for (int y = 0; y < gridManager.Height; y++)
         {
-            gridManager.GetTileAt(0, y)?.PrimeTile();
-            gridManager.GetTileAt(gridManager.Width - 1, y)?.PrimeTile();
+            gridManager.GetTileAt(0, y)?.MatrixTile();
+            gridManager.GetTileAt(gridManager.Width - 1, y)?.MatrixTile();
         }
     }
     
@@ -204,7 +204,7 @@ public class GridDesigner : PrototypingPanelBase
         if (gridManager == null) return;
         int min = Mathf.Min(gridManager.Width, gridManager.Height);
         for (int i = 0; i < min; i++)
-            gridManager.GetTileAt(i, i)?.PrimeTile();
+            gridManager.GetTileAt(i, i)?.MatrixTile();
     }
     
     private void RandomPattern()
@@ -213,7 +213,7 @@ public class GridDesigner : PrototypingPanelBase
         for (int x = 0; x < gridManager.Width; x++)
             for (int y = 0; y < gridManager.Height; y++)
                 if (Random.value < 0.2f)
-                    gridManager.GetTileAt(x, y)?.PrimeTile();
+                    gridManager.GetTileAt(x, y)?.MatrixTile();
     }
     #endregion
 }

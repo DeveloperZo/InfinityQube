@@ -63,7 +63,7 @@ public class PlayerManager : MonoBehaviour, IManagerDebugInterface
     public int markersTriggered = 0;
     public int detonationsUsed = 0;
     public int tilesCorrupted = 0;
-    public int tilesPrimed = 0;
+    public int tilesMatrixd = 0;
     public int tilesEnhanced = 0;
     public int playerDeaths = 0;
     public int movesCount = 0;

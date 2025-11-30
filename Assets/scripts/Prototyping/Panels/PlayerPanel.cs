@@ -27,13 +27,13 @@ public class PlayerPanel : PrototypingPanelBase
     // Stored values for restoring after unlimited mode
     private float storedUnitCooldown;
     private float storedRecursionCooldown;
-    private float storedPrimeCooldown;
+    private float storedMatrixCooldown;
     private float storedInfinityCooldown;
     private int storedUnitCharges;
     private int storedRecursionCharges;
-    private int storedPrimeCharges;
+    private int storedMatrixCharges;
     private int storedInfinityCharges;
-    private int storedPrimeMarkerOnGridLimit;
+    private int storedMatrixMarkerOnGridLimit;
     
     public override void Initialize()
     {
@@ -105,8 +105,8 @@ public class PlayerPanel : PrototypingPanelBase
             GUI.backgroundColor = actionManager.GetCurrentMode() == MarkerMode.Unit ? new Color(0.8f, 0.5f, 0.2f) : Color.white;
             if (GUILayout.Button("1:UnitMarker")) actionManager.SetMode(MarkerMode.Unit);
             
-            GUI.backgroundColor = actionManager.GetCurrentMode() == MarkerMode.Prime ? new Color(0.2f, 0.5f, 0.8f) : Color.white;
-            if (GUILayout.Button("2:PrimeMarker")) actionManager.SetMode(MarkerMode.Prime);
+            GUI.backgroundColor = actionManager.GetCurrentMode() == MarkerMode.Matrix ? new Color(0.2f, 0.5f, 0.8f) : Color.white;
+            if (GUILayout.Button("2:MatrixMarker")) actionManager.SetMode(MarkerMode.Matrix);
             
             GUI.backgroundColor = actionManager.GetCurrentMode() == MarkerMode.Recursion ? new Color(0.6f, 0.2f, 0.6f) : Color.white;
             if (GUILayout.Button("3:RecursionMarker")) actionManager.SetMode(MarkerMode.Recursion);
@@ -138,12 +138,12 @@ public class PlayerPanel : PrototypingPanelBase
                 ref actionManager.maxUnitMarkers,
                 actionManager.GetUnitMarkerCooldownRemaining());
             
-            // PrimeMarker settings
-            DrawMarkerTypeSettings("PrimeMarker", 
-                ref actionManager.maxPrimeMarkerCharges, 
-                ref actionManager.primeMarkerCooldown,
-                ref actionManager.maxPrimeMarkers,
-                actionManager.GetPrimeMarkerCooldownRemaining());
+            // MatrixMarker settings
+            DrawMarkerTypeSettings("MatrixMarker", 
+                ref actionManager.maxMatrixMarkerCharges, 
+                ref actionManager.matrixMarkerCooldown,
+                ref actionManager.maxMatrixMarkers,
+                actionManager.GetMatrixMarkerCooldownRemaining());
             
             // RecursionMarker settings
             DrawMarkerTypeSettings("RecursionMarker", 
@@ -227,28 +227,28 @@ public class PlayerPanel : PrototypingPanelBase
             // Store current values
             storedUnitCooldown = actionManager.unitMarkerCooldown;
             storedRecursionCooldown = actionManager.recursionMarkerCooldown;
-            storedPrimeCooldown = actionManager.primeMarkerCooldown;
+            storedMatrixCooldown = actionManager.matrixMarkerCooldown;
             storedInfinityCooldown = actionManager.infinityMarkerCooldown;
             storedUnitCharges = actionManager.maxUnitMarkerCharges;
             storedRecursionCharges = actionManager.maxRecursionMarkerCharges;
-            storedPrimeCharges = actionManager.maxPrimeMarkerCharges;
+            storedMatrixCharges = actionManager.maxMatrixMarkerCharges;
             storedInfinityCharges = actionManager.maxInfinityMarkerCharges;
-            storedPrimeMarkerOnGridLimit = actionManager.primeMarkerOnGridLimit;
+            storedMatrixMarkerOnGridLimit = actionManager.matrixMarkerOnGridLimit;
             
             // Set unlimited for all marker types
             actionManager.unitMarkerCooldown = 0;
             actionManager.recursionMarkerCooldown = 0;
-            actionManager.primeMarkerCooldown = 0;
+            actionManager.matrixMarkerCooldown = 0;
             actionManager.infinityMarkerCooldown = 0;
             actionManager.maxUnitMarkerCharges = 99;
             actionManager.maxRecursionMarkerCharges = 99;
-            actionManager.maxPrimeMarkerCharges = 99;
+            actionManager.maxMatrixMarkerCharges = 99;
             actionManager.maxInfinityMarkerCharges = 99;
             actionManager.maxUnitMarkers = 99;
             actionManager.maxRecursionMarkers = 99;
-            actionManager.maxPrimeMarkers = 99;
+            actionManager.maxMatrixMarkers = 99;
             actionManager.maxInfinityMarkers = 99;
-            actionManager.primeMarkerOnGridLimit = 99;
+            actionManager.matrixMarkerOnGridLimit = 99;
             
             RefillAllCharges();
             LogAction("Unlimited mode ON - All marker types enabled");
@@ -258,13 +258,13 @@ public class PlayerPanel : PrototypingPanelBase
             // Restore values
             actionManager.unitMarkerCooldown = storedUnitCooldown;
             actionManager.recursionMarkerCooldown = storedRecursionCooldown;
-            actionManager.primeMarkerCooldown = storedPrimeCooldown;
+            actionManager.matrixMarkerCooldown = storedMatrixCooldown;
             actionManager.infinityMarkerCooldown = storedInfinityCooldown;
             actionManager.maxUnitMarkerCharges = storedUnitCharges;
             actionManager.maxRecursionMarkerCharges = storedRecursionCharges;
-            actionManager.maxPrimeMarkerCharges = storedPrimeCharges;
+            actionManager.maxMatrixMarkerCharges = storedMatrixCharges;
             actionManager.maxInfinityMarkerCharges = storedInfinityCharges;
-            actionManager.primeMarkerOnGridLimit = storedPrimeMarkerOnGridLimit;
+            actionManager.matrixMarkerOnGridLimit = storedMatrixMarkerOnGridLimit;
             
             LogAction("Unlimited mode OFF");
         }
@@ -275,7 +275,7 @@ public class PlayerPanel : PrototypingPanelBase
         if (actionManager == null) return;
         actionManager.unitMarkerCooldown = value;
         actionManager.recursionMarkerCooldown = value;
-        actionManager.primeMarkerCooldown = value;
+        actionManager.matrixMarkerCooldown = value;
         actionManager.infinityMarkerCooldown = value;
         LogAction($"All cooldowns set to {value}");
     }
@@ -285,7 +285,7 @@ public class PlayerPanel : PrototypingPanelBase
         if (actionManager == null) return;
         actionManager.RefillUnitMarkerCharges();
         actionManager.RefillRecursionMarkerCharges();
-        actionManager.RefillPrimeMarkerCharges();
+        actionManager.RefillMatrixMarkerCharges();
         actionManager.RefillInfinityMarkerCharges();
         LogAction("All charges refilled");
     }
@@ -296,15 +296,15 @@ public class PlayerPanel : PrototypingPanelBase
         unlimitedMode = false;
         actionManager.unitMarkerCooldown = 5f;
         actionManager.recursionMarkerCooldown = 5f;
-        actionManager.primeMarkerCooldown = 5f;
+        actionManager.matrixMarkerCooldown = 5f;
         actionManager.infinityMarkerCooldown = 15f;
         actionManager.maxUnitMarkerCharges = 3;
         actionManager.maxRecursionMarkerCharges = 2;
-        actionManager.maxPrimeMarkerCharges = 2;
+        actionManager.maxMatrixMarkerCharges = 2;
         actionManager.maxInfinityMarkerCharges = 1;
         actionManager.maxUnitMarkers = 3;
         actionManager.maxRecursionMarkers = 2;
-        actionManager.maxPrimeMarkers = 2;
+        actionManager.maxMatrixMarkers = 2;
         actionManager.maxInfinityMarkers = 2;
         LogAction("Reset to defaults");
     }
@@ -329,7 +329,7 @@ public class PlayerPanel : PrototypingPanelBase
             GUILayout.Label("Place (F key):");
             GUILayout.BeginHorizontal();
             if (GUILayout.Button("UnitMarker")) PlaceAndRecord(playerPos, MarkerMode.Unit);
-            if (GUILayout.Button("PrimeMarker")) PlaceAndRecord(playerPos, MarkerMode.Prime);
+            if (GUILayout.Button("MatrixMarker")) PlaceAndRecord(playerPos, MarkerMode.Matrix);
             if (GUILayout.Button("RecursionMarker")) PlaceAndRecord(playerPos, MarkerMode.Recursion);
             if (GUILayout.Button("InfinityMarker")) PlaceAndRecord(playerPos, MarkerMode.Infinity);
             GUILayout.EndHorizontal();
@@ -340,7 +340,7 @@ public class PlayerPanel : PrototypingPanelBase
             GUILayout.Label("Undo:");
             GUILayout.BeginHorizontal();
             if (GUILayout.Button("UnitMarker")) UndoLastMarker(MarkerMode.Unit);
-            if (GUILayout.Button("PrimeMarker")) UndoLastMarker(MarkerMode.Prime);
+            if (GUILayout.Button("MatrixMarker")) UndoLastMarker(MarkerMode.Matrix);
             if (GUILayout.Button("RecursionMarker")) UndoLastMarker(MarkerMode.Recursion);
             if (GUILayout.Button("InfinityMarker")) UndoLastMarker(MarkerMode.Infinity);
             GUILayout.EndHorizontal();
@@ -396,7 +396,7 @@ public class PlayerPanel : PrototypingPanelBase
         {
             case MarkerMode.Unit: markerList = markers.unitMarkerPositions; break;
             case MarkerMode.Recursion: markerList = markers.recursionMarkerPositions; break;
-            case MarkerMode.Prime: markerList = markers.primeMarkerPositions; break;
+            case MarkerMode.Matrix: markerList = markers.matrixMarkerPositions; break;
         }
         
         if (markerList != null && markerList.Count > 0)

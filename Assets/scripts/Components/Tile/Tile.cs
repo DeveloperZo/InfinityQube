@@ -58,7 +58,7 @@ public class Tile : MonoBehaviour
     public bool HasFallen => hasFallen;
     public bool IsPlayable => !hasFallen;
     public bool IsBlackened => isBlackened;
-    public bool IsPrimed => hasDetonationPoint;
+    public bool IsMatrixd => hasDetonationPoint;
     public bool HasDetonationPoint => hasDetonationPoint;
     public bool isPhasedZone { get; private set; }
     public TileState currentState = TileState.Normal;
@@ -204,10 +204,10 @@ public class Tile : MonoBehaviour
                 NotifyPlayerCubeCapture(CubeType.Infinity);
                 break;
 
-            case CubeType.Prime:
-                Debug.Log($"Prime cube captured at ({x}, {y}) - Creating prime cube marker");
-                NotifyPlayerCubeCapture(CubeType.Prime);
-                PrimeTile();
+            case CubeType.Matrix:
+                Debug.Log($"Matrix cube captured at ({x}, {y}) - Creating matrix cube marker");
+                NotifyPlayerCubeCapture(CubeType.Matrix);
+                MatrixTile();
                 Destroy(cubeToProcess.gameObject);
                 break;
 
@@ -216,7 +216,7 @@ public class Tile : MonoBehaviour
                 if (cubeToProcess.ShouldCreateDetonation())
                 {
                     Debug.Log("Normal cube creating detonation due to face status!");
-                    PrimeTile();
+                    MatrixTile();
                 }
                 Destroy(cubeToProcess.gameObject);
                 break;
@@ -295,7 +295,7 @@ public class Tile : MonoBehaviour
         HideSoftHighlight();
     }
 
-    public void PrimeTile()
+    public void MatrixTile()
     {
         if (isBlackened) return;
         hasDetonationPoint = true;
@@ -304,14 +304,14 @@ public class Tile : MonoBehaviour
         UpdateTileVisuals();
 
         // Register with PlayerActionManager
-        // Default size is 2x2 for Prime tile detonation (from marker capture)
+        // Default size is 2x2 for Matrix tile detonation (from marker capture)
         PlayerActionManager playerActionManager = FindObjectOfType<PlayerActionManager>();
         if (playerActionManager != null)
         {
-            playerActionManager.CreateCubeMarker(new Vector2Int(x, y), PlayerMarkerSystem.CubeMarkerType.Prime, 2);
+            playerActionManager.CreateCubeMarker(new Vector2Int(x, y), PlayerMarkerSystem.CubeMarkerType.Matrix, 2);
         }
 
-        Debug.Log($"Tile ({x},{y}): Primed for detonation and registered with PlayerActionManager");
+        Debug.Log($"Tile ({x},{y}): Matrixd for detonation and registered with PlayerActionManager");
     }
 
     public void ResetTile()

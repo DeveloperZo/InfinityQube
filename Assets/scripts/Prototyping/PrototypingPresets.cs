@@ -185,13 +185,13 @@ public class PrototypingPresets
                 if (tile == null) continue;
                 
                 // Only save non-normal tiles
-                if (tile.IsPrimed || tile.IsBlackened || tile.HasMarker || !tile.IsPlayable)
+                if (tile.IsMatrixd || tile.IsBlackened || tile.HasMarker || !tile.IsPlayable)
                 {
                     preset.tileStates.Add(new TileStateData
                     {
                         x = x,
                         y = y,
-                        isPrimed = tile.IsPrimed,
+                        isMatrixd = tile.IsMatrixd,
                         isBlackened = tile.IsBlackened,
                         hasMarker = tile.HasMarker,
                         isFallen = !tile.IsPlayable
@@ -283,8 +283,8 @@ public class PrototypingPresets
                 tile.MakeTileFall();
             else if (tileState.isBlackened)
                 tile.BlackenTile();
-            else if (tileState.isPrimed)
-                tile.PrimeTile();
+            else if (tileState.isMatrixd)
+                tile.MatrixTile();
             
             if (tileState.hasMarker)
                 gridManager.PlaceMarker(tileState.x, tileState.y);
@@ -424,7 +424,7 @@ public class TileStateData
 {
     public int x;
     public int y;
-    public bool isPrimed;
+    public bool isMatrixd;
     public bool isBlackened;
     public bool hasMarker;
     public bool isFallen;

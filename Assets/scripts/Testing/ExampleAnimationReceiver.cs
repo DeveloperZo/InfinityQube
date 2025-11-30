@@ -563,7 +563,7 @@ public class ExampleAnimationReceiver : MonoBehaviour, IAnimationTriggerReceiver
         switch (mode)
         {
             case MarkerMode.Unit: return Color.yellow;
-            case MarkerMode.Prime: return Color.magenta;
+            case MarkerMode.Matrix: return Color.magenta;
             case MarkerMode.Recursion: return Color.red;
             default: return Color.white;
         }

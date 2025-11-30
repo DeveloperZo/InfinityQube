@@ -17,13 +17,13 @@ This milestone focuses on refining the marker system to ensure cohesive gameplay
 ## Current System State
 
 ### ✅ What's Already Implemented
-- **Marker Types**: Unit, Recursion, Prime, Infinity, Cube markers
+- **Marker Types**: Unit, Recursion, Matrix, Infinity, Cube markers
 - **Marker Placement**: All marker types can be placed with charge system
 - **Marker Spawning**: Markers automatically convert to player cubes when wave moves forward
 - **Charge System**: Regeneration mechanics exist for all marker types
 - **Paired Wave System**: Markers from Wave A spawn cubes in Wave B
 - **Basic Collision**: Player cubes can capture wave cubes
-- **Prime Area Effect**: Prime cubes capture in 3x3 area
+- **Matrix Area Effect**: Matrix cubes capture in 3x3 area
 
 ### ⚠️ What Needs Definition/Refinement
 - **Cube Collision Matrix**: Complete interaction rules for all cube type combinations
@@ -39,8 +39,8 @@ This milestone focuses on refining the marker system to ensure cohesive gameplay
 ### Task 1: Define Marker Placement and Spawning for All Markers
 
 **Current State**: 
-- Unit, Recursion, Prime, Infinity markers can be placed using unified input system (mode keys 1-4, placement key F)
-- Cube markers are generated from Prime cube captures
+- Unit, Recursion, Matrix, Infinity markers can be placed using unified input system (mode keys 1-4, placement key F)
+- Cube markers are generated from Matrix cube captures
 - All markers automatically spawn appropriate cube types when wave moves forward
 - Optional R key trigger activates markers to capture cubes (alternative to automatic spawning)
 
@@ -48,7 +48,7 @@ This milestone focuses on refining the marker system to ensure cohesive gameplay
 - [x] Verify all marker types spawn correct cube types:
   - Unit Marker → Unit Cube ✅ (automatic on wave movement)
   - Recursion Marker → Recursion Cube ✅ (automatic on wave movement)
-  - Prime Marker → Prime Cube ✅ (automatic on wave movement, 2x2 area)
+  - Matrix Marker → Matrix Cube ✅ (automatic on wave movement, 2x2 area)
   - Infinity Marker → Infinity Cube ✅ (automatic on wave movement)
   - Cube Marker → Area detonation (variable size: 2x2 or 3x3) ✅
 - [x] Document marker placement rules and restrictions ✅
@@ -65,12 +65,12 @@ This milestone focuses on refining the marker system to ensure cohesive gameplay
 ### Task 2: Design/Define Cube Collisions for All Combinations
 
 **Current State**:
-- Player cubes can capture wave cubes (Prime = area, others = single target)
+- Player cubes can capture wave cubes (Matrix = area, others = single target)
 - Infinity cubes are uncapturable via markers
 - Basic collision detection exists
 
 **Focus Areas** (as specified in roadmap):
-- **Prime/Prime Recursion/Recursion interactions**: Create meaningful gameplay rewarding player for matching
+- **Matrix/Matrix Recursion/Recursion interactions**: Create meaningful gameplay rewarding player for matching
 - **Infinity/Infinity interactions**: Define collision behavior
 
 **Collision Matrix to Define**:
@@ -81,19 +81,19 @@ This milestone focuses on refining the marker system to ensure cohesive gameplay
 |-------------|-----------|------------------|-------------------|----------------|
 | Unit | Unit | Captures | Captures + bonus? | Standard capture |
 | Unit | Recursion | Captures (1 hit) | Captures (1 hit) | Standard capture |
-| Unit | Prime | Captures | Captures | Standard capture |
+| Unit | Matrix | Captures | Captures | Standard capture |
 | Unit | Infinity | Cannot capture | Cannot capture | N/A |
 | Recursion | Unit | Captures | Captures | Standard capture |
 | Recursion | Recursion | Captures (1 hit) | **Captures + resource reward?** | **Reward matching** |
-| Recursion | Prime | Captures | Captures | Standard capture |
+| Recursion | Matrix | Captures | Captures | Standard capture |
 | Recursion | Infinity | Cannot capture | Cannot capture | N/A |
-| Prime | Unit | Area capture (3x3) | Area capture (3x3) | Area effect |
-| Prime | Recursion | Area capture (3x3) | Area capture (3x3) | Area effect |
-| Prime | Prime | Area capture (3x3) | **Area capture + enhanced reward?** | **Reward matching** |
-| Prime | Infinity | Cannot capture | Cannot capture | N/A |
+| Matrix | Unit | Area capture (3x3) | Area capture (3x3) | Area effect |
+| Matrix | Recursion | Area capture (3x3) | Area capture (3x3) | Area effect |
+| Matrix | Matrix | Area capture (3x3) | **Area capture + enhanced reward?** | **Reward matching** |
+| Matrix | Infinity | Cannot capture | Cannot capture | N/A |
 | Infinity | Unit | Pause effect? | **Define interaction** | **Strategic pause** |
 | Infinity | Recursion | Pause effect? | **Define interaction** | **Strategic pause** |
-| Infinity | Prime | Pause effect? | **Define interaction** | **Strategic pause** |
+| Infinity | Matrix | Pause effect? | **Define interaction** | **Strategic pause** |
 | Infinity | Infinity | **Undefined** | **Define collision behavior** | **Critical interaction** |
 
 #### Wave Cube → Wave Cube Collisions (Same Position)
@@ -102,11 +102,11 @@ This milestone focuses on refining the marker system to ensure cohesive gameplay
 |-------------|-------------|------------------|-------------------|
 | Infinity | Infinity | **Undefined** | **Tile corruption OR alternating pause OR lateral movement** |
 | Infinity | Any Other | Destroys other | Destroys other (existing) |
-| Prime | Prime | **Undefined** | **Define interaction** |
+| Matrix | Matrix | **Undefined** | **Define interaction** |
 | Recursion | Recursion | **Undefined** | **Define interaction** |
 
 **Design Questions to Answer**:
-1. **Prime/Prime Recursion/Recursion Matching Rewards**:
+1. **Matrix/Matrix Recursion/Recursion Matching Rewards**:
    - Should matching types provide bonus resources (marker charges)?
    - Should matching types provide score multipliers?
    - Should matching types create special effects (detonations, area effects)?
@@ -124,7 +124,7 @@ This milestone focuses on refining the marker system to ensure cohesive gameplay
 
 **Actions Needed**:
 - [ ] Design collision matrix for all combinations
-- [ ] Implement matching type rewards (Prime/Prime, Recursion/Recursion)
+- [ ] Implement matching type rewards (Matrix/Matrix, Recursion/Recursion)
 - [ ] Implement Infinity/Infinity collision behavior (choose option)
 - [ ] Implement Infinity player cube interactions
 - [ ] Update documentation with collision rules
@@ -132,7 +132,7 @@ This milestone focuses on refining the marker system to ensure cohesive gameplay
 
 **Acceptance Criteria**:
 - ✅ Collision logic defined for all cube type combinations
-- ✅ Matching type collisions (Prime/Prime, Recursion/Recursion) provide meaningful rewards
+- ✅ Matching type collisions (Matrix/Matrix, Recursion/Recursion) provide meaningful rewards
 - ✅ Infinity/Infinity collision behavior is implemented and tested
 - ✅ All collision behaviors are documented
 
@@ -167,7 +167,7 @@ This milestone focuses on refining the marker system to ensure cohesive gameplay
 |-------------|----------------|-----------|---------------|
 | Unit | ✅ Yes | Unit Cube | Standard mirroring |
 | Recursion | ✅ Yes | Recursion Cube | Standard mirroring |
-| Prime | ✅ Yes | Prime Cube | Spawns at center position |
+| Matrix | ✅ Yes | Matrix Cube | Spawns at center position |
 | Infinity | ✅ Yes | Infinity Cube | Standard mirroring |
 | Cube | ❓ TBD | N/A | Cube markers are direct actions, not placements |
 
@@ -198,7 +198,7 @@ This milestone focuses on refining the marker system to ensure cohesive gameplay
 1. **Charge Limits**:
    - Unit: High quantity, fast regeneration
    - Recursion: Medium quantity, medium regeneration
-   - Prime: Low quantity, slow regeneration
+   - Matrix: Low quantity, slow regeneration
    - Infinity: Very low quantity, very slow regeneration
    - **Verify**: Are these limits balanced?
 
@@ -238,12 +238,12 @@ This milestone focuses on refining the marker system to ensure cohesive gameplay
 - **Distinct Color Per Marker Type**:
   - Unit Marker: [Define color]
   - Recursion Marker: [Define color]
-  - Prime Marker: [Define color]
+  - Matrix Marker: [Define color]
   - Infinity Marker: [Define color - currently dark charcoal]
   - Cube Marker: [Define color]
 
 - **Interaction Indicators** (if applicable):
-  - Range indicators for area effects (Prime)
+  - Range indicators for area effects (Matrix)
   - Pause effect indicators (Infinity)
   - Charge status indicators
   - Mirroring preview indicators
@@ -268,7 +268,7 @@ This milestone focuses on refining the marker system to ensure cohesive gameplay
 
 **Current State**:
 - Markers are acquired through charge regeneration
-- Cube markers are generated from Prime cube captures
+- Cube markers are generated from Matrix cube captures
 - No other acquisition methods exist
 
 **Design Goal**: Create scarcity and strategic depth
@@ -276,7 +276,7 @@ This milestone focuses on refining the marker system to ensure cohesive gameplay
 **Proposed Acquisition Methods**:
 
 1. **Same-Type Collision Rewards**:
-   - Prime player cube + Prime wave cube = Prime marker charge
+   - Matrix player cube + Matrix wave cube = Matrix marker charge
    - Recursion player cube + Recursion wave cube = Recursion marker charge
    - **Benefit**: Rewards skillful matching, creates resource generation loop
 

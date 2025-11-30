@@ -78,7 +78,7 @@ MonoBehaviour:
     cooldownSeconds: 2
     shortMessage: 'Press K to advance'
     useShortMessageOnRepeat: 1
-  - Message: 'Press G to place Prime Markers'
+  - Message: 'Press G to place Matrix Markers'
     DisplayMoveStep: 2
     RequirePause: 0
     AutoHideDelay: 3
@@ -92,9 +92,9 @@ MonoBehaviour:
     triggerOnCubeTypes: []
     triggerOnCubeProximity: -1
     cooldownSeconds: 2
-    shortMessage: 'Press G for Prime markers'
+    shortMessage: 'Press G for Matrix markers'
     useShortMessageOnRepeat: 1
-  - Message: 'Press T to trigger Prime Markers'
+  - Message: 'Press T to trigger Matrix Markers'
     DisplayMoveStep: 2
     RequirePause: 1
     AutoHideDelay: 5
@@ -108,7 +108,7 @@ MonoBehaviour:
     triggerOnCubeTypes: []
     triggerOnCubeProximity: -1
     cooldownSeconds: 2
-    shortMessage: 'Press T to trigger Prime'
+    shortMessage: 'Press T to trigger Matrix'
     useShortMessageOnRepeat: 1
   contextualMessages:
   - Message: 'Excellent work! Ready for the next challenge?'
@@ -212,9 +212,9 @@ MonoBehaviour:
     sourceLocation: Wave_1_01.asset
     analysisNotes: Critical action-consequence instruction
   - originalMessage:
-      Message: 'Press G to place Prime Markers
+      Message: 'Press G to place Matrix Markers
 
-        Prime markers have enhanced capture abilities'
+        Matrix markers have enhanced capture abilities'
       DisplayMoveStep: 2
       RequirePause: 0
       AutoHideDelay: 3
@@ -225,7 +225,7 @@ MonoBehaviour:
     sourceLocation: Wave_1_01.asset
     analysisNotes: Advanced mechanic, important but not immediately essential
   - originalMessage:
-      Message: 'Press T to trigger Prime Markers
+      Message: 'Press T to trigger Matrix Markers
 
         Use them strategically for maximum captures!'
       DisplayMoveStep: 2

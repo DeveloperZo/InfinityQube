@@ -8,16 +8,16 @@ public class PlayerActionUI : MonoBehaviour
     [Header("UI References")]
     [SerializeField] private Image[] unitMarkerSegments = new Image[6];
     [SerializeField] private Image[] recursionMarkerSegments = new Image[6];
-    [SerializeField] private Image[] primeMarkerSegments = new Image[6];
+    [SerializeField] private Image[] matrixMarkerSegments = new Image[6];
     [SerializeField] private Image[] infinityMarkerSegments = new Image[6];
     [SerializeField] private GameObject UnitMarkerUI;
-    [SerializeField] private GameObject PrimeMarkerUI;
+    [SerializeField] private GameObject MatrixMarkerUI;
     [SerializeField] private GameObject RecursionMarkerUI;
     [SerializeField] private GameObject InfinityMarkerUI;
     [SerializeField] private Image[] modeIndicatorSegments = new Image[4];
     [SerializeField] private TextMeshProUGUI unitChargeText;
     [SerializeField] private TextMeshProUGUI recursionChargeText;
-    [SerializeField] private TextMeshProUGUI primeChargeText;
+    [SerializeField] private TextMeshProUGUI matrixChargeText;
     [SerializeField] private TextMeshProUGUI infinityChargeText;
 
     [Header("UI Colors")]
@@ -27,12 +27,12 @@ public class PlayerActionUI : MonoBehaviour
     [SerializeField] private Color segmentEmptyColor = new Color(0.3f, 0.3f, 0.3f, 0.3f);  // Gray when empty
     [SerializeField] private Color unitMarkerColor = new Color(1f, 0.5f, 0.2f, 1f);       // Orange for unit markers
     [SerializeField] private Color recursionMarkerColor = new Color(0.6f, 0.2f, 0.6f, 1f); // Purple for recursion markers
-    [SerializeField] private Color primeMarkerColor = new Color(0.2f, 0.5f, 0.8f, 1f);    // Blue for prime markers
+    [SerializeField] private Color matrixMarkerColor = new Color(0.2f, 0.5f, 0.8f, 1f);    // Blue for matrix markers
     [SerializeField] private Color infinityMarkerColor = new Color(0.3f, 0.8f, 0.9f, 1f); // Cyan for infinity markers
     [SerializeField] private Color[] modeColors = new Color[4] 
     {
         new Color(1f, 0.5f, 0.2f, 1f),      // Orange for Unit mode (index 0 = Unit=1)
-        new Color(0.2f, 0.5f, 0.8f, 1f),    // Blue for Prime mode (index 1 = Prime=2)
+        new Color(0.2f, 0.5f, 0.8f, 1f),    // Blue for Matrix mode (index 1 = Matrix=2)
         new Color(0.6f, 0.2f, 0.6f, 1f),    // Purple for Recursion mode (index 2 = Recursion=3)
         new Color(0.3f, 0.8f, 0.9f, 1f)     // Cyan for Infinity mode (index 3 = Infinity=4)
     };
@@ -42,7 +42,7 @@ public class PlayerActionUI : MonoBehaviour
     [SerializeField] private AnimationTriggerManager animationTriggerManager;
     public float unitMarkerCooldownTime = 6f;
     public float recursionMarkerCooldownTime = 8f;
-    public float primeMarkerCooldownTime = 12f;
+    public float matrixMarkerCooldownTime = 12f;
     public float infinityMarkerCooldownTime = 15f;
 
     // Cached references
@@ -50,8 +50,8 @@ public class PlayerActionUI : MonoBehaviour
     public int unitMaxCharges;
     public int recursionCharges;
     public int recursionMaxCharges;
-    public int primeCharges;
-    public int primeMaxCharges;
+    public int matrixCharges;
+    public int matrixMaxCharges;
     public int infinityCharges;
     public int infinityMaxCharges;
 
@@ -64,11 +64,11 @@ public class PlayerActionUI : MonoBehaviour
         {
             unitMaxCharges = playerActionManager.maxUnitMarkerCharges;
             recursionMaxCharges = playerActionManager.maxRecursionMarkerCharges;
-            primeMaxCharges = playerActionManager.maxPrimeMarkerCharges;
+            matrixMaxCharges = playerActionManager.maxMatrixMarkerCharges;
             infinityMaxCharges = playerActionManager.maxInfinityMarkerCharges;
             unitMarkerCooldownTime = playerActionManager.unitMarkerCooldown;
             recursionMarkerCooldownTime = playerActionManager.recursionMarkerCooldown;
-            primeMarkerCooldownTime = playerActionManager.primeMarkerCooldown;
+            matrixMarkerCooldownTime = playerActionManager.matrixMarkerCooldown;
             infinityMarkerCooldownTime = playerActionManager.infinityMarkerCooldown;
         }
 
@@ -80,17 +80,17 @@ public class PlayerActionUI : MonoBehaviour
         UpdateDisplay();
     }
 
-    public void UpdateCharges(int currentUnitCharges, int currentRecursionCharges, int currentPrimeCharges, int currentInfinityCharges)
+    public void UpdateCharges(int currentUnitCharges, int currentRecursionCharges, int currentMatrixCharges, int currentInfinityCharges)
     {
         // Check if charges have changed to trigger animations
         bool chargesChanged = (unitCharges != currentUnitCharges) || 
                              (recursionCharges != currentRecursionCharges) || 
-                             (primeCharges != currentPrimeCharges) ||
+                             (matrixCharges != currentMatrixCharges) ||
                              (infinityCharges != currentInfinityCharges);
 
         unitCharges = currentUnitCharges;
         recursionCharges = currentRecursionCharges;
-        primeCharges = currentPrimeCharges;
+        matrixCharges = currentMatrixCharges;
         infinityCharges = currentInfinityCharges;
 
         // Set max charges if not already set
@@ -104,9 +104,9 @@ public class PlayerActionUI : MonoBehaviour
             {
                 recursionMaxCharges = playerActionManager.maxRecursionMarkerCharges;
             }
-            if (primeMaxCharges == 0)
+            if (matrixMaxCharges == 0)
             {
-                primeMaxCharges = playerActionManager.maxPrimeMarkerCharges;
+                matrixMaxCharges = playerActionManager.maxMatrixMarkerCharges;
             }
             if (infinityMaxCharges == 0)
             {
@@ -127,11 +127,11 @@ public class PlayerActionUI : MonoBehaviour
         UpdateCharges(currentUnitCharges, 0, currentAreaCharges, 0);
     }
 
-    public void UpdateCooldowns(float unitCooldown, float recursionCooldown, float primeCooldown, float infinityCooldown)
+    public void UpdateCooldowns(float unitCooldown, float recursionCooldown, float matrixCooldown, float infinityCooldown)
     {
         unitMarkerCooldownTime = unitCooldown;
         recursionMarkerCooldownTime = recursionCooldown;
-        primeMarkerCooldownTime = primeCooldown;
+        matrixMarkerCooldownTime = matrixCooldown;
         infinityMarkerCooldownTime = infinityCooldown;
     }
 
@@ -139,7 +139,7 @@ public class PlayerActionUI : MonoBehaviour
     public void UpdateCooldowns(float individualCooldown, float areaCooldown)
     {
         unitMarkerCooldownTime = individualCooldown;
-        primeMarkerCooldownTime = areaCooldown;
+        matrixMarkerCooldownTime = areaCooldown;
     }
 
     public void OnMarkerPlaced(bool isUnitMarker)
@@ -180,25 +180,25 @@ public class PlayerActionUI : MonoBehaviour
         // Get current charges directly from PlayerActionManager for real-time display
         int currentUnitCharges = playerActionManager.GetCurrentUnitCharges();
         int currentRecursionCharges = playerActionManager.GetCurrentRecursionCharges();
-        int currentPrimeCharges = playerActionManager.GetCurrentPrimeCharges();
+        int currentMatrixCharges = playerActionManager.GetCurrentMatrixCharges();
         int currentInfinityCharges = playerActionManager.GetCurrentInfinityCharges();
 
         // Get max charges from PlayerActionManager (may be updated from wave configuration)
         unitMaxCharges = playerActionManager.maxUnitMarkerCharges;
         recursionMaxCharges = playerActionManager.maxRecursionMarkerCharges;
-        primeMaxCharges = playerActionManager.maxPrimeMarkerCharges;
+        matrixMaxCharges = playerActionManager.maxMatrixMarkerCharges;
         infinityMaxCharges = playerActionManager.maxInfinityMarkerCharges;
 
         // Update cached values for other methods that might need them
         unitCharges = currentUnitCharges;
         recursionCharges = currentRecursionCharges;
-        primeCharges = currentPrimeCharges;
+        matrixCharges = currentMatrixCharges;
         infinityCharges = currentInfinityCharges;
 
         // Calculate cooldown progress for UI segments
         float unitCooldownRemaining = playerActionManager.GetUnitMarkerCooldownRemaining();
         float recursionCooldownRemaining = playerActionManager.GetRecursionMarkerCooldownRemaining();
-        float primeCooldownRemaining = playerActionManager.GetPrimeMarkerCooldownRemaining();
+        float matrixCooldownRemaining = playerActionManager.GetMatrixMarkerCooldownRemaining();
         float infinityCooldownRemaining = playerActionManager.GetInfinityMarkerCooldownRemaining();
 
         float unitCooldownProgress = CalculateCooldownProgress(
@@ -215,11 +215,11 @@ public class PlayerActionUI : MonoBehaviour
             recursionMarkerCooldownTime
         );
 
-        float primeCooldownProgress = CalculateCooldownProgress(
-            currentPrimeCharges,
-            primeMaxCharges,
-            primeCooldownRemaining,
-            primeMarkerCooldownTime
+        float matrixCooldownProgress = CalculateCooldownProgress(
+            currentMatrixCharges,
+            matrixMaxCharges,
+            matrixCooldownRemaining,
+            matrixMarkerCooldownTime
         );
 
         float infinityCooldownProgress = CalculateCooldownProgress(
@@ -275,26 +275,26 @@ public class PlayerActionUI : MonoBehaviour
             }
         }
 
-        // Update Prime Marker UI - disable if not available
-        bool primeMarkersAvailable = primeMaxCharges > 0;
-        if (PrimeMarkerUI != null)
+        // Update Matrix Marker UI - disable if not available
+        bool matrixMarkersAvailable = matrixMaxCharges > 0;
+        if (MatrixMarkerUI != null)
         {
-            if (primeMarkersAvailable)
+            if (matrixMarkersAvailable)
             {
-                PrimeMarkerUI.SetActive(true);
+                MatrixMarkerUI.SetActive(true);
                 UpdateMarkerUI(
-                    currentPrimeCharges,
-                    primeMaxCharges,
-                    primeCooldownProgress,
-                    primeMarkerSegments,
-                    primeChargeText,
-                    primeMarkerColor,
-                    primeCooldownRemaining
+                    currentMatrixCharges,
+                    matrixMaxCharges,
+                    matrixCooldownProgress,
+                    matrixMarkerSegments,
+                    matrixChargeText,
+                    matrixMarkerColor,
+                    matrixCooldownRemaining
                 );
             }
             else
             {
-                PrimeMarkerUI.SetActive(false);
+                MatrixMarkerUI.SetActive(false);
             }
         }
 
@@ -472,24 +472,24 @@ public class PlayerActionUI : MonoBehaviour
         
         // Check which markers are available
         bool unitMarkersAvailable = unitMaxCharges > 0;
-        bool primeMarkersAvailable = primeMaxCharges > 0;
+        bool matrixMarkersAvailable = matrixMaxCharges > 0;
         bool recursionMarkersAvailable = recursionMaxCharges > 0;
         bool infinityMarkersAvailable = infinityMaxCharges > 0;
         
         // Update mode indicator segments - highlight current active mode
-        // Segments: 0=Unit, 1=Prime, 2=Recursion, 3=Infinity
+        // Segments: 0=Unit, 1=Matrix, 2=Recursion, 3=Infinity
         for (int i = 0; i < modeIndicatorSegments.Length && i < 4; i++)
         {
             if (modeIndicatorSegments[i] == null) continue;
 
-            // Calculate which mode this segment represents (Unit=1, Prime=2, Recursion=3, Infinity=4)
+            // Calculate which mode this segment represents (Unit=1, Matrix=2, Recursion=3, Infinity=4)
             MarkerMode segmentMode = (MarkerMode)(i + 1);
 
             // Hide mode indicator if markers aren't available
             bool shouldShow = segmentMode switch
             {
                 MarkerMode.Unit => unitMarkersAvailable,
-                MarkerMode.Prime => primeMarkersAvailable,
+                MarkerMode.Matrix => matrixMarkersAvailable,
                 MarkerMode.Recursion => recursionMarkersAvailable,
                 MarkerMode.Infinity => infinityMarkersAvailable,
                 _ => true
@@ -554,31 +554,31 @@ public class PlayerActionUI : MonoBehaviour
         );
     }
 
-    public float GetPrimeCooldownProgress()
+    public float GetMatrixCooldownProgress()
     {
         if (playerActionManager == null) return 0f;
         return CalculateCooldownProgress(
-            primeCharges,
-            primeMaxCharges,
-            playerActionManager.GetPrimeMarkerCooldownRemaining(),
-            primeMarkerCooldownTime
+            matrixCharges,
+            matrixMaxCharges,
+            playerActionManager.GetMatrixMarkerCooldownRemaining(),
+            matrixMarkerCooldownTime
         );
     }
 
     // Alias for backward compatibility
-    public float GetAreaCooldownProgress() => GetPrimeCooldownProgress();
+    public float GetAreaCooldownProgress() => GetMatrixCooldownProgress();
 
     public bool IsUnitCharging() => unitCharges < unitMaxCharges;
     public bool IsRecursionCharging() => recursionCharges < recursionMaxCharges;
-    public bool IsPrimeCharging() => primeCharges < primeMaxCharges;
+    public bool IsMatrixCharging() => matrixCharges < matrixMaxCharges;
     
 
     // Set max charges explicitly
-    public void SetMaxCharges(int maxUnit, int maxRecursion, int maxPrime, int maxInfinity)
+    public void SetMaxCharges(int maxUnit, int maxRecursion, int maxMatrix, int maxInfinity)
     {
         unitMaxCharges = maxUnit;
         recursionMaxCharges = maxRecursion;
-        primeMaxCharges = maxPrime;
+        matrixMaxCharges = maxMatrix;
         infinityMaxCharges = maxInfinity;
     }
 
@@ -586,7 +586,7 @@ public class PlayerActionUI : MonoBehaviour
     public void SetMaxCharges(int maxUnit, int maxArea)
     {
         unitMaxCharges = maxUnit;
-        primeMaxCharges = maxArea;
+        matrixMaxCharges = maxArea;
     }
 
     // Public method to update mode indicator from external calls

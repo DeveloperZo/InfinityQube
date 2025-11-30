@@ -38,16 +38,16 @@ Players place markers that transform into backward-moving cubes, creating symmet
 ### **Step-Based Wave System**
 Cubes advance in synchronized steps toward the player:
 - **Predictable Movement**: Step-based advancement allows timing calculations
-- **Cube Types**: Unit, Prime, Infinity, and Recursion cubes require different strategies
+- **Cube Types**: Unit, Matrix, Infinity, and Recursion cubes require different strategies
 - **Speed Variation**: Configurable step intervals create pressure
 
 
 ### **Four-Tier Marker System**
 Resource-limited tools for cube capture:
-- **Unit Markers**: Single-tile captures for Unit and Prime cubes
+- **Unit Markers**: Single-tile captures for Unit and Matrix cubes
 - **Recursion Markers**: Multi-hit capability for Recursion cubes
-- **Prime Markers**: 2x2 area coverage for group captures
-- **Cube Markers**: Generated from Prime captures, used for direct detonation
+- **Matrix Markers**: 2x2 area coverage for group captures
+- **Cube Markers**: Generated from Matrix captures, used for direct detonation
 
 ### **Symmetrical Wave System**
 The infinity symbol (∞) as core gameplay:

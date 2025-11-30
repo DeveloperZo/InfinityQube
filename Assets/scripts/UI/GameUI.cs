@@ -383,19 +383,19 @@ public class GameUI : MonoBehaviour
                 if (playerActionManager != null && 
                     (playerActionManager.GetCurrentUnitMarkers() > 0 || 
                      playerActionManager.GetCurrentRecursionMarkers() > 0 || 
-                     playerActionManager.GetCurrentPrimeMarkers() > 0))
+                     playerActionManager.GetCurrentMatrixMarkers() > 0))
                 {
                     return "Press ENTER to start wave";
                 }
             }
 
-            // Check for cube markers (from captured prime cubes)
+            // Check for cube markers (from captured matrix cubes)
             if (playerActionManager != null)
             {
                 int cubeMarkers = playerActionManager.GetCurrentCubeMarkers();
                 if (cubeMarkers > 0)
                 {
-                    return "Prime cubes give cube markers - press Q to detonate";
+                    return "Matrix cubes give cube markers - press Q to detonate";
                 }
             }
         }

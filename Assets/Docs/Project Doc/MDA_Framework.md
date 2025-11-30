@@ -18,7 +18,7 @@
 Marker-to-Cube Transformation (The Infinity Symbol ∞):
 - Unit Markers (F) → Light Cubes: Single-tile backward-moving interceptors
 - Recursion Markers (V) → Heavy Cubes: Multi-hit capable, Recursion destroyers
-- Prime Markers (G) → Prime Cubes: 3x3 area effect on collision
+- Matrix Markers (G) → Matrix Cubes: 3x3 area effect on collision
 - Cube Markers (Q): Direct detonation, no transformation needed
 
 Bidirectional Movement (Opposing Forces):
@@ -39,13 +39,13 @@ Face Status System (Cosmic Modification):
 Charge System:
 - Light Charges: High quantity, fast regeneration
 - Heavy Charges: Medium quantity, medium regeneration  
-- Prime Charges: Low quantity, slow regeneration
-- Cube Markers: Generated from Prime cube captures only
+- Matrix Charges: Low quantity, slow regeneration
+- Cube Markers: Generated from Matrix cube captures only
 
 Collision Resolution:
 - Type matching determines capture success
 - Same-type collisions generate marker resources
-- Area effects from Prime cube collisions (3x3)
+- Area effects from Matrix cube collisions (3x3)
 - Pass-through mechanics for Infinity cubes
 
 Information Systems:
@@ -63,7 +63,7 @@ Information Systems:
 #### **Symmetrical Mastery Patterns**
 - **Pattern Mirroring**: Creating reverse patterns to intercept waves
 - **Trajectory Calculation**: Predicting collision points in space-time
-- **Type Management**: Matching marker types to cube types (Unit, Prime, Infinity, Recursion)
+- **Type Management**: Matching marker types to cube types (Unit, Matrix, Infinity, Recursion)
 - **Conversion Tactics**: Using mid-flight Unit cube conversions strategically
 
 #### **Face Status Dynamics**
@@ -78,7 +78,7 @@ Status Effects as Game Changers:
 #### **Emergent Collision Patterns**
 - **Wave Formations**: Each wave presents unique cube arrangements
 - **Collision Chains**: Strategic marker placement creates capture sequences
-- **Resource Loops**: Prime cube captures generate cube markers for area effects
+- **Resource Loops**: Matrix cube captures generate cube markers for area effects
 - **Recursion Challenges**: Multi-hit requirements create extended engagements
 
 ### Temporal Strategy Layers
@@ -179,13 +179,13 @@ The synthesis of mathematical symmetry and cosmic atmosphere - where the infinit
 ### Act 1: Learning the Rules
 **Dominant Experience**: Core mechanics understanding
 - Understanding marker-to-cube transformation
-- Learning cube types (Unit, Prime, Infinity, Recursion)
+- Learning cube types (Unit, Matrix, Infinity, Recursion)
 - Basic collision mechanics
 
 ### Act 2: Efficiency Under Pressure
 **Dominant Experience**: Resource management
 - Limited charges force strategic decisions
-- Prime cube value recognition
+- Matrix cube value recognition
 - Spatial efficiency optimization
 
 ### Act 3: Advanced Tactics
@@ -234,7 +234,7 @@ Optimize Efficiency → Master Symmetry → Seek Perfect Solutions
 - Clear visual communication of mechanics
 
 #### What's Complete ✅
-- Four-tier marker system (Light/Heavy/Prime/Cube)
+- Four-tier marker system (Light/Heavy/Matrix/Cube)
 - Face Status System with Corrupted/Enhanced states
 - Wave management with completion feedback
 - Comprehensive statistics tracking

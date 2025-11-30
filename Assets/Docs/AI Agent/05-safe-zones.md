@@ -145,7 +145,7 @@ void Start() { } // -> void Awake() { } // FORBIDDEN
 public static Instance { get; set; } // FORBIDDEN
 
 // Altering enums
-public enum CubeType { Unit, Prime, NewType } // FORBIDDEN
+public enum CubeType { Unit, Matrix, NewType } // FORBIDDEN
 ```
 
 ## File-Specific Rules

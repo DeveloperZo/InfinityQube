@@ -36,7 +36,7 @@ public enum GameAudioEvent
     
     // === MARKER EVENTS ===
     LightMarkerPlaced,    // F key marker placement
-    PrimeMarkerPlaced,    // G key marker placement  
+    MatrixMarkerPlaced,    // G key marker placement  
     RecursionMarkerPlaced,    // V key marker placement
     MarkerTriggered,      // When marker activates/detonates
     MarkerHit,            // When marker successfully hits cube
@@ -413,7 +413,7 @@ public class PlayerManager : MonoBehaviour
 ```
 High Priority:
 - Marker placement sounds (3 variations)
-- Cube capture by type (Unit, Prime, Infinity, Dense - 2 each)
+- Cube capture by type (Unit, Matrix, Infinity, Dense - 2 each)
 - Cosmic metronome beat (3 variations)
 - Wave start/complete sounds (1 each)
 

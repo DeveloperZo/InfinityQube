@@ -31,7 +31,7 @@ The game features four distinct stage types, each serving different purposes in 
   - Clear objectives and feedback
   - Forgiving failure conditions
 - **Progression**: Tutorial stages unlock standard stages
-- **Examples**: Stage 0 (Pure Fundamentals), Stage 1 (Death Exists), Stage 2 (Prime Introduction)
+- **Examples**: Stage 0 (Pure Fundamentals), Stage 1 (Death Exists), Stage 2 (Matrix Introduction)
 
 #### Standard Stages
 - **Purpose**: Normal gameplay with balanced difficulty progression
@@ -105,7 +105,7 @@ Waves can be created through two primary methods:
 #### Procedural Generation
 - **Pattern-Based**: Uses predefined patterns that can be combined and modified
 - **Difficulty Scaling**: Automatically adjusts cube composition based on stage difficulty
-- **Cube Distribution**: Configurable percentages for each cube type (Unit, Prime, Infinity, Recursion)
+- **Cube Distribution**: Configurable percentages for each cube type (Unit, Matrix, Infinity, Recursion)
 - **Spacing Control**: Maintains appropriate spacing between cubes for playability
 - **Solvability Analysis**: System ensures generated waves are solvable
 - **Use Cases**: Replayability, varied challenges, dynamic difficulty adjustment
@@ -123,7 +123,7 @@ Procedural generation can be configured with:
 Each wave within a stage can be individually configured:
 
 - **Cube Placement**: Exact positions where cubes spawn at the start of the wave
-- **Marker Availability**: Each wave can specify how many marker charges and counts are available (Light, Heavy, Prime markers)
+- **Marker Availability**: Each wave can specify how many marker charges and counts are available (Light, Heavy, Matrix markers)
 - **Timing Settings**: Wave-specific movement speeds and start delays
 - **Success Criteria**: Waves can have their own completion requirements (capture counts, escape limits)
 - **Instructional Messages**: Waves can display messages at specific movement steps to guide players
@@ -195,15 +195,15 @@ Tutorial stages follow a specific structure to maximize learning effectiveness:
 
 #### Stage 2: Dancing with Danger
 - **Type**: Tutorial
-- **Mechanics Introduced**: Prime cube capture, cube marker generation
+- **Mechanics Introduced**: Matrix cube capture, cube marker generation
 - **Grid**: 5x20
 - **Resources**: 2 Unit Marker charges
-- **Cubes**: Unit, Infinity, and Prime cubes
+- **Cubes**: Unit, Infinity, and Matrix cubes
 - **Learning Goals**:
-  - Prime cubes can be captured
-  - Prime cube capture generates cube markers
+  - Matrix cubes can be captured
+  - Matrix cube capture generates cube markers
   - Cube markers provide tactical advantages
-  - Value hierarchy: Infinity = avoid, Prime = pursue
+  - Value hierarchy: Infinity = avoid, Matrix = pursue
 
 ### Symmetrical Wave System Tutorial Progression
 
@@ -215,7 +215,7 @@ After basic mechanics are established, the game introduces its core innovation: 
 - **Basic Spatial Awareness**: Understanding collision points on the grid
 
 #### Phase 2: Dynamic Collisions (Stages 6-8)
-- **Moving Cube Markers**: Cube markers from Prime captures can move and collide
+- **Moving Cube Markers**: Cube markers from Matrix captures can move and collide
 - **Collision Prediction**: Learning to anticipate where collisions will occur
 - **Mid-Flight Conversions**: Converting Infinity cubes by colliding Unit cubes into them
 
@@ -260,7 +260,7 @@ After basic mechanics are established, the game introduces its core innovation: 
 - **Grid**: 5x20
 - **Tools**: Movement + Individual Markers (2 charges)
 - **Cubes**: Normal + Black + **Blue Introduction**
-- **Learning Goal**: Prime cubes create opportunities
+- **Learning Goal**: Matrix cubes create opportunities
 
 **Wave Progression**:
 - Wave 2_01: 5 rows, 1 black cube per row (3 blue cubes)
@@ -298,9 +298,9 @@ After basic mechanics are established, the game introduces its core innovation: 
 - **Grid**: 7x25
 - **Tools**: Individual (2) + Area (2)
 - **Cubes**: Normal + Black + Blue
-- **Learning Goal**: Prime cubes as the "anti-infinity" - valuable detonation creators
+- **Learning Goal**: Matrix cubes as the "anti-infinity" - valuable detonation creators
 
-**The Power-Up**: Prime cube captures create cube markers for direct detonation. Players learn the value hierarchy: Infinity = avoid, Prime = pursue aggressively.
+**The Power-Up**: Matrix cube captures create cube markers for direct detonation. Players learn the value hierarchy: Infinity = avoid, Matrix = pursue aggressively.
 
 **Wave Progression**:
 - Wave 5_01: 7 rows, 1 black cube per row (3 blue cubes)
@@ -316,7 +316,7 @@ After basic mechanics are established, the game introduces its core innovation: 
 - **Cubes**: All types
 - **Learning Goal**: Multi-step strategy and prediction
 
-**The Combo**: Prime cubes positioned to create chain-clearing opportunities. Infinity cubes threaten perfect setups. Players learn forward thinking: "If I capture this Prime, the detonation will clear those Units before the Infinity cube blocks the lane."
+**The Combo**: Matrix cubes positioned to create chain-clearing opportunities. Infinity cubes threaten perfect setups. Players learn forward thinking: "If I capture this Matrix, the detonation will clear those Units before the Infinity cube blocks the lane."
 
 #### Stage 7: The Wall
 - **Grid**: 9x30
@@ -324,7 +324,7 @@ After basic mechanics are established, the game introduces its core innovation: 
 - **Cubes**: All types + **Recursion Introduction**
 - **Learning Goal**: Durability mechanics and indirect damage
 
-**The Puzzle**: Recursion cubes (2-3 hits required) create barriers. Infinity cubes prevent direct assault. Players must use Prime cube detonations to damage Recursion cubes from safe distances.
+**The Puzzle**: Recursion cubes (2-3 hits required) create barriers. Infinity cubes prevent direct assault. Players must use Matrix cube detonations to damage Recursion cubes from safe distances.
 
 #### Stage 8: Resource Management Master Class
 - **Grid**: 9x32
@@ -332,7 +332,7 @@ After basic mechanics are established, the game introduces its core innovation: 
 - **Cubes**: All types
 - **Learning Goal**: Perfect efficiency under extreme constraints
 
-**The Test**: Brutal resource constraints force optimal play. Every marker placement must be perfect. Infinity cubes punish waste. Prime cubes become precious efficiency multipliers.
+**The Test**: Brutal resource constraints force optimal play. Every marker placement must be perfect. Infinity cubes punish waste. Matrix cubes become precious efficiency multipliers.
 
 ### Act 4: Environmental Hazards (Stages 9-10)
 **Focus**: Dynamic board states
@@ -471,7 +471,7 @@ Each wave follows a structured sequence:
 ### Wave Completion Conditions
 Waves complete when:
 
-- **All Capturable Cubes Processed**: All Unit, Prime, and Recursion cubes have been either captured or have escaped. The wave ends when no capturable cubes remain active
+- **All Capturable Cubes Processed**: All Unit, Matrix, and Recursion cubes have been either captured or have escaped. The wave ends when no capturable cubes remain active
 - **Escape Limit Exceeded**: If a wave has an escape limit configured, exceeding that limit immediately fails the wave
 - **Player Death**: If the player is killed by an Infinity cube, the wave fails immediately
 
@@ -510,10 +510,10 @@ Waves trigger events that affect stage progression:
 ## 4.8 Current Development Priorities
 
 ### ✅ Completed Foundation Systems (June 2025)
-- **Four-Tier Marker System**: Light/Heavy/Prime/Cube markers fully implemented and integrated
+- **Four-Tier Marker System**: Light/Heavy/Matrix/Cube markers fully implemented and integrated
 - **Face Painting Integration**: Connected to stage progression with rotation tracking
 - **Tile State System**: Corrupted/Enhanced tile mechanics operational
-- **Cube Type Diversity**: Unit/Prime/Infinity/Recursion cube system with multi-hit mechanics
+- **Cube Type Diversity**: Unit/Matrix/Infinity/Recursion cube system with multi-hit mechanics
 - **Technical Infrastructure**: Debug systems, analytics, and integration testing complete
 
 ### 🔄 Phase 2 Active Priorities (July-August 2025)
@@ -540,7 +540,7 @@ Waves trigger events that affect stage progression:
 ### Stage Design Focus Areas
 - **Four-Tier Mastery Stages**: Dedicated levels teaching optimal marker type selection
 - **Recursion Cube Scenarios**: Strategic multi-hit encounters requiring Recursion Markers
-- **Prime Marker Techniques**: Stages emphasizing precision timing and positioning
+- **Matrix Marker Techniques**: Stages emphasizing precision timing and positioning
 - **Cube Marker Tactics**: Advanced detonation strategy implementation
 - **Symmetrical Wave Training**: Stages introducing moving cube markers and collision mechanics
 - **Infinity Bypass Puzzles**: Scenarios requiring Unit cube conversion tactics

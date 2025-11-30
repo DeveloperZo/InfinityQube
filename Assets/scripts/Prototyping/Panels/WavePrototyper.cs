@@ -242,7 +242,7 @@ public class WavePrototyper : PrototypingPanelBase
             if (markers != null && totalMarkers > 0)
             {
                 GUILayout.Label($"  UnitMarker: {markers.unitMarkerPositions.Count} → Unit cubes");
-                GUILayout.Label($"  PrimeMarker: {markers.primeMarkerPositions.Count} → Prime cubes");
+                GUILayout.Label($"  MatrixMarker: {markers.matrixMarkerPositions.Count} → Matrix cubes");
                 GUILayout.Label($"  RecursionMarker: {markers.recursionMarkerPositions.Count} → Recursion cubes");
                 GUILayout.Label($"  InfinityMarker: {markers.infinityMarkerPositions.Count} → Infinity cubes");
             }
@@ -263,7 +263,7 @@ public class WavePrototyper : PrototypingPanelBase
             GUILayout.Label("Quick Place Markers (at player Y):");
             GUILayout.BeginHorizontal();
             if (GUILayout.Button("Unit", GUILayout.Width(45))) PlaceTestMarker(MarkerMode.Unit);
-            if (GUILayout.Button("Prime", GUILayout.Width(45))) PlaceTestMarker(MarkerMode.Prime);
+            if (GUILayout.Button("Matrix", GUILayout.Width(45))) PlaceTestMarker(MarkerMode.Matrix);
             if (GUILayout.Button("Recur", GUILayout.Width(45))) PlaceTestMarker(MarkerMode.Recursion);
             if (GUILayout.Button("Inf", GUILayout.Width(35))) PlaceTestMarker(MarkerMode.Infinity);
             if (GUILayout.Button("Clear", GUILayout.Width(45))) ClearRecordedMarkers();
@@ -560,9 +560,9 @@ public class WavePrototyper : PrototypingPanelBase
             {
                 FillGrid(CubeType.Unit);
             }
-            if (GUILayout.Button("Fill Prime"))
+            if (GUILayout.Button("Fill Matrix"))
             {
-                FillGrid(CubeType.Prime);
+                FillGrid(CubeType.Matrix);
             }
             if (GUILayout.Button("Fill Recursion"))
             {
@@ -658,7 +658,7 @@ public class WavePrototyper : PrototypingPanelBase
         switch (type)
         {
             case CubeType.Unit: return new Color(0.8f, 0.5f, 0.2f); // Orange
-            case CubeType.Prime: return new Color(0.2f, 0.5f, 0.8f); // Blue
+            case CubeType.Matrix: return new Color(0.2f, 0.5f, 0.8f); // Blue
             case CubeType.Recursion: return new Color(0.6f, 0.2f, 0.6f); // Purple
             case CubeType.Infinity: return new Color(0.1f, 0.1f, 0.1f); // Black
             default: return Color.white;

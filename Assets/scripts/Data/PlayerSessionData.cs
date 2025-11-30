@@ -97,7 +97,7 @@ public class MarkerInteractionData
     [Header("Placement Timing")]
     public List<MarkerPlacementEvent> unitMarkerPlacements = new List<MarkerPlacementEvent>();
     public List<MarkerPlacementEvent> RecursionMarkerPlacements = new List<MarkerPlacementEvent>();
-    public List<MarkerPlacementEvent> primeMarkerPlacements = new List<MarkerPlacementEvent>();
+    public List<MarkerPlacementEvent> matrixMarkerPlacements = new List<MarkerPlacementEvent>();
     
     [Header("Trigger Efficiency")]
     public List<MarkerTriggerEvent> triggerEvents = new List<MarkerTriggerEvent>();
@@ -346,7 +346,7 @@ public class CubePaintingEvent
     public float timestamp;
     public Vector2Int cubePosition;
     public string faceDirection; // "front", "back", "left", "right", "top", "bottom"
-    public string paintType; // "light", "heavy", "prime"
+    public string paintType; // "light", "heavy", "matrix"
     public bool wasSuccessful;
     public float paintDuration;
     

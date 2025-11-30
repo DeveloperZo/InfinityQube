@@ -12,13 +12,13 @@
 **Previous (Incorrect)**:
 - Unit markers: F key to place, R key to trigger
 - Recursion markers: V key to place, Y key to trigger
-- Prime markers: G key to place, T key to trigger
+- Matrix markers: G key to place, T key to trigger
 - Infinity markers: H key to place, [undefined] to trigger
 
 **Correct**:
 - **Mode Selection**: Keys `1`, `2`, `3`, `4` switch between marker modes
   - `1` = Unit Marker mode
-  - `2` = Prime Marker mode
+  - `2` = Matrix Marker mode
   - `3` = Recursion Marker mode
   - `4` = Infinity Marker mode
 - **Placement**: `F` key places marker of current mode
@@ -51,7 +51,7 @@
 - Cube markers use Q key
 
 **Correct**:
-- **Regular Markers** (Unit, Recursion, Prime, Infinity):
+- **Regular Markers** (Unit, Recursion, Matrix, Infinity):
   - Automatically spawn player cubes when wave moves forward
   - No manual trigger needed
 - **Cube Markers** (generated from collisions):
@@ -61,21 +61,21 @@
   - Different from regular markers - these require manual triggering
 
 **Cube Marker Behavior**:
-- Prime+Prime collision → Cube marker placed at collision tile → R key triggers 3x3 area
+- Matrix+Matrix collision → Cube marker placed at collision tile → R key triggers 3x3 area
 - Recursion+Recursion collision → Cube marker placed at collision tile → R key triggers 2x2 area
-- Prime captured by non-Prime → Cube marker placed at capture position → R key triggers 2x2 area
+- Matrix captured by non-Matrix → Cube marker placed at capture position → R key triggers 2x2 area
 
 ---
 
-### 4. Prime Marker Size
+### 4. Matrix Marker Size
 
 **Previous (Incorrect)**:
-- Prime markers use 3x3 area
+- Matrix markers use 3x3 area
 
 **Correct**:
-- Prime markers use **2x2 area** (from placement)
-- Prime+Prime collisions create **3x3 area effect** (enhanced reward)
-- Prime+Prime collisions generate **3x3 cube marker** (triggered with R key)
+- Matrix markers use **2x2 area** (from placement)
+- Matrix+Matrix collisions create **3x3 area effect** (enhanced reward)
+- Matrix+Matrix collisions generate **3x3 cube marker** (triggered with R key)
 
 ---
 
@@ -85,24 +85,24 @@
    - Updated unified input system description
    - Corrected automatic spawning mechanism
    - Clarified cube marker vs regular marker distinction
-   - Updated Prime marker size information
+   - Updated Matrix marker size information
 
 2. **3_GameplayMechanics.md**:
    - Updated marker system section with unified input
    - Removed outdated individual keys
    - Documented automatic spawning
-   - Updated Prime marker coverage
+   - Updated Matrix marker coverage
 
 3. **Milestone1.2_Planning.md**:
    - Updated current state description
    - Marked automatic spawning verification as complete
 
-4. **Milestone1.2_PrimeMarkerRedesign.md**:
+4. **Milestone1.2_MatrixMarkerRedesign.md**:
    - Updated cube marker trigger behavior
    - Documented R key trigger for cube markers
    - Updated testing checklist
 
-5. **Milestone1.2_PrimeMarkerRedesign_Summary.md**:
+5. **Milestone1.2_MatrixMarkerRedesign_Summary.md**:
    - Updated cube marker generation rules
    - Documented R key trigger behavior
 
@@ -112,7 +112,7 @@
 
 1. **Regular Markers**: Place with F (after mode selection 1-4), automatically spawn player cubes on wave movement
 2. **Cube Markers**: Generated from collisions, triggered with R key to create area effects
-3. **Prime Markers**: 2x2 from placement, 3x3 for Prime+Prime collisions
+3. **Matrix Markers**: 2x2 from placement, 3x3 for Matrix+Matrix collisions
 4. **No Manual Trigger**: Regular markers do NOT use R key - they automatically convert
 
 ---

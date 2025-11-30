@@ -15,10 +15,10 @@ All marker types are implemented and functional. Marker placement rules are enfo
 ## Marker Types Overview
 
 ### Unified Input System
-**Regular markers (Unit, Recursion, Prime, Infinity) use a unified input system:**
+**Regular markers (Unit, Recursion, Matrix, Infinity) use a unified input system:**
 - **Mode Selection**: Keys `1`, `2`, `3`, `4` switch between marker modes
   - `1` = Unit Marker mode
-  - `2` = Prime Marker mode
+  - `2` = Matrix Marker mode
   - `3` = Recursion Marker mode
   - `4` = Infinity Marker mode
 - **Placement Key**: `F` (KeyCode.F) - places marker of current mode
@@ -27,16 +27,16 @@ All marker types are implemented and functional. Marker placement rules are enfo
 
 **Cube Markers (generated from collisions) use different system:**
 - **Generation**: Created automatically from collisions and placed at collision/capture tile:
-  - Prime+Prime collision → Prime cube marker placed at collision tile (3x3 area)
+  - Matrix+Matrix collision → Matrix cube marker placed at collision tile (3x3 area)
   - Recursion+Recursion collision → Recursion cube marker placed at collision tile (2x2 area)
-  - Prime captured by non-Prime → Prime cube marker placed at capture position (2x2 area)
+  - Matrix captured by non-Matrix → Matrix cube marker placed at capture position (2x2 area)
 - **Trigger Key**: `R` (KeyCode.R) - triggers cube marker to create area effect
 - **Behavior**: When `R` is pressed:
   - Area effect expands from cube marker position
   - Captures all non-Infinity cubes in the area (Infinity cubes are excluded via `RemoveCubeFromWaveManager()`)
-  - Prime+Prime cube marker: 3x3 area captures all non-Infinity cubes
+  - Matrix+Matrix cube marker: 3x3 area captures all non-Infinity cubes
   - Recursion+Recursion cube marker: 2x2 area captures all non-Infinity cubes
-  - Prime (non-matching) cube marker: 2x2 area captures all non-Infinity cubes
+  - Matrix (non-matching) cube marker: 2x2 area captures all non-Infinity cubes
 
 ### 1. Unit Marker
 - **Mode Key**: `1` (KeyCode.Alpha1)
@@ -73,23 +73,23 @@ All marker types are implemented and functional. Marker placement rules are enfo
 
 ---
 
-### 3. Prime Marker
+### 3. Matrix Marker
 - **Mode Key**: `2` (KeyCode.Alpha2)
-- **Placement Key**: `F` (KeyCode.F) when in Prime mode
-- **Automatic Spawning**: Spawns `CubeType.Prime` (Prime Cube) when wave moves forward - **Area Effect (2x2, 3x3 for Prime+Prime)**
+- **Placement Key**: `F` (KeyCode.F) when in Matrix mode
+- **Automatic Spawning**: Spawns `CubeType.Matrix` (Matrix Cube) when wave moves forward - **Area Effect (2x2, 3x3 for Matrix+Matrix)**
 - **No manual trigger** - automatically converts to player cube on wave movement
-- **Charge System**: `maxPrimeMarkerCharges`, `currentPrimeMarkerCharges`
-- **Placement Limit**: `primeMarkerOnGridLimit` (on-grid limit)
-- **Regeneration**: Cooldown-based (`primeMarkerCooldown`)
-- **Size**: Configurable (default 2x2 area, 3x3 for Prime+Prime collisions)
+- **Charge System**: `maxMatrixMarkerCharges`, `currentMatrixMarkerCharges`
+- **Placement Limit**: `MatrixMarkerOnGridLimit` (on-grid limit)
+- **Regeneration**: Cooldown-based (`MatrixMarkerCooldown`)
+- **Size**: Configurable (default 2x2 area, 3x3 for Matrix+Matrix collisions)
 - **Visual**: [Needs definition - currently uses default]
 
 **Implementation Status**: ✅ Complete
-- Placement: `PlacePrimeMarker(centerPosition, size)` in `PlayerMarkerSystem.cs:325`
-- Spawning: `SpawnPlayerCubeAt(marker.centerPosition, CubeType.Prime, true)` in `PlayerMarkerSystem.cs:786`
-  - Note: `isPrime = true` enables area capture (3x3)
-- Paired Wave: Records center position with `MarkerMode.Prime` in `PlayerMarkerSystem.cs:342`
-- **Special Behavior**: Covers 2x2 area (from marker), 3x3 for Prime+Prime collisions, records center position for paired wave
+- Placement: `PlaceMatrixMarker(centerPosition, size)` in `PlayerMarkerSystem.cs:325`
+- Spawning: `SpawnPlayerCubeAt(marker.centerPosition, CubeType.Matrix, true)` in `PlayerMarkerSystem.cs:786`
+  - Note: `isMatrix = true` enables area capture (3x3)
+- Paired Wave: Records center position with `MarkerMode.Matrix` in `PlayerMarkerSystem.cs:342`
+- **Special Behavior**: Covers 2x2 area (from marker), 3x3 for Matrix+Matrix collisions, records center position for paired wave
 
 ---
 
@@ -115,20 +115,20 @@ All marker types are implemented and functional. Marker placement rules are enfo
 - **Trigger Key**: `R` (KeyCode.R) - triggers cube marker to create area effect
 - **Power Up Key**: `E` (KeyCode.E) - powers up cube marker (if implemented)
 - **Generation**: Created automatically from collisions:
-  - **Prime+Prime collision**: Creates Prime cube marker at collision tile (3x3 area)
+  - **Matrix+Matrix collision**: Creates Matrix cube marker at collision tile (3x3 area)
   - **Recursion+Recursion collision**: Creates Recursion cube marker at collision tile (2x2 area)
-  - **Prime captured by non-Prime**: Creates Prime cube marker at capture position (2x2 area)
-- **Type**: `CubeMarkerType` enum (Unit, Recursion, Prime, Cube)
+  - **Matrix captured by non-Matrix**: Creates Matrix cube marker at capture position (2x2 area)
+- **Type**: `CubeMarkerType` enum (Unit, Recursion, Matrix, Cube)
 - **Visual**: [Needs definition]
 
 **Implementation Status**: ✅ Complete
 - Generation: `CreateCubeMarker()` in `PlayerMarkerSystem.cs:565` (called from `ProcessCubeCapture()`)
 - Trigger: `TriggerCubeMarkerAt()` in `PlayerMarkerSystem.cs:585` (called via `R` key in `HandleCubeMarkerInputs()`)
 - **Special Behavior**: 
-  - Prime+Prime collision → Cube marker placed at collision tile → `R` key triggers 3x3 area that captures all non-Infinity cubes
+  - Matrix+Matrix collision → Cube marker placed at collision tile → `R` key triggers 3x3 area that captures all non-Infinity cubes
   - Recursion+Recursion collision → Cube marker placed at collision tile → `R` key triggers 2x2 area that captures all non-Infinity cubes
-  - Prime captured by non-Prime → Cube marker placed at capture position → `R` key triggers 2x2 area that captures all non-Infinity cubes
-- **Mechanism**: Cube markers use `TriggerPrimeMarkerAt()` internally, which processes area capture via `ProcessCubeCapture()` - Infinity cubes are excluded from capture (checked in `RemoveCubeFromWaveManager()` at `PlayerMarkerSystem.cs:747`)
+  - Matrix captured by non-Matrix → Cube marker placed at capture position → `R` key triggers 2x2 area that captures all non-Infinity cubes
+- **Mechanism**: Cube markers use `TriggerMatrixMarkerAt()` internally, which processes area capture via `ProcessCubeCapture()` - Infinity cubes are excluded from capture (checked in `RemoveCubeFromWaveManager()` at `PlayerMarkerSystem.cs:747`)
 - **Note**: Cube markers are NOT placed markers - they are generated resources from collisions
 - **Paired Wave**: Cube markers do NOT participate in paired wave system (correct behavior)
 
@@ -151,7 +151,7 @@ Each marker placement goes through three validation checks:
    - Location: `PlayerMarkerSystem.cs:1280-1283` → `GridManager.IsValidGridPosition()`
 
 3. **Marker Conflict Check** (`CanPlaceMarkerAt()`)
-   - Verifies no existing Unit, Recursion, Prime, or Infinity marker at position
+   - Verifies no existing Unit, Recursion, Matrix, or Infinity marker at position
    - Location: `PlayerMarkerSystem.cs:1285-1289`
 
 ### Tile State Restrictions
@@ -179,7 +179,7 @@ Markers cannot be placed on tiles that are:
 |-------------|------------|----------|
 | Unit Marker | → Unit Cube | `PlayerMarkerSystem.cs:796` |
 | Recursion Marker | → Recursion Cube | `PlayerMarkerSystem.cs:825` |
-| Prime Marker | → Prime Cube (2x2 area effect) | `PlayerMarkerSystem.cs:812` |
+| Matrix Marker | → Matrix Cube (2x2 area effect) | `PlayerMarkerSystem.cs:812` |
 | Infinity Marker | → Infinity Cube | `PlayerMarkerSystem.cs:838` |
 | Cube Marker | → Area detonation (variable size: 2x2 or 3x3) | `PlayerMarkerSystem.cs:583` |
 
@@ -192,24 +192,24 @@ Markers cannot be placed on tiles that are:
 ### Cube Marker Mechanism: Manual Trigger (R Key)
 
 **Cube markers are triggered manually** (via `R` key):
-- **Prime+Prime cube marker**: `R` key triggers 3x3 area effect that captures all non-Infinity cubes
+- **Matrix+Matrix cube marker**: `R` key triggers 3x3 area effect that captures all non-Infinity cubes
 - **Recursion+Recursion cube marker**: `R` key triggers 2x2 area effect
-- **Prime (non-matching) cube marker**: `R` key triggers 2x2 area effect
+- **Matrix (non-matching) cube marker**: `R` key triggers 2x2 area effect
 
 **Behavior**:
-- Cube markers are placed at collision positions automatically (e.g., Prime+Prime collision creates cube marker at collision tile)
+- Cube markers are placed at collision positions automatically (e.g., Matrix+Matrix collision creates cube marker at collision tile)
 - Player presses `R` to trigger the cube marker
-- Area effect expands from cube marker position (size depends on cube marker type: 3x3 for Prime+Prime, 2x2 for others)
+- Area effect expands from cube marker position (size depends on cube marker type: 3x3 for Matrix+Matrix, 2x2 for others)
 - All non-Infinity cubes in the area are captured
 - Cube marker is removed after triggering
 
-**Note**: Cube markers are different from regular markers - they are generated from collisions and require manual triggering with `R` key. Regular markers (Unit, Recursion, Prime, Infinity) automatically spawn player cubes and do NOT use the R key.
+**Note**: Cube markers are different from regular markers - they are generated from collisions and require manual triggering with `R` key. Regular markers (Unit, Recursion, Matrix, Infinity) automatically spawn player cubes and do NOT use the R key.
 
 | Marker Type | Conversion | Location |
 |-------------|------------|----------|
 | Unit Marker | → Unit Cube | `PlayerMarkerSystem.cs:770` |
 | Recursion Marker | → Recursion Cube | `PlayerMarkerSystem.cs:799` |
-| Prime Marker | → Prime Cube (2x2 area effect) | `PlayerMarkerSystem.cs:786` |
+| Matrix Marker | → Matrix Cube (2x2 area effect) | `PlayerMarkerSystem.cs:786` |
 | Infinity Marker | → Infinity Cube | `PlayerMarkerSystem.cs:812` |
 | Cube Marker | → Area detonation (variable size: 2x2 or 3x3) | `PlayerMarkerSystem.cs:583` |
 
@@ -250,14 +250,14 @@ RecordMarkerForPairedWave(position, MarkerMode.[Type])
 - Conversion rules:
   - Unit Marker → Unit Cube
   - Recursion Marker → Recursion Cube
-  - Prime Marker → Prime Cube (at center position)
+  - Matrix Marker → Matrix Cube (at center position)
   - Infinity Marker → Infinity Cube
 - Implementation: `WaveManager.SpawnCubesFromMarkers()` (referenced in `WaveManager.cs:1455`)
 
 **Verification**: ✅ All marker types record positions correctly
 - Unit: `PlayerMarkerSystem.cs:141`
 - Recursion: `PlayerMarkerSystem.cs:241`
-- Prime: `PlayerMarkerSystem.cs:342`
+- Matrix: `PlayerMarkerSystem.cs:342`
 - Infinity: `PlayerMarkerSystem.cs:466`
 
 ---
@@ -270,7 +270,7 @@ RecordMarkerForPairedWave(position, MarkerMode.[Type])
 2. **Marker Placement on Corrupted Tiles**: ✅ Blocked correctly
 3. **Marker Placement on Blackened Tiles**: ✅ Blocked correctly
 4. **Marker Placement on Fallen Tiles**: ✅ Blocked correctly
-5. **Duplicate Marker Prevention**: ✅ Works (checks Unit/Recursion/Prime/Infinity)
+5. **Duplicate Marker Prevention**: ✅ Works (checks Unit/Recursion/Matrix/Infinity)
 6. **Charge Consumption**: ✅ Works correctly
 7. **Paired Wave Recording**: ✅ All marker types record correctly
 8. **Unified Input System**: ✅ Mode switching (1-4) and placement (F) work correctly
@@ -288,7 +288,7 @@ RecordMarkerForPairedWave(position, MarkerMode.[Type])
 3. **Visual Feedback Inconsistency**:
    - Unit marker has defined color (blue-gray)
    - Infinity marker has defined color (dark charcoal)
-   - Recursion and Prime markers need color definitions
+   - Recursion and Matrix markers need color definitions
    - **Recommendation**: Define colors for all marker types (Task 5)
 
 4. **Cube Marker Visual Feedback**:
@@ -304,7 +304,7 @@ RecordMarkerForPairedWave(position, MarkerMode.[Type])
 - [x] Mode switching works with keys `1`, `2`, `3`, `4`
 - [x] All markers can be placed with `F` key (when in appropriate mode)
 - [x] Unit markers: Mode `1` + `F` to place
-- [x] Prime markers: Mode `2` + `F` to place
+- [x] Matrix markers: Mode `2` + `F` to place
 - [x] Recursion markers: Mode `3` + `F` to place
 - [x] Infinity markers: Mode `4` + `F` to place
 
@@ -313,7 +313,7 @@ RecordMarkerForPairedWave(position, MarkerMode.[Type])
 - [x] `SpawnPlayerCubes()` is called from `WaveManager.MoveCubesForward()`
 - [x] Unit markers spawn Unit cubes
 - [x] Recursion markers spawn Recursion cubes
-- [x] Prime markers spawn Prime cubes (with area effect)
+- [x] Matrix markers spawn Matrix cubes (with area effect)
 - [x] Infinity markers spawn Infinity cubes
 - [x] Markers are removed after spawning player cubes
 - [x] Placement requires valid charges
@@ -321,21 +321,21 @@ RecordMarkerForPairedWave(position, MarkerMode.[Type])
 - [x] Placement blocked on corrupted tiles
 - [x] Placement blocked on blackened tiles
 - [x] Placement blocked on fallen tiles
-- [x] Duplicate markers prevented (Unit/Recursion/Prime/Infinity)
+- [x] Duplicate markers prevented (Unit/Recursion/Matrix/Infinity)
 
 ### Marker Spawning
 - [x] Unit markers spawn Unit cubes
 - [x] Recursion markers spawn Recursion cubes
-- [x] Prime markers spawn Prime cubes (with area effect)
+- [x] Matrix markers spawn Matrix cubes (with area effect)
 - [x] Infinity markers spawn Infinity cubes
 - [x] Cube markers create area detonation
 - [x] Spawning occurs at correct positions
-- [x] Prime markers spawn at center position
+- [x] Matrix markers spawn at center position
 
 ### Paired Wave Integration
 - [x] Unit markers record for paired wave
 - [x] Recursion markers record for paired wave
-- [x] Prime markers record for paired wave
+- [x] Matrix markers record for paired wave
 - [x] Infinity markers record for paired wave
 - [x] Cube markers do NOT record (correct behavior)
 - [x] Recorded positions spawn correct cube types
@@ -362,7 +362,7 @@ RecordMarkerForPairedWave(position, MarkerMode.[Type])
    - Unit: Blue-gray (0.5f, 0.6f, 0.7f, 1f) ✅
    - Infinity: Dark charcoal (0.15f, 0.15f, 0.18f, 1f) ✅
    - Recursion: [Define] ⚠️
-   - Prime: [Define] ⚠️
+   - Matrix: [Define] ⚠️
    - Cube Marker: [Define] ⚠️
 
 ### Future Enhancements (Other Tasks)

@@ -11,7 +11,7 @@ This roadmap outlines the development path from current production-ready state t
 
 ## Current Status
 ### ✅ **COMPLETED SYSTEMS** 
-- **Four-tier marker system** (Light/Heavy/Prime/Cube) - ✅ (June 23, 2025)
+- **Four-tier marker system** (Light/Heavy/Matrix/Cube) - ✅ (June 23, 2025)
 - **Face painting mechanics** with rotation tracking - ✅ Fully operational
 - **Corruption/enhancement tile system** - ✅ Integrated and tested
 - **Recursion cube multi-hit mechanics** - ✅ Working with Recursion Markers
@@ -57,14 +57,14 @@ This roadmap outlines the development path from current production-ready state t
   - [x] Should be no need to **Update StageDB/StageData** to support paired wave configuration and validation
   - [x] Implement marker position recording system in GridManager/PlayerActionManager
   - [x] Ensure wave manager alternates between wave and mirror wave
-  - [x] Implement marker-to-cube conversion rules (Light→Unit, Heavy→Recursion, Prime→Prime, Infinity→Infinity)
+  - [x] Implement marker-to-cube conversion rules (Light→Unit, Heavy→Recursion, Matrix→Matrix, Infinity→Infinity)
   - [x] Add visual feedback (placement echo, inheritance trail, type indicators)
   - [x] Update debug panels for paired wave visualization
   - [x] Integration testing with existing wave system
 - **Acceptance Criteria**:
   - ✅ Marker placements in Wave A are recorded and visible in debug panel
   - ✅ Wave B spawns cubes at recorded marker positions from Wave A
-  - ✅ Marker-to-cube conversion works correctly (Light→Unit, Heavy→Recursion, Prime→Prime, Infinity→Infinity)
+  - ✅ Marker-to-cube conversion works correctly (Light→Unit, Heavy→Recursion, Matrix→Matrix, Infinity→Infinity)
   - ✅ Visual feedback clearly shows inheritance connections (debug logging and prototype system)
   - ✅ Existing 3 stages can be loaded and played with paired waves
 - **Playtesting Checkpoint**:
@@ -80,7 +80,7 @@ This roadmap outlines the development path from current production-ready state t
 - **Dependencies**: Milestone 1.1 ✅ (paired wave system complete)
 - **Tasks**:
   - [ ] Define marker placement and spawning for all markers
-  - [ ] Design/Define cube collisions for all combinations and update documentation (with a focus on Prime/Prime Recursion/Recurion and Infinity/Infinity and hopefully creating meaningful gameplay rewarding player for matching)
+  - [ ] Design/Define cube collisions for all combinations and update documentation (with a focus on Matrix/Matrix Recursion/Recurion and Infinity/Infinity and hopefully creating meaningful gameplay rewarding player for matching)
   - [ ] Design/Define how and which markers should get mirrored and potential gameplay mechanics
   - [ ] Ensure charge system and regeneration mechanics are coherent
   - [ ] Visual feedback for markers (distinct color per marker type) and suggest interaction indicators if applicable

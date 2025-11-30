@@ -50,7 +50,7 @@ public class QuickAudioVerification : MonoBehaviour
         
         // 5. Test cube capture event
         Debug.Log("🧪 Testing cube capture audio event...");
-        AudioManager.Instance.TriggerCubeAudioEvent(GameAudioEvent.CubeCaptured, CubeType.Prime, transform.position);
+        AudioManager.Instance.TriggerCubeAudioEvent(GameAudioEvent.CubeCaptured, CubeType.Matrix, transform.position);
         
         yield return new WaitForSeconds(0.5f);
         

@@ -440,8 +440,8 @@ public class PlayerStatisticsManager : MonoBehaviour, IManagerDebugInterface
             case "heavy": // backward compatibility
                 currentSession.markerData.RecursionMarkerPlacements.Add(placementEvent);
                 break;
-            case "prime":
-                currentSession.markerData.primeMarkerPlacements.Add(placementEvent);
+            case "matrix":
+                currentSession.markerData.matrixMarkerPlacements.Add(placementEvent);
                 break;
         }
         
@@ -479,11 +479,11 @@ public class PlayerStatisticsManager : MonoBehaviour, IManagerDebugInterface
                     currentSession.markerData.RecursionMarkerPlacements.Remove(placementEvent);
                 }
                 break;
-            case "prime":
-                placementEvent = currentSession.markerData.primeMarkerPlacements.FirstOrDefault(x => x.position == position);
+            case "matrix":
+                placementEvent = currentSession.markerData.matrixMarkerPlacements.FirstOrDefault(x => x.position == position);
                 if (placementEvent != null)
                 {
-                    currentSession.markerData.primeMarkerPlacements.Remove(placementEvent);
+                    currentSession.markerData.matrixMarkerPlacements.Remove(placementEvent);
                 }
                 break;
         }
@@ -1283,7 +1283,7 @@ public class PlayerStatisticsManager : MonoBehaviour, IManagerDebugInterface
             ["Positions Recorded"] = currentSession?.movementData?.positionHistory?.Count ?? 0,
             ["Markers Placed"] = (currentSession?.markerData?.unitMarkerPlacements?.Count ?? 0) +
                                (currentSession?.markerData?.RecursionMarkerPlacements?.Count ?? 0) +
-                               (currentSession?.markerData?.primeMarkerPlacements?.Count ?? 0),
+                               (currentSession?.markerData?.matrixMarkerPlacements?.Count ?? 0),
             ["Cubes Captured"] = currentSession?.cubeData?.captureEvents?.Count ?? 0,
             ["Tutorial Messages"] = currentSession?.tutorialData?.messageEvents?.Count ?? 0,
             ["Auto Save Enabled"] = autoSaveOnCompletion,

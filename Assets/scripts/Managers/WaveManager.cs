@@ -556,7 +556,7 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
         int totalMarkersToSpawn = 0;
         if (rules.unitSpawnsUnit) totalMarkersToSpawn += recordedPositions.unitMarkerPositions.Count;
         if (rules.recursionSpawnsRecursion) totalMarkersToSpawn += recordedPositions.recursionMarkerPositions.Count;
-        if (rules.primeSpawnsPrime) totalMarkersToSpawn += recordedPositions.primeMarkerPositions.Count;
+        if (rules.matrixSpawnsMatrix) totalMarkersToSpawn += recordedPositions.matrixMarkerPositions.Count;
         if (rules.infinitySpawnsInfinity) totalMarkersToSpawn += recordedPositions.infinityMarkerPositions.Count;
         
         DebugLog($"[PairedWave] Starting spawn: {totalMarkersToSpawn} markers should spawn cubes");
@@ -582,12 +582,12 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
                 markerToCubeType[pos] = CubeType.Recursion;
             }
         }
-        if (rules.primeSpawnsPrime)
+        if (rules.matrixSpawnsMatrix)
         {
-            foreach (var pos in recordedPositions.primeMarkerPositions)
+            foreach (var pos in recordedPositions.matrixMarkerPositions)
             {
                 allMarkerPositions.Add(new Vector2Int(pos.x, pos.y));
-                markerToCubeType[pos] = CubeType.Prime;
+                markerToCubeType[pos] = CubeType.Matrix;
             }
         }
         if (rules.infinitySpawnsInfinity)
@@ -1161,7 +1161,7 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
         switch (cubeType)
         {
             case CubeType.Unit: normalCubesCaptured++; break;
-            case CubeType.Prime: blueCubesCaptured++; break;
+            case CubeType.Matrix: blueCubesCaptured++; break;
             case CubeType.Recursion: reinforcedCubesCaptured++; break;
         }
 
@@ -1366,7 +1366,7 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
     {
         float random = Random.value;
         if (random < normalCubeChance) return CubeType.Unit;
-        if (random < normalCubeChance + blueCubeChance) return CubeType.Prime;
+        if (random < normalCubeChance + blueCubeChance) return CubeType.Matrix;
         return CubeType.Infinity;
     }
 
@@ -1413,8 +1413,8 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
                 playerActionManager.maxRecursionMarkers = wave.maxRecursionMarkerCount;
                 playerActionManager.maxRecursionMarkerCharges = wave.maxRecursionMarkerCharge;
 
-                playerActionManager.maxPrimeMarkers = wave.maxPrimeMarkerCount;
-                playerActionManager.maxPrimeMarkerCharges = wave.maxPrimeMarkerCharge;
+                playerActionManager.maxMatrixMarkers = wave.maxMatrixMarkerCount;
+                playerActionManager.maxMatrixMarkerCharges = wave.maxMatrixMarkerCharge;
                 
                 // Validate and adjust current mode based on available marker types
                 playerActionManager.ValidateCurrentMode();
@@ -1537,14 +1537,14 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
             }
         }
         
-        // Prime markers → Prime cubes (if rule enabled)
-        if (rules.primeSpawnsPrime)
+        // Matrix markers → Matrix cubes (if rule enabled)
+        if (rules.matrixSpawnsMatrix)
         {
-            foreach (var pos in markers.primeMarkerPositions)
+            foreach (var pos in markers.matrixMarkerPositions)
             {
                 int spawnY = gridTop - NormalizeMarkerY(pos.y, markers);
                 int spawnX = Mathf.Clamp(pos.x, 0, grid.Width - 1);
-                SpawnCubeDirectly(spawnX, spawnY, CubeType.Prime);
+                SpawnCubeDirectly(spawnX, spawnY, CubeType.Matrix);
                 spawnedCount++;
             }
         }
@@ -1577,7 +1577,7 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
         
         foreach (var pos in allMarkers.unitMarkerPositions) { minY = Mathf.Min(minY, pos.y); maxY = Mathf.Max(maxY, pos.y); }
         foreach (var pos in allMarkers.recursionMarkerPositions) { minY = Mathf.Min(minY, pos.y); maxY = Mathf.Max(maxY, pos.y); }
-        foreach (var pos in allMarkers.primeMarkerPositions) { minY = Mathf.Min(minY, pos.y); maxY = Mathf.Max(maxY, pos.y); }
+        foreach (var pos in allMarkers.matrixMarkerPositions) { minY = Mathf.Min(minY, pos.y); maxY = Mathf.Max(maxY, pos.y); }
         foreach (var pos in allMarkers.infinityMarkerPositions) { minY = Mathf.Min(minY, pos.y); maxY = Mathf.Max(maxY, pos.y); }
         
         if (minY == int.MaxValue) return 0;
@@ -1757,7 +1757,7 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
         {
             debugData["Recorded Unit Markers"] = recordedPositions.unitMarkerPositions.Count;
             debugData["Recorded Recursion Markers"] = recordedPositions.recursionMarkerPositions.Count;
-            debugData["Recorded Prime Markers"] = recordedPositions.primeMarkerPositions.Count;
+            debugData["Recorded Matrix Markers"] = recordedPositions.matrixMarkerPositions.Count;
             debugData["Recorded Infinity Markers"] = recordedPositions.infinityMarkerPositions.Count;
             debugData["Total Recorded Markers"] = recordedPositions.GetTotalMarkerCount();
         }
@@ -1944,14 +1944,14 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
 
 /// <summary>
 /// Stores marker positions recorded during a wave for inheritance by the mirrored version.
-/// Marker types: Unit, Recursion, Prime, Infinity
+/// Marker types: Unit, Recursion, Matrix, Infinity
 /// </summary>
 [System.Serializable]
 public class RecordedMarkerPositions
 {
     public List<Vector2Int> unitMarkerPositions = new List<Vector2Int>();
     public List<Vector2Int> recursionMarkerPositions = new List<Vector2Int>();
-    public List<Vector2Int> primeMarkerPositions = new List<Vector2Int>();
+    public List<Vector2Int> matrixMarkerPositions = new List<Vector2Int>();
     public List<Vector2Int> infinityMarkerPositions = new List<Vector2Int>();
 
     public RecordedMarkerPositions()
@@ -1971,9 +1971,9 @@ public class RecordedMarkerPositions
                 if (!recursionMarkerPositions.Contains(position))
                     recursionMarkerPositions.Add(position);
                 break;
-            case MarkerMode.Prime:
-                if (!primeMarkerPositions.Contains(position))
-                    primeMarkerPositions.Add(position);
+            case MarkerMode.Matrix:
+                if (!matrixMarkerPositions.Contains(position))
+                    matrixMarkerPositions.Add(position);
                 break;
             case MarkerMode.Infinity:
                 if (!infinityMarkerPositions.Contains(position))
@@ -1990,8 +1990,8 @@ public class RecordedMarkerPositions
                 return unitMarkerPositions.Remove(position);
             case MarkerMode.Recursion:
                 return recursionMarkerPositions.Remove(position);
-            case MarkerMode.Prime:
-                return primeMarkerPositions.Remove(position);
+            case MarkerMode.Matrix:
+                return matrixMarkerPositions.Remove(position);
             case MarkerMode.Infinity:
                 return infinityMarkerPositions.Remove(position);
             default:
@@ -2002,7 +2002,7 @@ public class RecordedMarkerPositions
     public int GetTotalMarkerCount()
     {
         return unitMarkerPositions.Count + recursionMarkerPositions.Count + 
-               primeMarkerPositions.Count + infinityMarkerPositions.Count;
+               matrixMarkerPositions.Count + infinityMarkerPositions.Count;
     }
 }
 

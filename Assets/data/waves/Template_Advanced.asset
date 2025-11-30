@@ -48,8 +48,8 @@ MonoBehaviour:
     level: 1
   maxLightMarkerCharge: 2
   maxLightMarkerCount: 3
-  maxPrimeMarkerCharge: 2
-  maxPrimeMarkerCount: 3
+  maxMatrixMarkerCharge: 2
+  maxMatrixMarkerCount: 3
   maxRecursionMarkerCharge: 0
   maxRecursionMarkerCount: 0
   waveStartDelay: 0.75
@@ -60,7 +60,7 @@ MonoBehaviour:
   maxAllowedEscapes: 0
   messages: []
   unitCubesCaptured: 0
-  primeCubesCaptured: 0
+  MatrixCubesCaptured: 0
   infinityCubesEscaped: 0
   recursionCubesCaptured: 0
   markersPlaced: 0
@@ -68,7 +68,7 @@ MonoBehaviour:
   markerSpawnRules:
     lightSpawnsUnit: 1
     heavySpawnsRecursion: 1
-    primeSpawnsPrime: 1
+    MatrixSpawnsMatrix: 1
     infinitySpawnsInfinity: 1
     allowOverlap: 0
   inheritanceDelay: 0

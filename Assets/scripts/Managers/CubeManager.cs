@@ -49,7 +49,7 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
     public bool isMoving = false;
     public bool isDestroyed = false;
     public bool isPlayerCube = false;
-    public bool isPrimeCube = false; // True for Prime cubes that capture in an area
+    public bool isMatrixCube = false; // True for Matrix cubes that capture in an area
     public float rainSpeed = 3f;
     public float rainHeight = 5f;
     public int targetRow = -1;
@@ -767,7 +767,7 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
     public bool ShouldCreateDetonation()
     {
         FaceStatus activeStatus = GetActiveFaceStatus();
-        return activeStatus == FaceStatus.Enhanced || type == CubeType.Prime;
+        return activeStatus == FaceStatus.Enhanced || type == CubeType.Matrix;
     }
 
     public void PaintFace(CubeFace face, FaceStatus status, Color color, int duration = -1)

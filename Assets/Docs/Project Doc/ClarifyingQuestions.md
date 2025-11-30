@@ -174,22 +174,22 @@
 **Context**:
 - Code reference: `2_GameOverview.md:184` - Cube marker activation question
 - Code reference: `3_GameplayMechanics.md:116-144` - Cube marker generation and usage
-- Cube markers generated exclusively from Prime cube captures
+- Cube markers generated exclusively from Matrix cube captures
 - Code reference: `3_GameplayMechanics.md:125-144` - Cube marker generation process
 
-**Impact**: High - Core mechanic for Prime cube value
+**Impact**: High - Core mechanic for Matrix cube value
 
 **Current Implementation**:
-- Cube markers generated when Prime cubes are captured
+- Cube markers generated when Matrix cubes are captured
 - Q key triggers next cube marker from FIFO queue
 - Cube markers provide 3x3 area detonation
-- No placement phase - appear where Prime cube was captured
+- No placement phase - appear where Matrix cube was captured
 - No cooldowns - can be triggered immediately
 
 **Unclear Areas**:
 1. Activation method: Q key confirmed, but is there visual queue indicator?
 2. Queue management: What happens if multiple cube markers are queued?
-3. Power scaling: How does marker type that captured Prime affect cube marker power?
+3. Power scaling: How does marker type that captured Matrix affect cube marker power?
 4. Visual feedback: How do players see available cube markers?
 
 **Suggested Implementation**:
@@ -240,7 +240,7 @@
 - Code reference: `2_GameOverview.md:180,193` - Recursion cube visuals questions
 - Code reference: `2_GameOverview.md:79` - Material TBD for Recursion cubes
 - Code supports Recursion cubes but visual representation undefined
-- Other cube types: Gray (Unit), Blue (Prime), Black (Infinity)
+- Other cube types: Gray (Unit), Blue (Matrix), Black (Infinity)
 
 **Impact**: High - Affects player recognition and gameplay clarity
 
@@ -309,7 +309,7 @@
 **Current Implementation**:
 - Detonation types: Large/Standard (3x3), Small (2x2), Single (1x1)
 - Enhanced faces create detonations when captured
-- Prime cube captures generate cube markers (3x3 area)
+- Matrix cube captures generate cube markers (3x3 area)
 - Code reference: `3_GameplayMechanics.md:391-417` - Detonation flow
 
 **Unclear Areas**:
@@ -377,7 +377,7 @@
 **Current Implementation**:
 - Unit Markers: Automatic regeneration after cooldown
 - Recursion Markers: Automatic regeneration after cooldown (longer than Light)
-- Prime markers: Automatic regeneration after cooldown (longest)
+- Matrix markers: Automatic regeneration after cooldown (longest)
 - Charges regenerate between waves
 - Code reference: `3_GameplayMechanics.md:440-455` - Regeneration per marker type
 
@@ -518,7 +518,7 @@
    - Implement visual queue display
    - Test queue management clarity
    - **Owner**: UI Team + Design Team
-   - **Timeline**: Before Prime cube stages
+   - **Timeline**: Before Matrix cube stages
 
 9. **Define Detonation Chain Rules** (Q10)
    - Establish chain reaction mechanics
