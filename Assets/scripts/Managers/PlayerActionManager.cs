@@ -1668,7 +1668,7 @@ MarkerMode currentMode = GetCurrentMode();
     public bool HasInfinityMarkerAt(Vector2Int position) => markerSystem.HasInfinityMarkerAt(position);
     public bool TriggerNextInfinityMarker() => markerSystem.TriggerNextInfinityMarker();
 
-    public void CreateCubeMarker(Vector2Int position, PlayerMarkerSystem.CubeMarkerType type = PlayerMarkerSystem.CubeMarkerType.Prime) => markerSystem.CreateCubeMarker(position, type);
+    public void CreateCubeMarker(Vector2Int position, PlayerMarkerSystem.CubeMarkerType type = PlayerMarkerSystem.CubeMarkerType.Prime, int size = 3) => markerSystem.CreateCubeMarker(position, type, size);
     public bool TriggerNextCubeMarker() => markerSystem.TriggerNextCubeMarker();
     public bool PowerUpNextCubeMarker() => markerSystem.PowerUpNextCubeMarker();
 

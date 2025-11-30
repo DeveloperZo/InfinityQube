@@ -72,29 +72,28 @@ This roadmap outlines the development path from current production-ready state t
   - Verify: Inheritance is visually clear and gameplay feels strategic
   - Iterate: Adjust visual feedback and conversion rules based on playtest feedback
 
-### Milestone 1.2: Infinity Markers Implementation
-- **Target**: Complete Infinity marker system (placement, triggering, wave inheritance)
+### Milestone 1.2: Refine Markers Implementation
+- **Target**: Review and refine marker system (placement, cube spawn, cube collison/interactions)
 - **Complexity**: 3 points
 - **Effort Estimate**: ~1 week active development
-- **Status**: Designed but not implemented
+- **Status**: Partial design but not implemented
 - **Dependencies**: Milestone 1.1 ✅ (paired wave system complete)
 - **Tasks**:
-  - [ ] Define Infinity marker placement key and trigger key
-  - [ ] Implement Infinity marker placement mechanics
-  - [ ] Create pause-inducing cube spawn system
-  - [ ] Integrate with wave inheritance (Infinity markers spawn Infinity cubes in next wave)
-  - [ ] Add charge system and regeneration mechanics
-  - [ ] Visual feedback and interaction range indicators
-  - [ ] Integration with existing marker system
+  - [ ] Define marker placement and spawning for all markers
+  - [ ] Design/Define cube collisions for all combinations and update documentation (with a focus on Prime/Prime Recursion/Recurion and Infinity/Infinity and hopefully creating meaningful gameplay rewarding player for matching)
+  - [ ] Design/Define how and which markers should get mirrored and potential gameplay mechanics
+  - [ ] Ensure charge system and regeneration mechanics are coherent
+  - [ ] Visual feedback for markers (distinct color per marker type) and suggest interaction indicators if applicable
+  - [ ] Ensure cohesive marker system
+  - [ ] Explore interesting ways for player to acquire non unit markers to create scarcity and strategic depth
 - **Acceptance Criteria**:
-  - ✅ Infinity markers can be placed and triggered with defined keys
-  - ✅ Infinity markers spawn pause-inducing cubes that affect Infinity cubes
-  - ✅ Infinity markers in Wave A spawn Infinity cubes in Wave B
+  - ✅ Markers can be placed and spawn the appropriate cube
+  - ✅ Collision logic has been defined for all scenarios
   - ✅ Charge system and regeneration work correctly
-  - ✅ Visual feedback clearly shows Infinity marker effects
+  - ✅ Visual feedback clearly shows marker and spawned cube
 - **Playtesting Checkpoint**:
-  - Playtest: Place Infinity markers, trigger them, verify pause mechanics work
-  - Verify: Infinity marker inheritance creates strategic depth
+  - Playtest: Place markers verify mechanics work
+  - Verify: Marker dynamics creates strategic depth
   - Iterate: Balance charge system and visual feedback
 
 ### Milestone 1.3: First Pass at Complete Stage 1 Content

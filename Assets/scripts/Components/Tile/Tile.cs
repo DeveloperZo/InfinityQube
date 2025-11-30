@@ -304,10 +304,11 @@ public class Tile : MonoBehaviour
         UpdateTileVisuals();
 
         // Register with PlayerActionManager
+        // Default size is 2x2 for Prime tile detonation (from marker capture)
         PlayerActionManager playerActionManager = FindObjectOfType<PlayerActionManager>();
         if (playerActionManager != null)
         {
-            playerActionManager.CreateCubeMarker(new Vector2Int(x, y));
+            playerActionManager.CreateCubeMarker(new Vector2Int(x, y), PlayerMarkerSystem.CubeMarkerType.Prime, 2);
         }
 
         Debug.Log($"Tile ({x},{y}): Primed for detonation and registered with PlayerActionManager");

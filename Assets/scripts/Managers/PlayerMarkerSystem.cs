@@ -54,11 +54,13 @@ public class PlayerMarkerSystem : MonoBehaviour
         public bool isPoweredUp = false;
         public float creationTime;
         public GameObject visualObject;
+        public int size = 3; // Area size for cube marker (default 3x3, can be 2x2 for some types)
 
-        public CubeMarker(Vector2Int pos, CubeMarkerType markerType)
+        public CubeMarker(Vector2Int pos, CubeMarkerType markerType, int markerSize = 3)
         {
             position = pos;
             type = markerType;
+            size = markerSize;
             creationTime = Time.time;
         }
     }
@@ -560,14 +562,14 @@ public class PlayerMarkerSystem : MonoBehaviour
 
     #region Cube Markers
 
-    public void CreateCubeMarker(Vector2Int position, CubeMarkerType type = CubeMarkerType.Prime)
+    public void CreateCubeMarker(Vector2Int position, CubeMarkerType type = CubeMarkerType.Prime, int size = 3)
     {
-        var cubeMarker = new CubeMarker(position, type);
+        var cubeMarker = new CubeMarker(position, type, size);
         cubeMarker.visualObject = CreateCubeMarkerVisual(position, type);
 
         cubeMarkers.Add(cubeMarker);
 
-        Debug.Log($"Cube marker ({type}) created at ({position.x}, {position.y})");
+        Debug.Log($"Cube marker ({type}, size {size}x{size}) created at ({position.x}, {position.y})");
     }
 
     public bool TriggerNextCubeMarker()
@@ -590,8 +592,9 @@ public class PlayerMarkerSystem : MonoBehaviour
         
         DestroyMarkerVisual(cubeMarker.visualObject);
 
-        var tempPrimeMarker = new PrimeMarker(cubeMarker.position, 3, Time.time);
-        tempPrimeMarker.affectedPositions = GetAreaPositions(cubeMarker.position, 3);
+        // Use cube marker's size instead of hardcoded 3
+        var tempPrimeMarker = new PrimeMarker(cubeMarker.position, cubeMarker.size, Time.time);
+        tempPrimeMarker.affectedPositions = GetAreaPositions(cubeMarker.position, cubeMarker.size);
         return TriggerPrimeMarkerAt(tempPrimeMarker);
         
     }
@@ -663,7 +666,7 @@ public class PlayerMarkerSystem : MonoBehaviour
 
     #region Cube Interaction System
 
-    private bool ProcessCubeCapture(CubeManager cube, Vector2Int position, MarkerType markerType, object marker = null)
+    private bool ProcessCubeCapture(CubeManager cube, Vector2Int position, MarkerType markerType, object marker = null, bool isSameTypeMatch = false)
     {
         if (cube == null || cube.isDestroyed) return false;
 
@@ -673,12 +676,35 @@ public class PlayerMarkerSystem : MonoBehaviour
             return false;
         }
 
-        Debug.Log($"Capturing {cube.type} cube at ({position.x}, {position.y}) with {markerType} marker");
+        Debug.Log($"Capturing {cube.type} cube at ({position.x}, {position.y}) with {markerType} marker{(isSameTypeMatch ? " (same-type match!)" : "")}");
 
-        if (cube.type == CubeType.Prime)
+        // Generate cube markers based on collision type
+        if (isSameTypeMatch)
         {
-
-            CreateCubeMarker(position, CubeMarkerType.Prime);
+            // Same-type collision: generate enhanced cube marker
+            switch (cube.type)
+            {
+                case CubeType.Prime:
+                    // Prime+Prime: 3x3 cube marker (enhanced reward)
+                    CreateCubeMarker(position, CubeMarkerType.Prime, 3);
+                    break;
+                case CubeType.Recursion:
+                    // Recursion+Recursion: 2x2 cube marker (reward for matching)
+                    CreateCubeMarker(position, CubeMarkerType.Recursion, 2);
+                    break;
+                case CubeType.Unit:
+                    // Unit+Unit: No cube marker (too common)
+                    break;
+                case CubeType.Infinity:
+                    // Infinity+Infinity: Defer to Task 2 design
+                    // For now, no cube marker
+                    break;
+            }
+        }
+        else if (cube.type == CubeType.Prime)
+        {
+            // Prime cube captured by non-Prime: standard 2x2 cube marker
+            CreateCubeMarker(position, CubeMarkerType.Prime, 2);
         }
 
         // Notify statistics manager about cube capture
@@ -1010,7 +1036,7 @@ public class PlayerMarkerSystem : MonoBehaviour
     /// <summary>
     /// Checks for collision at a specific position and processes it if found.
     /// Returns true if collision was found and processed.
-    /// Prime cubes capture in an area (3x3), other cubes capture single target.
+    /// Prime cubes capture in an area (2x2 normally, 3x3 for Prime+Prime collisions), other cubes capture single target.
     /// </summary>
     private bool ProcessCollisionAtPosition(CubeManager playerCube, Vector2Int position, ref int collisionCount, ref int playerCubeIndex)
     {
@@ -1018,8 +1044,25 @@ public class PlayerMarkerSystem : MonoBehaviour
 
         if (playerCube.isPrimeCube)
         {
-            // Prime cube: capture in 3x3 area
-            var areaPositions = GetAreaPositions(position, 3);
+            // Prime cube: check if any wave cube at position is Prime type for enhanced 3x3 effect
+            var cubesAtPosition = FindAllCubesAt(position);
+            bool isPrimePrimeCollision = false;
+            
+            // Check if any cube at position is Prime type (Prime+Prime collision)
+            foreach (var cube in cubesAtPosition)
+            {
+                if (cube != null && !cube.isDestroyed && !cube.isPlayerCube && cube.type == CubeType.Prime)
+                {
+                    isPrimePrimeCollision = true;
+                    break;
+                }
+            }
+            
+            // Prime+Prime collision: use 3x3 area (enhanced reward)
+            // Normal Prime collision: use 2x2 area (from marker)
+            int areaSize = isPrimePrimeCollision ? 3 : 2;
+            var areaPositions = GetAreaPositions(position, areaSize);
+            
             foreach (var areaPos in areaPositions)
             {
                 var cubesAtArea = FindAllCubesAt(areaPos);
@@ -1027,7 +1070,10 @@ public class PlayerMarkerSystem : MonoBehaviour
                 {
                     if (cube == null || cube.isDestroyed || cube.isPlayerCube) continue;
                     
-                    if (ProcessCubeCapture(cube, areaPos, MarkerType.Prime, null))
+                    // Check if this is Prime+Prime collision (player Prime + wave Prime)
+                    bool isPrimeMatch = (playerCube.type == CubeType.Prime && cube.type == CubeType.Prime);
+                    
+                    if (ProcessCubeCapture(cube, areaPos, MarkerType.Prime, null, isPrimeMatch))
                     {
                         anyCaptured = true;
                     }
@@ -1042,7 +1088,10 @@ public class PlayerMarkerSystem : MonoBehaviour
             {
                 if (cube == null || cube.isDestroyed || cube.isPlayerCube) continue;
                 
-                if (ProcessCubeCapture(cube, position, MarkerType.Unit, null))
+                // Check if this is same-type collision (e.g., Recursion+Recursion)
+                bool isSameTypeMatch = (playerCube.type == cube.type);
+                
+                if (ProcessCubeCapture(cube, position, MarkerType.Unit, null, isSameTypeMatch))
                 {
                     anyCaptured = true;
                     break; // Only capture one cube for non-Prime
@@ -1071,8 +1120,25 @@ public class PlayerMarkerSystem : MonoBehaviour
 
         if (playerCube.isPrimeCube)
         {
-            // Prime cube: check area around previous position
-            var areaPositions = GetAreaPositions(playerPreviousPos, 3);
+            // Prime cube: check if colliding with Prime wave cube for enhanced 3x3 effect
+            var cubesAtPreviousPos = FindAllCubesAt(playerPreviousPos);
+            bool isPrimePrimeCollision = false;
+            
+            // Check if any cube at previous position is Prime type
+            foreach (var cube in cubesAtPreviousPos)
+            {
+                if (cube != null && !cube.isDestroyed && !cube.isPlayerCube && cube.type == CubeType.Prime)
+                {
+                    isPrimePrimeCollision = true;
+                    break;
+                }
+            }
+            
+            // Prime+Prime collision: use 3x3 area (enhanced reward)
+            // Normal Prime collision: use 2x2 area (from marker)
+            int areaSize = isPrimePrimeCollision ? 3 : 2;
+            var areaPositions = GetAreaPositions(playerPreviousPos, areaSize);
+            
             foreach (var areaPos in areaPositions)
             {
                 var cubesAtArea = FindAllCubesAt(areaPos);
@@ -1080,7 +1146,10 @@ public class PlayerMarkerSystem : MonoBehaviour
                 {
                     if (cube == null || cube.isDestroyed || cube.isPlayerCube) continue;
                     
-                    if (ProcessCubeCapture(cube, areaPos, MarkerType.Prime, null))
+                    // Check if this is Prime+Prime collision
+                    bool isPrimeMatch = (playerCube.type == CubeType.Prime && cube.type == CubeType.Prime);
+                    
+                    if (ProcessCubeCapture(cube, areaPos, MarkerType.Prime, null, isPrimeMatch))
                     {
                         anyCaptured = true;
                     }
@@ -1099,7 +1168,10 @@ public class PlayerMarkerSystem : MonoBehaviour
                 Vector2Int waveCubeSourcePos = new Vector2Int(cube.position.x, cube.position.y + 1);
                 if (waveCubeSourcePos == playerPos)
                 {
-                    if (ProcessCubeCapture(cube, playerPreviousPos, MarkerType.Unit, null))
+                    // Check if this is same-type collision (e.g., Recursion+Recursion)
+                    bool isSameTypeMatch = (playerCube.type == cube.type);
+                    
+                    if (ProcessCubeCapture(cube, playerPreviousPos, MarkerType.Unit, null, isSameTypeMatch))
                     {
                         anyCaptured = true;
                         break;
@@ -1284,7 +1356,10 @@ public class PlayerMarkerSystem : MonoBehaviour
 
     private bool CanPlaceMarkerAt(Vector2Int position)
     {
-        return !HasUnitMarkerAt(position) && !HasRecursionMarkerAt(position) && !HasPrimeMarkerAt(position);
+        return !HasUnitMarkerAt(position) && 
+               !HasRecursionMarkerAt(position) && 
+               !HasPrimeMarkerAt(position) &&
+               !HasInfinityMarkerAt(position);
     }
 
 
