@@ -14,7 +14,7 @@ This roadmap outlines the development path from current production-ready state t
 - **Four-tier marker system** (Light/Heavy/Prime/Cube) - ✅ (June 23, 2025)
 - **Face painting mechanics** with rotation tracking - ✅ Fully operational
 - **Corruption/enhancement tile system** - ✅ Integrated and tested
-- **Recursion cube multi-hit mechanics** - ✅ Working with heavy markers
+- **Recursion cube multi-hit mechanics** - ✅ Working with Recursion Markers
 - **Comprehensive debug infrastructure** - ✅ Production quality (OnGUI used only for debuggers)
 - **Statistics and analytics system** - ✅ Complete tracking implemented
 - **Integration testing framework** - ✅ All systems validated

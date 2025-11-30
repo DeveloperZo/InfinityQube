@@ -64,7 +64,7 @@
 | Four-tier marker system | 4 | June 20, 2025 | Light/Heavy/Prime/Cube integration |
 | Face painting mechanics | 3 | June 20, 2025 | Rotation tracking, state persistence |
 | Corruption/enhancement tiles | 3 | June 19, 2025 | Tile state propagation system |
-| Recursion cube mechanics | 2 | June 18, 2025 | Multi-hit system with heavy markers |
+| Recursion cube mechanics | 2 | June 18, 2025 | Multi-hit system with Recursion Markers |
 | Wave management system | 3 | June 15, 2025 | Editor tools, data persistence |
 | Player action system | 3 | June 10, 2025 | Input handling, marker management |
 | Wave completion messages | 2 | July 8, 2025 | Progress tracking with pause system |

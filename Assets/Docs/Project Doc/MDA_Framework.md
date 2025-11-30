@@ -16,8 +16,8 @@
 ### Core Symmetrical Wave System
 ```
 Marker-to-Cube Transformation (The Infinity Symbol ∞):
-- Light Markers (F) → Light Cubes: Single-tile backward-moving interceptors
-- Heavy Markers (V) → Heavy Cubes: Multi-hit capable, Recursion destroyers
+- Unit Markers (F) → Light Cubes: Single-tile backward-moving interceptors
+- Recursion Markers (V) → Heavy Cubes: Multi-hit capable, Recursion destroyers
 - Prime Markers (G) → Prime Cubes: 3x3 area effect on collision
 - Cube Markers (Q): Direct detonation, no transformation needed
 

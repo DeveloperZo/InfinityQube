@@ -95,7 +95,7 @@ using static Enumerations;
 
 // Then use directly:
 CubeType.Unit
-MarkerMode.Light
+MarkerMode.Unit
 GameAudioEvent.WaveStarted
 ```
 

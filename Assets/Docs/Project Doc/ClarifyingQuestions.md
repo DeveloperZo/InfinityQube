@@ -136,33 +136,33 @@
 
 ### Critical Priority
 
-#### Q5: Heavy Marker Interaction with Recursion Cubes
-**Question**: What are the exact mechanics for Heavy markers capturing Recursion cubes? How many hits required? Is there visual feedback for partial damage?
+#### Q5: Recursion Marker Interaction with Recursion Cubes
+**Question**: What are the exact mechanics for Recursion Markers capturing Recursion cubes? How many hits required? Is there visual feedback for partial damage?
 
 **Context**:
-- Code reference: `2_GameOverview.md:182` - Heavy marker mechanics question
-- Code reference: `3_GameplayMechanics.md:172-176` - Heavy marker reduces Recursion hits from 3-4 to 1-2
-- Heavy markers are "optimized for Recursion cube capture"
-- Code reference: `3_GameplayMechanics.md:98-105` - Heavy marker description
+- Code reference: `2_GameOverview.md:182` - Recursion Marker mechanics question
+- Code reference: `3_GameplayMechanics.md:172-176` - Recursion Marker reduces Recursion hits from 3-4 to 1-2
+- Recursion Markers are "optimized for Recursion cube capture"
+- Code reference: `3_GameplayMechanics.md:98-105` - Recursion Marker description
 
 **Impact**: High - Core mechanic for Recursion cube management
 
 **Current Implementation**:
 - Standard markers require 3-4 hits for Recursion cube capture
-- Heavy markers reduce requirement to 1-2 hits
+- Recursion Markers reduce requirement to 1-2 hits
 - Optimal placement can achieve single-detonation capture
 
 **Unclear Areas**:
 1. Exact hit count reduction: Is it always 1-2 hits, or variable based on placement?
 2. Visual feedback: Should Recursion cubes show damage state (cracks, color change)?
-3. Partial damage: Do Heavy markers deal partial damage if cube doesn't die?
-4. Stacking: Can multiple Heavy markers stack damage on same Recursion cube?
+3. Partial damage: Do Recursion Markers deal partial damage if cube doesn't die?
+4. Stacking: Can multiple Recursion Markers stack damage on same Recursion cube?
 
 **Suggested Implementation**:
-- Heavy markers reduce Recursion cube hits from 3-4 to 1-2 (exact value TBD)
+- Recursion Markers reduce Recursion cube hits from 3-4 to 1-2 (exact value TBD)
 - Visual feedback: Recursion cubes show damage state (cracks or color fade)
-- Partial damage: Heavy markers deal 2x damage, so 2 hits = 4 damage (kills 3-hit Recursion)
-- Stacking: Multiple Heavy markers can stack, but optimal is single well-placed marker
+- Partial damage: Recursion Markers deal 2x damage, so 2 hits = 4 damage (kills 3-hit Recursion)
+- Stacking: Multiple Recursion Markers can stack, but optimal is single well-placed marker
 
 **Action Required**: Define exact hit counts and visual feedback system
 
@@ -375,8 +375,8 @@
 **Impact**: Medium - Affects strategic planning and resource management
 
 **Current Implementation**:
-- Light markers: Automatic regeneration after cooldown
-- Heavy markers: Automatic regeneration after cooldown (longer than Light)
+- Unit Markers: Automatic regeneration after cooldown
+- Recursion Markers: Automatic regeneration after cooldown (longer than Light)
 - Prime markers: Automatic regeneration after cooldown (longest)
 - Charges regenerate between waves
 - Code reference: `3_GameplayMechanics.md:440-455` - Regeneration per marker type
@@ -476,7 +476,7 @@
    - **Owner**: Design Team + Technical Lead
    - **Timeline**: Before finalizing face painting system
 
-3. **Clarify Heavy Marker Recursion Mechanics** (Q5)
+3. **Clarify Recursion Marker Recursion Mechanics** (Q5)
    - Define exact hit count reduction (1-2 hits confirmed?)
    - Design visual feedback system for partial damage
    - Implement damage state visualization

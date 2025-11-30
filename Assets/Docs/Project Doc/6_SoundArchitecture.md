@@ -119,9 +119,9 @@ The system recognizes multiple categories of audio events that correspond to dif
 - **PlayerMoved**: When the player moves to a new position
 
 **Marker Events:**
-- **LightMarkerPlaced**: When a light marker is placed on the grid
+- **LightMarkerPlaced**: When a Unit Marker is placed on the grid
 - **PrimeMarkerPlaced**: When a prime marker is placed on the grid
-- **RecursionMarkerPlaced**: When a heavy marker is placed on the grid
+- **RecursionMarkerPlaced**: When a Recursion Marker is placed on the grid
 - **MarkerTriggered**: When any marker activates and affects cubes
 
 **Wave and Stage Events:**
@@ -130,9 +130,9 @@ The system recognizes multiple categories of audio events that correspond to dif
 - **ResourceRegeneration**: When marker charges regenerate
 
 **Mode Switching Events:**
-- **ModeSwitchedToLight**: When switching to light marker mode
+- **ModeSwitchedToLight**: When switching to Unit Marker mode
 - **ModeSwitchedToPrime**: When switching to prime marker mode
-- **ModeSwitchedToHeavy**: When switching to heavy marker mode
+- **ModeSwitchedToHeavy**: When switching to Recursion Marker mode
 
 **Feedback Events:**
 - **MessageShow**: When tutorial or guidance messages appear

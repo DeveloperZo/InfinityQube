@@ -292,7 +292,7 @@ design_risk:
 
 ## **Example Application**
 
-### **Scenario**: Heavy Marker Implementation
+### **Scenario**: Recursion Marker Implementation
 ```yaml
 task_identification:
   task_type: feature_implementation
@@ -302,17 +302,17 @@ task_identification:
   feature_category: gameplay
 
 feature_scope:
-  feature_name: Heavy Marker System
+  feature_name: Recursion Marker System
   feature_description: New marker type for capturing dense cubes with recursive functionality
   
   target_systems:
-    - PlayerMarkerSystem: Add heavy marker type and logic
-    - PlayerActionManager: New input handling for heavy markers
-    - CubeManager: Dense cube interaction with heavy markers
-    - UI: Heavy marker count display and controls
+    - PlayerMarkerSystem: Add Recursion Marker type and logic
+    - PlayerActionManager: New input handling for Recursion Markers
+    - CubeManager: Dense cube interaction with Recursion Markers
+    - UI: Recursion Marker count display and controls
   
   existing_files_modified:
-    - Assets/scripts/Managers/PlayerMarkerSystem.cs: Heavy marker implementation
+    - Assets/scripts/Managers/PlayerMarkerSystem.cs: Recursion Marker implementation
     - Assets/scripts/Managers/PlayerActionManager.cs: Input handling
     - Assets/scripts/Managers/CubeManager.cs: Dense cube capture logic
     - Assets/scripts/UI/PlayerActionUI.cs: UI updates
@@ -321,27 +321,27 @@ feature_scope:
 implementation_plan:
   foundation_phase:
     - Add RecursionMarker enum to MarkerType
-    - Create heavy marker data structures
+    - Create Recursion Marker data structures
     - Implement basic placement logic
     
   integration_phase:
-    - Add V key input for heavy marker placement
-    - Add Y key input for heavy marker triggering
+    - Add V key input for Recursion Marker placement
+    - Add Y key input for Recursion Marker triggering
     - Integrate with dense cube capture system
-    - Update UI to show heavy marker count
+    - Update UI to show Recursion Marker count
     
   polish_phase:
-    - Add visual feedback for heavy marker actions
+    - Add visual feedback for Recursion Marker actions
     - Implement recursive capture logic
     - Performance optimization for heavy operations
-    - Debug panel updates for heavy marker testing
+    - Debug panel updates for Recursion Marker testing
 
 success_criteria:
-  - Heavy markers can be placed with V key
-  - Heavy markers can be triggered with Y key
-  - Dense cubes are captured through heavy marker system
+  - Recursion Markers can be placed with V key
+  - Recursion Markers can be triggered with Y key
+  - Dense cubes are captured through Recursion Marker system
   - Recursive capture works for connected dense cubes
-  - UI accurately displays heavy marker count
+  - UI accurately displays Recursion Marker count
   - Performance impact is minimal
   - Integration with existing marker system is seamless
 ```

@@ -82,7 +82,7 @@ Assets/scripts/Managers/PlayerMarkerSystem.cs
 #### Systems Successfully Integrated:
 ✅ **Four-Tier Marker System**: Light/Heavy/Prime/Cube markers fully operational  
 ✅ **New Cube Terminology**: Unit/Infinity/Prime/Recursion implemented throughout  
-✅ **Heavy Marker + Recursion Cube Integration**: Enhanced marker functionality working  
+✅ **Recursion Marker + Recursion Cube Integration**: Enhanced marker functionality working  
 ✅ **Corruption Mechanics**: Infinity cube face painting and tile corruption operational  
 ✅ **Backward Compatibility**: All obsolete aliases functional with zero breaking changes  
 ✅ **UI Integration**: Four-tier marker display and controls implemented  
@@ -92,7 +92,7 @@ Assets/scripts/Managers/PlayerMarkerSystem.cs
 - **Zero Breaking Changes**: All existing functionality preserved
 - **Performance Maintained**: No degradation in system performance
 - **Full Feature Parity**: All legacy features available through new systems
-- **Enhanced Functionality**: Heavy markers provide new strategic options
+- **Enhanced Functionality**: Recursion Markers provide new strategic options
 - **Robust Testing**: Comprehensive test suite created for ongoing validation
 
 #### Files Modified During Integration:
@@ -169,7 +169,7 @@ private int corruptionDuration = 5;
 
 ### 5.3 Analytics Integration
 **Priority**: Low  
-**Description**: Add telemetry for heavy marker usage and corruption mechanics  
+**Description**: Add telemetry for Recursion Marker usage and corruption mechanics  
 **Benefits**: Data-driven balancing, player behavior insights
 
 ---
@@ -196,7 +196,7 @@ private int corruptionDuration = 5;
 
 ### 7.2 User Documentation  
 **Status**: ✅ Core mechanics updated  
-**Remaining**: Create user guide for heavy marker strategies
+**Remaining**: Create user guide for Recursion Marker strategies
 
 
 ---
@@ -422,12 +422,12 @@ GridManager.cs (600 lines - core grid)
 
 ### Test Categories Completed:
 1. ✅ Four-tier marker system terminology validation
-2. ✅ Light marker functionality (was individual) 
-3. ✅ Heavy marker functionality (NEW for recursion cubes)
+2. ✅ Unit Marker functionality (was individual) 
+3. ✅ Recursion Marker functionality (NEW for recursion cubes)
 4. ✅ Prime marker area coverage (was area)
 5. ✅ Cube marker generation from prime captures
 6. ✅ New cube terminology integration
-7. ✅ Heavy marker + recursion cube interaction
+7. ✅ Recursion Marker + recursion cube interaction
 8. ✅ Corruption mechanics validation
 9. ✅ Face painting integration testing
 10. ✅ Backward compatibility verification

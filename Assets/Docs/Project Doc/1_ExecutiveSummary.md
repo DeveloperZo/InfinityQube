@@ -44,9 +44,9 @@ Cubes advance in synchronized steps toward the player:
 
 ### **Four-Tier Marker System**
 Resource-limited tools for cube capture:
-- **Light Markers**: Single-tile captures for Unit and Prime cubes
-- **Heavy Markers**: Multi-hit capability for Recursion cubes
-- **Prime Markers**: 3x3 area coverage for group captures
+- **Unit Markers**: Single-tile captures for Unit and Prime cubes
+- **Recursion Markers**: Multi-hit capability for Recursion cubes
+- **Prime Markers**: 2x2 area coverage for group captures
 - **Cube Markers**: Generated from Prime captures, used for direct detonation
 
 ### **Symmetrical Wave System**

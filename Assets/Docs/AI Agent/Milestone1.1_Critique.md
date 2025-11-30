@@ -28,8 +28,8 @@ The Paired Wave System was functionally complete but had several behavioral inco
 ### ✅ Issue 2: Inconsistent Naming - "Light" and "Heavy" Terminology
 
 **Problem**: Mixed terminology used throughout the codebase:
-- "Light markers" instead of "Unit markers"
-- "Heavy markers" instead of "Recursion markers"
+- "Unit Markers" instead of "Unit markers"
+- "Recursion Markers" instead of "Recursion markers"
 - Inconsistent field casing (`RecursionMarkerPositions` vs `primeMarkerPositions`)
 
 **Impact**: Confusing codebase, harder to maintain.
@@ -77,7 +77,7 @@ The paired wave system supports two distinct modes:
 |------|---------|
 | `WaveData.cs` | Renamed `MarkerSpawnRules` fields, updated tooltips |
 | `WaveManager.cs` | Updated `SpawnCubesFromMarkers()`, renamed `RecordedMarkerPositions` fields, added documentation |
-| `PlayerActionManager.cs` | Renamed all light/heavy marker fields to unit/recursion |
+| `PlayerActionManager.cs` | Renamed all light/Recursion Marker fields to unit/recursion |
 | `PlayerPanel.cs` | Updated all field references |
 | `WavePrototyper.cs` | Updated marker position references |
 | `PlayerActionUI.cs` | Updated field references |

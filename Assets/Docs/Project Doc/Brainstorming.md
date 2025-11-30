@@ -60,8 +60,8 @@
   
 - **Marker-Cube Equivalence**:
   - Moving cube = mobile version of its marker type
-  - Light cube = Light marker capture behavior
-  - Heavy cube = Heavy marker (multi-hit for Recursion)
+  - Light cube = Unit Marker capture behavior
+  - Heavy cube = Recursion Marker (multi-hit for Recursion)
   - Prime cube = Prime marker (area effect potential)
   - Inherits all resource costs, cooldowns, and regeneration rules from marker system
 
@@ -101,7 +101,7 @@
    
 2. **Same-Type Collisions**:
    - Prime player cube + Prime wave cube = Prime marker dropped at collision
-   - Recursion player cube + Recursion wave cube = Heavy marker dropped
+   - Recursion player cube + Recursion wave cube = Recursion Marker dropped
    - Creates resource generation through successful interceptions
    
 3. **Strategic Positioning**:

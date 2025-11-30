@@ -102,14 +102,14 @@ FaceStatus Enum:
 ### Action System (PlayerActionManager)
 Comprehensive marker and detonation management:
 
-#### Light Markers (formerly Individual)
+#### Unit Markers (formerly Individual)
 - **Placement Key**: F
 - **Trigger Key**: R  
 - **Charge System**: Limited uses with regeneration
 - **Visual Feedback**: Placement indicators and charge display
 - **Wave Inheritance**: Position recorded for next wave cube spawn
 
-#### Heavy Markers
+#### Recursion Markers
 - **Placement Key**: V
 - **Trigger Key**: Y
 - **Primary Target**: Enhanced marker specifically designed for Recursion cubes
@@ -160,8 +160,8 @@ Revolutionary wave pairing mechanic creating strategic continuity:
 - **Marker Recording**: All marker placements in Wave A are recorded
 - **Position Conversion**: Marker positions become cube spawn points in Wave B
 - **Type Mapping**: Marker types influence spawned cube types:
-  - Light Marker → Unit Cube
-  - Heavy Marker → Recursion Cube
+  - Unit Marker → Unit Cube
+  - Recursion Marker → Recursion Cube
   - Prime Marker → Prime Cube (center of area)
   - Infinity Marker → Special/Infinity Cube
 - **Strategic Depth**: Players must balance immediate needs with future consequences
