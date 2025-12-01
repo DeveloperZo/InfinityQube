@@ -503,8 +503,10 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
         ClearAllCubes();
         ResetPlayer();
 
+        // Validate and adjust grid size to match wave size if needed
         if (useWaveConfiguration && CurrentWave != null)
         {
+            ValidateAndResizeGridForWave(CurrentWave);
             SpawnConfigurationCubes();
             
             // Spawn inherited cubes from previous wave markers (if this wave has been mirrored)
@@ -517,6 +519,44 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
 
         CountNonBlackCubes();
         DebugLog($"📦 Spawned {activeCubes.Count} cubes ({totalNonBlackCubes} non-black)");
+    }
+
+    /// <summary>
+    /// Validates that wave size matches grid size, and resizes grid if needed.
+    /// Ensures waves can only spawn within valid grid bounds.
+    /// </summary>
+    private void ValidateAndResizeGridForWave(WaveData wave)
+    {
+        if (wave == null || grid == null) return;
+
+        // Check if wave size matches grid size
+        bool needsResize = (wave.GridWidth != grid.Width || wave.GridHeight != grid.Height);
+        
+        if (needsResize)
+        {
+            DebugLog($"⚠️ Wave size ({wave.GridWidth}x{wave.GridHeight}) doesn't match grid size ({grid.Width}x{grid.Height}). Resizing grid to match wave.");
+            
+            // Validate wave dimensions are reasonable
+            int newWidth = Mathf.Clamp(wave.GridWidth, 3, 20);
+            int newHeight = Mathf.Clamp(wave.GridHeight, 9, 50);
+            
+            if (newWidth != wave.GridWidth || newHeight != wave.GridHeight)
+            {
+                DebugLog($"⚠️ Wave dimensions clamped from {wave.GridWidth}x{wave.GridHeight} to {newWidth}x{newHeight}");
+            }
+            
+            // Resize grid to match wave
+            grid.ResizeGrid(newWidth, newHeight);
+            
+            // Wait for grid to be ready (if in coroutine context, this will yield)
+            // Note: This is called from SpawnWaveCubes which is called from SetupWave
+            // which is called from RunWaveCoroutine, so we can't yield here.
+            // Grid resize should be fast enough, but we log if it's not ready
+            if (!grid.IsGridReady)
+            {
+                DebugLog("⚠️ Grid resize not complete, but continuing with wave spawn. Grid may not be fully ready.");
+            }
+        }
     }
 
     private void SpawnConfigurationCubes()

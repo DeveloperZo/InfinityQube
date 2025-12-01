@@ -321,7 +321,7 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
         // Create new tiles array
         tiles = new Tile[width, height];
 
-        // Copy existing tiles that fit in new dimensions
+        // Copy existing tiles that fit in new dimensions and update their scale/position
         int preservedCount = 0;
         for (int x = 0; x < Mathf.Min(oldWidth, width); x++)
         {
@@ -330,6 +330,13 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
                 if (oldTiles[x, y] != null)
                 {
                     tiles[x, y] = oldTiles[x, y];
+                    
+                    // Update tile scale and position to match new grid metrics
+                    GameObject tileObj = oldTiles[x, y].gameObject;
+                    Vector3 newWorldPosition = GridToWorldPosition(x, y, 0f);
+                    tileObj.transform.position = newWorldPosition;
+                    tileObj.transform.localScale = new Vector3(tileSize, 1f, tileSize);
+                    
                     preservedCount++;
                 }
             }

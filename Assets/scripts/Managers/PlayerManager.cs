@@ -646,10 +646,8 @@ public class PlayerManager : MonoBehaviour, IManagerDebugInterface
 
     private bool IsValidTilePosition(Vector2Int pos)
     {
-        if (pos.x < 0 || pos.x >= grid.Width || pos.y < 0 || pos.y >= grid.Height) return false;
-
-        Tile tile = grid.GetTileAt(pos.x, pos.y);
-        return tile != null && tile.IsPlayable;
+        // Use GridManager's validation for consistency
+        return grid != null && grid.IsValidGridPosition(pos);
     }
 
     private void CleanupPlayer()
