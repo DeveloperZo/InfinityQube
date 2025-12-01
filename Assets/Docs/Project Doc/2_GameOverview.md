@@ -34,6 +34,7 @@ Players progress through stages composed of multiple waves. Each wave presents a
 - Identify high-priority targets (Matrix cubes for resources, dangerous Recursion cubes)
 - Plan marker placement considering backward movement trajectories
 - Account for face status effects that modify cube behavior
+- Consider line divider position: threats above the line are visible but cannot be acted upon until they cross below
 
 ### 3. **Marker Placement & Transformation**
 - **Unit Markers** (Key: F): Single-tile markers that transform into backward-moving Light cubes
@@ -87,6 +88,7 @@ Players progress through stages composed of multiple waves. Each wave presents a
 - Configurable X by Y tile grid serving as the primary play space
 - Tiles support marker placement and cube movement
 - Edge boundaries define escape zones and spawn points
+- **Line Divider**: Dynamic line that restricts marker placement to lower rows, creating strategic tension as threats approach from above
 
 #### **Visual Design System** (AS IMPLEMENTED)
 

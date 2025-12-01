@@ -18,7 +18,27 @@ Outlines the structured learning progression, stage composition, and difficulty 
 - **Resource Pressure**: Scarcity forces efficiency
 - **Escalating Stakes**: Increasing consequences for mistakes
 
-## 4.2 Stage System Architecture
+## 4.2 Onboarding Pacing
+
+Structured progression that introduces mechanics gradually while building mastery:
+
+| Stage | Wave Cubes | Player Markers | Teaching Focus |
+|-------|------------|----------------|----------------|
+| 1 | Unit + Infinity | Unit only | Infinity cubes exist, can't capture them, must let them pass |
+| 2 | Unit + Matrix + Infinity | Unit + Matrix | Area capture; Matrix vs Infinity = destroyed but paints face; learn sacrifice-to-paint |
+| 3 | Unit + Matrix + Infinity | Unit + Matrix | Practice painted face timing and manual triggers |
+| 4 | Unit + Matrix + Recursion + Infinity | Unit + Matrix + Recursion | Auto-triggers; Recursion vs Infinity paints face; cross formation |
+| 5 | All types | Unit + Matrix + Recursion | Full wave complexity; master non-Infinity tools |
+| 6 | All types | All types (Infinity unlocked) | Player Infinity introduced; learn resonance; learn Infinity-first sequencing |
+| 7+ | All types | All types | Mastery; tighter line, denser waves, full strategic depth |
+
+### Pacing Principles
+- **Single New Element Per Stage**: Each stage introduces one new cube type or marker type
+- **Reinforcement Before Advancement**: Previous mechanics are practiced before adding complexity
+- **Marker Economy Introduction**: Non-Unit markers become scarce resources requiring management
+- **Strategic Depth Unfolding**: Early stages teach basics, later stages reveal advanced combinations
+
+## 4.3 Stage System Architecture
 
 ### Stage Types
 The game features four distinct stage types, each serving different purposes in the player experience:
@@ -144,7 +164,7 @@ Grid size directly impacts:
 - Spatial awareness requirements
 - Resource efficiency demands
 
-## 4.3 Tutorial Stage Structure
+## 4.4 Tutorial Stage Structure
 
 ### Tutorial Design Principles
 Tutorial stages follow a specific structure to maximize learning effectiveness:
@@ -229,7 +249,7 @@ After basic mechanics are established, the game introduces its core innovation: 
 - **Infinity Patterns**: Waves forming infinity symbol shapes
 - **Complete System Mastery**: All collision mechanics combined
 
-## 4.4 Progression Structure
+## 4.5 Progression Structure
 
 ### Act 1: Learn the Rules (Stages 0-2)
 **Focus**: Establishing core loop and primary danger
