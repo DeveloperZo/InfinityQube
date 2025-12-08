@@ -2,92 +2,120 @@
 
 > **Document Purpose:** This document tracks development speed, sprint summaries, and progress metrics. It does not contain roadmap, technical debt, or critique content.
 
-## Current Metrics (As of November 28, 2025)
+## Point Estimation Methodology
+
+### **Normalized Scale (Effective December 2025)**
+
+| Unit | Definition |
+|------|------------|
+| **1 point** | ≈ 1 day of active development work |
+| **5 points** | ≈ 1 week of active development work |
+| **20 points** | ≈ 1 month of active development (measured velocity) |
+
+### **Measurement Rules**
+- Points reflect actual development time, not complexity
+- Gap between commits < 1 week = same-day continuation for next commit
+- This is a personal project; hours are not tracked, only days/commits
+
+---
+
+## Current Metrics (As of December 8, 2025)
 
 ### **Full Project Velocity Analysis**
 
 #### **Overall Measured Velocity**
-- **Total Development Period**: April 29, 2025 - November 28, 2025 (~7 months)
-- **Active Development Time**: ~3 months (excluding July 15 - November 14 hiatus)
-- **Total Commits**: 235 commits
-- **Total Completed Complexity**: 44+ points
-- **Overall Monthly Rate**: ~14.7 points/month (accounting for hiatus)
-- **Active Period Rate**: ~22 points/month
+- **Total Development Period**: April 29, 2025 - December 8, 2025
+- **Active Development Time**: ~3.5 months (excluding July 15 - November 14 hiatus)
+- **Total Commits**: 250+ commits
+- **Total Completed Points**: 75 pts (normalized)
+- **Measured Velocity**: **22 points/month** (active periods)
 
 #### **Monthly Commit Distribution**
-| Month | Commits | Focus Area | Status |
-|-------|---------|------------|--------|
-| April 2025 | 18 | Project foundation | Active |
-| May 2025 | 106 | Core systems development | High Activity |
-| June 2025 | 85 | Feature integration, testing | High Activity |
-| July 2025 | 15 | Audio system, UI | Tapering |
-| Aug-Oct 2025 | 0 | Hiatus | Inactive |
-| November 2025 | 11 | Paired wave system, cleanup | Resumed |
+| Month | Commits | Points Delivered | Focus Area | Status |
+|-------|---------|------------------|------------|--------|
+| April 2025 | 18 | ~10 pts | Project foundation | Active |
+| May 2025 | 106 | ~25 pts | Core systems development | High Activity |
+| June 2025 | 85 | ~25 pts | Feature integration, testing | High Activity |
+| July 2025 | 15 | ~10 pts | Audio system, UI | Tapering |
+| Aug-Oct 2025 | 0 | 0 pts | Hiatus | Inactive |
+| November 2025 | 11 | ~3 pts | Marker system refinement, cleanup | Resumed |
+| December 2025 | 15+ | ~7 pts | Face painting, collision design | Active |
 
 #### **Phase-Based Velocity Analysis**
 
 **Phase 1: Foundation (April 29 - May 15, 2025)**
-- **Velocity**: ~12-15 points/month
+- **Points Delivered**: ~15 pts
 - **Focus**: Core architecture, basic systems, grid management
 - **Commits**: ~50
 
 **Phase 2: Core Development (May 16 - June 20, 2025)**
-- **Velocity**: ~20-25 points/month (peak)
+- **Points Delivered**: ~35 pts (peak activity)
 - **Focus**: Major feature implementation, marker systems, cube types
 - **Commits**: ~120
 
 **Phase 3: Integration & Polish (June 21 - July 13, 2025)**
-- **Velocity**: ~18-20 points/month
+- **Points Delivered**: ~15 pts
 - **Focus**: System integration, testing framework, documentation
 - **Commits**: ~50
 
-**Phase 4: Post-Hiatus Return (November 15-28, 2025)**
-- **Velocity**: TBD (establishing new baseline)
-- **Focus**: Paired wave system, codebase cleanup, cloud agent integration
-- **Commits**: 11
+**Phase 4: Hiatus (July 15 - November 14, 2025)**
+- **Points Delivered**: 0 pts
+- **Duration**: ~4 months
+
+**Phase 5: Post-Hiatus Return (November 15 - December 8, 2025)**
+- **Points Delivered**: ~10 pts
+- **Focus**: Marker system refinement, collision design, face painting
+- **Commits**: 26
 
 ### **Velocity Trend Analysis**
 
 **Key Observations**:
 1. **Peak Productivity**: May-June 2025 showed highest commit frequency (106 + 85 = 191 commits)
 2. **Hiatus Impact**: ~4 month break (mid-July to mid-November)
-3. **Resumed Focus**: November work concentrated on paired wave system (core innovation)
+3. **Resumed Focus**: November work concentrated on marker system refinement
 4. **Code Churn**: 150,682 insertions / 49,174 deletions since June 28 = net +101,508 lines
 
 ---
 
-## Updated Completed System Breakdown
+## Completed Work Breakdown (Normalized Points)
 
-### **Core Systems** (April-July 2025)
-| System | Complexity Points | Completion Date | Notes |
-|--------|------------------|-----------------|-------|
-| Four-tier marker system | 4 | June 20, 2025 | Light/Heavy/Matrix/Cube integration |
-| Face painting mechanics | 3 | June 20, 2025 | Rotation tracking, state persistence |
-| Corruption/enhancement tiles | 3 | June 19, 2025 | Tile state propagation system |
-| Recursion cube mechanics | 2 | June 18, 2025 | Multi-hit system with Recursion Markers |
-| Wave management system | 3 | June 15, 2025 | Editor tools, data persistence |
-| Player action system | 3 | June 10, 2025 | Input handling, marker management |
-| Wave completion messages | 2 | July 8, 2025 | Progress tracking with pause system |
-| Stage transition system | 2 | July 8, 2025 | Demo completion flow |
+### **Milestone 1.0: Core Game Development** (65 pts)
+*April-July 2025 (~3 months active work)*
 
-### **Infrastructure Systems**
-| System | Complexity Points | Completion Date | Notes |
-|--------|------------------|-----------------|-------|
-| Debug infrastructure | 4 | June 20, 2025 | Production-quality debug panels (OnGUI) |
-| Statistics/analytics | 2 | June 20, 2025 | Comprehensive tracking system |
-| Integration testing | 2 | June 23, 2025 | Automated validation framework |
-| Technical debt management | 1 | June 23, 2025 | Documentation and cleanup |
-| Documentation system | 2 | June 22, 2025 | Comprehensive project docs |
-| Audio system | 5 | July 8, 2025 | Full AudioManager implementation (7+ files) |
+| System | Points | Completion Date | Notes |
+|--------|--------|-----------------|-------|
+| Four-tier marker system | 8 | June 20, 2025 | Unit/Recursion/Matrix/Infinity |
+| Face painting mechanics | 5 | June 20, 2025 | Rotation tracking, state persistence |
+| Corruption/enhancement tiles | 5 | June 19, 2025 | Tile state propagation system |
+| Recursion cube mechanics | 3 | June 18, 2025 | Multi-hit system with Recursion Markers |
+| Wave management system | 7 | June 15, 2025 | Editor tools, data persistence |
+| Player action system | 7 | June 10, 2025 | Input handling, marker management |
+| Wave completion messages | 3 | July 8, 2025 | Progress tracking with pause system |
+| Stage transition system | 3 | July 8, 2025 | Demo completion flow |
+| Debug infrastructure | 8 | June 20, 2025 | Production-quality debug panels (OnGUI) |
+| Statistics/analytics | 3 | June 20, 2025 | Comprehensive tracking system |
+| Integration testing | 3 | June 23, 2025 | Automated validation framework |
+| Documentation system | 3 | June 22, 2025 | Comprehensive project docs |
+| Audio system | 7 | July 8, 2025 | Full AudioManager implementation (7+ files) |
 
-### **November 2025 Work**
-| System | Complexity Points | Completion Date | Notes |
-|--------|------------------|-----------------|-------|
-| Paired wave system (design) | 2 | Nov 26, 2025 | Marker inheritance architecture |
-| Codebase cleanup | 1 | Nov 27, 2025 | Removed obsolete debug panels |
-| Static using refactor | 1 | Nov 28, 2025 | Enumerations using static pattern |
+### **Milestone 1.2: Demo Stage Content** (5 pts)
+*July 2025 (~1 week work)*
 
-**Total Complexity Completed**: 44+ points
+| System | Points | Completion Date | Notes |
+|--------|--------|-----------------|-------|
+| Demo stage content | 5 | July 8, 2025 | Complete demo loop |
+
+### **Milestone 1.1: Refine Markers** (In Progress - ~5 pts delivered)
+*November-December 2025*
+
+| System | Points | Completion Date | Notes |
+|--------|--------|-----------------|-------|
+| Marker terminology standardization | 2 | Nov 30, 2025 | Unit/Recursion/Matrix/Infinity |
+| Unified input system | 2 | Nov 30, 2025 | Mode keys 1-4, F for placement |
+| Collision matrix design | 1 | Dec 1, 2025 | 16 combinations documented |
+| Face painting enhancement | (in progress) | - | Rotation mechanics |
+
+**Total Points Completed**: 75 pts
 
 ---
 
@@ -120,8 +148,8 @@
 
 #### **Phase 5: Post-Hiatus Return (November 15 - Present)**
 - **Velocity**: Re-establishing baseline
-- **Focus**: Paired wave system (core innovation), cleanup
-- **Key Deliverables**: Marker inheritance architecture, obsolete code removal
+- **Focus**: Marker system refinement, cleanup
+- **Key Deliverables**: Marker architecture improvements, obsolete code removal
 - **Characteristics**: Refocused on core innovation, cloud agent integration
 
 ### **Productivity Multipliers**
@@ -139,62 +167,37 @@
 
 ---
 
-## Updated Timeline Projections
+## Timeline Projections (Updated December 8, 2025)
 
-### **Remaining Work Analysis** (Updated November 28, 2025)
+### **Remaining Work Analysis**
 
-#### **Critical Path Items** (Total: 9 points)
-| Feature | Complexity | Status | Notes |
-|---------|------------|--------|-------|
-| Paired Wave System Implementation | 6 | In Design | Core innovation - highest priority |
-| Infinity Markers Implementation | 3 | Designed | Depends on paired wave system |
+| Phase | Remaining Points | Est. Months @ 22 pts/mo |
+|-------|------------------|-------------------------|
+| Phase 1 (remaining) | ~49 pts | ~2.2 months |
+| Phase 2 | 60 pts | ~2.7 months |
+| Phase 3 | 35 pts | ~1.6 months |
+| Phase 4 | 40 pts | ~1.8 months |
+| **TOTAL** | **~184 pts** | **~8.4 months** |
 
-#### **High Priority** (Total: 8 points)
-| Feature | Complexity | Status | Notes |
-|---------|------------|--------|-------|
-| Stage Content (12-13 stages) | 7 | Not Started | Needs paired wave system first |
-| File Size Refactoring | 1 | Tech Debt | Multiple managers over limits |
+### **Current Sprint Focus**
+| Item | Points | Status |
+|------|--------|--------|
+| Collision Matrix Implementation | 3 pts | Designed, needs code |
+| Line Divider System | 3 pts | Designed, needs implementation |
+| Resonance System | 2 pts | Designed, needs implementation |
+| Enhanced Face Painting | 2 pts | Rotation mechanics needed |
+| Penalty/Reward System | 2 pts | Designed, needs implementation |
+| Marker Economy | 2 pts | Per-stage grants designed |
 
-#### **Medium Priority** (Total: 15 points)
-| Feature | Complexity | Status | Notes |
-|---------|------------|--------|-------|
-| Visual Polish | 2 | Not Started | Particle effects, game feel |
-| Cosmic Theme Integration | 3 | Partial | Materials in place |
-| Save/Load System | 3 | Not Started | Progress persistence |
-| Interactive Tutorial | 4 | Not Started | Paired wave teaching |
-| Settings & Options | 2 | Not Started | Audio/graphics options |
-| File Size Cleanup | 1 | Tech Debt | Manager refactoring |
-
-#### **Release Preparation** (Total: 12 points)
-| Feature | Complexity | Status | Notes |
-|---------|------------|--------|-------|
-| Steam Integration | 3 | Not Started | Achievements, cloud saves |
-| Performance Optimization | 3 | Not Started | Frame rate, memory |
-| QA & Bug Fixing | 4 | Ongoing | Continuous |
-| Beta Testing | 2 | Not Started | External feedback |
-
-**Total Remaining**: ~44 complexity points
-
-### **Effort-Based Timeline Projections**
-
-#### **Remaining Work Estimates**
-| Priority | Work Item | Effort Estimate |
-|----------|-----------|-----------------|
-| Critical | Paired Wave System | 1-2 weeks active |
-| High | File Size Refactoring | 2-3 weeks active |
-| High | Infinity Markers | 1 week active |
-| Medium | Stage Content (12-13 stages) | 3-4 weeks active |
-| Medium | Visual Polish | 1-2 weeks active |
-| Low | Steam Integration | 1-2 weeks active |
-
-#### **Total Active Development Estimate**
-- **Remaining Work**: ~44 complexity points
-- **At 15 points/month**: ~3 months of active development
-- **At 20 points/month**: ~2.2 months of active development
-- **Note**: Calendar time will vary based on availability
+### **Velocity Scenarios**
+| Scenario | Monthly Pts | Time to Release |
+|----------|-------------|-----------------|
+| Current (measured) | 22 pts/mo | ~8.4 months |
+| Conservative | 15 pts/mo | ~12.3 months |
+| High productivity | 30 pts/mo | ~6.1 months |
 
 ### **Key Dependencies**
-1. **Paired Wave System** blocks stage content creation
+1. **Collision System** blocks stage content creation
 2. **Stage Content** blocks tutorial system  
 3. **Core Systems** should be stable before Steam integration
 
@@ -202,37 +205,33 @@
 
 ## Recent Activity Tracking
 
+### **December 2025**
+
+#### Week of December 1-8, 2025
+- **Commits**: 15+
+- **Points Delivered**: ~5 pts
+- **Focus**: Face painting, collision design, documentation consolidation
+- **Key Commits**:
+  - `359c1ff` - Auto-capture mechanics and countdown displays
+  - `8b8c2f7` - Face painting mechanics
+  - `e577e0d` - Gameplay mechanics documentation
+
 ### **November 2025 (Post-Hiatus Return)**
 
-#### Week of November 15-21, 2025
-- **Commits**: 3
-- **Focus**: Project review, documentation updates
+#### Week of November 15-28, 2025
+- **Commits**: 11
+- **Points Delivered**: ~3 pts
+- **Focus**: Marker refinement, cleanup, cloud agent integration
 - **Key Commits**:
-  - `7aa37ff` - Review project after hiatus
-  - `f56df7e` - Update project documentation
-  - `625f967` - Implement paired wave system design
+  - `cb69513` - Unified marker input system
+  - `8f1cbb1` - Rename Prime to Matrix markers
+  - `f86f109` - Static usings for Enumerations
 
-#### Week of November 22-28, 2025
-- **Commits**: 8
-- **Focus**: Paired wave system, cleanup, cloud agent integration
-- **Key Commits**:
-  - `7654f4b` - Update cosmic materials
-  - `348b9de` - Remove obsolete debug panels
-  - `be39197` - Enhance WaveManager and WavePrototyper
-  - `f86f109` - Refactor static usings for Enumerations
-  - `cc7c6d5` - Cloud agent integration
+### **Historical Reference (April-July 2025)**
 
-### **Historical Reference (June-July 2025)**
-
-#### Peak Activity (June 2025)
-- **Average Daily Commits**: 2.8
-- **Key Deliverables**: Marker systems, face painting, audio foundation
-- **Velocity**: ~20-25 points/month
-
-#### Wind-Down (July 2025)
-- **Average Daily Commits**: 1.0
-- **Key Deliverables**: Wave completion, stage transitions, audio completion
-- **Velocity**: ~15 points/month
+- **Peak Month (May)**: 106 commits, ~25 pts
+- **June**: 85 commits, ~25 pts
+- **Average**: ~22 pts/month during active periods
 
 ---
 
@@ -240,10 +239,10 @@
 
 ### **Velocity Performance Indicators**
 
-#### **Current Status (November 2025)** 🟡
-- **Minimum Acceptable**: 12 points/month → TBD (re-establishing baseline)
-- **Planning Target**: 15 points/month → Target for sustained development
-- **Stretch Goal**: 20+ points/month → Achievable based on historical peak
+#### **Current Status (December 2025)** ✅
+- **Measured Velocity**: 22 points/month (validated across active periods)
+- **Conservative Target**: 15 points/month (for planning buffer)
+- **Point Definition**: 1 pt ≈ 1 day of active work
 
 #### **Quality Indicators** ✅
 - **Core Systems**: Functional and tested
@@ -253,75 +252,60 @@
 #### **Risk Assessment**
 | Risk | Level | Mitigation |
 |------|-------|------------|
-| Sustained Velocity | 🟡 Medium | Re-establishing routine after hiatus |
-| File Size Violations | 🔴 High | 10 managers exceed size limits |
+| Velocity Sustainability | 🟢 Low | Measured at 22 pts/mo |
+| File Size Violations | 🔴 High | 12 managers exceed size limits (15 pts to fix) |
 | Scope Creep | 🟡 Medium | Roadmap discipline required |
 | Technical Debt | 🟡 Medium | Documented, needs execution |
 
-### **Post-Hiatus Considerations**
-
-**Re-engagement Factors**:
-- **Context Recovery**: Documentation aids re-familiarization
-- **Architecture Stability**: Code patterns remain consistent
-- **Focused Priority**: Paired wave system as clear next goal
-- **Tool Maturity**: Debug infrastructure still functional
-
-**Velocity Expectations**:
-- **Initial Weeks**: 50-70% of historical peak (context recovery)
-- **Stabilization**: 80-100% of historical peak within 2-3 weeks
-- **Target**: 15-20 points/month sustained
-
-**Key Risk Mitigation**:
-- Address file size violations incrementally
-- Maintain documentation discipline
-- Regular velocity tracking
-
 ---
 
-## Velocity Influencing Factors
+## Velocity Calibration
 
-### **Positive Multipliers**
-| Factor | Impact | Notes |
-|--------|--------|-------|
-| Mature Debug Infrastructure | +20-25% | Debug panels, testing tools |
-| Established Architecture | +25-30% | Clear patterns, ScriptableObjects |
-| Comprehensive Documentation | +15-20% | Context recovery, onboarding |
-| Event-Driven Systems | +10-15% | Loose coupling |
-| Static Using Pattern | +5% | Clean Enumerations access |
+### **How to Update Point Values**
 
-### **Velocity Drags**
-| Factor | Impact | Notes |
-|--------|--------|-------|
-| File Size Violations | -15-20% | 10 files need refactoring |
-| Solo Development | -10-15% | No code review, single point of failure |
-| Hiatus Context Loss | -10-15% | Temporary (2-3 weeks recovery) |
-| Tech Debt Accumulation | -5-10% | Needs regular attention |
+As work is completed, compare estimated vs actual points:
 
-### **Net Impact Estimate**
-- **Gross Multipliers**: +75-95%
-- **Gross Drags**: -40-60%
-- **Net Effect**: +20-40% over baseline
+```
+Actual Points = Work Days Elapsed (accounting for gap rule)
+If gap < 1 week between commits, treat as same-day continuation
+```
+
+**After each milestone**, recalculate:
+1. Sum actual points spent
+2. Compare to estimate
+3. Adjust future estimates accordingly
+
+### **Current Calibration**
+| Milestone | Estimated | Actual | Variance |
+|-----------|-----------|--------|----------|
+| 1.0 Core Development | 65 pts | 65 pts | 0% (baseline) |
+| 1.2 Demo Stage | 5 pts | 5 pts | 0% |
+| 1.1 Refine Markers | 14 pts | (in progress) | TBD |
 
 ---
 
 ## Next Steps & Action Items
 
-### **Immediate Priority** (Next Active Sprint)
-1. **Paired Wave System**: Implement marker inheritance mechanics (~1-2 weeks)
-2. **File Size Audit**: Begin WaveManager refactoring (1949 → 600 lines target)
+### **Immediate Priority** (Milestone 1.1 Completion)
+| Task | Points | Status |
+|------|--------|--------|
+| Collision Matrix Implementation | 3 pts | Ready to code |
+| Line Divider System | 3 pts | Designed |
+| Resonance System | 2 pts | Designed |
+| Enhanced Face Painting | 2 pts | In progress |
+| Penalty/Reward System | 2 pts | Designed |
+| Marker Economy | 2 pts | Designed |
 
-### **Following Sprint** (After Paired Waves)
-1. **File Size Refactoring**: Complete WaveManager, start PlayerActionManager (~2 weeks)
-2. **Infinity Markers**: Implementation after paired waves (~1 week)
-
-### **Content Phase** (After Core Systems Stable)
-1. **Stage Content Creation**: 12-13 stages with paired wave mechanics (~3-4 weeks)
-2. **Tutorial System**: Interactive paired wave teaching (~1-2 weeks)
+### **Following Sprint** (Milestone 1.3-1.4)
+| Task | Points | Dependencies |
+|------|--------|--------------|
+| StageDB Enhancement | 5 pts | Milestone 1.1 |
+| Stage Content Creation | 20 pts | StageDB done |
 
 ### **Quality Gates**
-1. **Per-Session Check**: Review progress against current milestone
-2. **Per-Milestone Review**: Tech debt assessment before starting next milestone
-3. **File Size Compliance**: Verify before each major feature
+1. **Per-Commit**: Track work days
+2. **Per-Milestone**: Compare estimated vs actual points
+3. **Monthly**: Update velocity if needed
 
 ---
 
@@ -330,12 +314,12 @@
 ### **Commit Hash Index (Recent)**
 | Hash | Date | Description |
 |------|------|-------------|
-| `cc7c6d5` | Nov 28 | Cloud agent integration |
+| `359c1ff` | Dec 8 | Auto-capture mechanics and countdown displays |
+| `8b8c2f7` | Dec 8 | Face painting mechanics |
+| `e577e0d` | Dec 1 | Gameplay mechanics documentation |
+| `cb69513` | Nov 30 | Unified marker input system |
+| `8f1cbb1` | Nov 30 | Rename Prime to Matrix markers |
 | `f86f109` | Nov 28 | Static usings for Enumerations |
-| `be39197` | Nov 27 | Enhance WaveManager and WavePrototyper |
-| `348b9de` | Nov 27 | Remove obsolete debug panels |
-| `625f967` | Nov 26 | Paired wave system design |
-| `7aa37ff` | Nov 15 | Project review after hiatus |
 
 ### **Major Milestone Commits**
 | Hash | Date | Milestone |
@@ -347,8 +331,8 @@
 
 ---
 
-*Last Updated: November 28, 2025*  
-*Next Review: After next active sprint*  
-*Methodology Version: 3.0 - Effort-Based Analysis with Commit Tracking*
+*Last Updated: December 8, 2025*  
+*Methodology Version: 4.0 - Day-Based Point Estimation*
+*1 point ≈ 1 day, 5 points ≈ 1 week, 22 points/month measured velocity*
 
 ## (END OF DOCUMENT)

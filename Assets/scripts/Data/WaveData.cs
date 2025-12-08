@@ -45,35 +45,4 @@ public class WaveData : ScriptableObject
     public int recursionCubesCaptured;
     public int markersPlaced;
     public int detonationsUsed;
-
-    [Header("Paired Wave System")]
-    [Tooltip("Rules for how markers from the previous wave spawn cubes in this wave when mirrored. Only used when HasBeenMirrored is true.")]
-    public MarkerSpawnRules markerSpawnRules = new MarkerSpawnRules();
-    
-    [Tooltip("Delay before inherited cubes spawn (in seconds). Allows base spawns to appear first.")]
-    public float inheritanceDelay = 0f;
-    
-    // Runtime-only: Tracks if this wave instance has been mirrored (spawned with marker-based cubes)
-    [System.NonSerialized]
-    public bool HasBeenMirrored = false;
-}
-
-/// <summary>
-/// Defines rules for how markers from the previous wave spawn cubes in the mirrored version of this wave.
-/// Each marker type can be configured to spawn its corresponding cube type.
-/// </summary>
-[System.Serializable]
-public class MarkerSpawnRules
-{
-    [Tooltip("If true, Unit markers from the previous wave spawn Unit cubes in the mirrored wave")]
-    public bool unitSpawnsUnit = true;
-    
-    [Tooltip("If true, Recursion markers from the previous wave spawn Recursion cubes in the mirrored wave")]
-    public bool recursionSpawnsRecursion = true;
-    
-    [Tooltip("If true, Matrix markers from the previous wave spawn Matrix cubes in the mirrored wave")]
-    public bool matrixSpawnsMatrix = true;
-    
-    [Tooltip("If true, Infinity markers from the previous wave spawn Infinity cubes in the mirrored wave")]
-    public bool infinitySpawnsInfinity = true;
 }

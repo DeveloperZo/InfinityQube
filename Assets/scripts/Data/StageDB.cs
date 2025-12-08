@@ -72,39 +72,4 @@ public class StageDB : ScriptableObject
         stageMap[stage.stageNumber] = stage;
     }
 
-    /// <summary>
-    /// Validates paired wave configuration for all stages.
-    /// Checks that waves have marker spawn rules configured if they will be used for mirroring.
-    /// </summary>
-    public bool ValidatePairedWaveConfiguration()
-    {
-        if (!initialized)
-            Initialize();
-
-        bool isValid = true;
-
-        foreach (var stage in stages)
-        {
-            if (stage == null || stage.waveConfigurations == null) continue;
-
-            foreach (var wave in stage.waveConfigurations)
-            {
-                if (wave == null) continue;
-
-                // Check that waves with marker spawn rules have at least one rule enabled
-                var rules = wave.markerSpawnRules;
-                bool hasAnyRule = rules.unitSpawnsUnit || rules.recursionSpawnsRecursion || 
-                                 rules.matrixSpawnsMatrix || rules.infinitySpawnsInfinity;
-                
-                // Note: It's valid to have no rules if the wave won't be mirrored
-                // This validation is informational - waves can work without mirroring
-                if (hasAnyRule)
-                {
-                    Debug.Log($"StageDB Validation: Wave '{wave.name}' has marker spawn rules configured (ready for mirroring)");
-                }
-            }
-        }
-
-        return isValid;
-    }
 }

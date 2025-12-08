@@ -661,6 +661,13 @@ public class Tile : MonoBehaviour
         
         Vector2Int centerPosition = new Vector2Int(x, y);
         
+        // Consume one charge from the painted face (unpaints when charges reach 0)
+        if (!cube.ConsumeActiveFaceCharge())
+        {
+            Debug.Log($"[Task 8] Painted face at ({x},{y}) has no charges remaining - skipping trigger");
+            return;
+        }
+        
         switch (faceStatus)
         {
             case FaceStatus.MatrixFace:
@@ -670,8 +677,8 @@ public class Tile : MonoBehaviour
                 break;
                 
             case FaceStatus.RecursionFace:
-                Debug.Log($"[Task 8] RecursionFace touched grid at ({x},{y}) - creating 5 tile cross marker");
-                CreateRecursionCrossMarker(centerPosition);
+                Debug.Log($"[Task 8] RecursionFace touched grid at ({x},{y}) - creating auto-capture marker (3 charges)");
+                CreateRecursionFaceMarker(centerPosition);
                 ApplyLineDividerReward(1); // Task 6: Reward for painted face trigger
                 break;
                 
@@ -684,38 +691,28 @@ public class Tile : MonoBehaviour
     }
     
     /// <summary>
-    /// Task 8: Creates a 5-tile cross marker pattern for RecursionFace
-    /// Creates an auto-capture area marker (doesn't consume player marker charges)
+    /// Task 8: Creates a single-tile auto-capture marker for RecursionFace
+    /// Per design doc: "auto-capture marker placed at that tile; captures 3 cubes as wave passes"
     /// </summary>
-    private void CreateRecursionCrossMarker(Vector2Int centerPosition)
+    private void CreateRecursionFaceMarker(Vector2Int centerPosition)
     {
         if (cachedPlayerActionManager == null || cachedGridManager == null) return;
         
-        // Build cross pattern: center + 4 adjacent tiles
-        List<Vector2Int> crossPositions = new List<Vector2Int>();
-        Vector2Int[] offsets = { Vector2Int.zero, Vector2Int.up, Vector2Int.down, Vector2Int.left, Vector2Int.right };
+        // Single tile position (not a cross pattern - cross is for Recursion+Recursion collision)
+        List<Vector2Int> positions = new List<Vector2Int> { centerPosition };
         
-        foreach (var offset in offsets)
-        {
-            Vector2Int pos = centerPosition + offset;
-            if (cachedGridManager.IsValidGridPosition(pos))
-            {
-                crossPositions.Add(pos);
-            }
-        }
-        
-        // Create auto-capture cross marker via PlayerMarkerSystem
-        // This creates a visual marker that auto-captures cubes passing through
-        var markerSystem = cachedPlayerActionManager.GetMarkerSystem();
+        // Create auto-capture marker via PlayerMarkerSystem
+        // Per design: auto-capture marker that captures 3 cubes as wave passes
+        var markerSystem = cachedPlayerActionManager.MarkerSystem;
         if (markerSystem != null)
         {
-            markerSystem.CreateAutoCaptureAreaMarker(crossPositions, "RecursionFaceCross", 
-                new Color(0.8f, 0.5f, 0.2f, 0.8f), 3, 2); // 3 moves expiration, 2 charges
-            Debug.Log($"[Task 8] Created RecursionFace auto-capture cross marker at ({centerPosition.x},{centerPosition.y}) with {crossPositions.Count} tiles");
+            markerSystem.CreateAutoCaptureAreaMarker(positions, "RecursionFaceMarker", 
+                new Color(0.8f, 0.5f, 0.2f, 0.8f), 5, 3); // 5 moves expiration, 3 charges (captures 3 cubes)
+            Debug.Log($"[Task 8] Created RecursionFace auto-capture marker at ({centerPosition.x},{centerPosition.y}) with 3 charges");
         }
         else
         {
-            Debug.LogWarning("[Task 8] MarkerSystem not available for RecursionFace cross marker");
+            Debug.LogWarning("[Task 8] MarkerSystem not available for RecursionFace marker");
         }
     }
     

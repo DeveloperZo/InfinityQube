@@ -1,72 +1,87 @@
 using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using static Enumerations;
 
 /// <summary>
-/// Manages all marker visual effects including tile highlights, countdown text, and effects.
-/// Extracted from PlayerMarkerSystem for better organization and maintainability.
+/// Manages all visual aspects of markers including creation, tile highlighting, 
+/// countdown text displays, and visual effects.
 /// </summary>
-public class MarkerVisualManager : MonoBehaviour
+public class MarkerVisualManager : MonoBehaviour, IManagerDebugInterface
 {
-    #region Serialized Fields
-    
-    [Header("Visual Effects Settings")]
+    #region Inspector Configuration
+
+    [Header("Visual Settings")]
     [SerializeField] private float flashDuration = 0.3f;
     [SerializeField] private Color areaPreviewColor = new Color(1f, 0.5f, 0f, 0.7f);
-    
-    [Header("Cube Marker Materials")]
-    [SerializeField] private Material cubeMarkerMaterial;
-    [SerializeField] private Material poweredCubeMarkerMaterial;
-    
+
+    [Header("Debug")]
+    [SerializeField] private bool enableDebugLogs = true;
+
     #endregion
-    
-    #region Private Fields
-    
-    // Temporary overlay tracking
+
+    #region Manager References
+
+    private GridManager gridManager;
+
+    #endregion
+
+    #region Runtime State
+
+    // Temporary marker overlays for tile highlighting
     private Dictionary<Vector2Int, GameObject> temporaryMarkerOverlays = new Dictionary<Vector2Int, GameObject>();
-    
+
     // Countdown text objects for auto-capture markers
     private Dictionary<Vector2Int, TextMesh> markerCountdownTexts = new Dictionary<Vector2Int, TextMesh>();
-    
-    // Preview system
-    private List<GameObject> previewObjects = new List<GameObject>();
-    private bool showingPreview = false;
-    
-    // Manager references
-    private GridManager gridManager;
-    
+
     #endregion
-    
+
     #region Properties
-    
-    public bool ShowingPreview => showingPreview;
-    
+
+    public bool EnableDebugLogs { get; set; } = true;
+
     #endregion
-    
-    #region Initialization
-    
+
+    #region Unity Lifecycle
+
+    private void OnDestroy()
+    {
+        // Clean up all temporary overlays
+        var overlaysToRemove = temporaryMarkerOverlays.Keys.ToList();
+        foreach (var pos in overlaysToRemove)
+        {
+            ClearTileHighlight(pos);
+        }
+
+        // Clean up all countdown texts
+        ClearAllMarkerCountdownTexts();
+    }
+
+    #endregion
+
+    #region Public API
+
+    /// <summary>
+    /// Initializes the visual manager with required references
+    /// </summary>
     public void Initialize(GridManager grid)
     {
         gridManager = grid;
+        EnableDebugLogs = enableDebugLogs;
+        DebugLog("Initialize", "MarkerVisualManager initialized");
     }
-    
-    void OnDestroy()
-    {
-        ClearAllOverlays();
-        ClearAllMarkerCountdownTexts();
-    }
-    
+
     #endregion
-    
-    #region Marker Visual Creation
-    
+
+    #region Visual Creation Methods
+
     /// <summary>
-    /// Creates visual for Unit marker placement
+    /// Creates visual marker for Unit marker placement
     /// </summary>
     public GameObject CreateUnitMarkerVisual(Vector2Int position)
     {
-        Tile tile = gridManager?.GetTileAt(position.x, position.y);
+        Tile tile = gridManager.GetTileAt(position.x, position.y);
         if (tile != null)
         {
             // Unit = Blue-gray (lighter variant for marker visibility)
@@ -79,11 +94,11 @@ public class MarkerVisualManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Creates visual for Recursion marker placement
+    /// Creates visual marker for Recursion marker placement
     /// </summary>
     public GameObject CreateRecursionMarkerVisual(Vector2Int position)
     {
-        Tile tile = gridManager?.GetTileAt(position.x, position.y);
+        Tile tile = gridManager.GetTileAt(position.x, position.y);
         if (tile != null)
         {
             // Recursion = Deep amber brown (warm brown-orange)
@@ -96,11 +111,11 @@ public class MarkerVisualManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Creates visual for Matrix marker placement
+    /// Creates visual marker for Matrix marker placement
     /// </summary>
     public GameObject CreateMatrixMarkerVisual(Vector2Int position)
     {
-        Tile tile = gridManager?.GetTileAt(position.x, position.y);
+        Tile tile = gridManager.GetTileAt(position.x, position.y);
         if (tile != null)
         {
             // Matrix = Vibrant light blue
@@ -113,17 +128,34 @@ public class MarkerVisualManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Creates visual for Cube marker (generated from collisions)
+    /// Creates visual marker for Infinity marker placement
+    /// </summary>
+    public GameObject CreateInfinityMarkerVisual(Vector2Int position)
+    {
+        Tile tile = gridManager.GetTileAt(position.x, position.y);
+        if (tile != null)
+        {
+            // Infinity = Deep black (dark charcoal for visibility)
+            SetTileHighlight(tile, new Color(0.15f, 0.15f, 0.18f, 1f), "Infinity");
+        }
+
+        GameObject dummy = new GameObject($"InfinityMarker_{position.x}_{position.y}");
+        dummy.transform.position = gridManager.GridToWorldPosition(position.x, position.y, 0f);
+        return dummy;
+    }
+
+    /// <summary>
+    /// Creates visual marker for Cube marker placement
     /// </summary>
     public GameObject CreateCubeMarkerVisual(Vector2Int position, PlayerMarkerSystem.CubeMarkerType type)
     {
-        Tile tile = gridManager?.GetTileAt(position.x, position.y);
+        Tile tile = gridManager.GetTileAt(position.x, position.y);
         if (tile != null)
         {
             Color highlightColor = type switch
             {
                 PlayerMarkerSystem.CubeMarkerType.Unit => Color.magenta,
-                PlayerMarkerSystem.CubeMarkerType.Recursion => new Color(0.7f, 0.2f, 0.7f, 1f),
+                PlayerMarkerSystem.CubeMarkerType.Recursion => new Color(0.7f, 0.2f, 0.7f, 1f), // Dark magenta
                 PlayerMarkerSystem.CubeMarkerType.Matrix => Color.cyan,
                 PlayerMarkerSystem.CubeMarkerType.Cube => Color.yellow,
                 _ => Color.white
@@ -138,11 +170,11 @@ public class MarkerVisualManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Creates visual for powered-up Cube marker
+    /// Creates visual marker for powered-up Cube marker
     /// </summary>
     public GameObject CreatePoweredCubeMarkerVisual(Vector2Int position, PlayerMarkerSystem.CubeMarkerType type)
     {
-        Tile tile = gridManager?.GetTileAt(position.x, position.y);
+        Tile tile = gridManager.GetTileAt(position.x, position.y);
         if (tile != null)
         {
             Color baseColor = type switch
@@ -162,18 +194,41 @@ public class MarkerVisualManager : MonoBehaviour
         dummy.transform.position = gridManager.GridToWorldPosition(position.x, position.y, 0f);
         return dummy;
     }
-    
-    #endregion
-    
-    #region Tile Highlighting
-    
+
     /// <summary>
-    /// Sets a highlight overlay on a tile with the specified color
+    /// Destroys a marker visual and clears associated highlights
+    /// </summary>
+    public void DestroyMarkerVisual(GameObject visual)
+    {
+        if (visual != null)
+        {
+            // Extract position from the visual object name
+            string[] nameParts = visual.name.Split('_');
+            if (nameParts.Length >= 3)
+            {
+                if (int.TryParse(nameParts[nameParts.Length - 2], out int x) &&
+                    int.TryParse(nameParts[nameParts.Length - 1], out int y))
+                {
+                    ClearTileHighlight(new Vector2Int(x, y));
+                    DebugLog("DestroyMarkerVisual", $"Cleared tile highlight at ({x}, {y}) after marker removal");
+                }
+            }
+
+            Destroy(visual);
+        }
+    }
+
+    #endregion
+
+    #region Tile Highlighting
+
+    /// <summary>
+    /// Sets a tile highlight with specified color and marker type
     /// </summary>
     public void SetTileHighlight(Tile tile, Color color, string markerType)
     {
         if (tile == null) return;
-        
+
         Vector2Int pos = new Vector2Int(tile.x, tile.y);
 
         // Remove existing overlay if present
@@ -183,7 +238,7 @@ public class MarkerVisualManager : MonoBehaviour
         GameObject overlay = GameObject.CreatePrimitive(PrimitiveType.Cube);
         overlay.name = $"ActionMarker_{markerType}_{tile.x}_{tile.y}";
         overlay.transform.SetParent(tile.transform);
-        overlay.transform.localPosition = new Vector3(0, 0.52f, 0);
+        overlay.transform.localPosition = new Vector3(0, 0.52f, 0); // Slightly above tile overlay
         overlay.transform.localScale = new Vector3(0.95f, 0.08f, 0.95f);
 
         // Remove collider to avoid physics issues
@@ -208,59 +263,56 @@ public class MarkerVisualManager : MonoBehaviour
         // Store overlay for cleanup
         temporaryMarkerOverlays[pos] = overlay;
 
-        Debug.Log($"[MarkerVisualManager] Created {markerType} highlight at ({tile.x}, {tile.y})");
+        DebugLog("SetTileHighlight", $"Created {markerType} highlight overlay at ({tile.x}, {tile.y}) with color {color}");
     }
 
     /// <summary>
-    /// Clears highlight from a tile
+    /// Clears tile highlight by Tile reference
     /// </summary>
     public void ClearTileHighlight(Tile tile)
     {
         if (tile == null) return;
-        
         Vector2Int pos = new Vector2Int(tile.x, tile.y);
+        ClearTileHighlight(pos);
+    }
 
-        if (temporaryMarkerOverlays.TryGetValue(pos, out GameObject overlay))
+    /// <summary>
+    /// Clears tile highlight by position
+    /// </summary>
+    public void ClearTileHighlight(Vector2Int position)
+    {
+        if (temporaryMarkerOverlays.TryGetValue(position, out GameObject overlay))
         {
             if (overlay != null)
             {
                 Destroy(overlay);
             }
-            temporaryMarkerOverlays.Remove(pos);
+            temporaryMarkerOverlays.Remove(position);
+            DebugLog("ClearTileHighlight", $"Cleared highlight overlay at ({position.x}, {position.y})");
         }
     }
 
     /// <summary>
-    /// Clears highlight at a position
+    /// Clears all temporary marker overlays
     /// </summary>
-    public void ClearTileHighlight(Vector2Int position)
+    public void ClearAllTileHighlights()
     {
-        Tile tile = gridManager?.GetTileAt(position.x, position.y);
-        if (tile != null)
+        var overlaysToRemove = temporaryMarkerOverlays.Keys.ToList();
+        foreach (var pos in overlaysToRemove)
         {
-            ClearTileHighlight(tile);
+            ClearTileHighlight(pos);
         }
     }
-    
+
     /// <summary>
-    /// Clears all overlay highlights
+    /// Gets count of active tile highlights
     /// </summary>
-    public void ClearAllOverlays()
-    {
-        foreach (var kvp in temporaryMarkerOverlays)
-        {
-            if (kvp.Value != null)
-            {
-                Destroy(kvp.Value);
-            }
-        }
-        temporaryMarkerOverlays.Clear();
-    }
-    
+    public int GetActiveHighlightCount() => temporaryMarkerOverlays.Count;
+
     #endregion
-    
+
     #region Marker Countdown Text
-    
+
     /// <summary>
     /// Creates a countdown text display on a tile for auto-capture markers
     /// </summary>
@@ -268,18 +320,19 @@ public class MarkerVisualManager : MonoBehaviour
     {
         if (markerCountdownTexts.ContainsKey(position))
         {
+            // Already exists, just update it
             UpdateMarkerCountdownText(position, remainingMoves);
             return;
         }
-        
+
         Tile tile = gridManager?.GetTileAt(position.x, position.y);
         if (tile == null) return;
-        
+
         // Create text object
         GameObject textObj = new GameObject($"MarkerCountdown_{position.x}_{position.y}");
         textObj.transform.SetParent(tile.transform);
-        textObj.transform.localPosition = new Vector3(0, 1.0f, 0);
-        
+        textObj.transform.localPosition = new Vector3(0, 1.0f, 0); // Above the tile overlay
+
         TextMesh textMesh = textObj.AddComponent<TextMesh>();
         textMesh.text = remainingMoves.ToString();
         textMesh.fontSize = 12;
@@ -288,18 +341,18 @@ public class MarkerVisualManager : MonoBehaviour
         textMesh.anchor = TextAnchor.MiddleCenter;
         textMesh.alignment = TextAlignment.Center;
         textMesh.characterSize = 0.15f;
-        
-        // Make text face camera
+
+        // Make text face camera (billboard style)
         if (Camera.main != null)
         {
             textObj.transform.LookAt(Camera.main.transform);
             textObj.transform.Rotate(0, 180, 0);
         }
-        
+
         markerCountdownTexts[position] = textMesh;
-        Debug.Log($"[MarkerVisualManager] Created countdown text at ({position.x}, {position.y}) showing {remainingMoves}");
+        DebugLog("CreateMarkerCountdownText", $"Created countdown text at ({position.x}, {position.y}) showing {remainingMoves}");
     }
-    
+
     /// <summary>
     /// Updates the countdown text for a marker position
     /// </summary>
@@ -311,9 +364,9 @@ public class MarkerVisualManager : MonoBehaviour
             markerCountdownTexts.Remove(position);
             return;
         }
-        
+
         textMesh.text = remainingMoves.ToString();
-        
+
         // Update color based on remaining moves (visual urgency)
         if (remainingMoves <= 1)
             textMesh.color = Color.red;
@@ -321,15 +374,15 @@ public class MarkerVisualManager : MonoBehaviour
             textMesh.color = Color.yellow;
         else
             textMesh.color = Color.white;
-        
-        // Re-orient to face camera
+
+        // Re-orient to face camera each update
         if (Camera.main != null && textMesh.gameObject != null)
         {
             textMesh.transform.LookAt(Camera.main.transform);
             textMesh.transform.Rotate(0, 180, 0);
         }
     }
-    
+
     /// <summary>
     /// Removes the countdown text for a marker position
     /// </summary>
@@ -342,9 +395,10 @@ public class MarkerVisualManager : MonoBehaviour
                 Destroy(textMesh.gameObject);
             }
             markerCountdownTexts.Remove(position);
+            DebugLog("ClearMarkerCountdownText", $"Cleared countdown text at ({position.x}, {position.y})");
         }
     }
-    
+
     /// <summary>
     /// Clears all marker countdown texts
     /// </summary>
@@ -359,223 +413,125 @@ public class MarkerVisualManager : MonoBehaviour
         }
         markerCountdownTexts.Clear();
     }
-    
-    #endregion
-    
-    #region Area Preview
-    
-    /// <summary>
-    /// Shows preview of area effect
-    /// </summary>
-    public void ShowAreaPreview(List<Vector2Int> positions)
-    {
-        HideAreaPreview();
-        
-        foreach (var pos in positions)
-        {
-            Tile tile = gridManager?.GetTileAt(pos.x, pos.y);
-            if (tile != null)
-            {
-                GameObject preview = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                preview.name = $"AreaPreview_{pos.x}_{pos.y}";
-                preview.transform.SetParent(tile.transform);
-                preview.transform.localPosition = new Vector3(0, 0.55f, 0);
-                preview.transform.localScale = new Vector3(0.9f, 0.05f, 0.9f);
-                
-                Destroy(preview.GetComponent<Collider>());
-                
-                Renderer renderer = preview.GetComponent<Renderer>();
-                if (renderer != null)
-                {
-                    Material previewMat = new Material(Shader.Find("Standard"));
-                    previewMat.color = areaPreviewColor;
-                    renderer.material = previewMat;
-                }
-                
-                previewObjects.Add(preview);
-            }
-        }
-        
-        showingPreview = true;
-    }
-    
-    /// <summary>
-    /// Hides area preview
-    /// </summary>
-    public void HideAreaPreview()
-    {
-        foreach (GameObject preview in previewObjects)
-        {
-            if (preview != null)
-            {
-                Destroy(preview);
-            }
-        }
-        previewObjects.Clear();
-        showingPreview = false;
-    }
-    
-    #endregion
-    
-    #region Marker Visual Destruction
-    
-    /// <summary>
-    /// Destroys a marker visual and cleans up associated highlight
-    /// </summary>
-    public void DestroyMarkerVisual(GameObject visual)
-    {
-        if (visual == null) return;
-        
-        // Extract position from the visual object name
-        string[] nameParts = visual.name.Split('_');
-        if (nameParts.Length >= 3)
-        {
-            if (int.TryParse(nameParts[nameParts.Length - 2], out int x) &&
-                int.TryParse(nameParts[nameParts.Length - 1], out int y))
-            {
-                ClearTileHighlight(new Vector2Int(x, y));
-            }
-        }
 
-        Destroy(visual);
-    }
-    
-    #endregion
-    
-    #region Trigger Effects
-    
     /// <summary>
-    /// Shows visual effect when a marker is triggered
+    /// Gets count of active countdown texts
     /// </summary>
-    public IEnumerator ShowMarkerTriggerEffect(Vector2Int position)
+    public int GetActiveCountdownTextCount() => markerCountdownTexts.Count;
+
+    #endregion
+
+    #region Effects
+
+    /// <summary>
+    /// Shows a trigger effect at the specified position
+    /// </summary>
+    public void ShowMarkerTriggerEffect(Vector2Int position)
     {
-        Tile tile = gridManager?.GetTileAt(position.x, position.y);
-        if (tile == null) yield break;
+        StartCoroutine(MarkerTriggerEffectCoroutine(position));
+    }
+
+    private IEnumerator MarkerTriggerEffectCoroutine(Vector2Int position)
+    {
+        Vector3 worldPos = gridManager.GridToWorldPosition(position.x, position.y, 0.1f);
 
         GameObject effect = GameObject.CreatePrimitive(PrimitiveType.Sphere);
         effect.name = $"TriggerEffect_{position.x}_{position.y}";
-        effect.transform.position = gridManager.GridToWorldPosition(position.x, position.y, 0.5f);
-        effect.transform.localScale = Vector3.one * 0.5f;
+        effect.transform.position = worldPos;
+        effect.transform.localScale = Vector3.zero;
 
         Destroy(effect.GetComponent<Collider>());
-
         Renderer renderer = effect.GetComponent<Renderer>();
-        if (renderer != null)
-        {
-            Material effectMat = new Material(Shader.Find("Standard"));
-            effectMat.color = new Color(1f, 0.8f, 0.2f, 0.8f);
-            effectMat.EnableKeyword("_EMISSION");
-            effectMat.SetColor("_EmissionColor", Color.yellow * 2f);
-            renderer.material = effectMat;
-        }
 
-        // Expand and fade out
+        float duration = 0.5f;
         float elapsed = 0f;
-        Vector3 startScale = effect.transform.localScale;
-        Vector3 endScale = startScale * 2f;
 
-        while (elapsed < flashDuration)
+        while (elapsed < duration)
         {
             elapsed += Time.deltaTime;
-            float t = elapsed / flashDuration;
-            
-            effect.transform.localScale = Vector3.Lerp(startScale, endScale, t);
-            
-            if (renderer != null)
-            {
-                Color c = renderer.material.color;
-                c.a = Mathf.Lerp(0.8f, 0f, t);
-                renderer.material.color = c;
-            }
-            
+            float t = elapsed / duration;
+
+            effect.transform.localScale = Vector3.Lerp(Vector3.zero, Vector3.one * 2f, t);
+
+            Color color = Color.white;
+            color.a = 1f - t;
+            renderer.material.color = color;
+
             yield return null;
         }
 
         Destroy(effect);
     }
-    
+
     /// <summary>
-    /// Shows visual effect for area capture
+    /// Clears area expansion highlights after delay
     /// </summary>
-    public IEnumerator ShowAreaCaptureEffect(List<Vector2Int> positions, Color effectColor)
+    public void ClearAreaExpansionAfterDelay(List<Vector2Int> positions, Vector2Int centerPos, float delay)
     {
-        List<GameObject> effects = new List<GameObject>();
-        
+        StartCoroutine(ClearAreaExpansionCoroutine(positions, centerPos, delay));
+    }
+
+    private IEnumerator ClearAreaExpansionCoroutine(List<Vector2Int> positions, Vector2Int centerPos, float delay)
+    {
+        yield return new WaitForSeconds(delay);
+
         foreach (var pos in positions)
         {
-            GameObject effect = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            effect.name = $"AreaEffect_{pos.x}_{pos.y}";
-            effect.transform.position = gridManager.GridToWorldPosition(pos.x, pos.y, 0.5f);
-            effect.transform.localScale = Vector3.one * 0.8f;
-
-            Destroy(effect.GetComponent<Collider>());
-
-            Renderer renderer = effect.GetComponent<Renderer>();
-            if (renderer != null)
-            {
-                Material effectMat = new Material(Shader.Find("Standard"));
-                effectMat.color = effectColor;
-                effectMat.EnableKeyword("_EMISSION");
-                effectMat.SetColor("_EmissionColor", effectColor * 1.5f);
-                renderer.material = effectMat;
-            }
-            
-            effects.Add(effect);
-        }
-
-        // Animate all effects
-        float elapsed = 0f;
-        while (elapsed < flashDuration)
-        {
-            elapsed += Time.deltaTime;
-            float t = elapsed / flashDuration;
-            
-            foreach (var effect in effects)
-            {
-                if (effect == null) continue;
-                
-                effect.transform.localScale = Vector3.Lerp(Vector3.one * 0.8f, Vector3.one * 1.2f, t);
-                
-                Renderer renderer = effect.GetComponent<Renderer>();
-                if (renderer != null)
-                {
-                    Color c = renderer.material.color;
-                    c.a = Mathf.Lerp(0.8f, 0f, t);
-                    renderer.material.color = c;
-                }
-            }
-            
-            yield return null;
-        }
-
-        foreach (var effect in effects)
-        {
-            if (effect != null)
-            {
-                Destroy(effect);
-            }
+            ClearTileHighlight(pos);
         }
     }
-    
+
     #endregion
-    
-    #region Utility Methods
-    
-    /// <summary>
-    /// Gets color for face painting based on cube type
-    /// </summary>
-    public Color GetFaceColorForType(CubeType type)
+
+    #region Debug
+
+    private void DebugLog(string methodName, string message)
     {
-        return type switch
+        if (EnableDebugLogs)
+            Debug.Log($"[MarkerVisualManager] {methodName}: {message}");
+    }
+
+    private void DebugWarning(string methodName, string message)
+    {
+        if (EnableDebugLogs)
+            Debug.LogWarning($"[MarkerVisualManager] {methodName}: {message}");
+    }
+
+    private void DebugError(string methodName, string message)
+    {
+        Debug.LogError($"[MarkerVisualManager] {methodName}: {message}");
+    }
+
+    public string GetDebugStatus()
+    {
+        return $"MarkerVisualManager: {temporaryMarkerOverlays.Count} highlights, {markerCountdownTexts.Count} countdown texts";
+    }
+
+    public Dictionary<string, object> GetDebugData()
+    {
+        return new Dictionary<string, object>
         {
-            CubeType.Unit => Color.gray,
-            CubeType.Matrix => Color.cyan,
-            CubeType.Recursion => new Color(0.8f, 0.5f, 0.2f),
-            CubeType.Infinity => Color.black,
-            _ => Color.white
+            ["Active Highlights"] = temporaryMarkerOverlays.Count,
+            ["Active Countdown Texts"] = markerCountdownTexts.Count,
+            ["GridManager Set"] = gridManager != null
         };
     }
-    
+
+    public void ResetToDefaults()
+    {
+        ClearAllTileHighlights();
+        ClearAllMarkerCountdownTexts();
+    }
+
+    public void LoadConfiguration(string configName)
+    {
+        DebugLog("LoadConfiguration", $"Loading configuration: {configName} (not yet implemented)");
+    }
+
+    public void SaveConfiguration(string configName)
+    {
+        DebugLog("SaveConfiguration", $"Saving configuration: {configName} (not yet implemented)");
+    }
+
     #endregion
 }
-
