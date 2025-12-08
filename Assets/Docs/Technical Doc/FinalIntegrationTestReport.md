@@ -7,8 +7,8 @@ All terminology updates, four-tier marker system implementation, and corruption 
 
 ### ✅ Core System Validation
 1. **Four-Tier Marker System**: ✅ IMPLEMENTED
-   - Light Markers (formerly Individual): Fully functional
-   - Heavy Markers (NEW): Implemented for recursion cube interaction
+   - Unit Markers (formerly Individual): Fully functional
+   - Recursion Markers (NEW): Implemented for recursion cube interaction
    - Prime Markers (formerly Area): Updated with 3x3 coverage
    - Cube Markers: Generated from prime cube captures
 
@@ -35,21 +35,21 @@ All terminology updates, four-tier marker system implementation, and corruption 
 ```
 ✅ MarkerType enum: Light, Heavy, Prime, Cube defined
 ✅ CubeMarkerType enum: Light, Heavy, Prime, Cube defined
-✅ Light marker placement and triggering: PASS
-✅ Heavy marker placement and triggering: PASS
+✅ Unit Marker placement and triggering: PASS
+✅ Recursion Marker placement and triggering: PASS
 ✅ Prime marker area coverage (3x3): PASS
 ✅ Cube marker generation from prime captures: PASS
 ✅ UI integration with four marker types: PASS
 ✅ Debug system updated for all marker types: PASS
 ```
 
-### Heavy Marker + Recursion Cube Integration
+### Recursion Marker + Recursion Cube Integration
 ```
-✅ Heavy marker visual distinction: PASS
+✅ Recursion Marker visual distinction: PASS
 ✅ Recursion cube damage system: PASS  
-✅ Heavy marker effectiveness on recursion cubes: PASS
-✅ Heavy marker cooldown system: PASS
-✅ Heavy marker charge regeneration: PASS
+✅ Recursion Marker effectiveness on recursion cubes: PASS
+✅ Recursion Marker cooldown system: PASS
+✅ Recursion Marker charge regeneration: PASS
 ```
 
 ### Corruption Mechanics Testing
@@ -79,14 +79,14 @@ All terminology updates, four-tier marker system implementation, and corruption 
 
 ### PlayerActionManager Integration
 - ✅ Four-tier marker management fully implemented
-- ✅ Heavy marker settings and cooldown system working
+- ✅ Recursion Marker settings and cooldown system working
 - ✅ UI integration updated for all marker types
 - ✅ Debug interface updated with new terminology
 - ✅ All backward compatibility aliases functional
 
 ### PlayerMarkerSystem Integration  
 - ✅ Four marker type queues operational
-- ✅ Heavy marker visual system implemented
+- ✅ Recursion Marker visual system implemented
 - ✅ Cube marker generation from prime captures working
 - ✅ Area coverage calculations updated for prime markers
 - ✅ All backward compatibility accessors functional
@@ -107,7 +107,7 @@ All terminology updates, four-tier marker system implementation, and corruption 
 
 ### UI Integration
 - ✅ Four-tier marker charge display working
-- ✅ Heavy marker UI elements implemented
+- ✅ Recursion Marker UI elements implemented
 - ✅ Marker type visual distinctions implemented
 - ✅ Cooldown displays for all marker types working
 
@@ -122,7 +122,7 @@ All terminology updates, four-tier marker system implementation, and corruption 
 ### ✅ Updated Documentation Files
 1. **3_GameplayMechanics.md**: 
    - Four-tier marker system documented
-   - Heavy marker controls added (V key placement, Y key trigger)
+   - Recursion Marker controls added (V key placement, Y key trigger)
    - Power up cube marker control added (E key)
    - Cube terminology updated throughout
    - Input control table updated with new mappings
@@ -159,7 +159,7 @@ All terminology updates, four-tier marker system implementation, and corruption 
 
 ### ✅ No Performance Degradation
 - Four-tier marker system uses existing queue structures
-- Heavy marker functionality reuses light marker code paths
+- Recursion Marker functionality reuses Unit Marker code paths
 - Face painting system integrated with existing cube state management
 - Corruption mechanics use existing tile state systems
 - All new features built on established architectural patterns
@@ -184,7 +184,7 @@ All terminology updates, four-tier marker system implementation, and corruption 
 ### Phase 2: Monitor and Validate (NEXT)
 - Monitor for any unexpected obsolete method usage
 - Validate all new features in production environment
-- Collect user feedback on heavy marker functionality
+- Collect user feedback on Recursion Marker functionality
 - Verify corruption mechanics balance
 
 ### Phase 3: Cleanup Obsolete Code (FUTURE)
@@ -197,7 +197,7 @@ All terminology updates, four-tier marker system implementation, and corruption 
 
 ### All Requirements Met:
 1. ✅ Four-tier marker system (Light/Heavy/Prime/Cube) fully operational
-2. ✅ Heavy marker functionality specifically designed for recursion cubes
+2. ✅ Recursion Marker functionality specifically designed for recursion cubes
 3. ✅ Prime marker area coverage working with 3x3 grid
 4. ✅ Cube marker generation from prime cube captures functional
 5. ✅ New cube terminology (Unit/Infinity/Prime/Recursion) implemented

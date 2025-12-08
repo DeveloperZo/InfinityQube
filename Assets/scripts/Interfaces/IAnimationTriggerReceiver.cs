@@ -1,4 +1,5 @@
 using UnityEngine;
+using static Enumerations;
 
 /// <summary>
 /// Interface for receiving animation trigger events from the animation trigger system.
@@ -58,7 +59,7 @@ public struct AnimationTriggerContext
     /// <summary>
     /// Specific marker mode associated with the trigger (if applicable)
     /// </summary>
-    public Enumerations.MarkerMode markerMode;
+    public MarkerMode markerMode;
     
     /// <summary>
     /// Additional string data for context-specific information
@@ -84,7 +85,7 @@ public struct AnimationTriggerContext
             secondaryPosition = Vector3.zero,
             intensity = Mathf.Clamp01(intensity),
             duration = 1.0f,
-            markerMode = Enumerations.MarkerMode.Light,
+            markerMode = MarkerMode.Unit,
             additionalData = string.Empty,
             dataReference = null
         };
@@ -98,7 +99,7 @@ public struct AnimationTriggerContext
     /// <param name="intensity">Intensity of the trigger</param>
     /// <param name="duration">Suggested duration for animations</param>
     /// <returns>Animation trigger context for marker actions</returns>
-    public static AnimationTriggerContext CreateMarkerContext(Vector3 position, Enumerations.MarkerMode mode, float intensity = 1.0f, float duration = 1.0f)
+    public static AnimationTriggerContext CreateMarkerContext(Vector3 position, MarkerMode mode, float intensity = 1.0f, float duration = 1.0f)
     {
         return new AnimationTriggerContext
         {
@@ -120,7 +121,7 @@ public struct AnimationTriggerContext
     /// <param name="toMode">New marker mode</param>
     /// <param name="intensity">Intensity of the transition</param>
     /// <returns>Animation trigger context for mode switches</returns>
-    public static AnimationTriggerContext CreateModeSwitchContext(Vector3 playerPosition, Enumerations.MarkerMode fromMode, Enumerations.MarkerMode toMode, float intensity = 1.0f)
+    public static AnimationTriggerContext CreateModeSwitchContext(Vector3 playerPosition, MarkerMode fromMode, MarkerMode toMode, float intensity = 1.0f)
     {
         return new AnimationTriggerContext
         {

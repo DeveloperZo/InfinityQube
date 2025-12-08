@@ -22,9 +22,9 @@ alwaysApply: true
   - Implementation-specific terminology
 
 **Examples of Appropriate Content**:
-- "Players press F to place Light markers"
+- "Players press F to place Unit Markers"
 - "Cubes move down the grid toward escape"
-- "Heavy markers are optimized for Recursion cubes"
+- "Recursion Markers are optimized for Recursion cubes"
 
 **Examples of Inappropriate Content**:
 - "PlayerActionManager.HandleUnifiedPlaceInput() places markers"

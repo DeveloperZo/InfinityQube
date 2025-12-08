@@ -50,8 +50,8 @@ Assets/scripts/Managers/PlayerMarkerSystem.cs
 3. **Remove Obsolete Properties**:
    ```csharp
    // REMOVE after validation
-   [System.Obsolete("Use maxLightMarkers instead")]
-   public int maxIndividualMarkers => maxLightMarkers;
+   [System.Obsolete("Use maxUnitMarkers instead")]
+   public int maxIndividualMarkers => maxUnitMarkers;
    ```
 
 4. **Remove Obsolete Enum Aliases**:
@@ -82,7 +82,7 @@ Assets/scripts/Managers/PlayerMarkerSystem.cs
 #### Systems Successfully Integrated:
 ✅ **Four-Tier Marker System**: Light/Heavy/Prime/Cube markers fully operational  
 ✅ **New Cube Terminology**: Unit/Infinity/Prime/Recursion implemented throughout  
-✅ **Heavy Marker + Recursion Cube Integration**: Enhanced marker functionality working  
+✅ **Recursion Marker + Recursion Cube Integration**: Enhanced marker functionality working  
 ✅ **Corruption Mechanics**: Infinity cube face painting and tile corruption operational  
 ✅ **Backward Compatibility**: All obsolete aliases functional with zero breaking changes  
 ✅ **UI Integration**: Four-tier marker display and controls implemented  
@@ -92,7 +92,7 @@ Assets/scripts/Managers/PlayerMarkerSystem.cs
 - **Zero Breaking Changes**: All existing functionality preserved
 - **Performance Maintained**: No degradation in system performance
 - **Full Feature Parity**: All legacy features available through new systems
-- **Enhanced Functionality**: Heavy markers provide new strategic options
+- **Enhanced Functionality**: Recursion Markers provide new strategic options
 - **Robust Testing**: Comprehensive test suite created for ongoing validation
 
 #### Files Modified During Integration:
@@ -169,7 +169,7 @@ private int corruptionDuration = 5;
 
 ### 5.3 Analytics Integration
 **Priority**: Low  
-**Description**: Add telemetry for heavy marker usage and corruption mechanics  
+**Description**: Add telemetry for Recursion Marker usage and corruption mechanics  
 **Benefits**: Data-driven balancing, player behavior insights
 
 ---
@@ -196,123 +196,144 @@ private int corruptionDuration = 5;
 
 ### 7.2 User Documentation  
 **Status**: ✅ Core mechanics updated  
-**Remaining**: Create user guide for heavy marker strategies
+**Remaining**: Create user guide for Recursion Marker strategies
 
 
 ---
 
-## 8. File Size Violations (Medium Priority)
+## 8. File Size Violations (CRITICAL Priority)
 
-### 8.1 Large File Refactoring Opportunities
+> **Updated November 28, 2025**: Comprehensive audit reveals 10 files exceeding limits.
 
-**Issue**: Two core files have grown beyond maintainable size limits, indicating opportunities for subsystem extraction.
+### 8.1 Critical Violations Summary
 
-#### 8.1.1 Tile.cs - Face Painting Subsystem Extraction
+**Project Standards**:
+- Core Components: 750 lines max
+- Manager Classes: 600 lines max
+- Utility Classes: 300 lines max
 
-**Current Status**: 1,114 lines (36,109 bytes)  
-**Recommended Threshold**: ~400 lines  
-**Priority**: Medium  
-**Extraction Opportunity**: Face Painting and Corruption subsystems
+| File | Current | Limit | Over By | Priority |
+|------|---------|-------|---------|----------|
+| WaveManager.cs | 1949 | 600 | **225%** | 🔴 CRITICAL |
+| PlayerActionManager.cs | 1655 | 600 | **176%** | 🔴 CRITICAL |
+| CubeManager.cs | 1378 | 600 | **130%** | 🔴 CRITICAL |
+| PlayerStatisticsManager.cs | 1347 | 600 | **125%** | 🔴 CRITICAL |
+| PlayerMarkerSystem.cs | 1347 | 600 | **125%** | 🔴 CRITICAL |
+| GridManager.cs | 1276 | 600 | **113%** | 🔴 CRITICAL |
+| IQWaveGenerator.cs | 1043 | 750 | **39%** | 🟡 HIGH |
+| TutorialMessageManager.cs | 997 | 600 | **66%** | 🟡 HIGH |
+| FacePaintingManager.cs | 861 | 600 | **44%** | 🟡 MEDIUM |
+| MessageProgressTracker.cs | 775 | 750 | **3%** | 🟢 LOW |
 
-**Potential Extraction**:
-```csharp
-// New class: TileFacePaintingController.cs (~300 lines)
-public class TileFacePaintingController
-{
-    // Extract face painting logic:
-    // - SetupFacePainting(), TryPaintCube(), PaintCube()
-    // - Face painting visual effects and state management
-    // - Paint duration tracking and cleanup
-    // - Integration with FacePaintingManager
-}
+**Note**: Tile.cs (602 lines) was previously flagged but has been successfully refactored into component system (TileVisuals, TileMarker, TileCorruption, TileFacePainting).
 
-// New class: TileCorruptionController.cs (~200 lines)  
-public class TileCorruptionController
-{
-    // Extract corruption logic:
-    // - CorruptTile(), CleanseCorruption(), ProcessCorruptionDecay()
-    // - Corruption visual effects and countdown system
-    // - Corruption interaction tracking
-    // - Corruption state persistence
-}
+### 8.2 Extraction Plans
+
+#### 8.2.1 WaveManager.cs (1949 → 600 target)
+
+**Current Responsibilities**:
+- Wave spawning and configuration
+- Paired wave system / marker inheritance
+- Cube management and tracking
+- Statistics and completion tracking
+- UI message display
+- Debug interface
+
+**Proposed Extraction**:
+```
+WaveManager.cs (600 lines - coordination)
+├── WaveSpawnSystem.cs (~400 lines) - Cube spawning logic
+├── WavePairingSystem.cs (~300 lines) - Marker inheritance
+├── WaveStatistics.cs (~200 lines) - Tracking & stats
+└── WaveUIController.cs (~150 lines) - Message display
 ```
 
-**Benefits**:
-- Cleaner separation of concerns
-- Easier testing of face painting mechanics
-- Reduced cognitive load when maintaining core tile functionality
-- Better reusability of painting logic across different tile types
+**Complexity**: 6 points  
+**Risk**: Medium (core system)
 
-**Estimated Effort**: 2-3 days  
-**Risk Level**: Low (well-defined subsystem boundaries)
+#### 8.2.2 PlayerActionManager.cs (1655 → 600 target)
 
-#### 8.1.2 GridManager.cs - Object Pooling Subsystem Extraction
+**Current Responsibilities**:
+- Light/Heavy/Prime/Cube marker placement
+- Marker triggering and detonation
+- Charge management and regeneration
+- UI synchronization
+- Debug interface
 
-**Current Status**: 1,279 lines (35,242 bytes)  
-**Recommended Threshold**: ~500 lines  
-**Priority**: Medium  
-**Extraction Opportunity**: Object Pooling and Batch Operations subsystems
-
-**Potential Extraction**:
-```csharp
-// New class: GridObjectPool.cs (~150 lines)
-public class GridObjectPool
-{
-    // Extract object pooling logic:
-    // - InitializeTilePool(), GetPooledTile(), ReturnTileToPool()
-    // - Pool management and cleanup
-    // - Pool size optimization and monitoring
-}
-
-// New class: GridBatchOperations.cs (~250 lines)
-public class GridBatchOperations  
-{
-    // Extract batch operations:
-    // - BatchSetTileStates(), BatchSetMarkers(), BatchTransformTiles()
-    // - Pattern application and preset management
-    // - Bulk tile state operations and optimization
-}
+**Proposed Extraction**:
+```
+PlayerActionManager.cs (400 lines - coordination)
+├── MarkerPlacementController.cs (~400 lines) - Placement logic
+├── MarkerTriggerController.cs (~300 lines) - Trigger/detonation
+└── MarkerChargeSystem.cs (~200 lines) - Charges & cooldowns
 ```
 
-**Benefits**:
-- Simplified core GridManager responsibilities
-- Reusable object pooling for other systems
-- More focused testing for batch operations
-- Performance optimizations can be isolated
+**Complexity**: 5 points  
+**Risk**: Medium (core system)
 
-**Estimated Effort**: 3-4 days  
-**Risk Level**: Low-Medium (requires careful dependency management)
+#### 8.2.3 CubeManager.cs (1378 → 600 target)
 
-### 8.2 Implementation Strategy
+**Proposed Extraction**:
+```
+CubeManager.cs (400 lines - state management)
+├── CubeMovementController.cs (~300 lines) - Movement/animation
+├── CubeFacePaintingController.cs (~250 lines) - Face status
+└── CubeCollisionHandler.cs (~200 lines) - Collision logic
+```
 
-**Phase 1: Analysis and Planning**
-- Create detailed dependency mapping
-- Identify integration points and interfaces
-- Plan backward compatibility approach
+**Complexity**: 4 points  
+**Risk**: Low-Medium
 
-**Phase 2: Incremental Extraction**
-- Extract one subsystem at a time
-- Maintain all existing functionality during transition
-- Comprehensive testing at each step
+#### 8.2.4 GridManager.cs (1276 → 600 target)
 
-**Phase 3: Integration and Optimization**
-- Optimize new subsystem interfaces
-- Remove redundant code from original files
-- Performance validation and tuning
+**Proposed Extraction**:
+```
+GridManager.cs (600 lines - core grid)
+├── GridObjectPool.cs (~200 lines) - Tile pooling
+└── GridBatchOperations.cs (~300 lines) - Bulk operations
+```
 
-### 8.3 Success Metrics
+**Complexity**: 4 points  
+**Risk**: Low-Medium
 
-**Target File Sizes**:
-- Tile.cs: Reduce to ~600 lines (45% reduction)
-- GridManager.cs: Reduce to ~800 lines (37% reduction)
+#### 8.2.5 Other Files
 
-**Quality Improvements**:
-- Improved maintainability scores
-- Reduced cognitive complexity
-- Better test coverage for extracted subsystems
-- Cleaner architecture with single responsibility principle
+| File | Target | Extraction Notes |
+|------|--------|------------------|
+| PlayerStatisticsManager.cs | 600 | Split tracking vs persistence |
+| PlayerMarkerSystem.cs | 600 | Already well-structured, needs review |
+| IQWaveGenerator.cs | 750 | Reduce redundancy |
+| TutorialMessageManager.cs | 600 | Extract message formatting |
+| FacePaintingManager.cs | 600 | Minor refactoring needed |
 
-**Timeline**: 1-2 weeks for both extractions (can be done independently)
+### 8.3 Implementation Strategy
+
+**Phase 1: WaveManager & PlayerActionManager** (~2 weeks active)
+- These are most over-limit and core to gameplay
+- Extract in parallel if resources allow
+- **Prerequisite**: None (can start immediately)
+
+**Phase 2: CubeManager & GridManager** (~1.5 weeks active)
+- Secondary priority
+- Can proceed after Phase 1 stabilizes
+- **Prerequisite**: Phase 1 complete
+
+**Phase 3: Remaining Files** (~1 week active)
+- Lower risk extractions
+- Can be done incrementally
+- **Prerequisite**: Phase 2 complete (or can be parallelized)
+
+### 8.4 Success Metrics
+
+**Target State**:
+- All managers under 600 lines
+- All core components under 750 lines
+- Clear single responsibility per file
+
+**Quality Indicators**:
+- Improved testability
+- Reduced merge conflicts
+- Faster feature implementation
 
 ---
 
@@ -390,8 +411,9 @@ public class GridBatchOperations
 
 ---
 
-**Last Updated**: July 13, 2025 - Recent implementations documented  
-**Next Review**: July 30, 2025  
+**Last Updated**: November 28, 2025 - Comprehensive file size audit completed  
+**Next Review**: After file size refactoring begins  
+**Related Documents**: [Architectural Critiques](ArchitecturalCritiques.md), [Development Velocity](DevelopmentVelocity.md)  
 **Maintained By**: Development Team
 
 ---
@@ -400,12 +422,12 @@ public class GridBatchOperations
 
 ### Test Categories Completed:
 1. ✅ Four-tier marker system terminology validation
-2. ✅ Light marker functionality (was individual) 
-3. ✅ Heavy marker functionality (NEW for recursion cubes)
+2. ✅ Unit Marker functionality (was individual) 
+3. ✅ Recursion Marker functionality (NEW for recursion cubes)
 4. ✅ Prime marker area coverage (was area)
 5. ✅ Cube marker generation from prime captures
 6. ✅ New cube terminology integration
-7. ✅ Heavy marker + recursion cube interaction
+7. ✅ Recursion Marker + recursion cube interaction
 8. ✅ Corruption mechanics validation
 9. ✅ Face painting integration testing
 10. ✅ Backward compatibility verification
@@ -420,9 +442,10 @@ public class GridBatchOperations
 - **Documentation**: Updated and comprehensive
 
 ---
-*Last Updated: July 13, 2025*  
-*Next Milestone Review: July 30, 2025*  
-*Critical Path Status: ON TRACK*  
-*Obsolete Code Status: AWAITING CLEANUP*
+*Last Updated: November 28, 2025*  
+*Next Review: After file size refactoring begins*  
+*Critical Path Status: IN PROGRESS - Post-hiatus resumption*  
+*File Size Status: 10 VIOLATIONS - Requires attention (~4-5 weeks effort)*  
+*Related: See [Architectural Critiques](ArchitecturalCritiques.md) for detailed analysis*
 
 ## (END OF DOCUMENT)

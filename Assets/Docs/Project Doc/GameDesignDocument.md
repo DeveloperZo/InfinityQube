@@ -108,10 +108,10 @@ Enhanced with temporal awareness:
 #### **Cube System**
 | Type | Properties | Inheritance Behavior |
 |------|------------|---------------------|
-| **Unit** | Basic, capturable | Standard spawn from Light markers |
+| **Unit** | Basic, capturable | Standard spawn from Unit Markers |
 | **Prime** | Generates cube markers | Valuable spawn from Prime markers |
 | **Infinity** | Uncapturable, pauseable | Dangerous spawn from Infinity markers |
-| **Recursion** | Multi-hit requirement | Challenging spawn from Heavy markers |
+| **Recursion** | Multi-hit requirement | Challenging spawn from Recursion Markers |
 
 #### **Wave Management (WaveManager)**
 Revolutionary paired wave configuration:
@@ -146,8 +146,8 @@ Efficient storage of paired wave data:
 ```
 Core Controls:
 Movement: WASD/Arrows → Grid navigation
-Light Marker: F → Place (spawns Unit in next wave)
-Heavy Marker: V → Place (spawns Recursion in next wave)
+Unit Marker: F → Place (spawns Unit in next wave)
+Recursion Marker: V → Place (spawns Recursion in next wave)
 Prime Marker: G → Place (spawns Prime in next wave)
 Infinity Marker: [TBD] → Place (spawns Infinity in next wave)
 Cube Marker: Q → Direct destruction (no inheritance)

@@ -561,8 +561,8 @@ public class ContextTriggerManager
 
         if (playerActionManager != null)
         {
-            context.availableMarkers = playerActionManager.GetCurrentLightCharges() + 
-                                     playerActionManager.GetCurrentHeavyCharges() + 
+            context.availableMarkers = playerActionManager.GetCurrentUnitCharges() + 
+                                     playerActionManager.GetCurrentRecursionCharges() + 
                                      playerActionManager.GetCurrentPrimeCharges();
         }
 

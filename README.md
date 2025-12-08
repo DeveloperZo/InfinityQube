@@ -18,8 +18,8 @@
 
 ### Four-Tier Marker System (PRODUCTION COMPLETE - June 23, 2025)
 
-**Light Markers** (F/R): Precision single-tile targeting  
-**Heavy Markers** (V/Y): Enhanced markers optimized for Recursion cubes  
+**Unit Markers** (F/R): Precision single-tile targeting  
+**Recursion Markers** (V/Y): Enhanced markers optimized for Recursion cubes  
 **Prime Markers** (G/T): 3x3 area coverage creating strategic zones  
 **Cube Markers** (Q/E): Generated from Prime cube captures, direct detonation capability
 
@@ -28,7 +28,7 @@
 **Unit Cubes**: Basic rhythm elements, reliable capture targets  
 **Prime Cubes**: High-value targets that generate Cube markers  
 **Infinity Cubes**: Uncapturable threats with face painting mechanics  
-**Recursion Cubes**: Multi-hit durability, optimized for Heavy marker interaction
+**Recursion Cubes**: Multi-hit durability, optimized for Recursion Marker interaction
 
 ### Dynamic Grid System
 - Configurable dimensions per stage (5x20 to 11x50)

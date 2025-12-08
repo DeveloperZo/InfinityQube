@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.Events;
+using static Enumerations;
 
 /// <summary>
 /// Message polish event data for external system integration
@@ -12,12 +13,12 @@ public class MessagePolishEventData
 {
     public string messageId;
     public string messageText;
-    public Enumerations.MessageCategory category;
+    public MessageCategory category;
     public Vector3 worldPosition;
     public bool wasSkipped;
     public float animationDuration;
     
-    public MessagePolishEventData(string id, string text, Enumerations.MessageCategory cat, Vector3 pos = default, bool skipped = false, float duration = 0.3f)
+    public MessagePolishEventData(string id, string text, MessageCategory cat, Vector3 pos = default, bool skipped = false, float duration = 0.3f)
     {
         messageId = id;
         messageText = text;
@@ -34,7 +35,7 @@ public class MessagePolishEventData
 [System.Serializable] public class MessageShowEvent : UnityEvent<MessagePolishEventData> { }
 [System.Serializable] public class MessageHideEvent : UnityEvent<MessagePolishEventData> { }
 [System.Serializable] public class MessageSkipEvent : UnityEvent<MessagePolishEventData> { }
-[System.Serializable] public class MessageAudioEvent : UnityEvent<Enumerations.GameAudioEvent, MessagePolishEventData> { }
+[System.Serializable] public class MessageAudioEvent : UnityEvent<GameAudioEvent, MessagePolishEventData> { }
 [System.Serializable] public class MessageAnimationEvent : UnityEvent<string, MessagePolishEventData> { }
 [System.Serializable] public class MessageVoiceEvent : UnityEvent<string, string, int> { } // text, messageId, priority
 
@@ -178,7 +179,7 @@ public class MessagePolishEvents : MonoBehaviour
     /// <param name="messageText">Message content</param>
     /// <param name="category">Message category for context</param>
     /// <param name="worldPosition">Optional world position for spatial effects</param>
-    public void TriggerMessageShow(string messageId, string messageText, Enumerations.MessageCategory category, Vector3 worldPosition = default)
+    public void TriggerMessageShow(string messageId, string messageText, MessageCategory category, Vector3 worldPosition = default)
     {
         float animDuration = GetAnimationDurationForCategory(category);
         var eventData = new MessagePolishEventData(messageId, messageText, category, worldPosition, false, animDuration);
@@ -200,7 +201,7 @@ public class MessagePolishEvents : MonoBehaviour
         // Trigger audio events
         if (enableAudioEvents)
         {
-            TriggerAudioEvent(Enumerations.GameAudioEvent.MessageShow, eventData);
+            TriggerAudioEvent(GameAudioEvent.MessageShow, eventData);
         }
         
         // Trigger voice events (placeholder)
@@ -223,7 +224,7 @@ public class MessagePolishEvents : MonoBehaviour
         if (!activeMessages.TryGetValue(messageId, out MessagePolishEventData eventData))
         {
             // Create minimal event data if message not tracked
-            eventData = new MessagePolishEventData(messageId, "", Enumerations.MessageCategory.Contextual, default, wasSkipped);
+            eventData = new MessagePolishEventData(messageId, "", MessageCategory.Contextual, default, wasSkipped);
         }
         else
         {
@@ -244,7 +245,7 @@ public class MessagePolishEvents : MonoBehaviour
         // Trigger audio events
         if (enableAudioEvents)
         {
-            Enumerations.GameAudioEvent audioEvent = wasSkipped ? Enumerations.GameAudioEvent.MessageSkip : Enumerations.GameAudioEvent.MessageHide;
+GameAudioEvent audioEvent = wasSkipped ? GameAudioEvent.MessageSkip : GameAudioEvent.MessageHide;
             TriggerAudioEvent(audioEvent, eventData);
         }
         
@@ -292,7 +293,7 @@ public class MessagePolishEvents : MonoBehaviour
     /// </summary>
     /// <param name="audioEvent">Type of audio event to trigger</param>
     /// <param name="eventData">Message event data for context</param>
-    private void TriggerAudioEvent(Enumerations.GameAudioEvent audioEvent, MessagePolishEventData eventData)
+    private void TriggerAudioEvent(GameAudioEvent audioEvent, MessagePolishEventData eventData)
     {
         if (!enableAudioEvents) return;
         
@@ -319,17 +320,17 @@ public class MessagePolishEvents : MonoBehaviour
     /// </summary>
     /// <param name="category">Message category</param>
     /// <returns>Animation duration in seconds</returns>
-    private float GetAnimationDurationForCategory(Enumerations.MessageCategory category)
+    private float GetAnimationDurationForCategory(MessageCategory category)
     {
         switch (category)
         {
-            case Enumerations.MessageCategory.Essential:
+            case MessageCategory.Essential:
                 return essentialMessageDuration;
-            case Enumerations.MessageCategory.Important:
+            case MessageCategory.Important:
                 return defaultAnimationDuration;
-            case Enumerations.MessageCategory.Contextual:
+            case MessageCategory.Contextual:
                 return contextualMessageDuration;
-            case Enumerations.MessageCategory.Debug:
+            case MessageCategory.Debug:
                 return contextualMessageDuration * 0.5f;
             default:
                 return defaultAnimationDuration;
@@ -341,17 +342,17 @@ public class MessagePolishEvents : MonoBehaviour
     /// </summary>
     /// <param name="category">Message category</param>
     /// <returns>Voice priority level</returns>
-    private int GetVoicePriorityForCategory(Enumerations.MessageCategory category)
+    private int GetVoicePriorityForCategory(MessageCategory category)
     {
         switch (category)
         {
-            case Enumerations.MessageCategory.Essential:
+            case MessageCategory.Essential:
                 return 3; // Highest priority
-            case Enumerations.MessageCategory.Important:
+            case MessageCategory.Important:
                 return 2; // High priority
-            case Enumerations.MessageCategory.Contextual:
+            case MessageCategory.Contextual:
                 return 1; // Normal priority
-            case Enumerations.MessageCategory.Debug:
+            case MessageCategory.Debug:
                 return 0; // Low priority
             default:
                 return 1;
@@ -363,17 +364,17 @@ public class MessagePolishEvents : MonoBehaviour
     /// </summary>
     /// <param name="category">Message category</param>
     /// <returns>Audio intensity multiplier</returns>
-    private float GetAudioIntensityForCategory(Enumerations.MessageCategory category)
+    private float GetAudioIntensityForCategory(MessageCategory category)
     {
         switch (category)
         {
-            case Enumerations.MessageCategory.Essential:
+            case MessageCategory.Essential:
                 return 1.2f; // Slightly louder for essential messages
-            case Enumerations.MessageCategory.Important:
+            case MessageCategory.Important:
                 return 1.0f; // Normal volume
-            case Enumerations.MessageCategory.Contextual:
+            case MessageCategory.Contextual:
                 return 0.8f; // Quieter for contextual hints
-            case Enumerations.MessageCategory.Debug:
+            case MessageCategory.Debug:
                 return 0.6f; // Quiet for debug messages
             default:
                 return 1.0f;
@@ -429,7 +430,7 @@ public class MessagePolishEvents : MonoBehaviour
     /// <param name="messageId">Message identifier</param>
     /// <param name="messageText">Message content</param>
     /// <param name="category">Message category</param>
-    public void OnTutorialMessageShow(string messageId, string messageText, Enumerations.MessageCategory category)
+    public void OnTutorialMessageShow(string messageId, string messageText, MessageCategory category)
     {
         TriggerMessageShow(messageId, messageText, category);
     }
@@ -449,7 +450,7 @@ public class MessagePolishEvents : MonoBehaviour
     /// </summary>
     /// <param name="category">Message category</param>
     /// <returns>Recommended duration in seconds</returns>
-    public float GetRecommendedAnimationDuration(Enumerations.MessageCategory category)
+    public float GetRecommendedAnimationDuration(MessageCategory category)
     {
         return GetAnimationDurationForCategory(category);
     }
@@ -506,7 +507,7 @@ public class MessagePolishEvents : MonoBehaviour
     [ContextMenu("Test Show Event")]
     public void TestShowEvent()
     {
-        TriggerMessageShow("test_message", "This is a test message for polish integration.", Enumerations.MessageCategory.Important);
+        TriggerMessageShow("test_message", "This is a test message for polish integration.", MessageCategory.Important);
     }
 
     [ContextMenu("Test Hide Event")]

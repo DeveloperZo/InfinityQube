@@ -50,8 +50,8 @@ MonoBehaviour:
   maxLightMarkerCount: 10
   maxPrimeMarkerCharge: 1
   maxPrimeMarkerCount: 5
-  maxHeavyMarkerCharge: 0
-  maxHeavyMarkerCount: 0
+  maxRecursionMarkerCharge: 0
+  maxRecursionMarkerCount: 0
   waveStartDelay: 0.8
   moveInterval: 2
   fastMoveInterval: 0.1

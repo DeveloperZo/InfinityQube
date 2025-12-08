@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
+using static Enumerations;
 
 /// <summary>
 /// Manager component for the input feedback hook system.
@@ -154,7 +155,7 @@ public class InputFeedbackManager : MonoBehaviour, IManagerDebugInterface
     /// <summary>
     /// Trigger mode switch feedback for all registered hooks
     /// </summary>
-    public void TriggerModeSwitch(Enumerations.MarkerMode previousMode, Enumerations.MarkerMode newMode, Vector2Int playerPosition)
+    public void TriggerModeSwitch(MarkerMode previousMode, MarkerMode newMode, Vector2Int playerPosition)
     {
         if (!enableFeedbackSystem || feedbackHooks.Count == 0)
             return;
@@ -170,7 +171,7 @@ public class InputFeedbackManager : MonoBehaviour, IManagerDebugInterface
     /// <summary>
     /// Trigger marker placement feedback for all registered hooks
     /// </summary>
-    public void TriggerMarkerPlace(Enumerations.MarkerMode markerMode, Vector2Int position, bool wasReplacement)
+    public void TriggerMarkerPlace(MarkerMode markerMode, Vector2Int position, bool wasReplacement)
     {
         if (!enableFeedbackSystem || feedbackHooks.Count == 0)
             return;
@@ -186,7 +187,7 @@ public class InputFeedbackManager : MonoBehaviour, IManagerDebugInterface
     /// <summary>
     /// Trigger marker trigger feedback for all registered hooks
     /// </summary>
-    public void TriggerMarkerTrigger(Enumerations.MarkerMode markerMode, Vector2Int position, int targetCount)
+    public void TriggerMarkerTrigger(MarkerMode markerMode, Vector2Int position, int targetCount)
     {
         if (!enableFeedbackSystem || feedbackHooks.Count == 0)
             return;

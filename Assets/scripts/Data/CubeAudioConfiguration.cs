@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using static Enumerations;
 
 [CreateAssetMenu(fileName = "CubeAudioConfiguration", menuName = "Infinity Qube/Cube Audio Configuration")]
 public class CubeAudioConfiguration : ScriptableObject
@@ -35,7 +36,7 @@ public class CubeAudioConfiguration : ScriptableObject
     /// </summary>
     /// <param name="cubeType">The cube type to get audio data for</param>
     /// <returns>CubeAudioData for the specified type, or null if not found</returns>
-    public CubeAudioData GetAudioData(Enumerations.CubeType cubeType)
+    public CubeAudioData GetAudioData(CubeType cubeType)
     {
         if (audioData == null)
             return null;
@@ -55,7 +56,7 @@ public class CubeAudioConfiguration : ScriptableObject
     /// <param name="cubeType">The cube type</param>
     /// <param name="soundCategory">The sound category</param>
     /// <returns>Random AudioClip, or fallback clip if cube-specific clip not available</returns>
-    public AudioClip GetRandomClip(Enumerations.CubeType cubeType, SoundCategory soundCategory)
+    public AudioClip GetRandomClip(CubeType cubeType, SoundCategory soundCategory)
     {
         // Try to get cube-specific audio first
         CubeAudioData cubeAudio = GetAudioData(cubeType);
@@ -85,7 +86,7 @@ public class CubeAudioConfiguration : ScriptableObject
     /// <param name="cubeType">The cube type</param>
     /// <param name="soundCategory">The sound category</param>
     /// <returns>AudioPlaybackSettings with volume and pitch information</returns>
-    public AudioPlaybackSettings GetPlaybackSettings(Enumerations.CubeType cubeType, SoundCategory soundCategory)
+    public AudioPlaybackSettings GetPlaybackSettings(CubeType cubeType, SoundCategory soundCategory)
     {
         CubeAudioData cubeAudio = GetAudioData(cubeType);
         AudioClipSet clipSet = cubeAudio?.GetClipSet(soundCategory);
@@ -155,8 +156,8 @@ public class CubeAudioConfiguration : ScriptableObject
         List<string> issues = new List<string>();
         
         // Check if we have audio data for all cube types
-        System.Array cubeTypes = System.Enum.GetValues(typeof(Enumerations.CubeType));
-        foreach (Enumerations.CubeType cubeType in cubeTypes)
+        System.Array cubeTypes = System.Enum.GetValues(typeof(CubeType));
+        foreach (CubeType cubeType in cubeTypes)
         {
             CubeAudioData data = GetAudioData(cubeType);
             if (data == null)
@@ -338,10 +339,10 @@ public class CubeAudioConfiguration : ScriptableObject
         List<string> suggestions = new List<string>();
         
         // Check if we have audio data for all cube types
-        System.Array cubeTypes = System.Enum.GetValues(typeof(Enumerations.CubeType));
+        System.Array cubeTypes = System.Enum.GetValues(typeof(CubeType));
         int configuredTypes = 0;
         
-        foreach (Enumerations.CubeType cubeType in cubeTypes)
+        foreach (CubeType cubeType in cubeTypes)
         {
             CubeAudioData data = GetAudioData(cubeType);
             if (data == null)
@@ -457,8 +458,8 @@ public class CubeAudioConfiguration : ScriptableObject
         }
         
         // Ensure we have an entry for each cube type
-        System.Array cubeTypes = System.Enum.GetValues(typeof(Enumerations.CubeType));
-        foreach (Enumerations.CubeType cubeType in cubeTypes)
+        System.Array cubeTypes = System.Enum.GetValues(typeof(CubeType));
+        foreach (CubeType cubeType in cubeTypes)
         {
             bool hasEntry = false;
             foreach (CubeAudioData data in audioData)

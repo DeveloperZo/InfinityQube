@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -21,10 +21,11 @@ public class PlayerMarkerSystem : MonoBehaviour
 
     private Dictionary<Vector2Int, GameObject> temporaryMarkerOverlays = new Dictionary<Vector2Int, GameObject>();
 
-    // Marker Collections - Four-tier system
-    [SerializeField] public Queue<LightMarker> lightMarkers = new Queue<LightMarker>();
-    [SerializeField] public Queue<HeavyMarker> heavyMarkers = new Queue<HeavyMarker>();
-    [SerializeField] public Queue<PrimeMarker> primeMarkers = new Queue<PrimeMarker>();
+    // Marker Collections - Five-tier system (Unit, Prime, Recursion, Infinity, Cube)
+    [SerializeField] public Queue<UnitMarker> UnitMarkers = new Queue<UnitMarker>();
+    [SerializeField] public Queue<RecursionMarker> RecursionMarkers = new Queue<RecursionMarker>();
+    [SerializeField] public Queue<PrimeMarker> PrimeMarkers = new Queue<PrimeMarker>();
+    [SerializeField] public Queue<InfinityMarker> InfinityMarkers = new Queue<InfinityMarker>();
     public List<CubeMarker> cubeMarkers = new List<CubeMarker>();
 
     // Player cube tracking
@@ -40,12 +41,7 @@ public class PlayerMarkerSystem : MonoBehaviour
 
     // Parent reference
     private PlayerActionManager actionManager;
-
-    // Public accessors for new marker system
-    public Queue<LightMarker> LightMarkers => lightMarkers;
-    public Queue<HeavyMarker> HeavyMarkers => heavyMarkers;
-    public Queue<PrimeMarker> PrimeMarkers => primeMarkers;
-    
+   
 
 
     #region Data Structures
@@ -58,11 +54,13 @@ public class PlayerMarkerSystem : MonoBehaviour
         public bool isPoweredUp = false;
         public float creationTime;
         public GameObject visualObject;
+        public int size = 3; // Area size for cube marker (default 3x3, can be 2x2 for some types)
 
-        public CubeMarker(Vector2Int pos, CubeMarkerType markerType)
+        public CubeMarker(Vector2Int pos, CubeMarkerType markerType, int markerSize = 3)
         {
             position = pos;
             type = markerType;
+            size = markerSize;
             creationTime = Time.time;
         }
     }
@@ -72,10 +70,10 @@ public class PlayerMarkerSystem : MonoBehaviour
     /// </summary>
     public enum CubeMarkerType
     {
-        /// <summary>Light cube marker: Basic targeting (formerly Individual)</summary>
-        Light,
-        /// <summary>Heavy cube marker: Enhanced targeting for recursion cubes (NEW)</summary>
-        Heavy,
+        /// <summary>Unit cube marker: Basic targeting (formerly Individual/Light)</summary>
+        Unit,
+        /// <summary>Recursion cube marker: Enhanced targeting for recursion cubes (formerly Heavy)</summary>
+        Recursion,
         /// <summary>Prime cube marker: Area coverage (formerly Area)</summary>
         Prime,
         /// <summary>Cube marker: Standard cube marker type</summary>
@@ -89,12 +87,14 @@ public class PlayerMarkerSystem : MonoBehaviour
     /// </summary>
     public enum MarkerType
     {
-        /// <summary>Light marker: Basic targeting (formerly Individual)</summary>
-        Light,
-        /// <summary>Heavy marker: Enhanced marker for recursion cubes (NEW)</summary>
-        Heavy,
+        /// <summary>Unit marker: Basic targeting (formerly Individual/Light)</summary>
+        Unit,
+        /// <summary>Recursion marker: Enhanced marker for recursion cubes (formerly Heavy)</summary>
+        Recursion,
         /// <summary>Prime marker: Area coverage marker (formerly Area)</summary>
         Prime,
+        /// <summary>Infinity marker: Special marker for infinity cubes</summary>
+        Infinity,
         /// <summary>Cube marker: Generated from prime cube captures</summary>
         CubeMarker,
         
@@ -123,33 +123,33 @@ public class PlayerMarkerSystem : MonoBehaviour
         }
     }
 
-    #region Light Markers
+    #region Unit Markers
 
-    public bool PlaceLightMarker(Vector2Int position)
+    public bool PlaceUnitMarker(Vector2Int position)
     {
-        if (!actionManager.CanPlaceLightMarker() || !IsValidPosition(position))
+        if (!actionManager.CanPlaceUnitMarker() || !IsValidPosition(position))
             return false;
 
         if (!CanPlaceMarkerAt(position))
             return false;
 
-        var marker = new LightMarker(position, Time.time);
-        marker.visualObject = CreateLightMarkerVisual(position);
+        var marker = new UnitMarker(position, Time.time);
+        marker.visualObject = CreateUnitMarkerVisual(position);
 
-        lightMarkers.Enqueue(marker);
-        actionManager.ConsumeLightCharge();
+        UnitMarkers.Enqueue(marker);
+        actionManager.ConsumeUnitCharge();
 
         // Record marker position for paired wave system
-        RecordMarkerForPairedWave(position, Enumerations.MarkerMode.Light);
+        RecordMarkerForPairedWave(position, MarkerMode.Unit);
 
-        Debug.Log($"Light marker placed at ({position.x}, {position.y})");
+        Debug.Log($"Unit marker placed at ({position.x}, {position.y})");
         return true;
     }
 
-    public bool RemoveLightMarkerAt(Vector2Int position)
+    public bool RemoveUnitMarkerAt(Vector2Int position)
     {
-        var markersArray = lightMarkers.ToArray();
-        var newQueue = new Queue<LightMarker>();
+        var markersArray = UnitMarkers.ToArray();
+        var newQueue = new Queue<UnitMarker>();
         bool removed = false;
 
         foreach (var marker in markersArray)
@@ -157,10 +157,10 @@ public class PlayerMarkerSystem : MonoBehaviour
             if (marker.position == position && !removed)
             {
                 DestroyMarkerVisual(marker.visualObject);
-                actionManager.ReleaseLightMarker();
-                actionManager.OnLightMarkerRemoved(); // Decrement placement counter
+                actionManager.ReleaseUnitMarker();
+                actionManager.OnUnitMarkerRemoved(); // Decrement placement counter
                 removed = true;
-                Debug.Log($"Removed light marker at ({position.x}, {position.y})");
+                Debug.Log($"Removed unit marker at ({position.x}, {position.y})");
             }
             else
             {
@@ -168,37 +168,37 @@ public class PlayerMarkerSystem : MonoBehaviour
             }
         }
 
-        lightMarkers = newQueue;
+        UnitMarkers = newQueue;
         return removed;
     }
 
-    public bool HasLightMarkerAt(Vector2Int position)
+    public bool HasUnitMarkerAt(Vector2Int position)
     {
-        return lightMarkers.Any(m => m.position == position);
+        return UnitMarkers.Any(m => m.position == position);
     }
 
-    public bool TriggerNextLightMarker()
+    public bool TriggerNextUnitMarker()
     {
-        if (lightMarkers.Count == 0) return false;
+        if (UnitMarkers.Count == 0) return false;
 
-        var marker = lightMarkers.Dequeue();
-        actionManager.ReleaseLightMarker();
+        var marker = UnitMarkers.Dequeue();
+        actionManager.ReleaseUnitMarker();
 
-        return TriggerLightMarkerAt(marker.position, marker);
+        return TriggerUnitMarkerAt(marker.position, marker);
     }
 
-    private bool TriggerLightMarkerAt(Vector2Int position, LightMarker marker)
+    private bool TriggerUnitMarkerAt(Vector2Int position, UnitMarker marker)
     {
         var cubes = FindAllCubesAt(position);
         bool success = false;
 
         // Trigger audio event for marker triggering
         Vector3 worldPosition = actionManager.GridManager.GridToWorldPosition(position.x, position.y);
-        TriggerMarkerAudioEvent(Enumerations.GameAudioEvent.MarkerTriggered, worldPosition);
+        TriggerMarkerAudioEvent(GameAudioEvent.MarkerTriggered, worldPosition);
 
         foreach (var cube in cubes)
         {
-            success |= ProcessCubeCapture(cube, position, MarkerType.Light, marker);
+            success |= ProcessCubeCapture(cube, position, MarkerType.Unit, marker);
         }
 
         if (success && IsWithinPerfectTimingWindow(marker.placementTime))
@@ -210,7 +210,7 @@ public class PlayerMarkerSystem : MonoBehaviour
         // Notify statistics manager
         if (PlayerStatisticsManager.Instance != null)
         {
-            PlayerStatisticsManager.Instance.OnMarkerTriggered(position, "light", success, cubes.Count);
+            PlayerStatisticsManager.Instance.OnMarkerTriggered(position, "unit", success, cubes.Count);
         }
 
         DestroyMarkerVisual(marker.visualObject);
@@ -223,33 +223,33 @@ public class PlayerMarkerSystem : MonoBehaviour
 
     #endregion
 
-    #region Heavy Markers
+    #region Recursion Markers
 
-    public bool PlaceHeavyMarker(Vector2Int position)
+    public bool PlaceRecursionMarker(Vector2Int position)
     {
-        if (!actionManager.CanPlaceHeavyMarker() || !IsValidPosition(position))
+        if (!actionManager.CanPlaceRecursionMarker() || !IsValidPosition(position))
             return false;
 
         if (!CanPlaceMarkerAt(position))
             return false;
 
-        var marker = new HeavyMarker(position, Time.time);
-        marker.visualObject = CreateHeavyMarkerVisual(position);
+        var marker = new RecursionMarker(position, Time.time);
+        marker.visualObject = CreateRecursionMarkerVisual(position);
 
-        heavyMarkers.Enqueue(marker);
-        actionManager.ConsumeHeavyCharge();
+        RecursionMarkers.Enqueue(marker);
+        actionManager.ConsumeRecursionCharge();
 
         // Record marker position for paired wave system
-        RecordMarkerForPairedWave(position, Enumerations.MarkerMode.Heavy);
+        RecordMarkerForPairedWave(position, MarkerMode.Recursion);
 
-        Debug.Log($"Heavy marker placed at ({position.x}, {position.y})");
+        Debug.Log($"Recursion marker placed at ({position.x}, {position.y})");
         return true;
     }
 
-    public bool RemoveHeavyMarkerAt(Vector2Int position)
+    public bool RemoveRecursionMarkerAt(Vector2Int position)
     {
-        var markersArray = heavyMarkers.ToArray();
-        var newQueue = new Queue<HeavyMarker>();
+        var markersArray = RecursionMarkers.ToArray();
+        var newQueue = new Queue<RecursionMarker>();
         bool removed = false;
 
         foreach (var marker in markersArray)
@@ -257,10 +257,10 @@ public class PlayerMarkerSystem : MonoBehaviour
             if (marker.position == position && !removed)
             {
                 DestroyMarkerVisual(marker.visualObject);
-                actionManager.ReleaseHeavyMarker();
-                actionManager.OnHeavyMarkerRemoved(); // Decrement placement counter
+                actionManager.ReleaseRecursionMarker();
+                actionManager.OnRecursionMarkerRemoved(); // Decrement placement counter
                 removed = true;
-                Debug.Log($"Removed heavy marker at ({position.x}, {position.y})");
+                Debug.Log($"Removed recursion marker at ({position.x}, {position.y})");
             }
             else
             {
@@ -268,38 +268,38 @@ public class PlayerMarkerSystem : MonoBehaviour
             }
         }
 
-        heavyMarkers = newQueue;
+        RecursionMarkers = newQueue;
         return removed;
     }
 
-    public bool HasHeavyMarkerAt(Vector2Int position)
+    public bool HasRecursionMarkerAt(Vector2Int position)
     {
-        return heavyMarkers.Any(m => m.position == position);
+        return RecursionMarkers.Any(m => m.position == position);
     }
 
-    public bool TriggerNextHeavyMarker()
+    public bool TriggerNextRecursionMarker()
     {
-        if (heavyMarkers.Count == 0) return false;
+        if (RecursionMarkers.Count == 0) return false;
 
-        var marker = heavyMarkers.Dequeue();
-        actionManager.ReleaseHeavyMarker();
+        var marker = RecursionMarkers.Dequeue();
+        actionManager.ReleaseRecursionMarker();
 
-        return TriggerHeavyMarkerAt(marker.position, marker);
+        return TriggerRecursionMarkerAt(marker.position, marker);
     }
 
-    private bool TriggerHeavyMarkerAt(Vector2Int position, HeavyMarker marker)
+    private bool TriggerRecursionMarkerAt(Vector2Int position, RecursionMarker marker)
     {
         var cubes = FindAllCubesAt(position);
         bool success = false;
 
         // Trigger audio event for marker triggering
         Vector3 worldPosition = actionManager.GridManager.GridToWorldPosition(position.x, position.y);
-        TriggerMarkerAudioEvent(Enumerations.GameAudioEvent.MarkerTriggered, worldPosition);
+        TriggerMarkerAudioEvent(GameAudioEvent.MarkerTriggered, worldPosition);
 
         foreach (var cube in cubes)
         {
-            // Heavy markers are specifically designed for recursion cubes but work on all cube types
-            success |= ProcessCubeCapture(cube, position, MarkerType.Heavy, marker);
+            // Recursion markers are specifically designed for recursion cubes but work on all cube types
+            success |= ProcessCubeCapture(cube, position, MarkerType.Recursion, marker);
         }
 
         if (success && IsWithinPerfectTimingWindow(marker.placementTime))
@@ -311,7 +311,7 @@ public class PlayerMarkerSystem : MonoBehaviour
         // Notify statistics manager
         if (PlayerStatisticsManager.Instance != null)
         {
-            PlayerStatisticsManager.Instance.OnMarkerTriggered(position, "heavy", success, cubes.Count);
+            PlayerStatisticsManager.Instance.OnMarkerTriggered(position, "recursion", success, cubes.Count);
         }
 
         DestroyMarkerVisual(marker.visualObject);
@@ -337,11 +337,11 @@ public class PlayerMarkerSystem : MonoBehaviour
         GameObject visual = CreatePrimeMarkerVisual(centerPosition);
         newMarker.visualObjects.Add(visual);
 
-        primeMarkers.Enqueue(newMarker);
+        PrimeMarkers.Enqueue(newMarker);
         actionManager.ConsumePrimeCharge();
 
         // Record marker position for paired wave system (record center position)
-        RecordMarkerForPairedWave(centerPosition, Enumerations.MarkerMode.Prime);
+        RecordMarkerForPairedWave(centerPosition, MarkerMode.Prime);
 
         Debug.Log($"Prime marker placed at ({centerPosition.x}, {centerPosition.y})");
         return true;
@@ -349,7 +349,7 @@ public class PlayerMarkerSystem : MonoBehaviour
 
     public bool RemovePrimeMarkerAt(Vector2Int centerPosition)
     {
-        var markersArray = primeMarkers.ToArray();
+        var markersArray = PrimeMarkers.ToArray();
         var newQueue = new Queue<PrimeMarker>();
         bool removed = false;
 
@@ -372,20 +372,20 @@ public class PlayerMarkerSystem : MonoBehaviour
             }
         }
 
-        primeMarkers = newQueue;
+        PrimeMarkers = newQueue;
         return removed;
     }
 
     public bool HasPrimeMarkerAt(Vector2Int centerPosition)
     {
-        return primeMarkers.Any(m => m.centerPosition == centerPosition);
+        return PrimeMarkers.Any(m => m.centerPosition == centerPosition);
     }
 
     public bool TriggerNextPrimeMarker()
     {
-        if (primeMarkers.Count == 0) return false;
+        if (PrimeMarkers.Count == 0) return false;
 
-        var marker = primeMarkers.Dequeue();
+        var marker = PrimeMarkers.Dequeue();
         actionManager.ReleasePrimeMarker();
 
         return TriggerPrimeMarkerAt(marker);
@@ -400,7 +400,7 @@ public class PlayerMarkerSystem : MonoBehaviour
 
         // Trigger audio event for marker triggering
         Vector3 centerWorldPosition = actionManager.GridManager.GridToWorldPosition(marker.centerPosition.x, marker.centerPosition.y);
-        TriggerMarkerAudioEvent(Enumerations.GameAudioEvent.MarkerTriggered, centerWorldPosition);
+        TriggerMarkerAudioEvent(GameAudioEvent.MarkerTriggered, centerWorldPosition);
 
         foreach (var visual in marker.visualObjects)
         {
@@ -448,16 +448,128 @@ public class PlayerMarkerSystem : MonoBehaviour
 
     #endregion
 
+    #region Infinity Markers
+
+    public bool PlaceInfinityMarker(Vector2Int position)
+    {
+        if (!actionManager.CanPlaceInfinityMarker() || !IsValidPosition(position))
+            return false;
+
+        if (!CanPlaceMarkerAt(position))
+            return false;
+
+        var marker = new InfinityMarker(position, Time.time);
+        marker.visualObject = CreateInfinityMarkerVisual(position);
+
+        InfinityMarkers.Enqueue(marker);
+        actionManager.ConsumeInfinityCharge();
+
+        // Record marker position for paired wave system
+        RecordMarkerForPairedWave(position, MarkerMode.Infinity);
+
+        Debug.Log($"Infinity marker placed at ({position.x}, {position.y})");
+        return true;
+    }
+
+    public bool RemoveInfinityMarkerAt(Vector2Int position)
+    {
+        var markersArray = InfinityMarkers.ToArray();
+        var newQueue = new Queue<InfinityMarker>();
+        bool removed = false;
+
+        foreach (var marker in markersArray)
+        {
+            if (marker.position == position && !removed)
+            {
+                DestroyMarkerVisual(marker.visualObject);
+                actionManager.ReleaseInfinityMarker();
+                removed = true;
+                Debug.Log($"Removed infinity marker at ({position.x}, {position.y})");
+            }
+            else
+            {
+                newQueue.Enqueue(marker);
+            }
+        }
+
+        InfinityMarkers = newQueue;
+        return removed;
+    }
+
+    public bool HasInfinityMarkerAt(Vector2Int position)
+    {
+        return InfinityMarkers.Any(m => m.position == position);
+    }
+
+    public bool TriggerNextInfinityMarker()
+    {
+        if (InfinityMarkers.Count == 0) return false;
+
+        var marker = InfinityMarkers.Dequeue();
+        actionManager.ReleaseInfinityMarker();
+
+        return TriggerInfinityMarkerAt(marker.position, marker);
+    }
+
+    private bool TriggerInfinityMarkerAt(Vector2Int position, InfinityMarker marker)
+    {
+        var cubes = FindAllCubesAt(position);
+        bool success = false;
+
+        // Trigger audio event for marker triggering
+        Vector3 worldPosition = actionManager.GridManager.GridToWorldPosition(position.x, position.y);
+        TriggerMarkerAudioEvent(GameAudioEvent.MarkerTriggered, worldPosition);
+
+        foreach (var cube in cubes)
+        {
+            success |= ProcessCubeCapture(cube, position, MarkerType.Infinity, marker);
+        }
+
+        if (success && IsWithinPerfectTimingWindow(marker.placementTime))
+        {
+            perfectTimingHits++;
+            marker.isPerfectTiming = true;
+        }
+
+        // Notify statistics manager
+        if (PlayerStatisticsManager.Instance != null)
+        {
+            PlayerStatisticsManager.Instance.OnMarkerTriggered(position, "infinity", success, cubes.Count);
+        }
+
+        DestroyMarkerVisual(marker.visualObject);
+        StartCoroutine(ShowMarkerTriggerEffect(position));
+
+        Debug.Log($"Infinity marker triggered at ({position.x}, {position.y}) - Perfect: {marker.isPerfectTiming}");
+        return success;
+    }
+
+    private GameObject CreateInfinityMarkerVisual(Vector2Int position)
+    {
+        Tile tile = actionManager.GridManager.GetTileAt(position.x, position.y);
+        if (tile != null)
+        {
+            // Infinity = Deep black (dark charcoal for visibility)
+            SetTileHighlight(tile, new Color(0.15f, 0.15f, 0.18f, 1f), "Infinity");
+        }
+
+        GameObject dummy = new GameObject($"InfinityMarker_{position.x}_{position.y}");
+        dummy.transform.position = actionManager.GridManager.GridToWorldPosition(position.x, position.y, 0f);
+        return dummy;
+    }
+
+    #endregion
+
     #region Cube Markers
 
-    public void CreateCubeMarker(Vector2Int position, CubeMarkerType type = CubeMarkerType.Prime)
+    public void CreateCubeMarker(Vector2Int position, CubeMarkerType type = CubeMarkerType.Prime, int size = 3)
     {
-        var cubeMarker = new CubeMarker(position, type);
+        var cubeMarker = new CubeMarker(position, type, size);
         cubeMarker.visualObject = CreateCubeMarkerVisual(position, type);
 
         cubeMarkers.Add(cubeMarker);
 
-        Debug.Log($"Cube marker ({type}) created at ({position.x}, {position.y})");
+        Debug.Log($"Cube marker ({type}, size {size}x{size}) created at ({position.x}, {position.y})");
     }
 
     public bool TriggerNextCubeMarker()
@@ -476,12 +588,13 @@ public class PlayerMarkerSystem : MonoBehaviour
 
         // Trigger audio event for cube marker triggering
         Vector3 worldPosition = actionManager.GridManager.GridToWorldPosition(cubeMarker.position.x, cubeMarker.position.y);
-        TriggerMarkerAudioEvent(Enumerations.GameAudioEvent.MarkerTriggered, worldPosition, 1.2f);
+        TriggerMarkerAudioEvent(GameAudioEvent.MarkerTriggered, worldPosition, 1.2f);
         
         DestroyMarkerVisual(cubeMarker.visualObject);
 
-        var tempPrimeMarker = new PrimeMarker(cubeMarker.position, 3, Time.time);
-        tempPrimeMarker.affectedPositions = GetAreaPositions(cubeMarker.position, 3);
+        // Use cube marker's size instead of hardcoded 3
+        var tempPrimeMarker = new PrimeMarker(cubeMarker.position, cubeMarker.size, Time.time);
+        tempPrimeMarker.affectedPositions = GetAreaPositions(cubeMarker.position, cubeMarker.size);
         return TriggerPrimeMarkerAt(tempPrimeMarker);
         
     }
@@ -493,7 +606,7 @@ public class PlayerMarkerSystem : MonoBehaviour
 
         foreach (var cube in cubes)
         {
-            success |= ProcessCubeCapture(cube, position, MarkerType.Light);
+            success |= ProcessCubeCapture(cube, position, MarkerType.Unit);
         }
 
         StartCoroutine(ShowMarkerTriggerEffect(position));
@@ -526,7 +639,7 @@ public class PlayerMarkerSystem : MonoBehaviour
     /// <param name="eventType">The type of audio event to trigger</param>
     /// <param name="worldPosition">World position for spatial audio</param>
     /// <param name="intensity">Audio intensity/volume multiplier</param>
-    private void TriggerMarkerAudioEvent(Enumerations.GameAudioEvent eventType, Vector3 worldPosition, float intensity = 1f)
+    private void TriggerMarkerAudioEvent(GameAudioEvent eventType, Vector3 worldPosition, float intensity = 1f)
     {
         if (actionManager != null)
         {
@@ -553,7 +666,7 @@ public class PlayerMarkerSystem : MonoBehaviour
 
     #region Cube Interaction System
 
-    private bool ProcessCubeCapture(CubeManager cube, Vector2Int position, MarkerType markerType, object marker = null)
+    private bool ProcessCubeCapture(CubeManager cube, Vector2Int position, MarkerType markerType, object marker = null, bool isSameTypeMatch = false)
     {
         if (cube == null || cube.isDestroyed) return false;
 
@@ -563,12 +676,35 @@ public class PlayerMarkerSystem : MonoBehaviour
             return false;
         }
 
-        Debug.Log($"Capturing {cube.type} cube at ({position.x}, {position.y}) with {markerType} marker");
+        Debug.Log($"Capturing {cube.type} cube at ({position.x}, {position.y}) with {markerType} marker{(isSameTypeMatch ? " (same-type match!)" : "")}");
 
-        if (cube.type == CubeType.Prime)
+        // Generate cube markers based on collision type
+        if (isSameTypeMatch)
         {
-
-            CreateCubeMarker(position, CubeMarkerType.Prime);
+            // Same-type collision: generate enhanced cube marker
+            switch (cube.type)
+            {
+                case CubeType.Prime:
+                    // Prime+Prime: 3x3 cube marker (enhanced reward)
+                    CreateCubeMarker(position, CubeMarkerType.Prime, 3);
+                    break;
+                case CubeType.Recursion:
+                    // Recursion+Recursion: 2x2 cube marker (reward for matching)
+                    CreateCubeMarker(position, CubeMarkerType.Recursion, 2);
+                    break;
+                case CubeType.Unit:
+                    // Unit+Unit: No cube marker (too common)
+                    break;
+                case CubeType.Infinity:
+                    // Infinity+Infinity: Defer to Task 2 design
+                    // For now, no cube marker
+                    break;
+            }
+        }
+        else if (cube.type == CubeType.Prime)
+        {
+            // Prime cube captured by non-Prime: standard 2x2 cube marker
+            CreateCubeMarker(position, CubeMarkerType.Prime, 2);
         }
 
         // Notify statistics manager about cube capture
@@ -587,10 +723,13 @@ public class PlayerMarkerSystem : MonoBehaviour
 
     private List<CubeManager> FindAllCubesAt(Vector2Int position)
     {
-        var allCubes = FindObjectsOfType<CubeManager>();
         var cubes = new List<CubeManager>();
+        
+        // Use cached WaveManager reference instead of FindObjectsOfType
+        var activeCubes = actionManager?.WaveManager?.activeCubes;
+        if (activeCubes == null) return cubes;
 
-        foreach (var cube in allCubes)
+        foreach (var cube in activeCubes)
         {
             if (cube != null && !cube.isDestroyed && 
                 cube.position.x == position.x && cube.position.y == position.y &&
@@ -621,8 +760,12 @@ public class PlayerMarkerSystem : MonoBehaviour
     #region Player Cube System
 
     /// <summary>
-    /// Spawns player cubes at positions where light markers exist.
-    /// Called during wave step forward movement to spawn Unit cubes from light markers.
+    /// Spawns player cubes from all marker types.
+    /// Called during wave move forward to spawn cubes that move opposite to wave.
+    /// - Unit markers → Unit cubes (single capture)
+    /// - Prime markers → Prime cubes (area capture - 3x3)
+    /// - Recursion markers → Recursion cubes (single capture)
+    /// - Infinity markers → Infinity cubes (single capture)
     /// </summary>
     public void SpawnPlayerCubes()
     {
@@ -635,8 +778,7 @@ public class PlayerMarkerSystem : MonoBehaviour
         var waveManager = actionManager.WaveManager;
         var grid = actionManager.GridManager;
 
-        // Check if cube prefabs are available
-        if (waveManager.cubePrefabs == null || (int)CubeType.Unit >= waveManager.cubePrefabs.Length)
+        if (waveManager.cubePrefabs == null)
         {
             Debug.LogWarning("[PlayerMarkerSystem] Cannot spawn player cubes - cube prefabs not available");
             return;
@@ -644,71 +786,115 @@ public class PlayerMarkerSystem : MonoBehaviour
 
         int spawnedCount = 0;
 
-        // Create a list of markers to process (to avoid modifying queue during iteration)
-        var markersToProcess = new List<LightMarker>();
-        var markersArray = lightMarkers.ToArray();
-        
-        foreach (var marker in markersArray)
+        // Process Unit markers → Unit cubes
+        var UnitMarkersArray = UnitMarkers.ToArray();
+        foreach (var marker in UnitMarkersArray)
         {
             if (marker != null)
             {
-                markersToProcess.Add(marker);
+                DestroyMarkerVisual(marker.visualObject);
+                SpawnPlayerCubeAt(marker.position, CubeType.Unit, false);
+                spawnedCount++;
             }
         }
+        UnitMarkers.Clear();
 
-        // Process each marker: spawn cube and remove marker
-        foreach (var marker in markersToProcess)
+        // Process Prime markers → Prime cubes (area capture)
+        var primeMarkersArray = PrimeMarkers.ToArray();
+        foreach (var marker in primeMarkersArray)
         {
-            Vector2Int position = marker.position;
-
-            // Create cube data for Unit cube
-            var cubeData = new CubeData
+            if (marker != null)
             {
-                type = CubeType.Unit,
-                position = position,
-                level = 1
-            };
-
-            // Calculate world position
-            Vector3 spawnPos = grid.GridToWorldPosition(position.x, position.y, 2f);
-
-            // Instantiate cube prefab
-            GameObject cubeObj = Instantiate(waveManager.cubePrefabs[(int)CubeType.Unit], spawnPos, Quaternion.identity);
-
-            // Get or add CubeManager component
-            var cube = cubeObj.GetComponent<CubeManager>();
-            if (cube == null)
-            {
-                cube = cubeObj.AddComponent<CubeManager>();
+                foreach (var visual in marker.visualObjects)
+                {
+                    DestroyMarkerVisual(visual);
+                }
+                SpawnPlayerCubeAt(marker.centerPosition, CubeType.Prime, true); // isPrime = true for area capture
+                spawnedCount++;
             }
-
-            // Initialize the cube
-            cube.Init(grid, cubeData, 2f);
-
-            // Mark as player cube
-            cube.isPlayerCube = true;
-            cube.usePhysics = false;
-            // Configure physics to allow player to pass through
-            cube.ConfigurePlayerCubePhysics();
-
-            // Make cube translucent
-            MakeCubeTranslucent(cube);
-
-            // Add to player cubes list (not to WaveManager.activeCubes)
-            playerCubes.Add(cube);
-
-            spawnedCount++;
-
-            Debug.Log($"[PlayerMarkerSystem] Spawned player cube at ({position.x}, {position.y}) from light marker");
-
-            // Remove the marker after spawning cube
-            RemoveLightMarkerAt(position);
         }
+        PrimeMarkers.Clear();
+
+        // Process Recursion markers → Recursion cubes
+        var RecursionMarkersArray = RecursionMarkers.ToArray();
+        foreach (var marker in RecursionMarkersArray)
+        {
+            if (marker != null)
+            {
+                DestroyMarkerVisual(marker.visualObject);
+                SpawnPlayerCubeAt(marker.position, CubeType.Recursion, false);
+                spawnedCount++;
+            }
+        }
+        RecursionMarkers.Clear();
+
+        // Process Infinity markers → Infinity cubes
+        var infinityMarkersArray = InfinityMarkers.ToArray();
+        foreach (var marker in infinityMarkersArray)
+        {
+            if (marker != null)
+            {
+                DestroyMarkerVisual(marker.visualObject);
+                SpawnPlayerCubeAt(marker.position, CubeType.Infinity, false);
+                spawnedCount++;
+            }
+        }
+        InfinityMarkers.Clear();
 
         if (spawnedCount > 0)
         {
-            Debug.Log($"[PlayerMarkerSystem] Spawned {spawnedCount} player cubes from light markers");
+            Debug.Log($"[PlayerMarkerSystem] Spawned {spawnedCount} player cubes from markers");
         }
+    }
+
+    /// <summary>
+    /// Spawns a single player cube at the specified position with the corresponding cube type.
+    /// </summary>
+    private void SpawnPlayerCubeAt(Vector2Int position, CubeType cubeType, bool isPrimeCube)
+    {
+        var waveManager = actionManager.WaveManager;
+        var grid = actionManager.GridManager;
+
+        // Use the correct prefab for the cube type
+        int prefabIndex = (int)cubeType;
+        if (prefabIndex >= waveManager.cubePrefabs.Length || waveManager.cubePrefabs[prefabIndex] == null)
+        {
+            // Fallback to Unit prefab if specific type not available
+            prefabIndex = (int)CubeType.Unit;
+            if (prefabIndex >= waveManager.cubePrefabs.Length || waveManager.cubePrefabs[prefabIndex] == null)
+            {
+                Debug.LogWarning($"[PlayerMarkerSystem] No cube prefab available for type {cubeType}");
+                return;
+            }
+            Debug.LogWarning($"[PlayerMarkerSystem] Prefab for {cubeType} not found, using Unit prefab");
+        }
+
+        var cubeData = new CubeData
+        {
+            type = cubeType,
+            position = position,
+            level = 1
+        };
+
+        Vector3 spawnPos = grid.GridToWorldPosition(position.x, position.y, 2f);
+        GameObject cubeObj = Instantiate(waveManager.cubePrefabs[prefabIndex], spawnPos, Quaternion.identity);
+
+        var cube = cubeObj.GetComponent<CubeManager>();
+        if (cube == null)
+        {
+            cube = cubeObj.AddComponent<CubeManager>();
+        }
+
+        cube.Init(grid, cubeData, 2f);
+        cube.isPlayerCube = true;
+        cube.isPrimeCube = isPrimeCube; // For area capture logic
+        cube.usePhysics = false;
+        cube.ConfigurePlayerCubePhysics();
+
+        MakeCubeTranslucent(cube);
+        playerCubes.Add(cube);
+
+        Debug.Log($"[PlayerMarkerSystem] Spawned {cubeType} player cube at ({position.x}, {position.y}){(isPrimeCube ? " (area capture)" : "")}");
     }
 
     /// <summary>
@@ -850,20 +1036,73 @@ public class PlayerMarkerSystem : MonoBehaviour
     /// <summary>
     /// Checks for collision at a specific position and processes it if found.
     /// Returns true if collision was found and processed.
+    /// Prime cubes capture in an area (2x2 normally, 3x3 for Prime+Prime collisions), other cubes capture single target.
     /// </summary>
     private bool ProcessCollisionAtPosition(CubeManager playerCube, Vector2Int position, ref int collisionCount, ref int playerCubeIndex)
     {
-        var cubesAtPosition = FindAllCubesAt(position);
-        
-        foreach (var cube in cubesAtPosition)
+        bool anyCaptured = false;
+
+        if (playerCube.isPrimeCube)
         {
-            if (cube == null || cube.isDestroyed || cube.isPlayerCube) continue;
+            // Prime cube: check if any wave cube at position is Prime type for enhanced 3x3 effect
+            var cubesAtPosition = FindAllCubesAt(position);
+            bool isPrimePrimeCollision = false;
             
-            if (ProcessCubeCapture(cube, position, MarkerType.Light, null))
+            // Check if any cube at position is Prime type (Prime+Prime collision)
+            foreach (var cube in cubesAtPosition)
             {
-                HandlePlayerCubeDestruction(playerCube, ref collisionCount, ref playerCubeIndex);
-                return true;
+                if (cube != null && !cube.isDestroyed && !cube.isPlayerCube && cube.type == CubeType.Prime)
+                {
+                    isPrimePrimeCollision = true;
+                    break;
+                }
             }
+            
+            // Prime+Prime collision: use 3x3 area (enhanced reward)
+            // Normal Prime collision: use 2x2 area (from marker)
+            int areaSize = isPrimePrimeCollision ? 3 : 2;
+            var areaPositions = GetAreaPositions(position, areaSize);
+            
+            foreach (var areaPos in areaPositions)
+            {
+                var cubesAtArea = FindAllCubesAt(areaPos);
+                foreach (var cube in cubesAtArea)
+                {
+                    if (cube == null || cube.isDestroyed || cube.isPlayerCube) continue;
+                    
+                    // Check if this is Prime+Prime collision (player Prime + wave Prime)
+                    bool isPrimeMatch = (playerCube.type == CubeType.Prime && cube.type == CubeType.Prime);
+                    
+                    if (ProcessCubeCapture(cube, areaPos, MarkerType.Prime, null, isPrimeMatch))
+                    {
+                        anyCaptured = true;
+                    }
+                }
+            }
+        }
+        else
+        {
+            // Unit/Recursion/Infinity cube: capture single target
+            var cubesAtPosition = FindAllCubesAt(position);
+            foreach (var cube in cubesAtPosition)
+            {
+                if (cube == null || cube.isDestroyed || cube.isPlayerCube) continue;
+                
+                // Check if this is same-type collision (e.g., Recursion+Recursion)
+                bool isSameTypeMatch = (playerCube.type == cube.type);
+                
+                if (ProcessCubeCapture(cube, position, MarkerType.Unit, null, isSameTypeMatch))
+                {
+                    anyCaptured = true;
+                    break; // Only capture one cube for non-Prime
+                }
+            }
+        }
+
+        if (anyCaptured)
+        {
+            HandlePlayerCubeDestruction(playerCube, ref collisionCount, ref playerCubeIndex);
+            return true;
         }
         
         return false;
@@ -872,27 +1111,78 @@ public class PlayerMarkerSystem : MonoBehaviour
     /// <summary>
     /// Handles collision detection for adjacent cubes moving toward each other.
     /// Verifies the wave cube came from where the player cube is now.
+    /// Prime cubes capture in an area, others capture single target.
     /// </summary>
     private void ProcessPassThroughCollision(CubeManager playerCube, Vector2Int playerPos, Vector2Int playerPreviousPos, 
         ref int collisionCount, ref int playerCubeIndex)
     {
-        var cubesAtPreviousPos = FindAllCubesAt(playerPreviousPos);
-        
-        foreach (var cube in cubesAtPreviousPos)
+        bool anyCaptured = false;
+
+        if (playerCube.isPrimeCube)
         {
-            if (cube == null || cube.isDestroyed || cube.isPlayerCube) continue;
+            // Prime cube: check if colliding with Prime wave cube for enhanced 3x3 effect
+            var cubesAtPreviousPos = FindAllCubesAt(playerPreviousPos);
+            bool isPrimePrimeCollision = false;
             
-            // Verify wave cube came from player's current position (confirms they passed through)
-            // Wave cubes move forward: if at (x, y), came from (x, y+1)
-            Vector2Int waveCubeSourcePos = new Vector2Int(cube.position.x, cube.position.y + 1);
-            if (waveCubeSourcePos == playerPos)
+            // Check if any cube at previous position is Prime type
+            foreach (var cube in cubesAtPreviousPos)
             {
-                if (ProcessCubeCapture(cube, playerPreviousPos, MarkerType.Light, null))
+                if (cube != null && !cube.isDestroyed && !cube.isPlayerCube && cube.type == CubeType.Prime)
                 {
-                    HandlePlayerCubeDestruction(playerCube, ref collisionCount, ref playerCubeIndex);
-                    return;
+                    isPrimePrimeCollision = true;
+                    break;
                 }
             }
+            
+            // Prime+Prime collision: use 3x3 area (enhanced reward)
+            // Normal Prime collision: use 2x2 area (from marker)
+            int areaSize = isPrimePrimeCollision ? 3 : 2;
+            var areaPositions = GetAreaPositions(playerPreviousPos, areaSize);
+            
+            foreach (var areaPos in areaPositions)
+            {
+                var cubesAtArea = FindAllCubesAt(areaPos);
+                foreach (var cube in cubesAtArea)
+                {
+                    if (cube == null || cube.isDestroyed || cube.isPlayerCube) continue;
+                    
+                    // Check if this is Prime+Prime collision
+                    bool isPrimeMatch = (playerCube.type == CubeType.Prime && cube.type == CubeType.Prime);
+                    
+                    if (ProcessCubeCapture(cube, areaPos, MarkerType.Prime, null, isPrimeMatch))
+                    {
+                        anyCaptured = true;
+                    }
+                }
+            }
+        }
+        else
+        {
+            // Single target capture
+            var cubesAtPreviousPos = FindAllCubesAt(playerPreviousPos);
+            foreach (var cube in cubesAtPreviousPos)
+            {
+                if (cube == null || cube.isDestroyed || cube.isPlayerCube) continue;
+                
+                // Verify wave cube came from player's current position (confirms they passed through)
+                Vector2Int waveCubeSourcePos = new Vector2Int(cube.position.x, cube.position.y + 1);
+                if (waveCubeSourcePos == playerPos)
+                {
+                    // Check if this is same-type collision (e.g., Recursion+Recursion)
+                    bool isSameTypeMatch = (playerCube.type == cube.type);
+                    
+                    if (ProcessCubeCapture(cube, playerPreviousPos, MarkerType.Unit, null, isSameTypeMatch))
+                    {
+                        anyCaptured = true;
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (anyCaptured)
+        {
+            HandlePlayerCubeDestruction(playerCube, ref collisionCount, ref playerCubeIndex);
         }
     }
     
@@ -954,7 +1244,7 @@ public class PlayerMarkerSystem : MonoBehaviour
     /// Records marker position for paired wave inheritance system.
     /// Always records markers during any wave - they will be used when the wave is mirrored.
     /// </summary>
-    private void RecordMarkerForPairedWave(Vector2Int position, Enumerations.MarkerMode markerType)
+    private void RecordMarkerForPairedWave(Vector2Int position, MarkerMode markerType)
     {
         if (actionManager?.WaveManager == null) return;
 
@@ -966,40 +1256,41 @@ public class PlayerMarkerSystem : MonoBehaviour
 
     #region Visual Creation Methods
 
-    public GameObject CreateLightMarkerVisual(Vector2Int position)
+    public GameObject CreateUnitMarkerVisual(Vector2Int position)
     {
         Tile tile = actionManager.GridManager.GetTileAt(position.x, position.y);
         if (tile != null)
         {
-            SetTileHighlight(tile, Color.red, "Light");
+            // Unit = Blue-gray (lighter variant for marker visibility)
+            SetTileHighlight(tile, new Color(0.5f, 0.6f, 0.7f, 1f), "Unit");
         }
 
-        GameObject dummy = new GameObject($"LightMarker_{position.x}_{position.y}");
+        GameObject dummy = new GameObject($"UnitMarker_{position.x}_{position.y}");
         dummy.transform.position = actionManager.GridManager.GridToWorldPosition(position.x, position.y, 0f);
         return dummy;
     }
 
-    public GameObject CreateHeavyMarkerVisual(Vector2Int position)
+    public GameObject CreateRecursionMarkerVisual(Vector2Int position)
     {
         Tile tile = actionManager.GridManager.GetTileAt(position.x, position.y);
         if (tile != null)
         {
-            SetTileHighlight(tile, new Color(0.8f, 0.2f, 0.2f, 1f), "Heavy"); // Dark red for heavy markers
+            // Recursion = Deep amber brown (warm brown-orange)
+            SetTileHighlight(tile, new Color(0.8f, 0.5f, 0.2f, 1f), "Recursion");
         }
 
-        GameObject dummy = new GameObject($"HeavyMarker_{position.x}_{position.y}");
+        GameObject dummy = new GameObject($"RecursionMarker_{position.x}_{position.y}");
         dummy.transform.position = actionManager.GridManager.GridToWorldPosition(position.x, position.y, 0f);
         return dummy;
     }
-
-
 
     public GameObject CreatePrimeMarkerVisual(Vector2Int position)
     {
         Tile tile = actionManager.GridManager.GetTileAt(position.x, position.y);
         if (tile != null)
         {
-            SetTileHighlight(tile, Color.green, "Prime");
+            // Prime = Vibrant light blue
+            SetTileHighlight(tile, new Color(0.3f, 0.7f, 1f, 1f), "Prime");
         }
 
         GameObject dummy = new GameObject($"PrimeMarker_{position.x}_{position.y}");
@@ -1016,8 +1307,8 @@ public class PlayerMarkerSystem : MonoBehaviour
         {
             Color highlightColor = type switch
             {
-                CubeMarkerType.Light => Color.magenta,
-                CubeMarkerType.Heavy => new Color(0.7f, 0.2f, 0.7f, 1f), // Dark magenta
+                CubeMarkerType.Unit => Color.magenta,
+                CubeMarkerType.Recursion => new Color(0.7f, 0.2f, 0.7f, 1f), // Dark magenta
                 CubeMarkerType.Prime => Color.cyan,
                 CubeMarkerType.Cube => Color.yellow,
                 _ => Color.white
@@ -1038,8 +1329,8 @@ public class PlayerMarkerSystem : MonoBehaviour
         {
             Color baseColor = type switch
             {
-                CubeMarkerType.Light => Color.magenta,
-                CubeMarkerType.Heavy => new Color(0.7f, 0.2f, 0.7f, 1f),
+                CubeMarkerType.Unit => Color.magenta,
+                CubeMarkerType.Recursion => new Color(0.7f, 0.2f, 0.7f, 1f),
                 CubeMarkerType.Prime => Color.cyan,
                 CubeMarkerType.Cube => Color.yellow,
                 _ => Color.white
@@ -1065,7 +1356,10 @@ public class PlayerMarkerSystem : MonoBehaviour
 
     private bool CanPlaceMarkerAt(Vector2Int position)
     {
-        return !HasLightMarkerAt(position) && !HasHeavyMarkerAt(position) && !HasPrimeMarkerAt(position);
+        return !HasUnitMarkerAt(position) && 
+               !HasRecursionMarkerAt(position) && 
+               !HasPrimeMarkerAt(position) &&
+               !HasInfinityMarkerAt(position);
     }
 
 
@@ -1221,23 +1515,23 @@ public class PlayerMarkerSystem : MonoBehaviour
     {
         HideAreaPreview();
 
-        while (lightMarkers.Count > 0)
+        while (UnitMarkers.Count > 0)
         {
-            var marker = lightMarkers.Dequeue();
+            var marker = UnitMarkers.Dequeue();
             DestroyMarkerVisual(marker.visualObject);
         }
-        // Note: Light marker count managed by PlayerActionManager
+        // Note: Unit marker count managed by PlayerActionManager
 
-        while (heavyMarkers.Count > 0)
+        while (RecursionMarkers.Count > 0)
         {
-            var marker = heavyMarkers.Dequeue();
+            var marker = RecursionMarkers.Dequeue();
             DestroyMarkerVisual(marker.visualObject);
         }
-        // Note: Heavy marker count managed by PlayerActionManager
+        // Note: Recursion marker count managed by PlayerActionManager
 
-        while (primeMarkers.Count > 0)
+        while (PrimeMarkers.Count > 0)
         {
-            var marker = primeMarkers.Dequeue();
+            var marker = PrimeMarkers.Dequeue();
             foreach (var visual in marker.visualObjects)
             {
                 DestroyMarkerVisual(visual);

@@ -29,13 +29,13 @@ This audit identified **9 unique messages** across the wave configuration files,
    - **Analysis**: UI instruction for tutorial navigation
    - **Notes**: Typo: "advanced" should be "advance"
 
-3. **"Press F to place Light Markers\nThese help you track cube movements"**
+3. **"Press F to place Unit Markers\nThese help you track cube movements"**
    - **Category**: Essential
    - **Trigger**: Move step 0
    - **Analysis**: Core mechanic introduction
    - **Gaps**: No context about optimal marker placement
 
-4. **"Press R to trigger Light Markers\nThis captures cubes within marker range!"**
+4. **"Press R to trigger Unit Markers\nThis captures cubes within marker range!"**
    - **Category**: Essential
    - **Trigger**: Move step 1, requires pause
    - **Analysis**: Critical action-consequence instruction
@@ -103,7 +103,7 @@ This audit identified **9 unique messages** across the wave configuration files,
 ### Recommended Message Additions
 
 1. **Resource Management**
-   - "Light markers recharging - position for next wave"
+   - "Unit Markers recharging - position for next wave"
    - "Prime markers available - consider strategic placement"
 
 2. **Tactical Guidance**

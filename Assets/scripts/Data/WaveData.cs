@@ -13,17 +13,17 @@ public class WaveData : ScriptableObject
     public List<CubeData> CubesData = new List<CubeData>();
 
     [Header("Marker Settings")]
-    [Tooltip("0 = Light markers disabled")]
-    public int maxLightMarkerCharge;
-    public int maxLightMarkerCount;
+    [Tooltip("0 = Unit markers disabled")]
+    public int maxUnitMarkerCharge;
+    public int maxUnitMarkerCount;
 
     [Tooltip("0 = Prime markers disabled")]
     public int maxPrimeMarkerCharge;
     public int maxPrimeMarkerCount;
 
-    [Tooltip("0 = Heavy markers disabled")]
-    public int maxHeavyMarkerCharge;
-    public int maxHeavyMarkerCount;
+    [Tooltip("0 = Recursion markers disabled")]
+    public int maxRecursionMarkerCharge;
+    public int maxRecursionMarkerCount;
 
     [Header("Wave Timing")]
     public float waveStartDelay;
@@ -59,23 +59,21 @@ public class WaveData : ScriptableObject
 }
 
 /// <summary>
-/// Defines rules for how markers from the previous wave spawn cubes in the mirrored version of this wave
+/// Defines rules for how markers from the previous wave spawn cubes in the mirrored version of this wave.
+/// Each marker type can be configured to spawn its corresponding cube type.
 /// </summary>
 [System.Serializable]
 public class MarkerSpawnRules
 {
-    [Tooltip("If true, Light markers from the previous wave spawn Unit cubes in the mirrored wave")]
-    public bool lightSpawnsUnit = true;
+    [Tooltip("If true, Unit markers from the previous wave spawn Unit cubes in the mirrored wave")]
+    public bool unitSpawnsUnit = true;
     
-    [Tooltip("If true, Heavy markers from the previous wave spawn Recursion cubes in the mirrored wave")]
-    public bool heavySpawnsRecursion = true;
+    [Tooltip("If true, Recursion markers from the previous wave spawn Recursion cubes in the mirrored wave")]
+    public bool recursionSpawnsRecursion = true;
     
     [Tooltip("If true, Prime markers from the previous wave spawn Prime cubes in the mirrored wave")]
     public bool primeSpawnsPrime = true;
     
     [Tooltip("If true, Infinity markers from the previous wave spawn Infinity cubes in the mirrored wave")]
     public bool infinitySpawnsInfinity = true;
-    
-    [Tooltip("If true, inherited spawns can overlap with base spawns. If false, inherited spawns replace base spawns at same positions.")]
-    public bool allowOverlap = false;
 }

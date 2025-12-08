@@ -49,6 +49,7 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
     public bool isMoving = false;
     public bool isDestroyed = false;
     public bool isPlayerCube = false;
+    public bool isPrimeCube = false; // True for Prime cubes that capture in an area
     public float rainSpeed = 3f;
     public float rainHeight = 5f;
     public int targetRow = -1;
@@ -604,18 +605,19 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
 
         this.Log($"Moving player cube {GetEffectiveType()} from ({position.x}, {position.y}) backward", EnableDebugLogs);
 
-        // Check if cube is at top of grid (boundary for backward movement)
-        if (position.y >= grid.Height || position.x < 0 || position.x >= grid.Width)
+        // Check if NEXT position would be out of bounds (top of grid)
+        int nextY = position.y + 1;
+        if (nextY >= grid.Height || position.x < 0 || position.x >= grid.Width)
         {
-            this.Log($"🚨 PLAYER CUBE BOUNDARY: {GetEffectiveType()} at ({position.x}, {position.y}) reached grid boundary. Grid bounds: {grid.Width}x{grid.Height}", EnableDebugLogs);
+            this.Log($"🚨 PLAYER CUBE BOUNDARY: {GetEffectiveType()} at ({position.x}, {position.y}) will exceed grid boundary (next Y={nextY}). Grid bounds: {grid.Width}x{grid.Height}", EnableDebugLogs);
 
-            // Destroy the player cube when it reaches the top
+            // Destroy the player cube when it would exceed the top
             Destroy(gameObject);
             return false; // Cube destroyed - movement chain broken
         }
 
         Vector2Int oldPosition = position;
-        position.y += 1; // Move backward (increasing Y)
+        position.y = nextY; // Move backward (increasing Y)
         moveCount++;
 
         // Fire move event

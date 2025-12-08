@@ -95,8 +95,8 @@ public class MovementData
 public class MarkerInteractionData
 {
     [Header("Placement Timing")]
-    public List<MarkerPlacementEvent> lightMarkerPlacements = new List<MarkerPlacementEvent>();
-    public List<MarkerPlacementEvent> heavyMarkerPlacements = new List<MarkerPlacementEvent>();
+    public List<MarkerPlacementEvent> unitMarkerPlacements = new List<MarkerPlacementEvent>();
+    public List<MarkerPlacementEvent> RecursionMarkerPlacements = new List<MarkerPlacementEvent>();
     public List<MarkerPlacementEvent> primeMarkerPlacements = new List<MarkerPlacementEvent>();
     
     [Header("Trigger Efficiency")]

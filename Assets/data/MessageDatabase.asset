@@ -9,7 +9,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0, type: 3}
+  m_Script: {fileID: 11500000, guid: 06822b85d9af8a540a4092f7d1dda6c7, type: 3}
   m_Name: MessageDatabase
   m_EditorClassIdentifier: 
   essentialMessages:
@@ -29,7 +29,7 @@ MonoBehaviour:
     cooldownSeconds: 2
     shortMessage: 'Use WASD to move'
     useShortMessageOnRepeat: 1
-  - Message: 'Press F to place Light Markers'
+  - Message: 'Press F to place Unit Markers'
     DisplayMoveStep: 0
     RequirePause: 0
     AutoHideDelay: 3
@@ -45,7 +45,7 @@ MonoBehaviour:
     cooldownSeconds: 2
     shortMessage: 'Press F for markers'
     useShortMessageOnRepeat: 1
-  - Message: 'Press R to trigger Light Markers'
+  - Message: 'Press R to trigger Unit Markers'
     DisplayMoveStep: 1
     RequirePause: 1
     AutoHideDelay: 5
@@ -186,7 +186,7 @@ MonoBehaviour:
     sourceLocation: Wave_1_01.asset
     analysisNotes: UI instruction, important but not blocking gameplay
   - originalMessage:
-      Message: 'Press F to place Light Markers
+      Message: 'Press F to place Unit Markers
 
         These help you track cube movements'
       DisplayMoveStep: 0
@@ -199,7 +199,7 @@ MonoBehaviour:
     sourceLocation: Wave_1_01.asset
     analysisNotes: Core mechanic introduction, essential for gameplay
   - originalMessage:
-      Message: 'Press R to trigger Light Markers
+      Message: 'Press R to trigger Unit Markers
 
         This captures cubes within marker range!'
       DisplayMoveStep: 1

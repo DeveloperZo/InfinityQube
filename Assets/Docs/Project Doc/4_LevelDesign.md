@@ -173,7 +173,7 @@ Tutorial stages follow a specific structure to maximize learning effectiveness:
 - **Type**: Tutorial
 - **Mechanics Introduced**: Movement, marker placement, basic cube capture
 - **Grid**: 5x20 (standard starting size)
-- **Resources**: 2 Light marker charges with standard cooldown
+- **Resources**: 2 Unit Marker charges with standard cooldown
 - **Cubes**: Unit cubes and Infinity cubes
 - **Learning Goals**: 
   - Grid navigation and positioning
@@ -185,7 +185,7 @@ Tutorial stages follow a specific structure to maximize learning effectiveness:
 - **Type**: Tutorial
 - **Mechanics Introduced**: Infinity cube avoidance, death mechanics
 - **Grid**: 5x20
-- **Resources**: 2 Light marker charges
+- **Resources**: 2 Unit Marker charges
 - **Cubes**: Unit cubes and Infinity cubes
 - **Learning Goals**:
   - Infinity cubes cannot be captured
@@ -197,7 +197,7 @@ Tutorial stages follow a specific structure to maximize learning effectiveness:
 - **Type**: Tutorial
 - **Mechanics Introduced**: Prime cube capture, cube marker generation
 - **Grid**: 5x20
-- **Resources**: 2 Light marker charges
+- **Resources**: 2 Unit Marker charges
 - **Cubes**: Unit, Infinity, and Prime cubes
 - **Learning Goals**:
   - Prime cubes can be captured
@@ -539,7 +539,7 @@ Waves trigger events that affect stage progression:
 
 ### Stage Design Focus Areas
 - **Four-Tier Mastery Stages**: Dedicated levels teaching optimal marker type selection
-- **Recursion Cube Scenarios**: Strategic multi-hit encounters requiring Heavy markers
+- **Recursion Cube Scenarios**: Strategic multi-hit encounters requiring Recursion Markers
 - **Prime Marker Techniques**: Stages emphasizing precision timing and positioning
 - **Cube Marker Tactics**: Advanced detonation strategy implementation
 - **Symmetrical Wave Training**: Stages introducing moving cube markers and collision mechanics

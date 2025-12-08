@@ -9,8 +9,8 @@
 - **Mouse**: Look around and aim your cosmic abilities
 
 **Cosmic Marker Powers:**
-- **F**: Place light markers in cube paths (limited charges - use wisely!)
-- **R**: Trigger light markers to capture cubes within their ethereal glow
+- **F**: Place Unit Markers in cube paths (limited charges - use wisely!)
+- **R**: Trigger Unit Markers to capture cubes within their ethereal glow
 - **G**: Place prime markers (covers 2x2 area for strategic positioning)
 - **T**: Trigger prime markers for larger area capture
 

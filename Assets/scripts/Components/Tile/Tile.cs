@@ -37,6 +37,7 @@ public class Tile : MonoBehaviour
     [SerializeField] private bool isPlayerOnTile = false;
     [SerializeField] private GameObject softHighlightObject;
     [SerializeField] private Material playerHoverMaterial;
+    [SerializeField] private Color currentHoverColor = new Color(0.5f, 0.6f, 0.7f, 0.5f); // Default: Unit blue-gray
     #endregion
 
     #region Component Delegates
@@ -198,20 +199,20 @@ public class Tile : MonoBehaviour
         // Handle cube type-specific behavior
         switch (effectiveType)
         {
-            case Enumerations.CubeType.Infinity:
+            case CubeType.Infinity:
                 Debug.Log($"Cube acting as black due to face status at ({x}, {y})");
-                NotifyPlayerCubeCapture(Enumerations.CubeType.Infinity);
+                NotifyPlayerCubeCapture(CubeType.Infinity);
                 break;
 
-            case Enumerations.CubeType.Prime:
+            case CubeType.Prime:
                 Debug.Log($"Prime cube captured at ({x}, {y}) - Creating prime cube marker");
-                NotifyPlayerCubeCapture(Enumerations.CubeType.Prime);
+                NotifyPlayerCubeCapture(CubeType.Prime);
                 PrimeTile();
                 Destroy(cubeToProcess.gameObject);
                 break;
 
-            case Enumerations.CubeType.Unit:
-                NotifyPlayerCubeCapture(Enumerations.CubeType.Unit);
+            case CubeType.Unit:
+                NotifyPlayerCubeCapture(CubeType.Unit);
                 if (cubeToProcess.ShouldCreateDetonation())
                 {
                     Debug.Log("Normal cube creating detonation due to face status!");
@@ -220,7 +221,7 @@ public class Tile : MonoBehaviour
                 Destroy(cubeToProcess.gameObject);
                 break;
 
-            case Enumerations.CubeType.Recursion:
+            case CubeType.Recursion:
                 HandleReinforcedCube(cubeToProcess);
                 break;
         }
@@ -303,10 +304,11 @@ public class Tile : MonoBehaviour
         UpdateTileVisuals();
 
         // Register with PlayerActionManager
+        // Default size is 2x2 for Prime tile detonation (from marker capture)
         PlayerActionManager playerActionManager = FindObjectOfType<PlayerActionManager>();
         if (playerActionManager != null)
         {
-            playerActionManager.CreateCubeMarker(new Vector2Int(x, y));
+            playerActionManager.CreateCubeMarker(new Vector2Int(x, y), PlayerMarkerSystem.CubeMarkerType.Prime, 2);
         }
 
         Debug.Log($"Tile ({x},{y}): Primed for detonation and registered with PlayerActionManager");
@@ -329,13 +331,13 @@ public class Tile : MonoBehaviour
         UpdateTileVisuals();
     }
 
-    public void TransformTile(Enumerations.CubeType cubeType)
+    public void TransformTile(CubeType cubeType)
     {
-        if (currentState != Enumerations.TileState.Transformed)
+        if (currentState != TileState.Transformed)
         {
-            currentState = Enumerations.TileState.Transformed;
+            currentState = TileState.Transformed;
 
-            if (cubeType == Enumerations.CubeType.Infinity)
+            if (cubeType == CubeType.Infinity)
             {
                 BlackenTile();
             }
@@ -344,7 +346,7 @@ public class Tile : MonoBehaviour
 
     public void TransformToPaintingTile(FaceStatus status, Color color, int duration = -1)
     {
-        currentState = Enumerations.TileState.Transformed;
+        currentState = TileState.Transformed;
         SetupFacePainting(status, color, duration);
         Debug.Log($"Tile ({x},{y}) transformed to paint cubes with {status} status");
     }
@@ -362,8 +364,6 @@ public class Tile : MonoBehaviour
     {
         if (isPlayerOnTile == isHovering) return;
 
-        Debug.Log($"Tile ({x},{y}): SetPlayerHover({isHovering}) - hasMarker={HasMarker}, isBlackened={isBlackened}, hasDetonationPoint={hasDetonationPoint}");
-
         isPlayerOnTile = isHovering;
 
         if (isHovering && !HasMarker && !isBlackened && !hasDetonationPoint && !IsCorrupted)
@@ -376,15 +376,31 @@ public class Tile : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Updates the hover highlight color based on current marker mode.
+    /// Call this when the player's selected marker mode changes.
+    /// </summary>
+    public void SetHoverColor(Color color)
+    {
+        currentHoverColor = color;
+        
+        // Update existing highlight if visible
+        if (softHighlightObject != null && softHighlightObject.activeSelf)
+        {
+            Renderer highlightRenderer = softHighlightObject.GetComponent<Renderer>();
+            if (highlightRenderer != null)
+            {
+                highlightRenderer.material.color = color;
+            }
+        }
+    }
+
     private void ShowSoftHighlight()
     {
         if (isBlackened || HasMarker || hasDetonationPoint || IsCorrupted)
         {
-            Debug.Log($"Tile ({x},{y}): Cannot show highlight - isBlackened={isBlackened}, hasMarker={HasMarker}, hasDetonationPoint={hasDetonationPoint}, isCorrupted={IsCorrupted}");
             return;
         }
-
-        Debug.Log($"Tile ({x},{y}): Showing soft highlight");
 
         if (softHighlightObject == null)
         {
@@ -401,18 +417,27 @@ public class Tile : MonoBehaviour
             }
 
             Renderer highlightRenderer = softHighlightObject.GetComponent<Renderer>();
-            if (highlightRenderer != null && playerHoverMaterial != null)
+            if (highlightRenderer != null)
             {
-                highlightRenderer.material = playerHoverMaterial;
+                // Create material with current hover color
+                Material hoverMat = new Material(Shader.Find("Standard"));
+                hoverMat.color = currentHoverColor;
+                highlightRenderer.material = hoverMat;
             }
-
-            Debug.Log($"Tile ({x},{y}): Created new soft highlight object");
+        }
+        else
+        {
+            // Update color on existing highlight
+            Renderer highlightRenderer = softHighlightObject.GetComponent<Renderer>();
+            if (highlightRenderer != null)
+            {
+                highlightRenderer.material.color = currentHoverColor;
+            }
         }
 
         if (softHighlightObject != null)
         {
             softHighlightObject.SetActive(true);
-            Debug.Log($"Tile ({x},{y}): Activated soft highlight object");
         }
     }
 
@@ -464,7 +489,7 @@ public class Tile : MonoBehaviour
         }
         
         // Handle transformed tile behavior
-        if (currentState == Enumerations.TileState.Transformed && IsBlackened)
+        if (currentState == TileState.Transformed && IsBlackened)
         {
             tileFacePainting?.UpdateForTransformedState(IsBlackened);
         }
@@ -483,12 +508,12 @@ public class Tile : MonoBehaviour
         if (wasDestroyed)
         {
             Debug.Log($"Reinforced cube destroyed at ({x}, {y}) after taking damage");
-            NotifyPlayerCubeCapture(Enumerations.CubeType.Recursion);
+            NotifyPlayerCubeCapture(CubeType.Recursion);
             
             WaveManager waveManager = FindObjectOfType<WaveManager>();
             if (waveManager != null)
             {
-                waveManager.OnNonBlackCubeProcessed(Enumerations.CubeType.Recursion, true);
+                waveManager.OnNonBlackCubeProcessed(CubeType.Recursion, true);
             }
             
             Destroy(cube.gameObject);
@@ -499,7 +524,7 @@ public class Tile : MonoBehaviour
         }
     }
 
-    private void NotifyPlayerCubeCapture(Enumerations.CubeType cubeType)
+    private void NotifyPlayerCubeCapture(CubeType cubeType)
     {
         WaveManager waveManager = FindObjectOfType<WaveManager>();
         if (waveManager != null)

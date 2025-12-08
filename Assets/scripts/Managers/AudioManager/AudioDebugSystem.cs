@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using static Enumerations;
 
 /// <summary>
 /// Handles all testing, debugging, and validation functionality for the AudioManager system.
@@ -154,10 +155,10 @@ public class AudioDebugSystem : MonoBehaviour
         DebugLog("=== AUDIO SYSTEM TEST STARTED ===");
         
         // Test all cube types
-        System.Array cubeTypes = System.Enum.GetValues(typeof(Enumerations.CubeType));
+        System.Array cubeTypes = System.Enum.GetValues(typeof(CubeType));
         Vector3 testPosition = transform.position;
         
-        foreach (Enumerations.CubeType cubeType in cubeTypes)
+        foreach (CubeType cubeType in cubeTypes)
         {
             DebugLog($"Testing audio for cube type: {cubeType}");
             TestCubeLandingSound(cubeType);
@@ -173,7 +174,7 @@ public class AudioDebugSystem : MonoBehaviour
     /// <summary>
     /// Tests landing sound for a specific cube type with current testing volume
     /// </summary>
-    public void TestCubeLandingSound(Enumerations.CubeType cubeType)
+    public void TestCubeLandingSound(CubeType cubeType)
     {
         if (!ValidateForTesting("TestCubeLandingSound"))
             return;
@@ -427,7 +428,7 @@ public class AudioDebugSystem : MonoBehaviour
         if (cubeAudioConfiguration != null)
         {
             var testClips = new List<AudioClip>();
-            foreach (Enumerations.CubeType cubeType in System.Enum.GetValues(typeof(Enumerations.CubeType)))
+            foreach (CubeType cubeType in System.Enum.GetValues(typeof(CubeType)))
             {
                 var clip = cubeAudioConfiguration.GetRandomClip(cubeType, SoundCategory.Landing);
                 if (clip != null)

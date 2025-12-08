@@ -555,8 +555,8 @@ public class TutorialMessageManager : MonoBehaviour, IMessageSystem, IManagerDeb
         // Determine capabilities from player action manager
         if (playerActionManager != null)
         {
-            capabilities.CanUseLightMarkers = playerActionManager.maxLightMarkerCharges > 0;
-            capabilities.CanUseHeavyMarkers = playerActionManager.maxHeavyMarkerCharges > 0;
+            capabilities.CanUseUnitMarkers = playerActionManager.maxUnitMarkerCharges > 0;
+            capabilities.CanUseRecursionMarkers = playerActionManager.maxRecursionMarkerCharges > 0;
             capabilities.CanUsePrimeMarkers = playerActionManager.maxPrimeMarkerCharges > 0;
             capabilities.CanUseCubeMarkers = playerActionManager.GetCurrentCubeMarkers() > 0;
         }
@@ -593,7 +593,7 @@ public class TutorialMessageManager : MonoBehaviour, IMessageSystem, IManagerDeb
         // Update marker context
         if (playerActionManager != null)
         {
-            currentContext.availableMarkers = playerActionManager.maxHeavyMarkerCharges + playerActionManager.maxLightMarkerCharges + playerActionManager.maxPrimeMarkerCharges;
+            currentContext.availableMarkers = playerActionManager.maxRecursionMarkerCharges + playerActionManager.maxUnitMarkerCharges + playerActionManager.maxPrimeMarkerCharges;
         }
 
         // Update wave context

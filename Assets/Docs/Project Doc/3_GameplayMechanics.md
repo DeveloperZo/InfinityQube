@@ -100,44 +100,64 @@ FaceStatus Enum:
 - **Rotation**: Faces movement direction dynamically
 
 ### Action System (PlayerActionManager)
-Comprehensive marker and detonation management:
+Comprehensive marker and detonation management using unified input system:
 
-#### Light Markers (formerly Individual)
-- **Placement Key**: F
-- **Trigger Key**: R  
+#### Unified Input System
+- **Mode Selection**: Keys `1`, `2`, `3`, `4` switch between marker modes
+  - `1` = Unit Marker mode
+  - `2` = Prime Marker mode
+  - `3` = Recursion Marker mode
+  - `4` = Infinity Marker mode
+- **Placement Key**: `F` - places marker of current mode
+- **Automatic Spawning**: When wave moves forward, all placed markers automatically spawn player cubes
+- **Cube Marker Trigger**: `R` key triggers cube markers (generated from collisions) to create area effects
+
+#### Unit Markers
+- **Mode Key**: `1`
+- **Placement**: `F` when in Unit mode
+- **Automatic Spawning**: Spawns Unit cube when wave moves forward
 - **Charge System**: Limited uses with regeneration
 - **Visual Feedback**: Placement indicators and charge display
 - **Wave Inheritance**: Position recorded for next wave cube spawn
 
-#### Heavy Markers
-- **Placement Key**: V
-- **Trigger Key**: Y
+#### Recursion Markers
+- **Mode Key**: `3`
+- **Placement**: `F` when in Recursion mode
+- **Automatic Spawning**: Spawns Recursion cube when wave moves forward
 - **Primary Target**: Enhanced marker specifically designed for Recursion cubes
 - **Charge System**: Maximum 2 markers, limited charges with 5-second cooldown
 - **Enhanced Power**: Optimized for multi-hit Recursion cube interactions
 - **Wave Inheritance**: Position recorded for next wave cube spawn
 
-#### Prime Markers (formerly Area)
-- **Placement Key**: G
-- **Trigger Key**: T
-- **Coverage**: 3x3 grid area
+#### Prime Markers
+- **Mode Key**: `2`
+- **Placement**: `F` when in Prime mode
+- **Automatic Spawning**: Spawns Prime cube when wave moves forward (2x2 area effect, 3x3 for Prime+Prime collisions)
+- **Coverage**: 2x2 grid area (from marker), 3x3 for Prime+Prime collisions
 - **Cooldown System**: Time-based restrictions
 - **Resource Limits**: Configurable maximum on-grid count
 - **Wave Inheritance**: Center position recorded for next wave cube spawn
 
 #### Cube Markers
-- **Trigger Key**: Q
-- **Power Up Key**: E
-- **Generation**: Created by capturing Prime cubes
-- **Direct Detonation**: Immediate cube destruction
-- **Strategic Resource**: Finite and valuable
+- **Trigger Key**: `R` (KeyCode.R)
+- **Power Up Key**: `E` (KeyCode.E) - powers up cube marker (if implemented)
+- **Generation**: Created automatically from collisions:
+  - Prime+Prime collision → Prime cube marker (3x3 area)
+  - Recursion+Recursion collision → Recursion cube marker (2x2 area)
+  - Prime captured by non-Prime → Prime cube marker (2x2 area)
+- **Behavior**: When triggered with `R`, creates area effect that expands from cube marker position and captures all non-Infinity cubes in the area
+  - Prime+Prime cube marker: 3x3 area effect
+  - Recursion+Recursion cube marker: 2x2 area effect
+  - Prime (non-matching) cube marker: 2x2 area effect
+- **Strategic Resource**: Finite and valuable, generated from skillful matching
 - **No Wave Inheritance**: Direct action, not placement-based
 
 #### Infinity Markers
-- **Placement Key**: TBD
-- **Trigger Key**: TBD
+- **Mode Key**: `4`
+- **Placement**: `F` when in Infinity mode
+- **Automatic Spawning**: Spawns Infinity cube when wave moves forward
 - **Effect**: Spawns pause-inducing cubes that affect Infinity cubes
-- **Charge System**: Limited uses with strategic regeneration
+- **Charge System**: Limited uses with strategic regeneration (default: 1 charge, 15s cooldown)
 - **Interaction Range**: Affects Infinity cubes within proximity
 - **Wave Inheritance**: Position recorded for next wave special cube spawn
 
@@ -160,8 +180,8 @@ Revolutionary wave pairing mechanic creating strategic continuity:
 - **Marker Recording**: All marker placements in Wave A are recorded
 - **Position Conversion**: Marker positions become cube spawn points in Wave B
 - **Type Mapping**: Marker types influence spawned cube types:
-  - Light Marker → Unit Cube
-  - Heavy Marker → Recursion Cube
+  - Unit Marker → Unit Cube
+  - Recursion Marker → Recursion Cube
   - Prime Marker → Prime Cube (center of area)
   - Infinity Marker → Special/Infinity Cube
 - **Strategic Depth**: Players must balance immediate needs with future consequences

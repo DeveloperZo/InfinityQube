@@ -36,8 +36,8 @@ Players progress through stages composed of multiple waves. Each wave presents a
 - Account for face status effects that modify cube behavior
 
 ### 3. **Marker Placement & Transformation**
-- **Light Markers** (Key: F): Single-tile markers that transform into backward-moving Light cubes
-- **Heavy Markers** (Key: V): Enhanced markers that become Heavy cubes for Recursion capture
+- **Unit Markers** (Key: F): Single-tile markers that transform into backward-moving Light cubes
+- **Recursion Markers** (Key: V): Enhanced markers that become Heavy cubes for Recursion capture
 - **Prime Markers** (Key: G): Area-effect markers creating 3x3 capture zones when transformed
 - **Cube Markers** (Key: Q): Special markers generated from Prime cube captures
 - **Transformation Process**: Upon placement, markers immediately convert to cubes and begin backward movement
@@ -130,22 +130,22 @@ Players progress through stages composed of multiple waves. Each wave presents a
 
 #### **Four-Tier Marker Framework**
 Dedicated input system for rapid marker deployment:
-- F Key: Deploy Light marker
-- V Key: Deploy Heavy marker
+- F Key: Deploy Unit Marker
+- V Key: Deploy Recursion Marker
 - G Key: Deploy Prime marker
 - Q Key: Activate Cube marker
 
-#### **Light Markers (F Key)**
+#### **Unit Markers (F Key)**
 - Single-tile precision placement
 - Transform into backward-moving Light cubes
 - Optimal for Unit cube interception
 - Resource-efficient standard tool
 
-#### **Heavy Markers (V Key)**
+#### **Recursion Markers (V Key)**
 - Enhanced single-tile markers
 - Become Heavy cubes upon transformation
 - Required for Recursion cube capture
-- Higher resource cost than Light markers
+- Higher resource cost than Unit Markers
 
 #### **Prime Markers (G Key)**
 - 3x3 area coverage capability

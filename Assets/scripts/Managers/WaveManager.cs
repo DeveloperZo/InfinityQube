@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
@@ -72,6 +72,9 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
     public bool waveActive = false;
     public int MoveStep = 0;
     public WaveData CurrentWave => useWaveConfiguration && currentWaveIndex < waveConfiguration.Count ? waveConfiguration[currentWaveIndex] : null;
+    
+    // Mirrored wave flag - when true, cubes are already spawned from markers
+    private bool isMirroredWaveActive = false;
 
     // Paired Wave System - Marker Position Recording
     // Stores marker positions from the previous wave for inheritance by the mirrored version
@@ -162,7 +165,7 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
         // Trigger wave start audio event
         if (audioManager != null)
         {
-            audioManager.TriggerAudioEvent(Enumerations.GameAudioEvent.WaveStarted, Vector3.zero);
+            audioManager.TriggerAudioEvent(GameAudioEvent.WaveStarted, Vector3.zero);
             DebugLog("🔊 Audio: Wave start event triggered");
         }
         
@@ -172,6 +175,46 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
         DebugLog($"Fired GameEvents.OnWaveStart for wave {currentWaveIndex}");
         
         waveCoroutine = StartCoroutine(RunWaveCoroutine());
+    }
+
+    /// <summary>
+    /// Starts a wave without spawning new cubes (uses existing cubes in activeCubes).
+    /// Useful for starting custom waves that were already spawned.
+    /// </summary>
+    public void StartWaveWithoutSpawning()
+    {
+        if (waveActive) return;
+
+        if (activeCubes.Count == 0)
+        {
+            DebugLog("⚠️ No cubes to start - use StartWave() instead");
+            return;
+        }
+
+        DebugLog("🌊 Starting Wave (without spawning)...");
+
+        if (waveCoroutine != null) StopCoroutine(waveCoroutine);
+
+        ResetWaveStatistics();
+        
+        // Disable debug mode and manual control so wave runs automatically
+        debugMode = false;
+        manualControl = false;
+        
+        // Trigger wave start audio event
+        if (audioManager != null)
+        {
+            audioManager.TriggerAudioEvent(GameAudioEvent.WaveStarted, Vector3.zero);
+            DebugLog("🔊 Audio: Wave start event triggered");
+        }
+        
+        // Fire GameEvents
+        GameEvents.FireWaveStart(currentWaveIndex, CurrentWave);
+        if (gameUI != null) gameUI.ToggleWaveIcon(currentWaveIndex, true);
+        DebugLog($"Fired GameEvents.OnWaveStart for wave {currentWaveIndex}");
+        
+        // Start coroutine with skipSpawn flag - wave will run automatically
+        waveCoroutine = StartCoroutine(RunWaveCoroutine(skipSpawn: true));
     }
 
     public void PauseWave()
@@ -223,18 +266,106 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
 
     public void StopWave()
     {
-        CleanupWave();
-        DebugLog("⏹️ Wave Stopped");
+        // Stop the wave coroutine but don't clear cubes
+        if (waveCoroutine != null)
+        {
+            StopCoroutine(waveCoroutine);
+            waveCoroutine = null;
+        }
+        
+        waveActive = false;
+        // Enable debug mode so manual controls work
+        debugMode = true;
+        DebugLog("⏹️ Wave Stopped (cubes remain, debug mode enabled for manual control)");
+    }
+
+    /// <summary>
+    /// Loads a specific wave for play/testing.
+    /// </summary>
+    public void LoadWave(WaveData wave)
+    {
+        if (wave == null)
+        {
+            DebugLog("⚠️ Cannot load null wave");
+            return;
+        }
+        
+        // Stop any current wave
+        if (waveActive) StopWave();
+        
+        // Add wave to configuration if not present
+        if (!waveConfiguration.Contains(wave))
+        {
+            waveConfiguration.Insert(0, wave);
+        }
+        
+        // Set current wave index
+        currentWaveIndex = waveConfiguration.IndexOf(wave);
+        useWaveConfiguration = true;
+        
+        DebugLog($"📋 Loaded wave: {wave.name}");
+    }
+
+    /// <summary>
+    /// Gets list of available waves from configuration and resources.
+    /// </summary>
+    public List<WaveData> GetAvailableWaves()
+    {
+        var waves = new List<WaveData>();
+        
+        // Add configured waves
+        if (waveConfiguration != null)
+        {
+            waves.AddRange(waveConfiguration);
+        }
+        
+        return waves;
+    }
+
+    /// <summary>
+    /// Force completes the current wave (for testing/prototyping).
+    /// </summary>
+    public void ForceCompleteWave()
+    {
+        if (!waveActive && activeCubes.Count == 0)
+        {
+            DebugLog("⚠️ No active wave to complete");
+            return;
+        }
+        
+        DebugLog("⏭️ Force completing wave...");
+        
+        // Clear all cubes
+        ClearAllCubes();
+        
+        // Stop the wave coroutine
+        if (waveCoroutine != null)
+        {
+            StopCoroutine(waveCoroutine);
+            waveCoroutine = null;
+        }
+        
+        waveActive = false;
+        
+        // Fire completion event
+        GameEvents.FireWaveComplete(currentWaveIndex);
+        
+        // Advance to next wave if available
+        if (HasMoreWaves())
+        {
+            currentWaveIndex++;
+            DebugLog($"➡️ Advanced to wave {currentWaveIndex}");
+        }
     }
     #endregion
 
     #region Wave Execution
-    private IEnumerator RunWaveCoroutine(bool resume = false)
+    private IEnumerator RunWaveCoroutine(bool resume = false, bool skipSpawn = false)
     {
         waveActive = true;
         if (!resume) MoveStep = 0;
 
-        SetupWave(resume);
+        SetupWave(resume, skipSpawn);
 
         yield return new WaitForSeconds(GetWaveStartDelay());
 
@@ -256,12 +387,28 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
         CompleteWave();
     }
 
-    private void SetupWave(bool resume)
+    private void SetupWave(bool resume, bool skipSpawn = false)
     {
         if (!resume)
         {
-            SpawnWaveCubes();
-            ShowInitialMessages();
+            // Skip spawning if skipSpawn flag is set (custom waves already spawned)
+            // or if mirrored wave (cubes already spawned from markers)
+            if (skipSpawn)
+            {
+                DebugLog("SetupWave: Skipping spawn - using existing cubes");
+                CountNonBlackCubes(); // Count existing cubes for completion tracking
+                // Don't show messages for custom waves (no wave configuration)
+            }
+            else if (!isMirroredWaveActive)
+            {
+                SpawnWaveCubes();
+                ShowInitialMessages(); // Only show messages for configured waves
+            }
+            else
+            {
+                DebugLog("[PairedWave] Mirrored wave - cubes already spawned from markers");
+                ShowInitialMessages(); // Show messages for mirrored waves if configured
+            }
         }
 
         ConfigurePlayer();
@@ -300,7 +447,7 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
         // Trigger wave completion audio event
         if (audioManager != null)
         {
-            audioManager.TriggerAudioEvent(Enumerations.GameAudioEvent.WaveCompleted, Vector3.zero);
+            audioManager.TriggerAudioEvent(GameAudioEvent.WaveCompleted, Vector3.zero);
             DebugLog("🔊 Audio: Wave completion event triggered");
         }
 
@@ -317,28 +464,21 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
         OnWaveComplete?.Invoke(currentWaveIndex);
         DebugLog($"🎯 Triggered OnWaveComplete event for wave {currentWaveIndex}");
 
-        // Handle HasBeenMirrored logic: If wave hasn't been mirrored, flip flag and spawn mirrored version
-        if (CurrentWave != null)
+        // Handle paired wave logic
+        if (isMirroredWaveActive)
         {
-            bool hasBeenMirrored = GetHasBeenMirrored(CurrentWave);
+            // Mirrored wave just completed - reset flag and advance to next config wave
+            isMirroredWaveActive = false;
+            DebugLog("[PairedWave] Mirrored wave completed, advancing to next config wave");
+        }
+        else if (CurrentWave != null)
+        {
+            // Config wave completed - spawn mirrored wave from recorded markers
+            DebugLog("[PairedWave] Config wave completed, spawning mirrored wave from markers...");
             
-            if (!hasBeenMirrored)
-            {
-                // Wave completed for first time - flip flag and spawn mirrored version
-                // Note: Don't clear markers yet - they're needed for SpawnMirroredWave()
-                SetHasBeenMirrored(CurrentWave, true);
-                DebugLog($"[PairedWave] Wave completed, HasBeenMirrored flipped to true. Spawning mirrored version...");
-                
-                // Spawn the mirrored version of this wave (markers will be cleared after use)
-                StartCoroutine(SpawnMirroredWave());
-                return; // Don't advance to next wave yet - we're spawning the mirrored version
-            }
-            else
-            {
-                // Wave has been mirrored already - clear markers and advance to next wave
-                ClearPreviousWaveMarkers();
-                DebugLog("[PairedWave] Mirrored wave completed, advancing to next wave");
-            }
+            // Spawn the mirrored wave (markers will be cleared after use)
+            StartCoroutine(SpawnMirroredWave());
+            return; // Don't advance to next wave yet - we're spawning the mirrored version
         }
 
         // Check if all waves are complete
@@ -414,8 +554,8 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
         
         // Count total markers that should spawn cubes
         int totalMarkersToSpawn = 0;
-        if (rules.lightSpawnsUnit) totalMarkersToSpawn += recordedPositions.lightMarkerPositions.Count;
-        if (rules.heavySpawnsRecursion) totalMarkersToSpawn += recordedPositions.heavyMarkerPositions.Count;
+        if (rules.unitSpawnsUnit) totalMarkersToSpawn += recordedPositions.unitMarkerPositions.Count;
+        if (rules.recursionSpawnsRecursion) totalMarkersToSpawn += recordedPositions.recursionMarkerPositions.Count;
         if (rules.primeSpawnsPrime) totalMarkersToSpawn += recordedPositions.primeMarkerPositions.Count;
         if (rules.infinitySpawnsInfinity) totalMarkersToSpawn += recordedPositions.infinityMarkerPositions.Count;
         
@@ -424,22 +564,22 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
         // Collect all marker positions and normalize them together
         // This ensures markers are mapped to wave rows based on their relative Y positions
         List<Vector2Int> allMarkerPositions = new List<Vector2Int>();
-        Dictionary<Vector2Int, Enumerations.CubeType> markerToCubeType = new Dictionary<Vector2Int, Enumerations.CubeType>();
+        Dictionary<Vector2Int, CubeType> markerToCubeType = new Dictionary<Vector2Int, CubeType>();
         
-        if (rules.lightSpawnsUnit)
+        if (rules.unitSpawnsUnit)
         {
-            foreach (var pos in recordedPositions.lightMarkerPositions)
+            foreach (var pos in recordedPositions.unitMarkerPositions)
             {
                 allMarkerPositions.Add(new Vector2Int(pos.x, pos.y));
-                markerToCubeType[pos] = Enumerations.CubeType.Unit;
+                markerToCubeType[pos] = CubeType.Unit;
             }
         }
-        if (rules.heavySpawnsRecursion)
+        if (rules.recursionSpawnsRecursion)
         {
-            foreach (var pos in recordedPositions.heavyMarkerPositions)
+            foreach (var pos in recordedPositions.recursionMarkerPositions)
             {
                 allMarkerPositions.Add(new Vector2Int(pos.x, pos.y));
-                markerToCubeType[pos] = Enumerations.CubeType.Recursion;
+                markerToCubeType[pos] = CubeType.Recursion;
             }
         }
         if (rules.primeSpawnsPrime)
@@ -447,7 +587,7 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
             foreach (var pos in recordedPositions.primeMarkerPositions)
             {
                 allMarkerPositions.Add(new Vector2Int(pos.x, pos.y));
-                markerToCubeType[pos] = Enumerations.CubeType.Prime;
+                markerToCubeType[pos] = CubeType.Prime;
             }
         }
         if (rules.infinitySpawnsInfinity)
@@ -455,7 +595,7 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
             foreach (var pos in recordedPositions.infinityMarkerPositions)
             {
                 allMarkerPositions.Add(new Vector2Int(pos.x, pos.y));
-                markerToCubeType[pos] = Enumerations.CubeType.Infinity;
+                markerToCubeType[pos] = CubeType.Infinity;
             }
         }
 
@@ -477,16 +617,8 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
                 continue;
             }
 
-            // Check if this normalized position was already used (only if allowOverlap is false)
-            if (!rules.allowOverlap && spawnedPositions.Contains(normalizedPos))
-            {
-                // Position collision - but we still need to spawn this cube
-                // Allow overlap to preserve marker count
-                DebugLog($"[PairedWave] Position collision at wave ({normalizedPos.x}, {normalizedPos.y}), but allowing overlap to preserve marker count");
-            }
-
-            Enumerations.CubeType cubeType = markerToCubeType[originalPos];
-            if (SpawnInheritedCubeAtNormalizedPosition(normalizedPos, cubeType, true)) // Always allow overlap to preserve count
+            CubeType cubeType = markerToCubeType[originalPos];
+            if (SpawnInheritedCubeAtNormalizedPosition(normalizedPos, cubeType))
             {
                 inheritedCount++;
                 spawnedPositions.Add(normalizedPos);
@@ -513,8 +645,9 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
     /// Spawns a single inherited cube at the normalized wave position.
     /// Position is already normalized to wave coordinates (0 to GridHeight-1).
     /// SpawnCube will convert this to grid coordinates and spawn at top of grid.
+    /// Always spawns cubes even if position overlaps with existing cubes (preserves 1:1 marker mapping).
     /// </summary>
-    private bool SpawnInheritedCubeAtNormalizedPosition(Vector2Int normalizedPosition, Enumerations.CubeType cubeType, bool allowOverlap)
+    private bool SpawnInheritedCubeAtNormalizedPosition(Vector2Int normalizedPosition, CubeType cubeType)
     {
         var wave = CurrentWave;
         if (wave == null || grid == null)
@@ -530,7 +663,7 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
             return false;
         }
 
-        // Check for overlap with existing cubes (check at the grid position where it will spawn)
+        // Calculate the final grid position where the cube will spawn
         // SpawnCube will convert wave Y to grid Y, so we need to calculate the final grid position
         // If normalizedPosition.y exceeds GridHeight, we need to calculate grid position differently
         var waveHeight = wave.GridHeight;
@@ -555,15 +688,6 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
         
         Vector2Int finalGridPosition = new Vector2Int(normalizedPosition.x, finalGridY);
         
-        bool hasOverlap = HasCubeAtPosition(finalGridPosition);
-        
-        if (hasOverlap && !allowOverlap)
-        {
-            // Overlap not allowed - skip this spawn
-            DebugLog($"[PairedWave] Skipping inherited cube at wave ({normalizedPosition.x}, {normalizedPosition.y}) -> final grid ({finalGridPosition.x}, {finalGridPosition.y}) due to overlap");
-            return false;
-        }
-
         // Create cube data with normalized wave coordinates
         // If position exceeds GridHeight, we need to spawn directly at calculated grid position
         // Otherwise, SpawnCube will handle the conversion
@@ -669,21 +793,6 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
         return normalizedMap;
     }
 
-    /// <summary>
-    /// Checks if there's already a cube at the specified position.
-    /// </summary>
-    private bool HasCubeAtPosition(Vector2Int position)
-    {
-        foreach (var cube in activeCubes)
-        {
-            if (cube != null && cube.position == position)
-            {
-                return true;
-            }
-        }
-        return false;
-    }
-
     private void SpawnRandomCubes()
     {
         // Generate cubes in top rows of grid
@@ -706,18 +815,30 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
             this.LogError($"Invalid prefab index {prefabIndex} for cube type {cubeData.type}");
             return;
         }
+        
+        // Calculate grid position WITHOUT modifying original cubeData
         var waveHeight = waveConfiguration.Count > 0 ? waveConfiguration[currentWaveIndex].GridHeight : waveSize;
         var gridLocalHeight = grid.Height - (waveHeight - cubeData.position.y);
-        cubeData.position.y = gridLocalHeight;
-        Vector3 spawnPos = grid.GridToWorldPosition(cubeData.position.x, cubeData.position.y, 2f);
-        this.Log($"Spawning {cubeData.type} cube at grid ({cubeData.position.x}, {cubeData.position.y}) -> world {spawnPos}", showDebugInfo);
+        
+        // Use local position for spawning (preserve original wave data)
+        Vector2Int spawnPosition = new Vector2Int(cubeData.position.x, gridLocalHeight);
+        Vector3 spawnPos = grid.GridToWorldPosition(spawnPosition.x, spawnPosition.y, 2f);
+        this.Log($"Spawning {cubeData.type} cube at grid ({spawnPosition.x}, {spawnPosition.y}) -> world {spawnPos}", showDebugInfo);
 
         GameObject cubeObj = Instantiate(cubePrefabs[prefabIndex], spawnPos, Quaternion.identity);
 
         var cube = cubeObj.GetComponent<CubeManager>();
         if (cube == null) cube = cubeObj.AddComponent<CubeManager>();
 
-        cube.Init(grid, cubeData, 2f);
+        // Create a copy of cubeData with the calculated grid position
+        var spawnData = new CubeData
+        {
+            type = cubeData.type,
+            position = spawnPosition,
+            level = cubeData.level
+        };
+        
+        cube.Init(grid, spawnData, 2f);
         activeCubes.Add(cube);
 
         this.Log($"Cube spawned successfully. Active cubes: {activeCubes.Count}", showDebugInfo);
@@ -735,7 +856,7 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
 
     private void MoveCubesForward()
     {
-        // Spawn player cubes from light markers before moving wave cubes
+        // Spawn player cubes from unit markers before moving wave cubes
         if (playerActionManager != null && playerActionManager.MarkerSystem != null)
         {
             playerActionManager.MarkerSystem.SpawnPlayerCubes();
@@ -762,7 +883,7 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
                 if (stillAlive && audioManager != null && grid != null)
                 {
                     Vector3 cubeWorldPosition = grid.GridToWorldPosition(cube.position.x, cube.position.y, 2f);
-                    audioManager.TriggerCubeAudioEvent(Enumerations.GameAudioEvent.CubeLanded, cube.type, cubeWorldPosition);
+                    audioManager.TriggerCubeAudioEvent(GameAudioEvent.CubeLanded, cube.type, cubeWorldPosition);
                     DebugLog($"🔊 Audio: Cube landing event triggered for {cube.type} at position {cube.position}");
                 }
 
@@ -806,14 +927,70 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
     #region Manual Control (for debugging)
     public void ManualMoveWaveForward()
     {
-        if (!debugMode) return;
+        // Allow manual movement when wave is stopped (debug mode) or when wave is active
+        if (!debugMode && !waveActive) return;
 
         MoveCubesForward();
         MoveStep++;
         ProcessStepMessages();
         NotifyStepComplete();
 
-        DebugLog($"🔧 Manual Step: {MoveStep}");
+        DebugLog($"🔧 Manual Step Forward: {MoveStep}");
+    }
+
+    /// <summary>
+    /// Manually moves all wave cubes backward (up) by one step.
+    /// Only works when wave is stopped (not active) or in debug mode.
+    /// </summary>
+    public void ManualMoveWaveBackward()
+    {
+        if (!debugMode && waveActive) return;
+
+        if (activeCubes.Count == 0)
+        {
+            DebugLog("⚠️ No cubes to move backward");
+            return;
+        }
+
+        // Move all cubes backward (up - increase Y)
+        for (int i = activeCubes.Count - 1; i >= 0; i--)
+        {
+            if (i >= activeCubes.Count) continue;
+            
+            var cube = activeCubes[i];
+            if (cube == null)
+            {
+                activeCubes.RemoveAt(i);
+                continue;
+            }
+
+            // Only move cubes that aren't currently animating
+            if (!cube.isMoving)
+            {
+                cube.ResetMovementState();
+                
+                // Move backward: increase Y (move up)
+                int nextY = cube.position.y + 1;
+                if (nextY < grid.Height && cube.position.x >= 0 && cube.position.x < grid.Width)
+                {
+                    Vector2Int oldPosition = cube.position;
+                    cube.position = new Vector2Int(cube.position.x, nextY);
+                    
+                    // Update cube's world position
+                    Vector3 worldPos = grid.GridToWorldPosition(cube.position.x, cube.position.y, 2f);
+                    cube.transform.position = worldPos;
+                    
+                    // Fire move event
+                    GameEvents.FireCubeMove(oldPosition, cube.position, cube.type);
+                }
+            }
+        }
+        
+        if (MoveStep > 0) MoveStep--;
+        ProcessStepMessages();
+        NotifyStepComplete();
+
+        DebugLog($"🔧 Manual Step Backward: {MoveStep}");
     }
 
     public void EnterDebugMode(bool manual)
@@ -979,13 +1156,13 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
     #endregion
 
     #region Statistics & Events
-    public void OnCubeCaptured(Enumerations.CubeType cubeType)
+    public void OnCubeCaptured(CubeType cubeType)
     {
         switch (cubeType)
         {
-            case Enumerations.CubeType.Unit: normalCubesCaptured++; break;
-            case Enumerations.CubeType.Prime: blueCubesCaptured++; break;
-            case Enumerations.CubeType.Recursion: reinforcedCubesCaptured++; break;
+            case CubeType.Unit: normalCubesCaptured++; break;
+            case CubeType.Prime: blueCubesCaptured++; break;
+            case CubeType.Recursion: reinforcedCubesCaptured++; break;
         }
 
         // Trigger cube captured audio event
@@ -998,7 +1175,7 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
             {
                 cubePosition = grid.GridToWorldPosition(capturedCube.position.x, capturedCube.position.y, 2f);
             }
-            audioManager.TriggerCubeAudioEvent(Enumerations.GameAudioEvent.CubeCaptured, cubeType, cubePosition);
+            audioManager.TriggerCubeAudioEvent(GameAudioEvent.CubeCaptured, cubeType, cubePosition);
             DebugLog($"🔊 Audio: Cube captured event triggered for {cubeType}");
         }
 
@@ -1011,7 +1188,7 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
     /// Wave determines if escape threshold is exceeded and triggers wave failure if needed.
     /// </summary>
     /// <param name="cubeType">Type of cube that escaped</param>
-    public void OnCubeEscaped(Enumerations.CubeType cubeType)
+    public void OnCubeEscaped(CubeType cubeType)
     {
         // Find the cube that's escaping to get its position
         var escapingCube = activeCubes.FirstOrDefault(c => c != null && c.type == cubeType && c.position.y <= 0);
@@ -1031,7 +1208,7 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
         if (audioManager != null && grid != null)
         {
             Vector3 escapeWorldPosition = grid.GridToWorldPosition(escapePosition.x, escapePosition.y, 2f);
-            audioManager.TriggerCubeAudioEvent(Enumerations.GameAudioEvent.CubeEscaped, cubeType, escapeWorldPosition);
+            audioManager.TriggerCubeAudioEvent(GameAudioEvent.CubeEscaped, cubeType, escapeWorldPosition);
             DebugLog($"🔊 Audio: Cube escaped event triggered for {cubeType} at position {escapePosition}");
         }
         
@@ -1047,7 +1224,7 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
         }
         
         // Process as normal cube behavior for wave completion tracking
-        if (cubeType == Enumerations.CubeType.Unit)
+        if (cubeType == CubeType.Unit)
         {
             OnNonBlackCubeProcessed(cubeType, false); // false = not captured
             this.Log($"Normal cube escaped - wave completion check triggered", showDebugInfo);
@@ -1087,9 +1264,9 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
 
     public void OnDetonationUsed() => detonationsUsed++;
 
-    public void OnNonBlackCubeProcessed(Enumerations.CubeType cubeType, bool wasCaptured)
+    public void OnNonBlackCubeProcessed(CubeType cubeType, bool wasCaptured)
     {
-        if (cubeType == Enumerations.CubeType.Infinity) return;
+        if (cubeType == CubeType.Infinity) return;
 
         processedNonBlackCubes++;
         DebugLog($"📊 Non-black cube processed: {processedNonBlackCubes}/{totalNonBlackCubes}");
@@ -1155,11 +1332,24 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
         isSpeedingUp = isSpeeding;
     }
 
+    /// <summary>
+    /// Sets the wave speed multiplier for prototyping tools.
+    /// 1.0 = normal speed, 2.0 = double speed, 0.5 = half speed.
+    /// </summary>
+    private float speedMultiplier = 1f;
+    public void SetWaveSpeed(float multiplier)
+    {
+        speedMultiplier = Mathf.Clamp(multiplier, 0.25f, 4f);
+        DebugLog($"Wave speed set to {speedMultiplier:F1}x");
+    }
+
     private float GetCurrentMoveInterval()
     {
         float normal = CurrentWave?.moveInterval ?? normalMoveInterval;
         float fast = CurrentWave?.fastMoveInterval ?? fastMoveInterval;
-        return isSpeedingUp ? fast : normal;
+        float baseInterval = isSpeedingUp ? fast : normal;
+        // Apply speed multiplier (higher multiplier = faster = shorter interval)
+        return baseInterval / speedMultiplier;
     }
 
     private float GetWaveStartDelay()
@@ -1172,17 +1362,17 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
         return activeCubes.Count > 0 && !debugMode;
     }
 
-    private Enumerations.CubeType GetRandomCubeType()
+    private CubeType GetRandomCubeType()
     {
         float random = Random.value;
-        if (random < normalCubeChance) return Enumerations.CubeType.Unit;
-        if (random < normalCubeChance + blueCubeChance) return Enumerations.CubeType.Prime;
-        return Enumerations.CubeType.Infinity;
+        if (random < normalCubeChance) return CubeType.Unit;
+        if (random < normalCubeChance + blueCubeChance) return CubeType.Prime;
+        return CubeType.Infinity;
     }
 
     private void CountNonBlackCubes()
     {
-        totalNonBlackCubes = activeCubes.Count(c => c != null && c.type != Enumerations.CubeType.Infinity);
+        totalNonBlackCubes = activeCubes.Count(c => c != null && c.type != CubeType.Infinity);
         processedNonBlackCubes = 0;
     }
 
@@ -1212,14 +1402,28 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
         if (player != null && !debugMode)
         {
             player.enabled = true;
-            playerActionManager.maxLightMarkers = waveConfiguration[currentWaveIndex].maxLightMarkerCount;
-            playerActionManager.maxLightMarkerCharges = waveConfiguration[currentWaveIndex].maxLightMarkerCharge;
-
-            playerActionManager.maxPrimeMarkers = waveConfiguration[currentWaveIndex].maxPrimeMarkerCount;
-            playerActionManager.maxPrimeMarkerCharges = waveConfiguration[currentWaveIndex].maxPrimeMarkerCharge;
             
-            // Validate and adjust current mode based on available marker types
-            playerActionManager.ValidateCurrentMode();
+            // Only configure player if we have a valid wave configuration
+            if (useWaveConfiguration && waveConfiguration != null && currentWaveIndex >= 0 && currentWaveIndex < waveConfiguration.Count)
+            {
+                var wave = waveConfiguration[currentWaveIndex];
+                playerActionManager.maxUnitMarkers = wave.maxUnitMarkerCount;
+                playerActionManager.maxUnitMarkerCharges = wave.maxUnitMarkerCharge;
+
+                playerActionManager.maxRecursionMarkers = wave.maxRecursionMarkerCount;
+                playerActionManager.maxRecursionMarkerCharges = wave.maxRecursionMarkerCharge;
+
+                playerActionManager.maxPrimeMarkers = wave.maxPrimeMarkerCount;
+                playerActionManager.maxPrimeMarkerCharges = wave.maxPrimeMarkerCharge;
+                
+                // Validate and adjust current mode based on available marker types
+                playerActionManager.ValidateCurrentMode();
+            }
+            else
+            {
+                // For custom waves without configuration, use default values or keep current settings
+                DebugLog("ConfigurePlayer: No wave configuration available, using current player settings");
+            }
         }
 
         //playerActionManager.ConfigureUI();
@@ -1248,9 +1452,9 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
     }
 
     /// <summary>
-    /// Spawns the mirrored version of the current wave using marker positions from the previous wave.
-    /// Called automatically when a wave completes for the first time (HasBeenMirrored = false).
-    /// Can also be called manually from debug panels.
+    /// Spawns the mirrored wave - cubes generated ONLY from previous wave's marker positions.
+    /// Called automatically when a config wave completes.
+    /// Mirrored waves contain only player-placed marker positions converted to cubes.
     /// </summary>
     public IEnumerator SpawnMirroredWave()
     {
@@ -1266,20 +1470,155 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
         ClearAllCubes();
         ResetPlayer();
         
-        // Spawn base cubes from wave configuration
-        SpawnConfigurationCubes();
+        // Get recorded marker positions
+        var recordedPositions = GetPreviousWaveMarkers();
+        if (recordedPositions == null || recordedPositions.GetTotalMarkerCount() == 0)
+        {
+            DebugLog("[PairedWave] No markers recorded - mirrored wave will be empty, skipping to next config wave");
+            isMirroredWaveActive = false;
+            ClearPreviousWaveMarkers();
+            AdvanceToNextWave();
+            yield break;
+        }
         
-        // Spawn inherited cubes from previous wave markers
-        SpawnInheritedCubes();
+        // Set mirrored wave flag BEFORE spawning (prevents SetupWave from spawning config cubes)
+        isMirroredWaveActive = true;
+        
+        // Spawn cubes ONLY from marker positions (no base config cubes)
+        SpawnCubesFromMarkers(recordedPositions);
         
         // Clear markers after they've been used for spawning
         ClearPreviousWaveMarkers();
         
         CountNonBlackCubes();
-        DebugLog($"[PairedWave] Mirrored wave spawned: {activeCubes.Count} cubes ({totalNonBlackCubes} non-black)");
+        DebugLog($"[PairedWave] Mirrored wave spawned: {activeCubes.Count} cubes from {recordedPositions.GetTotalMarkerCount()} markers");
         
-        // Start the mirrored wave
+        // Start the mirrored wave (SetupWave will skip spawning due to isMirroredWaveActive flag)
         StartWave();
+    }
+    
+    /// <summary>
+    /// Spawns cubes directly from recorded marker positions for MIRRORED waves.
+    /// Respects MarkerSpawnRules configuration from current wave.
+    /// Used for replacement mode: spawns ONLY marker-based cubes (no base config cubes).
+    /// Positions are normalized to spawn at top of grid with Y-axis mirroring.
+    /// </summary>
+    private void SpawnCubesFromMarkers(RecordedMarkerPositions markers)
+    {
+        if (grid == null) return;
+        
+        int gridTop = grid.Height - 1;
+        int spawnedCount = 0;
+        
+        // Get spawn rules from current wave (use defaults if no wave configured)
+        var rules = CurrentWave?.markerSpawnRules ?? new MarkerSpawnRules();
+        
+        // Unit markers → Unit cubes (if rule enabled)
+        if (rules.unitSpawnsUnit)
+        {
+            foreach (var pos in markers.unitMarkerPositions)
+            {
+                int spawnY = gridTop - NormalizeMarkerY(pos.y, markers);
+                int spawnX = Mathf.Clamp(pos.x, 0, grid.Width - 1);
+                SpawnCubeDirectly(spawnX, spawnY, CubeType.Unit);
+                spawnedCount++;
+            }
+        }
+        
+        // Recursion markers → Recursion cubes (if rule enabled)
+        if (rules.recursionSpawnsRecursion)
+        {
+            foreach (var pos in markers.recursionMarkerPositions)
+            {
+                int spawnY = gridTop - NormalizeMarkerY(pos.y, markers);
+                int spawnX = Mathf.Clamp(pos.x, 0, grid.Width - 1);
+                SpawnCubeDirectly(spawnX, spawnY, CubeType.Recursion);
+                spawnedCount++;
+            }
+        }
+        
+        // Prime markers → Prime cubes (if rule enabled)
+        if (rules.primeSpawnsPrime)
+        {
+            foreach (var pos in markers.primeMarkerPositions)
+            {
+                int spawnY = gridTop - NormalizeMarkerY(pos.y, markers);
+                int spawnX = Mathf.Clamp(pos.x, 0, grid.Width - 1);
+                SpawnCubeDirectly(spawnX, spawnY, CubeType.Prime);
+                spawnedCount++;
+            }
+        }
+        
+        // Infinity markers → Infinity cubes (if rule enabled)
+        if (rules.infinitySpawnsInfinity)
+        {
+            foreach (var pos in markers.infinityMarkerPositions)
+            {
+                int spawnY = gridTop - NormalizeMarkerY(pos.y, markers);
+                int spawnX = Mathf.Clamp(pos.x, 0, grid.Width - 1);
+                SpawnCubeDirectly(spawnX, spawnY, CubeType.Infinity);
+                spawnedCount++;
+            }
+        }
+        
+        DebugLog($"[PairedWave] Spawned {spawnedCount} cubes from markers (rules applied)");
+    }
+    
+    /// <summary>
+    /// Normalizes marker Y position to a row index (0 = top row of spawn area).
+    /// MIRRORS the Y axis: markers placed low (near player) spawn at top, markers placed high spawn lower.
+    /// This creates the paired wave challenge - your marker placements become incoming cubes.
+    /// </summary>
+    private int NormalizeMarkerY(int markerY, RecordedMarkerPositions allMarkers)
+    {
+        // Find the range of Y positions in all markers
+        int minY = int.MaxValue;
+        int maxY = int.MinValue;
+        
+        foreach (var pos in allMarkers.unitMarkerPositions) { minY = Mathf.Min(minY, pos.y); maxY = Mathf.Max(maxY, pos.y); }
+        foreach (var pos in allMarkers.recursionMarkerPositions) { minY = Mathf.Min(minY, pos.y); maxY = Mathf.Max(maxY, pos.y); }
+        foreach (var pos in allMarkers.primeMarkerPositions) { minY = Mathf.Min(minY, pos.y); maxY = Mathf.Max(maxY, pos.y); }
+        foreach (var pos in allMarkers.infinityMarkerPositions) { minY = Mathf.Min(minY, pos.y); maxY = Mathf.Max(maxY, pos.y); }
+        
+        if (minY == int.MaxValue) return 0;
+        
+        // MIRRORED: Lower Y markers (near player) spawn at top (row 0)
+        // Higher Y markers spawn further down
+        return markerY - minY;
+    }
+    
+    /// <summary>
+    /// Spawns a single cube directly at grid position (no wave-to-grid conversion).
+    /// </summary>
+    private void SpawnCubeDirectly(int gridX, int gridY, CubeType type)
+    {
+        if (grid == null || cubePrefabs == null) return;
+        
+        int prefabIndex = (int)type;
+        if (prefabIndex < 0 || prefabIndex >= cubePrefabs.Length) return;
+        
+        // Clamp to grid bounds
+        gridX = Mathf.Clamp(gridX, 0, grid.Width - 1);
+        gridY = Mathf.Clamp(gridY, 0, grid.Height - 1);
+        
+        Vector2Int position = new Vector2Int(gridX, gridY);
+        Vector3 worldPos = grid.GridToWorldPosition(gridX, gridY, 2f);
+        
+        GameObject cubeObj = Instantiate(cubePrefabs[prefabIndex], worldPos, Quaternion.identity);
+        var cube = cubeObj.GetComponent<CubeManager>();
+        if (cube == null) cube = cubeObj.AddComponent<CubeManager>();
+        
+        var cubeData = new CubeData
+        {
+            type = type,
+            position = position,
+            level = 1
+        };
+        
+        cube.Init(grid, cubeData, 2f);
+        activeCubes.Add(cube);
+        
+        DebugLog($"[PairedWave] Spawned {type} at ({gridX}, {gridY})");
     }
 
     private IEnumerator DelayedWaveStart()
@@ -1324,110 +1663,6 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
     public int CurrentWaveIndex => currentWaveIndex;
     #endregion
 
-    #region Paired Wave System - Ghost Preview
-
-    /// <summary>
-    /// Gets preview positions for inherited cubes that will spawn in the mirrored version of this wave.
-    /// Returns list of normalized positions (in wave coordinates) and cube types for visualization.
-    /// Positions are normalized to wave's GridHeight constraints, matching actual spawn behavior.
-    /// </summary>
-    public List<GhostPreviewData> GetGhostPreviewPositions()
-    {
-        var previews = new List<GhostPreviewData>();
-        
-        if (CurrentWave == null) return previews;
-        
-        // Only show previews if this wave hasn't been mirrored yet and has markers recorded
-        bool hasBeenMirrored = GetHasBeenMirrored(CurrentWave);
-        if (hasBeenMirrored) return previews;
-
-        // Get recorded marker positions from current wave
-        var recordedPositions = GetPreviousWaveMarkers();
-        if (recordedPositions == null || recordedPositions.GetTotalMarkerCount() == 0)
-        {
-            return previews;
-        }
-
-        // Use current wave's spawn rules for preview
-        var rules = CurrentWave.markerSpawnRules;
-
-        // Collect all marker positions that will spawn cubes
-        List<Vector2Int> allMarkerPositions = new List<Vector2Int>();
-        Dictionary<Vector2Int, Enumerations.CubeType> markerToCubeType = new Dictionary<Vector2Int, Enumerations.CubeType>();
-        
-        if (rules.lightSpawnsUnit)
-        {
-            foreach (var pos in recordedPositions.lightMarkerPositions)
-            {
-                allMarkerPositions.Add(pos);
-                markerToCubeType[pos] = Enumerations.CubeType.Unit;
-            }
-        }
-        if (rules.heavySpawnsRecursion)
-        {
-            foreach (var pos in recordedPositions.heavyMarkerPositions)
-            {
-                allMarkerPositions.Add(pos);
-                markerToCubeType[pos] = Enumerations.CubeType.Recursion;
-            }
-        }
-        if (rules.primeSpawnsPrime)
-        {
-            foreach (var pos in recordedPositions.primeMarkerPositions)
-            {
-                allMarkerPositions.Add(pos);
-                markerToCubeType[pos] = Enumerations.CubeType.Prime;
-            }
-        }
-        if (rules.infinitySpawnsInfinity)
-        {
-            foreach (var pos in recordedPositions.infinityMarkerPositions)
-            {
-                allMarkerPositions.Add(pos);
-                markerToCubeType[pos] = Enumerations.CubeType.Infinity;
-            }
-        }
-
-        // Normalize all positions to wave constraints (same logic as SpawnInheritedCubes)
-        Dictionary<Vector2Int, Vector2Int> normalizedPositions = NormalizeMarkerPositionsToWaveConstraints(allMarkerPositions, CurrentWave);
-
-        // Generate previews with normalized positions
-        foreach (var originalPos in allMarkerPositions)
-        {
-            if (normalizedPositions.TryGetValue(originalPos, out Vector2Int normalizedPos))
-            {
-                // Convert normalized wave position to final grid position for preview
-                // Use same logic as SpawnInheritedCubeAtNormalizedPosition
-                var waveHeight = CurrentWave.GridHeight;
-                int finalGridY;
-                
-                if (normalizedPos.y < waveHeight)
-                {
-                    // Normal case: within wave constraints
-                    finalGridY = grid != null ? grid.Height - (waveHeight - normalizedPos.y) : normalizedPos.y;
-                }
-                else
-                {
-                    // Extended case: beyond wave GridHeight
-                    int offsetFromTop = normalizedPos.y - waveHeight;
-                    finalGridY = grid != null ? grid.Height - 1 - offsetFromTop : normalizedPos.y;
-                    finalGridY = Mathf.Max(0, finalGridY);
-                }
-                
-                Vector2Int previewGridPos = new Vector2Int(normalizedPos.x, finalGridY);
-                
-                previews.Add(new GhostPreviewData 
-                { 
-                    position = previewGridPos, // Grid position for visualization
-                    cubeType = markerToCubeType[originalPos]
-                });
-            }
-        }
-
-        return previews;
-    }
-
-    #endregion
 
     #region Public Methods
     public void AddCube(Vector2Int wavePosition, CubeType type)
@@ -1474,7 +1709,17 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
     {
         string status = waveActive ? "ACTIVE" : "STOPPED";
         string speedState = isSpeedingUp ? "FAST" : "NORMAL";
-        return $"Wave {currentWaveIndex}: {status} ({speedState}) Step:{MoveStep} Cubes:{activeCubes.Count} Mode:{(debugMode ? "DEBUG" : "NORMAL")}";
+        string waveLabel = GetWaveLabel();
+        return $"Wave {waveLabel}: {status} ({speedState}) Step:{MoveStep} Cubes:{activeCubes.Count}";
+    }
+    
+    /// <summary>
+    /// Gets the display label for the current wave (e.g., "1", "1M", "2", "2M")
+    /// </summary>
+    public string GetWaveLabel()
+    {
+        int displayIndex = currentWaveIndex + 1; // 1-based for display
+        return isMirroredWaveActive ? $"{displayIndex}M" : $"{displayIndex}";
     }
 
     public Dictionary<string, object> GetDebugData()
@@ -1505,22 +1750,20 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
         };
 
         // Add paired wave debug information
-        if (CurrentWave != null)
+        debugData["Is Mirrored Wave"] = isMirroredWaveActive;
+        
+        var recordedPositions = GetPreviousWaveMarkers();
+        if (recordedPositions != null)
         {
-            bool hasBeenMirrored = GetHasBeenMirrored(CurrentWave);
-            debugData["Has Been Mirrored"] = hasBeenMirrored;
-            
-            var recordedPositions = GetPreviousWaveMarkers();
-            if (recordedPositions != null)
-            {
-                debugData["Recorded Light Markers"] = recordedPositions.lightMarkerPositions.Count;
-                debugData["Recorded Heavy Markers"] = recordedPositions.heavyMarkerPositions.Count;
-                debugData["Recorded Prime Markers"] = recordedPositions.primeMarkerPositions.Count;
-                debugData["Total Recorded Markers"] = recordedPositions.GetTotalMarkerCount();
-            }
-            
-            var ghostPreviews = GetGhostPreviewPositions();
-            debugData["Ghost Preview Count"] = ghostPreviews.Count;
+            debugData["Recorded Unit Markers"] = recordedPositions.unitMarkerPositions.Count;
+            debugData["Recorded Recursion Markers"] = recordedPositions.recursionMarkerPositions.Count;
+            debugData["Recorded Prime Markers"] = recordedPositions.primeMarkerPositions.Count;
+            debugData["Recorded Infinity Markers"] = recordedPositions.infinityMarkerPositions.Count;
+            debugData["Total Recorded Markers"] = recordedPositions.GetTotalMarkerCount();
+        }
+        else
+        {
+            debugData["Recorded Markers"] = "None";
         }
 
         return debugData;
@@ -1541,6 +1784,7 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
         debugMode = false;
         manualControl = false;
         isPaused = false;
+        isMirroredWaveActive = false;
         
         // Reset statistics
         ResetWaveStatistics();
@@ -1580,12 +1824,35 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
     #endregion
 
     #region Paired Wave System - Marker Position Recording
+    
+    // ============================================================================
+    // PAIRED WAVE SYSTEM - Two Distinct Wave Modes
+    // ============================================================================
+    //
+    // The paired wave system supports two distinct modes for spawning inherited cubes:
+    //
+    // 1. ADDITIVE MODE (SpawnInheritedCubes):
+    //    - Used during standard wave setup when HasBeenMirrored = true
+    //    - Spawns inherited cubes IN ADDITION TO base wave configuration cubes
+    //    - Respects MarkerSpawnRules configuration from WaveData
+    //    - Use case: Wave A has predefined cubes, plus inherited cubes from previous markers
+    //
+    // 2. REPLACEMENT MODE (SpawnMirroredWave -> SpawnCubesFromMarkers):
+    //    - Used for dedicated mirrored waves
+    //    - Spawns ONLY marker-inherited cubes (no base config cubes)
+    //    - Respects MarkerSpawnRules configuration from WaveData
+    //    - Use case: Wave B is entirely player-created from Wave A placements
+    //
+    // Both modes now respect the MarkerSpawnRules configuration, allowing designers
+    // to control which marker types spawn which cube types per wave.
+    //
+    // ============================================================================
 
     /// <summary>
     /// Records marker positions from the current wave for inheritance by the mirrored version.
     /// Called when markers are placed during any wave.
     /// </summary>
-    public void RecordMarkerPosition(Vector2Int position, Enumerations.MarkerMode markerType)
+    public void RecordMarkerPosition(Vector2Int position, MarkerMode markerType)
     {
         if (previousWaveMarkers == null)
         {
@@ -1594,6 +1861,22 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
 
         previousWaveMarkers.RecordMarker(position, markerType);
         DebugLog($"[PairedWave] Recorded {markerType} marker at ({position.x}, {position.y}) for next mirrored wave");
+    }
+    
+    /// <summary>
+    /// Removes a recorded marker position (for undo functionality).
+    /// Returns true if marker was found and removed.
+    /// </summary>
+    public bool UnrecordMarkerPosition(Vector2Int position, MarkerMode markerType)
+    {
+        if (previousWaveMarkers == null) return false;
+        
+        bool removed = previousWaveMarkers.RemoveMarker(position, markerType);
+        if (removed)
+        {
+            DebugLog($"[PairedWave] Unrecorded {markerType} marker at ({position.x}, {position.y})");
+        }
+        return removed;
     }
 
     /// <summary>
@@ -1661,12 +1944,13 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
 
 /// <summary>
 /// Stores marker positions recorded during a wave for inheritance by the mirrored version.
+/// Marker types: Unit, Recursion, Prime, Infinity
 /// </summary>
 [System.Serializable]
 public class RecordedMarkerPositions
 {
-    public List<Vector2Int> lightMarkerPositions = new List<Vector2Int>();
-    public List<Vector2Int> heavyMarkerPositions = new List<Vector2Int>();
+    public List<Vector2Int> unitMarkerPositions = new List<Vector2Int>();
+    public List<Vector2Int> recursionMarkerPositions = new List<Vector2Int>();
     public List<Vector2Int> primeMarkerPositions = new List<Vector2Int>();
     public List<Vector2Int> infinityMarkerPositions = new List<Vector2Int>();
 
@@ -1675,39 +1959,50 @@ public class RecordedMarkerPositions
         // No initialization needed
     }
 
-    public void RecordMarker(Vector2Int position, Enumerations.MarkerMode markerType)
+    public void RecordMarker(Vector2Int position, MarkerMode markerType)
     {
         switch (markerType)
         {
-            case Enumerations.MarkerMode.Light:
-                if (!lightMarkerPositions.Contains(position))
-                    lightMarkerPositions.Add(position);
+            case MarkerMode.Unit:
+                if (!unitMarkerPositions.Contains(position))
+                    unitMarkerPositions.Add(position);
                 break;
-            case Enumerations.MarkerMode.Heavy:
-                if (!heavyMarkerPositions.Contains(position))
-                    heavyMarkerPositions.Add(position);
+            case MarkerMode.Recursion:
+                if (!recursionMarkerPositions.Contains(position))
+                    recursionMarkerPositions.Add(position);
                 break;
-            case Enumerations.MarkerMode.Prime:
+            case MarkerMode.Prime:
                 if (!primeMarkerPositions.Contains(position))
                     primeMarkerPositions.Add(position);
                 break;
-            // Infinity markers not yet implemented, but structure is ready
+            case MarkerMode.Infinity:
+                if (!infinityMarkerPositions.Contains(position))
+                    infinityMarkerPositions.Add(position);
+                break;
+        }
+    }
+    
+    public bool RemoveMarker(Vector2Int position, MarkerMode markerType)
+    {
+        switch (markerType)
+        {
+            case MarkerMode.Unit:
+                return unitMarkerPositions.Remove(position);
+            case MarkerMode.Recursion:
+                return recursionMarkerPositions.Remove(position);
+            case MarkerMode.Prime:
+                return primeMarkerPositions.Remove(position);
+            case MarkerMode.Infinity:
+                return infinityMarkerPositions.Remove(position);
+            default:
+                return false;
         }
     }
 
     public int GetTotalMarkerCount()
     {
-        return lightMarkerPositions.Count + heavyMarkerPositions.Count + 
+        return unitMarkerPositions.Count + recursionMarkerPositions.Count + 
                primeMarkerPositions.Count + infinityMarkerPositions.Count;
     }
 }
 
-/// <summary>
-/// Data structure for ghost preview visualization of future cube spawns.
-/// </summary>
-[System.Serializable]
-public class GhostPreviewData
-{
-    public Vector2Int position;
-    public Enumerations.CubeType cubeType;
-}

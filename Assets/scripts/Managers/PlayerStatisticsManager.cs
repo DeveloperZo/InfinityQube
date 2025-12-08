@@ -432,11 +432,13 @@ public class PlayerStatisticsManager : MonoBehaviour, IManagerDebugInterface
         
         switch (markerType.ToLower())
         {
-            case "light":
-                currentSession.markerData.lightMarkerPlacements.Add(placementEvent);
+            case "unit":
+            case "light": // backward compatibility
+                currentSession.markerData.unitMarkerPlacements.Add(placementEvent);
                 break;
-            case "heavy":
-                currentSession.markerData.heavyMarkerPlacements.Add(placementEvent);
+            case "recursion":
+            case "heavy": // backward compatibility
+                currentSession.markerData.RecursionMarkerPlacements.Add(placementEvent);
                 break;
             case "prime":
                 currentSession.markerData.primeMarkerPlacements.Add(placementEvent);
@@ -461,18 +463,20 @@ public class PlayerStatisticsManager : MonoBehaviour, IManagerDebugInterface
 
         switch (markerType.ToLower())
         {
-            case "light":
-                placementEvent = currentSession.markerData.lightMarkerPlacements.FirstOrDefault(x => x.position == position);
+            case "unit":
+            case "light": // backward compatibility
+                placementEvent = currentSession.markerData.unitMarkerPlacements.FirstOrDefault(x => x.position == position);
                 if (placementEvent != null)
                 {
-                    currentSession.markerData.lightMarkerPlacements.Remove(placementEvent);
+                    currentSession.markerData.unitMarkerPlacements.Remove(placementEvent);
                 }
                 break;
-            case "heavy":
-                placementEvent = currentSession.markerData.heavyMarkerPlacements.FirstOrDefault(x => x.position == position);
+            case "recursion":
+            case "heavy": // backward compatibility
+                placementEvent = currentSession.markerData.RecursionMarkerPlacements.FirstOrDefault(x => x.position == position);
                 if (placementEvent != null)
                 {
-                    currentSession.markerData.heavyMarkerPlacements.Remove(placementEvent);
+                    currentSession.markerData.RecursionMarkerPlacements.Remove(placementEvent);
                 }
                 break;
             case "prime":
@@ -1277,8 +1281,8 @@ public class PlayerStatisticsManager : MonoBehaviour, IManagerDebugInterface
             ["Session ID"] = GetCurrentSessionId(),
             ["Session Duration"] = GetSessionDuration(),
             ["Positions Recorded"] = currentSession?.movementData?.positionHistory?.Count ?? 0,
-            ["Markers Placed"] = (currentSession?.markerData?.lightMarkerPlacements?.Count ?? 0) +
-                               (currentSession?.markerData?.heavyMarkerPlacements?.Count ?? 0) +
+            ["Markers Placed"] = (currentSession?.markerData?.unitMarkerPlacements?.Count ?? 0) +
+                               (currentSession?.markerData?.RecursionMarkerPlacements?.Count ?? 0) +
                                (currentSession?.markerData?.primeMarkerPlacements?.Count ?? 0),
             ["Cubes Captured"] = currentSession?.cubeData?.captureEvents?.Count ?? 0,
             ["Tutorial Messages"] = currentSession?.tutorialData?.messageEvents?.Count ?? 0,

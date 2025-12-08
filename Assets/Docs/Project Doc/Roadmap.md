@@ -14,7 +14,7 @@ This roadmap outlines the development path from current production-ready state t
 - **Four-tier marker system** (Light/Heavy/Prime/Cube) - ✅ (June 23, 2025)
 - **Face painting mechanics** with rotation tracking - ✅ Fully operational
 - **Corruption/enhancement tile system** - ✅ Integrated and tested
-- **Recursion cube multi-hit mechanics** - ✅ Working with heavy markers
+- **Recursion cube multi-hit mechanics** - ✅ Working with Recursion Markers
 - **Comprehensive debug infrastructure** - ✅ Production quality (OnGUI used only for debuggers)
 - **Statistics and analytics system** - ✅ Complete tracking implemented
 - **Integration testing framework** - ✅ All systems validated
@@ -38,66 +38,62 @@ This roadmap outlines the development path from current production-ready state t
   - PlayerUI.cs, StageInfoUI.cs (status displays)
 
 ### 🔄 **TOP PRIORITY - IN PROGRESS** 
-- **Paired Wave System** - ⚡ HIGHEST PRIORITY - Core innovation mechanic (designed, not yet implemented)
 - **Infinity Markers** - Designed but not implemented (can be prioritized)
 
 ---
 
 ## Phase 1: Core Innovation & Content (Current Phase)
 **Goal**: Implement core paired wave system and complete foundational content
+**Estimated Total Effort**: 6-8 weeks active development
 
 ### Milestone 1.1: Paired Wave System Implementation - HIGHEST PRIORITY
 - **Target**: Implement marker inheritance system where Wave A marker placements become Wave B cube spawns
 - **Complexity**: 6 points
-- **Status**: 🔴 CRITICAL - Core innovation mechanic, designed but not implemented
+- **Effort Estimate**: 1-2 weeks active development
+- **Status**: ✅ **COMPLETE** - Core innovation mechanic implemented and functional
 - **Dependencies**: None (foundational system)
 - **Tasks**:
-  - [ ] Extend WaveData ScriptableObject with paired wave fields (pairID, isPrimaryWave, markerSpawnRules, inheritanceDelay)
-  - [ ] **Update StageDB/StageData** to support paired wave configuration and validation
-  - [ ] Implement marker position recording system in GridManager/PlayerActionManager
-  - [ ] Create wave inheritance system in WaveManager (convert marker positions to cube spawns)
-  - [ ] Implement marker-to-cube conversion rules (Light→Unit, Heavy→Recursion, Prime→Prime, Infinity→Infinity)
-  - [ ] Add overlap resolution system for inherited vs base spawns
-  - [ ] Create ghost preview system for future spawn positions
-  - [ ] Add visual feedback (placement echo, inheritance trail, type indicators)
-  - [ ] Update debug panels for paired wave visualization
-  - [ ] Integration testing with existing wave system
-  - [ ] **Migration path for existing stage data** (update existing 3 stages to paired wave format)
+  - [x] Extend WaveData ScriptableObject with paired wave fields (pairID, isPrimaryWave, markerSpawnRules, inheritanceDelay)
+  - [x] Should be no need to **Update StageDB/StageData** to support paired wave configuration and validation
+  - [x] Implement marker position recording system in GridManager/PlayerActionManager
+  - [x] Ensure wave manager alternates between wave and mirror wave
+  - [x] Implement marker-to-cube conversion rules (Light→Unit, Heavy→Recursion, Prime→Prime, Infinity→Infinity)
+  - [x] Add visual feedback (placement echo, inheritance trail, type indicators)
+  - [x] Update debug panels for paired wave visualization
+  - [x] Integration testing with existing wave system
 - **Acceptance Criteria**:
-  - ✅ Can create WaveData with pairID and isPrimaryWave fields
   - ✅ Marker placements in Wave A are recorded and visible in debug panel
   - ✅ Wave B spawns cubes at recorded marker positions from Wave A
-  - ✅ Marker-to-cube conversion works correctly (Light→Unit, Heavy→Recursion, Prime→Prime)
-  - ✅ Ghost previews show future spawn positions before Wave B starts
-  - ✅ Visual feedback clearly shows inheritance connections
+  - ✅ Marker-to-cube conversion works correctly (Light→Unit, Heavy→Recursion, Prime→Prime, Infinity→Infinity)
+  - ✅ Visual feedback clearly shows inheritance connections (debug logging and prototype system)
   - ✅ Existing 3 stages can be loaded and played with paired waves
 - **Playtesting Checkpoint**:
   - Playtest: Create a simple 2-wave pair, place markers in Wave A, verify they spawn as cubes in Wave B
   - Verify: Inheritance is visually clear and gameplay feels strategic
   - Iterate: Adjust visual feedback and conversion rules based on playtest feedback
 
-### Milestone 1.2: Infinity Markers Implementation
-- **Target**: Complete Infinity marker system (placement, triggering, wave inheritance)
+### Milestone 1.2: Refine Markers Implementation
+- **Target**: Review and refine marker system (placement, cube spawn, cube collison/interactions)
 - **Complexity**: 3 points
-- **Status**: Designed but not implemented
-- **Dependencies**: Milestone 1.1 (needs paired wave system for inheritance)
+- **Effort Estimate**: ~1 week active development
+- **Status**: Partial design but not implemented
+- **Dependencies**: Milestone 1.1 ✅ (paired wave system complete)
 - **Tasks**:
-  - [ ] Define Infinity marker placement key and trigger key
-  - [ ] Implement Infinity marker placement mechanics
-  - [ ] Create pause-inducing cube spawn system
-  - [ ] Integrate with wave inheritance (Infinity markers spawn Infinity cubes in next wave)
-  - [ ] Add charge system and regeneration mechanics
-  - [ ] Visual feedback and interaction range indicators
-  - [ ] Integration with existing marker system
+  - [ ] Define marker placement and spawning for all markers
+  - [ ] Design/Define cube collisions for all combinations and update documentation (with a focus on Prime/Prime Recursion/Recurion and Infinity/Infinity and hopefully creating meaningful gameplay rewarding player for matching)
+  - [ ] Design/Define how and which markers should get mirrored and potential gameplay mechanics
+  - [ ] Ensure charge system and regeneration mechanics are coherent
+  - [ ] Visual feedback for markers (distinct color per marker type) and suggest interaction indicators if applicable
+  - [ ] Ensure cohesive marker system
+  - [ ] Explore interesting ways for player to acquire non unit markers to create scarcity and strategic depth
 - **Acceptance Criteria**:
-  - ✅ Infinity markers can be placed and triggered with defined keys
-  - ✅ Infinity markers spawn pause-inducing cubes that affect Infinity cubes
-  - ✅ Infinity markers in Wave A spawn Infinity cubes in Wave B
+  - ✅ Markers can be placed and spawn the appropriate cube
+  - ✅ Collision logic has been defined for all scenarios
   - ✅ Charge system and regeneration work correctly
-  - ✅ Visual feedback clearly shows Infinity marker effects
+  - ✅ Visual feedback clearly shows marker and spawned cube
 - **Playtesting Checkpoint**:
-  - Playtest: Place Infinity markers, trigger them, verify pause mechanics work
-  - Verify: Infinity marker inheritance creates strategic depth
+  - Playtest: Place markers verify mechanics work
+  - Verify: Marker dynamics creates strategic depth
   - Iterate: Balance charge system and visual feedback
 
 ### Milestone 1.3: First Pass at Complete Stage 1 Content
@@ -114,7 +110,8 @@ This roadmap outlines the development path from current production-ready state t
 ### Milestone 1.4: StageDB Enhancement & Migration
 - **Target**: Update StageDB system to fully support paired waves and migrate existing content
 - **Complexity**: 3 points
-- **Dependencies**: Milestone 1.1 (needs paired wave system implemented first)
+- **Effort Estimate**: ~1 week active development
+- **Dependencies**: Milestone 1.1 ✅ (paired wave system complete)
 - **Tasks**:
   - [ ] Extend StageDB validation to check paired wave integrity
   - [ ] Create StageDB migration tools for converting existing stages to paired wave format
@@ -137,7 +134,8 @@ This roadmap outlines the development path from current production-ready state t
 ### Milestone 1.5: Stage Content Creation
 - **Target**: 12-13 stages defined with waves, 4-5 complete stages with progression
 - **Complexity**: 7 points
-- **Dependencies**: Milestone 1.1, 1.4 (needs paired waves and StageDB tools)
+- **Effort Estimate**: 3-4 weeks active development
+- **Dependencies**: Milestone 1.1 ✅, 1.4 (needs paired waves ✅ and StageDB tools)
 - **Tasks**:
   - [ ] Design remaining 9-10 stages with paired wave mechanics
   - [ ] Create wave pairs for each stage (Wave A → Wave B structure)
@@ -163,6 +161,7 @@ This roadmap outlines the development path from current production-ready state t
 ### Milestone 1.6: RPG/Progression Ideation
 - **Target**: Establish framework to deliver progression and RPG vibes for player
 - **Complexity**: 4 points
+- **Effort Estimate**: 1-2 weeks active development
 - **Tasks**:
   - [ ] Brainstorm and design RPG elements and progression
   - [ ] Design hub area concept and layout
@@ -172,6 +171,7 @@ This roadmap outlines the development path from current production-ready state t
 ### Milestone 1.7: Visual Polish Pass
 - **Target**: Enhanced game feel and visual feedback
 - **Complexity**: 2 points
+- **Effort Estimate**: 1-2 weeks active development
 - **Tasks**:
   - [ ] Improved particle effects for all major actions
   - [ ] Screen shake and juice for impacts
@@ -185,10 +185,12 @@ This roadmap outlines the development path from current production-ready state t
 
 ## Phase 2: Content Completion & First Polish Pass
 **Goal**: Complete all content and achieve first polish level
+**Estimated Total Effort**: 8-10 weeks active development
 
 ### Milestone 2.1: Complete Stage Content
 - **Target**: Finish all 12-13 stages with full wave pairs
 - **Complexity**: 5 points
+- **Effort Estimate**: 2-3 weeks active development
 - **Dependencies**: Milestone 1.5 (builds on initial stage content)
 - **Tasks**:
   - [ ] Complete remaining stage designs and implementations
@@ -211,6 +213,7 @@ This roadmap outlines the development path from current production-ready state t
 ### Milestone 2.2: Save/Load & Progress Persistence
 - **Target**: Complete save/load system for game progress
 - **Complexity**: 3 points
+- **Effort Estimate**: 1-2 weeks active development
 - **Dependencies**: Milestone 2.1 (needs stages to save progress for)
 - **Tasks**:
   - [ ] Design save data structure (stage progress, unlocks, statistics)
@@ -235,6 +238,7 @@ This roadmap outlines the development path from current production-ready state t
 ### Milestone 2.3: Settings & Options System
 - **Target**: Complete settings menu with persistence
 - **Complexity**: 2 points
+- **Effort Estimate**: ~1 week active development
 - **Tasks**:
   - [ ] Create settings menu UI (graphics, audio, controls, gameplay)
   - [ ] Implement settings persistence (PlayerPrefs/JSON)
@@ -247,7 +251,8 @@ This roadmap outlines the development path from current production-ready state t
 ### Milestone 2.4: Interactive Tutorial System
 - **Target**: Comprehensive tutorial teaching all mechanics including paired waves
 - **Complexity**: 4 points
-- **Dependencies**: Milestone 1.1, 1.5 (needs paired waves and stages)
+- **Effort Estimate**: 1-2 weeks active development
+- **Dependencies**: Milestone 1.1 ✅, 1.5 (needs paired waves ✅ and stages)
 - **Tasks**:
   - [ ] Design tutorial flow for all mechanics
   - [ ] Create interactive tutorial stages (guided placement, step-by-step)
@@ -332,6 +337,7 @@ This roadmap outlines the development path from current production-ready state t
 
 ## Phase 3: Polish, Refinement & QA
 **Goal**: Achieve commercial polish level through iterative refinement
+**Estimated Total Effort**: 4-6 weeks active development
 
 ### Milestone 3.1: Second Polish Pass - Balance & Tuning
 - **Target**: Comprehensive balance pass and difficulty tuning
@@ -400,6 +406,7 @@ This roadmap outlines the development path from current production-ready state t
 
 ## Phase 4: Steam Integration & Release Preparation
 **Goal**: Platform integration and commercial release readiness
+**Estimated Total Effort**: 4-5 weeks active development
 
 ### Milestone 4.1: Steam SDK Integration
 - **Target**: Integrate Steamworks SDK
@@ -615,22 +622,52 @@ Milestones are ordered to minimize dependencies, but some key paths:
 ## Development Velocity Dashboard
 
 ### **Current Metrics**:
-- **Measured Velocity**: 18.9 complexity points/month (from MilestoneTracking)
-- **Development Period**: April 29 - November 16, 2025 (7.3 months)
-- **Completed Complexity**: 44 points (including full AudioManager implementation)
-- **Remaining Work**: ~70 complexity points (across all phases)
-- **Estimated Completion**: Based on 15 points/month conservative estimate: ~5 months
+- **Measured Velocity**: ~22 complexity points/month (active periods)
+- **Completed Complexity**: 55 points
+- **Remaining Work**: ~38 complexity points (across remaining phases)
+- **Estimated Total Effort**: ~8-12 weeks of active development
+
+### **Effort Summary by Phase**:
+| Phase | Focus | Effort Estimate |
+|-------|-------|-----------------|
+| Phase 1 | Core Innovation & Content | 6-8 weeks active |
+| Phase 2 | Content Completion & Polish | 8-10 weeks active |
+| Phase 3 | Polish, Refinement & QA | 4-6 weeks active |
+| Phase 4 | Steam Integration & Release | 4-5 weeks active |
+
+**Note**: Phases can overlap; some work can be parallelized.
 
 ### **Priority Tracking**:
-- **Immediate Priority**: Paired Wave System Implementation (6 points)
-- **Next Priority**: Infinity Markers Implementation (3 points)
-- **Following**: Stage content creation and polish
-- **Status**: 
-  - Audio system COMPLETE (7+ files implemented)
-  - Production UI COMPLETE (Unity UI systems operational)
-  - Debug systems use OnGUI (intentional, not production UI)
+| Priority | Item | Status | Effort |
+|----------|------|--------|--------|
+| 🔴 Critical | Paired Wave System Implementation | ✅ Complete | 1-2 weeks |
+| 🔴 High | File Size Refactoring (WaveManager) | Planned | 2-3 weeks |
+| 🟡 High | Infinity Markers Implementation | Designed | ~1 week |
+| 🟡 Medium | Stage Content Creation | Not Started | 3-4 weeks |
+
+### **System Status**:
+| System | Status | Notes |
+|--------|--------|-------|
+| Audio System | ✅ Complete | 7+ files implemented |
+| Production UI | ✅ Complete | Unity UI systems operational |
+| Debug Systems | ✅ Complete | OnGUI (intentional for debug) |
+| Paired Wave System | ✅ Complete | Core innovation implemented |
+| File Size Compliance | 🔴 Violation | 10 files exceed limits |
+
+### **Critical Path**:
+```
+Paired Wave System ✅ → Infinity Markers (1 wk) → Stage Content (3-4 wks) → Tutorial (1-2 wks) → Polish (2-4 wks) → Release
+```
 
 ---
 
-*Last Updated: December 2024*  
-*Development Phase: Phase 1 - Paired Wave System Implementation*
+**Related Documents**:
+- [Milestone Tracking](MilestoneTracking.md) - Historical record
+- [Development Velocity](../Technical%20Doc/DevelopmentVelocity.md) - Detailed metrics
+- [Technical Debt](../Technical%20Doc/TechnicalDebt.md) - Debt tracking
+- [Architectural Critiques](../Technical%20Doc/ArchitecturalCritiques.md) - Code analysis
+
+---
+
+*Last Updated: December 2025*  
+*Development Phase: Phase 1 - Infinity Markers & Content Creation*

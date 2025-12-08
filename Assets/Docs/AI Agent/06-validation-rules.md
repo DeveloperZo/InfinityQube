@@ -159,11 +159,11 @@ public void Manager_Initializes_Successfully()
 [Test]
 public void FourTierMarkerSystem_Functions_Correctly()
 {
-    // Test Light markers
+    // Test Unit Markers
     TestMarkerPlacement(MarkerType.Light, KeyCode.F);
     TestMarkerTrigger(MarkerType.Light, KeyCode.R);
     
-    // Test Heavy markers
+    // Test Recursion Markers
     TestMarkerPlacement(MarkerType.Heavy, KeyCode.V);
     TestMarkerTrigger(MarkerType.Heavy, KeyCode.Y);
     

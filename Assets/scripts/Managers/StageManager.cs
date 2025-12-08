@@ -4,6 +4,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System;
 using System.Linq;
+using static Enumerations;
 
 public class StageManager : MonoBehaviour, IManagerDebugInterface
 {
@@ -20,6 +21,7 @@ public class StageManager : MonoBehaviour, IManagerDebugInterface
 
     [Header("Stage Flow")]
     [SerializeField] private bool autoAdvanceStages = true;
+    [SerializeField] private bool autoAdvanceWaves = true;
     [SerializeField] private float stageTransitionDelay = 2f;
     [SerializeField] private bool restartOnFailure = true;
 
@@ -188,6 +190,12 @@ public class StageManager : MonoBehaviour, IManagerDebugInterface
     public Dictionary<int, int> GetStageAttempts()
     {
         return new Dictionary<int, int>(stageAttempts);
+    }
+
+    public bool AutoAdvanceWaves
+    {
+        get => autoAdvanceWaves;
+        set => autoAdvanceWaves = value;
     }
     #endregion
 
@@ -381,7 +389,7 @@ public class StageManager : MonoBehaviour, IManagerDebugInterface
     #endregion
 
     #region Stage Completion Logic
-    public void OnCubeCaptured(Enumerations.CubeType cubeType)
+    public void OnCubeCaptured(CubeType cubeType)
     {
         if (!IsStageInProgress) return;
 
@@ -666,8 +674,15 @@ public class StageManager : MonoBehaviour, IManagerDebugInterface
         // Check if there are more waves in this stage
         if (waveManager != null && waveManager.HasMoreWaves())
         {
-            DebugLog($"OnWaveCompleted: Transitioning to next wave after {stageTransitionDelay}s delay...");
-            StartCoroutine(DelayedNextWave());
+            if (autoAdvanceWaves)
+            {
+                DebugLog($"OnWaveCompleted: Transitioning to next wave after {stageTransitionDelay}s delay...");
+                StartCoroutine(DelayedNextWave());
+            }
+            else
+            {
+                DebugLog("OnWaveCompleted: Auto-advance disabled, waiting for manual control");
+            }
         }
         else
         {
@@ -743,7 +758,7 @@ public class StageManager : MonoBehaviour, IManagerDebugInterface
     /// Uses the existing WaveManager message system for consistent UI.
     /// </summary>
     /// <param name="cubeType">Type of cube that escaped</param>
-    private void ShowEscapeFeedback(Enumerations.CubeType cubeType)
+    private void ShowEscapeFeedback(CubeType cubeType)
     {
         if (waveManager == null || !waveManager.showMessages) return;
 
