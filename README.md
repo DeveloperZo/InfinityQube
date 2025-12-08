@@ -20,13 +20,13 @@
 
 **Unit Markers** (F/R): Precision single-tile targeting  
 **Recursion Markers** (V/Y): Enhanced markers optimized for Recursion cubes  
-**Prime Markers** (G/T): 3x3 area coverage creating strategic zones  
-**Cube Markers** (Q/E): Generated from Prime cube captures, direct detonation capability
+**Matrix Markers** (G/T): 3x3 area coverage creating strategic zones  
+**Cube Markers** (Q/E): Generated from Matrix cube captures, direct detonation capability
 
 ### Advanced Cube Ecosystem
 
 **Unit Cubes**: Basic rhythm elements, reliable capture targets  
-**Prime Cubes**: High-value targets that generate Cube markers  
+**Matrix Cubes**: High-value targets that generate Cube markers  
 **Infinity Cubes**: Uncapturable threats with face painting mechanics  
 **Recursion Cubes**: Multi-hit durability, optimized for Recursion Marker interaction
 
@@ -40,7 +40,7 @@
 1. **Wave Initiation**: Player-controlled rhythm start (ENTER)
 2. **Strategic Positioning**: WASD navigation with threat assessment
 3. **Four-Tier Marker Strategy**: Tactical marker type selection and placement
-4. **Dynamic Engagement**: Cube advancement, captures, prime cube rewards
+4. **Dynamic Engagement**: Cube advancement, captures, matrix cube rewards
 5. **Adaptive Response**: Resource management and chaos adaptation
 6. **Wave Resolution**: Performance analysis and progression
 

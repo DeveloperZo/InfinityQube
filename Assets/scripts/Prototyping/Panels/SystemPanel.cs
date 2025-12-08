@@ -9,7 +9,7 @@ using static Enumerations;
 public class SystemPanel : PrototypingPanelBase
 {
     public override string PanelName => "System";
-    public override string PanelIcon => "⚙";
+    public override string PanelIcon => "Sys";
     public override PrototypingCategory Category => PrototypingCategory.System;
     public override int Priority => 50;
     
@@ -18,6 +18,7 @@ public class SystemPanel : PrototypingPanelBase
     
     private bool showPerf = true;
     private bool showManagers = false;
+    private bool showGameplayToggles = true;
     private bool showPresets = false;
     
     public override List<QuickAction> GetQuickActions()
@@ -64,6 +65,16 @@ public class SystemPanel : PrototypingPanelBase
                 DrawManagerStatus("WaveManager", waveManager);
                 DrawManagerStatus("PlayerManager", playerManager);
                 DrawManagerStatus("StageManager", stageManager);
+            });
+        }
+        
+        // Gameplay Toggles
+        showGameplayToggles = DrawToggleSection("GAMEPLAY TOGGLES", showGameplayToggles);
+        if (showGameplayToggles)
+        {
+            DrawSection("", () =>
+            {
+                DrawGameplayToggles();
             });
         }
         
@@ -134,4 +145,61 @@ public class SystemPanel : PrototypingPanelBase
         if (waveManager != null) Debug.Log($"Cubes: {waveManager.activeCubes?.Count ?? 0}");
         Debug.Log("=== END REPORT ===");
     }
+    
+    #region Gameplay Toggles
+    
+    private void DrawGameplayToggles()
+    {
+        // Line Divider
+        GUILayout.Label("Line Divider:");
+        GUILayout.BeginHorizontal();
+        
+        bool lineDividerEnabled = gridManager?.LineDividerEnabled ?? false;
+        GUI.backgroundColor = lineDividerEnabled ? Color.green : Color.gray;
+        if (GUILayout.Button(lineDividerEnabled ? "ON" : "OFF", GUILayout.Width(50), GUILayout.Height(25)))
+        {
+            gridManager?.SetLineDividerEnabled(!lineDividerEnabled);
+            LogAction($"Line Divider: {(!lineDividerEnabled ? "ON" : "OFF")}");
+        }
+        GUI.backgroundColor = Color.white;
+        
+        if (lineDividerEnabled && gridManager != null)
+        {
+            GUILayout.Label($"Row: {gridManager.LineDividerRow}", GUILayout.Width(60));
+            if (GUILayout.Button("Up", GUILayout.Width(35)))
+            {
+                gridManager.MoveLineDivider(1, true);
+            }
+            if (GUILayout.Button("Down", GUILayout.Width(45)))
+            {
+                gridManager.MoveLineDivider(-1, false);
+            }
+        }
+        GUILayout.EndHorizontal();
+        
+        GUILayout.Space(5);
+        
+        // Game state info
+        GUILayout.Label("Game State:");
+        int phaseableCubes = CountPhaseableCubes();
+        GUILayout.Label($"  Phaseable Infinity cubes: {phaseableCubes}");
+        GUILayout.Label($"  Active cubes: {waveManager?.activeCubes?.Count ?? 0}");
+    }
+    
+    private int CountPhaseableCubes()
+    {
+        if (waveManager?.activeCubes == null) return 0;
+        
+        int count = 0;
+        foreach (var cube in waveManager.activeCubes)
+        {
+            if (cube != null && !cube.isDestroyed && cube.type == CubeType.Infinity && cube.IsPhaseable())
+            {
+                count++;
+            }
+        }
+        return count;
+    }
+    
+    #endregion
 }

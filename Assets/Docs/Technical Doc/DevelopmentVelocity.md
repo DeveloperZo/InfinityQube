@@ -61,7 +61,7 @@
 ### **Core Systems** (April-July 2025)
 | System | Complexity Points | Completion Date | Notes |
 |--------|------------------|-----------------|-------|
-| Four-tier marker system | 4 | June 20, 2025 | Light/Heavy/Prime/Cube integration |
+| Four-tier marker system | 4 | June 20, 2025 | Light/Heavy/Matrix/Cube integration |
 | Face painting mechanics | 3 | June 20, 2025 | Rotation tracking, state persistence |
 | Corruption/enhancement tiles | 3 | June 19, 2025 | Tile state propagation system |
 | Recursion cube mechanics | 2 | June 18, 2025 | Multi-hit system with Recursion Markers |

@@ -94,7 +94,7 @@ public class TileFacePainting
     /// </summary>
     public void SetupCorruptionPainting(int duration = 3)
     {
-        SetupFacePainting(FaceStatus.Corrupted, Color.black, duration);
+        SetupFacePainting(FaceStatus.InfinityFace, Color.black, duration);
     }
 
     /// <summary>
@@ -102,7 +102,7 @@ public class TileFacePainting
     /// </summary>
     public void SetupEnhancementPainting(int duration = 3)
     {
-        SetupFacePainting(FaceStatus.Enhanced, Color.blue, duration);
+        SetupFacePainting(FaceStatus.MatrixFace, Color.blue, duration);
     }
 
     /// <summary>
@@ -144,7 +144,7 @@ public class TileFacePainting
         {
             // Corrupted tiles paint cubes black
             paintColor = Color.black;
-            paintStatus = FaceStatus.Corrupted;
+            paintStatus = FaceStatus.InfinityFace;
         }
     }
     #endregion

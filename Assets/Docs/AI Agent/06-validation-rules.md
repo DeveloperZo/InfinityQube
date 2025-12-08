@@ -167,9 +167,9 @@ public void FourTierMarkerSystem_Functions_Correctly()
     TestMarkerPlacement(MarkerType.Heavy, KeyCode.V);
     TestMarkerTrigger(MarkerType.Heavy, KeyCode.Y);
     
-    // Test Prime markers
-    TestMarkerPlacement(MarkerType.Prime, KeyCode.G);
-    TestMarkerTrigger(MarkerType.Prime, KeyCode.T);
+    // Test Matrix markers
+    TestMarkerPlacement(MarkerType.Matrix, KeyCode.G);
+    TestMarkerTrigger(MarkerType.Matrix, KeyCode.T);
     
     // Test Cube markers (auto-generated)
     TestCubeMarkerGeneration();

@@ -37,7 +37,7 @@ public class RecursionMarker
 
 
 [System.Serializable]
-public class PrimeMarker
+public class MatrixMarker
 {
     public Vector2Int centerPosition;
     public int size;
@@ -45,7 +45,7 @@ public class PrimeMarker
     public List<GameObject> visualObjects = new List<GameObject>();
     public List<Vector2Int> affectedPositions = new List<Vector2Int>();
 
-    public PrimeMarker(Vector2Int center, int markerSize, float time)
+    public MatrixMarker(Vector2Int center, int markerSize, float time)
     {
         centerPosition = center;
         size = markerSize;
@@ -100,17 +100,17 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
     [SerializeField] public Material recursionMarkerMaterial;
     [SerializeField] public float lastRecursionMarkerTime;
 
-    [Header("Prime Marker Settings")]
-    [SerializeField] public int maxPrimeMarkers;
-    [SerializeField] public int primeMarkersPlaced;
-    [SerializeField] public int currentPrimeMarkers;
-    [SerializeField] public int maxPrimeMarkerCharges;
-    [SerializeField] private int currentPrimeMarkerCharges;
-    [SerializeField] public float primeMarkerCooldown;
-    [SerializeField] public float lastPrimeMarkerTime;
-    [SerializeField] public int primeMarkerSize;
-    [SerializeField] public int primeMarkerOnGridLimit;
-    [SerializeField] public Material primeMarkerMaterial;
+    [Header("Matrix Marker Settings")]
+    [SerializeField] public int maxMatrixMarkers;
+    [SerializeField] public int matrixMarkersPlaced;
+    [SerializeField] public int currentMatrixMarkers;
+    [SerializeField] public int maxMatrixMarkerCharges;
+    [SerializeField] private int currentMatrixMarkerCharges;
+    [SerializeField] public float matrixMarkerCooldown;
+    [SerializeField] public float lastMatrixMarkerTime;
+    [SerializeField] public int matrixMarkerSize;
+    [SerializeField] public int matrixMarkerOnGridLimit;
+    [SerializeField] public Material matrixMarkerMaterial;
 
     [Header("Infinity Marker Settings")]
     [SerializeField] public int maxInfinityMarkers = 2;
@@ -125,11 +125,11 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
     [Header("Input Settings")]
     [SerializeField] private KeyCode unitMarkerKey = KeyCode.F;
     [SerializeField] private KeyCode recursionMarkerKey = KeyCode.V;
-    [SerializeField] private KeyCode primeMarkerKey = KeyCode.G;
+    [SerializeField] private KeyCode matrixMarkerKey = KeyCode.G;
     [SerializeField] private KeyCode infinityMarkerKey = KeyCode.H;
     [SerializeField] private KeyCode triggerUnitKey = KeyCode.R;
     [SerializeField] private KeyCode triggerRecursionKey = KeyCode.Y;
-    [SerializeField] private KeyCode triggerPrimeKey = KeyCode.T;
+    [SerializeField] private KeyCode triggerMatrixKey = KeyCode.T;
     [SerializeField] private KeyCode triggerCubeMarkerKey = KeyCode.Q;
     
 
@@ -239,7 +239,7 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
     {
         currentUnitMarkerCharges = maxUnitMarkerCharges;
         currentRecursionMarkerCharges = maxRecursionMarkerCharges;
-        currentPrimeMarkerCharges = maxPrimeMarkerCharges;
+        currentMatrixMarkerCharges = maxMatrixMarkerCharges;
         currentInfinityMarkerCharges = maxInfinityMarkerCharges;
         inputEnabled = true;
     }
@@ -431,8 +431,8 @@ GameAudioEvent audioEvent = GameAudioEvent.ModeSwitchedToUnit;
         }
         else if (Input.GetKeyDown(KeyCode.Alpha2))
         {
-            targetMode = MarkerMode.Prime;
-            audioEvent = GameAudioEvent.ModeSwitchedToPrime;
+            targetMode = MarkerMode.Matrix;
+            audioEvent = GameAudioEvent.ModeSwitchedToMatrix;
             modeSwitchRequested = true;
         }
         else if (Input.GetKeyDown(KeyCode.Alpha3))
@@ -569,27 +569,27 @@ MarkerMode currentMode = GetCurrentMode();
                     }
                     break;
 
-                case MarkerMode.Prime:
-                    if (markerSystem.HasPrimeMarkerAt(playerPos))
+                case MarkerMode.Matrix:
+                    if (markerSystem.HasMatrixMarkerAt(playerPos))
                     {
-                        markerSystem.RemovePrimeMarkerAt(playerPos);
+                        markerSystem.RemoveMatrixMarkerAt(playerPos);
                         actionSuccessful = true;
                         // Trigger feedback for marker removal (replacement)
-                        TriggerInputFeedbackMarkerPlace(MarkerMode.Prime, playerPos, true);
+                        TriggerInputFeedbackMarkerPlace(MarkerMode.Matrix, playerPos, true);
                     }
-                    else if (CanPlacePrimeMarker())
+                    else if (CanPlaceMatrixMarker())
                     {
-                        markerSystem.PlacePrimeMarker(playerPos, primeMarkerSize);
+                        markerSystem.PlaceMatrixMarker(playerPos, matrixMarkerSize);
                         actionSuccessful = true;
                         
                         // Trigger feedback for new marker placement
-                        TriggerInputFeedbackMarkerPlace(MarkerMode.Prime, playerPos, false);
+                        TriggerInputFeedbackMarkerPlace(MarkerMode.Matrix, playerPos, false);
                         
                         // Trigger animation for marker placement
-                        TriggerAnimationMarkerPlace(MarkerMode.Prime, playerPos, false);
+                        TriggerAnimationMarkerPlace(MarkerMode.Matrix, playerPos, false);
                         
                         // Show success feedback for successful placement
-                        ShowActionSuccessFeedback("Prime marker placed successfully!");
+                        ShowActionSuccessFeedback("Matrix marker placed successfully!");
                     }
                     else
                     {
@@ -602,7 +602,7 @@ MarkerMode currentMode = GetCurrentMode();
                         
                         if (EnableDebugLogs)
                         {
-                            this.LogWarning($"Prime marker placement failed: {errorMessage}", EnableDebugLogs);
+                            this.LogWarning($"Matrix marker placement failed: {errorMessage}", EnableDebugLogs);
                         }
                     }
                     break;
@@ -675,15 +675,15 @@ MarkerMode currentMode = GetCurrentMode();
     }
 
     [System.Obsolete("Use HandleUnifiedPlaceInput() instead - individual marker input handlers are deprecated")]
-    private void HandlePrimeMarkerInput()
+    private void HandleMatrixMarkerInput()
     {
-        if (Input.GetKeyDown(primeMarkerKey))
+        if (Input.GetKeyDown(matrixMarkerKey))
         {
             Vector2Int playerPos = playerManager.currentTilePosition;
 
-            if (CanPlacePrimeMarker())
+            if (CanPlaceMatrixMarker())
             {
-                markerSystem.PlacePrimeMarker(playerPos, primeMarkerSize);
+                markerSystem.PlaceMatrixMarker(playerPos, matrixMarkerSize);
             }
         }
     }
@@ -757,8 +757,8 @@ MarkerMode currentMode = GetCurrentMode();
                     }
                     break;
 
-                case MarkerMode.Prime:
-                    actionSuccessful = markerSystem.TriggerNextPrimeMarker();
+                case MarkerMode.Matrix:
+                    actionSuccessful = markerSystem.TriggerNextMatrixMarker();
                     if (!actionSuccessful)
                     {
                         string errorMessage = GetModeActionErrorMessage(currentMode, "trigger");
@@ -769,21 +769,21 @@ MarkerMode currentMode = GetCurrentMode();
                         
                         if (EnableDebugLogs)
                         {
-                            this.LogWarning($"Prime marker trigger failed: {errorMessage}", EnableDebugLogs);
+                            this.LogWarning($"Matrix marker trigger failed: {errorMessage}", EnableDebugLogs);
                         }
                     }
                     else
                     {
                         // Trigger feedback for successful marker trigger
-                        // Prime markers affect multiple targets, so we estimate area
-                        int estimatedTargets = primeMarkerSize * primeMarkerSize;
-                        TriggerInputFeedbackMarkerTrigger(MarkerMode.Prime, GetCurrentPlayerPosition(), estimatedTargets);
+                        // Matrix markers affect multiple targets, so we estimate area
+                        int estimatedTargets = matrixMarkerSize * matrixMarkerSize;
+                        TriggerInputFeedbackMarkerTrigger(MarkerMode.Matrix, GetCurrentPlayerPosition(), estimatedTargets);
                         
                         // Trigger animation for marker trigger
-                        TriggerAnimationMarkerTrigger(MarkerMode.Prime, GetCurrentPlayerPosition(), estimatedTargets);
+                        TriggerAnimationMarkerTrigger(MarkerMode.Matrix, GetCurrentPlayerPosition(), estimatedTargets);
                         
                         // Show success feedback for successful trigger
-                        ShowActionSuccessFeedback("Prime marker triggered successfully!");
+                        ShowActionSuccessFeedback("Matrix marker triggered successfully!");
                     }
                     break;
 
@@ -834,9 +834,9 @@ MarkerMode currentMode = GetCurrentMode();
             markerSystem.TriggerNextRecursionMarker();
         }
 
-        if (Input.GetKeyDown(triggerPrimeKey))
+        if (Input.GetKeyDown(triggerMatrixKey))
         {
-            markerSystem.TriggerNextPrimeMarker();
+            markerSystem.TriggerNextMatrixMarker();
         }
     }
 
@@ -932,11 +932,11 @@ MarkerMode currentMode = GetCurrentMode();
                         return "Maximum Recursion markers already placed on grid.";
                     break;
 
-                case MarkerMode.Prime:
-                    if (currentPrimeMarkerCharges <= 0)
-                        return "No prime marker charges available. Wait for cooldown.";
-                    if (currentPrimeMarkers >= primeMarkerOnGridLimit)
-                        return "Maximum prime markers already placed on grid.";
+                case MarkerMode.Matrix:
+                    if (currentMatrixMarkerCharges <= 0)
+                        return "No matrix marker charges available. Wait for cooldown.";
+                    if (currentMatrixMarkers >= matrixMarkerOnGridLimit)
+                        return "Maximum matrix markers already placed on grid.";
                     break;
 
                 case MarkerMode.Infinity:
@@ -961,9 +961,9 @@ MarkerMode currentMode = GetCurrentMode();
                         return "No Recursion markers available to trigger.";
                     break;
 
-                case MarkerMode.Prime:
-                    if (markerSystem.PrimeMarkers.Count == 0)
-                        return "No prime markers available to trigger.";
+                case MarkerMode.Matrix:
+                    if (markerSystem.MatrixMarkers.Count == 0)
+                        return "No matrix markers available to trigger.";
                     break;
 
                 case MarkerMode.Infinity:
@@ -1237,7 +1237,7 @@ MarkerMode currentMode = GetCurrentMode();
         return mode switch
         {
             MarkerMode.Unit => new Color(0.5f, 0.6f, 0.7f, 0.6f),      // Blue-gray
-            MarkerMode.Prime => new Color(0.3f, 0.7f, 1f, 0.6f),       // Vibrant light blue
+            MarkerMode.Matrix => new Color(0.3f, 0.7f, 1f, 0.6f),       // Vibrant light blue
             MarkerMode.Recursion => new Color(0.8f, 0.5f, 0.2f, 0.6f), // Deep amber brown
             MarkerMode.Infinity => new Color(0.15f, 0.15f, 0.18f, 0.6f), // Deep black/charcoal
             _ => new Color(0.5f, 0.6f, 0.7f, 0.6f)                     // Default to Unit
@@ -1276,10 +1276,10 @@ MarkerMode currentMode = GetCurrentMode();
                 }
                 break;
                 
-            case MarkerMode.Prime:
-                if (maxPrimeMarkerCharges <= 0)
+            case MarkerMode.Matrix:
+                if (maxMatrixMarkerCharges <= 0)
                 {
-                    ShowActionErrorFeedback("Prime markers are not available in this wave.");
+                    ShowActionErrorFeedback("Matrix markers are not available in this wave.");
                     return false;
                 }
                 break;
@@ -1314,11 +1314,11 @@ MarkerMode currentMode = GetCurrentMode();
                // Note: recursionMarkersPlaced is for statistics only, not for limiting placement
     }
 
-    public bool CanPlacePrimeMarker()
+    public bool CanPlaceMatrixMarker()
     {
-        return currentPrimeMarkerCharges > 0 &&
-               currentPrimeMarkers < primeMarkerOnGridLimit;
-               // Note: primeMarkersPlaced is for statistics only, not for limiting placement
+        return currentMatrixMarkerCharges > 0 &&
+               currentMatrixMarkers < matrixMarkerOnGridLimit;
+               // Note: matrixMarkersPlaced is for statistics only, not for limiting placement
     }
 
     public bool CanPlaceInfinityMarker()
@@ -1377,16 +1377,16 @@ MarkerMode currentMode = GetCurrentMode();
         }
     }
 
-    public void ConsumePrimeCharge()
+    public void ConsumeMatrixCharge()
     {
-        currentPrimeMarkerCharges--;
-        lastPrimeMarkerTime = Time.time;
-        currentPrimeMarkers++;
-        primeMarkersPlaced++;
+        currentMatrixMarkerCharges--;
+        lastMatrixMarkerTime = Time.time;
+        currentMatrixMarkers++;
+        matrixMarkersPlaced++;
 
-        // Trigger audio event for prime marker placement
+        // Trigger audio event for matrix marker placement
         Vector3 worldPosition = GetWorldPositionForAudio(playerManager.currentTilePosition);
-        TriggerAudioEvent(GameAudioEvent.PrimeMarkerPlaced, worldPosition);
+        TriggerAudioEvent(GameAudioEvent.MatrixMarkerPlaced, worldPosition);
 
         UpdateUI();
 
@@ -1398,7 +1398,7 @@ MarkerMode currentMode = GetCurrentMode();
         // Notify statistics manager
         if (PlayerStatisticsManager.Instance != null)
         {
-            PlayerStatisticsManager.Instance.OnMarkerPlaced(playerManager.currentTilePosition, "prime");
+            PlayerStatisticsManager.Instance.OnMarkerPlaced(playerManager.currentTilePosition, "matrix");
         }
     }
 
@@ -1411,7 +1411,7 @@ MarkerMode currentMode = GetCurrentMode();
 
         // Trigger audio event for infinity marker placement
         Vector3 worldPosition = GetWorldPositionForAudio(playerManager.currentTilePosition);
-        TriggerAudioEvent(GameAudioEvent.PrimeMarkerPlaced, worldPosition); // TODO: Add infinity audio event
+        TriggerAudioEvent(GameAudioEvent.MatrixMarkerPlaced, worldPosition); // TODO: Add infinity audio event
 
         UpdateUI();
 
@@ -1442,9 +1442,9 @@ MarkerMode currentMode = GetCurrentMode();
         currentInfinityMarkers--;
     }
 
-    public void ReleasePrimeMarker()
+    public void ReleaseMatrixMarker()
     {
-        currentPrimeMarkers--;
+        currentMatrixMarkers--;
     }
 
     // Methods to handle marker removal (unmarking)
@@ -1488,23 +1488,23 @@ MarkerMode currentMode = GetCurrentMode();
         }
     }
 
-    public void OnPrimeMarkerRemoved()
+    public void OnMatrixMarkerRemoved()
     {
         // Decrement the placement counter when a marker is removed
-        if (primeMarkersPlaced > 0)
+        if (matrixMarkersPlaced > 0)
         {
-            primeMarkersPlaced--;
+            matrixMarkersPlaced--;
         }
         
         // Notify statistics manager about marker removal
         if (PlayerStatisticsManager.Instance != null)
         {
-            PlayerStatisticsManager.Instance.OnMarkerRemoved(playerManager.currentTilePosition, "prime");
+            PlayerStatisticsManager.Instance.OnMarkerRemoved(playerManager.currentTilePosition, "matrix");
         }
         
         if (EnableDebugLogs)
         {
-            this.Log($"Prime marker removed. Total placed: {primeMarkersPlaced}", EnableDebugLogs);
+            this.Log($"Matrix marker removed. Total placed: {matrixMarkersPlaced}", EnableDebugLogs);
         }
     }
 
@@ -1513,7 +1513,7 @@ MarkerMode currentMode = GetCurrentMode();
         bool chargesChanged = false;
         chargesChanged |= RegenerateUnitCharges();
         chargesChanged |= RegenerateRecursionCharges();
-        chargesChanged |= RegeneratePrimeCharges();
+        chargesChanged |= RegenerateMatrixCharges();
         chargesChanged |= RegenerateInfinityCharges();
 
         if (chargesChanged)
@@ -1570,24 +1570,24 @@ MarkerMode currentMode = GetCurrentMode();
         return false;
     }
 
-    private bool RegeneratePrimeCharges()
+    private bool RegenerateMatrixCharges()
     {
-        if (currentPrimeMarkerCharges < maxPrimeMarkerCharges)
+        if (currentMatrixMarkerCharges < maxMatrixMarkerCharges)
         {
-            float timeSinceLastUse = Time.time - lastPrimeMarkerTime;
-            if (timeSinceLastUse >= primeMarkerCooldown)
+            float timeSinceLastUse = Time.time - lastMatrixMarkerTime;
+            if (timeSinceLastUse >= matrixMarkerCooldown)
             {
-                currentPrimeMarkerCharges++;
-                lastPrimeMarkerTime = Time.time;
+                currentMatrixMarkerCharges++;
+                lastMatrixMarkerTime = Time.time;
                 
                 // Trigger audio event for resource regeneration
                 Vector3 playerWorldPos = GetWorldPositionForAudio(playerManager.currentTilePosition);
                 TriggerAudioEvent(GameAudioEvent.ResourceRegeneration, playerWorldPos, 0.8f);
                 
                 // Trigger animation for resource regeneration
-                TriggerAnimationResourceRegeneration(playerWorldPos, "Prime marker charge");
+                TriggerAnimationResourceRegeneration(playerWorldPos, "Matrix marker charge");
                 
-                this.Log($"Prime marker charge regenerated. Charges: {currentPrimeMarkerCharges}/{maxPrimeMarkerCharges}", EnableDebugLogs);
+                this.Log($"Matrix marker charge regenerated. Charges: {currentMatrixMarkerCharges}/{maxMatrixMarkerCharges}", EnableDebugLogs);
                 return true;
             }
         }
@@ -1623,9 +1623,9 @@ MarkerMode currentMode = GetCurrentMode();
         if (actionUI != null)
         {
             actionUI.UpdateCharges(currentUnitMarkerCharges, currentRecursionMarkerCharges, 
-                                 currentPrimeMarkerCharges, GetCurrentCubeMarkers());
+                                 currentMatrixMarkerCharges, GetCurrentCubeMarkers());
             actionUI.UpdateCooldowns(unitMarkerCooldown, recursionMarkerCooldown, 
-                                   primeMarkerCooldown, 1f);
+                                   matrixMarkerCooldown, 1f);
         }
     }
 
@@ -1640,9 +1640,9 @@ MarkerMode currentMode = GetCurrentMode();
     public float GetNextRecursionChargeTime() =>
         currentRecursionMarkerCharges < maxRecursionMarkerCharges ?
         lastRecursionMarkerTime + recursionMarkerCooldown : Time.time;
-    public float GetNextPrimeChargeTime() =>
-        currentPrimeMarkerCharges < maxPrimeMarkerCharges ?
-        lastPrimeMarkerTime + primeMarkerCooldown : Time.time;
+    public float GetNextMatrixChargeTime() =>
+        currentMatrixMarkerCharges < maxMatrixMarkerCharges ?
+        lastMatrixMarkerTime + matrixMarkerCooldown : Time.time;
 
     // Unit marker methods
     public bool PlaceUnitMarker(Vector2Int position) => markerSystem.PlaceUnitMarker(position);
@@ -1656,11 +1656,11 @@ MarkerMode currentMode = GetCurrentMode();
     public bool HasRecursionMarkerAt(Vector2Int position) => markerSystem.HasRecursionMarkerAt(position);
     public bool TriggerNextRecursionMarker() => markerSystem.TriggerNextRecursionMarker();
 
-    // Prime marker methods
-    public bool PlacePrimeMarker(Vector2Int centerPosition, int size) => markerSystem.PlacePrimeMarker(centerPosition, size);
-    public bool RemovePrimeMarkerAt(Vector2Int centerPosition) => markerSystem.RemovePrimeMarkerAt(centerPosition);
-    public bool HasPrimeMarkerAt(Vector2Int centerPosition) => markerSystem.HasPrimeMarkerAt(centerPosition);
-    public bool TriggerNextPrimeMarker() => markerSystem.TriggerNextPrimeMarker();
+    // Matrix marker methods
+    public bool PlaceMatrixMarker(Vector2Int centerPosition, int size) => markerSystem.PlaceMatrixMarker(centerPosition, size);
+    public bool RemoveMatrixMarkerAt(Vector2Int centerPosition) => markerSystem.RemoveMatrixMarkerAt(centerPosition);
+    public bool HasMatrixMarkerAt(Vector2Int centerPosition) => markerSystem.HasMatrixMarkerAt(centerPosition);
+    public bool TriggerNextMatrixMarker() => markerSystem.TriggerNextMatrixMarker();
 
     // Infinity marker methods
     public bool PlaceInfinityMarker(Vector2Int position) => markerSystem.PlaceInfinityMarker(position);
@@ -1668,7 +1668,7 @@ MarkerMode currentMode = GetCurrentMode();
     public bool HasInfinityMarkerAt(Vector2Int position) => markerSystem.HasInfinityMarkerAt(position);
     public bool TriggerNextInfinityMarker() => markerSystem.TriggerNextInfinityMarker();
 
-    public void CreateCubeMarker(Vector2Int position, PlayerMarkerSystem.CubeMarkerType type = PlayerMarkerSystem.CubeMarkerType.Prime, int size = 3) => markerSystem.CreateCubeMarker(position, type, size);
+    public void CreateCubeMarker(Vector2Int position, PlayerMarkerSystem.CubeMarkerType type = PlayerMarkerSystem.CubeMarkerType.Matrix, int size = 3) => markerSystem.CreateCubeMarker(position, type, size);
     public bool TriggerNextCubeMarker() => markerSystem.TriggerNextCubeMarker();
     public bool PowerUpNextCubeMarker() => markerSystem.PowerUpNextCubeMarker();
 
@@ -1677,7 +1677,7 @@ MarkerMode currentMode = GetCurrentMode();
     // Direct queue access for debugging
     public Queue<UnitMarker> UnitMarkers => markerSystem.UnitMarkers;
     public Queue<RecursionMarker> recursionMarkers => markerSystem.RecursionMarkers;
-    public Queue<PrimeMarker> primeMarkers => markerSystem.PrimeMarkers;
+    public Queue<MatrixMarker> matrixMarkers => markerSystem.MatrixMarkers;
 
 
     
@@ -1691,18 +1691,18 @@ MarkerMode currentMode = GetCurrentMode();
     // Resource availability checks
     public bool CanPlaceUnitMarkerCheck() => CanPlaceUnitMarker();
     public bool CanPlaceRecursionMarkerCheck() => CanPlaceRecursionMarker();
-    public bool CanPlacePrimeMarkerCheck() => CanPlacePrimeMarker();
+    public bool CanPlaceMatrixMarkerCheck() => CanPlaceMatrixMarker();
 
     // Charge refill methods (for prototyping tools)
     public void RefillUnitMarkerCharges() => currentUnitMarkerCharges = maxUnitMarkerCharges;
     public void RefillRecursionMarkerCharges() => currentRecursionMarkerCharges = maxRecursionMarkerCharges;
-    public void RefillPrimeMarkerCharges() => currentPrimeMarkerCharges = maxPrimeMarkerCharges;
+    public void RefillMatrixMarkerCharges() => currentMatrixMarkerCharges = maxMatrixMarkerCharges;
     public void RefillInfinityMarkerCharges() => currentInfinityMarkerCharges = maxInfinityMarkerCharges;
     public void RefillAllCharges()
     {
         RefillUnitMarkerCharges();
         RefillRecursionMarkerCharges();
-        RefillPrimeMarkerCharges();
+        RefillMatrixMarkerCharges();
         RefillInfinityMarkerCharges();
     }
 
@@ -1721,11 +1721,11 @@ MarkerMode currentMode = GetCurrentMode();
         return Mathf.Max(0f, recursionMarkerCooldown - (Time.time - lastRecursionMarkerTime));
     }
 
-    public float GetPrimeMarkerCooldownRemaining()
+    public float GetMatrixMarkerCooldownRemaining()
     {
-        if (currentPrimeMarkerCharges >= maxPrimeMarkerCharges)
+        if (currentMatrixMarkerCharges >= maxMatrixMarkerCharges)
             return 0f;
-        return Mathf.Max(0f, primeMarkerCooldown - (Time.time - lastPrimeMarkerTime));
+        return Mathf.Max(0f, matrixMarkerCooldown - (Time.time - lastMatrixMarkerTime));
     }
 
     public float GetInfinityMarkerCooldownRemaining()
@@ -1738,18 +1738,18 @@ MarkerMode currentMode = GetCurrentMode();
     // Statistics
     public int GetunitMarkersPlaced() => unitMarkersPlaced;
     public int GetrecursionMarkersPlaced() => recursionMarkersPlaced;
-    public int GetPrimeMarkersPlaced() => primeMarkersPlaced;
+    public int GetMatrixMarkersPlaced() => matrixMarkersPlaced;
     public int GetCubeMarkersTriggered() => cubeMarkersTriggered;
     public int GetPerfectTimingHits() => perfectTimingHits;
 
     // Current state information
     public int GetCurrentUnitMarkers() => currentUnitMarkers;
     public int GetCurrentRecursionMarkers() => currentRecursionMarkers;
-    public int GetCurrentPrimeMarkers() => currentPrimeMarkers;
+    public int GetCurrentMatrixMarkers() => currentMatrixMarkers;
     public int GetCurrentCubeMarkers() => markerSystem?.cubeMarkers?.Count ?? 0;
     public int GetCurrentUnitCharges() => currentUnitMarkerCharges;
     public int GetCurrentRecursionCharges() => currentRecursionMarkerCharges;
-    public int GetCurrentPrimeCharges() => currentPrimeMarkerCharges;
+    public int GetCurrentMatrixCharges() => currentMatrixMarkerCharges;
     public int GetCurrentInfinityCharges() => currentInfinityMarkerCharges;
     public int GetCurrentInfinityMarkers() => currentInfinityMarkers;
 
@@ -1763,7 +1763,7 @@ MarkerMode currentMode = GetCurrentMode();
 
     public string GetDebugStatus()
     {
-        return $"PlayerAction: Unit:{currentUnitMarkerCharges}/{maxUnitMarkerCharges} Recursion:{currentRecursionMarkerCharges}/{maxRecursionMarkerCharges} Prime:{currentPrimeMarkerCharges}/{maxPrimeMarkerCharges} OnGrid:{currentUnitMarkers}+{currentRecursionMarkers}+{currentPrimeMarkers} Cube:{GetCurrentCubeMarkers()}";
+        return $"PlayerAction: Unit:{currentUnitMarkerCharges}/{maxUnitMarkerCharges} Recursion:{currentRecursionMarkerCharges}/{maxRecursionMarkerCharges} Matrix:{currentMatrixMarkerCharges}/{maxMatrixMarkerCharges} OnGrid:{currentUnitMarkers}+{currentRecursionMarkers}+{currentMatrixMarkers} Cube:{GetCurrentCubeMarkers()}";
     }
 
     public Dictionary<string, object> GetDebugData()
@@ -1779,17 +1779,17 @@ MarkerMode currentMode = GetCurrentMode();
             ["Current Recursion Markers"] = currentRecursionMarkers,
             ["Recursion Charges"] = $"{currentRecursionMarkerCharges}/{maxRecursionMarkerCharges}",
             ["Recursion Cooldown Remaining"] = GetRecursionMarkerCooldownRemaining(),
-            ["Prime Markers Placed"] = primeMarkersPlaced,
-            ["Current Prime Markers"] = currentPrimeMarkers,
-            ["Prime Charges"] = $"{currentPrimeMarkerCharges}/{maxPrimeMarkerCharges}",
-            ["Prime Cooldown Remaining"] = GetPrimeMarkerCooldownRemaining(),
+            ["Matrix Markers Placed"] = matrixMarkersPlaced,
+            ["Current Matrix Markers"] = currentMatrixMarkers,
+            ["Matrix Charges"] = $"{currentMatrixMarkerCharges}/{maxMatrixMarkerCharges}",
+            ["Matrix Cooldown Remaining"] = GetMatrixMarkerCooldownRemaining(),
             ["Cube Markers Active"] = GetCurrentCubeMarkers(),
             ["Perfect Timing Hits"] = perfectTimingHits,
             ["Cube Markers Triggered"] = cubeMarkersTriggered,
             ["Input Enabled"] = inputEnabled,
             ["Can Place Unit"] = CanPlaceUnitMarker(),
             ["Can Place Recursion"] = CanPlaceRecursionMarker(),
-            ["Can Place Prime"] = CanPlacePrimeMarker()
+            ["Can Place Matrix"] = CanPlaceMatrixMarker()
         };
 
         // Add input feedback system debug information
@@ -1852,16 +1852,16 @@ MarkerMode currentMode = GetCurrentMode();
                     this.Log($"{previousMode} mode was active but markers are not available. Switched to Recursion mode.", EnableDebugLogs);
                 }
             }
-            // Fallback to Prime if Recursion not available
-            else if (maxPrimeMarkerCharges > 0)
+            // Fallback to Matrix if Recursion not available
+            else if (maxMatrixMarkerCharges > 0)
             {
-                SetMode(MarkerMode.Prime);
+                SetMode(MarkerMode.Matrix);
                 if (EnableDebugLogs)
                 {
-                    this.Log($"{previousMode} mode was active but markers are not available. Switched to Prime mode.", EnableDebugLogs);
+                    this.Log($"{previousMode} mode was active but markers are not available. Switched to Matrix mode.", EnableDebugLogs);
                 }
             }
-            // Fallback to Infinity if Prime not available
+            // Fallback to Infinity if Matrix not available
             else if (maxInfinityMarkerCharges > 0)
             {
                 SetMode(MarkerMode.Infinity);
@@ -1881,7 +1881,7 @@ MarkerMode currentMode = GetCurrentMode();
         // Reset charges to max
         currentUnitMarkerCharges = maxUnitMarkerCharges;
         currentRecursionMarkerCharges = maxRecursionMarkerCharges;
-        currentPrimeMarkerCharges = maxPrimeMarkerCharges;
+        currentMatrixMarkerCharges = maxMatrixMarkerCharges;
         currentInfinityMarkerCharges = maxInfinityMarkerCharges;
         
         // Reset marker mode (direct assignment for reset operation)
@@ -1896,11 +1896,11 @@ MarkerMode currentMode = GetCurrentMode();
         // Reset counters
         unitMarkersPlaced = 0;
         recursionMarkersPlaced = 0;
-        primeMarkersPlaced = 0;
+        matrixMarkersPlaced = 0;
         infinityMarkersPlaced = 0;
         currentUnitMarkers = 0;
         currentRecursionMarkers = 0;
-        currentPrimeMarkers = 0;
+        currentMatrixMarkers = 0;
         currentInfinityMarkers = 0;
         cubeMarkersTriggered = 0;
         perfectTimingHits = 0;
@@ -1908,7 +1908,7 @@ MarkerMode currentMode = GetCurrentMode();
         // Reset timers
         lastUnitMarkerTime = 0f;
         lastRecursionMarkerTime = 0f;
-        lastPrimeMarkerTime = 0f;
+        lastMatrixMarkerTime = 0f;
         lastInfinityMarkerTime = 0f;
         
         // Update UI

@@ -4,7 +4,7 @@ using System.Linq;
 
 /// <summary>
 /// Main prototyping tools system using IMGUI.
-/// Toggle with F12.
+/// Toggle with F12. Window is resizable by dragging edges.
 /// </summary>
 public class PrototypingSystem : MonoBehaviour
 {
@@ -23,8 +23,14 @@ public class PrototypingSystem : MonoBehaviour
     private List<IPrototypingPanel> panels = new List<IPrototypingPanel>();
     private int activePanelIndex = 0;
     
-    // Window
-    private Rect windowRect = new Rect(10, 10, 420, 600);
+    // Window sizing - start at max size for full visibility
+    private Rect windowRect = new Rect(10, 10, 480, 800);
+    private const float MIN_WIDTH = 400f;
+    private const float MAX_WIDTH = 700f;
+    private const float MIN_HEIGHT = 500f;
+    private const float MAX_HEIGHT = 1000f;
+    private const float RESIZE_HANDLE = 18f;
+    private bool isResizing = false;
     private Vector2 scrollPosition;
     
     // Styles
@@ -79,6 +85,7 @@ public class PrototypingSystem : MonoBehaviour
         panels.Clear();
         
         panels.Add(new WavePrototyper());
+        panels.Add(new CollisionPanel());
         panels.Add(new GridDesigner());
         panels.Add(new PlayerPanel());
         panels.Add(new StagePanel());
@@ -129,6 +136,9 @@ public class PrototypingSystem : MonoBehaviour
         
         InitStyles();
         
+        // Handle resize before window draw
+        HandleResize();
+        
         // Make window draggable
         windowRect = GUI.Window(9999, windowRect, DrawWindow, "");
         
@@ -137,29 +147,70 @@ public class PrototypingSystem : MonoBehaviour
         windowRect.y = Mathf.Clamp(windowRect.y, 0, Screen.height - 100);
     }
     
+    private void HandleResize()
+    {
+        // Resize handle area (bottom-right corner)
+        Rect resizeRect = new Rect(
+            windowRect.x + windowRect.width - RESIZE_HANDLE,
+            windowRect.y + windowRect.height - RESIZE_HANDLE,
+            RESIZE_HANDLE, RESIZE_HANDLE
+        );
+        
+        // Change cursor when hovering resize area
+        if (resizeRect.Contains(Event.current.mousePosition))
+        {
+            EditorCursorHint();
+        }
+        
+        // Handle resize drag
+        if (Event.current.type == EventType.MouseDown && resizeRect.Contains(Event.current.mousePosition))
+        {
+            isResizing = true;
+            Event.current.Use();
+        }
+        
+        if (Event.current.type == EventType.MouseUp)
+        {
+            isResizing = false;
+        }
+        
+        if (isResizing && Event.current.type == EventType.MouseDrag)
+        {
+            windowRect.width = Mathf.Clamp(
+                Event.current.mousePosition.x - windowRect.x + RESIZE_HANDLE / 2,
+                MIN_WIDTH, MAX_WIDTH
+            );
+            windowRect.height = Mathf.Clamp(
+                Event.current.mousePosition.y - windowRect.y + RESIZE_HANDLE / 2,
+                MIN_HEIGHT, MAX_HEIGHT
+            );
+            Event.current.Use();
+        }
+    }
+    
+    private void EditorCursorHint()
+    {
+        // Visual hint for resize - cursor change not available in runtime IMGUI
+    }
+    
     private void DrawWindow(int windowID)
     {
         // Header
         GUILayout.BeginHorizontal();
-        GUILayout.Label("🔧 PROTOTYPING TOOLS", headerStyle);
+        GUILayout.Label("PROTOTYPING", headerStyle);
         GUILayout.FlexibleSpace();
-        if (GUILayout.Button("✕", GUILayout.Width(25), GUILayout.Height(25)))
+        if (GUILayout.Button("X", GUILayout.Width(22), GUILayout.Height(22)))
         {
             isVisible = false;
         }
         GUILayout.EndHorizontal();
         
-        GUILayout.Space(5);
+        GUILayout.Space(3);
         
-        // Quick Actions Bar
-        DrawQuickActions();
-        
-        GUILayout.Space(5);
-        
-        // Tab Bar
+        // Tab Bar (simplified - text labels)
         DrawTabBar();
         
-        GUILayout.Space(5);
+        GUILayout.Space(3);
         
         // Panel Content
         scrollPosition = GUILayout.BeginScrollView(scrollPosition, GUILayout.ExpandHeight(true));
@@ -172,71 +223,62 @@ public class PrototypingSystem : MonoBehaviour
         
         GUILayout.EndScrollView();
         
-        // Status Bar
-        GUILayout.Space(5);
+        // Status Bar with resize hint
         GUILayout.BeginHorizontal();
-        GUILayout.Label($"Panel: {panels[activePanelIndex].PanelName}", GUILayout.Height(20));
+        GUILayout.Label("F12 toggle | Drag corner to resize", GUILayout.Height(18));
         GUILayout.FlexibleSpace();
-        GUILayout.Label("F12 to toggle", GUILayout.Height(20));
+        // Resize grip visual
+        GUILayout.Label("◢", GUILayout.Width(15), GUILayout.Height(18));
         GUILayout.EndHorizontal();
         
-        // Make draggable
-        GUI.DragWindow(new Rect(0, 0, 10000, 30));
-    }
-    
-    private void DrawQuickActions()
-    {
-        GUILayout.BeginVertical(GUI.skin.box);
-        GUILayout.BeginHorizontal();
-        
-        var allActions = new List<QuickAction>();
-        foreach (var panel in panels)
-        {
-            allActions.AddRange(panel.GetQuickActions());
-        }
-        
-        var topActions = allActions.OrderBy(a => a.Priority).Take(10).ToList();
-        
-        foreach (var action in topActions)
-        {
-            GUI.enabled = action.IsEnabled?.Invoke() ?? true;
-            
-            var style = GUI.skin.button;
-            if (action.IsHighlighted?.Invoke() ?? false)
-            {
-                GUI.backgroundColor = Color.green;
-            }
-            
-            string label = string.IsNullOrEmpty(action.Icon) ? action.Label : $"{action.Icon}";
-            if (GUILayout.Button(new GUIContent(label, action.Tooltip), GUILayout.Height(25), GUILayout.MinWidth(30)))
-            {
-                action.OnClick?.Invoke();
-            }
-            
-            GUI.backgroundColor = Color.white;
-            GUI.enabled = true;
-        }
-        
-        GUILayout.EndHorizontal();
-        GUILayout.EndVertical();
+        // Make header draggable
+        GUI.DragWindow(new Rect(0, 0, 10000, 25));
     }
     
     private void DrawTabBar()
     {
-        GUILayout.BeginHorizontal();
+        // Two-row tab layout with uniform sizing
+        GUILayout.BeginVertical();
         
-        for (int i = 0; i < panels.Count; i++)
+        // First row of tabs
+        GUILayout.BeginHorizontal();
+        int halfCount = (panels.Count + 1) / 2;
+        for (int i = 0; i < halfCount && i < panels.Count; i++)
         {
-            var panel = panels[i];
-            var style = (i == activePanelIndex) ? tabActiveStyle : tabInactiveStyle;
-            
-            if (GUILayout.Button($"{panel.PanelIcon} {panel.PanelName}", style, GUILayout.Height(28)))
+            DrawTab(i);
+        }
+        GUILayout.EndHorizontal();
+        
+        // Second row of tabs (if needed)
+        if (panels.Count > halfCount)
+        {
+            GUILayout.BeginHorizontal();
+            for (int i = halfCount; i < panels.Count; i++)
             {
-                activePanelIndex = i;
+                DrawTab(i);
             }
+            GUILayout.EndHorizontal();
         }
         
-        GUILayout.EndHorizontal();
+        GUILayout.EndVertical();
+    }
+    
+    private void DrawTab(int index)
+    {
+        var panel = panels[index];
+        bool isActive = index == activePanelIndex;
+        
+        GUI.backgroundColor = isActive ? new Color(0.3f, 0.5f, 0.7f) : Color.white;
+        var style = isActive ? tabActiveStyle : tabInactiveStyle;
+        
+        // Fixed width tabs for uniform appearance
+        float tabWidth = (windowRect.width - 20) / 3f; // 3 tabs per row
+        if (GUILayout.Button(panel.PanelName, style, GUILayout.Width(tabWidth), GUILayout.Height(26)))
+        {
+            activePanelIndex = index;
+        }
+        
+        GUI.backgroundColor = Color.white;
     }
     #endregion
     

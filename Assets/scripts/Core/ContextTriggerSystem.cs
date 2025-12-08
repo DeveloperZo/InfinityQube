@@ -480,7 +480,7 @@ public class ContextTriggerManager
         
         // Cube proximity triggers
         RegisterTrigger(new CubeProximityTrigger(CubeProximityTrigger.ProximityEvent.CubeAdjacent, 1.5f, CubeType.Unit, 4f));
-        RegisterTrigger(new CubeProximityTrigger(CubeProximityTrigger.ProximityEvent.CubeTypeSpecific, 2f, CubeType.Prime, 5f));
+        RegisterTrigger(new CubeProximityTrigger(CubeProximityTrigger.ProximityEvent.CubeTypeSpecific, 2f, CubeType.Matrix, 5f));
         RegisterTrigger(new CubeProximityTrigger(CubeProximityTrigger.ProximityEvent.CubeTypeSpecific, 2f, CubeType.Infinity, 6f));
         
         Debug.Log($"[ContextTriggerManager] Initialized {registeredTriggers.Count} default triggers");
@@ -563,7 +563,7 @@ public class ContextTriggerManager
         {
             context.availableMarkers = playerActionManager.GetCurrentUnitCharges() + 
                                      playerActionManager.GetCurrentRecursionCharges() + 
-                                     playerActionManager.GetCurrentPrimeCharges();
+                                     playerActionManager.GetCurrentMatrixCharges();
         }
 
         if (waveManager != null)

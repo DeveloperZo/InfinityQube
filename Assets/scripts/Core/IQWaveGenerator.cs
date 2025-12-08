@@ -21,7 +21,7 @@ public class IQWaveGenerator : MonoBehaviour, IManagerDebugInterface
     
     [Header("Cube Distribution")]
     [Range(0f, 1f)] public float unitCubePercentage = 0.6f;
-    [Range(0f, 1f)] public float primeCubePercentage = 0.2f;
+    [Range(0f, 1f)] public float matrixCubePercentage = 0.2f;
     [Range(0f, 1f)] public float infinityCubePercentage = 0.1f;
     [Range(0f, 1f)] public float recursionCubePercentage = 0.1f;
     
@@ -169,7 +169,7 @@ public class IQWaveGenerator : MonoBehaviour, IManagerDebugInterface
         activeConfig.maxGridHeight = maxGridHeight;
         
         activeConfig.unitCubePercentage = unitCubePercentage;
-        activeConfig.primeCubePercentage = primeCubePercentage;
+        activeConfig.matrixCubePercentage = matrixCubePercentage;
         activeConfig.infinityCubePercentage = infinityCubePercentage;
         activeConfig.recursionCubePercentage = recursionCubePercentage;
         
@@ -319,16 +319,16 @@ public class IQWaveGenerator : MonoBehaviour, IManagerDebugInterface
         
         // Temporarily adjust percentages based on difficulty
         float originalUnit = unitCubePercentage;
-        float originalPrime = primeCubePercentage;
+        float originalMatrix = matrixCubePercentage;
         float originalInfinity = infinityCubePercentage;
         float originalRecursion = recursionCubePercentage;
         
         // Scale special cube percentages based on difficulty
         unitCubePercentage = unitPercent;
-        float specialTotal = originalPrime + originalInfinity + originalRecursion;
+        float specialTotal = originalMatrix + originalInfinity + originalRecursion;
         if (specialTotal > 0)
         {
-            primeCubePercentage = (originalPrime / specialTotal) * specialPercent;
+            matrixCubePercentage = (originalMatrix / specialTotal) * specialPercent;
             infinityCubePercentage = (originalInfinity / specialTotal) * specialPercent;
             recursionCubePercentage = (originalRecursion / specialTotal) * specialPercent;
         }
@@ -338,7 +338,7 @@ public class IQWaveGenerator : MonoBehaviour, IManagerDebugInterface
         
         // Restore original percentages
         unitCubePercentage = originalUnit;
-        primeCubePercentage = originalPrime;
+        matrixCubePercentage = originalMatrix;
         infinityCubePercentage = originalInfinity;
         recursionCubePercentage = originalRecursion;
         
@@ -376,8 +376,8 @@ public class IQWaveGenerator : MonoBehaviour, IManagerDebugInterface
         cumulative += unitCubePercentage;
         if (rand < cumulative) return CubeType.Unit;
         
-        cumulative += primeCubePercentage;
-        if (rand < cumulative) return CubeType.Prime;
+        cumulative += matrixCubePercentage;
+        if (rand < cumulative) return CubeType.Matrix;
         
         cumulative += infinityCubePercentage;
         if (rand < cumulative) return CubeType.Infinity;
@@ -396,15 +396,15 @@ public class IQWaveGenerator : MonoBehaviour, IManagerDebugInterface
         
         // Distribute special cubes based on their relative percentages
         float specialRand = (float)randomGenerator.NextDouble();
-        float totalSpecial = primeCubePercentage + infinityCubePercentage + recursionCubePercentage;
+        float totalSpecial = matrixCubePercentage + infinityCubePercentage + recursionCubePercentage;
         
         if (totalSpecial <= 0) return CubeType.Unit;
         
-        float primeChance = primeCubePercentage / totalSpecial;
+        float matrixChance = matrixCubePercentage / totalSpecial;
         float infinityChance = infinityCubePercentage / totalSpecial;
         
-        if (specialRand < primeChance) return CubeType.Prime;
-        if (specialRand < primeChance + infinityChance) return CubeType.Infinity;
+        if (specialRand < matrixChance) return CubeType.Matrix;
+        if (specialRand < matrixChance + infinityChance) return CubeType.Infinity;
         
         return CubeType.Recursion;
     }
@@ -558,8 +558,8 @@ public class IQWaveGenerator : MonoBehaviour, IManagerDebugInterface
         {
             case CubeType.Infinity:
                 return ValidateInfinityCubePlacement(position, existingCubes);
-            case CubeType.Prime:
-                return ValidatePrimeCubePlacement(position, existingCubes);
+            case CubeType.Matrix:
+                return ValidateMatrixCubePlacement(position, existingCubes);
             case CubeType.Recursion:
                 return ValidateRecursionCubePlacement(position, existingCubes);
             default:
@@ -591,28 +591,28 @@ public class IQWaveGenerator : MonoBehaviour, IManagerDebugInterface
     }
     
     /// <summary>
-    /// Validates prime cube placement considering area effect overlaps
+    /// Validates matrix cube placement considering area effect overlaps
     /// </summary>
-    private bool ValidatePrimeCubePlacement(Vector2Int position, List<CubeData> existingCubes)
+    private bool ValidateMatrixCubePlacement(Vector2Int position, List<CubeData> existingCubes)
     {
-        // Prime cubes should have some spacing to avoid overlapping area effects
-        float minPrimeSpacing = 2.5f;
-        int nearbyPrimeCount = 0;
+        // Matrix cubes should have some spacing to avoid overlapping area effects
+        float minMatrixSpacing = 2.5f;
+        int nearbyMatrixCount = 0;
         
         foreach (var cube in existingCubes)
         {
-            if (cube.type == CubeType.Prime)
+            if (cube.type == CubeType.Matrix)
             {
                 float distance = Vector2Int.Distance(position, cube.position);
-                if (distance < minPrimeSpacing)
+                if (distance < minMatrixSpacing)
                 {
-                    nearbyPrimeCount++;
+                    nearbyMatrixCount++;
                 }
             }
         }
         
         // Allow some clustering but not too much
-        return nearbyPrimeCount < 2;
+        return nearbyMatrixCount < 2;
     }
     
     /// <summary>
@@ -662,33 +662,33 @@ public class IQWaveGenerator : MonoBehaviour, IManagerDebugInterface
     }
     
     /// <summary>
-    /// Detects clustering of advantage cubes (Prime cubes)
+    /// Detects clustering of advantage cubes (Matrix cubes)
     /// </summary>
     private bool DetectAdvantageCubeClustering(List<CubeData> cubes)
     {
-        int clusterThreshold = 3; // More than 3 prime cubes in close proximity
+        int clusterThreshold = 3; // More than 3 matrix cubes in close proximity
         float clusterRadius = 2.5f;
         
         foreach (var cube in cubes)
         {
-            if (cube.type == CubeType.Prime)
+            if (cube.type == CubeType.Matrix)
             {
-                int nearbyPrimes = 0;
+                int nearbyMatrixs = 0;
                 foreach (var other in cubes)
                 {
-                    if (other != cube && other.type == CubeType.Prime)
+                    if (other != cube && other.type == CubeType.Matrix)
                     {
                         float distance = Vector2Int.Distance(cube.position, other.position);
                         if (distance <= clusterRadius)
                         {
-                            nearbyPrimes++;
+                            nearbyMatrixs++;
                         }
                     }
                 }
                 
-                if (nearbyPrimes >= clusterThreshold)
+                if (nearbyMatrixs >= clusterThreshold)
                 {
-                    DebugLog("DetectAdvantageCubeClustering", $"Detected prime cube cluster at {cube.position}");
+                    DebugLog("DetectAdvantageCubeClustering", $"Detected matrix cube cluster at {cube.position}");
                     return true;
                 }
             }
@@ -730,7 +730,7 @@ public class IQWaveGenerator : MonoBehaviour, IManagerDebugInterface
         if (DetectAdvantageCubeClustering(waveData.CubesData))
         {
             // Clustering is okay but log it
-            DebugLog("ValidateWaveSolvability", "Wave contains prime cube clusters");
+            DebugLog("ValidateWaveSolvability", "Wave contains matrix cube clusters");
         }
         
         return true;
@@ -747,14 +747,14 @@ public class IQWaveGenerator : MonoBehaviour, IManagerDebugInterface
         
         // Calculate cube type distribution based on percentages
         int unitCount = Mathf.RoundToInt(cubeCount * unitCubePercentage);
-        int primeCount = Mathf.RoundToInt(cubeCount * primeCubePercentage);
+        int matrixCount = Mathf.RoundToInt(cubeCount * matrixCubePercentage);
         int infinityCount = Mathf.RoundToInt(cubeCount * infinityCubePercentage);
-        int recursionCount = cubeCount - unitCount - primeCount - infinityCount;
+        int recursionCount = cubeCount - unitCount - matrixCount - infinityCount;
         
         // Place special cubes first (they have more constraints)
         bool success = true;
         success &= PlaceCubesOfType(waveData, CubeType.Infinity, infinityCount, usedPositions, difficulty);
-        success &= PlaceCubesOfType(waveData, CubeType.Prime, primeCount, usedPositions, difficulty);
+        success &= PlaceCubesOfType(waveData, CubeType.Matrix, matrixCount, usedPositions, difficulty);
         success &= PlaceCubesOfType(waveData, CubeType.Recursion, recursionCount, usedPositions, difficulty);
         success &= PlaceCubesOfType(waveData, CubeType.Unit, unitCount, usedPositions, difficulty);
         
@@ -845,7 +845,7 @@ public class IQWaveGenerator : MonoBehaviour, IManagerDebugInterface
         maxGridHeight = activeConfig.maxGridHeight;
         
         unitCubePercentage = activeConfig.unitCubePercentage;
-        primeCubePercentage = activeConfig.primeCubePercentage;
+        matrixCubePercentage = activeConfig.matrixCubePercentage;
         infinityCubePercentage = activeConfig.infinityCubePercentage;
         recursionCubePercentage = activeConfig.recursionCubePercentage;
         
@@ -905,7 +905,7 @@ public class IQWaveGenerator : MonoBehaviour, IManagerDebugInterface
             ["Available Patterns"] = availablePatterns.Count,
             ["Difficulty Multiplier"] = difficultyMultiplier,
             ["Base Cubes Per Wave"] = baseCubesPerWave,
-            ["Cube Distribution"] = $"Unit:{unitCubePercentage:P0} Prime:{primeCubePercentage:P0} Infinity:{infinityCubePercentage:P0} Recursion:{recursionCubePercentage:P0}"
+            ["Cube Distribution"] = $"Unit:{unitCubePercentage:P0} Matrix:{matrixCubePercentage:P0} Infinity:{infinityCubePercentage:P0} Recursion:{recursionCubePercentage:P0}"
         };
     }
     
@@ -934,7 +934,7 @@ public class IQWaveGenerator : MonoBehaviour, IManagerDebugInterface
             maxGridHeight = 20;
             
             unitCubePercentage = 0.6f;
-            primeCubePercentage = 0.2f;
+            matrixCubePercentage = 0.2f;
             infinityCubePercentage = 0.1f;
             recursionCubePercentage = 0.1f;
             
@@ -992,7 +992,7 @@ public class WaveGeneratorConfig : ScriptableObject
     
     [Header("Cube Distribution")]
     public float unitCubePercentage = 0.6f;
-    public float primeCubePercentage = 0.2f;
+    public float matrixCubePercentage = 0.2f;
     public float infinityCubePercentage = 0.1f;
     public float recursionCubePercentage = 0.1f;
     

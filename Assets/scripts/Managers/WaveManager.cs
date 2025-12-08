@@ -503,8 +503,10 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
         ClearAllCubes();
         ResetPlayer();
 
+        // Validate and adjust grid size to match wave size if needed
         if (useWaveConfiguration && CurrentWave != null)
         {
+            ValidateAndResizeGridForWave(CurrentWave);
             SpawnConfigurationCubes();
             
             // Spawn inherited cubes from previous wave markers (if this wave has been mirrored)
@@ -517,6 +519,44 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
 
         CountNonBlackCubes();
         DebugLog($"📦 Spawned {activeCubes.Count} cubes ({totalNonBlackCubes} non-black)");
+    }
+
+    /// <summary>
+    /// Validates that wave size matches grid size, and resizes grid if needed.
+    /// Ensures waves can only spawn within valid grid bounds.
+    /// </summary>
+    private void ValidateAndResizeGridForWave(WaveData wave)
+    {
+        if (wave == null || grid == null) return;
+
+        // Check if wave size matches grid size
+        bool needsResize = (wave.GridWidth != grid.Width || wave.GridHeight != grid.Height);
+        
+        if (needsResize)
+        {
+            DebugLog($"⚠️ Wave size ({wave.GridWidth}x{wave.GridHeight}) doesn't match grid size ({grid.Width}x{grid.Height}). Resizing grid to match wave.");
+            
+            // Validate wave dimensions are reasonable
+            int newWidth = Mathf.Clamp(wave.GridWidth, 3, 20);
+            int newHeight = Mathf.Clamp(wave.GridHeight, 9, 50);
+            
+            if (newWidth != wave.GridWidth || newHeight != wave.GridHeight)
+            {
+                DebugLog($"⚠️ Wave dimensions clamped from {wave.GridWidth}x{wave.GridHeight} to {newWidth}x{newHeight}");
+            }
+            
+            // Resize grid to match wave
+            grid.ResizeGrid(newWidth, newHeight);
+            
+            // Wait for grid to be ready (if in coroutine context, this will yield)
+            // Note: This is called from SpawnWaveCubes which is called from SetupWave
+            // which is called from RunWaveCoroutine, so we can't yield here.
+            // Grid resize should be fast enough, but we log if it's not ready
+            if (!grid.IsGridReady)
+            {
+                DebugLog("⚠️ Grid resize not complete, but continuing with wave spawn. Grid may not be fully ready.");
+            }
+        }
     }
 
     private void SpawnConfigurationCubes()
@@ -556,7 +596,7 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
         int totalMarkersToSpawn = 0;
         if (rules.unitSpawnsUnit) totalMarkersToSpawn += recordedPositions.unitMarkerPositions.Count;
         if (rules.recursionSpawnsRecursion) totalMarkersToSpawn += recordedPositions.recursionMarkerPositions.Count;
-        if (rules.primeSpawnsPrime) totalMarkersToSpawn += recordedPositions.primeMarkerPositions.Count;
+        if (rules.matrixSpawnsMatrix) totalMarkersToSpawn += recordedPositions.matrixMarkerPositions.Count;
         if (rules.infinitySpawnsInfinity) totalMarkersToSpawn += recordedPositions.infinityMarkerPositions.Count;
         
         DebugLog($"[PairedWave] Starting spawn: {totalMarkersToSpawn} markers should spawn cubes");
@@ -582,12 +622,12 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
                 markerToCubeType[pos] = CubeType.Recursion;
             }
         }
-        if (rules.primeSpawnsPrime)
+        if (rules.matrixSpawnsMatrix)
         {
-            foreach (var pos in recordedPositions.primeMarkerPositions)
+            foreach (var pos in recordedPositions.matrixMarkerPositions)
             {
                 allMarkerPositions.Add(new Vector2Int(pos.x, pos.y));
-                markerToCubeType[pos] = CubeType.Prime;
+                markerToCubeType[pos] = CubeType.Matrix;
             }
         }
         if (rules.infinitySpawnsInfinity)
@@ -1161,7 +1201,7 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
         switch (cubeType)
         {
             case CubeType.Unit: normalCubesCaptured++; break;
-            case CubeType.Prime: blueCubesCaptured++; break;
+            case CubeType.Matrix: blueCubesCaptured++; break;
             case CubeType.Recursion: reinforcedCubesCaptured++; break;
         }
 
@@ -1223,11 +1263,39 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
             }
         }
         
+        // Task 6: Apply line divider penalty for cube escape
+        int penaltyRows = GetPenaltyRowsForCubeType(cubeType);
+        if (penaltyRows > 0 && grid != null)
+        {
+            grid.MoveLineDivider(-penaltyRows, false);
+            DebugLog($"[Task 6] Applied {penaltyRows} row penalty for {cubeType} escape");
+        }
+        
         // Process as normal cube behavior for wave completion tracking
         if (cubeType == CubeType.Unit)
         {
             OnNonBlackCubeProcessed(cubeType, false); // false = not captured
             this.Log($"Normal cube escaped - wave completion check triggered", showDebugInfo);
+        }
+    }
+    
+    /// <summary>
+    /// Task 6: Gets penalty rows for cube type based on design doc
+    /// Unit: 1 row, Matrix: 2 rows, Recursion: 2 rows, Infinity: 0 rows
+    /// </summary>
+    private int GetPenaltyRowsForCubeType(CubeType cubeType)
+    {
+        switch (cubeType)
+        {
+            case CubeType.Unit:
+                return 1;
+            case CubeType.Matrix:
+            case CubeType.Recursion:
+                return 2;
+            case CubeType.Infinity:
+                return 0; // No penalty for Infinity (intended behavior)
+            default:
+                return 1;
         }
     }
 
@@ -1274,6 +1342,14 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
         if (processedNonBlackCubes >= totalNonBlackCubes)
         {
             string reason = wasCaptured ? "All cubes captured!" : "All cubes processed!";
+            
+            // Task 6: Apply line divider reward for perfect wave clear
+            if (wasCaptured && grid != null)
+            {
+                grid.MoveLineDivider(1, true);
+                DebugLog($"[Task 6] Applied 1 row reward for perfect wave clear");
+            }
+            
             StartCoroutine(ShowCompletionMessage(reason));
         }
     }
@@ -1366,7 +1442,7 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
     {
         float random = Random.value;
         if (random < normalCubeChance) return CubeType.Unit;
-        if (random < normalCubeChance + blueCubeChance) return CubeType.Prime;
+        if (random < normalCubeChance + blueCubeChance) return CubeType.Matrix;
         return CubeType.Infinity;
     }
 
@@ -1413,8 +1489,8 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
                 playerActionManager.maxRecursionMarkers = wave.maxRecursionMarkerCount;
                 playerActionManager.maxRecursionMarkerCharges = wave.maxRecursionMarkerCharge;
 
-                playerActionManager.maxPrimeMarkers = wave.maxPrimeMarkerCount;
-                playerActionManager.maxPrimeMarkerCharges = wave.maxPrimeMarkerCharge;
+                playerActionManager.maxMatrixMarkers = wave.maxMatrixMarkerCount;
+                playerActionManager.maxMatrixMarkerCharges = wave.maxMatrixMarkerCharge;
                 
                 // Validate and adjust current mode based on available marker types
                 playerActionManager.ValidateCurrentMode();
@@ -1537,14 +1613,14 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
             }
         }
         
-        // Prime markers → Prime cubes (if rule enabled)
-        if (rules.primeSpawnsPrime)
+        // Matrix markers → Matrix cubes (if rule enabled)
+        if (rules.matrixSpawnsMatrix)
         {
-            foreach (var pos in markers.primeMarkerPositions)
+            foreach (var pos in markers.matrixMarkerPositions)
             {
                 int spawnY = gridTop - NormalizeMarkerY(pos.y, markers);
                 int spawnX = Mathf.Clamp(pos.x, 0, grid.Width - 1);
-                SpawnCubeDirectly(spawnX, spawnY, CubeType.Prime);
+                SpawnCubeDirectly(spawnX, spawnY, CubeType.Matrix);
                 spawnedCount++;
             }
         }
@@ -1577,7 +1653,7 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
         
         foreach (var pos in allMarkers.unitMarkerPositions) { minY = Mathf.Min(minY, pos.y); maxY = Mathf.Max(maxY, pos.y); }
         foreach (var pos in allMarkers.recursionMarkerPositions) { minY = Mathf.Min(minY, pos.y); maxY = Mathf.Max(maxY, pos.y); }
-        foreach (var pos in allMarkers.primeMarkerPositions) { minY = Mathf.Min(minY, pos.y); maxY = Mathf.Max(maxY, pos.y); }
+        foreach (var pos in allMarkers.matrixMarkerPositions) { minY = Mathf.Min(minY, pos.y); maxY = Mathf.Max(maxY, pos.y); }
         foreach (var pos in allMarkers.infinityMarkerPositions) { minY = Mathf.Min(minY, pos.y); maxY = Mathf.Max(maxY, pos.y); }
         
         if (minY == int.MaxValue) return 0;
@@ -1757,7 +1833,7 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
         {
             debugData["Recorded Unit Markers"] = recordedPositions.unitMarkerPositions.Count;
             debugData["Recorded Recursion Markers"] = recordedPositions.recursionMarkerPositions.Count;
-            debugData["Recorded Prime Markers"] = recordedPositions.primeMarkerPositions.Count;
+            debugData["Recorded Matrix Markers"] = recordedPositions.matrixMarkerPositions.Count;
             debugData["Recorded Infinity Markers"] = recordedPositions.infinityMarkerPositions.Count;
             debugData["Total Recorded Markers"] = recordedPositions.GetTotalMarkerCount();
         }
@@ -1944,14 +2020,14 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
 
 /// <summary>
 /// Stores marker positions recorded during a wave for inheritance by the mirrored version.
-/// Marker types: Unit, Recursion, Prime, Infinity
+/// Marker types: Unit, Recursion, Matrix, Infinity
 /// </summary>
 [System.Serializable]
 public class RecordedMarkerPositions
 {
     public List<Vector2Int> unitMarkerPositions = new List<Vector2Int>();
     public List<Vector2Int> recursionMarkerPositions = new List<Vector2Int>();
-    public List<Vector2Int> primeMarkerPositions = new List<Vector2Int>();
+    public List<Vector2Int> matrixMarkerPositions = new List<Vector2Int>();
     public List<Vector2Int> infinityMarkerPositions = new List<Vector2Int>();
 
     public RecordedMarkerPositions()
@@ -1971,9 +2047,9 @@ public class RecordedMarkerPositions
                 if (!recursionMarkerPositions.Contains(position))
                     recursionMarkerPositions.Add(position);
                 break;
-            case MarkerMode.Prime:
-                if (!primeMarkerPositions.Contains(position))
-                    primeMarkerPositions.Add(position);
+            case MarkerMode.Matrix:
+                if (!matrixMarkerPositions.Contains(position))
+                    matrixMarkerPositions.Add(position);
                 break;
             case MarkerMode.Infinity:
                 if (!infinityMarkerPositions.Contains(position))
@@ -1990,8 +2066,8 @@ public class RecordedMarkerPositions
                 return unitMarkerPositions.Remove(position);
             case MarkerMode.Recursion:
                 return recursionMarkerPositions.Remove(position);
-            case MarkerMode.Prime:
-                return primeMarkerPositions.Remove(position);
+            case MarkerMode.Matrix:
+                return matrixMarkerPositions.Remove(position);
             case MarkerMode.Infinity:
                 return infinityMarkerPositions.Remove(position);
             default:
@@ -2002,7 +2078,7 @@ public class RecordedMarkerPositions
     public int GetTotalMarkerCount()
     {
         return unitMarkerPositions.Count + recursionMarkerPositions.Count + 
-               primeMarkerPositions.Count + infinityMarkerPositions.Count;
+               matrixMarkerPositions.Count + infinityMarkerPositions.Count;
     }
 }
 

@@ -19,12 +19,12 @@ Maintains visibility into accumulated technical debt, planned cleanup activities
 ```
 Assets/scripts/Managers/PlayerActionManager.cs
 - [System.Obsolete("Use LightMarker instead")] IndividualMarker class
-- [System.Obsolete("Use PrimeMarker instead")] AreaMarker class
-- Multiple obsolete method aliases (Individual → Light, Area → Prime)
+- [System.Obsolete("Use MatrixMarker instead")] AreaMarker class
+- Multiple obsolete method aliases (Individual → Light, Area → Matrix)
 - Obsolete property aliases for compatibility
 
 Assets/scripts/Managers/PlayerMarkerSystem.cs  
-- Obsolete enum value aliases (Individual → Light, Area → Prime)
+- Obsolete enum value aliases (Individual → Light, Area → Matrix)
 - Obsolete accessor properties for backward compatibility
 - Obsolete method aliases for marker operations
 ```
@@ -36,8 +36,8 @@ Assets/scripts/Managers/PlayerMarkerSystem.cs
    [System.Obsolete("Use LightMarker instead")]
    public class IndividualMarker : LightMarker { ... }
    
-   [System.Obsolete("Use PrimeMarker instead")]  
-   public class AreaMarker : PrimeMarker { ... }
+   [System.Obsolete("Use MatrixMarker instead")]  
+   public class AreaMarker : MatrixMarker { ... }
    ```
 
 2. **Remove Obsolete Methods**:
@@ -80,8 +80,8 @@ Assets/scripts/Managers/PlayerMarkerSystem.cs
 **Validation Score**: 95% (Integration) / 100% (Production Stability)
 
 #### Systems Successfully Integrated:
-✅ **Four-Tier Marker System**: Light/Heavy/Prime/Cube markers fully operational  
-✅ **New Cube Terminology**: Unit/Infinity/Prime/Recursion implemented throughout  
+✅ **Four-Tier Marker System**: Light/Heavy/Matrix/Cube markers fully operational  
+✅ **New Cube Terminology**: Unit/Infinity/Matrix/Recursion implemented throughout  
 ✅ **Recursion Marker + Recursion Cube Integration**: Enhanced marker functionality working  
 ✅ **Corruption Mechanics**: Infinity cube face painting and tile corruption operational  
 ✅ **Backward Compatibility**: All obsolete aliases functional with zero breaking changes  
@@ -254,7 +254,7 @@ WaveManager.cs (600 lines - coordination)
 #### 8.2.2 PlayerActionManager.cs (1655 → 600 target)
 
 **Current Responsibilities**:
-- Light/Heavy/Prime/Cube marker placement
+- Light/Heavy/Matrix/Cube marker placement
 - Marker triggering and detonation
 - Charge management and regeneration
 - UI synchronization
@@ -424,8 +424,8 @@ GridManager.cs (600 lines - core grid)
 1. ✅ Four-tier marker system terminology validation
 2. ✅ Unit Marker functionality (was individual) 
 3. ✅ Recursion Marker functionality (NEW for recursion cubes)
-4. ✅ Prime marker area coverage (was area)
-5. ✅ Cube marker generation from prime captures
+4. ✅ Matrix marker area coverage (was area)
+5. ✅ Cube marker generation from Matrix captures
 6. ✅ New cube terminology integration
 7. ✅ Recursion Marker + recursion cube interaction
 8. ✅ Corruption mechanics validation

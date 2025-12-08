@@ -145,7 +145,7 @@ Cube behavior varies by type but is handled through switch statements:
 // Anti-pattern in CubeManager:
 switch (type) {
     case CubeType.Unit: // behavior
-    case CubeType.Prime: // different behavior
+    case CubeType.Matrix: // different behavior
     // etc.
 }
 ```
@@ -194,7 +194,7 @@ PlayerActionManager requires:
 ```csharp
 public enum GameAudioEvent {
     CubeLanded, CubeCaptured, CubeEscaped,
-    LightMarkerPlaced, PrimeMarkerPlaced, RecursionMarkerPlaced,
+    LightMarkerPlaced, MatrixMarkerPlaced, RecursionMarkerPlaced,
     // etc.
 }
 ```
@@ -397,8 +397,8 @@ private Dictionary<WaveData, bool> waveMirrorState = new Dictionary<WaveData, bo
 
 **Enumerations**: Clear, descriptive names
 ```csharp
-CubeType.Unit, CubeType.Prime, CubeType.Infinity, CubeType.Recursion
-MarkerType.Light, MarkerType.Heavy, MarkerType.Prime, MarkerType.Cube
+CubeType.Unit, CubeType.Matrix, CubeType.Infinity, CubeType.Recursion
+MarkerType.Light, MarkerType.Heavy, MarkerType.Matrix, MarkerType.Cube
 ```
 
 **Manager Naming**: `[Domain]Manager` pattern consistently applied
@@ -412,7 +412,7 @@ WaveManager, GridManager, PlayerManager, AudioManager, StageManager
 ```csharp
 LightMarker // Class in PlayerActionManager.cs
 RecursionMarker // Class in PlayerActionManager.cs
-PrimeMarker // Class in PlayerActionManager.cs
+MatrixMarker // Class in PlayerActionManager.cs
 // But also:
 PlayerMarkerSystem // Separate manager
 ```

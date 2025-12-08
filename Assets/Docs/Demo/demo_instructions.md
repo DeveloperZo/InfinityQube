@@ -11,8 +11,8 @@
 **Cosmic Marker Powers:**
 - **F**: Place Unit Markers in cube paths (limited charges - use wisely!)
 - **R**: Trigger Unit Markers to capture cubes within their ethereal glow
-- **G**: Place prime markers (covers 2x2 area for strategic positioning)
-- **T**: Trigger prime markers for larger area capture
+- **G**: Place Matrix markers (covers 2x2 area for strategic positioning)
+- **T**: Trigger Matrix markers for larger area capture
 
 **Wave Control:**
 - **ENTER**: Start the next wave when you're ready to face new challenges

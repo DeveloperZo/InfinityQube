@@ -269,7 +269,7 @@ public class ExampleDebugFeedbackHook : MonoBehaviour, IInputFeedbackHook
     [ContextMenu("Test Marker Place")]
     private void TestMarkerPlace()
     {
-        OnMarkerPlace(MarkerMode.Prime, new Vector2Int(3, 3), false);
+        OnMarkerPlace(MarkerMode.Matrix, new Vector2Int(3, 3), false);
     }
 
     /// <summary>

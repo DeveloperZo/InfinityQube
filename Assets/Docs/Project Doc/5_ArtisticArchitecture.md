@@ -53,14 +53,14 @@ Material Composition:
 ```
 Core Cube Materials (Existing Unity Assets):
 ├── CosmicBlack.mat     → Infinity Cube foundation (luscious black base)
-├── CosmicBlue.mat      → Prime Cube ocean energy (vibrant nebula blue)
+├── CosmicBlue.mat      → Matrix Cube ocean energy (vibrant nebula blue)
 ├── CosmicNormal.mat    → Unit Cube standard (functional gray-blue base)
 └── CosmicReinforced.mat → Recursion Cube complexity (honey-caramel foundation)
 
 Extended Cube Palette (To Create):
 ├── InfinityElite.mat   → Luscious black with white cosmic dust complexity
 ├── UnitAdaptive.mat    → Level-adaptive gray-blue for different stages
-├── PrimeNebula.mat     → Pulsating ocean blue with wave foam effects
+├── MatrixNebula.mat     → Pulsating ocean blue with wave foam effects
 └── RecursionHoney.mat      → Layered honey-caramel transitioning to red-purple
 ```
 
@@ -86,9 +86,9 @@ Attention Level: Low individual focus
 Identifier: Smooth surface without symbols
 ```
 
-#### **3. Prime Cube - Number Marker**
+#### **3. Matrix Cube - Number Marker**
 ```
-Visual Role: Prime number indicator
+Visual Role: Matrix number indicator
 Material: Ocean blue with soft glow
 Visibility: High through color differentiation
 Attention Level: Medium-high
@@ -205,13 +205,13 @@ Direction Switching Feedback:
 ```
 Player Cube Materials:
 ├── PlayerInfinity.mat    → Black base with cyan highlights
-├── PlayerPrime.mat       → Ocean blue with cyan accents
+├── PlayerMatrix.mat       → Ocean blue with cyan accents
 ├── PlayerUnit.mat        → Gray-blue with subtle cyan glow
 └── PlayerRecursion.mat   → Honey-caramel with cyan edges
 
 Wave Cube Materials:
 ├── WaveInfinity.mat      → Inverted white base with magenta highlights
-├── WavePrime.mat         → Deep purple with magenta accents
+├── WaveMatrix.mat         → Deep purple with magenta accents
 ├── WaveUnit.mat          → Blue-gray with subtle magenta glow
 └── WaveRecursion.mat     → Purple-red with magenta edges
 ```
@@ -258,7 +258,7 @@ Unit Cube Colors:
 - Emission: None (standard material)
 - Texture: Smooth metallic finish
 
-Prime Cube Colors:
+Matrix Cube Colors:
 - Primary: Ocean blue (#0EA5E9)
 - Secondary: Light blue highlights (#7DD3FC)
 - Emission: Soft blue glow
@@ -274,7 +274,7 @@ Recursion Cube Colors:
 #### **Cube-Based Color Psychology**
 - **Infinity Black-White**: Focus, elegance, infinite possibility, cosmic mystery
 - **Unit Gray-Blue**: Functional harmony, adaptable foundation, group coherence
-- **Prime Ocean Blue**: Playful energy, living motion, gentle illumination, nebula wonder
+- **Matrix Ocean Blue**: Playful energy, living motion, gentle illumination, nebula wonder
 - **Recursion Honey-Caramel**: Warm strength, layered complexity, rich depth, earthly contrast
 
 ---
@@ -290,7 +290,7 @@ The visual system uses an event-driven architecture where game actions trigger s
 The system recognizes multiple animation trigger points that correspond to different game actions:
 
 **Mode Switching Triggers:**
-- **ModeSwitch**: When players switch between marker modes (Light, Prime, Heavy)
+- **ModeSwitch**: When players switch between marker modes (Light, Matrix, Heavy)
 
 **Marker Action Triggers:**
 - **MarkerPlace**: When markers are placed on the grid

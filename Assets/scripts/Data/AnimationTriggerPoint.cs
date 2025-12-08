@@ -8,7 +8,7 @@ using UnityEngine;
 public enum AnimationTriggerPoint
 {
     /// <summary>
-    /// Triggered when switching between marker modes (Light/Prime/Heavy)
+    /// Triggered when switching between marker modes (Light/Matrix/Heavy)
     /// Context: Mode transition from one state to another
     /// </summary>
     ModeSwitch,

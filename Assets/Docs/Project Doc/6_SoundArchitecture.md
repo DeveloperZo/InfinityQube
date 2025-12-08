@@ -67,7 +67,7 @@ Spatial: Standard 3D positioning
 Variation: None - represents pure rhythm
 ```
 
-#### **Prime Cubes (Harmonic Resonance)**
+#### **Matrix Cubes (Harmonic Resonance)**
 ```
 Base Frequency: 240 Hz fundamental (octave above Unit)
 Character: Richer harmonics, ethereal tone quality
@@ -120,7 +120,7 @@ The system recognizes multiple categories of audio events that correspond to dif
 
 **Marker Events:**
 - **LightMarkerPlaced**: When a Unit Marker is placed on the grid
-- **PrimeMarkerPlaced**: When a prime marker is placed on the grid
+- **MatrixMarkerPlaced**: When a Matrix marker is placed on the grid
 - **RecursionMarkerPlaced**: When a Recursion Marker is placed on the grid
 - **MarkerTriggered**: When any marker activates and affects cubes
 
@@ -131,7 +131,7 @@ The system recognizes multiple categories of audio events that correspond to dif
 
 **Mode Switching Events:**
 - **ModeSwitchedToLight**: When switching to Unit Marker mode
-- **ModeSwitchedToPrime**: When switching to prime marker mode
+- **ModeSwitchedToMatrix**: When switching to Matrix marker mode
 - **ModeSwitchedToHeavy**: When switching to Recursion Marker mode
 
 **Feedback Events:**
@@ -166,7 +166,7 @@ Different cube types trigger distinct audio responses when events occur:
 - Capture: Satisfying confirmation chime
 - Escape: Subtle warning sound
 
-**Prime Cube Events:**
+**Matrix Cube Events:**
 - Landing: Harmonic resonance with ethereal tone
 - Capture: Valuable-sounding success bell
 - Escape: More prominent warning
@@ -533,7 +533,7 @@ Ambient Reference: Internal clock maintains atmospheric consistency
 #### **Atmospheric Layering System**
 - **Primary Pulse**: Cube impacts on grid landing
 - **Secondary Atmosphere**: Marker placement timing
-- **Accent Tones**: Prime cube captures and detonations
+- **Accent Tones**: Matrix cube captures and detonations
 - **Polyrhythmic Ambience**: Multiple cubes creating complex timing patterns
 
 ### **6.4.2 Legacy Atmospheric Pattern System**
@@ -582,7 +582,7 @@ public class AudioManager : MonoBehaviour
     
     [Header("Cube Impact Sounds")]
     public AudioClip unitCubeImpact;
-    public AudioClip primeCubeImpact;  
+    public AudioClip MatrixCubeImpact;  
     public AudioClip recursionCubeImpact;
     public AudioClip infinityCubeImpact; // THE SIGNATURE SOUND
     
@@ -669,7 +669,7 @@ AudioSource Configuration:
 AudioManager (Singleton)
 ├── CubeSounds (Mixer Group)
 │   ├── UnitCubeAudio
-│   ├── PrimeCubeAudio  
+│   ├── MatrixCubeAudio  
 │   ├── RecursionCubeAudio
 │   └── InfinityCubeAudio (SIGNATURE SOUND)
 ├── PlayerActions (Mixer Group)

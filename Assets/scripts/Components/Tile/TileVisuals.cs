@@ -12,7 +12,7 @@ public class TileVisuals
     // Colors for different states
     private readonly Color markerColor = Color.red;
     private readonly Color corruptedColor = Color.black;
-    private readonly Color primedColor = Color.blue;
+    private readonly Color matrixedColor = Color.blue;
     #endregion
 
     #region Runtime State
@@ -83,7 +83,7 @@ public class TileVisuals
             return (true, corruptedColor);
 
         if (hasDetonationPoint)
-            return (true, primedColor);
+            return (true, matrixedColor);
 
         return (false, Color.white); // No overlay needed
     }

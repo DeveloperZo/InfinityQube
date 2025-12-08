@@ -11,7 +11,7 @@ using static Enumerations;
 public class WavePrototyper : PrototypingPanelBase
 {
     public override string PanelName => "Wave";
-    public override string PanelIcon => "🌊";
+    public override string PanelIcon => "W";
     public override PrototypingCategory Category => PrototypingCategory.Wave;
     public override int Priority => 10;
     
@@ -39,7 +39,6 @@ public class WavePrototyper : PrototypingPanelBase
     // Section toggles
     private bool showWaveEditor = true;
     private bool showWaveControls = true;
-    private bool showPairedWave = true;
     private bool showQuickSpawn = false;
     
     public override void Initialize()
@@ -72,16 +71,8 @@ public class WavePrototyper : PrototypingPanelBase
     
     public override List<QuickAction> GetQuickActions()
     {
-        int markerCount = waveManager?.GetPreviousWaveMarkers()?.GetTotalMarkerCount() ?? 0;
-        
-        return new List<QuickAction>
-        {
-            new QuickAction("⏮", RespawnWave) { Group = QuickActionGroup.Wave, Priority = 1, Tooltip = "Respawn wave" },
-            new QuickAction(isPaused ? "▶" : "⏸", TogglePause) { Group = QuickActionGroup.Wave, Priority = 2, IsHighlighted = () => isPaused },
-            new QuickAction($"🔄M", SpawnMirrorWaveNow) { Group = QuickActionGroup.Wave, Priority = 3, Tooltip = $"Spawn mirror wave ({markerCount} markers)", IsEnabled = () => markerCount > 0 },
-            new QuickAction("🚀", SpawnConfiguredWave) { Group = QuickActionGroup.Wave, Priority = 5, Tooltip = "Spawn designed wave", IsEnabled = () => currentMode == EditorMode.DesignNew },
-            new QuickAction("🗑", ClearCubes) { Group = QuickActionGroup.Wave, Priority = 20, Tooltip = "Clear cubes" }
-        };
+        // No quick actions - all controls are in panel
+        return new List<QuickAction>();
     }
     
     public override void DrawGUI()
@@ -90,7 +81,7 @@ public class WavePrototyper : PrototypingPanelBase
         
         // Status with wave label (1, 1M, 2, 2M, etc.)
         string waveLabel = waveManager?.GetWaveLabel() ?? "?";
-        string modeStr = currentMode == EditorMode.TrackBoard ? "📡 TRACKING" : "✏️ DESIGN";
+        string modeStr = currentMode == EditorMode.TrackBoard ? "TRACK" : "DESIGN";
         string status = waveManager?.waveActive == true 
             ? $"{modeStr} | Wave {waveLabel} | Cubes: {activeCubes.Count}" 
             : $"{modeStr} | Wave {waveLabel} (stopped) | Cubes: {activeCubes.Count}";
@@ -101,12 +92,12 @@ public class WavePrototyper : PrototypingPanelBase
         // Mode Toggle
         GUILayout.BeginHorizontal();
         GUI.backgroundColor = currentMode == EditorMode.TrackBoard ? Color.cyan : Color.white;
-        if (GUILayout.Button("📡 Track Board", GUILayout.Height(28)))
+        if (GUILayout.Button("Track Board", GUILayout.Height(25)))
         {
             currentMode = EditorMode.TrackBoard;
         }
         GUI.backgroundColor = currentMode == EditorMode.DesignNew ? Color.cyan : Color.white;
-        if (GUILayout.Button("✏️ Design New", GUILayout.Height(28)))
+        if (GUILayout.Button("Design New", GUILayout.Height(25)))
         {
             currentMode = EditorMode.DesignNew;
         }
@@ -157,29 +148,29 @@ public class WavePrototyper : PrototypingPanelBase
                 
                 // Main control buttons
                 DrawButtonRow(
-                    ("▶ Start", StartWave),
-                    ("⏸ Stop", StopWave),
-                    ("⏮ Respawn", RespawnWave),
-                    (isPaused ? "▶ Resume" : "⏸ Pause", TogglePause)
+                    ("Start", StartWave),
+                    ("Stop", StopWave),
+                    ("Respawn", RespawnWave),
+                    (isPaused ? "Resume" : "Pause", TogglePause)
                 );
                 
                 // Manual step controls (only when wave is stopped)
                 bool waveStopped = waveManager != null && !waveManager.waveActive;
                 GUI.enabled = waveStopped && GetActiveCubes().Count > 0;
                 DrawButtonRow(
-                    ("◀ Step Back", StepBackward),
-                    ("Step Forward ▶", StepForward)
+                    ("Step Back", StepBackward),
+                    ("Step Fwd", StepForward)
                 );
                 GUI.enabled = true;
                 
                 if (waveStopped && GetActiveCubes().Count > 0)
                 {
-                    DrawStatus($"Step: {waveManager?.MoveStep ?? 0} (Manual control enabled)");
+                    DrawStatus($"Step: {waveManager?.MoveStep ?? 0} (Manual mode)");
                 }
                 
                 DrawButtonRow(
-                    ("🗑 Clear", ClearCubes),
-                    ("⚡ Complete", ForceComplete)
+                    ("Clear", ClearCubes),
+                    ("Complete", ForceComplete)
                 );
                 
                 GUILayout.Space(5);
@@ -192,13 +183,6 @@ public class WavePrototyper : PrototypingPanelBase
                 if (GUILayout.Button("4x")) SetSpeed(4f);
                 GUILayout.EndHorizontal();
             });
-        }
-        
-        // Paired Wave Testing
-        showPairedWave = DrawToggleSection("PAIRED WAVE TESTING", showPairedWave);
-        if (showPairedWave)
-        {
-            DrawPairedWaveSection();
         }
         
         // Quick Spawn
@@ -222,122 +206,12 @@ public class WavePrototyper : PrototypingPanelBase
                 
                 GUILayout.Space(5);
                 DrawButtonRow(
-                    ("↓ Move", MoveDown),
-                    ("⏬ Drop", DropAll)
+                    ("Move Down", MoveDown),
+                    ("Drop All", DropAll)
                 );
             });
         }
     }
-    
-    #region Paired Wave Testing
-    private void DrawPairedWaveSection()
-    {
-        DrawSection("", () =>
-        {
-            // Show recorded markers
-            var markers = waveManager?.GetPreviousWaveMarkers();
-            int totalMarkers = markers?.GetTotalMarkerCount() ?? 0;
-            
-            GUILayout.Label($"Recorded Markers: {totalMarkers}");
-            if (markers != null && totalMarkers > 0)
-            {
-                GUILayout.Label($"  UnitMarker: {markers.unitMarkerPositions.Count} → Unit cubes");
-                GUILayout.Label($"  PrimeMarker: {markers.primeMarkerPositions.Count} → Prime cubes");
-                GUILayout.Label($"  RecursionMarker: {markers.recursionMarkerPositions.Count} → Recursion cubes");
-                GUILayout.Label($"  InfinityMarker: {markers.infinityMarkerPositions.Count} → Infinity cubes");
-            }
-            
-            GUILayout.Space(5);
-            
-            // Spawn mirror wave button
-            GUI.enabled = totalMarkers > 0;
-            if (GUILayout.Button($"🔄 Spawn Mirror Wave ({totalMarkers} cubes)", GUILayout.Height(30)))
-            {
-                SpawnMirrorWaveNow();
-            }
-            GUI.enabled = true;
-            
-            GUILayout.Space(5);
-            
-            // Quick marker placement for testing
-            GUILayout.Label("Quick Place Markers (at player Y):");
-            GUILayout.BeginHorizontal();
-            if (GUILayout.Button("Unit", GUILayout.Width(45))) PlaceTestMarker(MarkerMode.Unit);
-            if (GUILayout.Button("Prime", GUILayout.Width(45))) PlaceTestMarker(MarkerMode.Prime);
-            if (GUILayout.Button("Recur", GUILayout.Width(45))) PlaceTestMarker(MarkerMode.Recursion);
-            if (GUILayout.Button("Inf", GUILayout.Width(35))) PlaceTestMarker(MarkerMode.Infinity);
-            if (GUILayout.Button("Clear", GUILayout.Width(45))) ClearRecordedMarkers();
-            GUILayout.EndHorizontal();
-            
-            GUILayout.Space(5);
-            
-            // Quick test workflow
-            GUILayout.Label("Quick Test Workflow:");
-            GUILayout.BeginHorizontal();
-            if (GUILayout.Button("1. Start Wave"))
-            {
-                waveManager?.StopWave();
-                waveManager?.ClearAllCubes();
-                ClearRecordedMarkers();
-                if (waveManager != null)
-                {
-                    waveManager.currentWaveIndex = 0;
-                    waveManager.StartWave();
-                }
-            }
-            if (GUILayout.Button("2. Add 3 Markers"))
-            {
-                PlaceTestMarker(MarkerMode.Unit);
-                PlaceTestMarker(MarkerMode.Unit);
-                PlaceTestMarker(MarkerMode.Recursion);
-            }
-            if (GUILayout.Button("3. Mirror!"))
-            {
-                SpawnMirrorWaveNow();
-            }
-            GUILayout.EndHorizontal();
-        });
-    }
-    
-    private void SpawnMirrorWaveNow()
-    {
-        if (waveManager == null) return;
-        
-        var markers = waveManager.GetPreviousWaveMarkers();
-        if (markers == null || markers.GetTotalMarkerCount() == 0)
-        {
-            LogAction("No markers recorded - place markers first!");
-            return;
-        }
-        
-        // Stop current wave and spawn mirror
-        waveManager.StopWave();
-        waveManager.StartCoroutine(waveManager.SpawnMirroredWave());
-        LogAction($"Spawned mirror wave with {markers.GetTotalMarkerCount()} cubes");
-    }
-    
-    private void PlaceTestMarker(MarkerMode mode)
-    {
-        if (waveManager == null || playerManager == null) return;
-        
-        // Get player position or use a test position
-        Vector2Int pos = playerManager.currentTilePosition;
-        
-        // Offset each marker slightly so they don't stack
-        var markers = waveManager.GetPreviousWaveMarkers();
-        int offset = markers?.GetTotalMarkerCount() ?? 0;
-        pos.x = (pos.x + offset) % (gridManager?.Width ?? 10);
-        
-        waveManager.RecordMarkerPosition(pos, mode);
-        LogAction($"Recorded {mode} marker at ({pos.x}, {pos.y})");
-    }
-    
-    private void ClearRecordedMarkers()
-    {
-        waveManager?.ClearPreviousWaveMarkers();
-        LogAction("Cleared recorded markers");
-    }
-    #endregion
     
     #region Wave Editor - Live View
     private void DrawLiveWaveView(List<CubeManager> activeCubes)
@@ -355,7 +229,7 @@ public class WavePrototyper : PrototypingPanelBase
             GUILayout.BeginHorizontal();
             
             GUI.backgroundColor = eraseMode ? Color.red : Color.white;
-            if (GUILayout.Button("✕ Delete", GUILayout.Width(60)))
+            if (GUILayout.Button("Delete", GUILayout.Width(55)))
             {
                 eraseMode = true;
             }
@@ -495,7 +369,7 @@ public class WavePrototyper : PrototypingPanelBase
             
             // Erase mode
             GUI.backgroundColor = eraseMode ? Color.red : Color.white;
-            if (GUILayout.Button("✕ Empty", GUILayout.Width(60)))
+            if (GUILayout.Button("Empty", GUILayout.Width(55)))
             {
                 eraseMode = true;
             }
@@ -545,11 +419,11 @@ public class WavePrototyper : PrototypingPanelBase
             
             // Wave editor actions
             GUILayout.BeginHorizontal();
-            if (GUILayout.Button("🚀 Spawn Wave"))
+            if (GUILayout.Button("Spawn Wave"))
             {
                 SpawnConfiguredWave();
             }
-            if (GUILayout.Button("🧹 Clear Grid"))
+            if (GUILayout.Button("Clear Grid"))
             {
                 ClearWaveGrid();
             }
@@ -560,9 +434,9 @@ public class WavePrototyper : PrototypingPanelBase
             {
                 FillGrid(CubeType.Unit);
             }
-            if (GUILayout.Button("Fill Prime"))
+            if (GUILayout.Button("Fill Matrix"))
             {
-                FillGrid(CubeType.Prime);
+                FillGrid(CubeType.Matrix);
             }
             if (GUILayout.Button("Fill Recursion"))
             {
@@ -658,7 +532,7 @@ public class WavePrototyper : PrototypingPanelBase
         switch (type)
         {
             case CubeType.Unit: return new Color(0.8f, 0.5f, 0.2f); // Orange
-            case CubeType.Prime: return new Color(0.2f, 0.5f, 0.8f); // Blue
+            case CubeType.Matrix: return new Color(0.2f, 0.5f, 0.8f); // Blue
             case CubeType.Recursion: return new Color(0.6f, 0.2f, 0.6f); // Purple
             case CubeType.Infinity: return new Color(0.1f, 0.1f, 0.1f); // Black
             default: return Color.white;

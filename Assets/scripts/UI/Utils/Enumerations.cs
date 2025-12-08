@@ -7,8 +7,9 @@ public static class Enumerations
     public enum FaceStatus
     {
         None,
-        Corrupted,      // Acts like black cube when active
-        Enhanced,       // Creates detonation when captured
+        InfinityFace,      // Creates infinity resonance when landing on grid
+        MatrixFace,       // Creates matrix marker when landing on grid
+        RecursionFace,       // Creates recursion marker when landing on grid
     }
 
     public enum CubeFace
@@ -28,7 +29,7 @@ public static class Enumerations
         /// <summary>Basic cube type (formerly Normal)</summary>
         Unit,
         /// <summary>Area coverage cube type (formerly Blue)</summary>
-        Prime,
+        Matrix,
         /// <summary>Special corruption cube type (formerly Black)</summary>
         Infinity,
         /// <summary>Enhanced durability cube type (formerly Reinforced)</summary>
@@ -45,9 +46,9 @@ public static class Enumerations
         Unit,
         /// <summary>Recursion marker: Enhanced marker for recursion cubes (formerly Heavy)</summary>
         Recursion,
-        /// <summary>Prime marker: Area coverage marker (formerly Area)</summary>
-        Prime,
-        /// <summary>Cube marker: Generated from prime cube captures</summary>
+        /// <summary>Matrix marker: Area coverage marker (formerly Area)</summary>
+        Matrix,
+        /// <summary>Cube marker: Generated from matrix cube captures</summary>
         Cube
     }
 
@@ -104,8 +105,8 @@ public static class Enumerations
     {
         /// <summary>Unit marker: Spawns Unit cube in mirror wave (Key: 1)</summary>
         Unit = 1,
-        /// <summary>Prime marker: Spawns Prime cube in mirror wave (Key: 2)</summary>
-        Prime = 2,
+        /// <summary>Matrix marker: Spawns Matrix cube in mirror wave (Key: 2)</summary>
+        Matrix = 2,
         /// <summary>Recursion marker: Spawns Recursion cube in mirror wave (Key: 3)</summary>
         Recursion = 3,
         /// <summary>Infinity marker: Spawns Infinity cube in mirror wave (Key: 4)</summary>
@@ -127,7 +128,7 @@ public static class Enumerations
         
         // Marker Events
         UnitMarkerPlaced,   // When a unit marker is placed
-        PrimeMarkerPlaced,  // When a prime marker is placed
+        MatrixMarkerPlaced,  // When a matrix marker is placed
         RecursionMarkerPlaced,  // When a recursion marker is placed
         MarkerTriggered,    // When any marker is triggered
         
@@ -140,7 +141,7 @@ public static class Enumerations
         
         // Mode Switching Events
         ModeSwitchedToUnit,   // When switching to Unit marker mode
-        ModeSwitchedToPrime,  // When switching to Prime marker mode
+        ModeSwitchedToMatrix,  // When switching to Matrix marker mode
         ModeSwitchedToRecursion, // When switching to Recursion marker mode
         
         // Message Polish Events

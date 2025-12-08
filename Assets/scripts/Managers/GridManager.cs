@@ -30,6 +30,11 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
     [Header("Debug")]
     public bool showGridGizmos = false;
     public Color gizmoColor = Color.cyan;
+    
+    [Header("Task 6: Line Divider System")]
+    [SerializeField] private bool enableLineDivider = false; // Toggle line divider system on/off (default: OFF for testing)
+    [SerializeField] private int lineDividerRow = 10; // Default divider position (middle of 20-row grid)
+    [SerializeField] private GameObject lineDividerVisual; // Visual indicator for line divider
     #endregion
 
     #region Runtime State
@@ -56,6 +61,14 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
     public Vector3 GridCenter => transform.position + calculatedGridOffset;
     public Vector3 MinWorldBounds => minWorldBounds;
     public Vector3 MaxWorldBounds => maxWorldBounds;
+    
+    // Task 6: Line divider properties
+    public bool LineDividerEnabled => enableLineDivider;
+    public int LineDividerRow => lineDividerRow;
+    /// <summary>
+    /// Task 6: Checks if a position is below the line divider (or always true if disabled)
+    /// </summary>
+    public bool IsPositionBelowLine(int y) => !enableLineDivider || y < lineDividerRow;
     #endregion
 
     #region Unity Lifecycle
@@ -70,6 +83,93 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
     {
         EnableDebugLogs = true;
         GenerateGrid();
+        InitializeLineDivider();
+    }
+    
+    /// <summary>
+    /// Task 6: Initializes the line divider system
+    /// </summary>
+    private void InitializeLineDivider()
+    {
+        if (!enableLineDivider)
+        {
+            DebugLog($"Line divider system DISABLED - marker placement unrestricted");
+            return;
+        }
+        
+        // Set default line divider position to middle of grid if not set
+        if (lineDividerRow <= 0 || lineDividerRow >= height)
+        {
+            lineDividerRow = height / 2;
+            DebugLog($"Line divider initialized to row {lineDividerRow} (middle of {height}-row grid)");
+        }
+        
+        UpdateLineDividerVisual();
+        DebugLog($"Line divider system ENABLED at row {lineDividerRow}");
+    }
+    
+    /// <summary>
+    /// Task 6: Moves the line divider up or down
+    /// </summary>
+    public void MoveLineDivider(int rows, bool isReward = true)
+    {
+        if (!enableLineDivider)
+        {
+            // Silently skip when disabled - no log spam
+            return;
+        }
+        
+        int oldRow = lineDividerRow;
+        lineDividerRow = Mathf.Clamp(lineDividerRow + rows, 1, height - 1);
+        
+        string direction = rows > 0 ? "up" : "down";
+        string reason = isReward ? "reward" : "penalty";
+        DebugLog($"[Task 6] Line divider moved {direction} from row {oldRow} to row {lineDividerRow} ({reason})");
+        
+        UpdateLineDividerVisual();
+    }
+    
+    /// <summary>
+    /// Task 6: Enables or disables the line divider system at runtime
+    /// </summary>
+    public void SetLineDividerEnabled(bool enabled)
+    {
+        enableLineDivider = enabled;
+        DebugLog($"[Task 6] Line divider system {(enabled ? "ENABLED" : "DISABLED")}");
+        
+        if (enabled)
+        {
+            InitializeLineDivider();
+        }
+        else
+        {
+            UpdateLineDividerVisual();
+        }
+    }
+    
+    /// <summary>
+    /// Task 6: Updates the visual indicator for the line divider
+    /// </summary>
+    private void UpdateLineDividerVisual()
+    {
+        if (!enableLineDivider)
+        {
+            // Hide visual when disabled
+            if (lineDividerVisual != null)
+            {
+                lineDividerVisual.SetActive(false);
+            }
+            return;
+        }
+        
+        // Create or update visual indicator (mock with log for now)
+        DebugLog($"[Task 6] Line divider visual at row {lineDividerRow}");
+        // TODO: Add visual line indicator when visual system is ready
+        
+        if (lineDividerVisual != null)
+        {
+            lineDividerVisual.SetActive(true);
+        }
     }
 
     private void OnDrawGizmosSelected()
@@ -321,7 +421,7 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
         // Create new tiles array
         tiles = new Tile[width, height];
 
-        // Copy existing tiles that fit in new dimensions
+        // Copy existing tiles that fit in new dimensions and update their scale/position
         int preservedCount = 0;
         for (int x = 0; x < Mathf.Min(oldWidth, width); x++)
         {
@@ -330,6 +430,13 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
                 if (oldTiles[x, y] != null)
                 {
                     tiles[x, y] = oldTiles[x, y];
+                    
+                    // Update tile scale and position to match new grid metrics
+                    GameObject tileObj = oldTiles[x, y].gameObject;
+                    Vector3 newWorldPosition = GridToWorldPosition(x, y, 0f);
+                    tileObj.transform.position = newWorldPosition;
+                    tileObj.transform.localScale = new Vector3(tileSize, 1f, tileSize);
+                    
                     preservedCount++;
                 }
             }
@@ -831,7 +938,7 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
                     state = tile.currentState,
                     hasMarker = tile.HasMarker,
                     isBlackened = tile.IsBlackened,
-                    isPrimed = tile.IsPrimed
+                    isMatrixd = tile.IsMatrixd
                 });
             }
         }
@@ -1014,9 +1121,9 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
         {
             tile.BlackenTile();
         }
-        else if (entry.isPrimed)
+        else if (entry.isMatrixd)
         {
-            tile.PrimeTile();
+            tile.MatrixTile();
         }
         
         // Apply marker if needed
@@ -1271,7 +1378,7 @@ public class TileStateEntry
     public TileState state;
     public bool hasMarker;
     public bool isBlackened;
-    public bool isPrimed;
+    public bool isMatrixd;
     public int charges;
 }
 #endregion

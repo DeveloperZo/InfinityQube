@@ -21,10 +21,10 @@ public class PlayerMarkerSystem : MonoBehaviour
 
     private Dictionary<Vector2Int, GameObject> temporaryMarkerOverlays = new Dictionary<Vector2Int, GameObject>();
 
-    // Marker Collections - Five-tier system (Unit, Prime, Recursion, Infinity, Cube)
+    // Marker Collections - Five-tier system (Unit, Matrix, Recursion, Infinity, Cube)
     [SerializeField] public Queue<UnitMarker> UnitMarkers = new Queue<UnitMarker>();
     [SerializeField] public Queue<RecursionMarker> RecursionMarkers = new Queue<RecursionMarker>();
-    [SerializeField] public Queue<PrimeMarker> PrimeMarkers = new Queue<PrimeMarker>();
+    [SerializeField] public Queue<MatrixMarker> MatrixMarkers = new Queue<MatrixMarker>();
     [SerializeField] public Queue<InfinityMarker> InfinityMarkers = new Queue<InfinityMarker>();
     public List<CubeMarker> cubeMarkers = new List<CubeMarker>();
 
@@ -41,6 +41,37 @@ public class PlayerMarkerSystem : MonoBehaviour
 
     // Parent reference
     private PlayerActionManager actionManager;
+    
+    // Active area markers that auto-capture and expire after N move forwards
+    private List<ActiveAreaMarker> activeAreaMarkers = new List<ActiveAreaMarker>();
+    
+    /// <summary>
+    /// Tracks an active area marker that can auto-capture cubes
+    /// </summary>
+    private class ActiveAreaMarker
+    {
+        public List<Vector2Int> positions;
+        public int createdAtMoveStep;
+        public int expiresAfterMoves; // Expires after this many move forwards
+        public Color markerColor;
+        public string markerType;
+        public bool autoCapture; // If true, automatically captures cubes entering the area
+        
+        public ActiveAreaMarker(List<Vector2Int> pos, int currentMoveStep, int duration, Color color, string type, bool autoCap = true)
+        {
+            positions = new List<Vector2Int>(pos);
+            createdAtMoveStep = currentMoveStep;
+            expiresAfterMoves = duration;
+            markerColor = color;
+            markerType = type;
+            autoCapture = autoCap;
+        }
+        
+        public bool IsExpired(int currentMoveStep)
+        {
+            return (currentMoveStep - createdAtMoveStep) >= expiresAfterMoves;
+        }
+    }
    
 
 
@@ -66,7 +97,7 @@ public class PlayerMarkerSystem : MonoBehaviour
     }
 
     /// <summary>
-    /// Cube marker types for markers created from prime cube captures
+    /// Cube marker types for markers created from matrix cube captures
     /// </summary>
     public enum CubeMarkerType
     {
@@ -74,8 +105,8 @@ public class PlayerMarkerSystem : MonoBehaviour
         Unit,
         /// <summary>Recursion cube marker: Enhanced targeting for recursion cubes (formerly Heavy)</summary>
         Recursion,
-        /// <summary>Prime cube marker: Area coverage (formerly Area)</summary>
-        Prime,
+        /// <summary>Matrix cube marker: Area coverage (formerly Area)</summary>
+        Matrix,
         /// <summary>Cube marker: Standard cube marker type</summary>
         Cube,
         
@@ -91,11 +122,11 @@ public class PlayerMarkerSystem : MonoBehaviour
         Unit,
         /// <summary>Recursion marker: Enhanced marker for recursion cubes (formerly Heavy)</summary>
         Recursion,
-        /// <summary>Prime marker: Area coverage marker (formerly Area)</summary>
-        Prime,
+        /// <summary>Matrix marker: Area coverage marker (formerly Area)</summary>
+        Matrix,
         /// <summary>Infinity marker: Special marker for infinity cubes</summary>
         Infinity,
-        /// <summary>Cube marker: Generated from prime cube captures</summary>
+        /// <summary>Cube marker: Generated from matrix cube captures</summary>
         CubeMarker,
         
 
@@ -105,9 +136,15 @@ public class PlayerMarkerSystem : MonoBehaviour
 
     void Awake()
     {
-        
         actionManager = FindFirstObjectByType<PlayerActionManager>();
     }
+    
+    void Start()
+    {
+        // Subscribe to wave step events for area marker processing
+        GameEvents.OnWaveStep += OnWaveStep;
+    }
+    
     public void Initialize(PlayerActionManager parent)
     {
         actionManager = parent;
@@ -115,11 +152,85 @@ public class PlayerMarkerSystem : MonoBehaviour
 
     private void OnDestroy()
     {
+        // Unsubscribe from events
+        GameEvents.OnWaveStep -= OnWaveStep;
+        
         // Clean up all temporary overlays
         var overlaysToRemove = temporaryMarkerOverlays.Keys.ToList();
         foreach (var pos in overlaysToRemove)
         {
             ClearTileHighlight(pos);
+        }
+        
+        // Clear active area markers
+        activeAreaMarkers.Clear();
+    }
+    
+    /// <summary>
+    /// Called on each wave step to process active area markers
+    /// </summary>
+    private void OnWaveStep(int waveIndex, int stepNumber)
+    {
+        ProcessActiveAreaMarkers(stepNumber);
+    }
+    
+    /// <summary>
+    /// Process all active area markers - check for auto-captures and expiration
+    /// </summary>
+    private void ProcessActiveAreaMarkers(int currentMoveStep)
+    {
+        if (activeAreaMarkers.Count == 0) return;
+        
+        var markersToRemove = new List<ActiveAreaMarker>();
+        
+        foreach (var marker in activeAreaMarkers)
+        {
+            bool shouldRemove = false;
+            
+            // Check for auto-capture at marker positions
+            if (marker.autoCapture)
+            {
+                foreach (var pos in marker.positions)
+                {
+                    var cubesAtPos = FindAllCubesAt(pos);
+                    foreach (var cube in cubesAtPos)
+                    {
+                        if (cube == null || cube.isDestroyed || cube.isPlayerCube) continue;
+                        
+                        // Capture the cube
+                        if (ProcessCubeCapture(cube, pos, MarkerType.Recursion, null, false))
+                        {
+                            Debug.Log($"[PlayerMarkerSystem] Auto-captured {cube.type} at ({pos.x}, {pos.y}) by {marker.markerType} marker");
+                            shouldRemove = true;
+                            break;
+                        }
+                    }
+                    if (shouldRemove) break;
+                }
+            }
+            
+            // Check for expiration
+            if (!shouldRemove && marker.IsExpired(currentMoveStep))
+            {
+                Debug.Log($"[PlayerMarkerSystem] {marker.markerType} marker expired after {marker.expiresAfterMoves} moves");
+                shouldRemove = true;
+            }
+            
+            if (shouldRemove)
+            {
+                // Clear the visual markers
+                foreach (var pos in marker.positions)
+                {
+                    ClearTileHighlight(pos);
+                }
+                markersToRemove.Add(marker);
+            }
+        }
+        
+        // Remove expired/captured markers
+        foreach (var marker in markersToRemove)
+        {
+            activeAreaMarkers.Remove(marker);
         }
     }
 
@@ -322,35 +433,35 @@ public class PlayerMarkerSystem : MonoBehaviour
 
     #endregion
 
-    #region Prime Markers
+    #region Matrix Markers
 
-    public bool PlacePrimeMarker(Vector2Int centerPosition, int size)
+    public bool PlaceMatrixMarker(Vector2Int centerPosition, int size)
     {
-        if (!actionManager.CanPlacePrimeMarker() || !IsValidPosition(centerPosition))
+        if (!actionManager.CanPlaceMatrixMarker() || !IsValidPosition(centerPosition))
             return false;
 
         if (!CanPlaceMarkerAt(centerPosition))
             return false;
 
-        PrimeMarker newMarker = new PrimeMarker(centerPosition, size, Time.time);
+        MatrixMarker newMarker = new MatrixMarker(centerPosition, size, Time.time);
         newMarker.affectedPositions = GetAreaPositions(centerPosition, size);
-        GameObject visual = CreatePrimeMarkerVisual(centerPosition);
+        GameObject visual = CreateMatrixMarkerVisual(centerPosition);
         newMarker.visualObjects.Add(visual);
 
-        PrimeMarkers.Enqueue(newMarker);
-        actionManager.ConsumePrimeCharge();
+        MatrixMarkers.Enqueue(newMarker);
+        actionManager.ConsumeMatrixCharge();
 
         // Record marker position for paired wave system (record center position)
-        RecordMarkerForPairedWave(centerPosition, MarkerMode.Prime);
+        RecordMarkerForPairedWave(centerPosition, MarkerMode.Matrix);
 
-        Debug.Log($"Prime marker placed at ({centerPosition.x}, {centerPosition.y})");
+        Debug.Log($"Matrix marker placed at ({centerPosition.x}, {centerPosition.y})");
         return true;
     }
 
-    public bool RemovePrimeMarkerAt(Vector2Int centerPosition)
+    public bool RemoveMatrixMarkerAt(Vector2Int centerPosition)
     {
-        var markersArray = PrimeMarkers.ToArray();
-        var newQueue = new Queue<PrimeMarker>();
+        var markersArray = MatrixMarkers.ToArray();
+        var newQueue = new Queue<MatrixMarker>();
         bool removed = false;
 
         foreach (var marker in markersArray)
@@ -361,10 +472,10 @@ public class PlayerMarkerSystem : MonoBehaviour
                 {
                     DestroyMarkerVisual(visual);
                 }
-                actionManager.ReleasePrimeMarker();
-                actionManager.OnPrimeMarkerRemoved(); // Decrement placement counter
+                actionManager.ReleaseMatrixMarker();
+                actionManager.OnMatrixMarkerRemoved(); // Decrement placement counter
                 removed = true;
-                Debug.Log($"Removed prime marker at ({centerPosition.x}, {centerPosition.y})");
+                Debug.Log($"Removed matrix marker at ({centerPosition.x}, {centerPosition.y})");
             }
             else
             {
@@ -372,31 +483,31 @@ public class PlayerMarkerSystem : MonoBehaviour
             }
         }
 
-        PrimeMarkers = newQueue;
+        MatrixMarkers = newQueue;
         return removed;
     }
 
-    public bool HasPrimeMarkerAt(Vector2Int centerPosition)
+    public bool HasMatrixMarkerAt(Vector2Int centerPosition)
     {
-        return PrimeMarkers.Any(m => m.centerPosition == centerPosition);
+        return MatrixMarkers.Any(m => m.centerPosition == centerPosition);
     }
 
-    public bool TriggerNextPrimeMarker()
+    public bool TriggerNextMatrixMarker()
     {
-        if (PrimeMarkers.Count == 0) return false;
+        if (MatrixMarkers.Count == 0) return false;
 
-        var marker = PrimeMarkers.Dequeue();
-        actionManager.ReleasePrimeMarker();
+        var marker = MatrixMarkers.Dequeue();
+        actionManager.ReleaseMatrixMarker();
 
-        return TriggerPrimeMarkerAt(marker);
+        return TriggerMatrixMarkerAt(marker);
     }
 
-    private bool TriggerPrimeMarkerAt(PrimeMarker marker)
+    private bool TriggerMatrixMarkerAt(MatrixMarker marker)
     {
         bool anySuccess = false;
         int totalCubesAffected = 0;
 
-        Debug.Log($"Triggering prime marker - expanding from center ({marker.centerPosition.x}, {marker.centerPosition.y}) to {marker.affectedPositions.Count} tiles");
+        Debug.Log($"Triggering matrix marker - expanding from center ({marker.centerPosition.x}, {marker.centerPosition.y}) to {marker.affectedPositions.Count} tiles");
 
         // Trigger audio event for marker triggering
         Vector3 centerWorldPosition = actionManager.GridManager.GridToWorldPosition(marker.centerPosition.x, marker.centerPosition.y);
@@ -419,7 +530,7 @@ public class PlayerMarkerSystem : MonoBehaviour
             totalCubesAffected += cubes.Count;
             foreach (var cube in cubes)
             {
-                anySuccess |= ProcessCubeCapture(cube, position, MarkerType.Prime);
+                anySuccess |= ProcessCubeCapture(cube, position, MarkerType.Matrix);
             }
             StartCoroutine(ShowMarkerTriggerEffect(position));
         }
@@ -427,7 +538,7 @@ public class PlayerMarkerSystem : MonoBehaviour
         // Notify statistics manager
         if (PlayerStatisticsManager.Instance != null)
         {
-            PlayerStatisticsManager.Instance.OnMarkerTriggered(marker.centerPosition, "prime", anySuccess, totalCubesAffected);
+            PlayerStatisticsManager.Instance.OnMarkerTriggered(marker.centerPosition, "matrix", anySuccess, totalCubesAffected);
         }
 
         StartCoroutine(ClearAreaExpansionAfterDelay(marker.affectedPositions, marker.centerPosition, 1f));
@@ -562,7 +673,7 @@ public class PlayerMarkerSystem : MonoBehaviour
 
     #region Cube Markers
 
-    public void CreateCubeMarker(Vector2Int position, CubeMarkerType type = CubeMarkerType.Prime, int size = 3)
+    public void CreateCubeMarker(Vector2Int position, CubeMarkerType type = CubeMarkerType.Matrix, int size = 3)
     {
         var cubeMarker = new CubeMarker(position, type, size);
         cubeMarker.visualObject = CreateCubeMarkerVisual(position, type);
@@ -593,9 +704,9 @@ public class PlayerMarkerSystem : MonoBehaviour
         DestroyMarkerVisual(cubeMarker.visualObject);
 
         // Use cube marker's size instead of hardcoded 3
-        var tempPrimeMarker = new PrimeMarker(cubeMarker.position, cubeMarker.size, Time.time);
-        tempPrimeMarker.affectedPositions = GetAreaPositions(cubeMarker.position, cubeMarker.size);
-        return TriggerPrimeMarkerAt(tempPrimeMarker);
+        var tempMatrixMarker = new MatrixMarker(cubeMarker.position, cubeMarker.size, Time.time);
+        tempMatrixMarker.affectedPositions = GetAreaPositions(cubeMarker.position, cubeMarker.size);
+        return TriggerMatrixMarkerAt(tempMatrixMarker);
         
     }
 
@@ -684,9 +795,9 @@ public class PlayerMarkerSystem : MonoBehaviour
             // Same-type collision: generate enhanced cube marker
             switch (cube.type)
             {
-                case CubeType.Prime:
-                    // Prime+Prime: 3x3 cube marker (enhanced reward)
-                    CreateCubeMarker(position, CubeMarkerType.Prime, 3);
+                case CubeType.Matrix:
+                    // Matrix+Matrix: 3x3 cube marker (enhanced reward)
+                    CreateCubeMarker(position, CubeMarkerType.Matrix, 3);
                     break;
                 case CubeType.Recursion:
                     // Recursion+Recursion: 2x2 cube marker (reward for matching)
@@ -701,10 +812,10 @@ public class PlayerMarkerSystem : MonoBehaviour
                     break;
             }
         }
-        else if (cube.type == CubeType.Prime)
+        else if (cube.type == CubeType.Matrix)
         {
-            // Prime cube captured by non-Prime: standard 2x2 cube marker
-            CreateCubeMarker(position, CubeMarkerType.Prime, 2);
+            // Matrix cube captured by non-Matrix: standard 2x2 cube marker
+            CreateCubeMarker(position, CubeMarkerType.Matrix, 2);
         }
 
         // Notify statistics manager about cube capture
@@ -763,7 +874,7 @@ public class PlayerMarkerSystem : MonoBehaviour
     /// Spawns player cubes from all marker types.
     /// Called during wave move forward to spawn cubes that move opposite to wave.
     /// - Unit markers → Unit cubes (single capture)
-    /// - Prime markers → Prime cubes (area capture - 3x3)
+    /// - Matrix markers → Matrix cubes (area capture - 3x3)
     /// - Recursion markers → Recursion cubes (single capture)
     /// - Infinity markers → Infinity cubes (single capture)
     /// </summary>
@@ -799,9 +910,9 @@ public class PlayerMarkerSystem : MonoBehaviour
         }
         UnitMarkers.Clear();
 
-        // Process Prime markers → Prime cubes (area capture)
-        var primeMarkersArray = PrimeMarkers.ToArray();
-        foreach (var marker in primeMarkersArray)
+        // Process Matrix markers → Matrix cubes (area capture)
+        var matrixMarkersArray = MatrixMarkers.ToArray();
+        foreach (var marker in matrixMarkersArray)
         {
             if (marker != null)
             {
@@ -809,11 +920,11 @@ public class PlayerMarkerSystem : MonoBehaviour
                 {
                     DestroyMarkerVisual(visual);
                 }
-                SpawnPlayerCubeAt(marker.centerPosition, CubeType.Prime, true); // isPrime = true for area capture
+                SpawnPlayerCubeAt(marker.centerPosition, CubeType.Matrix, true); // isMatrix = true for area capture
                 spawnedCount++;
             }
         }
-        PrimeMarkers.Clear();
+        MatrixMarkers.Clear();
 
         // Process Recursion markers → Recursion cubes
         var RecursionMarkersArray = RecursionMarkers.ToArray();
@@ -850,7 +961,7 @@ public class PlayerMarkerSystem : MonoBehaviour
     /// <summary>
     /// Spawns a single player cube at the specified position with the corresponding cube type.
     /// </summary>
-    private void SpawnPlayerCubeAt(Vector2Int position, CubeType cubeType, bool isPrimeCube)
+    private void SpawnPlayerCubeAt(Vector2Int position, CubeType cubeType, bool isMatrixCube)
     {
         var waveManager = actionManager.WaveManager;
         var grid = actionManager.GridManager;
@@ -887,14 +998,14 @@ public class PlayerMarkerSystem : MonoBehaviour
 
         cube.Init(grid, cubeData, 2f);
         cube.isPlayerCube = true;
-        cube.isPrimeCube = isPrimeCube; // For area capture logic
+        cube.isMatrixCube = isMatrixCube; // For area capture logic
         cube.usePhysics = false;
         cube.ConfigurePlayerCubePhysics();
 
         MakeCubeTranslucent(cube);
         playerCubes.Add(cube);
 
-        Debug.Log($"[PlayerMarkerSystem] Spawned {cubeType} player cube at ({position.x}, {position.y}){(isPrimeCube ? " (area capture)" : "")}");
+        Debug.Log($"[PlayerMarkerSystem] Spawned {cubeType} player cube at ({position.x}, {position.y}){(isMatrixCube ? " (area capture)" : "")}");
     }
 
     /// <summary>
@@ -1036,155 +1147,642 @@ public class PlayerMarkerSystem : MonoBehaviour
     /// <summary>
     /// Checks for collision at a specific position and processes it if found.
     /// Returns true if collision was found and processed.
-    /// Prime cubes capture in an area (2x2 normally, 3x3 for Prime+Prime collisions), other cubes capture single target.
+    /// Uses comprehensive collision matrix to handle all 16 collision combinations.
     /// </summary>
     private bool ProcessCollisionAtPosition(CubeManager playerCube, Vector2Int position, ref int collisionCount, ref int playerCubeIndex)
     {
-        bool anyCaptured = false;
-
-        if (playerCube.isPrimeCube)
+        var cubesAtPosition = FindAllCubesAt(position);
+        
+        foreach (var waveCube in cubesAtPosition)
         {
-            // Prime cube: check if any wave cube at position is Prime type for enhanced 3x3 effect
-            var cubesAtPosition = FindAllCubesAt(position);
-            bool isPrimePrimeCollision = false;
+            if (waveCube == null || waveCube.isDestroyed || waveCube.isPlayerCube) continue;
             
-            // Check if any cube at position is Prime type (Prime+Prime collision)
-            foreach (var cube in cubesAtPosition)
+            // Task 7: Check if wave cube is phaseable - if so, player cube passes through
+            if (waveCube.type == CubeType.Infinity && waveCube.IsPhaseable())
             {
-                if (cube != null && !cube.isDestroyed && !cube.isPlayerCube && cube.type == CubeType.Prime)
-                {
-                    isPrimePrimeCollision = true;
-                    break;
-                }
+                Debug.Log($"[Task 7] Player cube passing through phaseable Infinity cube at ({position.x}, {position.y})");
+                continue; // Skip collision, allow passing through
             }
             
-            // Prime+Prime collision: use 3x3 area (enhanced reward)
-            // Normal Prime collision: use 2x2 area (from marker)
-            int areaSize = isPrimePrimeCollision ? 3 : 2;
-            var areaPositions = GetAreaPositions(position, areaSize);
+            // Route to appropriate collision handler based on collision matrix
+            CollisionResult result = HandleCollision(playerCube, waveCube, position);
             
-            foreach (var areaPos in areaPositions)
+            if (result.handled)
             {
-                var cubesAtArea = FindAllCubesAt(areaPos);
-                foreach (var cube in cubesAtArea)
+                // Only destroy player cube if it should be destroyed (not for Infinity continue-up cases)
+                if (result.destroyPlayerCube)
                 {
-                    if (cube == null || cube.isDestroyed || cube.isPlayerCube) continue;
-                    
-                    // Check if this is Prime+Prime collision (player Prime + wave Prime)
-                    bool isPrimeMatch = (playerCube.type == CubeType.Prime && cube.type == CubeType.Prime);
-                    
-                    if (ProcessCubeCapture(cube, areaPos, MarkerType.Prime, null, isPrimeMatch))
-                    {
-                        anyCaptured = true;
-                    }
+                    HandlePlayerCubeDestruction(playerCube, ref collisionCount, ref playerCubeIndex);
                 }
+                return true;
             }
-        }
-        else
-        {
-            // Unit/Recursion/Infinity cube: capture single target
-            var cubesAtPosition = FindAllCubesAt(position);
-            foreach (var cube in cubesAtPosition)
-            {
-                if (cube == null || cube.isDestroyed || cube.isPlayerCube) continue;
-                
-                // Check if this is same-type collision (e.g., Recursion+Recursion)
-                bool isSameTypeMatch = (playerCube.type == cube.type);
-                
-                if (ProcessCubeCapture(cube, position, MarkerType.Unit, null, isSameTypeMatch))
-                {
-                    anyCaptured = true;
-                    break; // Only capture one cube for non-Prime
-                }
-            }
-        }
-
-        if (anyCaptured)
-        {
-            HandlePlayerCubeDestruction(playerCube, ref collisionCount, ref playerCubeIndex);
-            return true;
         }
         
         return false;
     }
     
     /// <summary>
+    /// Result of collision handling
+    /// </summary>
+    private struct CollisionResult
+    {
+        public bool handled;
+        public bool destroyPlayerCube;
+        
+        public CollisionResult(bool handled, bool destroyPlayerCube = true)
+        {
+            this.handled = handled;
+            this.destroyPlayerCube = destroyPlayerCube;
+        }
+    }
+    
+    /// <summary>
+    /// Central collision matrix handler. Routes all 16 collision combinations to their specific behaviors.
+    /// </summary>
+    private CollisionResult HandleCollision(CubeManager playerCube, CubeManager waveCube, Vector2Int collisionPosition)
+    {
+        CubeType playerType = playerCube.type;
+        CubeType waveType = waveCube.type;
+        
+        // Route to specific collision handler based on collision matrix
+        switch (playerType)
+        {
+            case CubeType.Unit:
+                return HandleUnitCollision(playerCube, waveCube, collisionPosition);
+            
+            case CubeType.Matrix:
+                return HandleMatrixCollision(playerCube, waveCube, collisionPosition);
+            
+            case CubeType.Recursion:
+                return HandleRecursionCollision(playerCube, waveCube, collisionPosition);
+            
+            case CubeType.Infinity:
+                return HandleInfinityCollision(playerCube, waveCube, collisionPosition);
+            
+            default:
+                Debug.LogWarning($"[PlayerMarkerSystem] Unknown player cube type: {playerType}");
+                return new CollisionResult(false);
+        }
+    }
+    
+    /// <summary>
     /// Handles collision detection for adjacent cubes moving toward each other.
     /// Verifies the wave cube came from where the player cube is now.
-    /// Prime cubes capture in an area, others capture single target.
+    /// Uses comprehensive collision matrix.
     /// </summary>
     private void ProcessPassThroughCollision(CubeManager playerCube, Vector2Int playerPos, Vector2Int playerPreviousPos, 
         ref int collisionCount, ref int playerCubeIndex)
     {
-        bool anyCaptured = false;
-
-        if (playerCube.isPrimeCube)
+        var cubesAtPreviousPos = FindAllCubesAt(playerPreviousPos);
+        
+        foreach (var waveCube in cubesAtPreviousPos)
         {
-            // Prime cube: check if colliding with Prime wave cube for enhanced 3x3 effect
-            var cubesAtPreviousPos = FindAllCubesAt(playerPreviousPos);
-            bool isPrimePrimeCollision = false;
+            if (waveCube == null || waveCube.isDestroyed || waveCube.isPlayerCube) continue;
             
-            // Check if any cube at previous position is Prime type
-            foreach (var cube in cubesAtPreviousPos)
+            // Task 7: Check if wave cube is phaseable - if so, player cube passes through
+            if (waveCube.type == CubeType.Infinity && waveCube.IsPhaseable())
             {
-                if (cube != null && !cube.isDestroyed && !cube.isPlayerCube && cube.type == CubeType.Prime)
-                {
-                    isPrimePrimeCollision = true;
-                    break;
-                }
+                Debug.Log($"[Task 7] Player cube passing through phaseable Infinity cube at ({playerPreviousPos.x}, {playerPreviousPos.y})");
+                continue; // Skip collision, allow passing through
             }
             
-            // Prime+Prime collision: use 3x3 area (enhanced reward)
-            // Normal Prime collision: use 2x2 area (from marker)
-            int areaSize = isPrimePrimeCollision ? 3 : 2;
-            var areaPositions = GetAreaPositions(playerPreviousPos, areaSize);
-            
-            foreach (var areaPos in areaPositions)
+            // Verify wave cube came from player's current position (confirms they passed through)
+            Vector2Int waveCubeSourcePos = new Vector2Int(waveCube.position.x, waveCube.position.y + 1);
+            if (waveCubeSourcePos == playerPos)
             {
-                var cubesAtArea = FindAllCubesAt(areaPos);
-                foreach (var cube in cubesAtArea)
-                {
-                    if (cube == null || cube.isDestroyed || cube.isPlayerCube) continue;
-                    
-                    // Check if this is Prime+Prime collision
-                    bool isPrimeMatch = (playerCube.type == CubeType.Prime && cube.type == CubeType.Prime);
-                    
-                    if (ProcessCubeCapture(cube, areaPos, MarkerType.Prime, null, isPrimeMatch))
-                    {
-                        anyCaptured = true;
-                    }
-                }
-            }
-        }
-        else
-        {
-            // Single target capture
-            var cubesAtPreviousPos = FindAllCubesAt(playerPreviousPos);
-            foreach (var cube in cubesAtPreviousPos)
-            {
-                if (cube == null || cube.isDestroyed || cube.isPlayerCube) continue;
+                CollisionResult result = HandleCollision(playerCube, waveCube, playerPreviousPos);
                 
-                // Verify wave cube came from player's current position (confirms they passed through)
-                Vector2Int waveCubeSourcePos = new Vector2Int(cube.position.x, cube.position.y + 1);
-                if (waveCubeSourcePos == playerPos)
+                if (result.handled)
                 {
-                    // Check if this is same-type collision (e.g., Recursion+Recursion)
-                    bool isSameTypeMatch = (playerCube.type == cube.type);
-                    
-                    if (ProcessCubeCapture(cube, playerPreviousPos, MarkerType.Unit, null, isSameTypeMatch))
+                    // Only destroy player cube if it should be destroyed
+                    if (result.destroyPlayerCube)
                     {
-                        anyCaptured = true;
-                        break;
+                        HandlePlayerCubeDestruction(playerCube, ref collisionCount, ref playerCubeIndex);
                     }
+                    return;
                 }
             }
-        }
-
-        if (anyCaptured)
-        {
-            HandlePlayerCubeDestruction(playerCube, ref collisionCount, ref playerCubeIndex);
         }
     }
+    
+    #region Collision Matrix Handlers
+    
+    /// <summary>
+    /// Handles Unit cube collisions (Unit, Matrix, Recursion, Infinity)
+    /// </summary>
+    private CollisionResult HandleUnitCollision(CubeManager playerCube, CubeManager waveCube, Vector2Int position)
+    {
+        switch (waveCube.type)
+        {
+            case CubeType.Unit:
+                // Unit + Unit: Standard capture
+                return new CollisionResult(ProcessCubeCapture(waveCube, position, MarkerType.Unit, null, false));
+            
+            case CubeType.Matrix:
+                // Unit + Matrix: 2x2 area capture centered on collision point
+                return new CollisionResult(HandleUnitMatrixCollision(position));
+            
+            case CubeType.Recursion:
+                // Unit + Recursion: Column capture (auto-captures 3 cubes)
+                return new CollisionResult(HandleColumnCapture(position, 3));
+            
+            case CubeType.Infinity:
+                // Unit + Infinity: Face paint, Unit destroyed
+                return HandleInfinityFacePaint(waveCube, playerCube, CubeType.Unit, position);
+            
+            default:
+                return new CollisionResult(false);
+        }
+    }
+    
+    /// <summary>
+    /// Handles Matrix cube collisions (Unit, Matrix, Recursion, Infinity)
+    /// </summary>
+    private CollisionResult HandleMatrixCollision(CubeManager playerCube, CubeManager waveCube, Vector2Int position)
+    {
+        switch (waveCube.type)
+        {
+            case CubeType.Unit:
+                // Matrix + Unit: 2x2 area capture from Matrix position
+                return new CollisionResult(HandleMatrixAreaCapture(position, 2));
+            
+            case CubeType.Matrix:
+                // Matrix + Matrix: 3x3 triggerable marker (enhanced reward)
+                return new CollisionResult(HandleMatrixMatrixCollision(position));
+            
+            case CubeType.Recursion:
+                // Matrix + Recursion: Degrading 2x2 marker
+                return new CollisionResult(HandleMatrixRecursionCollision(position));
+            
+            case CubeType.Infinity:
+                // Matrix + Infinity: Face paint, Matrix destroyed
+                return HandleInfinityFacePaint(waveCube, playerCube, CubeType.Matrix, position);
+            
+            default:
+                return new CollisionResult(false);
+        }
+    }
+    
+    /// <summary>
+    /// Handles Recursion cube collisions (Unit, Matrix, Recursion, Infinity)
+    /// </summary>
+    private CollisionResult HandleRecursionCollision(CubeManager playerCube, CubeManager waveCube, Vector2Int position)
+    {
+        switch (waveCube.type)
+        {
+            case CubeType.Unit:
+                // Recursion + Unit: Column capture (auto-captures 3 cubes)
+                return new CollisionResult(HandleColumnCapture(position, 3));
+            
+            case CubeType.Matrix:
+                // Recursion + Matrix: Auto 1x3 vertical marker
+                return new CollisionResult(HandleRecursionMatrixCollision(position));
+            
+            case CubeType.Recursion:
+                // Recursion + Recursion: Cross marker (5 tiles)
+                return new CollisionResult(HandleRecursionRecursionCollision(position));
+            
+            case CubeType.Infinity:
+                // Recursion + Infinity: Face paint, Recursion destroyed
+                return HandleInfinityFacePaint(waveCube, playerCube, CubeType.Recursion, position);
+            
+            default:
+                return new CollisionResult(false);
+        }
+    }
+    
+    /// <summary>
+    /// Handles Infinity cube collisions (Unit, Matrix, Recursion, Infinity)
+    /// </summary>
+    private CollisionResult HandleInfinityCollision(CubeManager playerCube, CubeManager waveCube, Vector2Int position)
+    {
+        switch (waveCube.type)
+        {
+            case CubeType.Unit:
+                // Infinity + Unit: Wave join (removes Unit, takes position, moves with wave)
+                return HandleInfinityWaveJoin(playerCube, waveCube, position);
+            
+            case CubeType.Matrix:
+                // Infinity + Matrix: Face paint, continue up
+                return HandleInfinityFacePaint(waveCube, playerCube, CubeType.Matrix, position, false);
+            
+            case CubeType.Recursion:
+                // Infinity + Recursion: Face paint, continue up
+                return HandleInfinityFacePaint(waveCube, playerCube, CubeType.Recursion, position, false);
+            
+            case CubeType.Infinity:
+                // Infinity + Infinity: Face paint, resonance
+                return HandleInfinityInfinityCollision(waveCube, playerCube, position);
+            
+            default:
+                return new CollisionResult(false);
+        }
+    }
+    
+    #endregion
+    
+    #region Specific Collision Behaviors
+    
+    /// <summary>
+    /// Unit + Matrix: 2x2 area capture centered on collision point
+    /// </summary>
+    private bool HandleUnitMatrixCollision(Vector2Int centerPosition)
+    {
+        var areaPositions = GetAreaPositions(centerPosition, 2);
+        bool anyCaptured = false;
+        
+        foreach (var areaPos in areaPositions)
+        {
+            var cubesAtArea = FindAllCubesAt(areaPos);
+            foreach (var cube in cubesAtArea)
+            {
+                if (cube == null || cube.isDestroyed || cube.isPlayerCube) continue;
+                if (ProcessCubeCapture(cube, areaPos, MarkerType.Matrix, null, false))
+                {
+                    anyCaptured = true;
+                }
+            }
+        }
+        
+        return anyCaptured;
+    }
+    
+    /// <summary>
+    /// Matrix + Unit: 2x2 area capture from Matrix position
+    /// </summary>
+    private bool HandleMatrixAreaCapture(Vector2Int centerPosition, int areaSize)
+    {
+        var areaPositions = GetAreaPositions(centerPosition, areaSize);
+        bool anyCaptured = false;
+        
+        foreach (var areaPos in areaPositions)
+        {
+            var cubesAtArea = FindAllCubesAt(areaPos);
+            foreach (var cube in cubesAtArea)
+            {
+                if (cube == null || cube.isDestroyed || cube.isPlayerCube) continue;
+                if (ProcessCubeCapture(cube, areaPos, MarkerType.Matrix, null, false))
+                {
+                    anyCaptured = true;
+                }
+            }
+        }
+        
+        return anyCaptured;
+    }
+    
+    /// <summary>
+    /// Matrix + Matrix: 3x3 triggerable marker (enhanced reward)
+    /// Note: Cube marker creation is handled by ProcessCubeCapture when isSameTypeMatch=true
+    /// </summary>
+    private bool HandleMatrixMatrixCollision(Vector2Int centerPosition)
+    {
+        // Capture all cubes in 3x3 area
+        // ProcessCubeCapture will create the 3x3 cube marker for same-type matches
+        var areaPositions = GetAreaPositions(centerPosition, 3);
+        bool anyCaptured = false;
+        
+        foreach (var areaPos in areaPositions)
+        {
+            var cubesAtArea = FindAllCubesAt(areaPos);
+            foreach (var cube in cubesAtArea)
+            {
+                if (cube == null || cube.isDestroyed || cube.isPlayerCube) continue;
+                // Pass isSameTypeMatch=true to trigger cube marker creation in ProcessCubeCapture
+                if (ProcessCubeCapture(cube, areaPos, MarkerType.Matrix, null, true))
+                {
+                    anyCaptured = true;
+                }
+            }
+        }
+        
+        return anyCaptured;
+    }
+    
+    /// <summary>
+    /// Matrix + Recursion: Degrading 2x2 marker (each tile has 1 charge, shrinks over triggers)
+    /// Note: Cube marker creation is handled by ProcessCubeCapture for Matrix cubes
+    /// </summary>
+    private bool HandleMatrixRecursionCollision(Vector2Int centerPosition)
+    {
+        // Capture all cubes in 2x2 area
+        // ProcessCubeCapture will create the 2x2 cube marker for Matrix cube captures
+        var areaPositions = GetAreaPositions(centerPosition, 2);
+        bool anyCaptured = false;
+        
+        foreach (var areaPos in areaPositions)
+        {
+            var cubesAtArea = FindAllCubesAt(areaPos);
+            foreach (var cube in cubesAtArea)
+            {
+                if (cube == null || cube.isDestroyed || cube.isPlayerCube) continue;
+                if (ProcessCubeCapture(cube, areaPos, MarkerType.Matrix, null, false))
+                {
+                    anyCaptured = true;
+                }
+            }
+        }
+        
+        return anyCaptured;
+    }
+    
+    /// <summary>
+    /// Column capture: Auto-captures N cubes as wave passes over collision tile
+    /// Used for Unit+Recursion and Recursion+Unit
+    /// Creates a 1x3 vertical marker that auto-captures cubes passing through
+    /// </summary>
+    private bool HandleColumnCapture(Vector2Int position, int cubeCount)
+    {
+        // Create visual column marker (1x3 vertical)
+        CreateColumnMarker(position, cubeCount);
+        
+        // Capture the cube at collision position immediately
+        var cubesAtPosition = FindAllCubesAt(position);
+        bool anyCaptured = false;
+        
+        foreach (var cube in cubesAtPosition)
+        {
+            if (cube == null || cube.isDestroyed || cube.isPlayerCube) continue;
+            
+            if (ProcessCubeCapture(cube, position, MarkerType.Recursion, null, false))
+            {
+                anyCaptured = true;
+                break; // Only capture the first cube at collision point
+            }
+        }
+        
+        return anyCaptured;
+    }
+    
+    /// <summary>
+    /// Creates a visual column marker (1x3 vertical) at the collision position.
+    /// Marker persists for N move forwards or until it captures a cube.
+    /// </summary>
+    private void CreateColumnMarker(Vector2Int centerPosition, int height)
+    {
+        List<Vector2Int> positions = new List<Vector2Int>();
+        Color markerColor = new Color(0.9f, 0.6f, 0.2f, 0.8f); // Amber/orange
+        
+        // Create visual markers for the column (tiles going down from collision)
+        for (int y = 0; y < height; y++)
+        {
+            Vector2Int pos = new Vector2Int(centerPosition.x, centerPosition.y - y);
+            if (IsValidPosition(pos))
+            {
+                positions.Add(pos);
+                Tile tile = actionManager.GridManager.GetTileAt(pos.x, pos.y);
+                if (tile != null)
+                {
+                    SetTileHighlight(tile, markerColor, "ColumnCapture");
+                }
+            }
+        }
+        
+        // Get current move step from WaveManager
+        int currentMoveStep = actionManager?.WaveManager?.MoveStep ?? 0;
+        
+        // Register as active area marker (expires after 3 move forwards or on capture)
+        var areaMarker = new ActiveAreaMarker(positions, currentMoveStep, 3, markerColor, "ColumnCapture", true);
+        activeAreaMarkers.Add(areaMarker);
+        
+        Debug.Log($"[PlayerMarkerSystem] Created column marker at ({centerPosition.x}, {centerPosition.y}) - expires in 3 moves or on capture");
+    }
+    
+    /// <summary>
+    /// Recursion + Matrix: Auto 1x3 vertical marker (3 tiles deep, auto-captures)
+    /// </summary>
+    private bool HandleRecursionMatrixCollision(Vector2Int centerPosition)
+    {
+        // Create visual 1x3 vertical marker (3 tiles going up from collision point)
+        CreateVerticalMarker(centerPosition, 3, true); // true = going up
+        
+        // Capture cubes at collision point immediately
+        var cubesAtPosition = FindAllCubesAt(centerPosition);
+        bool anyCaptured = false;
+        
+        foreach (var cube in cubesAtPosition)
+        {
+            if (cube == null || cube.isDestroyed || cube.isPlayerCube) continue;
+            if (ProcessCubeCapture(cube, centerPosition, MarkerType.Recursion, null, false))
+            {
+                anyCaptured = true;
+                break;
+            }
+        }
+        
+        return anyCaptured;
+    }
+    
+    /// <summary>
+    /// Creates a visual vertical marker (1x3) at the collision position.
+    /// Marker persists for N move forwards or until it captures a cube.
+    /// </summary>
+    private void CreateVerticalMarker(Vector2Int centerPosition, int height, bool goingUp)
+    {
+        List<Vector2Int> positions = new List<Vector2Int>();
+        Color markerColor = new Color(0.3f, 0.8f, 0.9f, 0.8f); // Cyan/blue
+        
+        for (int y = 0; y < height; y++)
+        {
+            int yOffset = goingUp ? y : -y;
+            Vector2Int pos = new Vector2Int(centerPosition.x, centerPosition.y + yOffset);
+            if (IsValidPosition(pos))
+            {
+                positions.Add(pos);
+                Tile tile = actionManager.GridManager.GetTileAt(pos.x, pos.y);
+                if (tile != null)
+                {
+                    SetTileHighlight(tile, markerColor, "VerticalCapture");
+                }
+            }
+        }
+        
+        // Get current move step from WaveManager
+        int currentMoveStep = actionManager?.WaveManager?.MoveStep ?? 0;
+        
+        // Register as active area marker (expires after 3 move forwards or on capture)
+        var areaMarker = new ActiveAreaMarker(positions, currentMoveStep, 3, markerColor, "VerticalCapture", true);
+        activeAreaMarkers.Add(areaMarker);
+        
+        Debug.Log($"[PlayerMarkerSystem] Created vertical marker at ({centerPosition.x}, {centerPosition.y}) - expires in 3 moves or on capture");
+    }
+    
+    /// <summary>
+    /// Recursion + Recursion: Cross marker (5 tiles - 1x3 vertical + 1x3 horizontal, overlapping at center)
+    /// Note: Cube marker creation is handled by ProcessCubeCapture when isSameTypeMatch=true
+    /// </summary>
+    private bool HandleRecursionRecursionCollision(Vector2Int centerPosition)
+    {
+        // Create cross marker (5 tiles total)
+        List<Vector2Int> crossPositions = new List<Vector2Int>();
+        
+        // Vertical line (3 tiles)
+        for (int y = -1; y <= 1; y++)
+        {
+            Vector2Int pos = new Vector2Int(centerPosition.x, centerPosition.y + y);
+            if (IsValidPosition(pos) && !crossPositions.Contains(pos))
+            {
+                crossPositions.Add(pos);
+            }
+        }
+        
+        // Horizontal line (3 tiles, center overlaps)
+        for (int x = -1; x <= 1; x++)
+        {
+            Vector2Int pos = new Vector2Int(centerPosition.x + x, centerPosition.y);
+            if (IsValidPosition(pos) && !crossPositions.Contains(pos))
+            {
+                crossPositions.Add(pos);
+            }
+        }
+        
+        // Create visual cross marker
+        CreateCrossMarker(crossPositions);
+        
+        // Capture all cubes in cross pattern
+        // ProcessCubeCapture will create the cube marker for same-type matches
+        bool anyCaptured = false;
+        foreach (var pos in crossPositions)
+        {
+            var cubesAtPos = FindAllCubesAt(pos);
+            foreach (var cube in cubesAtPos)
+            {
+                if (cube == null || cube.isDestroyed || cube.isPlayerCube) continue;
+                // Pass isSameTypeMatch=true to trigger cube marker creation in ProcessCubeCapture
+                if (ProcessCubeCapture(cube, pos, MarkerType.Recursion, null, true))
+                {
+                    anyCaptured = true;
+                }
+            }
+        }
+        
+        return anyCaptured;
+    }
+    
+    /// <summary>
+    /// Creates a visual cross marker (5 tiles) at the collision positions.
+    /// Marker persists for N move forwards or until it captures a cube.
+    /// </summary>
+    private void CreateCrossMarker(List<Vector2Int> positions)
+    {
+        Color markerColor = new Color(0.7f, 0.3f, 0.8f, 0.8f); // Purple
+        
+        foreach (var pos in positions)
+        {
+            Tile tile = actionManager.GridManager.GetTileAt(pos.x, pos.y);
+            if (tile != null)
+            {
+                SetTileHighlight(tile, markerColor, "CrossCapture");
+            }
+        }
+        
+        // Get current move step from WaveManager
+        int currentMoveStep = actionManager?.WaveManager?.MoveStep ?? 0;
+        
+        // Register as active area marker (expires after 3 move forwards or on capture)
+        var areaMarker = new ActiveAreaMarker(positions, currentMoveStep, 3, markerColor, "CrossCapture", true);
+        activeAreaMarkers.Add(areaMarker);
+        
+        Debug.Log($"[PlayerMarkerSystem] Created cross marker with {positions.Count} tiles - expires in 3 moves or on capture");
+    }
+    
+    /// <summary>
+    /// Infinity + Unit: Wave join (removes Unit, takes position, moves with wave)
+    /// </summary>
+    private CollisionResult HandleInfinityWaveJoin(CubeManager playerInfinity, CubeManager waveUnit, Vector2Int position)
+    {
+        // Remove the Unit cube
+        if (ProcessCubeCapture(waveUnit, position, MarkerType.Unit, null, false))
+        {
+            // Player Infinity takes the position and continues moving with wave
+            // Don't destroy player Infinity - it continues up
+            playerInfinity.position = position;
+            return new CollisionResult(true, false); // Handled, but don't destroy player cube
+        }
+        
+        return new CollisionResult(false);
+    }
+    
+    /// <summary>
+    /// Handles face painting for Infinity collisions.
+    /// Paints the collision face and destroys player cube (unless continueUp is true).
+    /// Responsibility: PlayerMarkerSystem handles collision detection and face painting coordination.
+    /// The actual face painting is delegated to CubeManager.PaintFace().
+    /// </summary>
+    private CollisionResult HandleInfinityFacePaint(CubeManager waveInfinity, CubeManager playerCube, CubeType paintedType, Vector2Int position, bool destroyPlayerCube = true)
+    {
+        if (waveInfinity.type != CubeType.Infinity) 
+            return new CollisionResult(false);
+        
+        // Determine which face was hit based on relative positions
+        // Player cube is moving up, so it hits the front face of the wave cube
+        CubeFace collisionFace = CubeFace.Front;
+        
+        // Paint the face with the appropriate status
+        // Face effects when painted face lands on grid:
+        // - InfinityFace: Creates infinity resonance (all infinity cubes phaseable for 2-4 move forwards)
+        // - MatrixFace: Leaves a marker that can detonate for 3x3 capture area
+        // - RecursionFace: Leaves a marker that forms a 5 tile + arrangement that auto captures
+        FaceStatus faceStatus = paintedType switch
+        {
+            CubeType.Unit => FaceStatus.None, // Unit collisions don't paint faces (Unit is destroyed)
+            CubeType.Matrix => FaceStatus.MatrixFace, // Matrix marker behavior (3x3 detonation marker)
+            CubeType.Recursion => FaceStatus.RecursionFace, // Recursion marker behavior (5 tile + auto-capture)
+            CubeType.Infinity => FaceStatus.InfinityFace, // Resonance effect (all infinity cubes phaseable)
+            _ => FaceStatus.None
+        };
+        
+        // Delegate face painting to CubeManager
+        // CubeManager is responsible for managing face state and visuals
+        waveInfinity.PaintFace(collisionFace, faceStatus, GetFaceColorForType(paintedType), -1);
+        
+        // Face effects are triggered when the painted face rotates to become the down face and touches the grid:
+        // - InfinityFace: Creates infinity resonance (all infinity cubes phaseable for 2-4 move forwards)
+        //   Implementation: Check GetActiveFaceStatus() == FaceStatus.InfinityFace in cube landing/movement logic
+        // - MatrixFace: Creates a 3x3 detonation marker at the landing tile
+        //   Implementation: Check GetActiveFaceStatus() == FaceStatus.MatrixFace, create cube marker with size 3
+        // - RecursionFace: Creates a 5 tile + arrangement marker that auto-captures
+        //   Implementation: Check GetActiveFaceStatus() == FaceStatus.RecursionFace, create cross marker pattern
+        // TODO: Implement grid touch detection in Tile.HandleCubeLanding() or CubeManager.MoveForward()
+        // to check GetActiveFaceStatus() and trigger appropriate marker creation via PlayerMarkerSystem
+        
+        Debug.Log($"[PlayerMarkerSystem] Painted {collisionFace} face of Infinity cube at ({position.x}, {position.y}) with {paintedType} type (status: {faceStatus})");
+        
+        // Return result indicating whether to destroy player cube
+        return new CollisionResult(true, destroyPlayerCube);
+    }
+    
+    /// <summary>
+    /// Infinity + Infinity: Face paint + resonance effect
+    /// </summary>
+    private CollisionResult HandleInfinityInfinityCollision(CubeManager waveInfinity, CubeManager playerInfinity, Vector2Int position)
+    {
+        // Paint face for resonance
+        CollisionResult result = HandleInfinityFacePaint(waveInfinity, playerInfinity, CubeType.Infinity, position, false);
+        
+        // TODO: When painted face touches grid, ALL Infinity cubes become phaseable
+        // This will be handled by the face painting system when the face rotates down
+        
+        // Player Infinity continues up (don't destroy)
+        return new CollisionResult(true, false);
+    }
+    
+    /// <summary>
+    /// Gets color for face painting based on cube type
+    /// </summary>
+    private Color GetFaceColorForType(CubeType type)
+    {
+        return type switch
+        {
+            CubeType.Unit => Color.gray,
+            CubeType.Matrix => Color.cyan,
+            CubeType.Recursion => new Color(0.8f, 0.5f, 0.2f), // Amber brown
+            CubeType.Infinity => Color.black,
+            _ => Color.white
+        };
+    }
+    
+    #endregion
     
     /// <summary>
     /// Destroys player cube and removes it from tracking list.
@@ -1284,16 +1882,16 @@ public class PlayerMarkerSystem : MonoBehaviour
         return dummy;
     }
 
-    public GameObject CreatePrimeMarkerVisual(Vector2Int position)
+    public GameObject CreateMatrixMarkerVisual(Vector2Int position)
     {
         Tile tile = actionManager.GridManager.GetTileAt(position.x, position.y);
         if (tile != null)
         {
-            // Prime = Vibrant light blue
-            SetTileHighlight(tile, new Color(0.3f, 0.7f, 1f, 1f), "Prime");
+            // Matrix = Vibrant light blue
+            SetTileHighlight(tile, new Color(0.3f, 0.7f, 1f, 1f), "Matrix");
         }
 
-        GameObject dummy = new GameObject($"PrimeMarker_{position.x}_{position.y}");
+        GameObject dummy = new GameObject($"MatrixMarker_{position.x}_{position.y}");
         dummy.transform.position = actionManager.GridManager.GridToWorldPosition(position.x, position.y, 0f);
         return dummy;
     }
@@ -1309,7 +1907,7 @@ public class PlayerMarkerSystem : MonoBehaviour
             {
                 CubeMarkerType.Unit => Color.magenta,
                 CubeMarkerType.Recursion => new Color(0.7f, 0.2f, 0.7f, 1f), // Dark magenta
-                CubeMarkerType.Prime => Color.cyan,
+                CubeMarkerType.Matrix => Color.cyan,
                 CubeMarkerType.Cube => Color.yellow,
                 _ => Color.white
             };
@@ -1331,7 +1929,7 @@ public class PlayerMarkerSystem : MonoBehaviour
             {
                 CubeMarkerType.Unit => Color.magenta,
                 CubeMarkerType.Recursion => new Color(0.7f, 0.2f, 0.7f, 1f),
-                CubeMarkerType.Prime => Color.cyan,
+                CubeMarkerType.Matrix => Color.cyan,
                 CubeMarkerType.Cube => Color.yellow,
                 _ => Color.white
             };
@@ -1356,9 +1954,19 @@ public class PlayerMarkerSystem : MonoBehaviour
 
     private bool CanPlaceMarkerAt(Vector2Int position)
     {
+        // Task 6: Check line divider restriction - markers can only be placed below the line (when enabled)
+        if (actionManager?.GridManager != null && actionManager.GridManager.LineDividerEnabled)
+        {
+            if (!actionManager.GridManager.IsPositionBelowLine(position.y))
+            {
+                Debug.Log($"[Task 6] Cannot place marker at ({position.x}, {position.y}) - above line divider (row {actionManager.GridManager.LineDividerRow})");
+                return false;
+            }
+        }
+        
         return !HasUnitMarkerAt(position) && 
                !HasRecursionMarkerAt(position) && 
-               !HasPrimeMarkerAt(position) &&
+               !HasMatrixMarkerAt(position) &&
                !HasInfinityMarkerAt(position);
     }
 
@@ -1529,15 +2137,15 @@ public class PlayerMarkerSystem : MonoBehaviour
         }
         // Note: Recursion marker count managed by PlayerActionManager
 
-        while (PrimeMarkers.Count > 0)
+        while (MatrixMarkers.Count > 0)
         {
-            var marker = PrimeMarkers.Dequeue();
+            var marker = MatrixMarkers.Dequeue();
             foreach (var visual in marker.visualObjects)
             {
                 DestroyMarkerVisual(visual);
             }
         }
-        // Note: Prime marker count managed by PlayerActionManager
+        // Note: Matrix marker count managed by PlayerActionManager
 
         foreach (var cubeMarker in cubeMarkers)
         {

@@ -14,7 +14,7 @@ A grid-based tactical puzzle game where players strategically place markers to i
 ### Key Features
 - **Paired Wave System**: Marker placements in one wave become cube spawns in the next
 - **Temporal Strategy**: Every decision affects both current and future gameplay
-- **Five-Tier Marker System**: Light, Heavy, Prime, Cube, and Infinity markers with distinct applications
+- **Five-Tier Marker System**: Light, Heavy, Matrix, Cube, and Infinity markers with distinct applications
 - **Advanced Cube Mechanics**: Four cube types with Infinity pause states and collision behaviors
 - **Dynamic Flow Control**: Infinity cube pause mechanics creating strategic bottlenecks
 - **Strategic Continuity**: Actions cascade across wave pairs creating emergent complexity
@@ -77,7 +77,7 @@ Wave Pair Components:
 |-------------|-------------------|----------------------|
 | Light | 1x Unit Cube | Low risk, manageable consequence |
 | Heavy | 1x Recursion Cube | High durability future threat |
-| Prime | 1x Prime Cube (center) or 3x3 Units | Resource opportunity or swarm |
+| Matrix | 1x Matrix Cube (center) or 3x3 Units | Resource opportunity or swarm |
 | Infinity | 1x Infinity Cube | Extreme future danger for current control |
 | Cube | No inheritance | Pure immediate action |
 
@@ -109,7 +109,7 @@ Enhanced with temporal awareness:
 | Type | Properties | Inheritance Behavior |
 |------|------------|---------------------|
 | **Unit** | Basic, capturable | Standard spawn from Unit Markers |
-| **Prime** | Generates cube markers | Valuable spawn from Prime markers |
+| **Matrix** | Generates cube markers | Valuable spawn from Matrix markers |
 | **Infinity** | Uncapturable, pauseable | Dangerous spawn from Infinity markers |
 | **Recursion** | Multi-hit requirement | Challenging spawn from Recursion Markers |
 
@@ -131,7 +131,7 @@ Efficient storage of paired wave data:
 {
   "pairID": "P1",
   "waveA": {
-    "spawns": [[2,10,"Unit"], [4,12,"Prime"]],
+    "spawns": [[2,10,"Unit"], [4,12,"Matrix"]],
     "resources": {"light": 5, "heavy": 2}
   },
   "waveB": {
@@ -148,7 +148,7 @@ Core Controls:
 Movement: WASD/Arrows → Grid navigation
 Unit Marker: F → Place (spawns Unit in next wave)
 Recursion Marker: V → Place (spawns Recursion in next wave)
-Prime Marker: G → Place (spawns Prime in next wave)
+Matrix Marker: G → Place (spawns Matrix in next wave)
 Infinity Marker: [TBD] → Place (spawns Infinity in next wave)
 Cube Marker: Q → Direct destruction (no inheritance)
 [Trigger keys remain the same]
@@ -163,7 +163,7 @@ Teaching both immediate tactics and temporal strategy:
 | Stage | Focus | Wave Pairing Lesson |
 |-------|-------|-------------------|
 | 1-2 | Basic markers | Introduction to inheritance |
-| 3-4 | Prime/Area markers | Area inheritance patterns |
+| 3-4 | Matrix/Area markers | Area inheritance patterns |
 | 5-6 | Infinity cubes | Dangerous inheritance |
 | 7-8 | Heavy/Recursion | Durability inheritance |
 | 9-10 | Full integration | Complex inheritance chains |
@@ -194,7 +194,7 @@ Use Cube markers exclusively to avoid inheritance, accepting resource limitation
 
 ### Risk/Reward Dynamics
 - **High Risk**: Aggressive marker use solves immediate problems but creates future chaos
-- **High Reward**: Strategic Prime placement creates resource generation opportunities
+- **High Reward**: Strategic Matrix placement creates resource generation opportunities
 - **Balanced Play**: Measured marker use with careful position selection
 - **Defensive Play**: Minimal marker use, relying on movement and Cube markers
 

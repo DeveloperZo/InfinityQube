@@ -25,7 +25,8 @@ public enum PrototypingCategory
     Grid,
     Player,
     Stage,
-    System
+    System,
+    Testing
 }
 
 /// <summary>
@@ -61,5 +62,6 @@ public enum QuickActionGroup
     Player,
     Stage,
     System,
+    Testing,
     General
 }

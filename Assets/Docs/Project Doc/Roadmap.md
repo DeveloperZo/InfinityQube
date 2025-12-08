@@ -11,7 +11,7 @@ This roadmap outlines the development path from current production-ready state t
 
 ## Current Status
 ### ✅ **COMPLETED SYSTEMS** 
-- **Four-tier marker system** (Light/Heavy/Prime/Cube) - ✅ (June 23, 2025)
+- **Four-tier marker system** (Light/Heavy/Matrix/Cube) - ✅ (June 23, 2025)
 - **Face painting mechanics** with rotation tracking - ✅ Fully operational
 - **Corruption/enhancement tile system** - ✅ Integrated and tested
 - **Recursion cube multi-hit mechanics** - ✅ Working with Recursion Markers
@@ -38,7 +38,11 @@ This roadmap outlines the development path from current production-ready state t
   - PlayerUI.cs, StageInfoUI.cs (status displays)
 
 ### 🔄 **TOP PRIORITY - IN PROGRESS** 
-- **Infinity Markers** - Designed but not implemented (can be prioritized)
+- **Line Divider System** - Designed, needs implementation (dynamic difficulty mechanism)
+- **Resonance System** - Designed, needs implementation (Infinity vs Infinity interaction)
+- **Enhanced Face Painting** - Rotation mechanics and visual feedback need implementation
+- **Penalty/Reward System** - Designed, needs implementation (line movement based on performance)
+- **Marker Economy** - Per-stage grant system designed, needs implementation
 
 ---
 
@@ -57,14 +61,14 @@ This roadmap outlines the development path from current production-ready state t
   - [x] Should be no need to **Update StageDB/StageData** to support paired wave configuration and validation
   - [x] Implement marker position recording system in GridManager/PlayerActionManager
   - [x] Ensure wave manager alternates between wave and mirror wave
-  - [x] Implement marker-to-cube conversion rules (Light→Unit, Heavy→Recursion, Prime→Prime, Infinity→Infinity)
+  - [x] Implement marker-to-cube conversion rules (Light→Unit, Heavy→Recursion, Matrix→Matrix, Infinity→Infinity)
   - [x] Add visual feedback (placement echo, inheritance trail, type indicators)
   - [x] Update debug panels for paired wave visualization
   - [x] Integration testing with existing wave system
 - **Acceptance Criteria**:
   - ✅ Marker placements in Wave A are recorded and visible in debug panel
   - ✅ Wave B spawns cubes at recorded marker positions from Wave A
-  - ✅ Marker-to-cube conversion works correctly (Light→Unit, Heavy→Recursion, Prime→Prime, Infinity→Infinity)
+  - ✅ Marker-to-cube conversion works correctly (Light→Unit, Heavy→Recursion, Matrix→Matrix, Infinity→Infinity)
   - ✅ Visual feedback clearly shows inheritance connections (debug logging and prototype system)
   - ✅ Existing 3 stages can be loaded and played with paired waves
 - **Playtesting Checkpoint**:
@@ -73,32 +77,45 @@ This roadmap outlines the development path from current production-ready state t
   - Iterate: Adjust visual feedback and conversion rules based on playtest feedback
 
 ### Milestone 1.2: Refine Markers Implementation
-- **Target**: Review and refine marker system (placement, cube spawn, cube collison/interactions)
-- **Complexity**: 3 points
-- **Effort Estimate**: ~1 week active development
-- **Status**: Partial design but not implemented
+- **Target**: Review and refine marker system (placement, cube spawn, cube collision/interactions) + Core gameplay systems
+- **Complexity**: 5 points (increased due to new systems)
+- **Effort Estimate**: ~2 weeks active development
+- **Status**: Partial design, collision matrix complete, new systems designed
 - **Dependencies**: Milestone 1.1 ✅ (paired wave system complete)
 - **Tasks**:
-  - [ ] Define marker placement and spawning for all markers
-  - [ ] Design/Define cube collisions for all combinations and update documentation (with a focus on Prime/Prime Recursion/Recurion and Infinity/Infinity and hopefully creating meaningful gameplay rewarding player for matching)
+  - [x] Define marker placement and spawning for all markers ✅
+  - [x] Design/Define cube collisions for all combinations ✅ (including resonance)
   - [ ] Design/Define how and which markers should get mirrored and potential gameplay mechanics
   - [ ] Ensure charge system and regeneration mechanics are coherent
   - [ ] Visual feedback for markers (distinct color per marker type) and suggest interaction indicators if applicable
   - [ ] Ensure cohesive marker system
-  - [ ] Explore interesting ways for player to acquire non unit markers to create scarcity and strategic depth
+  - [ ] **NEW**: Implement Line Divider System (dynamic difficulty, marker placement restriction)
+  - [ ] **NEW**: Implement Resonance System (Infinity vs Infinity phaseable effect)
+  - [ ] **NEW**: Implement Enhanced Face Painting (rotation mechanics, visual feedback, timing)
+  - [ ] **NEW**: Implement Penalty/Reward System (line movement based on cube falls and achievements)
+  - [ ] **NEW**: Implement Marker Economy (per-stage grants, cross-wave resource management)
 - **Acceptance Criteria**:
   - ✅ Markers can be placed and spawn the appropriate cube
-  - ✅ Collision logic has been defined for all scenarios
+  - ✅ Collision logic has been defined for all scenarios (including resonance)
   - ✅ Charge system and regeneration work correctly
   - ✅ Visual feedback clearly shows marker and spawned cube
+  - ✅ Line divider restricts marker placement and moves based on performance
+  - ✅ Resonance system makes Infinity cubes phaseable when triggered
+  - ✅ Face painting rotation mechanics work predictably
+  - ✅ Penalty/reward system moves line appropriately
+  - ✅ Marker economy creates strategic scarcity across waves
 - **Playtesting Checkpoint**:
   - Playtest: Place markers verify mechanics work
   - Verify: Marker dynamics creates strategic depth
-  - Iterate: Balance charge system and visual feedback
+  - Test: Line divider creates tension and strategic decisions
+  - Test: Resonance enables advanced Infinity strategies
+  - Test: Face painting timing is learnable and rewarding
+  - Iterate: Balance charge system, line movement, and visual feedback
 
 ### Milestone 1.3: First Pass at Complete Stage 1 Content
 - **Target**: Foundational Systems + One Complete Demo Stage
 - **Complexity**: 3 points
+- **Status**: ✅ **COMPLETE**
 - **Tasks**:
   - [x] Foundational Message System ✅ (July 8, 2025)
   - [x] Modal Control Scheme Implementation ✅
@@ -641,6 +658,12 @@ Milestones are ordered to minimize dependencies, but some key paths:
 | Priority | Item | Status | Effort |
 |----------|------|--------|--------|
 | 🔴 Critical | Paired Wave System Implementation | ✅ Complete | 1-2 weeks |
+| 🔴 High | Milestone 1.2: Core Gameplay Systems | In Progress | ~2 weeks |
+|   | - Line Divider System | Designed | ~3 days |
+|   | - Resonance System | Designed | ~2 days |
+|   | - Enhanced Face Painting | Designed | ~2 days |
+|   | - Penalty/Reward System | Designed | ~2 days |
+|   | - Marker Economy | Designed | ~2 days |
 | 🔴 High | File Size Refactoring (WaveManager) | Planned | 2-3 weeks |
 | 🟡 High | Infinity Markers Implementation | Designed | ~1 week |
 | 🟡 Medium | Stage Content Creation | Not Started | 3-4 weeks |
@@ -656,7 +679,8 @@ Milestones are ordered to minimize dependencies, but some key paths:
 
 ### **Critical Path**:
 ```
-Paired Wave System ✅ → Infinity Markers (1 wk) → Stage Content (3-4 wks) → Tutorial (1-2 wks) → Polish (2-4 wks) → Release
+Paired Wave System ✅ → Core Gameplay Systems (1.2: 2 wks) → Stage Content (3-4 wks) → Tutorial (1-2 wks) → Polish (2-4 wks) → Release
+  └─ Line Divider, Resonance, Face Painting, Penalty/Reward, Marker Economy
 ```
 
 ---

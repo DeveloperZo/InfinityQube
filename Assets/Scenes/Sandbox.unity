@@ -1403,7 +1403,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Prime
+  m_text: Matrix
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: d70f485aa27dc43f79a8fd168f58435c, type: 2}
   m_sharedMaterial: {fileID: 5416806443266638455, guid: d70f485aa27dc43f79a8fd168f58435c, type: 2}
@@ -2188,7 +2188,7 @@ GameObject:
   - component: {fileID: 596713751}
   - component: {fileID: 596713752}
   m_Layer: 5
-  m_Name: PrimeMarker
+  m_Name: MatrixMarker
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2431,7 +2431,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Prime
+  m_text: Matrix
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: d70f485aa27dc43f79a8fd168f58435c, type: 2}
   m_sharedMaterial: {fileID: 5416806443266638455, guid: d70f485aa27dc43f79a8fd168f58435c, type: 2}
@@ -4924,7 +4924,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Prime
+  m_text: Matrix
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: d70f485aa27dc43f79a8fd168f58435c, type: 2}
   m_sharedMaterial: {fileID: 5416806443266638455, guid: d70f485aa27dc43f79a8fd168f58435c, type: 2}
@@ -14398,7 +14398,7 @@ MonoBehaviour:
   markersTriggered: 0
   detonationsUsed: 0
   tilesCorrupted: 0
-  tilesPrimed: 0
+  tilesMatrixd: 0
   tilesEnhanced: 0
   playerDeaths: 0
   movesCount: 0
@@ -14663,16 +14663,16 @@ MonoBehaviour:
   RecursionMarkerCooldown: 0
   RecursionMarkerMaterial: {fileID: 0}
   lastRecursionMarkerTime: 0
-  maxPrimeMarkers: 0
-  primeMarkersPlaced: 0
-  currentPrimeMarkers: 0
-  maxPrimeMarkerCharges: 0
-  currentPrimeMarkerCharges: 0
-  primeMarkerCooldown: 12
-  lastPrimeMarkerTime: 0
-  primeMarkerSize: 2
-  primeMarkerOnGridLimit: 1
-  primeMarkerMaterial: {fileID: 0}
+  maxMatrixMarkers: 0
+  MatrixMarkersPlaced: 0
+  currentMatrixMarkers: 0
+  maxMatrixMarkerCharges: 0
+  currentMatrixMarkerCharges: 0
+  MatrixMarkerCooldown: 12
+  lastMatrixMarkerTime: 0
+  MatrixMarkerSize: 2
+  MatrixMarkerOnGridLimit: 1
+  MatrixMarkerMaterial: {fileID: 0}
   maxInfinityMarkers: 0
   infinityMarkersPlaced: 0
   currentInfinityMarkers: 0
@@ -14683,11 +14683,11 @@ MonoBehaviour:
   infinityMarkerMaterial: {fileID: 0}
   lightMarkerKey: 102
   RecursionMarkerKey: 118
-  primeMarkerKey: 103
+  MatrixMarkerKey: 103
   infinityMarkerKey: 104
   triggerLightKey: 114
   triggerHeavyKey: 121
-  triggerPrimeKey: 116
+  triggerMatrixKey: 116
   triggerCubeMarkerKey: 113
   currentMarkerMode: 1
 --- !u!114 &8656265648072650657
@@ -14735,7 +14735,7 @@ MonoBehaviour:
   - {fileID: 0}
   - {fileID: 0}
   - {fileID: 0}
-  primeMarkerSegments:
+  MatrixMarkerSegments:
   - {fileID: 1799705721}
   - {fileID: 35727126}
   - {fileID: 1922694879}
@@ -14750,7 +14750,7 @@ MonoBehaviour:
   - {fileID: 0}
   - {fileID: 0}
   UnitMarkerUI: {fileID: 1997467801}
-  PrimeMarkerUI: {fileID: 596713750}
+  MatrixMarkerUI: {fileID: 596713750}
   RecursionMarkerUI: {fileID: 2045576079}
   InfinityMarkerUI: {fileID: 557796817}
   modeIndicatorSegments:
@@ -14759,7 +14759,7 @@ MonoBehaviour:
   - {fileID: 0}
   unitChargeText: {fileID: 585395268}
   recursionChargeText: {fileID: 367516662}
-  primeChargeText: {fileID: 622622456}
+  MatrixChargeText: {fileID: 622622456}
   infinityChargeText: {fileID: 1439720169}
   segmentFullColor: {r: 1, g: 0.7, b: 0.2, a: 1}
   segmentChargingColor: {r: 0.5, g: 0.5, b: 1, a: 0.8}
@@ -14767,7 +14767,7 @@ MonoBehaviour:
   segmentEmptyColor: {r: 0.3, g: 0.3, b: 0.3, a: 0.3}
   unitMarkerColor: {r: 1, g: 0.5, b: 0.2, a: 1}
   recursionMarkerColor: {r: 0.6, g: 0.2, b: 0.6, a: 1}
-  primeMarkerColor: {r: 0.8, g: 0.2, b: 1, a: 1}
+  MatrixMarkerColor: {r: 0.8, g: 0.2, b: 1, a: 1}
   infinityMarkerColor: {r: 0.3, g: 0.8, b: 0.9, a: 1}
   modeColors:
   - {r: 1, g: 0.3, b: 0.3, a: 1}
@@ -14777,14 +14777,14 @@ MonoBehaviour:
   animationTriggerManager: {fileID: 0}
   unitMarkerCooldownTime: 6
   recursionMarkerCooldownTime: 8
-  primeMarkerCooldownTime: 4
+  MatrixMarkerCooldownTime: 4
   infinityMarkerCooldownTime: 15
   unitCharges: 0
   unitMaxCharges: 0
   recursionCharges: 0
   recursionMaxCharges: 0
-  primeCharges: 0
-  primeMaxCharges: 0
+  MatrixCharges: 0
+  MatrixMaxCharges: 0
   infinityCharges: 0
   infinityMaxCharges: 0
 --- !u!1 &8707610068485983747
