@@ -20,6 +20,9 @@ public class PlayerMarkerSystem : MonoBehaviour
     [SerializeField] private Color areaPreviewColor = new Color(1f, 0.5f, 0f, 0.7f);
 
     private Dictionary<Vector2Int, GameObject> temporaryMarkerOverlays = new Dictionary<Vector2Int, GameObject>();
+    
+    // Countdown text objects for auto-capture markers (recursion-type markers)
+    private Dictionary<Vector2Int, TextMesh> markerCountdownTexts = new Dictionary<Vector2Int, TextMesh>();
 
     // Marker Collections - Five-tier system (Unit, Matrix, Recursion, Infinity, Cube)
     [SerializeField] public Queue<UnitMarker> UnitMarkers = new Queue<UnitMarker>();
@@ -42,6 +45,11 @@ public class PlayerMarkerSystem : MonoBehaviour
     // Parent reference
     private PlayerActionManager actionManager;
     
+    // New manager references for refactored code
+    [Header("Manager References")]
+    [SerializeField] private MarkerVisualManager visualManager;
+    // Note: MarkerCollisionManager removed - collision handling is in this class
+    
     // Active area markers that auto-capture and expire after N move forwards
     private List<ActiveAreaMarker> activeAreaMarkers = new List<ActiveAreaMarker>();
     
@@ -53,23 +61,57 @@ public class PlayerMarkerSystem : MonoBehaviour
         public List<Vector2Int> positions;
         public int createdAtMoveStep;
         public int expiresAfterMoves; // Expires after this many move forwards
+        public int remainingCharges; // Number of captures remaining (default 2)
+        public int maxCharges; // Original max charges for display
         public Color markerColor;
         public string markerType;
         public bool autoCapture; // If true, automatically captures cubes entering the area
         
-        public ActiveAreaMarker(List<Vector2Int> pos, int currentMoveStep, int duration, Color color, string type, bool autoCap = true)
+        public ActiveAreaMarker(List<Vector2Int> pos, int currentMoveStep, int duration, Color color, string type, bool autoCap = true, int charges = 2)
         {
             positions = new List<Vector2Int>(pos);
             createdAtMoveStep = currentMoveStep;
             expiresAfterMoves = duration;
+            remainingCharges = charges;
+            maxCharges = charges;
             markerColor = color;
             markerType = type;
             autoCapture = autoCap;
         }
         
+        /// <summary>
+        /// Checks if marker is expired (either by moves or by charges exhausted)
+        /// </summary>
         public bool IsExpired(int currentMoveStep)
         {
-            return (currentMoveStep - createdAtMoveStep) >= expiresAfterMoves;
+            return remainingCharges <= 0 || (currentMoveStep - createdAtMoveStep) >= expiresAfterMoves;
+        }
+        
+        /// <summary>
+        /// Uses one charge. Returns true if capture should proceed, false if no charges left.
+        /// </summary>
+        public bool UseCharge()
+        {
+            if (remainingCharges <= 0) return false;
+            remainingCharges--;
+            return true;
+        }
+        
+        /// <summary>
+        /// Gets remaining move forwards before marker expires
+        /// </summary>
+        public int GetRemainingMoves(int currentMoveStep)
+        {
+            return Mathf.Max(0, expiresAfterMoves - (currentMoveStep - createdAtMoveStep));
+        }
+        
+        /// <summary>
+        /// Gets display text showing charges/moves remaining
+        /// </summary>
+        public string GetDisplayText(int currentMoveStep)
+        {
+            int movesLeft = GetRemainingMoves(currentMoveStep);
+            return $"{remainingCharges}";  // Show charges - can be enhanced to show both
         }
     }
    
@@ -143,14 +185,35 @@ public class PlayerMarkerSystem : MonoBehaviour
     {
         // Subscribe to wave step events for area marker processing
         GameEvents.OnWaveStep += OnWaveStep;
+        
+        // Initialize new managers if they exist
+        InitializeManagers();
     }
     
     public void Initialize(PlayerActionManager parent)
     {
         actionManager = parent;
+        InitializeManagers();
+    }
+    
+    private void InitializeManagers()
+    {
+        if (actionManager == null) return;
+        
+        // Initialize visual manager
+        if (visualManager == null)
+        {
+            visualManager = GetComponent<MarkerVisualManager>();
+            if (visualManager == null)
+            {
+                visualManager = gameObject.AddComponent<MarkerVisualManager>();
+            }
+        }
+        visualManager?.Initialize(actionManager.GridManager);
+        // Note: Collision handling is implemented directly in this class
     }
 
-    private void OnDestroy()
+    private     void OnDestroy()
     {
         // Unsubscribe from events
         GameEvents.OnWaveStep -= OnWaveStep;
@@ -161,6 +224,9 @@ public class PlayerMarkerSystem : MonoBehaviour
         {
             ClearTileHighlight(pos);
         }
+        
+        // Clean up all countdown texts
+        ClearAllMarkerCountdownTexts();
         
         // Clear active area markers
         activeAreaMarkers.Clear();
@@ -176,6 +242,7 @@ public class PlayerMarkerSystem : MonoBehaviour
     
     /// <summary>
     /// Process all active area markers - check for auto-captures and expiration
+    /// Markers expire when charges exhausted OR move forwards elapsed (whichever first)
     /// </summary>
     private void ProcessActiveAreaMarkers(int currentMoveStep)
     {
@@ -185,10 +252,8 @@ public class PlayerMarkerSystem : MonoBehaviour
         
         foreach (var marker in activeAreaMarkers)
         {
-            bool shouldRemove = false;
-            
-            // Check for auto-capture at marker positions
-            if (marker.autoCapture)
+            // Check for auto-capture at marker positions (if charges remain)
+            if (marker.autoCapture && marker.remainingCharges > 0)
             {
                 foreach (var pos in marker.positions)
                 {
@@ -197,37 +262,46 @@ public class PlayerMarkerSystem : MonoBehaviour
                     {
                         if (cube == null || cube.isDestroyed || cube.isPlayerCube) continue;
                         
-                        // Capture the cube
-                        if (ProcessCubeCapture(cube, pos, MarkerType.Recursion, null, false))
+                        // Try to use a charge and capture
+                        if (marker.UseCharge())
                         {
-                            Debug.Log($"[PlayerMarkerSystem] Auto-captured {cube.type} at ({pos.x}, {pos.y}) by {marker.markerType} marker");
-                            shouldRemove = true;
-                            break;
+                            if (ProcessCubeCapture(cube, pos, MarkerType.Recursion, null, false))
+                            {
+                                Debug.Log($"[PlayerMarkerSystem] Auto-captured {cube.type} at ({pos.x}, {pos.y}) by {marker.markerType} marker (charges left: {marker.remainingCharges})");
+                            }
                         }
+                        
+                        // Only capture one cube per position per step
+                        break;
                     }
-                    if (shouldRemove) break;
                 }
             }
             
-            // Check for expiration
-            if (!shouldRemove && marker.IsExpired(currentMoveStep))
+            // Check if marker should be removed (charges exhausted OR moves expired)
+            if (marker.IsExpired(currentMoveStep))
             {
-                Debug.Log($"[PlayerMarkerSystem] {marker.markerType} marker expired after {marker.expiresAfterMoves} moves");
-                shouldRemove = true;
-            }
-            
-            if (shouldRemove)
-            {
-                // Clear the visual markers
+                string reason = marker.remainingCharges <= 0 ? "charges exhausted" : "moves expired";
+                Debug.Log($"[PlayerMarkerSystem] {marker.markerType} marker removed ({reason})");
+                
+                // Clear the visual markers and countdown text
                 foreach (var pos in marker.positions)
                 {
                     ClearTileHighlight(pos);
+                    ClearMarkerCountdownText(pos);
                 }
                 markersToRemove.Add(marker);
             }
+            else
+            {
+                // Update countdown display - show remaining charges
+                foreach (var pos in marker.positions)
+                {
+                    UpdateMarkerCountdownText(pos, marker.remainingCharges);
+                }
+            }
         }
         
-        // Remove expired/captured markers
+        // Remove expired markers
         foreach (var marker in markersToRemove)
         {
             activeAreaMarkers.Remove(marker);
@@ -777,7 +851,7 @@ public class PlayerMarkerSystem : MonoBehaviour
 
     #region Cube Interaction System
 
-    private bool ProcessCubeCapture(CubeManager cube, Vector2Int position, MarkerType markerType, object marker = null, bool isSameTypeMatch = false)
+    public bool ProcessCubeCapture(CubeManager cube, Vector2Int position, MarkerType markerType, object marker = null, bool isSameTypeMatch = false)
     {
         if (cube == null || cube.isDestroyed) return false;
 
@@ -832,7 +906,7 @@ public class PlayerMarkerSystem : MonoBehaviour
         return true;
     }
 
-    private List<CubeManager> FindAllCubesAt(Vector2Int position)
+    public List<CubeManager> FindAllCubesAt(Vector2Int position)
     {
         var cubes = new List<CubeManager>();
         
@@ -1408,27 +1482,34 @@ public class PlayerMarkerSystem : MonoBehaviour
     }
     
     /// <summary>
-    /// Matrix + Unit: 2x2 area capture from Matrix position
+    /// Matrix + Unit: Creates 2x2 manual marker (player triggers with R)
+    /// Captures the Unit cube immediately, then creates a 2x2 cube marker for manual triggering
     /// </summary>
     private bool HandleMatrixAreaCapture(Vector2Int centerPosition, int areaSize)
     {
-        var areaPositions = GetAreaPositions(centerPosition, areaSize);
-        bool anyCaptured = false;
+        // Capture the Unit cube at collision point first
+        var cubesAtPosition = FindAllCubesAt(centerPosition);
+        bool capturedUnit = false;
         
-        foreach (var areaPos in areaPositions)
+        foreach (var cube in cubesAtPosition)
         {
-            var cubesAtArea = FindAllCubesAt(areaPos);
-            foreach (var cube in cubesAtArea)
+            if (cube == null || cube.isDestroyed || cube.isPlayerCube) continue;
+            if (cube.type == CubeType.Unit)
             {
-                if (cube == null || cube.isDestroyed || cube.isPlayerCube) continue;
-                if (ProcessCubeCapture(cube, areaPos, MarkerType.Matrix, null, false))
+                if (ProcessCubeCapture(cube, centerPosition, MarkerType.Matrix, null, false))
                 {
-                    anyCaptured = true;
+                    capturedUnit = true;
+                    break;
                 }
             }
         }
         
-        return anyCaptured;
+        // Create a 2x2 cube marker for manual triggering
+        // All Matrix player cube collisions create triggerable markers
+        CreateCubeMarker(centerPosition, CubeMarkerType.Matrix, areaSize);
+        Debug.Log($"[PlayerMarkerSystem] Matrix+Unit collision - created {areaSize}x{areaSize} manual cube marker at ({centerPosition.x}, {centerPosition.y})");
+        
+        return capturedUnit || true; // Always return true since we created a marker
     }
     
     /// <summary>
@@ -1460,45 +1541,52 @@ public class PlayerMarkerSystem : MonoBehaviour
     }
     
     /// <summary>
-    /// Matrix + Recursion: Degrading 2x2 marker (each tile has 1 charge, shrinks over triggers)
-    /// Note: Cube marker creation is handled by ProcessCubeCapture for Matrix cubes
+    /// Matrix + Recursion: Creates 2x2 degrading manual marker (player triggers with R)
+    /// Captures the Recursion cube immediately, then creates a 2x2 cube marker for manual triggering
     /// </summary>
     private bool HandleMatrixRecursionCollision(Vector2Int centerPosition)
     {
-        // Capture all cubes in 2x2 area
-        // ProcessCubeCapture will create the 2x2 cube marker for Matrix cube captures
-        var areaPositions = GetAreaPositions(centerPosition, 2);
-        bool anyCaptured = false;
+        // Capture the Recursion cube at collision point first
+        var cubesAtPosition = FindAllCubesAt(centerPosition);
+        bool capturedRecursion = false;
         
-        foreach (var areaPos in areaPositions)
+        foreach (var cube in cubesAtPosition)
         {
-            var cubesAtArea = FindAllCubesAt(areaPos);
-            foreach (var cube in cubesAtArea)
+            if (cube == null || cube.isDestroyed || cube.isPlayerCube) continue;
+            if (cube.type == CubeType.Recursion)
             {
-                if (cube == null || cube.isDestroyed || cube.isPlayerCube) continue;
-                if (ProcessCubeCapture(cube, areaPos, MarkerType.Matrix, null, false))
+                if (ProcessCubeCapture(cube, centerPosition, MarkerType.Matrix, null, false))
                 {
-                    anyCaptured = true;
+                    capturedRecursion = true;
+                    break;
                 }
             }
         }
         
-        return anyCaptured;
+        // Create a 2x2 cube marker for manual triggering (regardless of capture success)
+        // This follows the design: Matrix+Recursion = 2x2 degrading manual marker
+        CreateCubeMarker(centerPosition, CubeMarkerType.Matrix, 2);
+        Debug.Log($"[PlayerMarkerSystem] Matrix+Recursion collision - created 2x2 manual cube marker at ({centerPosition.x}, {centerPosition.y})");
+        
+        return capturedRecursion || true; // Always return true since we created a marker
     }
     
     /// <summary>
-    /// Column capture: Auto-captures N cubes as wave passes over collision tile
+    /// Column capture: Creates auto-capture marker with charges
     /// Used for Unit+Recursion and Recursion+Unit
-    /// Creates a 1x3 vertical marker that auto-captures cubes passing through
+    /// Captures immediately if cube present (uses 1 charge), then auto-captures on wave movement
+    /// Expires when charges exhausted OR move forwards elapsed (whichever first)
     /// </summary>
-    private bool HandleColumnCapture(Vector2Int position, int cubeCount)
+    private bool HandleColumnCapture(Vector2Int position, int charges = 2)
     {
-        // Create visual column marker (1x3 vertical)
-        CreateColumnMarker(position, cubeCount);
+        int expiresAfterMoves = 3;
         
-        // Capture the cube at collision position immediately
+        // Create visual column marker (1x3 vertical) with charge tracking
+        CreateColumnMarker(position, 3, expiresAfterMoves, charges);
+        
+        // Try to capture cube at collision point immediately (uses 1 charge)
         var cubesAtPosition = FindAllCubesAt(position);
-        bool anyCaptured = false;
+        bool capturedImmediately = false;
         
         foreach (var cube in cubesAtPosition)
         {
@@ -1506,19 +1594,28 @@ public class PlayerMarkerSystem : MonoBehaviour
             
             if (ProcessCubeCapture(cube, position, MarkerType.Recursion, null, false))
             {
-                anyCaptured = true;
-                break; // Only capture the first cube at collision point
+                // Decrement charge on the marker we just created
+                var marker = activeAreaMarkers[activeAreaMarkers.Count - 1];
+                marker.UseCharge();
+                capturedImmediately = true;
+                Debug.Log($"[PlayerMarkerSystem] Recursion column - immediate capture at ({position.x}, {position.y}), {marker.remainingCharges} charges left");
+                break;
             }
         }
         
-        return anyCaptured;
+        if (!capturedImmediately)
+        {
+            Debug.Log($"[PlayerMarkerSystem] Recursion column - no cube at collision, marker will auto-capture on wave movement ({charges} charges, {expiresAfterMoves} moves)");
+        }
+        
+        return true;
     }
     
     /// <summary>
     /// Creates a visual column marker (1x3 vertical) at the collision position.
-    /// Marker persists for N move forwards or until it captures a cube.
+    /// Marker expires when charges exhausted OR moves elapsed (whichever first)
     /// </summary>
-    private void CreateColumnMarker(Vector2Int centerPosition, int height)
+    private void CreateColumnMarker(Vector2Int centerPosition, int height, int expiresAfterMoves = 3, int charges = 2)
     {
         List<Vector2Int> positions = new List<Vector2Int>();
         Color markerColor = new Color(0.9f, 0.6f, 0.2f, 0.8f); // Amber/orange
@@ -1534,6 +1631,8 @@ public class PlayerMarkerSystem : MonoBehaviour
                 if (tile != null)
                 {
                     SetTileHighlight(tile, markerColor, "ColumnCapture");
+                    // Show charges remaining
+                    CreateMarkerCountdownText(pos, charges, Color.white);
                 }
             }
         }
@@ -1541,43 +1640,51 @@ public class PlayerMarkerSystem : MonoBehaviour
         // Get current move step from WaveManager
         int currentMoveStep = actionManager?.WaveManager?.MoveStep ?? 0;
         
-        // Register as active area marker (expires after 3 move forwards or on capture)
-        var areaMarker = new ActiveAreaMarker(positions, currentMoveStep, 3, markerColor, "ColumnCapture", true);
+        // Register as active area marker with charge tracking
+        var areaMarker = new ActiveAreaMarker(positions, currentMoveStep, expiresAfterMoves, markerColor, "ColumnCapture", true, charges);
         activeAreaMarkers.Add(areaMarker);
         
-        Debug.Log($"[PlayerMarkerSystem] Created column marker at ({centerPosition.x}, {centerPosition.y}) - expires in 3 moves or on capture");
+        Debug.Log($"[PlayerMarkerSystem] Created column marker at ({centerPosition.x}, {centerPosition.y}) - {charges} charges, expires in {expiresAfterMoves} moves");
     }
     
     /// <summary>
-    /// Recursion + Matrix: Auto 1x3 vertical marker (3 tiles deep, auto-captures)
+    /// Recursion + Matrix: Auto 1x3 vertical marker with charges
+    /// Captures immediately if cube present (uses 1 charge), then auto-captures on wave movement
     /// </summary>
     private bool HandleRecursionMatrixCollision(Vector2Int centerPosition)
     {
-        // Create visual 1x3 vertical marker (3 tiles going up from collision point)
-        CreateVerticalMarker(centerPosition, 3, true); // true = going up
+        int charges = 2;
+        int expiresAfterMoves = 3;
         
-        // Capture cubes at collision point immediately
+        // Create visual 1x3 vertical marker (3 tiles going up from collision point)
+        CreateVerticalMarker(centerPosition, 3, true, expiresAfterMoves, charges);
+        
+        // Try to capture cube at collision point immediately (uses 1 charge)
         var cubesAtPosition = FindAllCubesAt(centerPosition);
-        bool anyCaptured = false;
+        bool capturedImmediately = false;
         
         foreach (var cube in cubesAtPosition)
         {
             if (cube == null || cube.isDestroyed || cube.isPlayerCube) continue;
             if (ProcessCubeCapture(cube, centerPosition, MarkerType.Recursion, null, false))
             {
-                anyCaptured = true;
+                // Decrement charge on the marker we just created
+                var marker = activeAreaMarkers[activeAreaMarkers.Count - 1];
+                marker.UseCharge();
+                capturedImmediately = true;
+                Debug.Log($"[PlayerMarkerSystem] Recursion+Matrix - immediate capture, {marker.remainingCharges} charges left");
                 break;
             }
         }
         
-        return anyCaptured;
+        return true;
     }
     
     /// <summary>
     /// Creates a visual vertical marker (1x3) at the collision position.
-    /// Marker persists for N move forwards or until it captures a cube.
+    /// Marker expires when charges exhausted OR moves elapsed (whichever first)
     /// </summary>
-    private void CreateVerticalMarker(Vector2Int centerPosition, int height, bool goingUp)
+    private void CreateVerticalMarker(Vector2Int centerPosition, int height, bool goingUp, int expiresAfterMoves = 3, int charges = 2)
     {
         List<Vector2Int> positions = new List<Vector2Int>();
         Color markerColor = new Color(0.3f, 0.8f, 0.9f, 0.8f); // Cyan/blue
@@ -1593,6 +1700,8 @@ public class PlayerMarkerSystem : MonoBehaviour
                 if (tile != null)
                 {
                     SetTileHighlight(tile, markerColor, "VerticalCapture");
+                    // Show charges remaining
+                    CreateMarkerCountdownText(pos, charges, Color.white);
                 }
             }
         }
@@ -1600,19 +1709,22 @@ public class PlayerMarkerSystem : MonoBehaviour
         // Get current move step from WaveManager
         int currentMoveStep = actionManager?.WaveManager?.MoveStep ?? 0;
         
-        // Register as active area marker (expires after 3 move forwards or on capture)
-        var areaMarker = new ActiveAreaMarker(positions, currentMoveStep, 3, markerColor, "VerticalCapture", true);
+        // Register as active area marker with charge tracking
+        var areaMarker = new ActiveAreaMarker(positions, currentMoveStep, expiresAfterMoves, markerColor, "VerticalCapture", true, charges);
         activeAreaMarkers.Add(areaMarker);
         
-        Debug.Log($"[PlayerMarkerSystem] Created vertical marker at ({centerPosition.x}, {centerPosition.y}) - expires in 3 moves or on capture");
+        Debug.Log($"[PlayerMarkerSystem] Created vertical marker at ({centerPosition.x}, {centerPosition.y}) - {charges} charges, expires in {expiresAfterMoves} moves");
     }
     
     /// <summary>
-    /// Recursion + Recursion: Cross marker (5 tiles - 1x3 vertical + 1x3 horizontal, overlapping at center)
-    /// Note: Cube marker creation is handled by ProcessCubeCapture when isSameTypeMatch=true
+    /// Recursion + Recursion: Cross marker (5 tiles) with charges
+    /// Captures immediately if cube present (uses 1 charge), then auto-captures on wave movement
     /// </summary>
     private bool HandleRecursionRecursionCollision(Vector2Int centerPosition)
     {
+        int charges = 2;
+        int expiresAfterMoves = 3;
+        
         // Create cross marker (5 tiles total)
         List<Vector2Int> crossPositions = new List<Vector2Int>();
         
@@ -1636,34 +1748,36 @@ public class PlayerMarkerSystem : MonoBehaviour
             }
         }
         
-        // Create visual cross marker
-        CreateCrossMarker(crossPositions);
+        // Create visual cross marker with charge tracking
+        CreateCrossMarker(crossPositions, expiresAfterMoves, charges);
         
-        // Capture all cubes in cross pattern
-        // ProcessCubeCapture will create the cube marker for same-type matches
-        bool anyCaptured = false;
-        foreach (var pos in crossPositions)
+        // Try to capture cube at collision point immediately (uses 1 charge)
+        var cubesAtCenter = FindAllCubesAt(centerPosition);
+        bool capturedImmediately = false;
+        
+        foreach (var cube in cubesAtCenter)
         {
-            var cubesAtPos = FindAllCubesAt(pos);
-            foreach (var cube in cubesAtPos)
+            if (cube == null || cube.isDestroyed || cube.isPlayerCube) continue;
+            // Pass isSameTypeMatch=true to trigger cube marker creation in ProcessCubeCapture
+            if (ProcessCubeCapture(cube, centerPosition, MarkerType.Recursion, null, true))
             {
-                if (cube == null || cube.isDestroyed || cube.isPlayerCube) continue;
-                // Pass isSameTypeMatch=true to trigger cube marker creation in ProcessCubeCapture
-                if (ProcessCubeCapture(cube, pos, MarkerType.Recursion, null, true))
-                {
-                    anyCaptured = true;
-                }
+                // Decrement charge on the marker we just created
+                var marker = activeAreaMarkers[activeAreaMarkers.Count - 1];
+                marker.UseCharge();
+                capturedImmediately = true;
+                Debug.Log($"[PlayerMarkerSystem] Recursion+Recursion - immediate capture, {marker.remainingCharges} charges left");
+                break;
             }
         }
         
-        return anyCaptured;
+        return true;
     }
     
     /// <summary>
     /// Creates a visual cross marker (5 tiles) at the collision positions.
-    /// Marker persists for N move forwards or until it captures a cube.
+    /// Marker expires when charges exhausted OR moves elapsed (whichever first)
     /// </summary>
-    private void CreateCrossMarker(List<Vector2Int> positions)
+    private void CreateCrossMarker(List<Vector2Int> positions, int expiresAfterMoves = 3, int charges = 2)
     {
         Color markerColor = new Color(0.7f, 0.3f, 0.8f, 0.8f); // Purple
         
@@ -1673,17 +1787,55 @@ public class PlayerMarkerSystem : MonoBehaviour
             if (tile != null)
             {
                 SetTileHighlight(tile, markerColor, "CrossCapture");
+                // Show charges remaining
+                CreateMarkerCountdownText(pos, charges, Color.white);
             }
         }
         
         // Get current move step from WaveManager
         int currentMoveStep = actionManager?.WaveManager?.MoveStep ?? 0;
         
-        // Register as active area marker (expires after 3 move forwards or on capture)
-        var areaMarker = new ActiveAreaMarker(positions, currentMoveStep, 3, markerColor, "CrossCapture", true);
+        // Register as active area marker with charge tracking
+        var areaMarker = new ActiveAreaMarker(positions, currentMoveStep, expiresAfterMoves, markerColor, "CrossCapture", true, charges);
         activeAreaMarkers.Add(areaMarker);
         
-        Debug.Log($"[PlayerMarkerSystem] Created cross marker with {positions.Count} tiles - expires in 3 moves or on capture");
+        Debug.Log($"[PlayerMarkerSystem] Created cross marker with {positions.Count} tiles - expires in {expiresAfterMoves} moves or on capture");
+    }
+    
+    /// <summary>
+    /// Creates an auto-capture area marker from external sources (e.g., painted face grid touch).
+    /// This creates visual markers that auto-capture cubes passing through without consuming player charges.
+    /// Used by Tile.cs for RecursionFace and other painted face effects.
+    /// </summary>
+    /// <param name="positions">List of grid positions for the marker</param>
+    /// <param name="markerType">Name/type of the marker for logging</param>
+    /// <param name="markerColor">Visual color for the marker highlights</param>
+    /// <param name="expiresAfterMoves">Number of wave moves before marker expires</param>
+    /// <param name="charges">Number of auto-capture charges</param>
+    public void CreateAutoCaptureAreaMarker(List<Vector2Int> positions, string markerType, Color markerColor, int expiresAfterMoves = 3, int charges = 2)
+    {
+        if (positions == null || positions.Count == 0) return;
+        if (actionManager?.GridManager == null) return;
+        
+        // Create visual highlights for each position
+        foreach (var pos in positions)
+        {
+            Tile tile = actionManager.GridManager.GetTileAt(pos.x, pos.y);
+            if (tile != null)
+            {
+                SetTileHighlight(tile, markerColor, markerType);
+                CreateMarkerCountdownText(pos, charges, Color.white);
+            }
+        }
+        
+        // Get current move step from WaveManager
+        int currentMoveStep = actionManager?.WaveManager?.MoveStep ?? 0;
+        
+        // Register as active area marker with charge tracking
+        var areaMarker = new ActiveAreaMarker(positions, currentMoveStep, expiresAfterMoves, markerColor, markerType, true, charges);
+        activeAreaMarkers.Add(areaMarker);
+        
+        Debug.Log($"[PlayerMarkerSystem] Created {markerType} auto-capture marker with {positions.Count} tiles ({charges} charges, expires in {expiresAfterMoves} moves)");
     }
     
     /// <summary>
@@ -2093,6 +2245,111 @@ public class PlayerMarkerSystem : MonoBehaviour
             ClearTileHighlight(tile);
         }
     }
+    
+    #region Marker Countdown Text
+    
+    /// <summary>
+    /// Creates a countdown text display on a tile for auto-capture markers (recursion-type)
+    /// </summary>
+    private void CreateMarkerCountdownText(Vector2Int position, int remainingMoves, Color textColor)
+    {
+        if (markerCountdownTexts.ContainsKey(position))
+        {
+            // Already exists, just update it
+            UpdateMarkerCountdownText(position, remainingMoves);
+            return;
+        }
+        
+        Tile tile = actionManager?.GridManager?.GetTileAt(position.x, position.y);
+        if (tile == null) return;
+        
+        // Create text object
+        GameObject textObj = new GameObject($"MarkerCountdown_{position.x}_{position.y}");
+        textObj.transform.SetParent(tile.transform);
+        textObj.transform.localPosition = new Vector3(0, 1.0f, 0); // Above the tile overlay
+        
+        TextMesh textMesh = textObj.AddComponent<TextMesh>();
+        textMesh.text = remainingMoves.ToString();
+        textMesh.fontSize = 12;
+        textMesh.fontStyle = FontStyle.Bold;
+        textMesh.color = textColor;
+        textMesh.anchor = TextAnchor.MiddleCenter;
+        textMesh.alignment = TextAlignment.Center;
+        textMesh.characterSize = 0.15f;
+        
+        // Make text face camera (billboard style)
+        if (Camera.main != null)
+        {
+            textObj.transform.LookAt(Camera.main.transform);
+            textObj.transform.Rotate(0, 180, 0);
+        }
+        
+        markerCountdownTexts[position] = textMesh;
+        Debug.Log($"[PlayerMarkerSystem] Created countdown text at ({position.x}, {position.y}) showing {remainingMoves}");
+    }
+    
+    /// <summary>
+    /// Updates the countdown text for a marker position
+    /// </summary>
+    private void UpdateMarkerCountdownText(Vector2Int position, int remainingMoves)
+    {
+        if (!markerCountdownTexts.TryGetValue(position, out TextMesh textMesh)) return;
+        if (textMesh == null)
+        {
+            markerCountdownTexts.Remove(position);
+            return;
+        }
+        
+        textMesh.text = remainingMoves.ToString();
+        
+        // Update color based on remaining moves (visual urgency)
+        if (remainingMoves <= 1)
+            textMesh.color = Color.red;
+        else if (remainingMoves <= 2)
+            textMesh.color = Color.yellow;
+        else
+            textMesh.color = Color.white;
+        
+        // Re-orient to face camera each update
+        if (Camera.main != null && textMesh.gameObject != null)
+        {
+            textMesh.transform.LookAt(Camera.main.transform);
+            textMesh.transform.Rotate(0, 180, 0);
+        }
+    }
+    
+    /// <summary>
+    /// Removes the countdown text for a marker position
+    /// </summary>
+    private void ClearMarkerCountdownText(Vector2Int position)
+    {
+        if (markerCountdownTexts.TryGetValue(position, out TextMesh textMesh))
+        {
+            if (textMesh != null)
+            {
+                Destroy(textMesh.gameObject);
+            }
+            markerCountdownTexts.Remove(position);
+            Debug.Log($"[PlayerMarkerSystem] Cleared countdown text at ({position.x}, {position.y})");
+        }
+    }
+    
+    /// <summary>
+    /// Clears all marker countdown texts
+    /// </summary>
+    private void ClearAllMarkerCountdownTexts()
+    {
+        foreach (var kvp in markerCountdownTexts)
+        {
+            if (kvp.Value != null)
+            {
+                Destroy(kvp.Value.gameObject);
+            }
+        }
+        markerCountdownTexts.Clear();
+    }
+    
+    #endregion
 
     private void DestroyMarkerVisual(GameObject visual)
     {
@@ -2175,6 +2432,12 @@ public class PlayerMarkerSystem : MonoBehaviour
         {
             ClearTileHighlight(pos);
         }
+        
+        // Clear all countdown texts
+        ClearAllMarkerCountdownTexts();
+        
+        // Clear active area markers (auto-capture markers)
+        activeAreaMarkers.Clear();
 
         Debug.Log("All action markers and highlights cleared");
     }

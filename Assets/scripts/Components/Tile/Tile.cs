@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using static Enumerations;
 
@@ -684,23 +685,37 @@ public class Tile : MonoBehaviour
     
     /// <summary>
     /// Task 8: Creates a 5-tile cross marker pattern for RecursionFace
+    /// Creates an auto-capture area marker (doesn't consume player marker charges)
     /// </summary>
     private void CreateRecursionCrossMarker(Vector2Int centerPosition)
     {
         if (cachedPlayerActionManager == null || cachedGridManager == null) return;
         
         // Build cross pattern: center + 4 adjacent tiles
+        List<Vector2Int> crossPositions = new List<Vector2Int>();
         Vector2Int[] offsets = { Vector2Int.zero, Vector2Int.up, Vector2Int.down, Vector2Int.left, Vector2Int.right };
         
         foreach (var offset in offsets)
         {
             Vector2Int pos = centerPosition + offset;
-            if (cachedGridManager.IsValidGridPosition(pos) && 
-                cachedPlayerActionManager.CanPlaceRecursionMarker() && 
-                cachedPlayerActionManager.PlaceRecursionMarker(pos))
+            if (cachedGridManager.IsValidGridPosition(pos))
             {
-                Debug.Log($"[Task 8] Created Recursion marker at ({pos.x},{pos.y}) for cross pattern");
+                crossPositions.Add(pos);
             }
+        }
+        
+        // Create auto-capture cross marker via PlayerMarkerSystem
+        // This creates a visual marker that auto-captures cubes passing through
+        var markerSystem = cachedPlayerActionManager.GetMarkerSystem();
+        if (markerSystem != null)
+        {
+            markerSystem.CreateAutoCaptureAreaMarker(crossPositions, "RecursionFaceCross", 
+                new Color(0.8f, 0.5f, 0.2f, 0.8f), 3, 2); // 3 moves expiration, 2 charges
+            Debug.Log($"[Task 8] Created RecursionFace auto-capture cross marker at ({centerPosition.x},{centerPosition.y}) with {crossPositions.Count} tiles");
+        }
+        else
+        {
+            Debug.LogWarning("[Task 8] MarkerSystem not available for RecursionFace cross marker");
         }
     }
     
