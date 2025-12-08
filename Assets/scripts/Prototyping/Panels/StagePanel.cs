@@ -4,144 +4,46 @@ using System.Linq;
 using static Enumerations;
 
 /// <summary>
-/// Stage Panel - Stage flow and time control.
+/// Stage Panel - Time control and wave navigation.
+/// Works independently of StageManager for prototyping flexibility.
 /// </summary>
 public class StagePanel : PrototypingPanelBase
 {
     public override string PanelName => "Stage";
-    public override string PanelIcon => "🎭";
+    public override string PanelIcon => "S";
     public override PrototypingCategory Category => PrototypingCategory.Stage;
     public override int Priority => 40;
     
-    private bool showStage = true;
-    private bool showWaveAdvance = true;
     private bool showTime = true;
-    private bool showWinLose = true;
+    private bool showWaveNav = true;
+    private bool showStage = false;
     
     public override List<QuickAction> GetQuickActions()
     {
-        return new List<QuickAction>
-        {
-            new QuickAction("⏸", () => SetTime(0)) { Group = QuickActionGroup.Stage, Priority = 40, Tooltip = "Pause", IsHighlighted = () => Time.timeScale == 0 },
-            new QuickAction("1x", () => SetTime(1)) { Group = QuickActionGroup.Stage, Priority = 41, Tooltip = "Normal" },
-            new QuickAction("2x", () => SetTime(2)) { Group = QuickActionGroup.Stage, Priority = 42, Tooltip = "Fast" },
-            new QuickAction("🔄", Restart) { Group = QuickActionGroup.Stage, Priority = 45, Tooltip = "Restart" }
-        };
+        return new List<QuickAction>();
     }
     
     public override void DrawGUI()
     {
-        string info = stageManager?.CurrentStage != null 
-            ? $"Stage {stageManager.CurrentStageIndex}: {stageManager.CurrentStage.stageName}"
-            : "No active stage";
-        DrawStatus(info);
-        DrawStatus($"Time Scale: {Time.timeScale:F1}x | In Progress: {stageManager?.IsStageInProgress ?? false}");
+        // Status - works without StageManager
+        DrawStatus($"Time Scale: {Time.timeScale:F1}x");
         
         GUILayout.Space(5);
         
-        // Stage Control
-        showStage = DrawToggleSection("STAGE CONTROL", showStage);
-        if (showStage)
-        {
-            DrawSection("", () =>
-            {
-                DrawButtonRow(
-                    ("◀ Prev", PrevStage),
-                    ("🔄 Restart", Restart),
-                    ("Next ▶", NextStage)
-                );
-                
-                if (stageManager?.CurrentStage != null)
-                {
-                    var stage = stageManager.CurrentStage;
-                    GUILayout.Label($"Grid: {stage.gridWidth}x{stage.gridHeight}");
-                    GUILayout.Label($"Waves: {stage.waveConfigurations?.Count ?? 0}");
-                }
-                
-                GUILayout.Space(5);
-                GUILayout.Label("Jump to Stage:");
-                GUILayout.BeginHorizontal();
-                var stages = stageManager?.GetAvailableStages() ?? new List<int>();
-                foreach (int id in stages.Take(8))
-                {
-                    int stageId = id;
-                    GUI.backgroundColor = stageManager?.CurrentStageIndex == id ? Color.green : Color.white;
-                    if (GUILayout.Button($"{id}", GUILayout.Width(30)))
-                    {
-                        stageManager?.LoadStage(stageId);
-                    }
-                }
-                GUI.backgroundColor = Color.white;
-                GUILayout.EndHorizontal();
-            });
-        }
-        
-        // Wave Auto-Advance
-        showWaveAdvance = DrawToggleSection("WAVE AUTO-ADVANCE", showWaveAdvance);
-        if (showWaveAdvance)
-        {
-            DrawSection("", () =>
-            {
-                bool autoAdvance = stageManager?.AutoAdvanceWaves ?? true;
-                string statusText = autoAdvance 
-                    ? "Enabled (waves will auto-advance on completion)" 
-                    : "Disabled (waves will wait for manual control)";
-                
-                GUI.backgroundColor = autoAdvance ? Color.green : Color.yellow;
-                if (GUILayout.Button(autoAdvance ? "✓ Auto-Advance Waves" : "✗ Auto-Advance Waves", GUILayout.Height(28)))
-                {
-                    if (stageManager != null)
-                    {
-                        stageManager.AutoAdvanceWaves = !autoAdvance;
-                        LogAction($"Auto-advance waves: {(stageManager.AutoAdvanceWaves ? "Enabled" : "Disabled")}");
-                    }
-                }
-                GUI.backgroundColor = Color.white;
-                
-                GUILayout.Space(3);
-                DrawStatus(statusText);
-                
-                GUILayout.Space(5);
-                
-                // Wave navigation (only if using wave configuration)
-                if (waveManager?.useWaveConfiguration == true)
-                {
-                    bool canGoPrev = waveManager.currentWaveIndex > 0;
-                    bool canGoNext = waveManager.HasMoreWaves();
-                    
-                    GUILayout.Label("Wave Navigation:");
-                    GUILayout.BeginHorizontal();
-                    GUI.enabled = canGoPrev;
-                    if (GUILayout.Button("◀ Prev Wave"))
-                    {
-                        PrevWave();
-                    }
-                    GUI.enabled = canGoNext;
-                    if (GUILayout.Button("Next Wave ▶"))
-                    {
-                        NextWave();
-                    }
-                    GUI.enabled = true;
-                    GUILayout.EndHorizontal();
-                    
-                    string waveLabel = waveManager?.GetWaveLabel() ?? "?";
-                    int totalWaves = waveManager?.waveConfiguration?.Count ?? 0;
-                    DrawStatus($"Current: Wave {waveLabel}/{totalWaves}");
-                }
-            });
-        }
-        
-        // Time Control
+        // Time Control - Primary feature, always works
         showTime = DrawToggleSection("TIME CONTROL", showTime);
         if (showTime)
         {
             DrawSection("", () =>
             {
+                GUILayout.Label($"Current: {Time.timeScale:F2}x");
+                
                 float speed = DrawSlider("Speed", Time.timeScale, 0, 4);
-                if (speed != Time.timeScale) SetTime(speed);
+                if (Mathf.Abs(speed - Time.timeScale) > 0.01f) SetTime(speed);
                 
                 GUILayout.BeginHorizontal();
-                if (GUILayout.Button("⏸ 0x")) SetTime(0);
+                if (GUILayout.Button("Pause")) SetTime(0);
+                if (GUILayout.Button("0.25x")) SetTime(0.25f);
                 if (GUILayout.Button("0.5x")) SetTime(0.5f);
                 if (GUILayout.Button("1x")) SetTime(1);
                 if (GUILayout.Button("2x")) SetTime(2);
@@ -150,31 +52,127 @@ public class StagePanel : PrototypingPanelBase
             });
         }
         
-        // Win/Lose
-        showWinLose = DrawToggleSection("WIN/LOSE", showWinLose);
-        if (showWinLose)
+        // Wave Navigation - works with WaveManager
+        showWaveNav = DrawToggleSection("WAVE NAVIGATION", showWaveNav);
+        if (showWaveNav)
         {
             DrawSection("", () =>
             {
-                DrawButtonRow(
-                    ("🏆 Force Win", ForceWin),
-                    ("💀 Force Lose", ForceLose)
-                );
-                DrawButtonRow(
-                    ("⏭ Skip Wave", SkipWave),
-                    ("🔄 Restart", Restart)
-                );
+                if (waveManager == null)
+                {
+                    GUILayout.Label("WaveManager not available");
+                    return;
+                }
+                
+                // Wave info
+                string waveLabel = waveManager.GetWaveLabel() ?? "?";
+                int totalWaves = waveManager.waveConfiguration?.Count ?? 0;
+                bool waveActive = waveManager.waveActive;
+                
+                GUILayout.Label($"Wave: {waveLabel}" + (totalWaves > 0 ? $"/{totalWaves}" : "") + (waveActive ? " (Active)" : " (Stopped)"));
+                GUILayout.Label($"Cubes: {waveManager.activeCubes?.Count ?? 0}");
+                
+                GUILayout.Space(3);
+                
+                // Wave control
+                GUILayout.BeginHorizontal();
+                if (GUILayout.Button("Start Wave"))
+                {
+                    waveManager.StartWave();
+                    LogAction("Started wave");
+                }
+                if (GUILayout.Button("Stop Wave"))
+                {
+                    waveManager.StopWave();
+                    LogAction("Stopped wave");
+                }
+                GUILayout.EndHorizontal();
+                
+                GUILayout.BeginHorizontal();
+                if (GUILayout.Button("Skip Wave"))
+                {
+                    waveManager.ForceCompleteWave();
+                    LogAction("Skipped wave");
+                }
+                if (GUILayout.Button("Clear Cubes"))
+                {
+                    waveManager.ClearAllCubes();
+                    LogAction("Cleared cubes");
+                }
+                GUILayout.EndHorizontal();
+                
+                // Wave index navigation (if using configuration)
+                if (waveManager.useWaveConfiguration && totalWaves > 0)
+                {
+                    GUILayout.Space(5);
+                    GUILayout.Label("Jump to Wave:");
+                    GUILayout.BeginHorizontal();
+                    bool canGoPrev = waveManager.currentWaveIndex > 0;
+                    bool canGoNext = waveManager.HasMoreWaves();
+                    
+                    GUI.enabled = canGoPrev;
+                    if (GUILayout.Button("< Prev")) PrevWave();
+                    GUI.enabled = canGoNext;
+                    if (GUILayout.Button("Next >")) NextWave();
+                    GUI.enabled = true;
+                    GUILayout.EndHorizontal();
+                }
+            });
+        }
+        
+        // Stage Control - Optional, only shows if StageManager is available
+        bool hasStageManager = stageManager != null;
+        showStage = DrawToggleSection("STAGE CONTROL" + (hasStageManager ? "" : " (Disabled)"), showStage);
+        if (showStage)
+        {
+            DrawSection("", () =>
+            {
+                if (!hasStageManager)
+                {
+                    GUILayout.Label("StageManager is disabled or not available.");
+                    GUILayout.Label("Use Wave panel for direct wave control.");
+                    return;
+                }
+                
+                string info = stageManager.CurrentStage != null 
+                    ? $"Stage {stageManager.CurrentStageIndex}: {stageManager.CurrentStage.stageName}"
+                    : "No active stage (auto-start disabled)";
+                GUILayout.Label(info);
+                
+                GUILayout.Space(3);
+                
+                // Manual start button (for when auto-start is disabled)
+                if (stageManager.CurrentStage == null)
+                {
+                    if (GUILayout.Button("Start First Stage", GUILayout.Height(28)))
+                    {
+                        stageManager.LoadStage(0);
+                        LogAction("Manually started Stage 0");
+                    }
+                    GUILayout.Space(3);
+                }
+                
+                GUILayout.BeginHorizontal();
+                if (GUILayout.Button("< Prev Stage")) stageManager.LoadPreviousStage();
+                if (GUILayout.Button("Restart")) stageManager.RestartCurrentStage();
+                if (GUILayout.Button("Next Stage >")) stageManager.LoadNextStage();
+                GUILayout.EndHorizontal();
+                
+                // Auto-advance toggle
+                GUILayout.Space(5);
+                bool autoAdvance = stageManager.AutoAdvanceWaves;
+                GUI.backgroundColor = autoAdvance ? Color.green : Color.gray;
+                if (GUILayout.Button(autoAdvance ? "Auto-Advance: ON" : "Auto-Advance: OFF", GUILayout.Height(25)))
+                {
+                    stageManager.AutoAdvanceWaves = !autoAdvance;
+                    LogAction($"Auto-advance: {(stageManager.AutoAdvanceWaves ? "ON" : "OFF")}");
+                }
+                GUI.backgroundColor = Color.white;
             });
         }
     }
     
     #region Actions
-    private void PrevStage() => stageManager?.LoadPreviousStage();
-    private void NextStage() => stageManager?.LoadNextStage();
-    private void Restart() => stageManager?.RestartCurrentStage();
-    private void ForceWin() => stageManager?.ForceCompleteStage(true);
-    private void ForceLose() => stageManager?.ForceCompleteStage(false);
-    private void SkipWave() => waveManager?.ForceCompleteWave();
     private void SetTime(float scale) => Time.timeScale = Mathf.Clamp(scale, 0, 4);
     
     private void PrevWave()
@@ -186,7 +184,7 @@ public class StagePanel : PrototypingPanelBase
             waveManager.currentWaveIndex--;
             waveManager.StopWave();
             waveManager.ClearAllCubes();
-            LogAction($"Moved to previous wave: {waveManager.GetWaveLabel()}");
+            LogAction($"Moved to wave: {waveManager.GetWaveLabel()}");
         }
     }
     
@@ -199,7 +197,7 @@ public class StagePanel : PrototypingPanelBase
             waveManager.currentWaveIndex++;
             waveManager.StopWave();
             waveManager.ClearAllCubes();
-            LogAction($"Moved to next wave: {waveManager.GetWaveLabel()}");
+            LogAction($"Moved to wave: {waveManager.GetWaveLabel()}");
         }
     }
     #endregion

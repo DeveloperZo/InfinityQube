@@ -7,8 +7,9 @@ public static class Enumerations
     public enum FaceStatus
     {
         None,
-        Corrupted,      // Acts like black cube when active
-        Enhanced,       // Creates detonation when captured
+        InfinityFace,      // Creates infinity resonance when landing on grid
+        MatrixFace,       // Creates matrix marker when landing on grid
+        RecursionFace,       // Creates recursion marker when landing on grid
     }
 
     public enum CubeFace

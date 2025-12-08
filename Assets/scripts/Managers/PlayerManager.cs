@@ -274,6 +274,12 @@ public class PlayerManager : MonoBehaviour, IManagerDebugInterface
             // Skip player cubes - player can pass through them
             if (cube.isPlayerCube) continue;
             
+            // Task 7: Skip phaseable Infinity cubes - player can pass through them
+            if (cube.type == Enumerations.CubeType.Infinity && cube.IsPhaseable())
+            {
+                continue;
+            }
+            
             if (cube.position.x == gridPos.x && cube.position.y == gridPos.y)
             {
                 return true;

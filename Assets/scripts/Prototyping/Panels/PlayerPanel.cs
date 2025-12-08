@@ -9,7 +9,7 @@ using static Enumerations;
 public class PlayerPanel : PrototypingPanelBase
 {
     public override string PanelName => "Player";
-    public override string PanelIcon => "👤";
+    public override string PanelIcon => "P";
     public override PrototypingCategory Category => PrototypingCategory.Player;
     public override int Priority => 30;
     
@@ -43,10 +43,7 @@ public class PlayerPanel : PrototypingPanelBase
     
     public override List<QuickAction> GetQuickActions()
     {
-        return new List<QuickAction>
-        {
-            new QuickAction("∞", ToggleUnlimitedMode) { Group = QuickActionGroup.Player, Priority = 30, Tooltip = "Unlimited markers", IsHighlighted = () => unlimitedMode }
-        };
+        return new List<QuickAction>();
     }
     
     public override void DrawGUI()
@@ -315,96 +312,37 @@ public class PlayerPanel : PrototypingPanelBase
     {
         DrawSection("", () =>
         {
-            // Recorded markers info
-            var markers = waveManager?.GetPreviousWaveMarkers();
-            int totalMarkers = markers?.GetTotalMarkerCount() ?? 0;
-            GUILayout.Label($"Recorded for Mirror: {totalMarkers} markers");
-            
-            GUILayout.Space(5);
-            
-            // Place marker at player position
             Vector2Int playerPos = playerManager?.currentTilePosition ?? Vector2Int.zero;
             GUILayout.Label($"Player Position: ({playerPos.x}, {playerPos.y})");
             
-            GUILayout.Label("Place (F key):");
+            GUILayout.Space(3);
+            
+            // Place markers at player position using current mode
+            GUILayout.Label("Place at player position:");
             GUILayout.BeginHorizontal();
-            if (GUILayout.Button("UnitMarker")) PlaceAndRecord(playerPos, MarkerMode.Unit);
-            if (GUILayout.Button("MatrixMarker")) PlaceAndRecord(playerPos, MarkerMode.Matrix);
-            if (GUILayout.Button("RecursionMarker")) PlaceAndRecord(playerPos, MarkerMode.Recursion);
-            if (GUILayout.Button("InfinityMarker")) PlaceAndRecord(playerPos, MarkerMode.Infinity);
+            if (GUILayout.Button("Unit")) PlaceMarkerAtPlayer(MarkerMode.Unit);
+            if (GUILayout.Button("Matrix")) PlaceMarkerAtPlayer(MarkerMode.Matrix);
+            if (GUILayout.Button("Recursion")) PlaceMarkerAtPlayer(MarkerMode.Recursion);
+            if (GUILayout.Button("Infinity")) PlaceMarkerAtPlayer(MarkerMode.Infinity);
             GUILayout.EndHorizontal();
             
             GUILayout.Space(5);
             
-            // Undo last marker
-            GUILayout.Label("Undo:");
-            GUILayout.BeginHorizontal();
-            if (GUILayout.Button("UnitMarker")) UndoLastMarker(MarkerMode.Unit);
-            if (GUILayout.Button("MatrixMarker")) UndoLastMarker(MarkerMode.Matrix);
-            if (GUILayout.Button("RecursionMarker")) UndoLastMarker(MarkerMode.Recursion);
-            if (GUILayout.Button("InfinityMarker")) UndoLastMarker(MarkerMode.Infinity);
-            GUILayout.EndHorizontal();
-            
-            GUILayout.Space(5);
-            
-            // Clear all
-            GUILayout.BeginHorizontal();
-            if (GUILayout.Button("Clear Grid Markers"))
+            // Clear markers
+            if (GUILayout.Button("Clear All Markers"))
             {
                 gridManager?.ClearAllMarkers();
+                actionManager?.MarkerSystem?.ClearAllActions();
+                LogAction("Cleared all markers");
             }
-            if (GUILayout.Button("Clear Recorded"))
-            {
-                waveManager?.ClearPreviousWaveMarkers();
-                LogAction("Cleared recorded markers");
-            }
-            GUILayout.EndHorizontal();;
-            
-            GUILayout.Space(5);
-            
-            // Quick place row
-            GUILayout.Label("Quick Place (at player Y):");
-            GUILayout.BeginHorizontal();
-            int width = gridManager?.Width ?? 10;
-            for (int x = 0; x < Mathf.Min(width, 12); x++)
-            {
-                int col = x;
-                if (GUILayout.Button($"{x}", GUILayout.Width(28)))
-                {
-                    Vector2Int pos = new Vector2Int(col, playerPos.y);
-                    PlaceAndRecord(pos, actionManager?.GetCurrentMode() ?? MarkerMode.Unit);
-                }
-            }
-            GUILayout.EndHorizontal();;
         });
     }
     
-    private void PlaceAndRecord(Vector2Int pos, MarkerMode mode)
+    private void PlaceMarkerAtPlayer(MarkerMode mode)
     {
+        Vector2Int pos = playerManager?.currentTilePosition ?? Vector2Int.zero;
         gridManager?.PlaceMarker(pos.x, pos.y);
-        waveManager?.RecordMarkerPosition(pos, mode);
-        LogAction($"Placed & recorded {mode} at ({pos.x}, {pos.y})");
-    }
-    
-    private void UndoLastMarker(MarkerMode mode)
-    {
-        var markers = waveManager?.GetPreviousWaveMarkers();
-        if (markers == null) return;
-        
-        List<Vector2Int> markerList = null;
-        switch (mode)
-        {
-            case MarkerMode.Unit: markerList = markers.unitMarkerPositions; break;
-            case MarkerMode.Recursion: markerList = markers.recursionMarkerPositions; break;
-            case MarkerMode.Matrix: markerList = markers.matrixMarkerPositions; break;
-        }
-        
-        if (markerList != null && markerList.Count > 0)
-        {
-            Vector2Int lastPos = markerList[markerList.Count - 1];
-            waveManager?.UnrecordMarkerPosition(lastPos, mode);
-            LogAction($"Undid {mode} marker at ({lastPos.x}, {lastPos.y})");
-        }
+        LogAction($"Placed {mode} marker at ({pos.x}, {pos.y})");
     }
     #endregion
     

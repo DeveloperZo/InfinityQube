@@ -26,7 +26,7 @@ public class FinalIntegrationTest : MonoBehaviour
     private PlayerMarkerSystem markerSystem;
     private GridManager gridManager;
     private CubeManager testCube;
-    private PlayerManager playerManager;
+    private PlayerManager playerManager;    
 
     void Start()
     {
@@ -338,7 +338,7 @@ public class FinalIntegrationTest : MonoBehaviour
         // Test that top face is painted
         CubeFace topFace = infinityCube.GetTopFace();
         FaceStatus topFaceStatus = infinityCube.GetFaceStatus(topFace);
-        AssertTrue(topFaceStatus == FaceStatus.Corrupted, "Infinity cube top face painted on marker hit");
+        AssertTrue(topFaceStatus == FaceStatus.InfinityFace, "Infinity cube top face painted on marker hit");
         
         // Test tile corruption mechanics
         bool initialCorruption = testTile.IsCorrupted;
@@ -370,10 +370,10 @@ public class FinalIntegrationTest : MonoBehaviour
         CubeManager testCube = testCubeObj.GetComponent<CubeManager>();
         
         // Test face painting
-        testCube.PaintFace(CubeFace.Bottom, FaceStatus.Corrupted, Color.black, -1);
+        testCube.PaintFace(CubeFace.Bottom, FaceStatus.InfinityFace, Color.black, -1);
         
         FaceStatus bottomStatus = testCube.GetFaceStatus(CubeFace.Bottom);
-        AssertTrue(bottomStatus == FaceStatus.Corrupted, "Face painting applied correctly");
+        AssertTrue(bottomStatus == FaceStatus.InfinityFace  , "Face painting applied correctly");
         
         // Test effective type change
         CubeType effectiveType = testCube.GetEffectiveType();

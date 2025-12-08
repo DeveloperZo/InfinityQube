@@ -1263,11 +1263,39 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
             }
         }
         
+        // Task 6: Apply line divider penalty for cube escape
+        int penaltyRows = GetPenaltyRowsForCubeType(cubeType);
+        if (penaltyRows > 0 && grid != null)
+        {
+            grid.MoveLineDivider(-penaltyRows, false);
+            DebugLog($"[Task 6] Applied {penaltyRows} row penalty for {cubeType} escape");
+        }
+        
         // Process as normal cube behavior for wave completion tracking
         if (cubeType == CubeType.Unit)
         {
             OnNonBlackCubeProcessed(cubeType, false); // false = not captured
             this.Log($"Normal cube escaped - wave completion check triggered", showDebugInfo);
+        }
+    }
+    
+    /// <summary>
+    /// Task 6: Gets penalty rows for cube type based on design doc
+    /// Unit: 1 row, Matrix: 2 rows, Recursion: 2 rows, Infinity: 0 rows
+    /// </summary>
+    private int GetPenaltyRowsForCubeType(CubeType cubeType)
+    {
+        switch (cubeType)
+        {
+            case CubeType.Unit:
+                return 1;
+            case CubeType.Matrix:
+            case CubeType.Recursion:
+                return 2;
+            case CubeType.Infinity:
+                return 0; // No penalty for Infinity (intended behavior)
+            default:
+                return 1;
         }
     }
 
@@ -1314,6 +1342,14 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
         if (processedNonBlackCubes >= totalNonBlackCubes)
         {
             string reason = wasCaptured ? "All cubes captured!" : "All cubes processed!";
+            
+            // Task 6: Apply line divider reward for perfect wave clear
+            if (wasCaptured && grid != null)
+            {
+                grid.MoveLineDivider(1, true);
+                DebugLog($"[Task 6] Applied 1 row reward for perfect wave clear");
+            }
+            
             StartCoroutine(ShowCompletionMessage(reason));
         }
     }

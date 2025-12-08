@@ -50,6 +50,8 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
     public bool isDestroyed = false;
     public bool isPlayerCube = false;
     public bool isMatrixCube = false; // True for Matrix cubes that capture in an area
+    [SerializeField] private bool isPhaseable = false; // Task 7: Phaseable state for resonance system
+    [SerializeField] private int phaseableMovesRemaining = 0; // Task 7: Remaining moves in phaseable state
     public float rainSpeed = 3f;
     public float rainHeight = 5f;
     public int targetRow = -1;
@@ -568,6 +570,17 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
         RotateFaceMapping();
         ProcessFaceDurations();
         UpdateFaceRotationTracking(); // Enhanced face rotation tracking
+        
+        // Task 7: Decrement phaseable moves remaining
+        if (isPhaseable && phaseableMovesRemaining > 0)
+        {
+            phaseableMovesRemaining--;
+            if (phaseableMovesRemaining <= 0)
+            {
+                isPhaseable = false;
+                this.Log($"Phaseable state expired for {type} cube at ({position.x}, {position.y})", EnableDebugLogs);
+            }
+        }
 
         oldPosition = new Vector2Int(position.x, position.y + 1); // Previous position for face painting
         
@@ -626,6 +639,17 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
         RotateFaceMapping();
         ProcessFaceDurations();
         UpdateFaceRotationTracking(); // Enhanced face rotation tracking
+        
+        // Task 7: Decrement phaseable moves remaining
+        if (isPhaseable && phaseableMovesRemaining > 0)
+        {
+            phaseableMovesRemaining--;
+            if (phaseableMovesRemaining <= 0)
+            {
+                isPhaseable = false;
+                this.Log($"Phaseable state expired for {type} cube at ({position.x}, {position.y})", EnableDebugLogs);
+            }
+        }
 
         oldPosition = new Vector2Int(position.x, position.y - 1); // Previous position for face painting
 
@@ -732,6 +756,38 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
         CubeFace downFace = GetCurrentDownFace();
         return faceStatuses[(int)downFace];
     }
+    
+    /// <summary>
+    /// Task 8: Predicts which painted face will become the down face after N moves
+    /// Returns the face status that will be active after the specified number of moves
+    /// </summary>
+    public FaceStatus GetPredictedFaceStatus(int movesAhead = 1)
+    {
+        if (movesAhead <= 0) return GetActiveFaceStatus();
+        
+        // Calculate which face will be at the bottom position after N rotations
+        // Rotation sequence: Back->Bottom, Top->Back, Front->Top, Bottom->Front
+        // After 1 move: Back (index 3) becomes Bottom (index 0)
+        // After 2 moves: Top (index 1) becomes Bottom (index 0)
+        // After 3 moves: Front (index 2) becomes Bottom (index 0)
+        // After 4 moves: Bottom (index 0) becomes Bottom again (cycle)
+        
+        // Mapping: 1 move → Back(3), 2 moves → Top(1), 3 moves → Front(2), 4 moves → Bottom(0)
+        int[] sourceIndices = { 0, 3, 1, 2 }; // Index by (movesAhead % 4)
+        int sourceIndex = sourceIndices[movesAhead % 4];
+        
+        CubeFace sourceFace = currentFaceMapping[sourceIndex];
+        return faceStatuses[(int)sourceFace];
+    }
+    
+    /// <summary>
+    /// Task 8: Checks if a painted face will touch the grid in the specified number of moves
+    /// </summary>
+    public bool WillPaintedFaceTouchGrid(int movesAhead = 1)
+    {
+        FaceStatus predictedStatus = GetPredictedFaceStatus(movesAhead);
+        return predictedStatus != FaceStatus.None;
+    }
 
     public bool HasActiveFaceStatus(FaceStatus status)
     {
@@ -744,8 +800,12 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
 
         switch (activeStatus)
         {
-            case FaceStatus.Corrupted:
+            case FaceStatus.InfinityFace:
                 return CubeType.Infinity;
+            case FaceStatus.MatrixFace:
+                return CubeType.Matrix;
+            case FaceStatus.RecursionFace:
+                return CubeType.Recursion;
             default:
                 return type;
         }
@@ -753,21 +813,61 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
 
     public bool CanBeCaptured()
     {
-        FaceStatus activeStatus = GetActiveFaceStatus();
+            FaceStatus activeStatus = GetActiveFaceStatus();
 
         switch (activeStatus)
         {
-            case FaceStatus.Corrupted:
+            case FaceStatus.InfinityFace:
                 return false;
             default:
                 return type != CubeType.Infinity;
+        }
+    }
+    
+    /// <summary>
+    /// Task 7: Gets whether this cube is currently phaseable (can be passed through)
+    /// </summary>
+    public bool IsPhaseable()
+    {
+        return isPhaseable && phaseableMovesRemaining > 0;
+    }
+    
+    /// <summary>
+    /// Task 7: Sets the phaseable state for this cube (used by resonance system)
+    /// </summary>
+    public void SetPhaseable(int movesRemaining = 2)
+    {
+        if (type != CubeType.Infinity)
+        {
+            this.LogWarning($"Attempted to set phaseable state on non-Infinity cube {type}", EnableDebugLogs);
+            return;
+        }
+        
+        isPhaseable = true;
+        phaseableMovesRemaining = movesRemaining;
+        this.Log($"Set phaseable state for {type} cube at ({position.x}, {position.y}) for {movesRemaining} moves", EnableDebugLogs);
+        
+        // Task 7: Visual feedback for phaseable state (mock with log for now)
+        UpdatePhaseableVisual();
+    }
+    
+    /// <summary>
+    /// Task 7: Updates visual feedback for phaseable state
+    /// Currently uses logs - can be enhanced with visual effects later
+    /// </summary>
+    private void UpdatePhaseableVisual()
+    {
+        if (isPhaseable && phaseableMovesRemaining > 0)
+        {
+            this.Log($"[Task 7] Phaseable visual: {type} cube at ({position.x}, {position.y}) is phaseable ({phaseableMovesRemaining} moves remaining)", EnableDebugLogs);
+            // TODO: Add visual effect (glow, transparency, etc.) when visual system is ready
         }
     }
 
     public bool ShouldCreateDetonation()
     {
         FaceStatus activeStatus = GetActiveFaceStatus();
-        return activeStatus == FaceStatus.Enhanced || type == CubeType.Matrix;
+        return activeStatus == FaceStatus.MatrixFace || type == CubeType.Matrix;
     }
 
     public void PaintFace(CubeFace face, FaceStatus status, Color color, int duration = -1)
@@ -1046,7 +1146,7 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
     // Debug and testing methods
     public void TestPaintFace(CubeFace face, FaceStatus status)
     {
-        Color color = status == FaceStatus.Corrupted ? Color.black : Color.blue;
+        Color color = status == FaceStatus.InfinityFace ? Color.black : Color.blue;
         PaintFace(face, status, color, 5);
         this.Log($"Test painted {face} with {status} status", EnableDebugLogs);
     }
@@ -1056,7 +1156,7 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
         if (!showFaceIndicators) return;
 
         Color[] testColors = { Color.red, Color.green, Color.blue, Color.yellow };
-        FaceStatus[] testStatuses = { FaceStatus.Corrupted, FaceStatus.Enhanced, FaceStatus.Corrupted, FaceStatus.Enhanced };
+        FaceStatus[] testStatuses = { FaceStatus.InfinityFace, FaceStatus.MatrixFace, FaceStatus.RecursionFace, FaceStatus.RecursionFace };
 
         for (int i = 0; i < 4; i++)
         {
@@ -1109,8 +1209,8 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
     // Public methods for external testing
     public void SetFaceStatus(CubeFace face, FaceStatus status, int duration = -1)
     {
-        Color color = status == FaceStatus.Corrupted ? Color.red :
-                     status == FaceStatus.Enhanced ? Color.blue : Color.white;
+        Color color = status == FaceStatus.InfinityFace ? Color.red :
+                     status == FaceStatus.MatrixFace ? Color.blue : Color.white;
         PaintFace(face, status, color, duration);
     }
 
@@ -1148,7 +1248,7 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
         if (type == CubeType.Infinity)
         {
             CubeFace topFace = GetTopFace();
-            PaintFace(topFace, FaceStatus.Corrupted, Color.black, -1);
+            PaintFace(topFace, FaceStatus.InfinityFace, Color.black, -1);
             CreateMarkerHitEffect();
             this.Log($"Infinity cube at ({position.x}, {position.y}) hit by marker - top face painted for corruption", EnableDebugLogs);
         }
@@ -1223,7 +1323,7 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
     private bool HasCorruptedDownFace()
     {
         CubeFace downFace = GetCurrentDownFace();
-        return faceStatuses[(int)downFace] == FaceStatus.Corrupted;
+        return faceStatuses[(int)downFace] == FaceStatus.InfinityFace;
     }
 
     /// <summary>

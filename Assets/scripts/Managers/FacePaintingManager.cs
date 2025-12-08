@@ -391,7 +391,7 @@ public class FacePaintingManager : MonoBehaviour, IManagerDebugInterface
     /// </summary>
     public void SetupCorruptionPattern(List<Vector2Int> positions, int duration = 3)
     {
-        BatchSetFacePainting(positions, FaceStatus.Corrupted, Color.black, duration);
+        BatchSetFacePainting(positions, FaceStatus.InfinityFace, Color.black, duration);
     }
 
     /// <summary>
@@ -399,9 +399,16 @@ public class FacePaintingManager : MonoBehaviour, IManagerDebugInterface
     /// </summary>
     public void SetupEnhancementPattern(List<Vector2Int> positions, int duration = 3)
     {
-        BatchSetFacePainting(positions, FaceStatus.Enhanced, Color.blue, duration);
+        BatchSetFacePainting(positions, FaceStatus.MatrixFace, Color.blue, duration);
     }
 
+    /// <summary>
+    /// Quick setup for recursion painting (white face)
+    /// </summary>
+    public void SetupRecursionPattern(List<Vector2Int> positions, int duration = 3)
+    {
+        BatchSetFacePainting(positions, FaceStatus.RecursionFace, Color.white, duration);
+    }
     /// <summary>
     /// Sets up a single tile for face painting
     /// </summary>

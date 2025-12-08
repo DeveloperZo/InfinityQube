@@ -38,6 +38,9 @@ public class Tile : MonoBehaviour
     [SerializeField] private GameObject softHighlightObject;
     [SerializeField] private Material playerHoverMaterial;
     [SerializeField] private Color currentHoverColor = new Color(0.5f, 0.6f, 0.7f, 0.5f); // Default: Unit blue-gray
+    
+    [Header("Task 8: Face Painting Telegraph")]
+    [SerializeField] private GameObject telegraphObject; // Visual indicator for painted face grid touch
     #endregion
 
     #region Component Delegates
@@ -51,6 +54,12 @@ public class Tile : MonoBehaviour
     private Renderer tileRenderer;
     private bool isInitialized = false;
     private bool isBlackened = false;
+    
+    // Cached manager references (Task 6/7/8)
+    private GridManager cachedGridManager;
+    private WaveManager cachedWaveManager;
+    private PlayerActionManager cachedPlayerActionManager;
+    private Coroutine telegraphPulseCoroutine;
     #endregion
 
     #region Public Properties
@@ -100,6 +109,11 @@ public class Tile : MonoBehaviour
         x = xPos;
         y = yPos;
         isInitialized = true;
+        
+        // Cache manager references (Task 6/7/8) - done once per tile
+        cachedGridManager = GridManager.Instance;
+        cachedWaveManager = FindObjectOfType<WaveManager>();
+        cachedPlayerActionManager = FindObjectOfType<PlayerActionManager>();
 
         // Initialize hover material
         if (playerHoverMaterial == null)
@@ -467,8 +481,16 @@ public class Tile : MonoBehaviour
 
         currentCube = cube;
         
+        // Task 8: Grid touch detection for painted faces
+        // Check if a painted face has just touched the grid (become the down face)
+        FaceStatus activeFaceStatus = cube.GetActiveFaceStatus();
+        if (activeFaceStatus != FaceStatus.None)
+        {
+            HandlePaintedFaceGridTouch(cube, activeFaceStatus);
+        }
+        
         // Check for corruption from infinity cubes with painted faces
-        if (cube.type == CubeType.Infinity && cube.GetActiveFaceStatus() == FaceStatus.Corrupted)
+        if (cube.type == CubeType.Infinity && cube.GetActiveFaceStatus() == FaceStatus.InfinityFace)
         {
             CorruptTile(corruptionDuration, maxCorruptionInteractions);
             Debug.Log($"Tile ({x},{y}) corrupted by infinity cube with painted face");
@@ -477,7 +499,7 @@ public class Tile : MonoBehaviour
         // Handle corrupted tile behavior
         if (IsCorrupted && cube.type != CubeType.Infinity)
         {
-            cube.PaintCurrentDownFace(FaceStatus.Corrupted, Color.black, -1);
+            cube.PaintCurrentDownFace(FaceStatus.InfinityFace, Color.black, -1);
             tileCorruption.IncrementInteraction();
             Debug.Log($"Corrupted tile painted {cube.type} cube at ({x},{y}). Interactions: {tileCorruption.CorruptionInteractions}/{tileCorruption.MaxCorruptionInteractions}");
             
@@ -497,6 +519,224 @@ public class Tile : MonoBehaviour
         // Handle face painting
         TryPaintCube(cube);
         NotifyFacePaintingManager(cube);
+        
+        // Task 8: Update telegraph for painted faces that will touch grid soon
+        UpdatePaintedFaceTelegraph(cube);
+    }
+    
+    /// <summary>
+    /// Task 8: Updates telegraph visualization for painted faces that will touch grid in 1 turn
+    /// </summary>
+    private void UpdatePaintedFaceTelegraph(CubeManager cube)
+    {
+        if (cube == null) return;
+        
+        // Check if a painted face will touch grid in 1 move
+        if (cube.WillPaintedFaceTouchGrid(1))
+        {
+            FaceStatus predictedStatus = cube.GetPredictedFaceStatus(1);
+            ShowTelegraphEffect(predictedStatus);
+            Debug.Log($"[Task 8] Telegraph: Painted face ({predictedStatus}) will touch grid at ({x},{y}) in 1 move");
+        }
+        else
+        {
+            HideTelegraphEffect();
+        }
+    }
+    
+    /// <summary>
+    /// Task 8: Shows telegraph pulse effect on tile
+    /// </summary>
+    private void ShowTelegraphEffect(FaceStatus faceStatus)
+    {
+        // Create telegraph visual if needed
+        if (telegraphObject == null)
+        {
+            telegraphObject = GameObject.CreatePrimitive(PrimitiveType.Quad);
+            telegraphObject.name = $"Telegraph_{x}_{y}";
+            telegraphObject.transform.SetParent(transform);
+            telegraphObject.transform.localPosition = new Vector3(0, 0.52f, 0);
+            telegraphObject.transform.localRotation = Quaternion.Euler(90, 0, 0);
+            telegraphObject.transform.localScale = new Vector3(0.9f, 0.9f, 1f);
+            
+            // Remove collider
+            Destroy(telegraphObject.GetComponent<Collider>());
+            
+            // Set up transparent material
+            Renderer rend = telegraphObject.GetComponent<Renderer>();
+            Material mat = new Material(Shader.Find("Standard"));
+            mat.SetFloat("_Mode", 3); // Transparent
+            mat.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
+            mat.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+            mat.SetInt("_ZWrite", 0);
+            mat.EnableKeyword("_ALPHABLEND_ON");
+            mat.renderQueue = 3000;
+            rend.material = mat;
+        }
+        
+        // Set color based on face status
+        Color telegraphColor = GetTelegraphColor(faceStatus);
+        telegraphColor.a = 0.6f;
+        
+        Renderer renderer = telegraphObject.GetComponent<Renderer>();
+        if (renderer != null && renderer.material != null)
+        {
+            renderer.material.color = telegraphColor;
+        }
+        
+        telegraphObject.SetActive(true);
+        
+        // Stop existing pulse and start new one
+        if (telegraphPulseCoroutine != null)
+        {
+            StopCoroutine(telegraphPulseCoroutine);
+        }
+        telegraphPulseCoroutine = StartCoroutine(PulseTelegraph());
+    }
+    
+    /// <summary>
+    /// Task 8: Hides telegraph effect
+    /// </summary>
+    private void HideTelegraphEffect()
+    {
+        if (telegraphObject != null)
+        {
+            telegraphObject.SetActive(false);
+        }
+    }
+    
+    /// <summary>
+    /// Task 8: Gets telegraph color based on face status
+    /// </summary>
+    private Color GetTelegraphColor(FaceStatus faceStatus)
+    {
+        switch (faceStatus)
+        {
+            case FaceStatus.MatrixFace:
+                return new Color(0.3f, 0.7f, 1f); // Light blue for Matrix
+            case FaceStatus.RecursionFace:
+                return new Color(0.8f, 0.5f, 0.2f); // Amber for Recursion
+            case FaceStatus.InfinityFace:
+                return new Color(0.2f, 0.2f, 0.2f); // Dark for Infinity
+            default:
+                return Color.white;
+        }
+    }
+    
+    /// <summary>
+    /// Task 8: Pulses the telegraph effect
+    /// </summary>
+    private System.Collections.IEnumerator PulseTelegraph()
+    {
+        if (telegraphObject == null) yield break;
+        
+        float pulseSpeed = 2f;
+        float minAlpha = 0.3f;
+        float maxAlpha = 0.8f;
+        float elapsed = 0f;
+        
+        Renderer renderer = telegraphObject.GetComponent<Renderer>();
+        if (renderer == null || renderer.material == null) yield break;
+        
+        while (telegraphObject != null && telegraphObject.activeSelf)
+        {
+            elapsed += Time.deltaTime;
+            float alpha = Mathf.Lerp(minAlpha, maxAlpha, (Mathf.Sin(elapsed * pulseSpeed) + 1f) / 2f);
+            
+            Color color = renderer.material.color;
+            color.a = alpha;
+            renderer.material.color = color;
+            
+            yield return null;
+        }
+    }
+    
+    /// <summary>
+    /// Task 8: Handles painted face grid touch detection and triggers appropriate effects
+    /// </summary>
+    private void HandlePaintedFaceGridTouch(CubeManager cube, FaceStatus faceStatus)
+    {
+        if (cachedPlayerActionManager == null) return;
+        
+        Vector2Int centerPosition = new Vector2Int(x, y);
+        
+        switch (faceStatus)
+        {
+            case FaceStatus.MatrixFace:
+                Debug.Log($"[Task 8] MatrixFace touched grid at ({x},{y}) - creating 3x3 detonation marker");
+                cachedPlayerActionManager.CreateCubeMarker(centerPosition, PlayerMarkerSystem.CubeMarkerType.Matrix, 3);
+                ApplyLineDividerReward(1); // Task 6: Reward for painted face trigger
+                break;
+                
+            case FaceStatus.RecursionFace:
+                Debug.Log($"[Task 8] RecursionFace touched grid at ({x},{y}) - creating 5 tile cross marker");
+                CreateRecursionCrossMarker(centerPosition);
+                ApplyLineDividerReward(1); // Task 6: Reward for painted face trigger
+                break;
+                
+            case FaceStatus.InfinityFace:
+                Debug.Log($"[Task 8] InfinityFace touched grid at ({x},{y}) - triggering resonance system");
+                TriggerResonanceEffect();
+                ApplyLineDividerReward(2); // Task 6: Reward for resonance trigger (2 rows)
+                break;
+        }
+    }
+    
+    /// <summary>
+    /// Task 8: Creates a 5-tile cross marker pattern for RecursionFace
+    /// </summary>
+    private void CreateRecursionCrossMarker(Vector2Int centerPosition)
+    {
+        if (cachedPlayerActionManager == null || cachedGridManager == null) return;
+        
+        // Build cross pattern: center + 4 adjacent tiles
+        Vector2Int[] offsets = { Vector2Int.zero, Vector2Int.up, Vector2Int.down, Vector2Int.left, Vector2Int.right };
+        
+        foreach (var offset in offsets)
+        {
+            Vector2Int pos = centerPosition + offset;
+            if (cachedGridManager.IsValidGridPosition(pos) && 
+                cachedPlayerActionManager.CanPlaceRecursionMarker() && 
+                cachedPlayerActionManager.PlaceRecursionMarker(pos))
+            {
+                Debug.Log($"[Task 8] Created Recursion marker at ({pos.x},{pos.y}) for cross pattern");
+            }
+        }
+    }
+    
+    /// <summary>
+    /// Task 7: Triggers resonance effect when InfinityFace touches grid
+    /// Makes all Infinity cubes on grid phaseable for 2-4 moves
+    /// </summary>
+    private void TriggerResonanceEffect()
+    {
+        if (cachedWaveManager == null || cachedWaveManager.activeCubes == null)
+        {
+            Debug.LogWarning("[Task 7] WaveManager not found - cannot trigger resonance");
+            return;
+        }
+        
+        int phaseableMoves = UnityEngine.Random.Range(2, 5); // 2-4 moves
+        int infinityCubesAffected = 0;
+        
+        foreach (var activeCube in cachedWaveManager.activeCubes)
+        {
+            if (activeCube != null && !activeCube.isDestroyed && activeCube.type == CubeType.Infinity)
+            {
+                activeCube.SetPhaseable(phaseableMoves);
+                infinityCubesAffected++;
+            }
+        }
+        
+        Debug.Log($"[Task 7] Resonance: {infinityCubesAffected} Infinity cubes phaseable for {phaseableMoves} moves");
+    }
+    
+    /// <summary>
+    /// Task 6: Applies line divider reward (silently skips if disabled)
+    /// </summary>
+    private void ApplyLineDividerReward(int rows)
+    {
+        cachedGridManager?.MoveLineDivider(rows, true);
     }
 
     private void HandleReinforcedCube(CubeManager cube)

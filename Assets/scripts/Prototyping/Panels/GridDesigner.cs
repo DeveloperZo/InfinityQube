@@ -8,9 +8,9 @@ using static Enumerations;
 public class GridDesigner : PrototypingPanelBase
 {
     public override string PanelName => "Grid";
-    public override string PanelIcon => "🎨";
+    public override string PanelIcon => "G";
     public override PrototypingCategory Category => PrototypingCategory.Grid;
-    public override int Priority => 20;
+    public override int Priority => 25;
     
     private TileState selectedState = TileState.Normal;
     private Vector2Int targetPos = Vector2Int.zero;
@@ -21,10 +21,7 @@ public class GridDesigner : PrototypingPanelBase
     
     public override List<QuickAction> GetQuickActions()
     {
-        return new List<QuickAction>
-        {
-            new QuickAction("Reset", ResetAll) { Group = QuickActionGroup.Grid, Priority = 20, Tooltip = "Reset tiles" }
-        };
+        return new List<QuickAction>();
     }
     
     public override void DrawGUI()

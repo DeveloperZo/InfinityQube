@@ -25,6 +25,10 @@ public class StageManager : MonoBehaviour, IManagerDebugInterface
     [SerializeField] private float stageTransitionDelay = 2f;
     [SerializeField] private bool restartOnFailure = true;
 
+    [Header("Prototyping")]
+    [Tooltip("When true, stages will not auto-start. Use Prototyping window to manually start.")]
+    [SerializeField] private bool disableAutoStart = true;
+
     [Header("Debug")]
     [SerializeField] private bool showStageInfo = false;
     #endregion
@@ -62,10 +66,24 @@ public class StageManager : MonoBehaviour, IManagerDebugInterface
             SubscribeToWaveEvents();
         }
 
-        if (startingStageIndex != -1)
+        // Only auto-start if not disabled (for prototyping mode)
+        if (!disableAutoStart && startingStageIndex != -1)
         {
             LoadStage(startingStageIndex);
         }
+        else if (disableAutoStart)
+        {
+            Debug.Log("[StageManager] Auto-start disabled. Use Prototyping window to start stages manually.");
+        }
+    }
+    
+    /// <summary>
+    /// Allows external control of auto-start (for prototyping tools)
+    /// </summary>
+    public bool DisableAutoStart
+    {
+        get => disableAutoStart;
+        set => disableAutoStart = value;
     }
 
     private void OnDestroy()
