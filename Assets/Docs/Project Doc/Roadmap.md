@@ -48,9 +48,9 @@ Points reflect actual development time, not complexity. A "week gap" between com
 | | 1.4 Stage Content Creation | ⬜ Pending | 20 pts |
 | | 1.5 RPG/Progression Ideation | ⬜ Pending | 10 pts |
 | | 1.6 Visual Polish Pass | ⬜ Pending | 5 pts |
-| **Phase 2** | 2.1-2.9 Content & Polish | ⬜ Pending | 60 pts |
-| **Phase 3** | 3.1-3.5 QA & Refinement | ⬜ Pending | 35 pts |
-| **Phase 4** | 4.1-4.7 Steam & Release | ⬜ Pending | 40 pts |
+| **Phase 2** | 2.1-2.9 Content & Polish | ⬜ Pending | 63 pts |
+| **Phase 3** | 3.1-3.8 Polish & Commercial Prep | ⬜ Pending | 55 pts |
+| **Phase 4** | 4.1-4.9 Steam & Release | ⬜ Pending | 50 pts |
 
 ---
 
@@ -188,7 +188,7 @@ Points reflect actual development time, not complexity. A "week gap" between com
 
 ## Phase 2: Content Completion & First Polish Pass
 **Goal**: Complete all content and achieve first polish level  
-**Estimated Total**: ~60 pts (~3 months at 22 pts/month)
+**Estimated Total**: ~63 pts
 
 ### Milestone 2.1: Complete Stage Content
 - **Points**: 10 (~2 weeks)
@@ -198,9 +198,13 @@ Points reflect actual development time, not complexity. A "week gap" between com
 - **Points**: 5 (~1 week)
 - Complete save/load system for game progress
 
-### Milestone 2.3: Settings & Options System
-- **Points**: 5 (~1 week)
-- Complete settings menu with persistence
+### Milestone 2.3: Menu & UI Systems
+- **Points**: 8 (~1.5 weeks)
+- **Tasks**:
+  - [ ] Pause menu (resume, settings, quit to menu)
+  - [ ] Stage select screen
+  - [ ] Settings persistence (audio, display)
+  - [ ] Stage results/rating display
 
 ### Milestone 2.4: Interactive Tutorial System
 - **Points**: 10 (~2 weeks)
@@ -228,63 +232,124 @@ Points reflect actual development time, not complexity. A "week gap" between com
 
 ---
 
-## Phase 3: Polish, Refinement & QA
-**Goal**: Achieve commercial polish level through iterative refinement  
-**Estimated Total**: ~35 pts (~1.5 months at 22 pts/month)
+## Phase 3: Polish, Refinement & Commercial Prep
+**Goal**: Achieve commercial polish level and prepare for Steam release  
+**Estimated Total**: ~55 pts
 
 ### Milestone 3.1: Second Polish Pass - Balance & Tuning
-- **Points**: 10 (~2 weeks)
+- **Points**: 10
 - Comprehensive balance pass and difficulty tuning
 
 ### Milestone 3.2: UI/UX Polish Pass
-- **Points**: 7 (~1.5 weeks)
+- **Points**: 7
 - Polish all user interfaces and user experience
 
-### Milestone 3.3: Performance Optimization
-- **Points**: 5 (~1 week)
+### Milestone 3.3: Input & Display Systems
+- **Points**: 8
+- **Tasks**:
+  - [ ] Controller support (full gamepad playability)
+  - [ ] Keyboard/controller rebinding
+  - [ ] Resolution and display mode options
+  - [ ] UI scaling for different resolutions
+
+### Milestone 3.4: Performance Optimization
+- **Points**: 5
 - Optimize performance for commercial release
 
-### Milestone 3.4: Comprehensive QA & Bug Fixing
-- **Points**: 8 (~1.5 weeks)
+### Milestone 3.5: Comprehensive QA & Bug Fixing
+- **Points**: 8
 - Find and fix all critical bugs
 
-### Milestone 3.5: Accessibility & Localization Prep
-- **Points**: 5 (~1 week)
+### Milestone 3.6: Accessibility & Localization Prep
+- **Points**: 5
 - Ensure game is accessible and ready for localization
+
+### Milestone 3.7: Business & Legal Setup
+- **Points**: 5
+- **Tasks**:
+  - [ ] Steamworks Partner account registration
+  - [ ] Privacy Policy creation
+  - [ ] EULA preparation
+  - [ ] IARC age rating questionnaire
+  - [ ] Business entity decisions (if needed)
+
+### Milestone 3.8: Demo Build (Steam Next Fest)
+- **Points**: 7
+- **Tasks**:
+  - [ ] Define demo scope (stages 1-3 or subset)
+  - [ ] Demo-specific intro/outro messaging
+  - [ ] Wishlist CTA integration
+  - [ ] Demo build pipeline
+  - [ ] Apply to Steam Next Fest (4-6 weeks before event)
 
 ---
 
-## Phase 4: Steam Integration & Release Preparation
-**Goal**: Platform integration and commercial release readiness  
-**Estimated Total**: ~40 pts (~2 months at 22 pts/month)
+## Phase 4: Steam Integration & Release
+**Goal**: Platform integration, store presence, and commercial launch  
+**Estimated Total**: ~50 pts
 
 ### Milestone 4.1: Steam SDK Integration
-- **Points**: 7 (~1.5 weeks)
-- Integrate Steamworks SDK
+- **Points**: 7
+- **Tasks**:
+  - [ ] Steamworks.NET integration
+  - [ ] Steam initialization and error handling
+  - [ ] Steam overlay support
+  - [ ] Build pipeline for Steam uploads
 
 ### Milestone 4.2: Steam Achievements & Stats
-- **Points**: 5 (~1 week)
-- Implement Steam achievements and statistics
+- **Points**: 5
+- **Tasks**:
+  - [ ] Define achievement list (10-15 achievements MVP)
+  - [ ] Implement achievement triggers
+  - [ ] Steam stats tracking integration
 
 ### Milestone 4.3: Steam Cloud Saves
-- **Points**: 5 (~1 week)
+- **Points**: 5
 - Implement Steam cloud save functionality
 
-### Milestone 4.4: Steam Store Page & Marketing Assets
-- **Points**: 7 (~1.5 weeks)
-- Create Steam store presence
+### Milestone 4.4: Steam Store Page & Assets
+- **Points**: 8
+- **Tasks**:
+  - [ ] Capsule images (header, library, small, hero)
+  - [ ] 5+ high-quality screenshots
+  - [ ] Store description and tags
+  - [ ] System requirements
+  - [ ] "Coming Soon" page live (start wishlist building)
 
-### Milestone 4.5: Final Polish & Release Candidate
-- **Points**: 7 (~1.5 weeks)
+### Milestone 4.5: Launch Trailer
+- **Points**: 5
+- **Tasks**:
+  - [ ] Gameplay capture
+  - [ ] Trailer editing (30-60 seconds)
+  - [ ] Trailer thumbnail
+  - [ ] Upload to Steam and YouTube
+
+### Milestone 4.6: Final Polish & Release Candidate
+- **Points**: 7
 - Final polish pass and release candidate build
 
-### Milestone 4.6: Beta Testing Program
-- **Points**: 5 (~1 week)
-- Execute beta testing and gather feedback
+### Milestone 4.7: Beta Testing (Steam Playtest)
+- **Points**: 5
+- **Tasks**:
+  - [ ] Steam Playtest branch setup
+  - [ ] Recruit beta testers
+  - [ ] Feedback collection and triage
+  - [ ] Critical bug fixes
 
-### Milestone 4.7: Launch Day Preparation
-- **Points**: 4 (~1 week)
-- Prepare for commercial launch
+### Milestone 4.8: Launch Preparation
+- **Points**: 5
+- **Tasks**:
+  - [ ] Press/streamer key distribution
+  - [ ] Launch day announcement prep
+  - [ ] Community response plan
+  - [ ] Day-1 patch pipeline ready
+
+### Milestone 4.9: Post-Launch Buffer
+- **Points**: 3
+- **Tasks**:
+  - [ ] Day-1/Week-1 patch releases
+  - [ ] Review monitoring and response
+  - [ ] Critical bug triage
 
 ---
 
@@ -305,18 +370,58 @@ Milestone 1.0 ✅ → 1.1 🔄 → 1.3 → 1.4 → 2.x → 3.x → 4.x → Relea
 
 ---
 
+## Minimum Viable Product (MVP) Definition
+
+**Purpose**: Define the shippable floor if timeline compresses. This gives permission to cut scope without compromising core identity.
+
+### MVP Requirements (Must Ship)
+
+| Element | Full Scope | MVP Scope | Notes |
+|---------|------------|-----------|-------|
+| **Stages** | 12-13 | 8 (incl. tutorial) | Quality over quantity |
+| **Cube Types** | All 4 | All 4 | Core identity |
+| **Marker Types** | All 4 | All 4 | Core identity |
+| **Collision Matrix** | Full 16 combos | Full 16 combos | Core differentiation |
+| **Face Painting** | Full system | Basic (Unit trigger only) | Can simplify |
+| **Line Divider** | Dynamic | Static position | Can simplify |
+| **Tutorial** | Interactive | Message-based | Can simplify |
+| **Achievements** | 20+ | 10 basic | Reduce scope |
+| **Controller** | Full support | Full support | Steam expectation |
+
+### MVP Cuts (Can Defer to Post-Launch)
+
+| Feature | Reason to Cut |
+|---------|---------------|
+| Resonance System | Advanced mechanic, not core loop |
+| RPG/Progression Systems | Nice-to-have, not core puzzle |
+| Localization | English-only is acceptable for launch |
+| Leaderboards | Can add post-launch |
+| Advanced accessibility | Basic options sufficient for launch |
+
+### MVP Quality Bar
+
+- All 4 cube types feel distinct and purposeful
+- Player understands core loop within 2 minutes
+- 60 FPS on mid-range hardware
+- No game-breaking bugs
+- Complete gameplay loop (start → stages → completion)
+- Save/load works reliably
+- Controller and keyboard both work
+
+---
+
 ## Effort Summary
 
-| Phase | Focus | Points | Est. Time @ 22 pts/mo | Status |
-|-------|-------|--------|----------------------|--------|
-| Phase 1 | Core Innovation & Content | 124 pts | ~5.6 months | 🔄 In Progress |
-| Phase 2 | Content Completion & Polish | 60 pts | ~2.7 months | ⬜ Pending |
-| Phase 3 | Polish, Refinement & QA | 35 pts | ~1.6 months | ⬜ Pending |
-| Phase 4 | Steam Integration & Release | 40 pts | ~1.8 months | ⬜ Pending |
-| **TOTAL** | | **259 pts** | **~11.8 months** | |
+| Phase | Focus | Points | Status |
+|-------|-------|--------|--------|
+| Phase 1 | Core Innovation & Content | 124 pts | 🔄 In Progress |
+| Phase 2 | Content Completion & Polish | 63 pts | ⬜ Pending |
+| Phase 3 | Polish & Commercial Prep | 55 pts | ⬜ Pending |
+| Phase 4 | Steam Integration & Release | 50 pts | ⬜ Pending |
+| **TOTAL** | | **292 pts** | |
 
 **Completed**: 75 pts (Milestone 1.0 + 1.2)  
-**Remaining**: ~184 pts (~8.4 months at current velocity)
+**Remaining**: ~217 pts
 
 **Note**: Phases can overlap; calendar time will vary based on availability.
 
@@ -327,7 +432,8 @@ Milestone 1.0 ✅ → 1.1 🔄 → 1.3 → 1.4 → 2.x → 3.x → 4.x → Relea
 | Metric | Value |
 |--------|-------|
 | **Measured Velocity** | **22 points/month** (active periods) |
-| **Completed Points** | 75 pts (normalized) |
+| **Completed Points** | 75 pts |
+| **Remaining Points** | ~217 pts |
 | **Point Definition** | 1 pt ≈ 1 day active work |
 | **Week Definition** | 5 pts ≈ 1 week active work |
 | **Measurement Rule** | Gap < 1 week = same-day continuation |
@@ -347,10 +453,55 @@ Milestone 1.0 ✅ → 1.1 🔄 → 1.3 → 1.4 → 2.x → 3.x → 4.x → Relea
 
 | Risk | Mitigation | Fallback |
 |------|------------|----------|
-| Velocity Sustainability | Weekly tracking | Conservative 15 pts/month (~10.8 months remaining) |
-| Content Creation Scope | Quality over quantity | Launch with 8-10 stages |
+| Velocity Sustainability | Weekly tracking | Conservative 15 pts/month |
+| Content Creation Scope | Quality over quantity | Launch with 8-10 stages (MVP) |
 | Scope Creep | Feature freeze after Phase 1 | Focus on polish |
 | File Size Violations | Phased refactoring | Prioritize critical managers |
+| Store Page Too Late | Start assets in Phase 3 | Simple capsules, iterate |
+| Launch Without Wishlists | Demo in Next Fest | Direct community outreach |
+
+---
+
+## Steam Release Guardrails
+
+**Checkpoints to ensure commercial readiness:**
+
+| Checkpoint | When | Gate |
+|------------|------|------|
+| **MVP Scope Locked** | End of Phase 1 | Know exactly what's shipping |
+| **Feature Freeze** | Start of Phase 3 | No new features, polish only |
+| **Business/Legal Complete** | Mid Phase 3 | Steamworks account, policies ready |
+| **Store Page Live** | End of Phase 3 | "Coming Soon" visible, wishlisting active |
+| **Controller Verified** | End of Phase 3 | Full gamepad playability confirmed |
+| **Demo Submitted** | Phase 3 (if Next Fest) | Apply 4-6 weeks before event |
+| **Content Freeze** | Start of Phase 4 | No new stages, bugs only |
+| **Beta Complete** | Mid Phase 4 | Critical feedback addressed |
+| **Release Candidate** | End of 4.6 | Build that could ship |
+| **Launch** | After 4.8 | Store page updated, build live |
+
+### Steam Store Requirements Checklist
+
+**Required for Store Page:**
+- [ ] Header capsule (460x215, 920x430)
+- [ ] Small capsule (231x87)
+- [ ] Main capsule (616x353)
+- [ ] Library capsule (600x900) - for library view
+- [ ] Hero image (3840x1240) - optional but recommended
+- [ ] 5+ screenshots (1920x1080 recommended)
+- [ ] Short description (< 300 chars)
+- [ ] Full description
+- [ ] System requirements
+- [ ] Privacy policy URL
+- [ ] IARC age rating
+
+**Required for Launch:**
+- [ ] Gameplay trailer
+- [ ] All store assets finalized
+- [ ] Build uploaded and tested
+- [ ] Achievements configured
+- [ ] Cloud saves tested
+- [ ] Pricing set
+- [ ] Release date set
 
 ---
 
@@ -373,4 +524,5 @@ Milestone 1.0 ✅ → 1.1 🔄 → 1.3 → 1.4 → 2.x → 3.x → 4.x → Relea
 
 *Last Updated: December 8, 2025*  
 *Current Phase: Phase 1 - Core Innovation & Content*  
-*Current Milestone: 1.1 - Refine Markers Implementation*
+*Current Milestone: 1.1 - Refine Markers Implementation*  
+*Total Points: 292 | Completed: 75 | Remaining: 217*

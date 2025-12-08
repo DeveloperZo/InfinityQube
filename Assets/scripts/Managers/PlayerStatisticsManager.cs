@@ -977,27 +977,28 @@ public class PlayerStatisticsManager : MonoBehaviour, IManagerDebugInterface
     {
         try
         {
-            // Save with simple name for friends to find easily
+            // Unified naming scheme:
+            // - player_statistics.json: Easy access to current/latest session
+            // - InfinityQube_Session_{timestamp}.json: Timestamped archive for analysis
             string simpleFileName = "player_statistics.json";
-            string detailedFileName = $"InfinityQube_DemoStats_{currentSession.sessionId}_{currentSession.timestamp}.json";
+            string timestampedFileName = $"InfinityQube_Session_{currentSession.timestamp}.json";
             
-            // Save to multiple locations for maximum accessibility
+            // Save to persistentDataPath (primary location for logs/analysis)
             SaveToLocation(Application.persistentDataPath, simpleFileName);
-            SaveToLocation(Application.persistentDataPath, detailedFileName);
+            SaveToLocation(Application.persistentDataPath, timestampedFileName);
             
-            // Also save to game directory if possible (build location)
-            if (!Application.isEditor)
-            {
-                string gameDirectory = Path.GetDirectoryName(Application.dataPath);
-                SaveToLocation(gameDirectory, simpleFileName);
-            }
-            
-            // Save to Documents folder for easy access
+            // Save to Documents/InfinityQube for easy user access
             string documentsPath = System.Environment.GetFolderPath(System.Environment.SpecialFolder.MyDocuments);
             string gameDocumentsFolder = Path.Combine(documentsPath, "InfinityQube");
             Directory.CreateDirectory(gameDocumentsFolder);
             SaveToLocation(gameDocumentsFolder, simpleFileName);
             
+            // Build location (non-editor only)
+            if (!Application.isEditor)
+            {
+                string gameDirectory = Path.GetDirectoryName(Application.dataPath);
+                SaveToLocation(gameDirectory, simpleFileName);
+            }
         }
         catch (System.Exception e)
         {
@@ -1029,35 +1030,34 @@ public class PlayerStatisticsManager : MonoBehaviour, IManagerDebugInterface
             
             // Update session data for emergency save
             currentSession.sessionDuration = Time.time - sessionStartTime;
-            currentSession.isCompleted = false; // Mark as emergency save
+            currentSession.isCompleted = false; // Mark as emergency/incomplete save (checked via isCompleted field)
             
             // Update timestamp for final save
             currentSession.timestamp = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
             
-            // Save as both emergency backup and regular file
-            string emergencyFileName = $"InfinityQube_EmergencyStats_{currentSession.sessionId}_{DateTime.Now:yyyy-MM-dd_HH-mm-ss}.json";
-            string regularFileName = "player_statistics.json";
+            // Unified naming scheme - same as regular save
+            // isCompleted=false distinguishes emergency saves when reading the file
+            string simpleFileName = "player_statistics.json";
+            string timestampedFileName = $"InfinityQube_Session_{currentSession.timestamp}.json";
             
-            // Save emergency backup
-            SaveToLocation(Application.persistentDataPath, emergencyFileName);
+            // Save to persistentDataPath (primary location)
+            SaveToLocation(Application.persistentDataPath, simpleFileName);
+            SaveToLocation(Application.persistentDataPath, timestampedFileName);
             
-            // Save regular file for friends
-            SaveToLocation(Application.persistentDataPath, regularFileName);
-            
-            // Also save to Documents folder
+            // Save to Documents/InfinityQube for easy user access
             string documentsPath = System.Environment.GetFolderPath(System.Environment.SpecialFolder.MyDocuments);
             string gameDocumentsFolder = Path.Combine(documentsPath, "InfinityQube");
             Directory.CreateDirectory(gameDocumentsFolder);
-            SaveToLocation(gameDocumentsFolder, regularFileName);
+            SaveToLocation(gameDocumentsFolder, simpleFileName);
             
-            // Save to game directory if not in editor
+            // Build location (non-editor only)
             if (!Application.isEditor)
             {
                 string gameDirectory = Path.GetDirectoryName(Application.dataPath);
-                SaveToLocation(gameDirectory, regularFileName);
+                SaveToLocation(gameDirectory, simpleFileName);
             }
             
-            DebugLog($"🚨 Emergency save completed to multiple locations");
+            DebugLog($"🚨 Emergency save completed (isCompleted=false indicates emergency save)");
         }
         catch (System.Exception e)
         {
