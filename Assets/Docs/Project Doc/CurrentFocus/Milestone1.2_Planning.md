@@ -1,10 +1,10 @@
-# Milestone 1.2: Refine Markers Implementation - Planning Document
+# Milestone 1.1: Refine Markers Implementation - Planning Document
 
-> **Status**: Planning Phase  
+> **Status**: ✅ COMPLETE (December 2024)  
 > **Target**: Review and refine marker system (placement, cube spawn, cube collision/interactions)  
-> **Complexity**: 3 points  
-> **Effort Estimate**: ~1 week active development  
-> **Dependencies**: Core marker system complete
+> **Complexity**: 14 points  
+> **Effort Estimate**: ~2-3 weeks active development  
+> **Dependencies**: Core marker system complete ✅
 
 ---
 
@@ -12,28 +12,31 @@
 
 This milestone focuses on refining the marker system to ensure cohesive gameplay, clear collision mechanics, and strategic depth. The goal is to define and implement all marker interactions, cube collision behaviors, and visual feedback systems.
 
+**✅ MILESTONE COMPLETE** - All systems implemented and verified.
+
 ---
 
 ## Current System State
 
-### ✅ What's Already Implemented
+### ✅ All Systems Implemented
 - **Marker Types**: Unit, Recursion, Matrix, Infinity, Cube markers
-- **Marker Placement**: All marker types can be placed with charge system
+- **Marker Placement**: All marker types with unified input (1-4 mode keys, F to place)
 - **Marker Spawning**: Markers automatically convert to player cubes when wave moves forward
-- **Charge System**: Regeneration mechanics exist for all marker types
-- **Basic Collision**: Player cubes can capture wave cubes
-- **Matrix Area Effect**: Matrix cubes capture in 3x3 area
+- **Charge System**: Hybrid economy (Unit=cooldown, others=grants) with toggle
+- **Collision Matrix**: All 16 cube type combinations implemented
+- **Matrix Area Effect**: 2x2 area capture
+- **Line Divider System**: Dynamic difficulty with visual feedback (blue/red zones)
+- **Resonance System**: Infinity+Infinity makes all Infinity cubes phaseable (2 moves)
+- **Face Painting**: Front face with 3-move telegraph system
+- **Penalty/Reward System**: Line movement based on cube escapes and achievements
+- **Marker Economy**: Per-stage/wave grants with inventory caps
 
-### ⚠️ What Needs Definition/Refinement
-- **Cube Collision Matrix**: ✅ Complete (including resonance) - See GameplayMechanics.md
-- **Charge System Coherence**: Ensure all regeneration mechanics are balanced
-- **Visual Feedback**: Distinct colors and indicators for all marker types
-- **Non-Unit Marker Acquisition**: Ways to acquire markers beyond initial charges
-- **Line Divider System**: Dynamic difficulty mechanism restricting marker placement
-- **Resonance System**: Infinity vs Infinity phaseable effect implementation
-- **Enhanced Face Painting**: Rotation mechanics, timing, visual feedback
-- **Penalty/Reward System**: Line movement based on cube falls and achievements
-- **Marker Economy**: Per-stage grants and cross-wave resource management
+### Implementation Details
+- **CubeCollisionManager**: Full collision matrix with 16 handlers
+- **CubeManager**: Phaseable state, face painting, material swapping
+- **GridManager**: Line divider visual, safe zone detection
+- **PlayerActionManager**: Marker economy with stage/wave grants
+- **Tile**: Telegraph system with progressive intensity
 
 ---
 

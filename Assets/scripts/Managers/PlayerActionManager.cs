@@ -122,6 +122,25 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
     [SerializeField] public float lastInfinityMarkerTime;
     [SerializeField] public Material infinityMarkerMaterial;
 
+    [Header("Marker Economy")]
+    [Tooltip("Enable per-stage/wave grant system instead of cooldown regeneration for non-Unit markers")]
+    [SerializeField] public bool useMarkerEconomy = true;
+    
+    [Header("Marker Economy - Stage Grants (given at stage start)")]
+    [SerializeField] public int stageGrantRecursion = 5;
+    [SerializeField] public int stageGrantMatrix = 3;
+    [SerializeField] public int stageGrantInfinity = 2;
+    
+    [Header("Marker Economy - Wave Grants (given at wave start)")]
+    [SerializeField] public int waveGrantRecursion = 1;
+    [SerializeField] public int waveGrantMatrix = 1;
+    [SerializeField] public int waveGrantInfinity = 0;
+    
+    [Header("Marker Economy - Inventory Caps")]
+    [SerializeField] public int maxRecursionInventory = 8;
+    [SerializeField] public int maxMatrixInventory = 5;
+    [SerializeField] public int maxInfinityInventory = 3;
+
     [Header("Input Settings")]
     [SerializeField] private KeyCode unitMarkerKey = KeyCode.F;
     [SerializeField] private KeyCode recursionMarkerKey = KeyCode.V;
@@ -175,6 +194,20 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
             HandleInput();
         }
         RegenerateCharges();
+    }
+
+    private void OnEnable()
+    {
+        // Subscribe to marker economy events
+        GameEvents.OnStageStart += HandleStageStart;
+        GameEvents.OnWaveStart += HandleWaveStart;
+    }
+
+    private void OnDisable()
+    {
+        // Unsubscribe from marker economy events
+        GameEvents.OnStageStart -= HandleStageStart;
+        GameEvents.OnWaveStart -= HandleWaveStart;
     }
 
     private void InitializeReferences()
@@ -1300,6 +1333,60 @@ MarkerMode currentMode = GetCurrentMode();
 
     #region Charge Management
 
+    #region Marker Economy
+    
+    /// <summary>
+    /// Handle stage start - apply stage grants
+    /// </summary>
+    private void HandleStageStart(int stageIndex, StageData stageData)
+    {
+        if (!useMarkerEconomy) return;
+        
+        ApplyStageGrants();
+        Debug.Log($"[MarkerEconomy] Stage {stageIndex} started - Applied stage grants: Rec={stageGrantRecursion}, Mat={stageGrantMatrix}, Inf={stageGrantInfinity}");
+    }
+    
+    /// <summary>
+    /// Handle wave start - apply wave grants
+    /// </summary>
+    private void HandleWaveStart(int waveIndex, WaveData waveData)
+    {
+        if (!useMarkerEconomy) return;
+        
+        ApplyWaveGrants();
+        Debug.Log($"[MarkerEconomy] Wave {waveIndex} started - Applied wave grants: Rec=+{waveGrantRecursion}, Mat=+{waveGrantMatrix}, Inf=+{waveGrantInfinity}");
+    }
+    
+    /// <summary>
+    /// Apply stage grants - refills inventory up to stage grant amount (capped at max inventory)
+    /// Called at the start of each stage
+    /// </summary>
+    public void ApplyStageGrants()
+    {
+        // Stage grants SET the inventory (not add), capped at max
+        currentRecursionMarkerCharges = Mathf.Min(stageGrantRecursion, maxRecursionInventory);
+        currentMatrixMarkerCharges = Mathf.Min(stageGrantMatrix, maxMatrixInventory);
+        currentInfinityMarkerCharges = Mathf.Min(stageGrantInfinity, maxInfinityInventory);
+        
+        UpdateUI();
+    }
+    
+    /// <summary>
+    /// Apply wave grants - adds to current inventory (capped at max inventory)
+    /// Called at the start of each wave within a stage
+    /// </summary>
+    public void ApplyWaveGrants()
+    {
+        // Wave grants ADD to current inventory, capped at max
+        currentRecursionMarkerCharges = Mathf.Min(currentRecursionMarkerCharges + waveGrantRecursion, maxRecursionInventory);
+        currentMatrixMarkerCharges = Mathf.Min(currentMatrixMarkerCharges + waveGrantMatrix, maxMatrixInventory);
+        currentInfinityMarkerCharges = Mathf.Min(currentInfinityMarkerCharges + waveGrantInfinity, maxInfinityInventory);
+        
+        UpdateUI();
+    }
+    
+    #endregion
+
     public bool CanPlaceUnitMarker()
     {
         return currentUnitMarkerCharges > 0 &&
@@ -1511,10 +1598,18 @@ MarkerMode currentMode = GetCurrentMode();
     private void RegenerateCharges()
     {
         bool chargesChanged = false;
+        
+        // Unit markers always use cooldown-based regeneration (unlimited)
         chargesChanged |= RegenerateUnitCharges();
-        chargesChanged |= RegenerateRecursionCharges();
-        chargesChanged |= RegenerateMatrixCharges();
-        chargesChanged |= RegenerateInfinityCharges();
+        
+        // Non-Unit markers only regenerate if marker economy is disabled
+        // When economy is enabled, they only get grants at stage/wave start
+        if (!useMarkerEconomy)
+        {
+            chargesChanged |= RegenerateRecursionCharges();
+            chargesChanged |= RegenerateMatrixCharges();
+            chargesChanged |= RegenerateInfinityCharges();
+        }
 
         if (chargesChanged)
         {
@@ -1694,10 +1789,12 @@ MarkerMode currentMode = GetCurrentMode();
     public bool CanPlaceMatrixMarkerCheck() => CanPlaceMatrixMarker();
 
     // Charge refill methods (for prototyping tools)
+    // Unit always uses maxCharges (cooldown-based)
+    // Non-Unit uses inventory cap when economy enabled, otherwise maxCharges
     public void RefillUnitMarkerCharges() => currentUnitMarkerCharges = maxUnitMarkerCharges;
-    public void RefillRecursionMarkerCharges() => currentRecursionMarkerCharges = maxRecursionMarkerCharges;
-    public void RefillMatrixMarkerCharges() => currentMatrixMarkerCharges = maxMatrixMarkerCharges;
-    public void RefillInfinityMarkerCharges() => currentInfinityMarkerCharges = maxInfinityMarkerCharges;
+    public void RefillRecursionMarkerCharges() => currentRecursionMarkerCharges = useMarkerEconomy ? maxRecursionInventory : maxRecursionMarkerCharges;
+    public void RefillMatrixMarkerCharges() => currentMatrixMarkerCharges = useMarkerEconomy ? maxMatrixInventory : maxMatrixMarkerCharges;
+    public void RefillInfinityMarkerCharges() => currentInfinityMarkerCharges = useMarkerEconomy ? maxInfinityInventory : maxInfinityMarkerCharges;
     public void RefillAllCharges()
     {
         RefillUnitMarkerCharges();

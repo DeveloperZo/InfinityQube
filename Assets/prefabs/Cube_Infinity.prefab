@@ -367,7 +367,7 @@ MonoBehaviour:
   level: 1
   position: {x: 0, y: 0}
   type: 2
-  material: {fileID: 0}
+  material: {fileID: 2100000, guid: a85f9ed5dfb6ed64b89ade32ef958cc5, type: 2}
   prefab: {fileID: 6551000342905767615}
   spawnHeight: 0
   currentHitPoints: 1
@@ -388,6 +388,7 @@ MonoBehaviour:
   - {r: 0, g: 0, b: 0, a: 0}
   - {r: 0, g: 0, b: 0, a: 0}
   faceDurations: 00000000000000000000000000000000
+  faceCharges: 00000000000000000000000000000000
   faceIndicators:
   - {fileID: 0}
   - {fileID: 0}
@@ -397,6 +398,11 @@ MonoBehaviour:
   isMoving: 0
   isDestroyed: 0
   isPlayerCube: 0
+  isMatrixCube: 0
+  isPhaseable: 0
+  phaseableMovesRemaining: 0
+  phaseableMaterial: {fileID: 2100000, guid: a86c1ac69d5b8f34b803ed6ed3b0ce51, type: 2}
+  playerCubeMaterial: {fileID: 2100000, guid: 671842a414de9984e8c0566116bd04ba, type: 2}
   rainSpeed: 3
   rainHeight: 5
   targetRow: -1

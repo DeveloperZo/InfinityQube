@@ -126,6 +126,34 @@ public class PlayerPanel : PrototypingPanelBase
             }
             GUI.backgroundColor = Color.white;
             
+            GUILayout.Space(5);
+            
+            // Marker Economy toggle
+            GUI.backgroundColor = actionManager.useMarkerEconomy ? Color.cyan : Color.gray;
+            if (GUILayout.Button(actionManager.useMarkerEconomy ? "✓ MARKER ECONOMY ON" : "✗ Marker Economy OFF"))
+            {
+                actionManager.useMarkerEconomy = !actionManager.useMarkerEconomy;
+                LogAction($"Marker Economy: {(actionManager.useMarkerEconomy ? "ON" : "OFF")}");
+            }
+            GUI.backgroundColor = Color.white;
+            
+            // Manual grant buttons (when economy is enabled)
+            if (actionManager.useMarkerEconomy)
+            {
+                GUILayout.BeginHorizontal();
+                if (GUILayout.Button("Apply Stage Grants"))
+                {
+                    actionManager.ApplyStageGrants();
+                    LogAction("Applied stage grants");
+                }
+                if (GUILayout.Button("Apply Wave Grants"))
+                {
+                    actionManager.ApplyWaveGrants();
+                    LogAction("Applied wave grants");
+                }
+                GUILayout.EndHorizontal();
+            }
+            
             GUILayout.Space(10);
             
             // UnitMarker settings

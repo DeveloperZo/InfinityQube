@@ -818,32 +818,7 @@ public class PlayerMarkerSystem : MonoBehaviour
     private void MakeCubeTranslucent(CubeManager cube)
     {
         if (cube == null) return;
-
-        Renderer renderer = cube.GetComponent<Renderer>();
-        if (renderer == null) return;
-
-        Material originalMaterial = renderer.material;
-        if (originalMaterial == null) return;
-
-        Material translucentMaterial = new Material(originalMaterial);
-
-        Color color = translucentMaterial.color;
-        color.a = 0.35f;
-        translucentMaterial.color = color;
-
-        if (translucentMaterial.HasProperty("_Mode"))
-        {
-            translucentMaterial.SetFloat("_Mode", 3);
-            translucentMaterial.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
-            translucentMaterial.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
-            translucentMaterial.SetInt("_ZWrite", 0);
-            translucentMaterial.DisableKeyword("_ALPHATEST_ON");
-            translucentMaterial.EnableKeyword("_ALPHABLEND_ON");
-            translucentMaterial.DisableKeyword("_ALPHAPREMULTIPLY_ON");
-            translucentMaterial.renderQueue = 3000;
-        }
-
-        renderer.material = translucentMaterial;
+        cube.ApplyPlayerCubeMaterial();
     }
 
     public void MovePlayerCubesBackward()
@@ -936,12 +911,12 @@ public class PlayerMarkerSystem : MonoBehaviour
 
     private bool CanPlaceMarkerAt(Vector2Int position)
     {
-        // Task 6: Check line divider restriction
+        // Task 6: Check line divider restriction - player must be in safe zone (below line)
         if (actionManager?.GridManager != null && actionManager.GridManager.LineDividerEnabled)
         {
-            if (!actionManager.GridManager.IsPositionBelowLine(position.y))
+            if (!actionManager.GridManager.IsPlayerInSafeZone())
             {
-                Debug.Log($"[Task 6] Cannot place marker at ({position.x}, {position.y}) - above line divider (row {actionManager.GridManager.LineDividerRow})");
+                Debug.Log($"[Task 6] Cannot place marker - player is above line divider (danger zone)");
                 return false;
             }
         }

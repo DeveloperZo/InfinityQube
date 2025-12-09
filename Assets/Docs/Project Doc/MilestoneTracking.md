@@ -37,41 +37,45 @@
 | Stage transition system | 2 | July 8, 2025 | - |
 | Demo loop completion | 1 | July 8, 2025 | - |
 
-### Post-Hiatus Work (November-December 2025)
-*Part of Milestone 1.1 (~5 pts delivered so far)*
+### Milestone 1.1: Refine Markers Implementation (14 pts) ✅
+*December 2025 (~2 weeks active work)*
 
-| System | Points | Completion Date | Commit |
-|--------|--------|-----------------|--------|
-| Marker terminology standardization | 2 | Nov 30, 2025 | `8f1cbb1` |
-| Unified marker input system | 2 | Nov 30, 2025 | `cb69513` |
-| Collision matrix design | 1 | Dec 1, 2025 | - |
+| System | Points | Completion Date | Notes |
+|--------|--------|-----------------|-------|
+| Marker terminology standardization | 2 | Nov 30, 2025 | Unified naming |
+| Unified marker input system | 2 | Nov 30, 2025 | Mode keys 1-4, F to place |
+| Collision matrix design | 1 | Dec 1, 2025 | All 16 combinations |
+| Collision matrix implementation | 3 | Dec 9, 2025 | CubeCollisionManager complete |
+| Line Divider System | 2 | Dec 9, 2025 | Blue/red zones, marker restriction |
+| Resonance System | 2 | Dec 9, 2025 | Phaseable state (2 moves) |
+| Enhanced Face Painting | 2 | Dec 9, 2025 | Front face, 3-move telegraph |
+| Penalty/Reward System | 1 | Dec 9, 2025 | Line movement on escape/success |
+| Marker Economy | 2 | Dec 9, 2025 | Stage/wave grants with caps |
 
-**Total Completed**: 75 points (normalized)
+**Total Completed**: 89 points (normalized)
 
 ---
 
 ## Active Development Tracking
 
-### Currently In Progress: Milestone 1.1 (December 2025)
-**Total Points**: 14 pts | **Delivered**: ~5 pts | **Remaining**: ~9 pts
+### Next Up: Milestone 1.2 (RPG/Progression Ideation)
+**Total Points**: 10 pts | **Status**: Ready to start
 
 | Item | Points | Status | Notes |
 |------|--------|--------|-------|
-| Collision Matrix Implementation | 3 pts | Ready to code | Structure exists |
-| Line Divider System | 3 pts | Designed | Dynamic difficulty |
-| Resonance System | 2 pts | Designed | Infinity vs Infinity |
-| Enhanced Face Painting | 2 pts | In Progress | Rotation mechanics |
-| Penalty/Reward System | 2 pts | Designed | Line movement |
-| Marker Economy | 2 pts | Designed | Per-stage grants |
+| RPG elements design | 3 pts | Pending | Brainstorm progression |
+| Hub area concept | 2 pts | Pending | Design and layout |
+| Meta-progression systems | 3 pts | Pending | Unlocks, upgrades |
+| Progression economy | 2 pts | Pending | Resources, currencies |
 
 ### Velocity Summary
 | Metric | Value |
 |--------|-------|
 | **Measured Velocity** | **22 points/month** |
-| Total Commits | 250+ |
-| Total Points Completed | 75 pts |
-| Remaining Points | ~184 pts |
-| Est. Time to Release | ~8.4 months @ current velocity |
+| Total Commits | 260+ |
+| Total Points Completed | 89 pts |
+| Remaining Points | ~170 pts |
+| Est. Time to Release | ~7.7 months @ current velocity |
 
 ---
 
@@ -100,7 +104,7 @@
 
 ---
 
-**Last Updated**: December 8, 2025
+**Last Updated**: December 9, 2025
 
 ### Documentation Notes
 - **Point Scale**: 1 pt ≈ 1 day, 5 pts ≈ 1 week, 22 pts/month measured

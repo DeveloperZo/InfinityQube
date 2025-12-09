@@ -495,8 +495,8 @@ public class CubeCollisionManager : MonoBehaviour, IManagerDebugInterface
                 return new CollisionResult(HandleColumnCapture(position, 3));
 
             case CubeType.Infinity:
-                // Unit + Infinity: Face paint, Unit destroyed
-                return HandleInfinityFacePaint(waveCube, playerCube, CubeType.Unit, position);
+                // Unit + Infinity: Paint Wave Infinity's face, Unit destroyed
+                return HandleWaveInfinityFacePaint(waveCube, playerCube, CubeType.Unit, position);
 
             default:
                 return new CollisionResult(false);
@@ -523,8 +523,8 @@ public class CubeCollisionManager : MonoBehaviour, IManagerDebugInterface
                 return new CollisionResult(HandleMatrixRecursionCollision(position));
 
             case CubeType.Infinity:
-                // Matrix + Infinity: Face paint, Matrix destroyed
-                return HandleInfinityFacePaint(waveCube, playerCube, CubeType.Matrix, position);
+                // Matrix + Infinity: Paint Wave Infinity's face with Matrix, Matrix destroyed
+                return HandleWaveInfinityFacePaint(waveCube, playerCube, CubeType.Matrix, position);
 
             default:
                 return new CollisionResult(false);
@@ -551,8 +551,8 @@ public class CubeCollisionManager : MonoBehaviour, IManagerDebugInterface
                 return new CollisionResult(HandleRecursionRecursionCollision(position));
 
             case CubeType.Infinity:
-                // Recursion + Infinity: Face paint, Recursion destroyed
-                return HandleInfinityFacePaint(waveCube, playerCube, CubeType.Recursion, position);
+                // Recursion + Infinity: Paint Wave Infinity's face, leave recursion marker, Recursion destroyed
+                return HandleRecursionInfinityCollision(waveCube, playerCube, position);
 
             default:
                 return new CollisionResult(false);
@@ -561,26 +561,27 @@ public class CubeCollisionManager : MonoBehaviour, IManagerDebugInterface
 
     /// <summary>
     /// Handles Infinity cube collisions (Unit, Matrix, Recursion, Infinity)
+    /// When Player Infinity hits wave cubes, the PLAYER Infinity gets painted
     /// </summary>
     private CollisionResult HandleInfinityCollision(CubeManager playerCube, CubeManager waveCube, Vector2Int position)
     {
         switch (waveCube.type)
         {
             case CubeType.Unit:
-                // Infinity + Unit: Wave join (removes Unit, takes position, moves with wave)
+                // Infinity + Unit: Wave join (removes Unit, Infinity takes position, moves with wave)
                 return HandleInfinityWaveJoin(playerCube, waveCube, position);
 
             case CubeType.Matrix:
-                // Infinity + Matrix: Face paint, continue up
-                return HandleInfinityFacePaint(waveCube, playerCube, CubeType.Matrix, position, false);
+                // Infinity + Matrix: Paint PLAYER Infinity's face with Matrix status, player continues up
+                return HandlePlayerInfinityFacePaint(playerCube, waveCube, CubeType.Matrix, position);
 
             case CubeType.Recursion:
-                // Infinity + Recursion: Face paint, continue up
-                return HandleInfinityFacePaint(waveCube, playerCube, CubeType.Recursion, position, false);
+                // Infinity + Recursion: Paint PLAYER Infinity's face with Recursion status, player continues up
+                return HandlePlayerInfinityFacePaint(playerCube, waveCube, CubeType.Recursion, position);
 
             case CubeType.Infinity:
-                // Infinity + Infinity: Face paint, resonance
-                return HandleInfinityInfinityCollision(waveCube, playerCube, position);
+                // Infinity + Infinity: Paint PLAYER Infinity's face with Infinity status, resonance
+                return HandleInfinityInfinityCollision(playerCube, waveCube, position);
 
             default:
                 return new CollisionResult(false);
@@ -696,14 +697,15 @@ public class CubeCollisionManager : MonoBehaviour, IManagerDebugInterface
     }
 
     /// <summary>
-    /// Column capture: Creates auto-capture marker with charges
+    /// Recursion capture: Creates a single recursion marker with 3 charges at collision point
+    /// Recursion+Unit and Unit+Recursion behavior
     /// </summary>
-    private bool HandleColumnCapture(Vector2Int position, int charges = 2)
+    private bool HandleColumnCapture(Vector2Int position, int charges = 3)
     {
-        int expiresAfterMoves = 3;
+        int expiresAfterMoves = 5;
 
-        // Create visual column marker (1x3 vertical) with charge tracking
-        CreateColumnMarker(position, 3, expiresAfterMoves, charges);
+        // Create single marker with 3 charges at collision point
+        CreateRecursionMarker(position, expiresAfterMoves, charges);
 
         // Try to capture cube at collision point immediately
         var cubesAtPosition = markerSystem.FindAllCubesAt(position);
@@ -715,61 +717,62 @@ public class CubeCollisionManager : MonoBehaviour, IManagerDebugInterface
 
             if (markerSystem.ProcessCubeCapture(cube, position, PlayerMarkerSystem.MarkerType.Recursion, null, false))
             {
-                var marker = activeAreaMarkers[activeAreaMarkers.Count - 1];
-                marker.UseCharge();
+                // Find the marker and use a charge
+                foreach (var marker in activeAreaMarkers)
+                {
+                    if (marker.positions.Contains(position) && marker.markerType == "RecursionCapture")
+                    {
+                        marker.UseCharge();
+                        break;
+                    }
+                }
                 capturedImmediately = true;
-                DebugLog("HandleColumnCapture", $"Recursion column - immediate capture at ({position.x}, {position.y}), {marker.remainingCharges} charges left");
+                DebugLog("HandleColumnCapture", $"Recursion capture - immediate capture at ({position.x}, {position.y})");
                 break;
             }
         }
 
         if (!capturedImmediately)
         {
-            DebugLog("HandleColumnCapture", $"Recursion column - no cube at collision, marker will auto-capture on wave movement ({charges} charges, {expiresAfterMoves} moves)");
+            DebugLog("HandleColumnCapture", $"Recursion capture - created marker with {charges} charges, expires in {expiresAfterMoves} moves");
         }
 
         return true;
     }
 
     /// <summary>
-    /// Creates a visual column marker (1x3 vertical)
+    /// Creates a single recursion marker at position with specified charges
     /// </summary>
-    private void CreateColumnMarker(Vector2Int centerPosition, int height, int expiresAfterMoves = 3, int charges = 2)
+    private void CreateRecursionMarker(Vector2Int position, int expiresAfterMoves = 5, int charges = 3)
     {
-        List<Vector2Int> positions = new List<Vector2Int>();
         Color markerColor = new Color(0.9f, 0.6f, 0.2f, 0.8f); // Amber/orange
+        int currentMoveStep = actionManager?.WaveManager?.MoveStep ?? 0;
 
-        for (int y = 0; y < height; y++)
+        Tile tile = gridManager.GetTileAt(position.x, position.y);
+        if (tile != null)
         {
-            Vector2Int pos = new Vector2Int(centerPosition.x, centerPosition.y - y);
-            if (IsValidPosition(pos))
-            {
-                positions.Add(pos);
-                Tile tile = gridManager.GetTileAt(pos.x, pos.y);
-                if (tile != null)
-                {
-                    visualManager?.SetTileHighlight(tile, markerColor, "ColumnCapture");
-                    visualManager?.CreateMarkerCountdownText(pos, charges, Color.white);
-                }
-            }
+            visualManager?.SetTileHighlight(tile, markerColor, "RecursionCapture");
+            visualManager?.CreateMarkerCountdownText(position, charges, Color.white);
         }
 
-        int currentMoveStep = actionManager?.WaveManager?.MoveStep ?? 0;
-        var areaMarker = new ActiveAreaMarker(positions, currentMoveStep, expiresAfterMoves, markerColor, "ColumnCapture", true, charges);
+        // Single marker with all charges
+        List<Vector2Int> positions = new List<Vector2Int> { position };
+        var areaMarker = new ActiveAreaMarker(positions, currentMoveStep, expiresAfterMoves, markerColor, "RecursionCapture", true, charges);
         activeAreaMarkers.Add(areaMarker);
 
-        DebugLog("CreateColumnMarker", $"Created column marker at ({centerPosition.x}, {centerPosition.y}) - {charges} charges, expires in {expiresAfterMoves} moves");
+        DebugLog("CreateRecursionMarker", $"Created recursion marker at ({position.x}, {position.y}) with {charges} charges, expires in {expiresAfterMoves} moves");
     }
 
     /// <summary>
-    /// Recursion + Matrix: Auto 1x3 vertical marker with charges
+    /// Recursion + Matrix: Auto 3x1 horizontal marker with 2 charges
+    /// Horizontally strong, captures cubes as wave passes
     /// </summary>
     private bool HandleRecursionMatrixCollision(Vector2Int centerPosition)
     {
         int charges = 2;
-        int expiresAfterMoves = 3;
+        int expiresAfterMoves = 5;
 
-        CreateVerticalMarker(centerPosition, 3, true, expiresAfterMoves, charges);
+        CreateHorizontalMarker(centerPosition, 3, expiresAfterMoves, charges);
 
         var cubesAtPosition = markerSystem.FindAllCubesAt(centerPosition);
         bool capturedImmediately = false;
@@ -791,34 +794,34 @@ public class CubeCollisionManager : MonoBehaviour, IManagerDebugInterface
     }
 
     /// <summary>
-    /// Creates a visual vertical marker (1x3)
+    /// Creates a visual horizontal marker (3x1) - spans left/center/right
     /// </summary>
-    private void CreateVerticalMarker(Vector2Int centerPosition, int height, bool goingUp, int expiresAfterMoves = 3, int charges = 2)
+    private void CreateHorizontalMarker(Vector2Int centerPosition, int width, int expiresAfterMoves = 5, int charges = 2)
     {
         List<Vector2Int> positions = new List<Vector2Int>();
         Color markerColor = new Color(0.3f, 0.8f, 0.9f, 0.8f); // Cyan/blue
 
-        for (int y = 0; y < height; y++)
+        // Horizontal: left, center, right
+        for (int x = -1; x <= 1; x++)
         {
-            int yOffset = goingUp ? y : -y;
-            Vector2Int pos = new Vector2Int(centerPosition.x, centerPosition.y + yOffset);
+            Vector2Int pos = new Vector2Int(centerPosition.x + x, centerPosition.y);
             if (IsValidPosition(pos))
             {
                 positions.Add(pos);
                 Tile tile = gridManager.GetTileAt(pos.x, pos.y);
                 if (tile != null)
                 {
-                    visualManager?.SetTileHighlight(tile, markerColor, "VerticalCapture");
+                    visualManager?.SetTileHighlight(tile, markerColor, "HorizontalCapture");
                     visualManager?.CreateMarkerCountdownText(pos, charges, Color.white);
                 }
             }
         }
 
         int currentMoveStep = actionManager?.WaveManager?.MoveStep ?? 0;
-        var areaMarker = new ActiveAreaMarker(positions, currentMoveStep, expiresAfterMoves, markerColor, "VerticalCapture", true, charges);
+        var areaMarker = new ActiveAreaMarker(positions, currentMoveStep, expiresAfterMoves, markerColor, "HorizontalCapture", true, charges);
         activeAreaMarkers.Add(areaMarker);
 
-        DebugLog("CreateVerticalMarker", $"Created vertical marker at ({centerPosition.x}, {centerPosition.y}) - {charges} charges, expires in {expiresAfterMoves} moves");
+        DebugLog("CreateHorizontalMarker", $"Created 3x1 horizontal marker at ({centerPosition.x}, {centerPosition.y}) - {charges} charges, expires in {expiresAfterMoves} moves");
     }
 
     /// <summary>
@@ -897,28 +900,109 @@ public class CubeCollisionManager : MonoBehaviour, IManagerDebugInterface
     }
 
     /// <summary>
-    /// Infinity + Unit: Wave join
+    /// Recursion + Infinity: Paint Wave Infinity's face AND leave a recursion marker at collision point
+    /// </summary>
+    private CollisionResult HandleRecursionInfinityCollision(CubeManager waveInfinity, CubeManager playerRecursion, Vector2Int position)
+    {
+        // Paint the Wave Infinity's face with Recursion status
+        CollisionResult paintResult = HandleWaveInfinityFacePaint(waveInfinity, playerRecursion, CubeType.Recursion, position, true);
+        
+        // Also leave a recursion marker at the collision point (1 charge by default)
+        int charges = 1; // Per user request: "per the number of charges of the painted face (default 1)"
+        int expiresAfterMoves = 5;
+        
+        List<Vector2Int> positions = new List<Vector2Int> { position };
+        Color markerColor = new Color(0.8f, 0.5f, 0.2f, 0.8f); // Amber for Recursion
+        
+        Tile tile = gridManager.GetTileAt(position.x, position.y);
+        if (tile != null)
+        {
+            visualManager?.SetTileHighlight(tile, markerColor, "RecursionMarker");
+            visualManager?.CreateMarkerCountdownText(position, charges, Color.white);
+        }
+        
+        int currentMoveStep = actionManager?.WaveManager?.MoveStep ?? 0;
+        var areaMarker = new ActiveAreaMarker(positions, currentMoveStep, expiresAfterMoves, markerColor, "RecursionMarker", true, charges);
+        activeAreaMarkers.Add(areaMarker);
+        
+        DebugLog("HandleRecursionInfinityCollision", $"Recursion+Infinity - painted Wave Infinity, left recursion marker with {charges} charge at ({position.x}, {position.y})");
+        
+        return paintResult;
+    }
+
+    /// <summary>
+    /// Infinity + Unit: Wave join - Player Infinity destroys Unit, takes its place, moves with wave
     /// </summary>
     private CollisionResult HandleInfinityWaveJoin(CubeManager playerInfinity, CubeManager waveUnit, Vector2Int position)
     {
+        // Capture/destroy the Unit cube
         if (markerSystem.ProcessCubeCapture(waveUnit, position, PlayerMarkerSystem.MarkerType.Unit, null, false))
         {
+            // Player Infinity takes the Unit's position
             playerInfinity.position = position;
-            return new CollisionResult(true, false);
+            
+            // Convert to wave cube - no longer player-controlled, moves with wave
+            playerInfinity.isPlayerCube = false;
+            
+            // Apply wave cube material (opaque instead of translucent)
+            playerInfinity.ApplyWaveCubeMaterial();
+            
+            // CRITICAL: Remove from player cubes list so it doesn't get moved backward
+            if (markerSystem.playerCubes.Contains(playerInfinity))
+            {
+                markerSystem.playerCubes.Remove(playerInfinity);
+            }
+            
+            // Add to wave's active cubes so it moves with the wave
+            if (actionManager?.WaveManager != null && !actionManager.WaveManager.activeCubes.Contains(playerInfinity))
+            {
+                actionManager.WaveManager.activeCubes.Add(playerInfinity);
+            }
+            
+            DebugLog("HandleInfinityWaveJoin", $"Player Infinity joined wave at ({position.x}, {position.y}) - removed from player cubes, now moves with wave");
+            return new CollisionResult(true, false); // Don't destroy - it joined wave
         }
 
         return new CollisionResult(false);
     }
 
     /// <summary>
-    /// Handles face painting for Infinity collisions.
+    /// Handles face painting when non-Infinity player cubes hit Wave Infinity cubes.
+    /// Paints the WAVE Infinity cube's face with the player cube's type.
     /// </summary>
-    private CollisionResult HandleInfinityFacePaint(CubeManager waveInfinity, CubeManager playerCube, CubeType paintedType, Vector2Int position, bool destroyPlayerCube = true)
+    private CollisionResult HandleWaveInfinityFacePaint(CubeManager waveInfinity, CubeManager playerCube, CubeType paintedType, Vector2Int position, bool destroyPlayerCube = true)
     {
         if (waveInfinity.type != CubeType.Infinity)
             return new CollisionResult(false);
 
-        CubeFace collisionFace = CubeFace.Front;
+        CubeFace collisionFace = CubeFace.Front; // Face that was hit
+
+        FaceStatus faceStatus = paintedType switch
+        {
+            CubeType.Unit => FaceStatus.None, // Unit doesn't paint a useful face
+            CubeType.Matrix => FaceStatus.MatrixFace,
+            CubeType.Recursion => FaceStatus.RecursionFace,
+            CubeType.Infinity => FaceStatus.InfinityFace,
+            _ => FaceStatus.None
+        };
+
+        waveInfinity.PaintFace(collisionFace, faceStatus, GetFaceColorForType(paintedType), -1);
+
+        DebugLog("HandleWaveInfinityFacePaint", $"Painted Wave Infinity's {collisionFace} face at ({position.x}, {position.y}) with {paintedType} type");
+
+        return new CollisionResult(true, destroyPlayerCube);
+    }
+
+    /// <summary>
+    /// Handles face painting when Player Infinity hits non-Infinity wave cubes.
+    /// Paints the PLAYER Infinity cube's face with the wave cube's type, player continues moving.
+    /// </summary>
+    private CollisionResult HandlePlayerInfinityFacePaint(CubeManager playerInfinity, CubeManager waveCube, CubeType paintedType, Vector2Int position)
+    {
+        if (playerInfinity.type != CubeType.Infinity)
+            return new CollisionResult(false);
+
+        CubeFace collisionFace = CubeFace.Front; // Face that hit the wave cube
 
         FaceStatus faceStatus = paintedType switch
         {
@@ -929,20 +1013,33 @@ public class CubeCollisionManager : MonoBehaviour, IManagerDebugInterface
             _ => FaceStatus.None
         };
 
-        waveInfinity.PaintFace(collisionFace, faceStatus, GetFaceColorForType(paintedType), -1);
+        // All painted faces have 1 charge
+        int charges = 1;
 
-        DebugLog("HandleInfinityFacePaint", $"Painted {collisionFace} face of Infinity cube at ({position.x}, {position.y}) with {paintedType} type (status: {faceStatus})");
+        // Paint the PLAYER Infinity cube's face with appropriate charges
+        playerInfinity.PaintFace(collisionFace, faceStatus, GetFaceColorForType(paintedType), -1, charges);
 
-        return new CollisionResult(true, destroyPlayerCube);
+        // Capture the wave cube
+        markerSystem.ProcessCubeCapture(waveCube, position, PlayerMarkerSystem.MarkerType.Infinity, null, false);
+
+        DebugLog("HandlePlayerInfinityFacePaint", $"Painted Player Infinity's {collisionFace} face with {paintedType} type ({charges} charges), captured wave cube, continuing up");
+
+        return new CollisionResult(true, false); // Player Infinity continues, not destroyed
     }
 
     /// <summary>
-    /// Infinity + Infinity: Face paint + resonance effect
+    /// Infinity + Infinity: Paint WAVE Infinity's face, destroy Player Infinity (cost of resonance)
+    /// When painted face touches grid, triggers resonance (all Infinity cubes become phaseable)
     /// </summary>
-    private CollisionResult HandleInfinityInfinityCollision(CubeManager waveInfinity, CubeManager playerInfinity, Vector2Int position)
+    private CollisionResult HandleInfinityInfinityCollision(CubeManager playerInfinity, CubeManager waveInfinity, Vector2Int position)
     {
-        CollisionResult result = HandleInfinityFacePaint(waveInfinity, playerInfinity, CubeType.Infinity, position, false);
-        return new CollisionResult(true, false);
+        // Paint the WAVE Infinity cube's face with Infinity status (resonance trigger)
+        CubeFace collisionFace = CubeFace.Front;
+        waveInfinity.PaintFace(collisionFace, FaceStatus.InfinityFace, GetFaceColorForType(CubeType.Infinity), -1);
+
+        DebugLog("HandleInfinityInfinityCollision", $"Infinity+Infinity collision - painted Wave Infinity's {collisionFace} face for resonance, Player Infinity destroyed (cost)");
+
+        return new CollisionResult(true, true); // Player Infinity destroyed as cost of resonance
     }
 
     /// <summary>

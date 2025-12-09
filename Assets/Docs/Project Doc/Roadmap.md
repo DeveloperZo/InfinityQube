@@ -48,7 +48,7 @@ Points reflect actual development time, not complexity. A "week gap" between com
 | | 1.4 Stage Content Creation | ⬜ Pending | 20 pts |
 | | 1.5 RPG/Progression Ideation | ⬜ Pending | 10 pts |
 | | 1.6 Visual Polish Pass | ⬜ Pending | 5 pts |
-| **Phase 2** | 2.1-2.9 Content & Polish | ⬜ Pending | 63 pts |
+| **Phase 2** | 2.1-2.10 Content & Polish | ⬜ Pending | 68 pts |
 | **Phase 3** | 3.1-3.8 Polish & Commercial Prep | ⬜ Pending | 55 pts |
 | **Phase 4** | 4.1-4.9 Steam & Release | ⬜ Pending | 50 pts |
 
@@ -84,48 +84,51 @@ Points reflect actual development time, not complexity. A "week gap" between com
 
 ---
 
-### Milestone 1.1: Refine Markers Implementation 🔄 IN PROGRESS
+### Milestone 1.1: Refine Markers Implementation ✅ COMPLETE
 - **Target**: Review and refine marker system (placement, cube spawn, cube collision/interactions) + Core gameplay systems
 - **Points**: 14 (~2-3 weeks active development)
-- **Status**: 🔄 **IN PROGRESS** - Collision matrix designed, unified input implemented
+- **Status**: ✅ **COMPLETE** - All systems implemented and verified
 - **Dependencies**: Milestone 1.0 ✅
+- **Completed**: December 2024
 
-#### Completed:
+#### Completed Tasks:
 - [x] Define marker placement and spawning for all markers
 - [x] Design/Define cube collisions for all 16 combinations (including resonance)
 - [x] Unified input system (mode keys 1-4, placement key F)
-- [x] CubeCollisionManager created (collision logic structure)
+- [x] CubeCollisionManager created with full collision matrix implementation
+- [x] **Collision matrix code** - All 16 cube type combinations implemented
+- [x] **Line Divider System** - Dynamic difficulty with visual feedback (blue=safe, red=danger)
+- [x] **Resonance System** - Infinity+Infinity makes all Infinity cubes phaseable (2 moves)
+- [x] **Enhanced Face Painting** - Front face painting with 3-move telegraph system
+- [x] **Penalty/Reward System** - Line movement based on cube escapes and achievements
+- [x] **Marker Economy** - Per-stage/wave grants with inventory caps (toggleable)
+- [x] Visual feedback for phaseable cubes (material swapping)
+- [x] Grid telegraph shows painted face trigger location 1-3 moves ahead
+- [x] Charge system coherent with economy toggle for testing
 
-#### In Progress / Remaining:
-- [ ] **Implement collision matrix code** (CubeCollisionManager has structure, needs full implementation)
-- [ ] Ensure charge system and regeneration mechanics are coherent
-- [ ] Visual feedback for markers (distinct color per marker type)
-- [ ] Ensure cohesive marker system
-- [ ] **Implement Line Divider System** (dynamic difficulty, marker placement restriction)
-- [ ] **Implement Resonance System** (Infinity vs Infinity phaseable effect)
-- [ ] **Implement Enhanced Face Painting** (rotation mechanics, visual feedback, timing)
-- [ ] **Implement Penalty/Reward System** (line movement based on cube falls and achievements)
-- [ ] **Implement Marker Economy** (per-stage grants, cross-wave resource management)
+#### Implementation Details:
+- **Face Painting**: Paints Front face → triggers after 3 moves (learnable rhythm)
+- **Telegraph**: Progressive visual (dim→bright, small→large, slow→fast pulse)
+- **Materials**: CosmicBlack (opaque), CosmicBlack_Transparent (player), CosmicBlack_Phaseable
+- **Economy**: Stage grants (set inventory) + Wave grants (add to inventory) + Caps
 
-#### Playtesting Checkpoint:
-- Test: Line divider creates tension and strategic decisions
-- Test: Resonance enables advanced Infinity strategies
-- Test: Face painting timing is learnable and rewarding
-- Iterate: Balance charge system, line movement, and visual feedback
+#### Playtesting Notes:
+- Line divider creates tension when player is above the line (red zone)
+- Resonance requires sacrificing player Infinity cube (meaningful cost)
+- Face painting telegraph gives clear 3-turn warning
+- Marker economy forces strategic conservation across waves
 
 ---
 
-### Milestone 1.2: Demo Stage Content ✅ COMPLETE
-- **Target**: Foundational Systems + One Complete Demo Stage
-- **Points**: 5 (measured: ~1 week work)
-- **Status**: ✅ **COMPLETE** (July 8, 2025)
+### Milestone 1.2: RPG/Progression Ideation
+- **Target**: Establish framework to deliver progression and RPG vibes for player
+- **Points**: 10 (~2 weeks active development)
+- **Status**: ⬜ Pending
 - **Tasks**:
-  - [x] Foundational Message System
-  - [x] Modal Control Scheme Implementation
-  - [x] Wave Completion Messages
-  - [x] Stage Success Transitions
-  - [x] Stage/Wave Sequence Framework
-  - [x] Complete Splash to Stage loop
+  - [ ] Brainstorm and design RPG elements and progression
+  - [ ] Design hub area concept and layout
+  - [ ] Plan meta-progression systems (unlocks, upgrades, character growth)
+  - [ ] Create progression economy design (resources, currencies, rewards)
 
 ---
 
@@ -159,15 +162,17 @@ Points reflect actual development time, not complexity. A "week gap" between com
 
 ---
 
-### Milestone 1.5: RPG/Progression Ideation
-- **Target**: Establish framework to deliver progression and RPG vibes for player
-- **Points**: 10 (~2 weeks active development)
-- **Status**: ⬜ Pending
+### Milestone 1.5: Demo Stage Content
+- **Target**: Foundational Systems + One Complete Demo Stage
+- **Points**: 5 (measured: ~1 week work)
+- **Status**: ✅ **Partially started** (July 8, 2025)
 - **Tasks**:
-  - [ ] Brainstorm and design RPG elements and progression
-  - [ ] Design hub area concept and layout
-  - [ ] Plan meta-progression systems (unlocks, upgrades, character growth)
-  - [ ] Create progression economy design (resources, currencies, rewards)
+  - [ ] Foundational Message System
+  - [ ] Modal Control Scheme Implementation
+  - [ ] Wave Completion Messages
+  - [ ] Stage Success Transitions
+  - [ ] Stage/Wave Sequence Framework
+  - [ ] Complete Splash to Stage loop
 
 ---
 
@@ -188,7 +193,7 @@ Points reflect actual development time, not complexity. A "week gap" between com
 
 ## Phase 2: Content Completion & First Polish Pass
 **Goal**: Complete all content and achieve first polish level  
-**Estimated Total**: ~63 pts
+**Estimated Total**: ~68 pts
 
 ### Milestone 2.1: Complete Stage Content
 - **Points**: 10 (~2 weeks)
@@ -229,6 +234,19 @@ Points reflect actual development time, not complexity. A "week gap" between com
 ### Milestone 2.9: Meta-Progression Systems
 - **Points**: 5 (~1 week)
 - Player retention, achievement, and expressive progression
+
+### Milestone 2.10: Analytics Dashboard
+- **Points**: 5 (~1 week)
+- **Goal**: Simple web tool to visualize player stats JSON for playtesting insights
+- **Tasks**:
+  - [ ] Parse InfinityQube stats JSON format (DemoStats, EmergencyStats, player_statistics)
+  - [ ] Session overview (duration, completion status, APM over time)
+  - [ ] Movement heatmap visualization
+  - [ ] Marker usage breakdown (placement timing, trigger success rate)
+  - [ ] Cube capture/escape timeline
+  - [ ] Tutorial message read times and skip rates
+  - [ ] Export/share session summaries
+- **Tech**: Static HTML/JS site (no backend needed)
 
 ---
 
@@ -415,13 +433,13 @@ Milestone 1.0 ✅ → 1.1 🔄 → 1.3 → 1.4 → 2.x → 3.x → 4.x → Relea
 | Phase | Focus | Points | Status |
 |-------|-------|--------|--------|
 | Phase 1 | Core Innovation & Content | 124 pts | 🔄 In Progress |
-| Phase 2 | Content Completion & Polish | 63 pts | ⬜ Pending |
+| Phase 2 | Content Completion & Polish | 68 pts | ⬜ Pending |
 | Phase 3 | Polish & Commercial Prep | 55 pts | ⬜ Pending |
 | Phase 4 | Steam Integration & Release | 50 pts | ⬜ Pending |
-| **TOTAL** | | **292 pts** | |
+| **TOTAL** | | **297 pts** | |
 
 **Completed**: 75 pts (Milestone 1.0 + 1.2)  
-**Remaining**: ~217 pts
+**Remaining**: ~222 pts
 
 **Note**: Phases can overlap; calendar time will vary based on availability.
 
@@ -433,7 +451,7 @@ Milestone 1.0 ✅ → 1.1 🔄 → 1.3 → 1.4 → 2.x → 3.x → 4.x → Relea
 |--------|-------|
 | **Measured Velocity** | **22 points/month** (active periods) |
 | **Completed Points** | 75 pts |
-| **Remaining Points** | ~217 pts |
+| **Remaining Points** | ~222 pts |
 | **Point Definition** | 1 pt ≈ 1 day active work |
 | **Week Definition** | 5 pts ≈ 1 week active work |
 | **Measurement Rule** | Gap < 1 week = same-day continuation |
@@ -446,6 +464,7 @@ Milestone 1.0 ✅ → 1.1 🔄 → 1.3 → 1.4 → 2.x → 3.x → 4.x → Relea
 1. **Playtesting Pipeline** ✅ Framework exists
 2. **Technical Debt Management** ✅ System operational (12 file size violations)
 3. **Community Building** - Development blog, Discord setup
+4. **Analytics Dashboard** - Can start early to support playtesting (Milestone 2.10)
 
 ---
 
@@ -525,4 +544,4 @@ Milestone 1.0 ✅ → 1.1 🔄 → 1.3 → 1.4 → 2.x → 3.x → 4.x → Relea
 *Last Updated: December 8, 2025*  
 *Current Phase: Phase 1 - Core Innovation & Content*  
 *Current Milestone: 1.1 - Refine Markers Implementation*  
-*Total Points: 292 | Completed: 75 | Remaining: 217*
+*Total Points: 297 | Completed: 75 | Remaining: 222*

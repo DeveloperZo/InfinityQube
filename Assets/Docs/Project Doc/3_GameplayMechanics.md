@@ -60,20 +60,20 @@ Dynamic difficulty mechanism that creates strategic tension:
 |-------------|-----------|----------|-------------|
 | Unit | Unit | Standard capture | Player Unit collides with Wave Unit and removes it from the grid |
 | Unit | Matrix | 2x2 area capture | Player Unit collides with Wave Matrix and triggers a 2x2 capture area centered on collision point |
-| Unit | Recursion | Column capture | Player Unit collides with Wave Recursion and auto-captures 3 cubes as wave passes over collision tile |
+| Unit | Recursion | Recursion marker with 3 charges | Player Unit collides with Wave Recursion and creates a single marker; auto-captures 3 cubes or expires after 5 move forwards |
 | Unit | Infinity | Face paint, Unit destroyed | Player Unit collides with Wave Infinity, paints collision face, Unit destroyed; when face touches grid, Unit marker placed at that tile; auto-captures next cube that passes over |
 | Matrix | Unit | 2x2 area capture | Player Matrix collides with Wave Unit and triggers a 2x2 capture area expanding from Matrix's position |
 | Matrix | Matrix | Triggerable 3x3 marker | Player Matrix collides with Wave Matrix and creates a 3x3 manual marker centered on collision point; single trigger |
 | Matrix | Recursion | Degrading 2x2 marker | Player Matrix collides with Wave Recursion and creates a 2x2 area marker; each tile has 1 charge; collision point and diagonal opposite degrade last; player manually triggers; area shrinks over triggers |
 | Matrix | Infinity | Face paint, Matrix destroyed | Player Matrix collides with Wave Infinity, paints collision face, Matrix destroyed; when face touches grid, 2x2 manual marker placed at that tile |
-| Recursion | Unit | Column capture | Player Recursion collides with Wave Unit and auto-captures 3 cubes as wave passes over collision tile |
-| Recursion | Matrix | Auto 1x3 marker | Player Recursion collides with Wave Matrix and creates a 1x3 vertical marker (3 tiles deep); each tile auto-captures as wave passes |
+| Recursion | Unit | A recursion marker with 3 charges | Player Recursion collides with Wave Unit a creates a marker; auto-captures 3 cubes or expires after 5 move forwards |
+| Recursion | Matrix | Auto 3x1 horizontal marker | Player Recursion collides with Wave Matrix and creates a 3x1 horizontal marker (3 tiles wide); 2 charges total, auto-captures as wave passes |
 | Recursion | Recursion | Cross marker | Player Recursion collides with Wave Recursion and creates a cross-shaped marker (5 tiles - 1x3 vertical + 1x3 horizontal, overlapping at center); each tile auto-captures as wave passes |
-| Recursion | Infinity | Face paint, Recursion destroyed | Player Recursion collides with Wave Recursion, paints collision face, Recursion destroyed; when face touches grid, auto-capture marker placed at that tile; captures 3 cubes as wave passes |
-| Infinity | Unit | Wave join | Player Infinity collides with Wave Unit, removes Unit, takes its position; moves with wave; passes through harmlessly at player edge |
-| Infinity | Matrix | Face paint, continue up | Player Infinity collides with Wave Matrix, paints collision face, continues up until exiting grid; when face touches grid, 2x2 manual marker placed at that tile |
-| Infinity | Recursion | Face paint, continue up | Player Infinity collides with Wave Recursion, paints collision face, continues up until exiting grid; when face touches grid, auto-capture marker placed at that tile; captures 3 cubes as wave passes |
-| Infinity | Infinity | Face paint, resonance | Player Infinity collides with Wave Infinity, paints collision face, continues up until exiting grid; when face touches grid, ALL Infinity cubes on grid become phaseable for that turn |
+| Recursion | Infinity | Face paint + marker, Recursion destroyed | Player Recursion collides with Wave Infinity, paints Wave Infinity's face with Recursion status, leaves 1-charge recursion marker at collision point, Recursion destroyed |
+| Infinity | Unit | Wave join | Player Infinity destroys Wave Unit, takes its position, joins wave and moves downward with it |
+| Infinity | Matrix | Face paint Player (1 charge), continue up | Player Infinity collides with Wave Matrix, paints Player Infinity's face with Matrix status (1 charge), captures Matrix, continues up; when face touches grid, 2x2 manual marker placed |
+| Infinity | Recursion | Face paint Player, continue up | Player Infinity collides with Wave Recursion, paints Player Infinity's face with Recursion status, captures Recursion, continues up; when face touches grid, auto-capture marker placed |
+| Infinity | Infinity | Face paint Wave, Player destroyed | Player Infinity collides with Wave Infinity, paints Wave Infinity's face with Infinity status, Player Infinity destroyed (cost); when face touches grid, ALL Infinity cubes become phaseable |
 
 ---
 
@@ -220,23 +220,28 @@ WaveData Structure:
 ### Marker Economy
 Resource management system that creates strategic depth:
 
-#### Per Stage Grant
-- **Fixed Allocation**: Players receive a fixed number of non-Unit markers at stage start
-- **Cross-Wave Management**: Players manage this inventory across all waves in that stage
-- **No Replenishment**: Spent markers do not replenish until next stage
-- **Strategic Conservation**: Forces players to balance immediate needs with future wave requirements
+#### Grant System (Hybrid Stage + Wave)
+| Grant Type | Recursion | Matrix | Infinity | Behavior |
+|------------|-----------|--------|----------|----------|
+| **Stage Grant** | 5 | 3 | 2 | SET inventory (at stage start) |
+| **Wave Grant** | +1 | +1 | +0 | ADD to inventory (at wave start) |
+| **Inventory Cap** | 8 | 5 | 3 | Maximum holdings |
 
 #### Marker Behavior by Type
-- **Unit Markers**: Unlimited availability, always accessible
-- **Matrix Markers**: Scarce resource, manual trigger required
-- **Recursion Markers**: Scarce resource, auto-trigger behavior
-- **Infinity Markers**: Very scarce, unlocked later in progression
+- **Unit Markers**: Cooldown-based regeneration, always accessible (unlimited total)
+- **Matrix Markers**: Grant-based, manual trigger, caps at 5
+- **Recursion Markers**: Grant-based, auto-trigger, caps at 8
+- **Infinity Markers**: Grant-based, very scarce, caps at 3
+
+#### Economy Toggle
+- **useMarkerEconomy = true**: Non-Unit markers use grant system (no regeneration)
+- **useMarkerEconomy = false**: All markers use cooldown-based regeneration (testing mode)
 
 ### Marker Placement Rules
 - **Grid Validation**: Must be within valid grid boundaries
 - **Tile State Check**: Cannot place on corrupted or occupied tiles
-- **Resource Availability**: Sufficient charges/cooldown completed
-- **Line Divider Restriction**: Can only place below the line divider
+- **Resource Availability**: Sufficient charges available
+- **Line Divider Restriction**: Player must be in safe zone (below line) to place markers
 
 ## 3.6 Penalty and Reward System
 
@@ -300,7 +305,7 @@ Core principles governing marker trigger behavior:
 
 - **Recursion Interactions** = Auto trigger (wave movement triggers)
   - Recursion vs Recursion: Cross marker (auto-captures)
-  - Recursion vs Matrix: 1x3 vertical marker (auto-captures)
+  - Recursion vs Matrix: 3x1 horizontal marker (auto-captures)
   - Recursion vs Infinity: Auto-capture marker (from painted face)
   - Recursion vs Unit: Column capture (auto)
 
@@ -319,7 +324,7 @@ Visual and mechanical patterns created by cube interactions:
 | Matrix vs Matrix | 3x3 square | Manual |
 | Matrix vs Recursion | 2x2 degrading (1 charge per tile) | Manual |
 | Recursion vs Unit / Unit vs Recursion | Single tile, 3 charges | Auto |
-| Recursion vs Matrix | 1x3 vertical line | Auto |
+| Recursion vs Matrix | 3x1 horizontal line | Auto |
 | Recursion vs Recursion | Cross (5 tiles) | Auto |
 
 ## 3.10 Face Painting Visual Feedback

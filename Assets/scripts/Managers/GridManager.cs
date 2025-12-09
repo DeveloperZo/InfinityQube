@@ -35,6 +35,8 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
     [SerializeField] private bool enableLineDivider = false; // Toggle line divider system on/off (default: OFF for testing)
     [SerializeField] private int lineDividerRow = 10; // Default divider position (middle of 20-row grid)
     [SerializeField] private GameObject lineDividerVisual; // Visual indicator for line divider
+    [SerializeField] private Color lineDividerColorSafe = new Color(0.2f, 0.5f, 1f, 0.7f); // Blue - player below line
+    [SerializeField] private Color lineDividerColorDanger = new Color(1f, 0.2f, 0.2f, 0.7f); // Red - player above line
     #endregion
 
     #region Runtime State
@@ -50,6 +52,12 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
     // Object pooling (if enabled)
     private Queue<GameObject> tilePool = new Queue<GameObject>();
     private List<GameObject> activeTiles = new List<GameObject>();
+    
+    // Task 6: Line divider runtime state
+    private bool lineDividerStyled = false;
+    private Material lineDividerMaterial;
+    private PlayerManager playerManager;
+    private bool playerWasBelowLine = true; // Track previous state to avoid constant updates
     #endregion
 
     #region Properties
@@ -84,6 +92,15 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
         EnableDebugLogs = true;
         GenerateGrid();
         InitializeLineDivider();
+        
+        // Get PlayerManager reference for line divider color updates
+        playerManager = FindFirstObjectByType<PlayerManager>();
+    }
+    
+    private void Update()
+    {
+        // Task 6: Update line divider color based on player position
+        UpdateLineDividerColor();
     }
     
     /// <summary>
@@ -162,14 +179,116 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
             return;
         }
         
-        // Create or update visual indicator (mock with log for now)
-        DebugLog($"[Task 6] Line divider visual at row {lineDividerRow}");
-        // TODO: Add visual line indicator when visual system is ready
-        
         if (lineDividerVisual != null)
         {
+            // Style the assigned visual (only once)
+            if (!lineDividerStyled)
+            {
+                StyleLineDividerVisual();
+                lineDividerStyled = true;
+            }
+            
             lineDividerVisual.SetActive(true);
+            PositionLineDividerVisual();
+            DebugLog($"[Task 6] Line divider visual positioned at row {lineDividerRow}");
         }
+        else
+        {
+            DebugLog($"[Task 6] Line divider at row {lineDividerRow} (no visual assigned)");
+        }
+    }
+    
+    /// <summary>
+    /// Task 6: Styles an assigned line divider visual (removes collider, applies material)
+    /// Assign any Cube or GameObject in the Inspector - this will style it at runtime
+    /// </summary>
+    private void StyleLineDividerVisual()
+    {
+        if (lineDividerVisual == null) return;
+        
+        // Remove collider if present - visual only, no physics
+        Collider col = lineDividerVisual.GetComponent<Collider>();
+        if (col != null) Destroy(col);
+        
+        // Create and apply transparent material (start with safe/blue color)
+        Renderer renderer = lineDividerVisual.GetComponent<Renderer>();
+        if (renderer != null)
+        {
+            lineDividerMaterial = new Material(Shader.Find("Standard"));
+            lineDividerMaterial.color = lineDividerColorSafe; // Start with blue (safe)
+            lineDividerMaterial.SetFloat("_Mode", 3); // Transparent mode
+            lineDividerMaterial.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
+            lineDividerMaterial.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+            lineDividerMaterial.SetInt("_ZWrite", 0);
+            lineDividerMaterial.DisableKeyword("_ALPHATEST_ON");
+            lineDividerMaterial.EnableKeyword("_ALPHABLEND_ON");
+            lineDividerMaterial.DisableKeyword("_ALPHAPREMULTIPLY_ON");
+            lineDividerMaterial.renderQueue = 3000;
+            renderer.material = lineDividerMaterial;
+        }
+        
+        DebugLog("[Task 6] Styled line divider visual");
+    }
+    
+    /// <summary>
+    /// Task 6: Updates line divider color based on player position
+    /// Blue = player below line (safe, can place markers)
+    /// Red = player above line (danger, cannot place markers)
+    /// </summary>
+    private void UpdateLineDividerColor()
+    {
+        // Skip if line divider disabled or no visual/material
+        if (!enableLineDivider || lineDividerMaterial == null || playerManager == null) return;
+        
+        // Check if player is below the line
+        bool playerIsBelowLine = playerManager.currentTilePosition.y < lineDividerRow;
+        
+        // Only update color if state changed (performance optimization)
+        if (playerIsBelowLine != playerWasBelowLine)
+        {
+            playerWasBelowLine = playerIsBelowLine;
+            Color targetColor = playerIsBelowLine ? lineDividerColorSafe : lineDividerColorDanger;
+            lineDividerMaterial.color = targetColor;
+            
+            DebugLog($"[Task 6] Line divider color changed: {(playerIsBelowLine ? "BLUE (safe)" : "RED (danger)")}");
+        }
+    }
+    
+    /// <summary>
+    /// Task 6: Checks if player is currently in safe zone (below line divider)
+    /// Returns true if line divider is disabled OR player is below the line
+    /// </summary>
+    public bool IsPlayerInSafeZone()
+    {
+        if (!enableLineDivider) return true; // Always safe if disabled
+        if (playerManager == null) return true; // Default to safe if no player
+        return playerManager.currentTilePosition.y < lineDividerRow;
+    }
+    
+    /// <summary>
+    /// Task 6: Positions the line divider visual at the current divider row
+    /// </summary>
+    private void PositionLineDividerVisual()
+    {
+        if (lineDividerVisual == null) return;
+        
+        // Position: center of grid width, at the divider row boundary
+        // The line sits at the BOTTOM edge of the divider row (markers allowed below, not on or above)
+        float gridWidth = (width - 1) * tileSize;
+        float centerX = gridWidth / 2f;
+        
+        // Position at the boundary between lineDividerRow-1 and lineDividerRow
+        Vector3 lineWorldPos = GridToWorldPosition(0, lineDividerRow, 0.1f); // Slightly above ground
+        lineWorldPos.x = centerX + (transform.position + calculatedGridOffset).x;
+        lineWorldPos.z -= tileSize * 0.5f; // Position at the boundary between rows
+        
+        lineDividerVisual.transform.position = lineWorldPos;
+        
+        // Scale: span full grid width, thin line
+        float lineWidth = gridWidth + tileSize; // Extend slightly past edges
+        float lineHeight = 5f; // Vertical height
+        float lineDepth = 0.08f; // Thin depth
+        lineDividerVisual.transform.localScale = new Vector3(lineWidth, lineHeight, lineDepth);
     }
 
     private void OnDrawGizmosSelected()
