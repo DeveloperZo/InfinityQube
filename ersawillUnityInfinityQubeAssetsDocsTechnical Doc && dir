@@ -1,0 +1,20 @@
+[33m359c1ff[m[33m ([m[1;36mHEAD -> [m[1;32mdevelop[m[33m, [m[1;31morigin/develop[m[33m)[m refactor: Enhance PlayerMarkerSystem with auto-capture mechanics and countdown displays
+[33m8b8c2f7[m refactor: Implement face painting mechanics and enhance cube interactions
+[33me577e0d[m refactor: Update gameplay mechanics documentation and implement new systems
+[33m738d2d7[m refactor: Enhance gameplay documentation with line divider and resonance systems
+[33m8f1cbb1[m refactor: Rename Prime markers to Matrix markers and update related systems
+[33mcb69513[m refactor: Enhance marker system with unified input and size management
+[33mdbe5e98[m refactor: Standardize marker terminology across documentation and codebase
+[33m164fa35[m refactor: Update ContextTriggerSystem to use new marker terminology
+[33mab41b5d[m refactor: Update PlayerStatisticsManager for marker type consistency and backward compatibility
+[33m375004e[m refactor: Remove backward compatibility properties in PlayerActionUI
+[33m761cf88[m refactor: Standardize marker terminology and enhance wave system documentation
+[33m1088f3a[m chore: Add initial critique document for Milestone 1.1
+[33md2db645[m feat: Implement wave auto-advance feature and enhance wave management UI
+[33mf2111d2[m refactor: Enhance marker system and UI for Infinity markers
+[33mb4eebfd[m refactor: Rename HeavyMarker to RecursionMarker and update related systems
+[33mb951902[m refactor: Simplify wave management and update roadmap
+[33maebdbb2[m Merge branch 'master' of https://github.com/DeveloperZo/InfinityQube
+[33mefe823f[m refactor: Update marker system and UI for enhanced gameplay mechanics
+[33m98b1fb3[m Merge pull request #3 from DeveloperZo/cursor/analyze-codebase-and-update-documentation-claude-4.5-opus-high-thinking-08f6
+[33m4f0c9b9[m Update docs to reflect effort-based estimates

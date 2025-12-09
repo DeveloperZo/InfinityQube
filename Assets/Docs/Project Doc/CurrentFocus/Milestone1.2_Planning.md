@@ -4,7 +4,7 @@
 > **Target**: Review and refine marker system (placement, cube spawn, cube collision/interactions)  
 > **Complexity**: 3 points  
 > **Effort Estimate**: ~1 week active development  
-> **Dependencies**: Milestone 1.1 ✅ (paired wave system complete)
+> **Dependencies**: Core marker system complete
 
 ---
 
@@ -21,13 +21,11 @@ This milestone focuses on refining the marker system to ensure cohesive gameplay
 - **Marker Placement**: All marker types can be placed with charge system
 - **Marker Spawning**: Markers automatically convert to player cubes when wave moves forward
 - **Charge System**: Regeneration mechanics exist for all marker types
-- **Paired Wave System**: Markers from Wave A spawn cubes in Wave B
 - **Basic Collision**: Player cubes can capture wave cubes
 - **Matrix Area Effect**: Matrix cubes capture in 3x3 area
 
 ### ⚠️ What Needs Definition/Refinement
 - **Cube Collision Matrix**: ✅ Complete (including resonance) - See GameplayMechanics.md
-- **Marker Mirroring Rules**: Which markers get mirrored and how
 - **Charge System Coherence**: Ensure all regeneration mechanics are balanced
 - **Visual Feedback**: Distinct colors and indicators for all marker types
 - **Non-Unit Marker Acquisition**: Ways to acquire markers beyond initial charges
@@ -57,13 +55,12 @@ This milestone focuses on refining the marker system to ensure cohesive gameplay
   - Infinity Marker → Infinity Cube ✅ (automatic on wave movement)
   - Cube Marker → Area detonation (variable size: 2x2 or 3x3) ✅
 - [x] Document marker placement rules and restrictions ✅
-- [x] Verify marker-to-cube conversion in paired wave system ✅
 - [x] Document unified input system (mode keys 1-4, placement F, automatic spawning) ✅
 
 **Acceptance Criteria**:
 - ✅ All marker types can be placed and spawn appropriate cubes
 - ✅ Marker placement rules are clearly defined and enforced
-- ✅ Marker-to-cube conversion works correctly in both immediate and paired wave contexts
+- ✅ Marker-to-cube conversion works correctly
 
 ---
 
@@ -121,55 +118,6 @@ This milestone focuses on refining the marker system to ensure cohesive gameplay
 - ✅ Infinity+Infinity collision behavior defined (face paint + resonance effect)
 - ✅ All Infinity collision behaviors defined (face painting system)
 - ✅ All collision behaviors documented in Task 2 document
-
----
-
-### Task 3: Design/Define Marker Mirroring and Gameplay Mechanics
-
-**Current State**:
-- Paired wave system records all marker positions
-- Markers from Wave A spawn cubes in Wave B (mirrored wave)
-- Mirroring is automatic for all marker types
-
-**Design Questions**:
-1. **Which Markers Should Be Mirrored?**
-   - Current: All markers are mirrored
-   - Question: Should some markers NOT be mirrored (e.g., Cube markers)?
-   - Question: Should mirroring be optional per marker type?
-
-2. **Mirroring Mechanics**:
-   - Current: Markers spawn cubes at recorded positions
-   - Question: Should mirroring include position transformations (Y-axis flip, offset)?
-   - Question: Should mirroring preserve marker type or allow type conversion?
-
-3. **Strategic Depth**:
-   - How can mirroring create interesting strategic decisions?
-   - Should players be able to "opt out" of mirroring for certain markers?
-   - Should mirroring have resource costs or limitations?
-
-**Proposed Mirroring Rules**:
-
-| Marker Type | Should Mirror? | Spawn Type | Special Rules |
-|-------------|----------------|-----------|---------------|
-| Unit | ✅ Yes | Unit Cube | Standard mirroring |
-| Recursion | ✅ Yes | Recursion Cube | Standard mirroring |
-| Matrix | ✅ Yes | Matrix Cube | Spawns at center position |
-| Infinity | ✅ Yes | Infinity Cube | Standard mirroring |
-| Cube | ❓ TBD | N/A | Cube markers are direct actions, not placements |
-
-**Actions Needed**:
-- [ ] Define mirroring rules for each marker type
-- [ ] Implement mirroring exclusions if needed (e.g., Cube markers)
-- [ ] Design mirroring position transformations (if any)
-- [ ] Add visual indicators for which markers will be mirrored
-- [ ] Test mirroring with all marker combinations
-- [ ] Document mirroring mechanics
-
-**Acceptance Criteria**:
-- ✅ Mirroring rules are defined for all marker types
-- ✅ Mirroring mechanics create strategic depth
-- ✅ Visual feedback shows which markers will be mirrored
-- ✅ Mirroring behavior is documented
 
 ---
 

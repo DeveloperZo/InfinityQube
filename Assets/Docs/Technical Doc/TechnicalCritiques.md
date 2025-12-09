@@ -1,13 +1,13 @@
-# Architectural Critiques
+# Technical Critiques
 
-> **Document Purpose:** This document provides a critical analysis of the codebase architecture, identifying strengths, weaknesses, and opportunities for improvement. It serves as a guide for refactoring decisions and architectural evolution.
+> **Document Purpose:** This document provides a comprehensive critical analysis of the codebase architecture, technical debt, issues, and improvement opportunities. It consolidates all technical concerns into a single reference.
 
 ## Overview
 
-**Analysis Date**: November 28, 2025  
-**Codebase State**: Post-hiatus, paired wave system in design  
-**Total Scripts**: 84 C# files  
-**Total Lines**: ~26,751 lines of C# code
+**Analysis Date**: December 8, 2025  
+**Codebase State**: Milestone 1.2 - Marker system refinement in progress  
+**Total Scripts**: 87+ C# files  
+**Total Lines**: ~29,000+ lines of C# code (estimated)
 
 ---
 
@@ -21,38 +21,46 @@
 - Event-driven communication patterns
 - Comprehensive debug infrastructure
 - Well-documented enumeration system
+- Tile system successfully decomposed into components
 
 **Critical Issues**:
-- 10 files violate size limits (some by 200%+)
+- 12 files violate size limits (some by 200%+)
 - God class anti-pattern in major managers
 - Tight coupling between some systems
+- New CubeCollisionManager added at 1017 lines (already over limit)
 - OnGUI still used for debug panels (acceptable for debug-only)
 
 ---
 
-## 1. File Size Violations (Critical)
+## 1. File Size Violations (CRITICAL Priority)
+
+> **Updated December 8, 2025**: Fresh audit reveals 12 files exceeding limits.
 
 ### Current Violations
 
-The project establishes these limits:
-- **Core Components**: 750 lines max
-- **Manager Classes**: 600 lines max
-- **Utility Classes**: 300 lines max
+**Project Standards**:
+- Core Components: 750 lines max
+- Manager Classes: 600 lines max
+- Utility Classes: 300 lines max
 
-**Violation Summary**:
+**Violation Summary (December 2025)**:
 
-| File | Lines | Limit | Over By | Priority |
-|------|-------|-------|---------|----------|
-| WaveManager.cs | 1949 | 600 | **225%** | 🔴 Critical |
-| PlayerActionManager.cs | 1655 | 600 | **176%** | 🔴 Critical |
-| CubeManager.cs | 1378 | 600 | **130%** | 🔴 Critical |
-| PlayerStatisticsManager.cs | 1347 | 600 | **125%** | 🔴 Critical |
-| PlayerMarkerSystem.cs | 1347 | 600 | **125%** | 🔴 Critical |
-| GridManager.cs | 1276 | 600 | **113%** | 🔴 Critical |
-| IQWaveGenerator.cs | 1043 | 750 | **39%** | 🟡 Medium |
-| TutorialMessageManager.cs | 997 | 600 | **66%** | 🟡 Medium |
-| FacePaintingManager.cs | 861 | 600 | **44%** | 🟡 Medium |
-| MessageProgressTracker.cs | 775 | 750 | **3%** | 🟢 Low |
+| File | Current Lines | Limit | Over By | Priority |
+|------|---------------|-------|---------|----------|
+| WaveManager.cs | 2083 | 600 | **247%** | 🔴 CRITICAL |
+| PlayerActionManager.cs | 1936 | 600 | **223%** | 🔴 CRITICAL |
+| CubeManager.cs | 1535 | 600 | **156%** | 🔴 CRITICAL |
+| GridManager.cs | 1384 | 600 | **131%** | 🔴 CRITICAL |
+| PlayerStatisticsManager.cs | 1352 | 600 | **125%** | 🔴 CRITICAL |
+| PlayerMarkerSystem.cs | 1122 | 600 | **87%** | 🔴 CRITICAL |
+| IQWaveGenerator.cs | 1043 | 750 | **39%** | 🟡 HIGH |
+| **CubeCollisionManager.cs (NEW)** | 1017 | 600 | **70%** | 🟡 HIGH |
+| TutorialMessageManager.cs | 997 | 600 | **66%** | 🟡 HIGH |
+| FacePaintingManager.cs | 869 | 600 | **45%** | 🟡 MEDIUM |
+| Tile.cs | 878 | 750 | **17%** | 🟡 MEDIUM |
+| MarkerVisualManager.cs | 537 | 600 | - | ✅ OK |
+
+**Note**: Tile.cs was previously well-decomposed but has grown again during Milestone 1.2 work.
 
 ### Impact Assessment
 
@@ -62,28 +70,43 @@ The project establishes these limits:
 - Merge conflict risk in team scenarios
 - Test isolation challenges
 
-**Recommended Extractions**:
+### Recommended Extractions
 
-#### WaveManager.cs (1949 → target 600)
+#### WaveManager.cs (2083 → target 600)
 Extract these subsystems:
 1. `WaveSpawnSystem.cs` (~400 lines) - Cube spawning and positioning logic
-2. `WavePairingSystem.cs` (~300 lines) - Marker inheritance and paired wave logic
-3. `WaveStatistics.cs` (~200 lines) - Wave tracking and statistics
-4. `WaveUIController.cs` (~150 lines) - Message display and UI interaction
+2. `WaveStatistics.cs` (~200 lines) - Wave tracking and statistics
+3. `WaveUIController.cs` (~150 lines) - Message display and UI interaction
 
-#### PlayerActionManager.cs (1655 → target 600)
+#### PlayerActionManager.cs (1936 → target 600)
 Extract these subsystems:
 1. `MarkerPlacementController.cs` (~400 lines) - Placement validation and execution
 2. `MarkerTriggerController.cs` (~300 lines) - Trigger logic and effects
 3. `MarkerChargeSystem.cs` (~200 lines) - Charge management and regeneration
 4. Keep core coordination in PlayerActionManager (~400 lines)
 
-#### CubeManager.cs (1378 → target 600)
+#### CubeManager.cs (1535 → target 600)
 Extract these subsystems:
 1. `CubeMovementController.cs` (~300 lines) - Movement and animation
 2. `CubeFacePaintingController.cs` (~250 lines) - Face status and painting
 3. `CubeCollisionHandler.cs` (~200 lines) - Collision detection and response
 4. Keep core cube state in CubeManager (~400 lines)
+
+#### CubeCollisionManager.cs (1017 → target 600) - NEW
+**Current Responsibilities**:
+- Collision matrix implementation
+- All cube vs cube collision logic
+- Result handling and callbacks
+
+**Proposed Extraction**:
+```
+CubeCollisionManager.cs (400 lines - coordination)
+├── CollisionMatrixHandler.cs (~300 lines) - Matrix lookup and rules
+└── CollisionEffectHandler.cs (~300 lines) - Effect execution
+```
+
+**Complexity**: 3 points
+**Risk**: Low (new file, can be refactored early)
 
 ---
 
@@ -106,7 +129,7 @@ private TileMarker tileMarker;
 private TileCorruption tileCorruption;
 private TileFacePainting tileFacePainting;
 ```
-**Assessment**: Excellent application. Tile.cs is well-organized at 602 lines despite complex functionality.
+**Assessment**: Excellent application. Model pattern for other systems.
 
 #### Observer Pattern (UnityEvents)
 ```csharp
@@ -238,13 +261,13 @@ tileCorruption.ApplyCorruption();
 #### Tile System (Assets/scripts/Components/Tile/)
 ```
 Tile/
-├── Tile.cs (602 lines) - Facade
+├── Tile.cs (878 lines) - Facade (needs attention)
 ├── TileVisuals.cs - Visual state
 ├── TileMarker.cs - Marker management
 ├── TileCorruption.cs - Corruption state
 └── TileFacePainting.cs - Face painting
 ```
-**Assessment**: Excellent component separation. Model for other systems.
+**Assessment**: Good component separation, but Tile.cs has grown again.
 
 #### AudioManager System (Assets/scripts/Managers/AudioManager/)
 ```
@@ -264,58 +287,124 @@ AudioManager/
 Most managers are monolithic:
 ```
 Managers/
-├── WaveManager.cs (1949 lines) - MONOLITHIC
-├── PlayerActionManager.cs (1655 lines) - MONOLITHIC
-├── CubeManager.cs (1378 lines) - MONOLITHIC
-├── GridManager.cs (1276 lines) - MONOLITHIC
-└── StageManager.cs (771 lines) - Acceptable
+├── WaveManager.cs (2083 lines) - MONOLITHIC
+├── PlayerActionManager.cs (1936 lines) - MONOLITHIC
+├── CubeManager.cs (1535 lines) - MONOLITHIC
+├── GridManager.cs (1384 lines) - MONOLITHIC
+├── CubeCollisionManager.cs (1017 lines) - NEW, ALREADY TOO LARGE
+└── StageManager.cs (~800 lines) - Getting large
 ```
 
 **Recommendation**: Apply Tile-style decomposition to major managers.
 
 ---
 
-## 5. Data Architecture
+## 5. Technical Debt Items
 
-### ScriptableObject Usage ✅
+### 5.1 Obsolete Code Cleanup (Medium Priority)
 
-**Strengths**:
-- Configuration separated from code
-- Designer-friendly editing
-- Easy A/B testing and balancing
+**Status**: ⚠️ STILL PRESENT IN CODE - Awaiting cleanup execution  
+**Impact**: Low risk - all functionality redirects to new implementations  
+**Timeline**: Production validated, ready for removal but not yet executed
 
-**Current ScriptableObjects**:
-| Asset | Purpose | Location |
-|-------|---------|----------|
-| WaveData | Wave configuration | Assets/data/ |
-| StageData | Stage configuration | Assets/data/ |
-| CubeTypeDefinitions | Cube type data | Assets/data/ |
-| CubeAudioConfiguration | Audio settings | Assets/data/ |
-| MessageDatabase | Tutorial messages | Assets/data/ |
+#### Files Containing Obsolete Attributes:
+```
+Assets/scripts/Managers/PlayerActionManager.cs
+- [System.Obsolete("Use LightMarker instead")] IndividualMarker class
+- [System.Obsolete("Use MatrixMarker instead")] AreaMarker class
+- Multiple obsolete method aliases (Individual → Light, Area → Matrix)
+- Obsolete property aliases for compatibility
 
-### Data Flow Concerns ⚠️
-
-#### Paired Wave System Data
-Current implementation stores marker positions in runtime dictionary:
-```csharp
-private RecordedMarkerPositions previousWaveMarkers = null;
-private Dictionary<WaveData, bool> waveMirrorState = new Dictionary<WaveData, bool>();
+Assets/scripts/Managers/PlayerMarkerSystem.cs  
+- Obsolete enum value aliases (Individual → Light, Area → Matrix)
+- Obsolete accessor properties for backward compatibility
+- Obsolete method aliases for marker operations
 ```
 
-**Concern**: Runtime state not persisted. Lost on scene reload.
+#### Cleanup Actions Required:
+1. Remove obsolete IndividualMarker and AreaMarker classes
+2. Remove obsolete method aliases
+3. Remove obsolete property aliases
+4. Remove obsolete enum aliases
 
-**Recommendation**: Extend WaveData ScriptableObject to store marker inheritance configuration.
+### 5.2 Magic Number Cleanup (Medium Priority)
+**Files**: Various  
+**Issue**: Hardcoded values should be moved to configuration  
+**Examples**:
+```csharp
+// TODO: Move to configuration
+private float perfectTimingWindow = 0.2f;
+private int maxCorruptionInteractions = 3;
+private int corruptionDuration = 5;
+```
 
-#### Statistics Persistence
-`PlayerStatisticsManager` (1347 lines) handles both tracking and persistence.
+### 5.3 Error Handling Standardization (Low Priority)
+**Files**: Manager classes  
+**Issue**: Inconsistent error handling patterns  
+**Action**: Implement standardized error handling with logging
 
-**Recommendation**: Separate into:
-- `PlayerStatisticsTracker.cs` - Runtime tracking
-- `PlayerStatisticsSerializer.cs` - Save/Load operations
+### 5.4 Comment Updates (Low Priority)
+**Files**: All modified files  
+**Issue**: Some comments still reference old terminology  
+**Action**: Update remaining comments to use new terminology
 
 ---
 
-## 6. Debug Infrastructure
+## 6. Performance Concerns
+
+### 6.1 Marker Visual System
+**File**: PlayerMarkerSystem.cs  
+**Issue**: Individual GameObjects for each marker overlay  
+**Opportunity**: Consider pooling or batch rendering for many markers
+
+### 6.2 Face Painting Visual System
+**File**: CubeManager.cs  
+**Issue**: Individual face indicator GameObjects  
+**Opportunity**: Investigate shader-based face painting for better performance
+
+### 6.3 FindAnyObjectByType Usage
+```csharp
+// CubeManager.Init()
+playerActionManager = FindAnyObjectByType<PlayerActionManager>();
+```
+**Concern**: Called during cube initialization. Could be expensive with many cubes.
+**Recommendation**: Pass reference through Init() parameter instead.
+
+### 6.4 Large Dictionaries
+```csharp
+// WaveManager
+private Dictionary<WaveData, bool> waveMirrorState = new Dictionary<WaveData, bool>();
+```
+**Concern**: Unbounded growth potential. Need cleanup strategy.
+
+---
+
+## 7. Memory and Resource Patterns
+
+### Good Patterns ✅
+
+#### Object Pooling Ready
+```csharp
+// GridManager
+public bool useObjectPooling = false;
+public int pooledTileCount = 100;
+private Queue<GameObject> tilePool = new Queue<GameObject>();
+```
+**Assessment**: Infrastructure exists but not fully utilized.
+
+#### Cached References
+```csharp
+// Managers cache references in Start()
+private GridManager gridManager;
+private void Start() {
+    gridManager = GridManager.Instance;
+}
+```
+**Assessment**: Follows recommended pattern. Avoids FindObjectOfType in Update.
+
+---
+
+## 8. Debug Infrastructure
 
 ### Current Debug Architecture
 
@@ -348,50 +437,7 @@ private Dictionary<WaveData, bool> waveMirrorState = new Dictionary<WaveData, bo
 
 ---
 
-## 7. Memory and Performance Patterns
-
-### Good Patterns ✅
-
-#### Object Pooling Ready
-```csharp
-// GridManager
-public bool useObjectPooling = false;
-public int pooledTileCount = 100;
-private Queue<GameObject> tilePool = new Queue<GameObject>();
-```
-**Assessment**: Infrastructure exists but not fully utilized.
-
-#### Cached References
-```csharp
-// Managers cache references in Start()
-private GridManager gridManager;
-private void Start() {
-    gridManager = GridManager.Instance;
-}
-```
-**Assessment**: Follows recommended pattern. Avoids FindObjectOfType in Update.
-
-### Potential Issues ⚠️
-
-#### FindAnyObjectByType Usage
-```csharp
-// CubeManager.Init()
-playerActionManager = FindAnyObjectByType<PlayerActionManager>();
-```
-**Concern**: Called during cube initialization. Could be expensive with many cubes.
-
-**Recommendation**: Pass reference through Init() parameter instead.
-
-#### Large Dictionaries
-```csharp
-// WaveManager
-private Dictionary<WaveData, bool> waveMirrorState = new Dictionary<WaveData, bool>();
-```
-**Concern**: Unbounded growth potential. Need cleanup strategy.
-
----
-
-## 8. Naming and Conventions
+## 9. Naming and Conventions
 
 ### Consistent Patterns ✅
 
@@ -420,12 +466,12 @@ PlayerMarkerSystem // Separate manager
 
 ---
 
-## 9. Priority Refactoring Roadmap
+## 10. Priority Refactoring Roadmap
 
 ### Phase 1: Critical (Immediate - Next Sprint)
 1. **WaveManager Decomposition** (Complexity: 6)
    - Extract WaveSpawnSystem
-   - Extract WavePairingSystem
+   - Extract WaveStatistics
    - Reduce to 600 lines
 
 2. **PlayerActionManager Decomposition** (Complexity: 5)
@@ -442,21 +488,39 @@ PlayerMarkerSystem // Separate manager
    - Extract GridObjectPool
    - Extract GridBatchOperations
 
+5. **CubeCollisionManager Decomposition** (Complexity: 3)
+   - Extract CollisionMatrixHandler
+   - Extract CollisionEffectHandler
+
 ### Phase 3: Medium Priority (Q2 2026)
-5. **PlayerStatisticsManager Decomposition** (Complexity: 3)
-6. **TutorialMessageManager Decomposition** (Complexity: 3)
-7. **Interface Extraction for Dependency Injection** (Complexity: 4)
+6. **PlayerStatisticsManager Decomposition** (Complexity: 3)
+7. **TutorialMessageManager Decomposition** (Complexity: 3)
+8. **Interface Extraction for Dependency Injection** (Complexity: 4)
 
 ### Phase 4: Low Priority (Post-Release)
-8. **Strategy Pattern for Cube Behaviors** (Complexity: 3)
-9. **Factory Pattern Implementation** (Complexity: 2)
-10. **Full Dependency Injection Framework** (Complexity: 5)
+9. **Strategy Pattern for Cube Behaviors** (Complexity: 3)
+10. **Factory Pattern Implementation** (Complexity: 2)
+11. **Full Dependency Injection Framework** (Complexity: 5)
 
 ---
 
-## 10. Architecture Evolution Vision
+## 11. Testing Infrastructure
 
-### Current State (November 2025)
+### Current State
+**Status**: ✅ Framework created  
+**Location**: Assets/scripts/Testing/FinalIntegrationTest.cs  
+**Coverage**: Core integration paths tested
+
+### Needs
+- Expand test coverage for edge cases
+- Performance regression tests (planned)
+- Automated build validation
+
+---
+
+## 12. Architecture Evolution Vision
+
+### Current State (December 2025)
 ```
 [Monolithic Managers] → [Direct References] → [Tight Coupling]
 ```
@@ -479,7 +543,7 @@ PlayerMarkerSystem // Separate manager
 ### Lines of Code by Category
 | Category | Files | Total Lines | Avg/File |
 |----------|-------|-------------|----------|
-| Managers | 17 | ~15,000 | 882 |
+| Managers | 18+ | ~17,000+ | 944 |
 | Components | 8 | ~2,500 | 313 |
 | Core | 6 | ~4,500 | 750 |
 | Data | 17 | ~1,500 | 88 |
@@ -487,14 +551,14 @@ PlayerMarkerSystem // Separate manager
 | Utils | 8 | ~1,500 | 188 |
 
 ### Complexity Distribution
-- **High Complexity** (>1000 lines): 6 files
-- **Medium Complexity** (500-1000 lines): 8 files
-- **Low Complexity** (<500 lines): 70 files
+- **High Complexity** (>1000 lines): 8 files
+- **Medium Complexity** (500-1000 lines): 10 files
+- **Low Complexity** (<500 lines): 69+ files
 
 ---
 
-*Last Updated: November 28, 2025*  
-*Analysis Methodology: Manual code review + static analysis*  
-*Next Review: January 2026*
+*Last Updated: December 8, 2025*  
+*Analysis Methodology: Manual code review + line count audit*  
+*Next Review: After Phase 1 refactoring completes*
 
 ## (END OF DOCUMENT)

@@ -1,4 +1,4 @@
-# Cosmic Cube Capture - Demo Instructions
+# Infinity Cube - Demo Instructions
 
 🌌 Welcome, cosmic wanderer! Step into a universe where strategy meets precision, and light bends to your will. You are a guardian wielding the power of cosmic markers to capture ethereal cubes drifting through space.
 
@@ -6,49 +6,66 @@
 
 **Movement & Navigation:**
 - **WASD**: Move your cosmic wanderer through the dimensional arena
-- **Mouse**: Look around and aim your cosmic abilities
 
-**Cosmic Marker Powers:**
-- **F**: Place Unit Markers in cube paths (limited charges - use wisely!)
-- **R**: Trigger Unit Markers to capture cubes within their ethereal glow
-- **G**: Place matrix markers (covers 2x2 area for strategic positioning)
-- **T**: Trigger matrix markers for larger area capture
+**Marker Mode Selection:**
+- **1**: Unit Marker mode
+- **2**: Matrix Marker mode  
+- **3**: Recursion Marker mode
+- **4**: Infinity Marker mode
+
+**Marker Actions:**
+- **F**: Place marker of current mode
+- **R**: Trigger cube markers (generated from collisions)
 
 **Wave Control:**
 - **ENTER**: Start the next wave when you're ready to face new challenges
 - **K**: Skip dialogue and tutorial messages
 
+**System:**
+- **ESC**: Exit game
+- **P**: Restart current stage
+- **Tab**: Toggle UI hints
+- **F12**: Open debug/prototyping panel
+
 ## Your Mission
 
-Capture the gray cubes while avoiding the dark ones. Each gray cube you successfully capture brings order to the cosmic chaos. Dark cubes must be avoided - they disrupt the harmonic balance you're working to achieve.
+Capture the gray cubes while avoiding the dark Infinity cubes. Each gray cube you successfully capture brings order to the cosmic chaos. Infinity cubes are uncapturable - use strategy to work around them or paint their faces for delayed effects.
+
+## Cube Types
+
+| Cube | Color | Behavior |
+|------|-------|----------|
+| **Unit** | Gray | Basic, capturable |
+| **Matrix** | Blue | Creates area capture effects |
+| **Recursion** | Metallic | Requires multiple hits |
+| **Infinity** | Black | Uncapturable, can be painted |
 
 ## Demo Experience
 
 This demo features the first stage tutorial with 3 progressive waves designed as a learning experience. You'll master the art of marker placement, timing, and spatial strategy as you progress through increasingly complex scenarios.
 
-## Performance Analytics
+## Logs & Analytics
 
-The game automatically saves your play data to help improve the cosmic experience:
-- **Statistics Location**: Check your game folder or Documents folder for "player_statistics.json"
-- **Feedback Request**: If you enjoyed this cosmic journey, consider sharing your stats file via Discord! Your play data helps refine the universe for future wanderers.
+The game saves logs and play data to help improve the experience:
+- **Log Location**: `%USERPROFILE%\AppData\LocalLow\DefaultCompany\InfinityQube\Logs\`
+- **Statistics**: `player_statistics.json` in the same location
+
+If you enjoyed this cosmic journey, consider sharing your logs or stats via Discord! Your play data helps refine the universe for future wanderers.
 
 ## System Requirements
 
 - **OS**: Windows 10/11
 - **Graphics**: DirectX 11 compatible
 - **Storage**: 100MB available space
-- **Input**: Keyboard and mouse required
+- **Input**: Keyboard required
 
 ## Troubleshooting
 
 - **Performance Issues**: Try running in windowed mode or lowering screen resolution
 - **Control Issues**: Ensure no other applications are capturing keyboard input
 - **Graphics Issues**: Update your graphics drivers to the latest version
+- **Finding Logs**: Press F12 in-game, go to System panel, click "Open Log Directory"
 
 ---
 
 *May your markers shine bright and your captures be swift, cosmic wanderer!* ✨
-
----
-
-**Share this cosmic experience with your Discord friends and let them join the dimensional adventure!**

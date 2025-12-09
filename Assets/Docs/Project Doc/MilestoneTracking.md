@@ -2,83 +2,91 @@
 
 > **Document Purpose:** This document is a historical record of completed milestones. For current priorities and upcoming work, see [Roadmap.md](Roadmap.md). For velocity metrics, see [Development Velocity](../Technical%20Doc/DevelopmentVelocity.md).
 
+## Point Estimation Scale
+
+> **1 point ≈ 1 day of active development**  
+> **5 points ≈ 1 week of active development**  
+> **22 points/month** (measured velocity)
+
+---
+
 ## Completed Milestones ✅
 
-### Project Foundation Phase (April-May 2025)
-| Date | Milestone | Complexity | Status | Commit |
-|------|-----------|------------|---------|--------|
-| April 29, 2025 | Project initialization | 1 point | ✅ Complete | Initial |
-| May 1, 2025 | Core architecture design | 2 points | ✅ Complete | - |
-| May 15, 2025 | Basic gameplay loop | 3 points | ✅ Complete | - |
-| May 30, 2025 | Wave management system | 3 points | ✅ Complete | - |
+### Milestone 1.0: Core Game Development (65 pts)
+*April-July 2025 (~3 months active work)*
 
-### Core Systems Phase (June 2025)
-| Date | Milestone | Complexity | Status | Commit |
-|------|-----------|------------|---------|--------|
-| June 1, 2025 | Documentation framework | 2 points | ✅ Complete | - |
-| June 10, 2025 | Player action system | 3 points | ✅ Complete | - |
-| June 15, 2025 | Four-tier marker system | 4 points | ✅ Complete | - |
-| June 20, 2025 | Face painting mechanics | 3 points | ✅ Complete | `905032c` |
-| June 22, 2025 | Corruption/enhancement system | 3 points | ✅ Complete | - |
-| June 23, 2025 | Production integration | 4 points | ✅ Complete | `bd71b29` |
-| June 27, 2025 | Audio system foundation | 1 point | ✅ Complete | - |
+| System | Points | Completion Date | Commit |
+|--------|--------|-----------------|--------|
+| Project initialization & architecture | 10 | May 2025 | Initial |
+| Basic gameplay loop | 5 | May 15, 2025 | - |
+| Wave management system | 7 | June 15, 2025 | - |
+| Player action system | 7 | June 10, 2025 | - |
+| Four-tier marker system | 8 | June 20, 2025 | `bd71b29` |
+| Face painting mechanics | 5 | June 20, 2025 | `905032c` |
+| Corruption/enhancement tiles | 5 | June 22, 2025 | - |
+| Debug infrastructure | 8 | June 20, 2025 | - |
+| Audio system | 7 | July 8, 2025 | `24da3f1` |
+| Documentation & integration | 3 | June 23, 2025 | - |
 
-### UI/UX Enhancement Phase (July 2025)
-| Date | Milestone | Complexity | Status | Commit |
-|------|-----------|------------|---------|--------|
-| July 8, 2025 | Wave completion messages | 2 points | ✅ Complete | `62f574f` |
-| July 8, 2025 | Stage transition enhancements | 2 points | ✅ Complete | - |
-| July 8, 2025 | Audio system implementation | 5 points | ✅ Complete | `24da3f1` |
+### Milestone 1.2: Demo Stage Content (5 pts)
+*July 2025 (~1 week work)*
 
-### Post-Hiatus Phase (November 2025)
-| Date | Milestone | Complexity | Status | Commit |
-|------|-----------|------------|---------|--------|
-| Nov 15, 2025 | Project review & documentation update | 1 point | ✅ Complete | `7aa37ff` |
-| Nov 26, 2025 | Paired wave system (design) | 2 points | ✅ Complete | `625f967` |
-| Nov 27, 2025 | Obsolete code cleanup | 1 point | ✅ Complete | `348b9de` |
-| Nov 28, 2025 | Static using refactor | 1 point | ✅ Complete | `f86f109` |
-| Dec 2025 | Paired wave system (implementation) | 6 points | ✅ Complete | - |
+| System | Points | Completion Date | Commit |
+|--------|--------|-----------------|--------|
+| Wave completion messages | 2 | July 8, 2025 | `62f574f` |
+| Stage transition system | 2 | July 8, 2025 | - |
+| Demo loop completion | 1 | July 8, 2025 | - |
 
-**Total Completed**: 55 complexity points
+### Post-Hiatus Work (November-December 2025)
+*Part of Milestone 1.1 (~5 pts delivered so far)*
+
+| System | Points | Completion Date | Commit |
+|--------|--------|-----------------|--------|
+| Marker terminology standardization | 2 | Nov 30, 2025 | `8f1cbb1` |
+| Unified marker input system | 2 | Nov 30, 2025 | `cb69513` |
+| Collision matrix design | 1 | Dec 1, 2025 | - |
+
+**Total Completed**: 75 points (normalized)
 
 ---
 
 ## Active Development Tracking
 
-### Currently In Progress (December 2025)
-| Item | Status | Notes |
-|------|--------|-------|
-| Documentation Update | ✅ Complete | Updated velocity, tech debt, added architectural critiques |
-| File Size Audit | ✅ Complete | 10 violations identified |
+### Currently In Progress: Milestone 1.1 (December 2025)
+**Total Points**: 14 pts | **Delivered**: ~5 pts | **Remaining**: ~9 pts
 
-### Upcoming (Next Active Sprints)
-| Item | Priority | Complexity | Effort | Dependencies |
-|------|----------|------------|--------|--------------|
-| WaveManager Refactoring | 🔴 High | 4 points | ~2 weeks | Can parallel |
-| Infinity Markers | 🟡 High | 3 points | ~1 week | Complete |
+| Item | Points | Status | Notes |
+|------|--------|--------|-------|
+| Collision Matrix Implementation | 3 pts | Ready to code | Structure exists |
+| Line Divider System | 3 pts | Designed | Dynamic difficulty |
+| Resonance System | 2 pts | Designed | Infinity vs Infinity |
+| Enhanced Face Painting | 2 pts | In Progress | Rotation mechanics |
+| Penalty/Reward System | 2 pts | Designed | Line movement |
+| Marker Economy | 2 pts | Designed | Per-stage grants |
 
-### Development Velocity Summary
-| Metric | Value | Source |
-|--------|-------|--------|
-| Total Commits | 235 | Git history |
-| Active Months | ~3 | April-July 2025 |
-| Hiatus | ~4 months | July-November 2025 |
-| Current Phase | Post-hiatus resume | November 2025 |
-| Average Velocity (active) | ~22 points/month | Historical data |
-| Target Velocity | 15-20 points/month | Conservative estimate |
+### Velocity Summary
+| Metric | Value |
+|--------|-------|
+| **Measured Velocity** | **22 points/month** |
+| Total Commits | 250+ |
+| Total Points Completed | 75 pts |
+| Remaining Points | ~184 pts |
+| Est. Time to Release | ~8.4 months @ current velocity |
 
 ---
 
 ## Commit Statistics
 
-### Monthly Commit Distribution
-| Month | Commits | Trend |
-|-------|---------|-------|
-| April 2025 | 18 | 🟢 Start |
-| May 2025 | 106 | 🟢 Peak |
-| June 2025 | 85 | 🟢 High |
-| July 2025 | 15 | 🟡 Tapering |
-| Nov 2025 | 11 | 🟢 Resumed |
+### Monthly Distribution
+| Month | Commits | Points | Trend |
+|-------|---------|--------|-------|
+| April 2025 | 18 | ~10 pts | 🟢 Start |
+| May 2025 | 106 | ~25 pts | 🟢 Peak |
+| June 2025 | 85 | ~25 pts | 🟢 High |
+| July 2025 | 15 | ~10 pts | 🟡 Tapering |
+| Aug-Oct 2025 | 0 | 0 pts | ⚫ Hiatus |
+| Nov 2025 | 11 | ~3 pts | 🟢 Resumed |
+| Dec 2025 | 15+ | ~5 pts | 🟢 Active |
 
 ### Key Commit References
 | Milestone | Commit | Date |
@@ -86,15 +94,15 @@
 | Four-tier markers | `bd71b29` | June 23 |
 | PlayerMarkerSystem | `905032c` | June 20 |
 | AudioManager | `24da3f1` | July 4 |
-| Paired wave design | `625f967` | Nov 26 |
-| Static usings | `f86f109` | Nov 28 |
+| Unified marker input | `cb69513` | Nov 30 |
+| Face painting | `8b8c2f7` | Dec 8 |
+| Auto-capture mechanics | `359c1ff` | Dec 8 |
 
 ---
 
-**Last Updated**: December 2025
+**Last Updated**: December 8, 2025
 
 ### Documentation Notes
-- **Audio System**: Fully implemented with 7+ subsystem files (AudioManager, AudioDebugSystem, AudioPlaybackSystem, AudioSourcePool, AudioVolumeController, CubeAudioSystem, CubeAudioConfiguration)
-- **UI Status**: Still using OnGUI system for debug panels (intentional) - Production UI uses Unity UI (PlayerActionUI, WaveProgressUI, StageTransitionUI)
-- **File Size Violations**: 10 managers exceed limits - see [Technical Debt](../Technical%20Doc/TechnicalDebt.md)
-- **Architecture Analysis**: See [Architectural Critiques](../Technical%20Doc/ArchitecturalCritiques.md) for detailed code review
+- **Point Scale**: 1 pt ≈ 1 day, 5 pts ≈ 1 week, 22 pts/month measured
+- **File Size Violations**: 12 files exceed limits - see [Technical Critiques](../Technical%20Doc/TechnicalCritiques.md)
+- **Full Velocity Analysis**: See [Development Velocity](../Technical%20Doc/DevelopmentVelocity.md)

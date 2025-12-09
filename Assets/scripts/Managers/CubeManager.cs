@@ -40,6 +40,7 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
     [SerializeField] private FaceStatus[] faceStatuses = new FaceStatus[4]; // 4 cube faces
     [SerializeField] private Color[] faceColors = new Color[4]; // Visual colors for each face
     [SerializeField] private int[] faceDurations = new int[4]; // Remaining duration for each face (-1 = permanent)
+    [SerializeField] private int[] faceCharges = new int[4]; // Grid touch charges for each face (default 1)
     [SerializeField] private GameObject[] faceIndicators = new GameObject[4]; // Visual indicators
     [SerializeField] private bool showFaceIndicators = true;
     private CubeFace[] currentFaceMapping = new CubeFace[4];
@@ -870,12 +871,13 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
         return activeStatus == FaceStatus.MatrixFace || type == CubeType.Matrix;
     }
 
-    public void PaintFace(CubeFace face, FaceStatus status, Color color, int duration = -1)
+    public void PaintFace(CubeFace face, FaceStatus status, Color color, int duration = -1, int charges = 1)
     {
         int faceIndex = (int)face;
         faceStatuses[faceIndex] = status;
         faceColors[faceIndex] = color;
         faceDurations[faceIndex] = duration;
+        faceCharges[faceIndex] = charges;
         faceIndicators[faceIndex].SetActive(true);
         UpdateFaceVisuals();
         
@@ -885,7 +887,57 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
             PlayerStatisticsManager.Instance.OnFacePainted(position, face, status);
         }
         
-        this.Log($"Painted {face} of cube at ({position.x}, {position.y}) with {status} status, duration: {duration}", EnableDebugLogs);
+        this.Log($"Painted {face} of cube at ({position.x}, {position.y}) with {status} status, duration: {duration}, charges: {charges}", EnableDebugLogs);
+    }
+    
+    /// <summary>
+    /// Consumes one charge from the active (down) face when it triggers on grid touch.
+    /// Returns true if charge was consumed, false if no charges remain.
+    /// Unpaints the face when charges reach zero.
+    /// </summary>
+    public bool ConsumeActiveFaceCharge()
+    {
+        CubeFace downFace = GetCurrentDownFace();
+        int faceIndex = (int)downFace;
+        
+        if (faceStatuses[faceIndex] == FaceStatus.None)
+            return false;
+        
+        if (faceCharges[faceIndex] <= 0)
+            return false;
+        
+        faceCharges[faceIndex]--;
+        this.Log($"Face {downFace} charge consumed on cube at ({position.x}, {position.y}). Remaining: {faceCharges[faceIndex]}", EnableDebugLogs);
+        
+        // Unpaint the face when charges reach zero
+        if (faceCharges[faceIndex] <= 0)
+        {
+            FaceStatus oldStatus = faceStatuses[faceIndex];
+            faceStatuses[faceIndex] = FaceStatus.None;
+            faceColors[faceIndex] = Color.white;
+            faceIndicators[faceIndex].SetActive(false);
+            UpdateFaceVisuals();
+            this.Log($"Face {downFace} unpainted on cube at ({position.x}, {position.y}) - charges exhausted (was {oldStatus})", EnableDebugLogs);
+        }
+        
+        return true;
+    }
+    
+    /// <summary>
+    /// Gets remaining charges for the active (down) face.
+    /// </summary>
+    public int GetActiveFaceCharges()
+    {
+        CubeFace downFace = GetCurrentDownFace();
+        return faceCharges[(int)downFace];
+    }
+    
+    /// <summary>
+    /// Gets remaining charges for a specific face.
+    /// </summary>
+    public int GetFaceCharges(CubeFace face)
+    {
+        return faceCharges[(int)face];
     }
 
     public void PaintCurrentDownFace(FaceStatus status, Color color, int duration = -1)
@@ -926,6 +978,7 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
             faceStatuses[i] = FaceStatus.None;
             faceColors[i] = Color.white;
             faceDurations[i] = 0;
+            faceCharges[i] = 0;
         }
 
         if (showFaceIndicators)
@@ -1231,6 +1284,7 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
             faceStatuses[i] = FaceStatus.None;
             faceColors[i] = Color.white;
             faceDurations[i] = 0;
+            faceCharges[i] = 0;
         }
         UpdateFaceVisuals();
         this.Log($"Cleared all face statuses on cube at ({position.x}, {position.y})", EnableDebugLogs);

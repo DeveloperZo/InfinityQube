@@ -8,7 +8,7 @@
 
 ## Executive Summary
 
-All marker types are implemented and functional. Marker placement rules are enforced, and marker-to-cube conversion works correctly in both immediate and paired wave contexts. This document verifies the current implementation and documents the complete system.
+All marker types are implemented and functional. Marker placement rules are enforced, and marker-to-cube conversion works correctly. This document verifies the current implementation and documents the complete system.
 
 ---
 
@@ -51,7 +51,6 @@ All marker types are implemented and functional. Marker placement rules are enfo
 **Implementation Status**: ✅ Complete
 - Placement: `PlaceUnitMarker()` in `PlayerMarkerSystem.cs:126`
 - Spawning: `SpawnPlayerCubeAt(marker.position, CubeType.Unit, false)` in `PlayerMarkerSystem.cs:770`
-- Paired Wave: Records with `MarkerMode.Unit` in `PlayerMarkerSystem.cs:141`
 
 ---
 
@@ -68,7 +67,6 @@ All marker types are implemented and functional. Marker placement rules are enfo
 **Implementation Status**: ✅ Complete
 - Placement: `PlaceRecursionMarker()` in `PlayerMarkerSystem.cs:226`
 - Spawning: `SpawnPlayerCubeAt(marker.position, CubeType.Recursion, false)` in `PlayerMarkerSystem.cs:799`
-- Paired Wave: Records with `MarkerMode.Recursion` in `PlayerMarkerSystem.cs:241`
 - **Special Note**: Designed specifically for Recursion cubes but works on all cube types
 
 ---
@@ -88,8 +86,7 @@ All marker types are implemented and functional. Marker placement rules are enfo
 - Placement: `PlaceMatrixMarker(centerPosition, size)` in `PlayerMarkerSystem.cs:325`
 - Spawning: `SpawnPlayerCubeAt(marker.centerPosition, CubeType.Matrix, true)` in `PlayerMarkerSystem.cs:786`
   - Note: `isMatrix = true` enables area capture (3x3)
-- Paired Wave: Records center position with `MarkerMode.Matrix` in `PlayerMarkerSystem.cs:342`
-- **Special Behavior**: Covers 2x2 area (from marker), 3x3 for Matrix+Matrix collisions, records center position for paired wave
+- **Special Behavior**: Covers 2x2 area (from marker), 3x3 for Matrix+Matrix collisions
 
 ---
 
@@ -106,7 +103,6 @@ All marker types are implemented and functional. Marker placement rules are enfo
 **Implementation Status**: ✅ Complete
 - Placement: `PlaceInfinityMarker()` in `PlayerMarkerSystem.cs:451`
 - Spawning: `SpawnPlayerCubeAt(marker.position, CubeType.Infinity, false)` in `PlayerMarkerSystem.cs:812`
-- Paired Wave: Records with `MarkerMode.Infinity` in `PlayerMarkerSystem.cs:466`
 - **Note**: Infinity markers automatically spawn player cubes when wave moves forward (no manual trigger)
 
 ---
@@ -130,7 +126,6 @@ All marker types are implemented and functional. Marker placement rules are enfo
   - Matrix captured by non-Matrix → Cube marker placed at capture position → `R` key triggers 2x2 area that captures all non-Infinity cubes
 - **Mechanism**: Cube markers use `TriggerMatrixMarkerAt()` internally, which processes area capture via `ProcessCubeCapture()` - Infinity cubes are excluded from capture (checked in `RemoveCubeFromWaveManager()` at `PlayerMarkerSystem.cs:747`)
 - **Note**: Cube markers are NOT placed markers - they are generated resources from collisions
-- **Paired Wave**: Cube markers do NOT participate in paired wave system (correct behavior)
 
 ---
 
@@ -222,46 +217,6 @@ Markers cannot be placed on tiles that are:
 
 ---
 
-## Paired Wave Integration
-
-### Recording System
-
-All marker placements are automatically recorded for paired wave system:
-
-```csharp
-RecordMarkerForPairedWave(position, MarkerMode.[Type])
-```
-
-**Recording Location**: `PlayerMarkerSystem.cs:1175-1181`
-- Calls `WaveManager.RecordMarkerPosition(position, markerType)`
-- Always records during any wave
-- Markers will be used when wave is mirrored
-
-### Marker-to-Cube Conversion in Paired Waves
-
-**Wave A (Config Wave)**:
-- Player places markers
-- Markers are recorded via `RecordMarkerForPairedWave()`
-- Markers can be triggered to capture cubes
-- Markers can spawn player cubes if triggered
-
-**Wave B (Mirrored Wave)**:
-- Recorded marker positions spawn cubes at those positions
-- Conversion rules:
-  - Unit Marker → Unit Cube
-  - Recursion Marker → Recursion Cube
-  - Matrix Marker → Matrix Cube (at center position)
-  - Infinity Marker → Infinity Cube
-- Implementation: `WaveManager.SpawnCubesFromMarkers()` (referenced in `WaveManager.cs:1455`)
-
-**Verification**: ✅ All marker types record positions correctly
-- Unit: `PlayerMarkerSystem.cs:141`
-- Recursion: `PlayerMarkerSystem.cs:241`
-- Matrix: `PlayerMarkerSystem.cs:342`
-- Infinity: `PlayerMarkerSystem.cs:466`
-
----
-
 ## Edge Cases and Issues
 
 ### ✅ Working Correctly
@@ -272,8 +227,7 @@ RecordMarkerForPairedWave(position, MarkerMode.[Type])
 4. **Marker Placement on Fallen Tiles**: ✅ Blocked correctly
 5. **Duplicate Marker Prevention**: ✅ Works (checks Unit/Recursion/Matrix/Infinity)
 6. **Charge Consumption**: ✅ Works correctly
-7. **Paired Wave Recording**: ✅ All marker types record correctly
-8. **Unified Input System**: ✅ Mode switching (1-4) and placement (F) work correctly
+7. **Unified Input System**: ✅ Mode switching (1-4) and placement (F) work correctly
 
 ### ⚠️ Potential Issues
 
@@ -332,14 +286,6 @@ RecordMarkerForPairedWave(position, MarkerMode.[Type])
 - [x] Spawning occurs at correct positions
 - [x] Matrix markers spawn at center position
 
-### Paired Wave Integration
-- [x] Unit markers record for paired wave
-- [x] Recursion markers record for paired wave
-- [x] Matrix markers record for paired wave
-- [x] Infinity markers record for paired wave
-- [x] Cube markers do NOT record (correct behavior)
-- [x] Recorded positions spawn correct cube types
-
 ---
 
 ## Recommendations
@@ -382,7 +328,7 @@ RecordMarkerForPairedWave(position, MarkerMode.[Type])
 All marker types are implemented and functional. Marker placement rules are enforced correctly, and marker-to-cube conversion works automatically when waves move forward. All identified issues have been fixed:
 - ✅ Infinity marker conflict check added to `CanPlaceMarkerAt()`
 - ✅ Unified input system documented (mode keys 1-4, placement F, automatic spawning on wave movement)
-- ✅ Automatic player cube spawning verified (`SpawnPlayerCubes()` called from `WaveManager.MoveCubesForward()`)
+- ✅ Automatic player cube spawning verified
 
 **Next Steps**: 
 1. Document visual colors for all marker types (Task 5)
