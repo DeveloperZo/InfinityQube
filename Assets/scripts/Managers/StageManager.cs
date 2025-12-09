@@ -129,9 +129,9 @@ public class StageManager : MonoBehaviour, IManagerDebugInterface
     private void FindReferences()
     {
         if (gridManager == null) gridManager = GridManager.Instance;
-        if (waveManager == null) waveManager = FindObjectOfType<WaveManager>();
-        if (playerController == null) playerController = FindObjectOfType<PlayerManager>();
-        if (playerActionManager == null) playerActionManager = FindObjectOfType<PlayerActionManager>();
+        if (waveManager == null) waveManager = FindFirstObjectByType<WaveManager>();
+        if (playerController == null) playerController = FindFirstObjectByType<PlayerManager>();
+        if (playerActionManager == null) playerActionManager = FindFirstObjectByType<PlayerActionManager>();
     }
 
     private void InitializeStageDatabase()
@@ -319,7 +319,7 @@ public class StageManager : MonoBehaviour, IManagerDebugInterface
         for (int i = 0; i < stage.waveConfigurations.Count && i < 3; i++)
         {
             var wave = stage.waveConfigurations[i];
-            DebugLog($"ConfigureWaveManager: Wave {i + 1} - {wave.CubesData.Count} cubes");
+            DebugLog($"ConfigureWaveManager: Wave {i + 1} - {wave.cubes.Count} cubes");
         }
     }
 

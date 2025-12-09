@@ -119,9 +119,9 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
     #region Initialization
     private void FindReferences()
     {
-        if (grid == null) grid = FindAnyObjectByType<GridManager>();
-        if (player == null) player = FindAnyObjectByType<PlayerManager>();
-        if (playerActionManager == null) playerActionManager = FindAnyObjectByType<PlayerActionManager>();
+        if (grid == null) grid = FindFirstObjectByType<GridManager>();
+        if (player == null) player = FindFirstObjectByType<PlayerManager>();
+        if (playerActionManager == null) playerActionManager = FindFirstObjectByType<PlayerActionManager>();
         if (audioManager == null) audioManager = AudioManager.Instance;
 
         ValidateReferences();
@@ -526,7 +526,7 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
     private void SpawnConfigurationCubes()
     {
         var wave = CurrentWave;
-        foreach (var cubeData in wave.CubesData)
+        foreach (var cubeData in wave.cubes)
         {
             SpawnCube(cubeData);
         }
@@ -1211,7 +1211,7 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
 
     private void NotifyStageManager(System.Action<StageManager> action)
     {
-        var stageManager = FindAnyObjectByType<StageManager>();
+        var stageManager = FindFirstObjectByType<StageManager>();
         if (stageManager != null) action(stageManager);
     }
 
@@ -1280,7 +1280,7 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
 
         // Add cube to wave configuration
         var cubeData = new CubeData { position = wavePosition, type = type };
-        CurrentWave.CubesData.Add(cubeData);
+        CurrentWave.cubes.Add(cubeData);
 
         // Spawn cube in the grid
         SpawnCube(cubeData);
@@ -1295,7 +1295,7 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
         }
 
         // Remove cube from wave configuration
-        CurrentWave.CubesData.RemoveAll(cd => cd.position == cube.position);
+        CurrentWave.cubes.RemoveAll(cd => cd.position == cube.position);
 
         // Remove cube from the grid
         activeCubes.Remove(cube);

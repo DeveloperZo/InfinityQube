@@ -145,7 +145,9 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
     [SerializeField] private KeyCode unitMarkerKey = KeyCode.F;
     [SerializeField] private KeyCode recursionMarkerKey = KeyCode.V;
     [SerializeField] private KeyCode matrixMarkerKey = KeyCode.G;
+    #pragma warning disable CS0414 // Reserved for legacy input mode
     [SerializeField] private KeyCode infinityMarkerKey = KeyCode.H;
+    #pragma warning restore CS0414
     [SerializeField] private KeyCode triggerUnitKey = KeyCode.R;
     [SerializeField] private KeyCode triggerRecursionKey = KeyCode.Y;
     [SerializeField] private KeyCode triggerMatrixKey = KeyCode.T;
@@ -213,19 +215,19 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
     private void InitializeReferences()
     {
         if (gridManager == null)
-            gridManager = FindObjectOfType<GridManager>();
+            gridManager = FindFirstObjectByType<GridManager>();
         if (playerManager == null)
-            playerManager = FindObjectOfType<PlayerManager>();
+            playerManager = FindFirstObjectByType<PlayerManager>();
         if (waveManager == null)
-            waveManager = FindObjectOfType<WaveManager>();
+            waveManager = FindFirstObjectByType<WaveManager>();
         if (actionUI == null)
-            actionUI = FindObjectOfType<PlayerActionUI>();
+            actionUI = FindFirstObjectByType<PlayerActionUI>();
         if (audioManager == null)
-            audioManager = FindObjectOfType<AudioManager>();
+            audioManager = FindFirstObjectByType<AudioManager>();
         if (inputFeedbackManager == null)
-            inputFeedbackManager = FindObjectOfType<InputFeedbackManager>();
+            inputFeedbackManager = FindFirstObjectByType<InputFeedbackManager>();
         if (animationTriggerManager == null)
-            animationTriggerManager = FindObjectOfType<AnimationTriggerManager>();
+            animationTriggerManager = FindFirstObjectByType<AnimationTriggerManager>();
             
         ValidateAudioManager();
         ValidateInputFeedbackManager();
@@ -1335,55 +1337,142 @@ MarkerMode currentMode = GetCurrentMode();
 
     #region Marker Economy
     
+    // Cached stage data for grant application
+    private StageData _currentStageData;
+    
     /// <summary>
-    /// Handle stage start - apply stage grants
+    /// Handle stage start - apply stage grants from StageData
     /// </summary>
     private void HandleStageStart(int stageIndex, StageData stageData)
     {
+        _currentStageData = stageData;
+        
         if (!useMarkerEconomy) return;
         
-        ApplyStageGrants();
-        Debug.Log($"[MarkerEconomy] Stage {stageIndex} started - Applied stage grants: Rec={stageGrantRecursion}, Mat={stageGrantMatrix}, Inf={stageGrantInfinity}");
+        ApplyStageGrants(stageData);
     }
     
     /// <summary>
-    /// Handle wave start - apply wave grants
+    /// Handle wave start - apply wave grants from WaveData
     /// </summary>
     private void HandleWaveStart(int waveIndex, WaveData waveData)
     {
         if (!useMarkerEconomy) return;
         
-        ApplyWaveGrants();
-        Debug.Log($"[MarkerEconomy] Wave {waveIndex} started - Applied wave grants: Rec=+{waveGrantRecursion}, Mat=+{waveGrantMatrix}, Inf=+{waveGrantInfinity}");
+        // Check if stage uses wave grants
+        if (_currentStageData != null && _currentStageData.useWaveGrants && waveData != null)
+        {
+            ApplyWaveGrants(waveData);
+        }
+        else
+        {
+            // Fallback to inspector defaults
+            ApplyWaveGrantsDefault();
+        }
     }
     
     /// <summary>
-    /// Apply stage grants - refills inventory up to stage grant amount (capped at max inventory)
-    /// Called at the start of each stage
+    /// Apply stage grants from StageData - sets inventory to grant amounts
     /// </summary>
-    public void ApplyStageGrants()
+    public void ApplyStageGrants(StageData stageData)
     {
-        // Stage grants SET the inventory (not add), capped at max
+        if (stageData?.stageGrants != null)
+        {
+            var grants = stageData.stageGrants;
+            
+            // Stage grants SET the inventory (not add), capped at max
+            currentUnitMarkerCharges = Mathf.Min(grants.unitCharges, maxUnitMarkerCharges);
+            currentRecursionMarkerCharges = Mathf.Min(grants.recursionCharges, maxRecursionInventory);
+            currentMatrixMarkerCharges = Mathf.Min(grants.matrixCharges, maxMatrixInventory);
+            currentInfinityMarkerCharges = Mathf.Min(grants.infinityCharges, maxInfinityInventory);
+            
+            // Also apply max on grid limits
+            maxUnitMarkers = grants.unitMaxOnGrid;
+            maxRecursionMarkers = grants.recursionMaxOnGrid;
+            maxMatrixMarkers = grants.matrixMaxOnGrid;
+            maxInfinityMarkers = grants.infinityMaxOnGrid;
+            
+            Debug.Log($"[MarkerEconomy] Stage grants applied from StageData: Unit={grants.unitCharges}, Rec={grants.recursionCharges}, Mat={grants.matrixCharges}, Inf={grants.infinityCharges}");
+        }
+        else
+        {
+            // Fallback to inspector defaults
+            ApplyStageGrantsDefault();
+        }
+        
+        UpdateUI();
+    }
+    
+    /// <summary>
+    /// Apply wave grants from WaveData - adds to current inventory
+    /// </summary>
+    public void ApplyWaveGrants(WaveData waveData)
+    {
+        if (waveData == null) return;
+        
+        if (waveData.grantsAddToInventory)
+        {
+            // Wave grants ADD to current inventory, capped at max
+            currentUnitMarkerCharges = Mathf.Min(currentUnitMarkerCharges + waveData.grantUnitCharges, maxUnitMarkerCharges);
+            currentRecursionMarkerCharges = Mathf.Min(currentRecursionMarkerCharges + waveData.grantRecursionCharges, maxRecursionInventory);
+            currentMatrixMarkerCharges = Mathf.Min(currentMatrixMarkerCharges + waveData.grantMatrixCharges, maxMatrixInventory);
+            currentInfinityMarkerCharges = Mathf.Min(currentInfinityMarkerCharges + waveData.grantInfinityCharges, maxInfinityInventory);
+        }
+        else
+        {
+            // Wave grants SET inventory (override)
+            currentUnitMarkerCharges = Mathf.Min(waveData.grantUnitCharges, maxUnitMarkerCharges);
+            currentRecursionMarkerCharges = Mathf.Min(waveData.grantRecursionCharges, maxRecursionInventory);
+            currentMatrixMarkerCharges = Mathf.Min(waveData.grantMatrixCharges, maxMatrixInventory);
+            currentInfinityMarkerCharges = Mathf.Min(waveData.grantInfinityCharges, maxInfinityInventory);
+        }
+        
+        // Apply per-wave max overrides if specified
+        if (waveData.overrideUnitMaxOnGrid > 0) maxUnitMarkers = waveData.overrideUnitMaxOnGrid;
+        if (waveData.overrideRecursionMaxOnGrid > 0) maxRecursionMarkers = waveData.overrideRecursionMaxOnGrid;
+        if (waveData.overrideMatrixMaxOnGrid > 0) maxMatrixMarkers = waveData.overrideMatrixMaxOnGrid;
+        if (waveData.overrideInfinityMaxOnGrid > 0) maxInfinityMarkers = waveData.overrideInfinityMaxOnGrid;
+        
+        Debug.Log($"[MarkerEconomy] Wave grants applied: Unit=+{waveData.grantUnitCharges}, Rec=+{waveData.grantRecursionCharges}, Mat=+{waveData.grantMatrixCharges}, Inf=+{waveData.grantInfinityCharges}");
+        
+        UpdateUI();
+    }
+    
+    /// <summary>
+    /// Fallback: Apply stage grants from inspector fields
+    /// </summary>
+    public void ApplyStageGrantsDefault()
+    {
         currentRecursionMarkerCharges = Mathf.Min(stageGrantRecursion, maxRecursionInventory);
         currentMatrixMarkerCharges = Mathf.Min(stageGrantMatrix, maxMatrixInventory);
         currentInfinityMarkerCharges = Mathf.Min(stageGrantInfinity, maxInfinityInventory);
         
+        Debug.Log($"[MarkerEconomy] Stage grants applied (defaults): Rec={stageGrantRecursion}, Mat={stageGrantMatrix}, Inf={stageGrantInfinity}");
         UpdateUI();
     }
     
     /// <summary>
-    /// Apply wave grants - adds to current inventory (capped at max inventory)
-    /// Called at the start of each wave within a stage
+    /// Fallback: Apply wave grants from inspector fields
     /// </summary>
-    public void ApplyWaveGrants()
+    public void ApplyWaveGrantsDefault()
     {
-        // Wave grants ADD to current inventory, capped at max
         currentRecursionMarkerCharges = Mathf.Min(currentRecursionMarkerCharges + waveGrantRecursion, maxRecursionInventory);
         currentMatrixMarkerCharges = Mathf.Min(currentMatrixMarkerCharges + waveGrantMatrix, maxMatrixInventory);
         currentInfinityMarkerCharges = Mathf.Min(currentInfinityMarkerCharges + waveGrantInfinity, maxInfinityInventory);
         
+        Debug.Log($"[MarkerEconomy] Wave grants applied (defaults): Rec=+{waveGrantRecursion}, Mat=+{waveGrantMatrix}, Inf=+{waveGrantInfinity}");
         UpdateUI();
     }
+    
+    /// <summary>
+    /// Legacy method for prototyping panel compatibility
+    /// </summary>
+    public void ApplyStageGrants() => ApplyStageGrantsDefault();
+    
+    /// <summary>
+    /// Legacy method for prototyping panel compatibility
+    /// </summary>
+    public void ApplyWaveGrants() => ApplyWaveGrantsDefault();
     
     #endregion
 

@@ -125,12 +125,18 @@ public class ScoreManager : MonoBehaviour, IManagerDebugInterface
         DebugLog($"Stage {stageIndex} ({_currentStageName}) started. Max moves: {_stageMaxMoves}");
     }
     
-    private void HandleWaveStart(int waveIndex)
+    private void HandleWaveStart(int waveIndex, WaveData waveData)
     {
         _currentWaveScore.Reset();
         _currentWaveScore.maxPossibleMoves = _stageMaxMoves;
         
-        DebugLog($"Wave {waveIndex} started");
+        // Track total cubes in this wave for scoring
+        if (waveData != null && waveData.cubes != null)
+        {
+            _currentWaveScore.totalCubesInWave = waveData.cubes.Count;
+        }
+        
+        DebugLog($"Wave {waveIndex} started (cubes: {_currentWaveScore.totalCubesInWave})");
     }
     
     private void HandleWaveComplete(int waveIndex)

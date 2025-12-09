@@ -152,7 +152,7 @@ public class MessagePolishEvents : MonoBehaviour
             audioManager = AudioManager.Instance;
             if (audioManager == null)
             {
-                audioManager = FindObjectOfType<AudioManager>();
+                audioManager = FindFirstObjectByType<AudioManager>();
             }
         }
     }

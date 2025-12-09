@@ -61,9 +61,7 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
     public float rainSpeed = 3f;
     public float rainHeight = 5f;
     public int targetRow = -1;
-    private bool isRainAnimating = false;
     public int moveCountRemaining = 0;
-    private float tileScale = 3f;
     private float tileSize = 1f;
 
     public void Init(GridManager gridManager, CubeData cubeData, float spawnHeight = 2f)
@@ -104,7 +102,7 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
 
         this.Log($"Cube {type} initialized at grid ({position.x}, {position.y}) -> world {worldPos}, HP: {currentHitPoints}/{maxHitPoints}", EnableDebugLogs);
 
-        playerActionManager = FindAnyObjectByType<PlayerActionManager>();
+        playerActionManager = FindFirstObjectByType<PlayerActionManager>();
         gameObject.name = name;
 
         InitializeFaceSystem();
@@ -556,7 +554,7 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
         }
 
         // Notify FacePaintingManager that cube is leaving
-        FacePaintingManager facePaintingManager = FindAnyObjectByType<FacePaintingManager>();
+        FacePaintingManager facePaintingManager = FindFirstObjectByType<FacePaintingManager>();
         if (facePaintingManager != null)
         {
             facePaintingManager.OnCubeLeft(position);
@@ -610,7 +608,7 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
                 {
                     // CUBE ESCAPE PROCESSING: Notify Wave system of cube escape
                     // Wave handles escape counting and failure conditions
-                    WaveManager waveManager = FindAnyObjectByType<WaveManager>();
+                    WaveManager waveManager = FindFirstObjectByType<WaveManager>();
                     if (waveManager != null)
                     {
                         waveManager.OnNonBlackCubeProcessed(effectiveType, false);
@@ -661,7 +659,7 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
         this.Log($"Cube moved to ({position.x}, {position.y}), move count: {moveCount}", EnableDebugLogs);
 
         // Notify FacePaintingManager of movement
-        FacePaintingManager facePaintingManager = FindAnyObjectByType<FacePaintingManager>();
+        FacePaintingManager facePaintingManager = FindFirstObjectByType<FacePaintingManager>();
         if (facePaintingManager != null)
         {
             facePaintingManager.OnCubeMoved(this, oldPosition, position);
@@ -731,7 +729,7 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
         this.Log($"Player cube moved to ({position.x}, {position.y}), move count: {moveCount}", EnableDebugLogs);
 
         // Notify FacePaintingManager of movement
-        FacePaintingManager facePaintingManager = FindAnyObjectByType<FacePaintingManager>();
+        FacePaintingManager facePaintingManager = FindFirstObjectByType<FacePaintingManager>();
         if (facePaintingManager != null)
         {
             facePaintingManager.OnCubeMoved(this, oldPosition, position);
@@ -760,7 +758,7 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
 
         this.Log($"Animating cube from {start} to {end} (grid pos {newPos})", EnableDebugLogs);
 
-        WaveManager waveManager = FindAnyObjectByType<WaveManager>();
+        WaveManager waveManager = FindFirstObjectByType<WaveManager>();
         float actualMoveDuration = moveDuration;
 
         if (waveManager != null)

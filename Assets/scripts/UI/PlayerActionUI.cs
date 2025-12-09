@@ -57,8 +57,8 @@ public class PlayerActionUI : MonoBehaviour
 
     void Start()
     {
-        playerActionManager = FindAnyObjectByType<PlayerActionManager>();
-        animationTriggerManager = FindAnyObjectByType<AnimationTriggerManager>();
+        playerActionManager = FindFirstObjectByType<PlayerActionManager>();
+        animationTriggerManager = FindFirstObjectByType<AnimationTriggerManager>();
 
         if (playerActionManager != null)
         {

@@ -99,16 +99,16 @@ public class FinalIntegrationTest : MonoBehaviour
     {
         Log("Initializing test systems...");
         
-        playerActionManager = FindObjectOfType<PlayerActionManager>();
+        playerActionManager = FindFirstObjectByType<PlayerActionManager>();
         AssertNotNull(playerActionManager, "PlayerActionManager found");
         
-        markerSystem = FindObjectOfType<PlayerMarkerSystem>();
+        markerSystem = FindFirstObjectByType<PlayerMarkerSystem>();
         AssertNotNull(markerSystem, "PlayerMarkerSystem found");
         
-        gridManager = FindObjectOfType<GridManager>();
+        gridManager = FindFirstObjectByType<GridManager>();
         AssertNotNull(gridManager, "GridManager found");
         
-        playerManager = FindObjectOfType<PlayerManager>();
+        playerManager = FindFirstObjectByType<PlayerManager>();
         AssertNotNull(playerManager, "PlayerManager found");
         
         yield return new WaitForSeconds(testDelay);
@@ -441,7 +441,7 @@ public class FinalIntegrationTest : MonoBehaviour
     {
         Log("Testing UI integration with four-tier marker system...");
         
-        PlayerActionUI actionUI = FindObjectOfType<PlayerActionUI>();
+        PlayerActionUI actionUI = FindFirstObjectByType<PlayerActionUI>();
         
         if (actionUI != null)
         {

@@ -8,7 +8,7 @@ public class PlayerUI : MonoBehaviour
 
     void Start()
     {
-        playerManager = FindObjectOfType<PlayerManager>();
+        playerManager = FindFirstObjectByType<PlayerManager>();
 
 
         UpdateDisplay();

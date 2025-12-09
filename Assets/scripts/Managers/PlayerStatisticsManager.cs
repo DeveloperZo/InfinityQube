@@ -64,7 +64,7 @@ public class PlayerStatisticsManager : MonoBehaviour, IManagerDebugInterface
         {
             if (_instance == null)
             {
-                _instance = FindObjectOfType<PlayerStatisticsManager>();
+                _instance = FindFirstObjectByType<PlayerStatisticsManager>();
                 if (_instance == null)
                 {
                     GameObject go = new GameObject("PlayerStatisticsManager");
@@ -166,13 +166,13 @@ public class PlayerStatisticsManager : MonoBehaviour, IManagerDebugInterface
     private void FindManagerReferences()
     {
         if (playerManager == null)
-            playerManager = FindObjectOfType<PlayerManager>();
+            playerManager = FindFirstObjectByType<PlayerManager>();
         if (waveManager == null)
-            waveManager = FindObjectOfType<WaveManager>();
+            waveManager = FindFirstObjectByType<WaveManager>();
         if (playerActionManager == null)
-            playerActionManager = FindObjectOfType<PlayerActionManager>();
+            playerActionManager = FindFirstObjectByType<PlayerActionManager>();
         if (gridManager == null)
-            gridManager = FindObjectOfType<GridManager>();
+            gridManager = FindFirstObjectByType<GridManager>();
             
         ValidateReferences();
     }

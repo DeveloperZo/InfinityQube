@@ -133,11 +133,11 @@ public class TutorialMessageManager : MonoBehaviour, IMessageSystem, IManagerDeb
 
     private void CacheManagerReferences()
     {
-        waveManager = FindObjectOfType<WaveManager>();
+        waveManager = FindFirstObjectByType<WaveManager>();
         gridManager = GridManager.Instance;
-        playerManager = FindObjectOfType<PlayerManager>();
-        playerActionManager = FindObjectOfType<PlayerActionManager>();
-        stageManager = FindObjectOfType<StageManager>();
+        playerManager = FindFirstObjectByType<PlayerManager>();
+        playerActionManager = FindFirstObjectByType<PlayerActionManager>();
+        stageManager = FindFirstObjectByType<StageManager>();
         progressTracker = MessageProgressTracker.Instance;
 
         ValidateManagerReferences();

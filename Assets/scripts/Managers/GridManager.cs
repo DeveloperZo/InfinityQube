@@ -97,10 +97,85 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
         playerManager = FindFirstObjectByType<PlayerManager>();
     }
     
+    private void OnEnable()
+    {
+        // Subscribe to stage events for line divider configuration
+        GameEvents.OnStageStart += HandleStageStart;
+    }
+    
+    private void OnDisable()
+    {
+        GameEvents.OnStageStart -= HandleStageStart;
+    }
+    
     private void Update()
     {
         // Task 6: Update line divider color based on player position
         UpdateLineDividerColor();
+    }
+    
+    /// <summary>
+    /// Configure grid and line divider from StageData
+    /// </summary>
+    private void HandleStageStart(int stageIndex, StageData stageData)
+    {
+        if (stageData == null) return;
+        
+        // Configure line divider from stage data
+        ConfigureLineDivider(stageData);
+        
+        DebugLog($"Grid configured for stage {stageIndex}: LineDivider at row {lineDividerRow}");
+    }
+    
+    /// <summary>
+    /// Configure line divider settings from StageData
+    /// </summary>
+    public void ConfigureLineDivider(StageData stageData)
+    {
+        if (stageData == null) return;
+        
+        // Enable/disable based on whether start position is meaningful
+        bool shouldEnable = stageData.lineDividerStartY > 0 && stageData.lineDividerStartY < stageData.gridHeight;
+        enableLineDivider = shouldEnable;
+        
+        if (shouldEnable)
+        {
+            lineDividerRow = stageData.lineDividerStartY;
+            
+            // Store penalty/reward values for use in MoveLineDivider
+            _lineDividerEscapePenalty = stageData.lineDividerEscapePenalty;
+            _lineDividerCaptureReward = stageData.lineDividerCaptureReward;
+            
+            DebugLog($"Line divider configured: Row={lineDividerRow}, Penalty={_lineDividerEscapePenalty}, Reward={_lineDividerCaptureReward}");
+        }
+        
+        UpdateLineDividerVisual();
+    }
+    
+    // Cached line divider movement values
+    private int _lineDividerEscapePenalty = 1;
+    private int _lineDividerCaptureReward = 1;
+    
+    /// <summary>
+    /// Move line divider based on escape (penalty) or capture (reward)
+    /// </summary>
+    public void OnCubeEscaped()
+    {
+        if (_lineDividerEscapePenalty > 0)
+        {
+            MoveLineDivider(_lineDividerEscapePenalty, false); // Move up (penalty)
+        }
+    }
+    
+    /// <summary>
+    /// Move line divider based on capture (reward)
+    /// </summary>
+    public void OnCubeCaptured()
+    {
+        if (_lineDividerCaptureReward > 0)
+        {
+            MoveLineDivider(-_lineDividerCaptureReward, true); // Move down (reward)
+        }
     }
     
     /// <summary>
@@ -606,7 +681,7 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
         UpdateWorldBounds();
         
         // Clamp player position to new grid bounds
-        var playerManager = FindObjectOfType<PlayerManager>();
+        var playerManager = FindFirstObjectByType<PlayerManager>();
         if (playerManager != null)
         {
             // Get player's current world position and convert to grid position
@@ -622,14 +697,14 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
         }
 
         // Update camera if it exists
-        var cameraFollow = FindObjectOfType<CameraFollow>();
+        var cameraFollow = FindFirstObjectByType<CameraFollow>();
         if (cameraFollow != null)
         {
             cameraFollow.ForceUpdatePosition();
         }
 
         // Clear any wave cubes that are now outside bounds
-        var waveManager = FindObjectOfType<WaveManager>();
+        var waveManager = FindFirstObjectByType<WaveManager>();
         if (waveManager != null)
         {
             CleanupOutOfBoundsCubes(waveManager);
@@ -1294,7 +1369,7 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
 
     private void AdjustPlayerPosition()
     {
-        var playerManager = FindObjectOfType<PlayerManager>();
+        var playerManager = FindFirstObjectByType<PlayerManager>();
         if (playerManager != null && playerManager.currentTilePosition.y == 0)
         {
             // Find the lowest available row

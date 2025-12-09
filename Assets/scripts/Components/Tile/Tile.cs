@@ -113,8 +113,8 @@ public class Tile : MonoBehaviour
         
         // Cache manager references (Task 6/7/8) - done once per tile
         cachedGridManager = GridManager.Instance;
-        cachedWaveManager = FindObjectOfType<WaveManager>();
-        cachedPlayerActionManager = FindObjectOfType<PlayerActionManager>();
+        cachedWaveManager = FindFirstObjectByType<WaveManager>();
+        cachedPlayerActionManager = FindFirstObjectByType<PlayerActionManager>();
 
         // Initialize hover material
         if (playerHoverMaterial == null)
@@ -320,7 +320,7 @@ public class Tile : MonoBehaviour
 
         // Register with PlayerActionManager
         // Default size is 2x2 for Matrix tile detonation (from marker capture)
-        PlayerActionManager playerActionManager = FindObjectOfType<PlayerActionManager>();
+        PlayerActionManager playerActionManager = FindFirstObjectByType<PlayerActionManager>();
         if (playerActionManager != null)
         {
             playerActionManager.CreateCubeMarker(new Vector2Int(x, y), PlayerMarkerSystem.CubeMarkerType.Matrix, 2);
@@ -817,7 +817,7 @@ public class Tile : MonoBehaviour
             Debug.Log($"Reinforced cube destroyed at ({x}, {y}) after taking damage");
             NotifyPlayerCubeCapture(CubeType.Recursion);
             
-            WaveManager waveManager = FindObjectOfType<WaveManager>();
+            WaveManager waveManager = FindFirstObjectByType<WaveManager>();
             if (waveManager != null)
             {
                 waveManager.OnNonBlackCubeProcessed(CubeType.Recursion, true);
@@ -833,7 +833,7 @@ public class Tile : MonoBehaviour
 
     private void NotifyPlayerCubeCapture(CubeType cubeType)
     {
-        WaveManager waveManager = FindObjectOfType<WaveManager>();
+        WaveManager waveManager = FindFirstObjectByType<WaveManager>();
         if (waveManager != null)
         {
             waveManager.OnCubeCaptured(cubeType);

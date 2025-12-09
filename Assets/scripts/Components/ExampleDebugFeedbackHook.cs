@@ -173,7 +173,7 @@ public class ExampleDebugFeedbackHook : MonoBehaviour, IInputFeedbackHook
     private void Start()
     {
         // Auto-register this hook with the InputFeedbackManager if available
-        InputFeedbackManager feedbackManager = FindObjectOfType<InputFeedbackManager>();
+        InputFeedbackManager feedbackManager = FindFirstObjectByType<InputFeedbackManager>();
         if (feedbackManager != null)
         {
             bool registered = feedbackManager.RegisterHook(this);
@@ -191,7 +191,7 @@ public class ExampleDebugFeedbackHook : MonoBehaviour, IInputFeedbackHook
     private void OnDestroy()
     {
         // Auto-unregister when destroyed
-        InputFeedbackManager feedbackManager = FindObjectOfType<InputFeedbackManager>();
+        InputFeedbackManager feedbackManager = FindFirstObjectByType<InputFeedbackManager>();
         if (feedbackManager != null)
         {
             feedbackManager.UnregisterHook(this);

@@ -69,7 +69,7 @@ public class ExampleAnimationReceiver : MonoBehaviour, IAnimationTriggerReceiver
     
     private void RegisterWithAnimationManager()
     {
-        var animationManager = FindObjectOfType<AnimationTriggerManager>();
+        var animationManager = FindFirstObjectByType<AnimationTriggerManager>();
         if (animationManager != null)
         {
             // Register for all trigger types for demonstration
@@ -88,7 +88,7 @@ public class ExampleAnimationReceiver : MonoBehaviour, IAnimationTriggerReceiver
     
     private void UnregisterFromAnimationManager()
     {
-        var animationManager = FindObjectOfType<AnimationTriggerManager>();
+        var animationManager = FindFirstObjectByType<AnimationTriggerManager>();
         if (animationManager != null)
         {
             animationManager.UnregisterReceiver(this);

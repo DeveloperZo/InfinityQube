@@ -90,7 +90,7 @@ public class TutorialMessage : WaveMessage
     /// <summary>
     /// Validate this message meets formatting requirements
     /// </summary>
-    public MessageValidationResult ValidateFormatting()
+    public new MessageValidationResult ValidateFormatting()
     {
         return MessageFormatter.ValidateMessage(Message);
     }

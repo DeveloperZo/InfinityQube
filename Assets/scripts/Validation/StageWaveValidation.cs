@@ -33,9 +33,9 @@ public class StageWaveValidation : MonoBehaviour
         
         // Find components if not assigned
         if (stageManager == null)
-            stageManager = FindObjectOfType<StageManager>();
+            stageManager = FindFirstObjectByType<StageManager>();
         if (waveManager == null)
-            waveManager = FindObjectOfType<WaveManager>();
+            waveManager = FindFirstObjectByType<WaveManager>();
 
         if (stageManager == null || waveManager == null)
         {

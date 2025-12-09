@@ -80,7 +80,7 @@ public class FacePaintingManager : MonoBehaviour, IManagerDebugInterface
     private void InitializeManager()
     {
         // Get reference to GridManager
-        gridManager = FindObjectOfType<GridManager>();
+        gridManager = FindFirstObjectByType<GridManager>();
         if (gridManager == null)
         {
             Debug.LogError("FacePaintingManager requires GridManager to function!");

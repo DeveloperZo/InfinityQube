@@ -1,0 +1,56 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: faaa491ad539cb444afed02f7554648d, type: 3}
+  m_Name: Stage_00
+  m_EditorClassIdentifier: 
+  stageNumber: 0
+  stageName: Playtest Sandbox
+  stageType: 0
+  description: A sandbox stage for playtesting core mechanics and scoring system. Contains 3 waves introducing Unit, Matrix, and Recursion cubes.
+  objective: Capture cubes and test the scoring system
+  gridWidth: 5
+  gridHeight: 15
+  playerStartPosition: {x: 2, y: 0}
+  lineDividerStartY: 0
+  lineDividerEscapePenalty: 0
+  lineDividerCaptureReward: 0
+  stageGrants:
+    unitCharges: 5
+    unitMaxOnGrid: 5
+    matrixCharges: 3
+    matrixMaxOnGrid: 3
+    recursionCharges: 2
+    recursionMaxOnGrid: 2
+    infinityCharges: 1
+    infinityMaxOnGrid: 1
+  useWaveGrants: 1
+  lockAttunements: 0
+  allowedAttunementIds: []
+  waveConfigurations:
+  - {fileID: 11400000, guid: a1b2c3d4e5f6789012345678901234a1, type: 2}
+  - {fileID: 11400000, guid: a1b2c3d4e5f6789012345678901234a2, type: 2}
+  - {fileID: 11400000, guid: a1b2c3d4e5f6789012345678901234a3, type: 2}
+  requireAllCubesDestroyed: 0
+  requiredCaptureCount: 0
+  maxAllowedEscapes: 99
+  playerStatistics:
+    unitCubesCaptured: 0
+    matrixCubesCaptured: 0
+    recursionCubesCaptured: 0
+    infinityCubesCaptured: 0
+    cubesEscaped: 0
+    markersPlaced: 0
+    detonationsUsed: 0
+    completionTime: 0
+    bestCompletionTime: 0
+    timesCompleted: 0
+

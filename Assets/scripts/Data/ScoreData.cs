@@ -40,6 +40,7 @@ public class WaveScoreData
     public int maxPossibleMoves = 20; // Set from grid height
     public int markersPlaced = 0;
     public int playerDeaths = 0;
+    public int totalCubesInWave = 0; // Total cubes spawned in this wave
     
     #endregion
     

@@ -42,9 +42,9 @@ public class GameUI : MonoBehaviour
 
     private void FindReferences()
     {
-        playerManager = FindObjectOfType<PlayerManager>();
-        waveManager = FindObjectOfType<WaveManager>();
-        playerActionManager = FindObjectOfType<PlayerActionManager>();
+        playerManager = FindFirstObjectByType<PlayerManager>();
+        waveManager = FindFirstObjectByType<WaveManager>();
+        playerActionManager = FindFirstObjectByType<PlayerActionManager>();
     }
 
     private void InitializeUI()
@@ -75,7 +75,7 @@ public class GameUI : MonoBehaviour
 
     private void RestartLevel()
     {
-        var stageManager = FindObjectOfType<StageManager>();
+        var stageManager = FindFirstObjectByType<StageManager>();
         if (stageManager != null)
         {
             stageManager.RestartCurrentStage();

@@ -8,8 +8,10 @@ public class SplashScreenManager : MonoBehaviour
     [SerializeField] private string nextSceneName = "Sandbox";
 
     [Header("Playback Options")]
+    #pragma warning disable CS0414 // Reserved for future skip delay implementation
     [SerializeField] private bool canSkip = true;
     [SerializeField] private float skipDelay = 0.5f;
+    #pragma warning restore CS0414
     [SerializeField] private bool showDebugLogs = true;
 
     [Header("UI References")]

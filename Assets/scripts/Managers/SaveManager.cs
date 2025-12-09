@@ -501,7 +501,7 @@ public class SaveManager : MonoBehaviour, IManagerDebugInterface
         {
             // Calculate final score with grade
             int totalWaves = 1; // Default
-            var stageManager = Object.FindFirstObjectByType<StageManager>();
+            var stageManager = FindFirstObjectByType<StageManager>();
             if (stageManager?.CurrentStage != null)
             {
                 totalWaves = stageManager.CurrentStage.waveConfigurations?.Count ?? 1;

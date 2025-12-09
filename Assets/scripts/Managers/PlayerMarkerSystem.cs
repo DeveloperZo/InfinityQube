@@ -40,7 +40,6 @@ public class PlayerMarkerSystem : MonoBehaviour
 
     // Preview system
     private List<GameObject> previewObjects = new List<GameObject>();
-    private bool showingPreview = false;
 
     // Statistics
     private int cubeMarkersTriggered = 0;
@@ -1065,7 +1064,6 @@ public class PlayerMarkerSystem : MonoBehaviour
             if (preview != null) Destroy(preview);
         }
         previewObjects.Clear();
-        showingPreview = false;
 
         // Clear visual manager highlights and countdown texts
         visualManager?.ClearAllTileHighlights();
@@ -1087,7 +1085,6 @@ public class PlayerMarkerSystem : MonoBehaviour
             }
         }
         previewObjects.Clear();
-        showingPreview = false;
     }
 
     #endregion

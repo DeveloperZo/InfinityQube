@@ -38,7 +38,6 @@ public class PlayerManager : MonoBehaviour, IManagerDebugInterface
     public Vector2Int currentTilePosition = new Vector2Int(0, 0);
     private Vector3 currentVelocity = Vector3.zero;
     private bool isMoving = false;
-    private bool isSpeedingUp = false;
 
     // Tile Interaction
     private Tile currentHoveredTile = null;
@@ -127,7 +126,7 @@ public class PlayerManager : MonoBehaviour, IManagerDebugInterface
     {
         if (grid == null)
         {
-            grid = GridManager.Instance ?? FindObjectOfType<GridManager>();
+            grid = GridManager.Instance ?? FindFirstObjectByType<GridManager>();
             if (grid == null)
             {
                 this.LogError("PlayerManager requires GridManager!");
@@ -136,13 +135,13 @@ public class PlayerManager : MonoBehaviour, IManagerDebugInterface
             }
         }
 
-        playerActionManager = FindObjectOfType<PlayerActionManager>();
+        playerActionManager = FindFirstObjectByType<PlayerActionManager>();
         if (playerActionManager == null)
         {
             this.LogWarning("PlayerActionManager not found - player actions features limited", EnableDebugLogs);
         }
 
-        waveManager = FindObjectOfType<WaveManager>();
+        waveManager = FindFirstObjectByType<WaveManager>();
         if (waveManager == null)
         {
             this.LogWarning("WaveManager not found - cube collision features limited", EnableDebugLogs);

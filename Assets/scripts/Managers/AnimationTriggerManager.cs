@@ -91,7 +91,7 @@ public class AnimationTriggerManager : MonoBehaviour, IManagerDebugInterface
         if (unityAnimator == null)
         {
             // Try to find PlayerActionManager's Animator
-            var playerActionManager = FindObjectOfType<PlayerActionManager>();
+            var playerActionManager = FindFirstObjectByType<PlayerActionManager>();
             if (playerActionManager != null)
             {
                 unityAnimator = playerActionManager.GetComponentInChildren<Animator>();
@@ -462,7 +462,7 @@ public class AnimationTriggerManager : MonoBehaviour, IManagerDebugInterface
 
     #region IManagerDebugInterface Implementation
 
-    public bool EnableDebugLogs { get; set; } = true;
+    public bool EnableDebugLogs { get => showDebugLogs; set => showDebugLogs = value; }
 
     public string GetDebugStatus()
     {

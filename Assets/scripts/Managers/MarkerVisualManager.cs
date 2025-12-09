@@ -13,7 +13,9 @@ public class MarkerVisualManager : MonoBehaviour, IManagerDebugInterface
     #region Inspector Configuration
 
     [Header("Visual Settings")]
+    #pragma warning disable CS0414 // Reserved for future flash effect implementation
     [SerializeField] private float flashDuration = 0.3f;
+    #pragma warning restore CS0414
     [SerializeField] private Color areaPreviewColor = new Color(1f, 0.5f, 0f, 0.7f);
 
     [Header("Debug")]
