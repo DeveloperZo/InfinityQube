@@ -486,7 +486,7 @@ public class SaveManager : MonoBehaviour, IManagerDebugInterface
     }
     
     /// <summary>
-    /// Handle stage completion - mark as cleared, unlock hub areas.
+    /// Handle stage completion - calculate score, award shards, mark as cleared.
     /// </summary>
     public void OnStageComplete(int stageIndex, bool success)
     {
@@ -496,15 +496,45 @@ public class SaveManager : MonoBehaviour, IManagerDebugInterface
         Progression.MarkStageCleared(stageIndex);
         _isDirty = true;
         
-        if (wasFirstClear)
+        // Calculate score and award shards (first clear only)
+        if (wasFirstClear && ScoreManager.IsInitialized)
         {
-            DebugLog($"Stage {stageIndex} first clear! Highest: {Progression.highestStageUnlocked}");
+            // Calculate final score with grade
+            int totalWaves = 1; // Default
+            var stageManager = Object.FindFirstObjectByType<StageManager>();
+            if (stageManager?.CurrentStage != null)
+            {
+                totalWaves = stageManager.CurrentStage.waveConfigurations?.Count ?? 1;
+            }
+            
+            int baseShards = totalWaves * SHARDS_PER_WAVE;
+            var scoreResult = ScoreManager.Instance.CalculateStageResult(baseShards);
+            
+            // Award shards based on grade
+            AwardShards(scoreResult.finalShards, $"Stage {stageIndex} complete ({scoreResult.grade})");
+            
+            // Record lifetime stats
+            Progression.RecordStageCompletion(stageIndex, scoreResult.totalMovesUsed);
+            Progression.RecordCubesCaptured(scoreResult.totalCubesCaptured);
+            Progression.RecordCubesEscaped(scoreResult.totalEscapes);
+            
+            DebugLog($"Stage {stageIndex} first clear! Grade: {scoreResult.grade} ({scoreResult.gradePercentage:F0}%) - Shards: {scoreResult.finalShards}");
             
             // Check hub unlocks
-            if (stageIndex >= 3 && Progression.resonanceAlignmentUnlocked)
+            if (stageIndex >= 3)
             {
                 DebugLog("Hub areas unlocked: Resonance Alignment Chamber, Observation Chronicle");
             }
+        }
+        else if (wasFirstClear)
+        {
+            // Fallback if ScoreManager not available
+            AwardShards(SHARDS_PER_WAVE, $"Stage {stageIndex} complete");
+            DebugLog($"Stage {stageIndex} first clear (no scoring)");
+        }
+        else
+        {
+            DebugLog($"Stage {stageIndex} replay complete (no shards)");
         }
         
         if (autoSaveEnabled)
