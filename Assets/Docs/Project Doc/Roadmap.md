@@ -12,18 +12,16 @@ This roadmap outlines the development path from current production-ready state t
 ## Current Status
 
 ### 📍 **Current Phase**: Phase 1 - Core Innovation & Content
-### 📍 **Current Milestone**: 1.1 - Refine Markers Implementation (In Progress)
+### 📍 **Current Milestone**: 1.4 - Stage Content Creation
 
 ### 🔴 **TOP PRIORITIES**
 | Priority | Item | Status | Points |
 |----------|------|--------|--------|
-| 🔴 Critical | Collision Matrix Implementation | Designed, needs code | 3 pts |
-| 🔴 Critical | Line Divider System | Designed, needs implementation | 3 pts |
-| 🔴 Critical | Resonance System | Designed, needs implementation | 2 pts |
-| 🔴 High | Enhanced Face Painting | Rotation mechanics need implementation | 2 pts |
-| 🔴 High | Penalty/Reward System | Designed, needs implementation | 2 pts |
-| 🟡 Medium | Marker Economy | Per-stage grant system designed | 2 pts |
+| 🔴 Critical | Design remaining stages | Ready to start | 8 pts |
+| 🔴 Critical | Create wave configurations | Ready to start | 8 pts |
+| 🔴 High | Implement difficulty curve | After stages | 4 pts |
 | 🟡 Medium | File Size Refactoring | 12 files over limit | 15 pts |
+| 🟢 Low | Hub polish pass | Deferred | 2 pts |
 
 ---
 
@@ -42,11 +40,11 @@ Points reflect actual development time, not complexity. A "week gap" between com
 | Phase | Milestone | Status | Points |
 |-------|-----------|--------|--------|
 | **Phase 1** | 1.0 Core Game Development | ✅ Complete | 65 pts |
-| | **1.1 Refine Markers** | 🔄 **In Progress** | 14 pts |
-| | 1.2 Demo Stage Content | ✅ Complete | 5 pts |
-| | 1.3 StageDB Enhancement | ⬜ Pending | 5 pts |
-| | 1.4 Stage Content Creation | ⬜ Pending | 20 pts |
-| | 1.5 RPG/Progression Ideation | ⬜ Pending | 10 pts |
+| | 1.1 Refine Markers | ✅ Complete | 14 pts |
+| | 1.2 RPG/Progression | ✅ Complete | 12 pts |
+| | 1.3 Database Enhancement | ✅ Complete | 6 pts |
+| | **1.4 Stage Content Creation** | 🔄 **In Progress** | 20 pts |
+| | 1.5 Demo Stage Content | ⬜ Pending | 5 pts |
 | | 1.6 Visual Polish Pass | ⬜ Pending | 5 pts |
 | **Phase 2** | 2.1-2.10 Content & Polish | ⬜ Pending | 68 pts |
 | **Phase 3** | 3.1-3.8 Polish & Commercial Prep | ⬜ Pending | 55 pts |
@@ -120,29 +118,128 @@ Points reflect actual development time, not complexity. A "week gap" between com
 
 ---
 
-### Milestone 1.2: RPG/Progression Ideation
-- **Target**: Establish framework to deliver progression and RPG vibes for player
-- **Points**: 10 (~2 weeks active development)
-- **Status**: ⬜ Pending
-- **Tasks**:
-  - [ ] Brainstorm and design RPG elements and progression
-  - [ ] Design hub area concept and layout
-  - [ ] Plan meta-progression systems (unlocks, upgrades, character growth)
-  - [ ] Create progression economy design (resources, currencies, rewards)
+### Milestone 1.2: RPG/Progression ✅ COMPLETE
+
+**Target:** Establish framework to deliver progression and RPG vibes for player
+
+**Points:** 12 (exceeded original 10-point ideation scope with full implementation)
+
+**Status:** ✅ **COMPLETE** - December 2024
+
+**Planning Document:** [Milestone1.2_RPGProgressionPlan.md](CurrentFocus/Milestone1.2_RPGProgressionPlan.md)
+
+#### Completed Deliverables:
+- [x] **SaveManager** - Full persistence system (JSON, Steam Cloud ready)
+- [x] **PlayerProgression** - Data structure for currency, attunements, stage progress
+- [x] **AttunementManager** - 9 attunement definitions with query API
+- [x] **All 9 attunements integrated** into CubeCollisionManager
+- [x] **Economy wired** to GameEvents (100 shards/wave, first playthrough only)
+- [x] **Hub scene foundation** - 3 clickable buildings, UI panel system
+- [x] **Debug panel** for attunement testing (F12 → Player → Attunements)
+
+#### Implementation Beyond Original Scope:
+Original milestone was ideation/design docs. Delivered full working implementation:
+- Concentrated Expansion: Matrix markers trigger twice
+- Expanded Concentration: Recursion creates 2-tile vertical pattern
+- Phaseable attunements: Same-type collisions paint wave cube faces
+- Untethered: Infinity vs Unit destroys and continues (no wave join)
 
 ---
 
-### Milestone 1.3: StageDB Enhancement
-- **Target**: Update StageDB system and migrate existing content
-- **Points**: 5 (~1 week active development)
-- **Status**: ⬜ Pending
-- **Dependencies**: Milestone 1.1
-- **Tasks**:
-  - [ ] Extend StageDB validation
-  - [ ] Update StageData inspector/editor tools
-  - [ ] Create StageDB debug tools
-  - [ ] Migrate existing 3 stages
-  - [ ] Test StageDB loading/saving
+### Hub: Infinity's Axiom
+
+| Area | Function | Unlock |
+|------|----------|--------|
+| Celestial Atlas | Stage selection | Always |
+| Resonance Alignment Chamber | Marker attunements | Stage 3 |
+| Observation Chronicle | Stats/history | Stage 3 |
+
+---
+
+### Marker Attunements
+
+One attunement per marker type. Modifies cube properties, not collision matrix.
+
+#### Matrix Attunements (Expansion Theme)
+
+| Attunement | Effect |
+|------------|--------|
+| Expanded Expansion | +1 area dimensions (2x2 → 3x3) |
+| Concentrated Expansion | +1 charge per tile |
+| Phaseable Expansion | Matrix vs Matrix also paints wave cube face |
+
+#### Recursion Attunements (Concentration Theme)
+
+| Attunement | Effect |
+|------------|--------|
+| Concentrated Concentration | +2 charges (3 → 5) |
+| Expanded Concentration | +1 tile to pattern |
+| Phaseable Concentration | Recursion vs Recursion also paints wave cube face |
+
+#### Infinity Attunements (Phaseability Theme)
+
+| Attunement | Effect |
+|------------|--------|
+| Potent Matrix Paint | +1 charge on Matrix painted faces |
+| Potent Recursion Paint | +1 charge on Recursion painted faces |
+| Untethered | vs Unit = destroy + continue (no wave join) |
+
+---
+
+### Economy
+
+| Aspect | Value |
+|--------|-------|
+| Currency | Axiom Shards |
+| Earn | 100 shards flat per wave |
+| Spend | Attunement unlocks (100-250 each) |
+| Replay | No currency (anti-farming) |
+
+---
+
+### Key Design Decisions
+
+| Decision | Rationale |
+|----------|-----------|
+| Attunements modify cube, not collision matrix | Players learn collision matrix once, attunements layer on top |
+| Phaseable attunements enable same-type face painting | High-skill reward, extends existing mechanic |
+| Locked per stage | Forces commitment, meaningful choice |
+| Passives removed | Attunements provide sufficient expression |
+
+---
+
+### Tasks
+
+- [ ] Hub architecture design (3 areas, functions, unlock flow)
+- [ ] Attunement system design (9 attunements with exact values)
+- [ ] Economy design (earn rates, costs, pacing)
+- [ ] Technical prep (data structures, integration points)
+
+---
+
+### Milestone 1.3: Database & Configuration Enhancement ✅ COMPLETE
+- **Target**: Enhance core databases for easier content creation and balance tuning
+- **Points**: 6 (~1 week active development)
+- **Status**: ✅ **COMPLETE** - December 2024
+- **Dependencies**: Milestone 1.2 ✅
+- **Planning Document**: [Milestone1.3_DatabaseEnhancement.md](CurrentFocus/Milestone1.3_DatabaseEnhancement.md)
+
+#### Completed Deliverables
+
+**StageDB + WaveData**
+- [x] Enhanced StageData with line divider, marker grants, attunement locking, validation
+- [x] Enhanced WaveData with Infinity markers, grants system, validation  
+- [x] Enhanced CubeData with pre-painted faces, spawn delay
+- [x] Enhanced StageDB with validation, query methods
+
+**AttunementDatabase**
+- [x] Created AttunementData ScriptableObject
+- [x] Created AttunementDatabase ScriptableObject
+- [x] Migrated 9 attunement definitions
+- [x] Updated AttunementManager to load from DB (with fallback)
+
+**PlayerProgression**
+- [x] Added lifetime statistics (cubes captured, play time, best times)
 
 ---
 
@@ -374,16 +471,14 @@ Points reflect actual development time, not complexity. A "week gap" between com
 ## Critical Path
 
 ```
-Milestone 1.0 ✅ → 1.1 🔄 → 1.3 → 1.4 → 2.x → 3.x → 4.x → Release
-                    ↑
-              YOU ARE HERE
-                    │
-              Collision Implementation
-              Line Divider
-              Resonance
-              Face Painting
-              Penalty/Reward
-              Marker Economy
+Milestone 1.0 ✅ → 1.1 ✅ → 1.2 🔄 → 1.3 → 1.4 → 2.x → 3.x → 4.x → Release
+                            ↑
+                      YOU ARE HERE
+                            │
+                      Hub Architecture
+                      Attunement System
+                      Progression Economy
+                      Technical Prep
 ```
 
 ---
@@ -541,7 +636,7 @@ Milestone 1.0 ✅ → 1.1 🔄 → 1.3 → 1.4 → 2.x → 3.x → 4.x → Relea
 
 ---
 
-*Last Updated: December 8, 2025*  
+*Last Updated: December 9, 2025*  
 *Current Phase: Phase 1 - Core Innovation & Content*  
-*Current Milestone: 1.1 - Refine Markers Implementation*  
-*Total Points: 297 | Completed: 75 | Remaining: 222*
+*Current Milestone: 1.2 - RPG/Progression Ideation*  
+*Total Points: 297 | Completed: 89 | Remaining: 208*

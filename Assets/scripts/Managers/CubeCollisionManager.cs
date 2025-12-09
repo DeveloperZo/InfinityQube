@@ -23,6 +23,7 @@ public class CubeCollisionManager : MonoBehaviour, IManagerDebugInterface
     private PlayerActionManager actionManager;
     private GridManager gridManager;
     private MarkerVisualManager visualManager;
+    private AttunementManager attunementManager;
 
     #endregion
 
@@ -511,12 +512,14 @@ public class CubeCollisionManager : MonoBehaviour, IManagerDebugInterface
         switch (waveCube.type)
         {
             case CubeType.Unit:
-                // Matrix + Unit: 2x2 area capture from Matrix position
-                return new CollisionResult(HandleMatrixAreaCapture(position, 2));
+                // Matrix + Unit: Area capture from Matrix position (2x2 base, 3x3 with Expanded Expansion)
+                int matrixAreaSize = AttunementManager.IsInitialized ? AttunementManager.Instance.GetMatrixAreaSize() : 2;
+                return new CollisionResult(HandleMatrixAreaCapture(position, matrixAreaSize));
 
             case CubeType.Matrix:
                 // Matrix + Matrix: 3x3 triggerable marker (enhanced reward)
-                return new CollisionResult(HandleMatrixMatrixCollision(position));
+                // Phaseable Expansion attunement may paint wave cube face
+                return new CollisionResult(HandleMatrixMatrixCollision(position, waveCube));
 
             case CubeType.Recursion:
                 // Matrix + Recursion: Degrading 2x2 marker
@@ -548,7 +551,8 @@ public class CubeCollisionManager : MonoBehaviour, IManagerDebugInterface
 
             case CubeType.Recursion:
                 // Recursion + Recursion: Cross marker (5 tiles)
-                return new CollisionResult(HandleRecursionRecursionCollision(position));
+                // Phaseable Concentration attunement may paint wave cube face
+                return new CollisionResult(HandleRecursionRecursionCollision(position, waveCube));
 
             case CubeType.Infinity:
                 // Recursion + Infinity: Paint Wave Infinity's face, leave recursion marker, Recursion destroyed
@@ -569,6 +573,11 @@ public class CubeCollisionManager : MonoBehaviour, IManagerDebugInterface
         {
             case CubeType.Unit:
                 // Infinity + Unit: Wave join (removes Unit, Infinity takes position, moves with wave)
+                // With Untethered attunement: Destroy Unit and continue up (no wave join)
+                if (AttunementManager.IsInitialized && AttunementManager.Instance.ShouldInfinitySkipWaveJoin())
+                {
+                    return HandleInfinityUntethered(playerCube, waveCube, position);
+                }
                 return HandleInfinityWaveJoin(playerCube, waveCube, position);
 
             case CubeType.Matrix:
@@ -647,8 +656,9 @@ public class CubeCollisionManager : MonoBehaviour, IManagerDebugInterface
 
     /// <summary>
     /// Matrix + Matrix: 3x3 triggerable marker (enhanced reward)
+    /// With Phaseable Expansion attunement: Also paints wave Matrix cube face
     /// </summary>
-    private bool HandleMatrixMatrixCollision(Vector2Int centerPosition)
+    private bool HandleMatrixMatrixCollision(Vector2Int centerPosition, CubeManager waveMatrixCube = null)
     {
         var areaPositions = markerSystem.GetAreaPositions(centerPosition, 3);
         bool anyCaptured = false;
@@ -664,6 +674,14 @@ public class CubeCollisionManager : MonoBehaviour, IManagerDebugInterface
                     anyCaptured = true;
                 }
             }
+        }
+
+        // Phaseable Expansion attunement: Paint wave Matrix cube's face
+        if (waveMatrixCube != null && AttunementManager.IsInitialized && AttunementManager.Instance.ShouldMatrixMatrixPaintFace())
+        {
+            CubeFace collisionFace = CubeFace.Front;
+            waveMatrixCube.PaintFace(collisionFace, FaceStatus.MatrixFace, GetFaceColorForType(CubeType.Matrix), -1);
+            DebugLog("HandleMatrixMatrixCollision", $"[Phaseable Expansion] Painted wave Matrix face at ({centerPosition.x}, {centerPosition.y})");
         }
 
         return anyCaptured;
@@ -697,15 +715,19 @@ public class CubeCollisionManager : MonoBehaviour, IManagerDebugInterface
     }
 
     /// <summary>
-    /// Recursion capture: Creates a single recursion marker with 3 charges at collision point
+    /// Recursion capture: Creates a single recursion marker at collision point
+    /// Base: 3 charges. With Concentrated Concentration attunement: 5 charges.
     /// Recursion+Unit and Unit+Recursion behavior
     /// </summary>
     private bool HandleColumnCapture(Vector2Int position, int charges = 3)
     {
         int expiresAfterMoves = 5;
+        
+        // Apply Concentrated Concentration attunement (+2 charges)
+        int finalCharges = AttunementManager.IsInitialized ? AttunementManager.Instance.GetRecursionCharges() : charges;
 
-        // Create single marker with 3 charges at collision point
-        CreateRecursionMarker(position, expiresAfterMoves, charges);
+        // Create single marker with charges at collision point
+        CreateRecursionMarker(position, expiresAfterMoves, finalCharges);
 
         // Try to capture cube at collision point immediately
         var cubesAtPosition = markerSystem.FindAllCubesAt(position);
@@ -741,26 +763,49 @@ public class CubeCollisionManager : MonoBehaviour, IManagerDebugInterface
     }
 
     /// <summary>
-    /// Creates a single recursion marker at position with specified charges
+    /// Creates a recursion marker at position with specified charges.
+    /// With Expanded Concentration attunement: Creates 2-tile vertical pattern.
     /// </summary>
     private void CreateRecursionMarker(Vector2Int position, int expiresAfterMoves = 5, int charges = 3)
     {
         Color markerColor = new Color(0.9f, 0.6f, 0.2f, 0.8f); // Amber/orange
         int currentMoveStep = actionManager?.WaveManager?.MoveStep ?? 0;
 
+        // Check for Expanded Concentration attunement (+1 tile to pattern)
+        int patternTiles = AttunementManager.IsInitialized ? AttunementManager.Instance.GetRecursionPatternTiles() : 1;
+        
+        List<Vector2Int> positions = new List<Vector2Int>();
+        
+        // Base position
+        positions.Add(position);
         Tile tile = gridManager.GetTileAt(position.x, position.y);
         if (tile != null)
         {
             visualManager?.SetTileHighlight(tile, markerColor, "RecursionCapture");
             visualManager?.CreateMarkerCountdownText(position, charges, Color.white);
         }
+        
+        // Expanded Concentration: Add additional tile above (vertical pattern)
+        if (patternTiles > 1)
+        {
+            Vector2Int abovePos = new Vector2Int(position.x, position.y + 1);
+            if (IsValidPosition(abovePos))
+            {
+                positions.Add(abovePos);
+                Tile aboveTile = gridManager.GetTileAt(abovePos.x, abovePos.y);
+                if (aboveTile != null)
+                {
+                    visualManager?.SetTileHighlight(aboveTile, markerColor, "RecursionCapture");
+                    visualManager?.CreateMarkerCountdownText(abovePos, charges, Color.white);
+                }
+            }
+            DebugLog("CreateRecursionMarker", $"[Expanded Concentration] Extended to {positions.Count}-tile vertical pattern");
+        }
 
-        // Single marker with all charges
-        List<Vector2Int> positions = new List<Vector2Int> { position };
         var areaMarker = new ActiveAreaMarker(positions, currentMoveStep, expiresAfterMoves, markerColor, "RecursionCapture", true, charges);
         activeAreaMarkers.Add(areaMarker);
 
-        DebugLog("CreateRecursionMarker", $"Created recursion marker at ({position.x}, {position.y}) with {charges} charges, expires in {expiresAfterMoves} moves");
+        DebugLog("CreateRecursionMarker", $"Created recursion marker at ({position.x}, {position.y}) with {charges} charges, {positions.Count} tiles, expires in {expiresAfterMoves} moves");
     }
 
     /// <summary>
@@ -826,8 +871,9 @@ public class CubeCollisionManager : MonoBehaviour, IManagerDebugInterface
 
     /// <summary>
     /// Recursion + Recursion: Cross marker (5 tiles) with charges
+    /// With Phaseable Concentration attunement: Also paints wave Recursion cube face
     /// </summary>
-    private bool HandleRecursionRecursionCollision(Vector2Int centerPosition)
+    private bool HandleRecursionRecursionCollision(Vector2Int centerPosition, CubeManager waveRecursionCube = null)
     {
         int charges = 2;
         int expiresAfterMoves = 3;
@@ -855,6 +901,14 @@ public class CubeCollisionManager : MonoBehaviour, IManagerDebugInterface
         }
 
         CreateCrossMarker(crossPositions, expiresAfterMoves, charges);
+
+        // Phaseable Concentration attunement: Paint wave Recursion cube's face
+        if (waveRecursionCube != null && AttunementManager.IsInitialized && AttunementManager.Instance.ShouldRecursionRecursionPaintFace())
+        {
+            CubeFace collisionFace = CubeFace.Front;
+            waveRecursionCube.PaintFace(collisionFace, FaceStatus.RecursionFace, GetFaceColorForType(CubeType.Recursion), -1);
+            DebugLog("HandleRecursionRecursionCollision", $"[Phaseable Concentration] Painted wave Recursion face at ({centerPosition.x}, {centerPosition.y})");
+        }
 
         var cubesAtCenter = markerSystem.FindAllCubesAt(centerPosition);
         bool capturedImmediately = false;
@@ -967,6 +1021,22 @@ public class CubeCollisionManager : MonoBehaviour, IManagerDebugInterface
     }
 
     /// <summary>
+    /// Untethered attunement: Infinity destroys Unit and continues moving up (no wave join)
+    /// </summary>
+    private CollisionResult HandleInfinityUntethered(CubeManager playerInfinity, CubeManager waveUnit, Vector2Int position)
+    {
+        // Capture/destroy the Unit cube
+        if (markerSystem.ProcessCubeCapture(waveUnit, position, PlayerMarkerSystem.MarkerType.Unit, null, false))
+        {
+            DebugLog("HandleInfinityUntethered", $"[Untethered] Player Infinity destroyed Unit at ({position.x}, {position.y}) and continues up");
+            // Player Infinity continues moving - don't join wave, don't destroy
+            return new CollisionResult(true, false); // Collision handled, don't destroy player cube
+        }
+
+        return new CollisionResult(false);
+    }
+
+    /// <summary>
     /// Handles face painting when non-Infinity player cubes hit Wave Infinity cubes.
     /// Paints the WAVE Infinity cube's face with the player cube's type.
     /// </summary>
@@ -1013,8 +1083,19 @@ public class CubeCollisionManager : MonoBehaviour, IManagerDebugInterface
             _ => FaceStatus.None
         };
 
-        // All painted faces have 1 charge
+        // Base: 1 charge. Apply Potent Paint attunements for bonus charges.
         int charges = 1;
+        if (AttunementManager.IsInitialized)
+        {
+            if (paintedType == CubeType.Matrix)
+            {
+                charges += AttunementManager.Instance.GetMatrixPaintBonusCharges();
+            }
+            else if (paintedType == CubeType.Recursion)
+            {
+                charges += AttunementManager.Instance.GetRecursionPaintBonusCharges();
+            }
+        }
 
         // Paint the PLAYER Infinity cube's face with appropriate charges
         playerInfinity.PaintFace(collisionFace, faceStatus, GetFaceColorForType(paintedType), -1, charges);
@@ -1022,7 +1103,8 @@ public class CubeCollisionManager : MonoBehaviour, IManagerDebugInterface
         // Capture the wave cube
         markerSystem.ProcessCubeCapture(waveCube, position, PlayerMarkerSystem.MarkerType.Infinity, null, false);
 
-        DebugLog("HandlePlayerInfinityFacePaint", $"Painted Player Infinity's {collisionFace} face with {paintedType} type ({charges} charges), captured wave cube, continuing up");
+        string attunementNote = charges > 1 ? $" [Potent {paintedType} Paint]" : "";
+        DebugLog("HandlePlayerInfinityFacePaint", $"Painted Player Infinity's {collisionFace} face with {paintedType} type ({charges} charges){attunementNote}, captured wave cube, continuing up");
 
         return new CollisionResult(true, false); // Player Infinity continues, not destroyed
     }

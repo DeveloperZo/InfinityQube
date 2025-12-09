@@ -20,6 +20,7 @@ public class PlayerPanel : PrototypingPanelBase
     private bool showMarkerSettings = true;
     private bool showMarkerPlacement = true;
     private bool showPlayerControl = false;
+    private bool showAttunements = true;
     
     // Unlimited mode
     private bool unlimitedMode = false;
@@ -79,6 +80,13 @@ public class PlayerPanel : PrototypingPanelBase
         if (showPlayerControl)
         {
             DrawPlayerControl();
+        }
+        
+        // Attunements
+        showAttunements = DrawToggleSection("ATTUNEMENTS", showAttunements);
+        if (showAttunements)
+        {
+            DrawAttunements();
         }
     }
     
@@ -407,6 +415,161 @@ public class PlayerPanel : PrototypingPanelBase
         int x = gridManager.Width / 2;
         playerManager.currentTilePosition = new Vector2Int(x, 0);
         playerManager.transform.position = gridManager.GridToWorldPosition(x, 0, 0);
+    }
+    #endregion
+    
+    #region Attunements
+    private void DrawAttunements()
+    {
+        DrawSection("", () =>
+        {
+            // Check if managers are available
+            if (!SaveManager.IsInitialized)
+            {
+                GUILayout.Label("SaveManager not initialized");
+                if (GUILayout.Button("Add SaveManager to Scene"))
+                {
+                    var go = new GameObject("SaveManager");
+                    go.AddComponent<SaveManager>();
+                    LogAction("Created SaveManager");
+                }
+                return;
+            }
+            
+            if (!AttunementManager.IsInitialized)
+            {
+                GUILayout.Label("AttunementManager not initialized");
+                if (GUILayout.Button("Add AttunementManager to Scene"))
+                {
+                    var go = new GameObject("AttunementManager");
+                    go.AddComponent<AttunementManager>();
+                    LogAction("Created AttunementManager");
+                }
+                return;
+            }
+            
+            // Currency display and controls
+            GUILayout.BeginHorizontal();
+            GUILayout.Label($"Axiom Shards: {SaveManager.Instance.AxiomShards}", GUILayout.Width(150));
+            if (GUILayout.Button("+100")) 
+            {
+                SaveManager.Instance.AwardShards(100, "Debug");
+                LogAction("Awarded 100 shards");
+            }
+            if (GUILayout.Button("+1000")) 
+            {
+                SaveManager.Instance.AwardShards(1000, "Debug");
+                LogAction("Awarded 1000 shards");
+            }
+            GUILayout.EndHorizontal();
+            
+            GUILayout.Space(5);
+            
+            // Matrix Attunements
+            DrawAttunementRow("Matrix", MarkerMode.Matrix);
+            
+            // Recursion Attunements
+            DrawAttunementRow("Recursion", MarkerMode.Recursion);
+            
+            // Infinity Attunements
+            DrawAttunementRow("Infinity", MarkerMode.Infinity);
+            
+            GUILayout.Space(5);
+            
+            // Quick actions
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button("Unlock All"))
+            {
+                UnlockAllAttunements();
+            }
+            if (GUILayout.Button("Unequip All"))
+            {
+                UnequipAllAttunements();
+            }
+            if (GUILayout.Button("Reset Save"))
+            {
+                SaveManager.Instance.DeleteSave();
+                LogAction("Save reset");
+            }
+            GUILayout.EndHorizontal();
+        });
+    }
+    
+    private void DrawAttunementRow(string label, MarkerMode mode)
+    {
+        var attunements = AttunementManager.Instance.GetAttunmentsForMarker(mode);
+        string equipped = AttunementManager.Instance.GetEquippedAttunementName(mode);
+        
+        GUILayout.BeginVertical(GUI.skin.box);
+        GUILayout.Label($"{label}: {equipped}");
+        
+        GUILayout.BeginHorizontal();
+        
+        // None button (unequip)
+        GUI.backgroundColor = string.IsNullOrEmpty(SaveManager.Instance.GetEquippedAttunement(mode)) ? Color.green : Color.white;
+        if (GUILayout.Button("None", GUILayout.Width(50)))
+        {
+            SaveManager.Instance.EquipAttunement(mode, "");
+            LogAction($"Unequipped {mode} attunement");
+        }
+        
+        // Attunement buttons
+        foreach (var att in attunements)
+        {
+            bool isUnlocked = AttunementManager.Instance.IsUnlocked(att.id);
+            bool isEquipped = SaveManager.Instance.GetEquippedAttunement(mode) == att.id;
+            
+            GUI.backgroundColor = isEquipped ? Color.green : (isUnlocked ? Color.cyan : Color.gray);
+            
+            string buttonText = isUnlocked ? att.displayName.Split(' ')[0] : $"🔒{att.unlockCost}";
+            
+            if (GUILayout.Button(buttonText, GUILayout.MinWidth(60)))
+            {
+                if (isUnlocked)
+                {
+                    SaveManager.Instance.EquipAttunement(mode, att.id);
+                    LogAction($"Equipped {att.displayName}");
+                }
+                else
+                {
+                    if (SaveManager.Instance.TryUnlockAttunement(att.id, att.unlockCost))
+                    {
+                        LogAction($"Unlocked {att.displayName}");
+                    }
+                    else
+                    {
+                        LogAction($"Not enough shards for {att.displayName}");
+                    }
+                }
+            }
+        }
+        
+        GUI.backgroundColor = Color.white;
+        GUILayout.EndHorizontal();
+        GUILayout.EndVertical();
+    }
+    
+    private void UnlockAllAttunements()
+    {
+        if (!AttunementManager.IsInitialized) return;
+        
+        foreach (var def in AttunementManager.Instance.Definitions.Values)
+        {
+            if (!SaveManager.Instance.Progression.IsAttunementUnlocked(def.id))
+            {
+                SaveManager.Instance.Progression.UnlockAttunement(def.id);
+            }
+        }
+        SaveManager.Instance.Save();
+        LogAction("Unlocked all attunements");
+    }
+    
+    private void UnequipAllAttunements()
+    {
+        SaveManager.Instance.EquipAttunement(MarkerMode.Matrix, "");
+        SaveManager.Instance.EquipAttunement(MarkerMode.Recursion, "");
+        SaveManager.Instance.EquipAttunement(MarkerMode.Infinity, "");
+        LogAction("Unequipped all attunements");
     }
     #endregion
 }

@@ -62,13 +62,15 @@ public class PlayerMarkerSystem : MonoBehaviour
         public float creationTime;
         public GameObject visualObject;
         public int size = 3;
+        public int remainingUses = 1; // Default 1 trigger, Concentrated Expansion adds +1
 
-        public CubeMarker(Vector2Int pos, CubeMarkerType markerType, int markerSize = 3)
+        public CubeMarker(Vector2Int pos, CubeMarkerType markerType, int markerSize = 3, int uses = 1)
         {
             position = pos;
             type = markerType;
             size = markerSize;
             creationTime = Time.time;
+            remainingUses = uses;
         }
     }
 
@@ -538,14 +540,26 @@ public class PlayerMarkerSystem : MonoBehaviour
 
     #region Cube Markers
 
-    public void CreateCubeMarker(Vector2Int position, CubeMarkerType type = CubeMarkerType.Matrix, int size = 3)
+    public void CreateCubeMarker(Vector2Int position, CubeMarkerType type = CubeMarkerType.Matrix, int size = 3, int uses = -1)
     {
-        var cubeMarker = new CubeMarker(position, type, size);
+        // If uses not specified, calculate from attunement (Matrix only)
+        int finalUses = uses;
+        if (uses < 0)
+        {
+            finalUses = 1;
+            if (type == CubeMarkerType.Matrix && AttunementManager.IsInitialized)
+            {
+                // Concentrated Expansion: +1 use for Matrix markers
+                finalUses = AttunementManager.Instance.GetMatrixChargesPerTile();
+            }
+        }
+        
+        var cubeMarker = new CubeMarker(position, type, size, finalUses);
         cubeMarker.visualObject = visualManager?.CreateCubeMarkerVisual(position, type);
 
         cubeMarkers.Add(cubeMarker);
 
-        Debug.Log($"Cube marker ({type}, size {size}x{size}) created at ({position.x}, {position.y})");
+        Debug.Log($"Cube marker ({type}, size {size}x{size}, {finalUses} uses) created at ({position.x}, {position.y})");
     }
 
     public bool TriggerNextCubeMarker()
@@ -553,19 +567,35 @@ public class PlayerMarkerSystem : MonoBehaviour
         if (cubeMarkers.Count == 0) return false;
 
         var cubeMarker = cubeMarkers[0];
-        cubeMarkers.RemoveAt(0);
+        
+        // Decrement uses
+        cubeMarker.remainingUses--;
+        
+        // Only remove if no uses left
+        if (cubeMarker.remainingUses <= 0)
+        {
+            cubeMarkers.RemoveAt(0);
+        }
+        else
+        {
+            Debug.Log($"[Concentrated Expansion] Cube marker has {cubeMarker.remainingUses} uses remaining");
+        }
 
-        return TriggerCubeMarkerAt(cubeMarker);
+        return TriggerCubeMarkerAt(cubeMarker, cubeMarker.remainingUses <= 0);
     }
 
-    public bool TriggerCubeMarkerAt(CubeMarker cubeMarker)
+    public bool TriggerCubeMarkerAt(CubeMarker cubeMarker, bool destroyVisual = true)
     {
         cubeMarkersTriggered++;
 
         Vector3 worldPosition = actionManager.GridManager.GridToWorldPosition(cubeMarker.position.x, cubeMarker.position.y);
         TriggerMarkerAudioEvent(GameAudioEvent.MarkerTriggered, worldPosition, 1.2f);
 
-        visualManager?.DestroyMarkerVisual(cubeMarker.visualObject);
+        // Only destroy visual if this is the last use
+        if (destroyVisual)
+        {
+            visualManager?.DestroyMarkerVisual(cubeMarker.visualObject);
+        }
 
         var tempMatrixMarker = new MatrixMarker(cubeMarker.position, cubeMarker.size, Time.time);
         tempMatrixMarker.affectedPositions = GetAreaPositions(cubeMarker.position, cubeMarker.size);
