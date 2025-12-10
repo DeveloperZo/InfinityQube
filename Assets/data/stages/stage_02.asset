@@ -19,6 +19,10 @@ MonoBehaviour:
   gridWidth: 3
   gridHeight: 15
   playerStartPosition: {x: 0, y: 1}
+  enableLineDivider: 0
+  lineDividerStartY: 10
+  lineDividerEscapePenalty: 0
+  lineDividerCaptureReward: 0
   waveConfigurations:
   - {fileID: 11400000, guid: 17d72c1cb53a2e64db0dd043a4e376bb, type: 2}
   - {fileID: 11400000, guid: 2e465d29e5e1def48b4c17c56dbc282d, type: 2}

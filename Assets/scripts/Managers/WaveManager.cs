@@ -148,6 +148,10 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
 
         DebugLog("🌊 Starting Wave...");
 
+        // Reset debug mode to allow wave to run automatically
+        debugMode = false;
+        manualControl = false;
+
         if (waveCoroutine != null) StopCoroutine(waveCoroutine);
 
         ResetWaveStatistics();
@@ -486,41 +490,23 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
     }
 
     /// <summary>
-    /// Validates that wave size matches grid size, and resizes grid if needed.
-    /// Ensures waves can only spawn within valid grid bounds.
+    /// Validates that wave spawn area fits within the grid.
+    /// Does NOT resize the grid - grid size is controlled by StageData.
+    /// Wave's GridWidth/GridHeight represent the spawn area dimensions, not grid size.
     /// </summary>
     private void ValidateAndResizeGridForWave(WaveData wave)
     {
         if (wave == null || grid == null) return;
 
-        // Check if wave size matches grid size
-        bool needsResize = (wave.GridWidth != grid.Width || wave.GridHeight != grid.Height);
-        
-        if (needsResize)
+        // Wave's GridWidth/GridHeight is the spawn area, not the grid size
+        // Just validate that spawn area fits within grid
+        if (wave.GridWidth > grid.Width)
         {
-            DebugLog($"⚠️ Wave size ({wave.GridWidth}x{wave.GridHeight}) doesn't match grid size ({grid.Width}x{grid.Height}). Resizing grid to match wave.");
-            
-            // Validate wave dimensions are reasonable
-            int newWidth = Mathf.Clamp(wave.GridWidth, 3, 20);
-            int newHeight = Mathf.Clamp(wave.GridHeight, 9, 50);
-            
-            if (newWidth != wave.GridWidth || newHeight != wave.GridHeight)
-            {
-                DebugLog($"⚠️ Wave dimensions clamped from {wave.GridWidth}x{wave.GridHeight} to {newWidth}x{newHeight}");
-            }
-            
-            // Resize grid to match wave
-            grid.ResizeGrid(newWidth, newHeight);
-            
-            // Wait for grid to be ready (if in coroutine context, this will yield)
-            // Note: This is called from SpawnWaveCubes which is called from SetupWave
-            // which is called from RunWaveCoroutine, so we can't yield here.
-            // Grid resize should be fast enough, but we log if it's not ready
-            if (!grid.IsGridReady)
-            {
-                DebugLog("⚠️ Grid resize not complete, but continuing with wave spawn. Grid may not be fully ready.");
-            }
+            DebugLog($"⚠️ Wave spawn width ({wave.GridWidth}) exceeds grid width ({grid.Width}). Cubes may spawn out of bounds.");
         }
+        
+        // GridHeight is the number of rows of cubes at top of grid - this is fine as long as grid is tall enough
+        DebugLog($"Wave spawn area: {wave.GridWidth}x{wave.GridHeight}, Grid: {grid.Width}x{grid.Height}");
     }
 
     private void SpawnConfigurationCubes()
@@ -1178,30 +1164,17 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
         {
             player.enabled = true;
             
-            // Only configure player if we have a valid wave configuration
-            if (useWaveConfiguration && waveConfiguration != null && currentWaveIndex >= 0 && currentWaveIndex < waveConfiguration.Count)
+            // NOTE: Marker economy (charges, max on grid) is now managed by PlayerActionManager
+            // via GameEvents.OnStageStart and GameEvents.OnWaveStart subscriptions.
+            // This method should NOT set marker charges directly - that would override the
+            // stage/wave grant system.
+            
+            // Only validate current mode based on available marker types
+            if (playerActionManager != null)
             {
-                var wave = waveConfiguration[currentWaveIndex];
-                playerActionManager.maxUnitMarkers = wave.maxUnitMarkerCount;
-                playerActionManager.maxUnitMarkerCharges = wave.maxUnitMarkerCharge;
-
-                playerActionManager.maxRecursionMarkers = wave.maxRecursionMarkerCount;
-                playerActionManager.maxRecursionMarkerCharges = wave.maxRecursionMarkerCharge;
-
-                playerActionManager.maxMatrixMarkers = wave.maxMatrixMarkerCount;
-                playerActionManager.maxMatrixMarkerCharges = wave.maxMatrixMarkerCharge;
-                
-                // Validate and adjust current mode based on available marker types
                 playerActionManager.ValidateCurrentMode();
             }
-            else
-            {
-                // For custom waves without configuration, use default values or keep current settings
-                DebugLog("ConfigurePlayer: No wave configuration available, using current player settings");
-            }
         }
-
-        //playerActionManager.ConfigureUI();
     }
 
     private void NotifyStepComplete()

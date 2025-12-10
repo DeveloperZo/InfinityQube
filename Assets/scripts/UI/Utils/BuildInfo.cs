@@ -1,16 +1,18 @@
-// Add this to a new script for build info
 using UnityEngine;
 
 public class BuildInfo : MonoBehaviour
 {
     [Header("Build Information")]
-    public string buildVersion = "0.3.708-alpha";
-    public string buildDate = "2025-07-08";
+    [Tooltip("Pulled from Project Settings > Player > Version")]
+    public string BuildVersion => Application.version;
+    
+    [SerializeField]
+    private string buildDate = "2025-12-10";
 
-    // Add to BuildInfo.cs around line 15
+    public string BuildDate => buildDate;
+
     private void Awake()
     {
-        // Show build info in development builds
         if (Debug.isDebugBuild)
         {
             DontDestroyOnLoad(gameObject);
@@ -22,7 +24,7 @@ public class BuildInfo : MonoBehaviour
         if (Debug.isDebugBuild)
         {
             GUI.Label(new Rect(10, Screen.height - 60, 400, 40),
-                     $"Build: {buildVersion} | {buildDate}\nDemo Build");
+                     $"Build: {BuildVersion} | {buildDate}\nDemo Build");
         }
     }
 }

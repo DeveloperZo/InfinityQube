@@ -37,10 +37,11 @@ public class PlayerActionUI : MonoBehaviour
         new Color(0.3f, 0.8f, 0.9f, 1f)     // Cyan for Infinity mode (index 3 = Infinity=4)
     };
 
-    [Header("Cooldown Settings")]
+    [Header("Cooldown/Recharge Settings")]
     [SerializeField] private PlayerActionManager playerActionManager;
     [SerializeField] private AnimationTriggerManager animationTriggerManager;
-    public float unitMarkerCooldownTime = 6f;
+    [Tooltip("Unit marker uses move-based recharge (0-1 progress fraction)")]
+    public float unitMarkerRechargeProgress = 0f; // Move-based: fraction of progress toward next charge
     public float recursionMarkerCooldownTime = 8f;
     public float matrixMarkerCooldownTime = 12f;
     public float infinityMarkerCooldownTime = 15f;
@@ -66,7 +67,8 @@ public class PlayerActionUI : MonoBehaviour
             recursionMaxCharges = playerActionManager.maxRecursionMarkerCharges;
             matrixMaxCharges = playerActionManager.maxMatrixMarkerCharges;
             infinityMaxCharges = playerActionManager.maxInfinityMarkerCharges;
-            unitMarkerCooldownTime = playerActionManager.unitMarkerCooldown;
+            // Unit markers use move-based recharge, not time-based cooldown
+            unitMarkerRechargeProgress = 0f;
             recursionMarkerCooldownTime = playerActionManager.recursionMarkerCooldown;
             matrixMarkerCooldownTime = playerActionManager.matrixMarkerCooldown;
             infinityMarkerCooldownTime = playerActionManager.infinityMarkerCooldown;
@@ -121,25 +123,13 @@ public class PlayerActionUI : MonoBehaviour
         }
     }
 
-    // Backward compatibility method
-    public void UpdateCharges(int currentUnitCharges, int currentAreaCharges)
+    public void UpdateCooldowns(float unitRechargeProgress, float recursionCooldown, float matrixCooldown, float infinityCooldown)
     {
-        UpdateCharges(currentUnitCharges, 0, currentAreaCharges, 0);
-    }
-
-    public void UpdateCooldowns(float unitCooldown, float recursionCooldown, float matrixCooldown, float infinityCooldown)
-    {
-        unitMarkerCooldownTime = unitCooldown;
+        // Unit marker now uses move-based recharge (progress is 0-1 fraction)
+        unitMarkerRechargeProgress = unitRechargeProgress;
         recursionMarkerCooldownTime = recursionCooldown;
         matrixMarkerCooldownTime = matrixCooldown;
         infinityMarkerCooldownTime = infinityCooldown;
-    }
-
-    // Backward compatibility method
-    public void UpdateCooldowns(float individualCooldown, float areaCooldown)
-    {
-        unitMarkerCooldownTime = individualCooldown;
-        matrixMarkerCooldownTime = areaCooldown;
     }
 
     public void OnMarkerPlaced(bool isUnitMarker)
@@ -196,17 +186,13 @@ public class PlayerActionUI : MonoBehaviour
         infinityCharges = currentInfinityCharges;
 
         // Calculate cooldown progress for UI segments
-        float unitCooldownRemaining = playerActionManager.GetUnitMarkerCooldownRemaining();
+        // Unit marker uses move-based recharge - progress is already a 0-1 fraction
+        float unitCooldownProgress = (currentUnitCharges >= unitMaxCharges) ? 1f : unitMarkerRechargeProgress;
+        float unitCooldownRemaining = playerActionManager.GetUnitMarkerCooldownRemaining(); // Moves remaining
+        
         float recursionCooldownRemaining = playerActionManager.GetRecursionMarkerCooldownRemaining();
         float matrixCooldownRemaining = playerActionManager.GetMatrixMarkerCooldownRemaining();
         float infinityCooldownRemaining = playerActionManager.GetInfinityMarkerCooldownRemaining();
-
-        float unitCooldownProgress = CalculateCooldownProgress(
-            currentUnitCharges,
-            unitMaxCharges,
-            unitCooldownRemaining,
-            unitMarkerCooldownTime
-        );
 
         float recursionCooldownProgress = CalculateCooldownProgress(
             currentRecursionCharges,
@@ -229,27 +215,24 @@ public class PlayerActionUI : MonoBehaviour
             infinityMarkerCooldownTime
         );
 
-        // Update Unit Marker UI - disable if not available
-        bool unitMarkersAvailable = unitMaxCharges > 0;
+        // Update Unit Marker UI - Unit markers are ALWAYS available (infinite with cooldown)
+        // unitMaxCharges represents the regenerating charge pool, not total available
         if (UnitMarkerUI != null)
         {
-            if (unitMarkersAvailable)
-            {
-                UnitMarkerUI.SetActive(true);
-                UpdateMarkerUI(
-                    currentUnitCharges,
-                    unitMaxCharges,
-                    unitCooldownProgress,
-                    unitMarkerSegments,
-                    unitChargeText,
-                    unitMarkerColor,
-                    unitCooldownRemaining
-                );
-            }
-            else
-            {
-                UnitMarkerUI.SetActive(false);
-            }
+            UnitMarkerUI.SetActive(true);
+            
+            // Ensure we have valid max charges for display (Unit uses regenerating pool of 3)
+            int displayMaxCharges = unitMaxCharges > 0 ? unitMaxCharges : 3;
+            
+            UpdateMarkerUI(
+                currentUnitCharges,
+                displayMaxCharges,
+                unitCooldownProgress,
+                unitMarkerSegments,
+                unitChargeText,
+                unitMarkerColor,
+                unitCooldownRemaining
+            );
         }
 
         // Update Recursion Marker UI - disable if not available
@@ -471,7 +454,8 @@ public class PlayerActionUI : MonoBehaviour
         bool modeChanged = false;
         
         // Check which markers are available
-        bool unitMarkersAvailable = unitMaxCharges > 0;
+        // Unit markers are ALWAYS available (infinite with cooldown)
+        bool unitMarkersAvailable = true;
         bool matrixMarkersAvailable = matrixMaxCharges > 0;
         bool recursionMarkersAvailable = recursionMaxCharges > 0;
         bool infinityMarkersAvailable = infinityMaxCharges > 0;
@@ -535,12 +519,8 @@ public class PlayerActionUI : MonoBehaviour
     public float GetUnitCooldownProgress()
     {
         if (playerActionManager == null) return 0f;
-        return CalculateCooldownProgress(
-            unitCharges,
-            unitMaxCharges,
-            playerActionManager.GetUnitMarkerCooldownRemaining(),
-            unitMarkerCooldownTime
-        );
+        // Unit marker uses move-based recharge - progress is already a 0-1 fraction
+        return (unitCharges >= unitMaxCharges) ? 1f : unitMarkerRechargeProgress;
     }
 
     public float GetRecursionCooldownProgress()
@@ -565,9 +545,6 @@ public class PlayerActionUI : MonoBehaviour
         );
     }
 
-    // Alias for backward compatibility
-    public float GetAreaCooldownProgress() => GetMatrixCooldownProgress();
-
     public bool IsUnitCharging() => unitCharges < unitMaxCharges;
     public bool IsRecursionCharging() => recursionCharges < recursionMaxCharges;
     public bool IsMatrixCharging() => matrixCharges < matrixMaxCharges;
@@ -580,13 +557,6 @@ public class PlayerActionUI : MonoBehaviour
         recursionMaxCharges = maxRecursion;
         matrixMaxCharges = maxMatrix;
         infinityMaxCharges = maxInfinity;
-    }
-
-    // Backward compatibility method
-    public void SetMaxCharges(int maxUnit, int maxArea)
-    {
-        unitMaxCharges = maxUnit;
-        matrixMaxCharges = maxArea;
     }
 
     // Public method to update mode indicator from external calls

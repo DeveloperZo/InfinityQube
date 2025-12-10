@@ -26,7 +26,7 @@ public class PlayerPanel : PrototypingPanelBase
     private bool unlimitedMode = false;
     
     // Stored values for restoring after unlimited mode
-    private float storedUnitCooldown;
+    private int storedUnitRechargeRate;
     private float storedRecursionCooldown;
     private float storedMatrixCooldown;
     private float storedInfinityCooldown;
@@ -164,10 +164,10 @@ public class PlayerPanel : PrototypingPanelBase
             
             GUILayout.Space(10);
             
-            // UnitMarker settings
-            DrawMarkerTypeSettings("UnitMarker", 
+            // UnitMarker settings (move-based recharge)
+            DrawUnitMarkerSettings("UnitMarker", 
                 ref actionManager.maxUnitMarkerCharges, 
-                ref actionManager.unitMarkerCooldown,
+                ref actionManager.unitMarkerRechargeRate,
                 ref actionManager.maxUnitMarkers,
                 actionManager.GetUnitMarkerCooldownRemaining());
             
@@ -249,6 +249,45 @@ public class PlayerPanel : PrototypingPanelBase
         GUILayout.EndVertical();
     }
     
+    /// <summary>
+    /// Draw Unit marker settings with move-based recharge rate instead of time-based cooldown
+    /// </summary>
+    private void DrawUnitMarkerSettings(string label, ref int maxCharges, ref int rechargeRate, ref int maxOnGrid, float movesRemaining)
+    {
+        GUILayout.BeginVertical(GUI.skin.box);
+        
+        GUILayout.BeginHorizontal();
+        GUILayout.Label($"{label}", GUILayout.Width(110));
+        GUILayout.Label($"Moves: {movesRemaining:F0}", GUILayout.Width(70));
+        GUILayout.EndHorizontal();
+        
+        // Max charges
+        GUILayout.BeginHorizontal();
+        GUILayout.Label("Charges:", GUILayout.Width(60));
+        if (GUILayout.Button("-", GUILayout.Width(25)) && maxCharges > 0) maxCharges--;
+        GUILayout.Label($"{maxCharges}", GUILayout.Width(25));
+        if (GUILayout.Button("+", GUILayout.Width(25)) && maxCharges < 20) maxCharges++;
+        GUILayout.EndHorizontal();
+        
+        // Recharge rate (moves per charge)
+        GUILayout.BeginHorizontal();
+        GUILayout.Label("Recharge:", GUILayout.Width(60));
+        if (GUILayout.Button("-", GUILayout.Width(25)) && rechargeRate > 1) rechargeRate--;
+        GUILayout.Label($"{rechargeRate}m", GUILayout.Width(25));
+        if (GUILayout.Button("+", GUILayout.Width(25)) && rechargeRate < 10) rechargeRate++;
+        GUILayout.EndHorizontal();
+        
+        // Max on grid
+        GUILayout.BeginHorizontal();
+        GUILayout.Label("Max Grid:", GUILayout.Width(60));
+        if (GUILayout.Button("-", GUILayout.Width(25)) && maxOnGrid > 1) maxOnGrid--;
+        GUILayout.Label($"{maxOnGrid}", GUILayout.Width(25));
+        if (GUILayout.Button("+", GUILayout.Width(25)) && maxOnGrid < 20) maxOnGrid++;
+        GUILayout.EndHorizontal();
+        
+        GUILayout.EndVertical();
+    }
+    
     private void ToggleUnlimitedMode()
     {
         if (actionManager == null) return;
@@ -258,7 +297,7 @@ public class PlayerPanel : PrototypingPanelBase
         if (unlimitedMode)
         {
             // Store current values
-            storedUnitCooldown = actionManager.unitMarkerCooldown;
+            storedUnitRechargeRate = actionManager.unitMarkerRechargeRate;
             storedRecursionCooldown = actionManager.recursionMarkerCooldown;
             storedMatrixCooldown = actionManager.matrixMarkerCooldown;
             storedInfinityCooldown = actionManager.infinityMarkerCooldown;
@@ -269,7 +308,7 @@ public class PlayerPanel : PrototypingPanelBase
             storedMatrixMarkerOnGridLimit = actionManager.matrixMarkerOnGridLimit;
             
             // Set unlimited for all marker types
-            actionManager.unitMarkerCooldown = 0;
+            actionManager.unitMarkerRechargeRate = 1; // Recharge every move
             actionManager.recursionMarkerCooldown = 0;
             actionManager.matrixMarkerCooldown = 0;
             actionManager.infinityMarkerCooldown = 0;
@@ -289,7 +328,7 @@ public class PlayerPanel : PrototypingPanelBase
         else
         {
             // Restore values
-            actionManager.unitMarkerCooldown = storedUnitCooldown;
+            actionManager.unitMarkerRechargeRate = storedUnitRechargeRate;
             actionManager.recursionMarkerCooldown = storedRecursionCooldown;
             actionManager.matrixMarkerCooldown = storedMatrixCooldown;
             actionManager.infinityMarkerCooldown = storedInfinityCooldown;
@@ -306,11 +345,12 @@ public class PlayerPanel : PrototypingPanelBase
     private void SetAllCooldowns(float value)
     {
         if (actionManager == null) return;
-        actionManager.unitMarkerCooldown = value;
+        // Unit marker uses move-based recharge, so set to 1 for "no cooldown"
+        actionManager.unitMarkerRechargeRate = value <= 0 ? 1 : (int)value;
         actionManager.recursionMarkerCooldown = value;
         actionManager.matrixMarkerCooldown = value;
         actionManager.infinityMarkerCooldown = value;
-        LogAction($"All cooldowns set to {value}");
+        LogAction($"All cooldowns set to {value} (Unit: {actionManager.unitMarkerRechargeRate} moves)");
     }
     
     private void RefillAllCharges()
@@ -327,7 +367,7 @@ public class PlayerPanel : PrototypingPanelBase
     {
         if (actionManager == null) return;
         unlimitedMode = false;
-        actionManager.unitMarkerCooldown = 5f;
+        actionManager.unitMarkerRechargeRate = 3; // 3 moves per charge
         actionManager.recursionMarkerCooldown = 5f;
         actionManager.matrixMarkerCooldown = 5f;
         actionManager.infinityMarkerCooldown = 15f;

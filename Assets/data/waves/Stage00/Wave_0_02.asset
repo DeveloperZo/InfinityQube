@@ -12,11 +12,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 78c3fb7cc917307469018838241693f1, type: 3}
   m_Name: Wave_0_02
   m_EditorClassIdentifier: 
-  waveIndex: 1
+  Index: 1
   waveName: Matrix Introduction
-  spawnWidth: 5
-  spawnHeight: 2
-  cubes:
+  GridWidth: 5
+  GridHeight: 2
+  CubesData:
   - type: 0
     position: {x: 0, y: 0}
     level: 1

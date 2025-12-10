@@ -91,10 +91,18 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
     {
         EnableDebugLogs = true;
         GenerateGrid();
-        InitializeLineDivider();
+        // NOTE: Do NOT call InitializeLineDivider() here - line divider is configured
+        // by stage data via HandleStageStart() → ConfigureLineDivider()
+        // The serialized Inspector values are only used as fallback defaults.
         
         // Get PlayerManager reference for line divider color updates
         playerManager = FindFirstObjectByType<PlayerManager>();
+        
+        // Ensure line divider visual is hidden until stage configures it
+        if (lineDividerVisual != null)
+        {
+            lineDividerVisual.SetActive(false);
+        }
     }
     
     private void OnEnable()
@@ -134,8 +142,9 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
     {
         if (stageData == null) return;
         
-        // Enable/disable based on whether start position is meaningful
-        bool shouldEnable = stageData.lineDividerStartY > 0 && stageData.lineDividerStartY < stageData.gridHeight;
+        // Check explicit enable flag first, then validate position is meaningful
+        bool positionValid = stageData.lineDividerStartY > 0 && stageData.lineDividerStartY < stageData.gridHeight;
+        bool shouldEnable = stageData.enableLineDivider && positionValid;
         enableLineDivider = shouldEnable;
         
         if (shouldEnable)
@@ -147,6 +156,10 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
             _lineDividerCaptureReward = stageData.lineDividerCaptureReward;
             
             DebugLog($"Line divider configured: Row={lineDividerRow}, Penalty={_lineDividerEscapePenalty}, Reward={_lineDividerCaptureReward}");
+        }
+        else
+        {
+            DebugLog($"Line divider DISABLED for stage (enableLineDivider={stageData.enableLineDivider}, positionValid={positionValid})");
         }
         
         UpdateLineDividerVisual();
@@ -1057,10 +1070,6 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
             DestroyGrid();
         }
     }
-
-    // Keep backward compatibility
-    [System.Obsolete("Use TileSize instead")]
-    public float TileScale => tileSize;
     #endregion
 
     #region Batch Tile Operations

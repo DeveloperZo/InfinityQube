@@ -161,6 +161,8 @@ public class CubeCollisionManager : MonoBehaviour, IManagerDebugInterface
     /// <summary>
     /// Checks for collisions between player cubes and wave cubes.
     /// Handles both same-tile collisions and adjacent cubes moving toward each other.
+    /// IMPORTANT: Pass-through collisions are checked FIRST to ensure the player cube
+    /// collides with the leading wave cube when multiple adjacent cubes are present.
     /// </summary>
     public void CheckPlayerCubeCollisions(List<CubeManager> playerCubes)
     {
@@ -189,17 +191,22 @@ public class CubeCollisionManager : MonoBehaviour, IManagerDebugInterface
                 continue;
             }
 
-            // Check collision at current position (normal case)
-            if (ProcessCollisionAtPosition(playerCube, playerPos, playerCubes, ref collisionCount, ref i))
-            {
-                continue; // Collision handled, move to next player cube
-            }
-
-            // Check collision at previous position (adjacent cubes passing through)
+            // PRIORITY 1: Check pass-through collision FIRST (adjacent cubes that moved past each other)
+            // This ensures we hit the LEADING cube when two adjacent wave cubes are present,
+            // not the TRAILING cube that moved into our destination position.
             Vector2Int playerPreviousPos = new Vector2Int(playerPos.x, playerPos.y - 1);
             if (IsValidPosition(playerPreviousPos))
             {
-                ProcessPassThroughCollision(playerCube, playerPos, playerPreviousPos, playerCubes, ref collisionCount, ref i);
+                if (ProcessPassThroughCollision(playerCube, playerPos, playerPreviousPos, playerCubes, ref collisionCount, ref i))
+                {
+                    continue; // Pass-through collision handled, move to next player cube
+                }
+            }
+
+            // PRIORITY 2: Check collision at current position (normal same-tile collision)
+            if (ProcessCollisionAtPosition(playerCube, playerPos, playerCubes, ref collisionCount, ref i))
+            {
+                continue; // Collision handled, move to next player cube
             }
         }
 
@@ -211,40 +218,75 @@ public class CubeCollisionManager : MonoBehaviour, IManagerDebugInterface
 
     /// <summary>
     /// Process all active area markers - check for auto-captures and expiration
+    /// SEQUENTIAL CAPTURE: Processes positions sorted by Y (lowest first, closest to player)
+    /// to ensure cubes are captured in proper order when multiple markers exist in same column.
     /// </summary>
     public void ProcessActiveAreaMarkers(int currentMoveStep)
     {
         if (activeAreaMarkers.Count == 0) return;
 
         var markersToRemove = new List<ActiveAreaMarker>();
+        
+        // Track which columns have already captured this step to prevent simultaneous same-column captures
+        var columnsCapturedThisStep = new HashSet<int>();
 
+        // Collect all marker positions with their associated markers, sorted by Y (ascending)
+        // This ensures we process cubes closest to the player first
+        var sortedPositions = new List<(Vector2Int pos, ActiveAreaMarker marker)>();
         foreach (var marker in activeAreaMarkers)
         {
-            // Check for auto-capture at marker positions (if charges remain)
             if (marker.autoCapture && marker.remainingCharges > 0)
             {
                 foreach (var pos in marker.positions)
                 {
-                    var cubesAtPos = markerSystem.FindAllCubesAt(pos);
-                    foreach (var cube in cubesAtPos)
-                    {
-                        if (cube == null || cube.isDestroyed || cube.isPlayerCube) continue;
-
-                        // Try to use a charge and capture
-                        if (marker.UseCharge())
-                        {
-                            if (markerSystem.ProcessCubeCapture(cube, pos, PlayerMarkerSystem.MarkerType.Recursion, null, false))
-                            {
-                                DebugLog("ProcessActiveAreaMarkers", $"Auto-captured {cube.type} at ({pos.x}, {pos.y}) by {marker.markerType} marker (charges left: {marker.remainingCharges})");
-                            }
-                        }
-
-                        // Only capture one cube per position per step
-                        break;
-                    }
+                    sortedPositions.Add((pos, marker));
                 }
             }
+        }
+        
+        // Sort by Y position (ascending - lower Y = closer to player = process first)
+        sortedPositions.Sort((a, b) => a.pos.y.CompareTo(b.pos.y));
+        
+        // Process positions in sorted order
+        foreach (var (pos, marker) in sortedPositions)
+        {
+            // Skip if this column already captured a cube this step (sequential capture)
+            if (columnsCapturedThisStep.Contains(pos.x))
+            {
+                continue;
+            }
+            
+            // Skip if marker is out of charges (may have been used earlier in this loop)
+            if (marker.remainingCharges <= 0)
+            {
+                continue;
+            }
+            
+            var cubesAtPos = markerSystem.FindAllCubesAt(pos);
+            foreach (var cube in cubesAtPos)
+            {
+                if (cube == null || cube.isDestroyed || cube.isPlayerCube) continue;
 
+                // Try to use a charge and capture
+                if (marker.UseCharge())
+                {
+                    if (markerSystem.ProcessCubeCapture(cube, pos, PlayerMarkerSystem.MarkerType.Recursion, null, false))
+                    {
+                        DebugLog("ProcessActiveAreaMarkers", $"Auto-captured {cube.type} at ({pos.x}, {pos.y}) by {marker.markerType} marker (charges left: {marker.remainingCharges})");
+                        
+                        // Mark this column as captured for this step (sequential capture)
+                        columnsCapturedThisStep.Add(pos.x);
+                    }
+                }
+
+                // Only capture one cube per position per step
+                break;
+            }
+        }
+
+        // Check for marker expiration and update displays
+        foreach (var marker in activeAreaMarkers)
+        {
             // Check if marker should be removed (charges exhausted OR moves expired)
             if (marker.IsExpired(currentMoveStep))
             {
@@ -385,8 +427,10 @@ public class CubeCollisionManager : MonoBehaviour, IManagerDebugInterface
 
     /// <summary>
     /// Handles collision detection for adjacent cubes moving toward each other.
+    /// This detects the leading cube that passed through the player's path.
     /// </summary>
-    private void ProcessPassThroughCollision(CubeManager playerCube, Vector2Int playerPos, Vector2Int playerPreviousPos,
+    /// <returns>True if a pass-through collision was handled, false otherwise</returns>
+    private bool ProcessPassThroughCollision(CubeManager playerCube, Vector2Int playerPos, Vector2Int playerPreviousPos,
         List<CubeManager> playerCubes, ref int collisionCount, ref int playerCubeIndex)
     {
         var cubesAtPreviousPos = markerSystem.FindAllCubesAt(playerPreviousPos);
@@ -403,9 +447,14 @@ public class CubeCollisionManager : MonoBehaviour, IManagerDebugInterface
             }
 
             // Verify wave cube came from player's current position (confirms they passed through)
+            // Wave moves down (Y decreases), so wave's previous position is Y+1
+            // Player moves up (Y increases), so player's previous position is Y-1
+            // If wave cube's source position equals player's current position, they passed through each other
             Vector2Int waveCubeSourcePos = new Vector2Int(waveCube.position.x, waveCube.position.y + 1);
             if (waveCubeSourcePos == playerPos)
             {
+                DebugLog("ProcessPassThroughCollision", $"Pass-through detected: Player at ({playerPos.x}, {playerPos.y}), Wave at ({waveCube.position.x}, {waveCube.position.y}) came from ({waveCubeSourcePos.x}, {waveCubeSourcePos.y})");
+                
                 CollisionResult result = HandleCollision(playerCube, waveCube, playerPreviousPos);
 
                 if (result.handled)
@@ -414,10 +463,12 @@ public class CubeCollisionManager : MonoBehaviour, IManagerDebugInterface
                     {
                         HandlePlayerCubeDestruction(playerCube, playerCubes, ref collisionCount, ref playerCubeIndex);
                     }
-                    return;
+                    return true; // Collision was handled
                 }
             }
         }
+
+        return false; // No pass-through collision found
     }
 
     /// <summary>

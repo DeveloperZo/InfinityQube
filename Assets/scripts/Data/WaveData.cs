@@ -9,9 +9,12 @@ public class WaveData : ScriptableObject
     
     [Header("Wave Identity")]
     [Tooltip("Wave index within the stage (0-based)")]
-    public int waveIndex = 0;
+    public int Index = 0;  // Keep exact name for asset deserialization
     [Tooltip("Display name for this wave (optional)")]
     public string waveName;
+    
+    // Alias property for new code style
+    public int waveIndex { get => Index; set => Index = value; }
     
     #endregion
 
@@ -19,9 +22,13 @@ public class WaveData : ScriptableObject
     
     [Header("Wave Grid (Spawn Area)")]
     [Tooltip("Width of the spawn area for this wave")]
-    [Range(1, 12)] public int spawnWidth = 3;
+    [Range(1, 12)] public int GridWidth = 3;  // Keep exact name for asset deserialization
     [Tooltip("Height/depth of the spawn area")]
-    [Range(1, 10)] public int spawnHeight = 3;
+    [Range(1, 10)] public int GridHeight = 3;  // Keep exact name for asset deserialization
+    
+    // Alias properties for new code style
+    public int spawnWidth { get => GridWidth; set => GridWidth = value; }
+    public int spawnHeight { get => GridHeight; set => GridHeight = value; }
     
     #endregion
 
@@ -29,7 +36,10 @@ public class WaveData : ScriptableObject
     
     [Header("Cube Configuration")]
     [Tooltip("Cubes spawned in this wave with positions and types")]
-    public List<CubeData> cubes = new List<CubeData>();
+    public List<CubeData> CubesData = new List<CubeData>();  // Keep exact name for asset deserialization
+    
+    // Alias property for new code style
+    public List<CubeData> cubes { get => CubesData; set => CubesData = value; }
     
     #endregion
 
@@ -40,8 +50,7 @@ public class WaveData : ScriptableObject
     public bool grantsAddToInventory = true;
     
     [Space(5)]
-    [Tooltip("Unit marker charges granted (0 = no grant)")]
-    [Range(0, 10)] public int grantUnitCharges = 0;
+    // NOTE: Unit markers are INFINITE with cooldown - wave grants don't affect them
     
     [Tooltip("Matrix marker charges granted (0 = no grant)")]
     [Range(0, 10)] public int grantMatrixCharges = 0;
@@ -162,24 +171,6 @@ public class WaveData : ScriptableObject
         
         return issues;
     }
-    
-    #endregion
-    
-    #region Legacy Compatibility
-    
-    // Legacy field mappings for backward compatibility
-    [System.Obsolete("Use waveIndex instead")] public int Index { get => waveIndex; set => waveIndex = value; }
-    [System.Obsolete("Use spawnHeight instead")] public int GridHeight { get => spawnHeight; set => spawnHeight = value; }
-    [System.Obsolete("Use spawnWidth instead")] public int GridWidth { get => spawnWidth; set => spawnWidth = value; }
-    [System.Obsolete("Use cubes instead")] public List<CubeData> CubesData { get => cubes; set => cubes = value; }
-    
-    // Legacy marker fields (mapped to grants)
-    [System.Obsolete("Use grantUnitCharges instead")] public int maxUnitMarkerCharge { get => grantUnitCharges; set => grantUnitCharges = value; }
-    [System.Obsolete("Use overrideUnitMaxOnGrid instead")] public int maxUnitMarkerCount { get => overrideUnitMaxOnGrid; set => overrideUnitMaxOnGrid = value; }
-    [System.Obsolete("Use grantMatrixCharges instead")] public int maxMatrixMarkerCharge { get => grantMatrixCharges; set => grantMatrixCharges = value; }
-    [System.Obsolete("Use overrideMatrixMaxOnGrid instead")] public int maxMatrixMarkerCount { get => overrideMatrixMaxOnGrid; set => overrideMatrixMaxOnGrid = value; }
-    [System.Obsolete("Use grantRecursionCharges instead")] public int maxRecursionMarkerCharge { get => grantRecursionCharges; set => grantRecursionCharges = value; }
-    [System.Obsolete("Use overrideRecursionMaxOnGrid instead")] public int maxRecursionMarkerCount { get => overrideRecursionMaxOnGrid; set => overrideRecursionMaxOnGrid = value; }
     
     #endregion
 }

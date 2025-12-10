@@ -15,24 +15,26 @@ MonoBehaviour:
   stageNumber: 0
   stageName: Playtest Sandbox
   stageType: 0
-  description: A sandbox stage for playtesting core mechanics and scoring system. Contains 3 waves introducing Unit, Matrix, and Recursion cubes.
+  description: A sandbox stage for playtesting core mechanics and scoring system.
+    Contains 3 waves introducing Unit, Matrix, and Recursion cubes.
   objective: Capture cubes and test the scoring system
   gridWidth: 5
   gridHeight: 15
   playerStartPosition: {x: 2, y: 0}
-  lineDividerStartY: 0
+  enableLineDivider: 0
+  lineDividerStartY: 7
   lineDividerEscapePenalty: 0
   lineDividerCaptureReward: 0
   stageGrants:
-    unitCharges: 5
     unitMaxOnGrid: 5
+    unitCharges: 5
     matrixCharges: 3
     matrixMaxOnGrid: 3
     recursionCharges: 2
     recursionMaxOnGrid: 2
     infinityCharges: 1
     infinityMaxOnGrid: 1
-  useWaveGrants: 1
+  waveGrantsFromWaveData: 1
   lockAttunements: 0
   allowedAttunementIds: []
   waveConfigurations:
@@ -42,15 +44,3 @@ MonoBehaviour:
   requireAllCubesDestroyed: 0
   requiredCaptureCount: 0
   maxAllowedEscapes: 99
-  playerStatistics:
-    unitCubesCaptured: 0
-    matrixCubesCaptured: 0
-    recursionCubesCaptured: 0
-    infinityCubesCaptured: 0
-    cubesEscaped: 0
-    markersPlaced: 0
-    detonationsUsed: 0
-    completionTime: 0
-    bestCompletionTime: 0
-    timesCompleted: 0
-

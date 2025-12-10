@@ -12,11 +12,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 78c3fb7cc917307469018838241693f1, type: 3}
   m_Name: Wave_0_03
   m_EditorClassIdentifier: 
-  waveIndex: 2
+  Index: 2
   waveName: Recursion Introduction
-  spawnWidth: 5
-  spawnHeight: 3
-  cubes:
+  GridWidth: 5
+  GridHeight: 3
+  CubesData:
   - type: 0
     position: {x: 0, y: 0}
     level: 1

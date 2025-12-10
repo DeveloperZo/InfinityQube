@@ -86,9 +86,10 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
     [SerializeField] public int currentUnitMarkers;
     [SerializeField] public int maxUnitMarkerCharges;
     [SerializeField] private int currentUnitMarkerCharges;
-    [SerializeField] public float unitMarkerCooldown;
+    [Tooltip("Number of wave moves required to regenerate one Unit marker charge")]
+    [SerializeField] public int unitMarkerRechargeRate = 3; // Moves per charge (replaces time-based cooldown)
     [SerializeField] public Material unitMarkerMaterial;
-    [SerializeField] public float lastUnitMarkerTime;
+    [SerializeField] private int unitMarkerRechargeProgress = 0; // Current progress toward next charge
 
     [Header("Recursion Marker Settings")]
     [SerializeField] public int maxRecursionMarkers;
@@ -127,11 +128,13 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
     [SerializeField] public bool useMarkerEconomy = true;
     
     [Header("Marker Economy - Stage Grants (given at stage start)")]
+    [Tooltip("Unit markers are INFINITE with cooldown - no grants needed")]
     [SerializeField] public int stageGrantRecursion = 5;
     [SerializeField] public int stageGrantMatrix = 3;
     [SerializeField] public int stageGrantInfinity = 2;
     
     [Header("Marker Economy - Wave Grants (given at wave start)")]
+    [Tooltip("Unit markers are INFINITE with cooldown - no grants needed")]
     [SerializeField] public int waveGrantRecursion = 1;
     [SerializeField] public int waveGrantMatrix = 1;
     [SerializeField] public int waveGrantInfinity = 0;
@@ -145,12 +148,6 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
     [SerializeField] private KeyCode unitMarkerKey = KeyCode.F;
     [SerializeField] private KeyCode recursionMarkerKey = KeyCode.V;
     [SerializeField] private KeyCode matrixMarkerKey = KeyCode.G;
-    #pragma warning disable CS0414 // Reserved for legacy input mode
-    [SerializeField] private KeyCode infinityMarkerKey = KeyCode.H;
-    #pragma warning restore CS0414
-    [SerializeField] private KeyCode triggerUnitKey = KeyCode.R;
-    [SerializeField] private KeyCode triggerRecursionKey = KeyCode.Y;
-    [SerializeField] private KeyCode triggerMatrixKey = KeyCode.T;
     [SerializeField] private KeyCode triggerCubeMarkerKey = KeyCode.Q;
     
 
@@ -203,6 +200,7 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
         // Subscribe to marker economy events
         GameEvents.OnStageStart += HandleStageStart;
         GameEvents.OnWaveStart += HandleWaveStart;
+        GameEvents.OnWaveStep += HandleWaveStep;
     }
 
     private void OnDisable()
@@ -210,6 +208,7 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
         // Unsubscribe from marker economy events
         GameEvents.OnStageStart -= HandleStageStart;
         GameEvents.OnWaveStart -= HandleWaveStart;
+        GameEvents.OnWaveStep -= HandleWaveStep;
     }
 
     private void InitializeReferences()
@@ -272,11 +271,20 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
 
     private void InitializeCharges()
     {
+        // Unit markers are INFINITE with move-based regeneration
+        // ALWAYS set these to ensure proper behavior
+        maxUnitMarkerCharges = 3; // Pool of 3 regenerating charges
         currentUnitMarkerCharges = maxUnitMarkerCharges;
+        if (unitMarkerRechargeRate <= 0) unitMarkerRechargeRate = 3; // Default 3 moves per charge
+        unitMarkerRechargeProgress = 0; // Start fresh
+        
+        // Non-Unit markers use inventory system when economy enabled
         currentRecursionMarkerCharges = maxRecursionMarkerCharges;
         currentMatrixMarkerCharges = maxMatrixMarkerCharges;
         currentInfinityMarkerCharges = maxInfinityMarkerCharges;
         inputEnabled = true;
+        
+        Debug.Log($"[MarkerEconomy] InitializeCharges: Unit={currentUnitMarkerCharges}/{maxUnitMarkerCharges} recharge={unitMarkerRechargeRate} moves");
     }
 
     private void InitializeMarkerMode()
@@ -538,17 +546,27 @@ MarkerMode currentMode = GetCurrentMode();
                     }
                     else if (CanPlaceUnitMarker())
                     {
-                        markerSystem.PlaceUnitMarker(playerPos);
-                        actionSuccessful = true;
-                        
-                        // Trigger feedback for new marker placement
-                        TriggerInputFeedbackMarkerPlace(MarkerMode.Unit, playerPos, false);
-                        
-                        // Trigger animation for marker placement
-                        TriggerAnimationMarkerPlace(MarkerMode.Unit, playerPos, false);
-                        
-                        // Show success feedback for successful placement
-                        ShowActionSuccessFeedback("Unit marker placed successfully!");
+                        // Actually attempt placement and check if it succeeded
+                        bool placed = markerSystem.PlaceUnitMarker(playerPos);
+                        if (placed)
+                        {
+                            actionSuccessful = true;
+                            
+                            // Trigger feedback for new marker placement
+                            TriggerInputFeedbackMarkerPlace(MarkerMode.Unit, playerPos, false);
+                            
+                            // Trigger animation for marker placement
+                            TriggerAnimationMarkerPlace(MarkerMode.Unit, playerPos, false);
+                            
+                            // Show success feedback for successful placement
+                            ShowActionSuccessFeedback("Unit marker placed successfully!");
+                        }
+                        else
+                        {
+                            // Placement failed (e.g., line divider restriction)
+                            ShowActionErrorFeedback("Cannot place marker in danger zone!");
+                            TriggerInputFeedbackActionFailed("place", "Cannot place above line divider", playerPos, 0.7f);
+                        }
                     }
                     else
                     {
@@ -576,17 +594,27 @@ MarkerMode currentMode = GetCurrentMode();
                     }
                     else if (CanPlaceRecursionMarker())
                     {
-                        markerSystem.PlaceRecursionMarker(playerPos);
-                        actionSuccessful = true;
-                        
-                        // Trigger feedback for new marker placement
-                        TriggerInputFeedbackMarkerPlace(MarkerMode.Recursion, playerPos, false);
-                        
-                        // Trigger animation for marker placement
-                        TriggerAnimationMarkerPlace(MarkerMode.Recursion, playerPos, false);
-                        
-                        // Show success feedback for successful placement
-                        ShowActionSuccessFeedback("Recursion marker placed successfully!");
+                        // Actually attempt placement and check if it succeeded
+                        bool placed = markerSystem.PlaceRecursionMarker(playerPos);
+                        if (placed)
+                        {
+                            actionSuccessful = true;
+                            
+                            // Trigger feedback for new marker placement
+                            TriggerInputFeedbackMarkerPlace(MarkerMode.Recursion, playerPos, false);
+                            
+                            // Trigger animation for marker placement
+                            TriggerAnimationMarkerPlace(MarkerMode.Recursion, playerPos, false);
+                            
+                            // Show success feedback for successful placement
+                            ShowActionSuccessFeedback("Recursion marker placed successfully!");
+                        }
+                        else
+                        {
+                            // Placement failed (e.g., line divider restriction)
+                            ShowActionErrorFeedback("Cannot place marker in danger zone!");
+                            TriggerInputFeedbackActionFailed("place", "Cannot place above line divider", playerPos, 0.7f);
+                        }
                     }
                     else
                     {
@@ -614,17 +642,27 @@ MarkerMode currentMode = GetCurrentMode();
                     }
                     else if (CanPlaceMatrixMarker())
                     {
-                        markerSystem.PlaceMatrixMarker(playerPos, matrixMarkerSize);
-                        actionSuccessful = true;
-                        
-                        // Trigger feedback for new marker placement
-                        TriggerInputFeedbackMarkerPlace(MarkerMode.Matrix, playerPos, false);
-                        
-                        // Trigger animation for marker placement
-                        TriggerAnimationMarkerPlace(MarkerMode.Matrix, playerPos, false);
-                        
-                        // Show success feedback for successful placement
-                        ShowActionSuccessFeedback("Matrix marker placed successfully!");
+                        // Actually attempt placement and check if it succeeded
+                        bool placed = markerSystem.PlaceMatrixMarker(playerPos, matrixMarkerSize);
+                        if (placed)
+                        {
+                            actionSuccessful = true;
+                            
+                            // Trigger feedback for new marker placement
+                            TriggerInputFeedbackMarkerPlace(MarkerMode.Matrix, playerPos, false);
+                            
+                            // Trigger animation for marker placement
+                            TriggerAnimationMarkerPlace(MarkerMode.Matrix, playerPos, false);
+                            
+                            // Show success feedback for successful placement
+                            ShowActionSuccessFeedback("Matrix marker placed successfully!");
+                        }
+                        else
+                        {
+                            // Placement failed (e.g., line divider restriction)
+                            ShowActionErrorFeedback("Cannot place marker in danger zone!");
+                            TriggerInputFeedbackActionFailed("place", "Cannot place above line divider", playerPos, 0.7f);
+                        }
                     }
                     else
                     {
@@ -651,12 +689,22 @@ MarkerMode currentMode = GetCurrentMode();
                     }
                     else if (CanPlaceInfinityMarker())
                     {
-                        markerSystem.PlaceInfinityMarker(playerPos);
-                        actionSuccessful = true;
-                        
-                        TriggerInputFeedbackMarkerPlace(MarkerMode.Infinity, playerPos, false);
-                        TriggerAnimationMarkerPlace(MarkerMode.Infinity, playerPos, false);
-                        ShowActionSuccessFeedback("Infinity marker placed successfully!");
+                        // Actually attempt placement and check if it succeeded
+                        bool placed = markerSystem.PlaceInfinityMarker(playerPos);
+                        if (placed)
+                        {
+                            actionSuccessful = true;
+                            
+                            TriggerInputFeedbackMarkerPlace(MarkerMode.Infinity, playerPos, false);
+                            TriggerAnimationMarkerPlace(MarkerMode.Infinity, playerPos, false);
+                            ShowActionSuccessFeedback("Infinity marker placed successfully!");
+                        }
+                        else
+                        {
+                            // Placement failed (e.g., line divider restriction)
+                            ShowActionErrorFeedback("Cannot place marker in danger zone!");
+                            TriggerInputFeedbackActionFailed("place", "Cannot place above line divider", playerPos, 0.7f);
+                        }
                     }
                     else
                     {
@@ -677,48 +725,6 @@ MarkerMode currentMode = GetCurrentMode();
                         this.LogWarning($"Unhandled marker mode in unified place input: {GetCurrentMode()}", EnableDebugLogs);
                     }
                     break;
-            }
-        }
-    }
-
-    [System.Obsolete("Use HandleUnifiedPlaceInput() instead - individual marker input handlers are deprecated")]
-    private void HandleUnitMarkerInput()
-    {
-        if (Input.GetKeyDown(unitMarkerKey))
-        {
-            Vector2Int playerPos = playerManager.currentTilePosition;
-
-            if (CanPlaceUnitMarker())
-            {
-                markerSystem.PlaceUnitMarker(playerPos);
-            }
-        }
-    }
-
-    [System.Obsolete("Use HandleUnifiedPlaceInput() instead - individual marker input handlers are deprecated")]
-    private void HandleRecursionMarkerInput()
-    {
-        if (Input.GetKeyDown(recursionMarkerKey))
-        {
-            Vector2Int playerPos = playerManager.currentTilePosition;
-
-            if (CanPlaceRecursionMarker())
-            {
-                markerSystem.PlaceRecursionMarker(playerPos);
-            }
-        }
-    }
-
-    [System.Obsolete("Use HandleUnifiedPlaceInput() instead - individual marker input handlers are deprecated")]
-    private void HandleMatrixMarkerInput()
-    {
-        if (Input.GetKeyDown(matrixMarkerKey))
-        {
-            Vector2Int playerPos = playerManager.currentTilePosition;
-
-            if (CanPlaceMatrixMarker())
-            {
-                markerSystem.PlaceMatrixMarker(playerPos, matrixMarkerSize);
             }
         }
     }
@@ -850,28 +856,6 @@ MarkerMode currentMode = GetCurrentMode();
                     }
                     break;
             }
-        }
-    }
-
-    /// <summary>
-    /// Legacy trigger inputs - kept for backward compatibility but marked as obsolete
-    /// </summary>
-    [System.Obsolete("Use unified R key triggering instead - individual trigger keys are deprecated")]
-    private void HandleLegacyTriggerInputs()
-    {
-        if (Input.GetKeyDown(triggerUnitKey))
-        {
-            markerSystem.TriggerNextUnitMarker();
-        }
-
-        if (Input.GetKeyDown(triggerRecursionKey))
-        {
-            markerSystem.TriggerNextRecursionMarker();
-        }
-
-        if (Input.GetKeyDown(triggerMatrixKey))
-        {
-            markerSystem.TriggerNextMatrixMarker();
         }
     }
 
@@ -1293,14 +1277,11 @@ MarkerMode currentMode = GetCurrentMode();
         }
 
         // Prevent switching to modes if markers are not available
+        // NOTE: Unit markers are ALWAYS available (infinite with cooldown)
         switch (mode)
         {
             case MarkerMode.Unit:
-                if (maxUnitMarkerCharges <= 0)
-                {
-                    ShowActionErrorFeedback("Unit markers are not available in this wave.");
-                    return false;
-                }
+                // Unit markers are always available - they use cooldown, not charges
                 break;
                 
             case MarkerMode.Recursion:
@@ -1359,15 +1340,51 @@ MarkerMode currentMode = GetCurrentMode();
     {
         if (!useMarkerEconomy) return;
         
-        // Check if stage uses wave grants
-        if (_currentStageData != null && _currentStageData.useWaveGrants && waveData != null)
+        // Wave grants are ALWAYS applied (combinatorial with stage grants)
+        // waveGrantsFromWaveData controls the SOURCE (WaveData vs inspector defaults)
+        if (_currentStageData != null && _currentStageData.waveGrantsFromWaveData && waveData != null)
         {
             ApplyWaveGrants(waveData);
         }
         else
         {
-            // Fallback to inspector defaults
+            // Use inspector defaults for wave grants
             ApplyWaveGrantsDefault();
+        }
+    }
+    
+    /// <summary>
+    /// Handle wave step - regenerate Unit marker charges based on wave moves
+    /// Move-based regeneration: charges regenerate based on wave cadence, not real-time
+    /// </summary>
+    private void HandleWaveStep(int waveIndex, int stepNumber)
+    {
+        // Only regenerate if we're below max charges
+        if (currentUnitMarkerCharges >= maxUnitMarkerCharges)
+        {
+            unitMarkerRechargeProgress = 0; // Reset progress when full
+            return;
+        }
+        
+        // Increment progress toward next charge
+        unitMarkerRechargeProgress++;
+        
+        // Check if we've accumulated enough moves for a charge
+        if (unitMarkerRechargeProgress >= unitMarkerRechargeRate)
+        {
+            unitMarkerRechargeProgress = 0; // Reset progress
+            currentUnitMarkerCharges = Mathf.Min(currentUnitMarkerCharges + 1, maxUnitMarkerCharges);
+            
+            // Trigger audio event for resource regeneration
+            Vector3 playerWorldPos = GetWorldPositionForAudio(playerManager.currentTilePosition);
+            TriggerAudioEvent(GameAudioEvent.ResourceRegeneration, playerWorldPos, 0.8f);
+            
+            // Trigger animation for resource regeneration
+            TriggerAnimationResourceRegeneration(playerWorldPos, "Unit marker charge");
+            
+            this.Log($"Unit marker charge regenerated (move {stepNumber}). Charges: {currentUnitMarkerCharges}/{maxUnitMarkerCharges}", EnableDebugLogs);
+            
+            UpdateUI();
         }
     }
     
@@ -1380,19 +1397,30 @@ MarkerMode currentMode = GetCurrentMode();
         {
             var grants = stageData.stageGrants;
             
+            // Unit markers are INFINITE with cooldown regeneration
+            // ALWAYS set these to ensure proper behavior regardless of inspector values
+            maxUnitMarkerCharges = 3; // Pool of 3 regenerating charges
+            currentUnitMarkerCharges = maxUnitMarkerCharges; // Always start full
+            maxUnitMarkers = grants.unitMaxOnGrid > 0 ? grants.unitMaxOnGrid : 5; // Max on grid
+            if (unitMarkerRechargeRate <= 0) unitMarkerRechargeRate = 3; // Default 3 moves per charge
+            unitMarkerRechargeProgress = 0; // Start fresh
+            
+            // Non-Unit markers use inventory system
+            maxRecursionInventory = Mathf.Max(maxRecursionInventory, grants.recursionCharges);
+            maxMatrixInventory = Mathf.Max(maxMatrixInventory, grants.matrixCharges);
+            maxInfinityInventory = Mathf.Max(maxInfinityInventory, grants.infinityCharges);
+            
             // Stage grants SET the inventory (not add), capped at max
-            currentUnitMarkerCharges = Mathf.Min(grants.unitCharges, maxUnitMarkerCharges);
             currentRecursionMarkerCharges = Mathf.Min(grants.recursionCharges, maxRecursionInventory);
             currentMatrixMarkerCharges = Mathf.Min(grants.matrixCharges, maxMatrixInventory);
             currentInfinityMarkerCharges = Mathf.Min(grants.infinityCharges, maxInfinityInventory);
             
-            // Also apply max on grid limits
-            maxUnitMarkers = grants.unitMaxOnGrid;
-            maxRecursionMarkers = grants.recursionMaxOnGrid;
-            maxMatrixMarkers = grants.matrixMaxOnGrid;
-            maxInfinityMarkers = grants.infinityMaxOnGrid;
+            // Apply max on grid limits for non-Unit
+            maxRecursionMarkers = grants.recursionMaxOnGrid > 0 ? grants.recursionMaxOnGrid : 3;
+            maxMatrixMarkers = grants.matrixMaxOnGrid > 0 ? grants.matrixMaxOnGrid : 2;
+            maxInfinityMarkers = grants.infinityMaxOnGrid > 0 ? grants.infinityMaxOnGrid : 1;
             
-            Debug.Log($"[MarkerEconomy] Stage grants applied from StageData: Unit={grants.unitCharges}, Rec={grants.recursionCharges}, Mat={grants.matrixCharges}, Inf={grants.infinityCharges}");
+            Debug.Log($"[MarkerEconomy] Stage grants applied: Unit=∞({currentUnitMarkerCharges}/{maxUnitMarkerCharges}, recharge:{unitMarkerRechargeRate} moves, grid:{maxUnitMarkers}), Rec={grants.recursionCharges}/{maxRecursionInventory}, Mat={grants.matrixCharges}/{maxMatrixInventory}, Inf={grants.infinityCharges}/{maxInfinityInventory}");
         }
         else
         {
@@ -1410,10 +1438,21 @@ MarkerMode currentMode = GetCurrentMode();
     {
         if (waveData == null) return;
         
+        // Track overrides for logging
+        string overrideLog = "";
+        
+        // Unit markers are INFINITE - wave grants don't affect charges
+        // But wave CAN override max-on-grid
+        if (waveData.overrideUnitMaxOnGrid > 0)
+        {
+            maxUnitMarkers = waveData.overrideUnitMaxOnGrid;
+            overrideLog += $" UnitGrid:{maxUnitMarkers}";
+        }
+        
+        // Non-Unit markers use inventory system
         if (waveData.grantsAddToInventory)
         {
             // Wave grants ADD to current inventory, capped at max
-            currentUnitMarkerCharges = Mathf.Min(currentUnitMarkerCharges + waveData.grantUnitCharges, maxUnitMarkerCharges);
             currentRecursionMarkerCharges = Mathf.Min(currentRecursionMarkerCharges + waveData.grantRecursionCharges, maxRecursionInventory);
             currentMatrixMarkerCharges = Mathf.Min(currentMatrixMarkerCharges + waveData.grantMatrixCharges, maxMatrixInventory);
             currentInfinityMarkerCharges = Mathf.Min(currentInfinityMarkerCharges + waveData.grantInfinityCharges, maxInfinityInventory);
@@ -1421,19 +1460,30 @@ MarkerMode currentMode = GetCurrentMode();
         else
         {
             // Wave grants SET inventory (override)
-            currentUnitMarkerCharges = Mathf.Min(waveData.grantUnitCharges, maxUnitMarkerCharges);
             currentRecursionMarkerCharges = Mathf.Min(waveData.grantRecursionCharges, maxRecursionInventory);
             currentMatrixMarkerCharges = Mathf.Min(waveData.grantMatrixCharges, maxMatrixInventory);
             currentInfinityMarkerCharges = Mathf.Min(waveData.grantInfinityCharges, maxInfinityInventory);
         }
         
         // Apply per-wave max overrides if specified
-        if (waveData.overrideUnitMaxOnGrid > 0) maxUnitMarkers = waveData.overrideUnitMaxOnGrid;
-        if (waveData.overrideRecursionMaxOnGrid > 0) maxRecursionMarkers = waveData.overrideRecursionMaxOnGrid;
-        if (waveData.overrideMatrixMaxOnGrid > 0) maxMatrixMarkers = waveData.overrideMatrixMaxOnGrid;
-        if (waveData.overrideInfinityMaxOnGrid > 0) maxInfinityMarkers = waveData.overrideInfinityMaxOnGrid;
+        if (waveData.overrideRecursionMaxOnGrid > 0)
+        {
+            maxRecursionMarkers = waveData.overrideRecursionMaxOnGrid;
+            overrideLog += $" RecGrid:{maxRecursionMarkers}";
+        }
+        if (waveData.overrideMatrixMaxOnGrid > 0)
+        {
+            maxMatrixMarkers = waveData.overrideMatrixMaxOnGrid;
+            overrideLog += $" MatGrid:{maxMatrixMarkers}";
+        }
+        if (waveData.overrideInfinityMaxOnGrid > 0)
+        {
+            maxInfinityMarkers = waveData.overrideInfinityMaxOnGrid;
+            overrideLog += $" InfGrid:{maxInfinityMarkers}";
+        }
         
-        Debug.Log($"[MarkerEconomy] Wave grants applied: Unit=+{waveData.grantUnitCharges}, Rec=+{waveData.grantRecursionCharges}, Mat=+{waveData.grantMatrixCharges}, Inf=+{waveData.grantInfinityCharges}");
+        string overrideStr = string.IsNullOrEmpty(overrideLog) ? "" : $" [Overrides:{overrideLog}]";
+        Debug.Log($"[MarkerEconomy] Wave grants applied: Unit=∞(grid:{maxUnitMarkers}), Rec=+{waveData.grantRecursionCharges}, Mat=+{waveData.grantMatrixCharges}, Inf=+{waveData.grantInfinityCharges}{overrideStr}");
         
         UpdateUI();
     }
@@ -1443,11 +1493,30 @@ MarkerMode currentMode = GetCurrentMode();
     /// </summary>
     public void ApplyStageGrantsDefault()
     {
+        // Unit markers are INFINITE with cooldown regeneration
+        // ALWAYS set these to ensure proper behavior regardless of inspector values
+        maxUnitMarkerCharges = 3; // Pool of 3 regenerating charges
+        maxUnitMarkers = 5; // Max on grid
+        currentUnitMarkerCharges = maxUnitMarkerCharges; // Start full
+        if (unitMarkerRechargeRate <= 0) unitMarkerRechargeRate = 3; // Default 3 moves per charge
+        unitMarkerRechargeProgress = 0; // Start fresh
+        
+        // Non-Unit markers use inventory system
+        if (maxRecursionInventory <= 0) maxRecursionInventory = 8;
+        if (maxMatrixInventory <= 0) maxMatrixInventory = 5;
+        if (maxInfinityInventory <= 0) maxInfinityInventory = 3;
+        
+        // Apply current charges from inspector stage grants
         currentRecursionMarkerCharges = Mathf.Min(stageGrantRecursion, maxRecursionInventory);
         currentMatrixMarkerCharges = Mathf.Min(stageGrantMatrix, maxMatrixInventory);
         currentInfinityMarkerCharges = Mathf.Min(stageGrantInfinity, maxInfinityInventory);
         
-        Debug.Log($"[MarkerEconomy] Stage grants applied (defaults): Rec={stageGrantRecursion}, Mat={stageGrantMatrix}, Inf={stageGrantInfinity}");
+        // Ensure max on grid for non-Unit if not set
+        if (maxRecursionMarkers <= 0) maxRecursionMarkers = 3;
+        if (maxMatrixMarkers <= 0) maxMatrixMarkers = 2;
+        if (maxInfinityMarkers <= 0) maxInfinityMarkers = 1;
+        
+        Debug.Log($"[MarkerEconomy] Stage grants applied (defaults): Unit=∞({currentUnitMarkerCharges}/{maxUnitMarkerCharges}, recharge:{unitMarkerRechargeRate} moves), Rec={stageGrantRecursion}, Mat={stageGrantMatrix}, Inf={stageGrantInfinity}");
         UpdateUI();
     }
     
@@ -1456,11 +1525,13 @@ MarkerMode currentMode = GetCurrentMode();
     /// </summary>
     public void ApplyWaveGrantsDefault()
     {
+        // Unit markers are INFINITE - no wave grants needed
+        // Non-Unit markers add to inventory
         currentRecursionMarkerCharges = Mathf.Min(currentRecursionMarkerCharges + waveGrantRecursion, maxRecursionInventory);
         currentMatrixMarkerCharges = Mathf.Min(currentMatrixMarkerCharges + waveGrantMatrix, maxMatrixInventory);
         currentInfinityMarkerCharges = Mathf.Min(currentInfinityMarkerCharges + waveGrantInfinity, maxInfinityInventory);
         
-        Debug.Log($"[MarkerEconomy] Wave grants applied (defaults): Rec=+{waveGrantRecursion}, Mat=+{waveGrantMatrix}, Inf=+{waveGrantInfinity}");
+        Debug.Log($"[MarkerEconomy] Wave grants applied (defaults): Unit=∞, Rec=+{waveGrantRecursion}, Mat=+{waveGrantMatrix}, Inf=+{waveGrantInfinity}");
         UpdateUI();
     }
     
@@ -1478,9 +1549,14 @@ MarkerMode currentMode = GetCurrentMode();
 
     public bool CanPlaceUnitMarker()
     {
+        // Unit markers are INFINITE - only limited by:
+        // 1. Cooldown (handled by currentUnitMarkerCharges which regenerates)
+        // 2. Max on grid (maxUnitMarkers)
+        // If maxUnitMarkers is 0 or not set, use a reasonable default
+        int effectiveMaxOnGrid = maxUnitMarkers > 0 ? maxUnitMarkers : 5;
+        
         return currentUnitMarkerCharges > 0 &&
-               currentUnitMarkers < maxUnitMarkers;
-               // Note: unitMarkersPlaced is for statistics only, not for limiting placement
+               currentUnitMarkers < effectiveMaxOnGrid;
     }
 
     public bool CanPlaceRecursionMarker()
@@ -1506,7 +1582,8 @@ MarkerMode currentMode = GetCurrentMode();
     public void ConsumeUnitCharge()
     {
         currentUnitMarkerCharges--;
-        lastUnitMarkerTime = Time.time;
+        // Note: Recharge progress is NOT reset when placing - it continues from where it was
+        // This way players aren't "punished" for using markers
         currentUnitMarkers++;
         unitMarkersPlaced++;
 
@@ -1605,22 +1682,22 @@ MarkerMode currentMode = GetCurrentMode();
 
     public void ReleaseUnitMarker()
     {
-        currentUnitMarkers--;
+        currentUnitMarkers = Mathf.Max(0, currentUnitMarkers - 1);
     }
 
     public void ReleaseRecursionMarker()
     {
-        currentRecursionMarkers--;
+        currentRecursionMarkers = Mathf.Max(0, currentRecursionMarkers - 1);
     }
 
     public void ReleaseInfinityMarker()
     {
-        currentInfinityMarkers--;
+        currentInfinityMarkers = Mathf.Max(0, currentInfinityMarkers - 1);
     }
 
     public void ReleaseMatrixMarker()
     {
-        currentMatrixMarkers--;
+        currentMatrixMarkers = Mathf.Max(0, currentMatrixMarkers - 1);
     }
 
     // Methods to handle marker removal (unmarking)
@@ -1688,8 +1765,8 @@ MarkerMode currentMode = GetCurrentMode();
     {
         bool chargesChanged = false;
         
-        // Unit markers always use cooldown-based regeneration (unlimited)
-        chargesChanged |= RegenerateUnitCharges();
+        // Unit markers now use MOVE-BASED regeneration via HandleWaveStep()
+        // No time-based regeneration in Update() anymore
         
         // Non-Unit markers only regenerate if marker economy is disabled
         // When economy is enabled, they only get grants at stage/wave start
@@ -1704,30 +1781,6 @@ MarkerMode currentMode = GetCurrentMode();
         {
             UpdateUI();
         }
-    }
-
-    private bool RegenerateUnitCharges()
-    {
-        if (currentUnitMarkerCharges < maxUnitMarkerCharges)
-        {
-            float timeSinceLastUse = Time.time - lastUnitMarkerTime;
-            if (timeSinceLastUse >= unitMarkerCooldown)
-            {
-                currentUnitMarkerCharges++;
-                lastUnitMarkerTime = Time.time;
-                
-                // Trigger audio event for resource regeneration
-                Vector3 playerWorldPos = GetWorldPositionForAudio(playerManager.currentTilePosition);
-                TriggerAudioEvent(GameAudioEvent.ResourceRegeneration, playerWorldPos, 0.8f);
-                
-                // Trigger animation for resource regeneration
-                TriggerAnimationResourceRegeneration(playerWorldPos, "Unit marker charge");
-                
-                this.Log($"Unit marker charge regenerated. Charges: {currentUnitMarkerCharges}/{maxUnitMarkerCharges}", EnableDebugLogs);
-                return true;
-            }
-        }
-        return false;
     }
 
     private bool RegenerateRecursionCharges()
@@ -1808,7 +1861,10 @@ MarkerMode currentMode = GetCurrentMode();
         {
             actionUI.UpdateCharges(currentUnitMarkerCharges, currentRecursionMarkerCharges, 
                                  currentMatrixMarkerCharges, GetCurrentCubeMarkers());
-            actionUI.UpdateCooldowns(unitMarkerCooldown, recursionMarkerCooldown, 
+            // Pass recharge progress as fraction for UI display (move-based, not time-based)
+            float unitRechargeProgress = unitMarkerRechargeRate > 0 ? 
+                (float)unitMarkerRechargeProgress / unitMarkerRechargeRate : 0f;
+            actionUI.UpdateCooldowns(unitRechargeProgress, recursionMarkerCooldown, 
                                    matrixMarkerCooldown, 1f);
         }
     }
@@ -1818,9 +1874,10 @@ MarkerMode currentMode = GetCurrentMode();
     #region Public API (Delegates to MarkerSystem)
 
     // Next charge time for UI system
+    // Move-based recharge: Returns moves remaining until next charge (as float for UI compatibility)
     public float GetNextUnitChargeTime() =>
         currentUnitMarkerCharges < maxUnitMarkerCharges ?
-        lastUnitMarkerTime + unitMarkerCooldown : Time.time;
+        (float)(unitMarkerRechargeRate - unitMarkerRechargeProgress) : 0f;
     public float GetNextRecursionChargeTime() =>
         currentRecursionMarkerCharges < maxRecursionMarkerCharges ?
         lastRecursionMarkerTime + recursionMarkerCooldown : Time.time;
@@ -1897,7 +1954,8 @@ MarkerMode currentMode = GetCurrentMode();
     {
         if (currentUnitMarkerCharges >= maxUnitMarkerCharges)
             return 0f;
-        return Mathf.Max(0f, unitMarkerCooldown - (Time.time - lastUnitMarkerTime));
+        // Move-based: Return moves remaining as float (for UI compatibility)
+        return (float)(unitMarkerRechargeRate - unitMarkerRechargeProgress);
     }
 
     public float GetRecursionMarkerCooldownRemaining()
@@ -2091,8 +2149,8 @@ MarkerMode currentMode = GetCurrentMode();
         cubeMarkersTriggered = 0;
         perfectTimingHits = 0;
         
-        // Reset timers
-        lastUnitMarkerTime = 0f;
+        // Reset recharge progress
+        unitMarkerRechargeProgress = 0;
         lastRecursionMarkerTime = 0f;
         lastMatrixMarkerTime = 0f;
         lastInfinityMarkerTime = 0f;

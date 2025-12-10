@@ -79,13 +79,10 @@ public class FinalIntegrationTest : MonoBehaviour
         // Test 9: Face painting integration
         yield return TestFacePaintingIntegration();
         
-        // Test 10: Backward compatibility aliases
-        yield return TestBackwardCompatibility();
-        
-        // Test 11: UI integration with four-tier system
+        // Test 10: UI integration with four-tier system
         yield return TestUIIntegration();
         
-        // Test 12: Debug system updates
+        // Test 11: Debug system updates
         yield return TestDebugSystemUpdates();
         
         // Final cleanup and summary
@@ -390,53 +387,7 @@ public class FinalIntegrationTest : MonoBehaviour
     }
     #endregion
 
-    #region Test 10: Backward compatibility aliases
-    private IEnumerator TestBackwardCompatibility()
-    {
-        Log("Testing backward compatibility aliases...");
-        
-        Vector2Int pos = new Vector2Int(7, 8);
-        
-        // Test that obsolete methods still work but generate warnings
-        try
-        {
-#pragma warning disable CS0618 // Disable obsolete warnings for testing
-            
-            // Test obsolete marker placement methods
-            bool individualPlaced = playerActionManager.PlaceUnitMarker(pos);
-            Log($"Obsolete PlaceUnitMarker still works: {individualPlaced}");
-            
-            bool hasIndividual = playerActionManager.HasUnitMarkerAt(pos);
-            Log($"Obsolete HasUnitMarkerAt still works: {hasIndividual}");
-            
-            if (hasIndividual)
-            {
-                playerActionManager.RemoveUnitMarkerAt(pos);
-            }
-            
-            // Test obsolete area marker methods
-            bool areaPlaced = playerActionManager.PlaceMatrixMarker(pos, 2);
-            Log($"Obsolete PlaceMatrixMarker still works: {areaPlaced}");
-            
-            if (areaPlaced)
-            {
-                playerActionManager.RemoveMatrixMarkerAt(pos);
-            }
-            
-#pragma warning restore CS0618
-            
-            AssertTrue(true, "Backward compatibility aliases functional");
-        }
-        catch (System.Exception e)
-        {
-            AssertTrue(false, $"Backward compatibility failed: {e.Message}");
-        }
-        
-        yield return new WaitForSeconds(testDelay);
-    }
-    #endregion
-
-    #region Test 11: UI integration
+    #region Test 10: UI integration
     private IEnumerator TestUIIntegration()
     {
         Log("Testing UI integration with four-tier marker system...");
@@ -464,7 +415,7 @@ public class FinalIntegrationTest : MonoBehaviour
     }
     #endregion
 
-    #region Test 12: Debug system updates
+    #region Test 11: Debug system updates
     private IEnumerator TestDebugSystemUpdates()
     {
         Log("Testing debug system updates...");

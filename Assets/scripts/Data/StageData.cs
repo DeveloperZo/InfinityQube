@@ -30,6 +30,8 @@ public class StageData : ScriptableObject
     #region Line Divider
     
     [Header("Line Divider")]
+    [Tooltip("Enable or disable the line divider system for this stage")]
+    public bool enableLineDivider = true;
     [Tooltip("Starting Y position of the line divider (danger zone above)")]
     [Range(0, 20)] public int lineDividerStartY = 10;
     [Tooltip("How much the line moves up per escape")]
@@ -42,11 +44,11 @@ public class StageData : ScriptableObject
     #region Marker Economy (Stage Grants)
     
     [Header("Marker Economy - Stage Grants")]
-    [Tooltip("Marker charges granted at stage start (sets inventory)")]
+    [Tooltip("Marker charges granted at stage start (SETS inventory to these values)")]
     public MarkerGrants stageGrants = new MarkerGrants();
     
-    [Tooltip("If true, uses per-wave grants instead of stage grants")]
-    public bool useWaveGrants = false;
+    [Tooltip("If true, wave grants come from WaveData. If false, waves use inspector defaults. Stage grants + Wave grants are BOTH applied (combinatorial).")]
+    public bool waveGrantsFromWaveData = false;
     
     #endregion
 
@@ -109,7 +111,8 @@ public class StageData : ScriptableObject
         if (playerStartPosition.x < 0 || playerStartPosition.x >= gridWidth)
             issues.Add($"Player start X ({playerStartPosition.x}) out of grid bounds");
             
-        if (lineDividerStartY > gridHeight)
+        // Only validate line divider position if it's enabled
+        if (enableLineDivider && lineDividerStartY > gridHeight)
             issues.Add($"Line divider start ({lineDividerStartY}) above grid height ({gridHeight})");
         
         // Validate each wave
@@ -137,23 +140,24 @@ public class StageData : ScriptableObject
 
 /// <summary>
 /// Marker charges granted to player. Used for stage and wave grants.
+/// NOTE: Unit markers are INFINITE with cooldown - only max-on-grid matters.
 /// </summary>
 [System.Serializable]
 public class MarkerGrants
 {
-    [Header("Unit Marker")]
-    [Range(0, 10)] public int unitCharges = 3;
-    [Range(0, 10)] public int unitMaxOnGrid = 3;
+    [Header("Unit Marker (INFINITE with cooldown)")]
+    [Tooltip("Unit markers are infinite - this only limits how many can be on grid at once")]
+    [Range(1, 10)] public int unitMaxOnGrid = 5;
     
-    [Header("Matrix Marker")]
+    [Header("Matrix Marker (inventory-based)")]
     [Range(0, 10)] public int matrixCharges = 2;
     [Range(0, 5)] public int matrixMaxOnGrid = 2;
     
-    [Header("Recursion Marker")]
+    [Header("Recursion Marker (inventory-based)")]
     [Range(0, 10)] public int recursionCharges = 2;
     [Range(0, 5)] public int recursionMaxOnGrid = 2;
     
-    [Header("Infinity Marker")]
+    [Header("Infinity Marker (inventory-based)")]
     [Range(0, 5)] public int infinityCharges = 1;
     [Range(0, 3)] public int infinityMaxOnGrid = 1;
 }

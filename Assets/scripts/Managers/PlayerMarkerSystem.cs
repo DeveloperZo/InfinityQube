@@ -745,6 +745,7 @@ public class PlayerMarkerSystem : MonoBehaviour
             if (marker != null)
             {
                 visualManager?.DestroyMarkerVisual(marker.visualObject);
+                actionManager.ReleaseUnitMarker(); // Release the on-grid slot
                 SpawnPlayerCubeAt(marker.position, CubeType.Unit, false);
                 spawnedCount++;
             }
@@ -761,6 +762,7 @@ public class PlayerMarkerSystem : MonoBehaviour
                 {
                     visualManager?.DestroyMarkerVisual(visual);
                 }
+                actionManager.ReleaseMatrixMarker(); // Release the on-grid slot
                 SpawnPlayerCubeAt(marker.centerPosition, CubeType.Matrix, true);
                 spawnedCount++;
             }
@@ -774,6 +776,7 @@ public class PlayerMarkerSystem : MonoBehaviour
             if (marker != null)
             {
                 visualManager?.DestroyMarkerVisual(marker.visualObject);
+                actionManager.ReleaseRecursionMarker(); // Release the on-grid slot
                 SpawnPlayerCubeAt(marker.position, CubeType.Recursion, false);
                 spawnedCount++;
             }
@@ -787,6 +790,7 @@ public class PlayerMarkerSystem : MonoBehaviour
             if (marker != null)
             {
                 visualManager?.DestroyMarkerVisual(marker.visualObject);
+                actionManager.ReleaseInfinityMarker(); // Release the on-grid slot
                 SpawnPlayerCubeAt(marker.position, CubeType.Infinity, false);
                 spawnedCount++;
             }
