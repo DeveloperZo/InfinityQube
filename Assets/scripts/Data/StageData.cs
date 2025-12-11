@@ -140,14 +140,18 @@ public class StageData : ScriptableObject
 
 /// <summary>
 /// Marker charges granted to player. Used for stage and wave grants.
-/// NOTE: Unit markers are INFINITE with cooldown - only max-on-grid matters.
+/// NOTE: Unit markers are INFINITE with move-based regeneration - only max-on-grid matters.
 /// </summary>
 [System.Serializable]
 public class MarkerGrants
 {
-    [Header("Unit Marker (INFINITE with cooldown)")]
+    [Header("Unit Marker (INFINITE with move-based regeneration)")]
     [Tooltip("Unit markers are infinite - this only limits how many can be on grid at once")]
     [Range(1, 10)] public int unitMaxOnGrid = 5;
+    [Tooltip("Number of wave moves required to regenerate one Unit marker charge (0 = use default 3)")]
+    [Range(0, 10)] public int unitMarkerRechargeRate = 0;
+    [Tooltip("Maximum Unit marker charges in the regeneration pool (0 = use default 3)")]
+    [Range(0, 10)] public int maxUnitMarkerCharges = 0;
     
     [Header("Matrix Marker (inventory-based)")]
     [Range(0, 10)] public int matrixCharges = 2;

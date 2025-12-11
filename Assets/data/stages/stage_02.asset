@@ -12,10 +12,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: faaa491ad539cb444afed02f7554648d, type: 3}
   m_Name: stage_02
   m_EditorClassIdentifier: 
-  stageNumber: 1
+  stageNumber: 2
   stageName: Strategic Choice
-  description: Learn to prioritize targets when resources are limited.
-  objective: Not every cube needs a marker. Choose wisely
+  description: Resources are limited. Learn to prioritize which cubes to capture and which to let pass.
+  objective: Not every cube needs a marker. Choose wisely and avoid Infinity cubes
   gridWidth: 3
   gridHeight: 15
   playerStartPosition: {x: 0, y: 1}

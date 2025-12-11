@@ -13,13 +13,12 @@ MonoBehaviour:
   m_Name: Stage_00
   m_EditorClassIdentifier: 
   stageNumber: 0
-  stageName: Playtest Sandbox
+  stageName: Tutorial - Pure Fundamentals
   stageType: 0
-  description: A sandbox stage for playtesting core mechanics and scoring system.
-    Contains 3 waves introducing Unit, Matrix, and Recursion cubes.
-  objective: Capture cubes and test the scoring system
+  description: Learn the basics: movement, marker placement, and cube capture. You'll encounter both Unit cubes (capturable) and Infinity cubes (dangerous - avoid them!).
+  objective: Capture Unit cubes with Unit markers while avoiding Infinity cubes
   gridWidth: 5
-  gridHeight: 15
+  gridHeight: 20
   playerStartPosition: {x: 2, y: 0}
   enableLineDivider: 0
   lineDividerStartY: 7
@@ -27,13 +26,14 @@ MonoBehaviour:
   lineDividerCaptureReward: 0
   stageGrants:
     unitMaxOnGrid: 5
-    unitCharges: 5
-    matrixCharges: 3
-    matrixMaxOnGrid: 3
-    recursionCharges: 2
-    recursionMaxOnGrid: 2
-    infinityCharges: 1
-    infinityMaxOnGrid: 1
+    unitMarkerRechargeRate: 3
+    maxUnitMarkerCharges: 3
+    matrixCharges: 0
+    matrixMaxOnGrid: 0
+    recursionCharges: 0
+    recursionMaxOnGrid: 0
+    infinityCharges: 0
+    infinityMaxOnGrid: 0
   waveGrantsFromWaveData: 1
   lockAttunements: 0
   allowedAttunementIds: []
@@ -43,4 +43,4 @@ MonoBehaviour:
   - {fileID: 11400000, guid: a1b2c3d4e5f6789012345678901234a3, type: 2}
   requireAllCubesDestroyed: 0
   requiredCaptureCount: 0
-  maxAllowedEscapes: 99
+  maxAllowedEscapes: 5

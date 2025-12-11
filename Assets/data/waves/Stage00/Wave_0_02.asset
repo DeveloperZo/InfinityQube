@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Wave_0_02
   m_EditorClassIdentifier: 
   Index: 1
-  waveName: Matrix Introduction
+  waveName: Infinity Cube Danger
   GridWidth: 5
   GridHeight: 2
   CubesData:
@@ -31,7 +31,7 @@ MonoBehaviour:
     frontFaceStatus: 0
     frontFaceCharges: 0
     spawnDelay: 0
-  - type: 1
+  - type: 0
     position: {x: 2, y: 0}
     level: 1
     hasPaintedFaces: 0
@@ -52,15 +52,29 @@ MonoBehaviour:
     frontFaceStatus: 0
     frontFaceCharges: 0
     spawnDelay: 0
-  - type: 0
+  - type: 2
     position: {x: 0, y: 1}
     level: 1
     hasPaintedFaces: 0
     frontFaceStatus: 0
     frontFaceCharges: 0
     spawnDelay: 0
-  - type: 1
+  - type: 0
+    position: {x: 1, y: 1}
+    level: 1
+    hasPaintedFaces: 0
+    frontFaceStatus: 0
+    frontFaceCharges: 0
+    spawnDelay: 0
+  - type: 0
     position: {x: 2, y: 1}
+    level: 1
+    hasPaintedFaces: 0
+    frontFaceStatus: 0
+    frontFaceCharges: 0
+    spawnDelay: 0
+  - type: 2
+    position: {x: 3, y: 1}
     level: 1
     hasPaintedFaces: 0
     frontFaceStatus: 0
@@ -74,28 +88,28 @@ MonoBehaviour:
     frontFaceCharges: 0
     spawnDelay: 0
   grantsAddToInventory: 1
-  grantUnitCharges: 1
-  grantMatrixCharges: 1
+  grantMatrixCharges: 0
   grantRecursionCharges: 0
   grantInfinityCharges: 0
-  overrideUnitMaxOnGrid: 0
+  overrideUnitMaxOnGrid: 4
   overrideMatrixMaxOnGrid: 0
   overrideRecursionMaxOnGrid: 0
   overrideInfinityMaxOnGrid: 0
+  overrideUnitMarkerRechargeRate: 0
   waveStartDelay: 1.5
-  moveInterval: 1.5
+  moveInterval: 2
   fastMoveInterval: 0.1
   hasOwnSuccessCriteria: 0
   requiredCaptureCount: 0
   maxAllowedEscapes: -1
   messages:
-  - Message: Wave 2 - Matrix cubes (green)
+  - Message: Cyan cubes are dangerous - avoid them!
     DisplayMoveStep: 0
-    RequirePause: 0
-    AutoHideDelay: 3
+    RequirePause: 1
+    AutoHideDelay: 0
     HighlightTile: 0
     highlightTiles: []
-    highlightColor: {r: 1, g: 1, b: 0, a: 1}
+    highlightColor: {r: 1, g: 0, b: 0, a: 1}
   _runtimeStats:
     unitCubesCaptured: 0
     matrixCubesCaptured: 0
@@ -105,4 +119,3 @@ MonoBehaviour:
     markersPlaced: 0
     markersTriggererd: 0
     completionTime: 0
-

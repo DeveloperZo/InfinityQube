@@ -131,9 +131,9 @@ public class SplashScreenManager : MonoBehaviour
         if (showDebugLogs)
             Debug.Log($"SplashScreenManager: Loading scene '{nextSceneName}'");
 
-        // Don't unload the current scene first - just load the new scene
-        // This is more reliable for scene transitions
-        SceneManager.LoadSceneAsync(nextSceneName);
+        // Use Single mode to ensure current scene is fully unloaded before loading new scene
+        // This prevents object duplication when returning to splash and starting again
+        SceneManager.LoadScene(nextSceneName, LoadSceneMode.Single);
     }
 
     private void ShowSettingsPopup()

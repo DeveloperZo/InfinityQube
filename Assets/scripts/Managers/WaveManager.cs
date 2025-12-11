@@ -16,6 +16,7 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
     [SerializeField] public PlayerActionManager playerActionManager;
     [SerializeField] public GameUI gameUI;
     private AudioManager audioManager;
+    private MessageHighlightManager messageHighlightManager;
 
 
     [Header("Wave Configuration")]
@@ -122,6 +123,7 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
         if (grid == null) grid = FindFirstObjectByType<GridManager>();
         if (player == null) player = FindFirstObjectByType<PlayerManager>();
         if (playerActionManager == null) playerActionManager = FindFirstObjectByType<PlayerActionManager>();
+        if (messageHighlightManager == null) messageHighlightManager = FindFirstObjectByType<MessageHighlightManager>();
         if (audioManager == null) audioManager = AudioManager.Instance;
 
         ValidateReferences();
@@ -233,6 +235,40 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
         manualControl = false;
 
         DebugLog("▶️ Wave Resumed");
+    }
+    
+    /// <summary>
+    /// Pauses wave movement for validation (keeps wave active, just stops cube movement)
+    /// Used by MessageHighlightManager for tutorial sequences
+    /// </summary>
+    public void PauseWaveForValidation()
+    {
+        if (!waveActive) return;
+        
+        if (waveCoroutine != null) StopCoroutine(waveCoroutine);
+        // Set manualControl to stop the RunWaveCoroutine loop
+        manualControl = true;
+        // Don't set waveActive = false, just stop the coroutine
+        // This allows the wave to resume from where it was
+        
+        DebugLog("⏸️ Wave paused for validation");
+    }
+    
+    /// <summary>
+    /// Resumes wave movement after validation
+    /// Used by MessageHighlightManager for tutorial sequences
+    /// </summary>
+    public void ResumeWaveAfterValidation()
+    {
+        if (!waveActive) return; // Wave must be active to resume
+        
+        // Clear manualControl to allow RunWaveCoroutine to continue
+        manualControl = false;
+        
+        if (waveCoroutine != null) StopCoroutine(waveCoroutine);
+        waveCoroutine = StartCoroutine(RunWaveCoroutine(resume: true));
+        
+        DebugLog("▶️ Wave resumed after validation");
     }
 
     public void StartNextWave()
@@ -414,6 +450,7 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
         }
         
         ProcessStepMessages();
+        ProcessStepSequences();
         NotifyStepComplete();
 
         yield return null;
@@ -746,10 +783,53 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
     {
         if (CurrentWave?.messages == null || !showMessages) return;
 
+        // Start coroutine to delay messages until camera has panned to position
+        StartCoroutine(ShowInitialMessagesDelayed());
+    }
+    
+    private IEnumerator ShowInitialMessagesDelayed()
+    {
+        // Wait for camera to pan to default position (CameraFollow uses 0.25s smooth time)
+        // Add extra buffer to ensure camera is fully positioned before showing messages
+        yield return new WaitForSeconds(0.6f);
+
+        // Process initial sequences first (if any)
+        ProcessInitialSequences();
+        
+        // Then show initial messages (using MessageHighlightManager if available, otherwise fallback)
         var initialMessages = CurrentWave.messages.Where(m => m.DisplayMoveStep == 0);
         foreach (var message in initialMessages)
         {
-            ShowMessage(message);
+            if (messageHighlightManager != null)
+            {
+                // Use MessageHighlightManager for unified message handling
+                messageHighlightManager.ShowMessage(message.Message, message.RequirePause, message.AutoHideDelay, MoveStep);
+            }
+            else
+            {
+                // Fallback to old system
+                ShowMessage(message);
+            }
+        }
+    }
+    
+    /// <summary>
+    /// Processes highlight sequences at move step 0 (wave start)
+    /// Only executes sequences with DisplayMoveStep == 0 that don't have trigger conditions
+    /// </summary>
+    private void ProcessInitialSequences()
+    {
+        if (CurrentWave?.highlightSequences == null || messageHighlightManager == null) return;
+        
+        var initialSequences = CurrentWave.highlightSequences.Where(s => 
+            s != null && 
+            s.DisplayMoveStep == 0 &&
+            s.triggerOnMarkerAtPosition == Vector2Int.zero && 
+            s.triggerOnCaptureAtPosition == Vector2Int.zero);
+        
+        foreach (var sequence in initialSequences)
+        {
+            messageHighlightManager.ExecuteSequence(sequence);
         }
     }
 
@@ -760,7 +840,36 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
         var stepMessages = CurrentWave.messages.Where(m => m.DisplayMoveStep == MoveStep);
         foreach (var message in stepMessages)
         {
-            ShowMessage(message);
+            if (messageHighlightManager != null)
+            {
+                // Use MessageHighlightManager for unified message handling
+                messageHighlightManager.ShowMessage(message.Message, message.RequirePause, message.AutoHideDelay, MoveStep);
+            }
+            else
+            {
+                // Fallback to old system
+                ShowMessage(message);
+            }
+        }
+    }
+    
+    /// <summary>
+    /// Processes highlight sequences at the current move step
+    /// </summary>
+    private void ProcessStepSequences()
+    {
+        if (CurrentWave?.highlightSequences == null || messageHighlightManager == null) return;
+        
+        // Get sequences for current move step that aren't event-triggered
+        var stepSequences = CurrentWave.highlightSequences.Where(s => 
+            s != null && 
+            s.DisplayMoveStep == MoveStep &&
+            s.triggerOnMarkerAtPosition == Vector2Int.zero && 
+            s.triggerOnCaptureAtPosition == Vector2Int.zero);
+        
+        foreach (var sequence in stepSequences)
+        {
+            messageHighlightManager.ExecuteSequence(sequence);
         }
     }
 
@@ -771,7 +880,16 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
         var endMessages = CurrentWave.messages.Where(m => m.DisplayMoveStep == -1);
         foreach (var message in endMessages)
         {
-            ShowMessage(message);
+            if (messageHighlightManager != null)
+            {
+                // Use MessageHighlightManager for unified message handling
+                messageHighlightManager.ShowMessage(message.Message, message.RequirePause, message.AutoHideDelay, MoveStep);
+            }
+            else
+            {
+                // Fallback to old system
+                ShowMessage(message);
+            }
         }
     }
 
@@ -799,14 +917,21 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
         // Simple prompt
         message += "Press K to continue";
         
-        var completionMsg = new WaveMessage
+        // Use MessageHighlightManager if available, otherwise fallback
+        if (messageHighlightManager != null)
         {
-            Message = message,
-            RequirePause = true, // POC: All tutorial waves pause for feedback
-            AutoHideDelay = 0f
-        };
-
-        ShowMessage(completionMsg);
+            messageHighlightManager.ShowMessage(message, true, 0f, MoveStep);
+        }
+        else
+        {
+            var completionMsg = new WaveMessage
+            {
+                Message = message,
+                RequirePause = true, // POC: All tutorial waves pause for feedback
+                AutoHideDelay = 0f
+            };
+            ShowMessage(completionMsg);
+        }
         DebugLog($"ShowWaveCompletionMessage: Wave {waveNum}/{totalWaves} - Captured: {totalCaptured}, Escaped: {cubesEscaped}");
     }
 

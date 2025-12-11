@@ -50,7 +50,7 @@ public class WaveData : ScriptableObject
     public bool grantsAddToInventory = true;
     
     [Space(5)]
-    // NOTE: Unit markers are INFINITE with cooldown - wave grants don't affect them
+    // NOTE: Unit markers are INFINITE with move-based regeneration - wave grants don't affect them
     
     [Tooltip("Matrix marker charges granted (0 = no grant)")]
     [Range(0, 10)] public int grantMatrixCharges = 0;
@@ -77,6 +77,9 @@ public class WaveData : ScriptableObject
     
     [Tooltip("Override max Infinity markers on grid (0 = use stage default)")]
     [Range(0, 3)] public int overrideInfinityMaxOnGrid = 0;
+    
+    [Tooltip("Override Unit marker recharge rate in moves per charge (0 = use stage default, typically 3 moves)")]
+    [Range(0, 10)] public int overrideUnitMarkerRechargeRate = 0;
     
     #endregion
 
@@ -113,6 +116,14 @@ public class WaveData : ScriptableObject
     [Header("Wave Messages")]
     [Tooltip("Tutorial/guidance messages shown during this wave")]
     public List<WaveMessage> messages = new List<WaveMessage>();
+    
+    #endregion
+    
+    #region Highlight Sequences
+    
+    [Header("Highlight Sequences")]
+    [Tooltip("Guided sequences: pause → message → highlight → resume. Executed at DisplayMoveStep timing.")]
+    public List<HighlightSequence> highlightSequences = new List<HighlightSequence>();
     
     #endregion
 

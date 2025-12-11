@@ -12,10 +12,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: faaa491ad539cb444afed02f7554648d, type: 3}
   m_Name: stage_03
   m_EditorClassIdentifier: 
-  stageNumber: 1
-  stageName: Qube02
-  description: "**Learning Goals:**\r\n  - Blue cube mechanics\r\n"
-  objective: Destroy all gray cubes by placing markers in their path.
+  stageNumber: 3
+  stageName: Dancing with Danger
+  description: Matrix cubes are introduced! These blue cubes can be captured and create opportunities. Learn the value hierarchy: Infinity = avoid, Matrix = pursue.
+  objective: Capture Matrix cubes to create cube markers while avoiding Infinity cubes
   gridWidth: 5
   gridHeight: 20
   playerStartPosition: {x: 0, y: 1}

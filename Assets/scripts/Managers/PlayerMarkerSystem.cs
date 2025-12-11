@@ -163,7 +163,7 @@ public class PlayerMarkerSystem : MonoBehaviour
         marker.visualObject = visualManager?.CreateUnitMarkerVisual(position);
 
         UnitMarkers.Enqueue(marker);
-        actionManager.ConsumeUnitCharge();
+        actionManager.ConsumeUnitCharge(position);
 
         Debug.Log($"Unit marker placed at ({position.x}, {position.y})");
         return true;
@@ -677,6 +677,12 @@ public class PlayerMarkerSystem : MonoBehaviour
             PlayerStatisticsManager.Instance.OnCubeCaptured(position, cube.type.ToString(), markerType.ToString());
         }
 
+        // Show capture success visual feedback
+        if (visualManager != null)
+        {
+            visualManager.ShowCaptureSuccessEffect(position, cube.type);
+        }
+        
         RemoveCubeFromWaveManager(cube);
         NotifyWaveManager(wm => wm.OnCubeCaptured(cube.type));
         Destroy(cube.gameObject);

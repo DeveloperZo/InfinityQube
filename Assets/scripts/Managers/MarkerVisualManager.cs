@@ -464,6 +464,69 @@ public class MarkerVisualManager : MonoBehaviour, IManagerDebugInterface
 
         Destroy(effect);
     }
+    
+    /// <summary>
+    /// Shows a success flash effect when a cube is captured
+    /// </summary>
+    public void ShowCaptureSuccessEffect(Vector2Int position, CubeType cubeType)
+    {
+        StartCoroutine(CaptureSuccessEffectCoroutine(position, cubeType));
+    }
+    
+    private IEnumerator CaptureSuccessEffectCoroutine(Vector2Int position, CubeType cubeType)
+    {
+        Vector3 worldPos = gridManager.GridToWorldPosition(position.x, position.y, 1.5f);
+        
+        // Create flash effect
+        GameObject flash = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+        flash.name = $"CaptureFlash_{position.x}_{position.y}";
+        flash.transform.position = worldPos;
+        flash.transform.localScale = Vector3.zero;
+        
+        Destroy(flash.GetComponent<Collider>());
+        Renderer flashRenderer = flash.GetComponent<Renderer>();
+        
+        // Success color based on cube type
+        Color successColor = cubeType switch
+        {
+            CubeType.Unit => new Color(0.3f, 0.8f, 0.3f, 1f), // Green
+            CubeType.Matrix => new Color(0.3f, 0.7f, 1f, 1f), // Blue
+            CubeType.Recursion => new Color(0.8f, 0.5f, 0.2f, 1f), // Orange
+            _ => Color.green
+        };
+        
+        Material flashMat = new Material(Shader.Find("Standard"));
+        flashMat.EnableKeyword("_EMISSION");
+        flashMat.SetColor("_EmissionColor", successColor * 2f);
+        flashRenderer.material = flashMat;
+        
+        // Flash animation
+        float duration = 0.4f;
+        float elapsed = 0f;
+        
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            float t = elapsed / duration;
+            
+            // Expand then fade
+            float scale = t < 0.5f 
+                ? Mathf.Lerp(0f, 3f, t * 2f) 
+                : Mathf.Lerp(3f, 4f, (t - 0.5f) * 2f);
+            
+            flash.transform.localScale = Vector3.one * scale;
+            
+            // Fade out
+            Color color = successColor;
+            color.a = 1f - t;
+            flashMat.SetColor("_EmissionColor", color * (2f * (1f - t)));
+            flashRenderer.material.color = color;
+            
+            yield return null;
+        }
+        
+        Destroy(flash);
+    }
 
     /// <summary>
     /// Clears area expansion highlights after delay

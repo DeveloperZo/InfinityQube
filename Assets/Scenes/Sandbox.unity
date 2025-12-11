@@ -979,7 +979,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ac359e300a123be4fb3b5c493d8c7845, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  buildVersion: 0.1.0-alpha
   buildDate: 
 --- !u!1 &287251656
 GameObject:
@@ -13392,7 +13391,7 @@ MonoBehaviour:
   stageTransitionDelay: 2
   restartOnFailure: 1
   disableAutoStart: 0
-  showStageInfo: 0
+  showStageInfo: 1
 --- !u!4 &1918197466871702463
 Transform:
   m_ObjectHideFlags: 0
@@ -14862,26 +14861,22 @@ MonoBehaviour:
   maxUnitMarkers: 0
   unitMarkersPlaced: 0
   currentUnitMarkers: 0
-  maxUnitMarkerCharges: 0
   currentUnitMarkerCharges: 0
-  unitMarkerCooldown: 0
+  unitMarkerRechargeProgress: 0
+  maxUnitMarkerCharges: 0
+  unitMarkerRechargeRate: 2
   unitMarkerMaterial: {fileID: 0}
-  lastUnitMarkerTime: 0
   maxRecursionMarkers: 0
   recursionMarkersPlaced: 0
   currentRecursionMarkers: 0
   maxRecursionMarkerCharges: 0
   currentRecursionMarkerCharges: 0
-  recursionMarkerCooldown: 0
   recursionMarkerMaterial: {fileID: 0}
-  lastRecursionMarkerTime: 0
   maxMatrixMarkers: 0
   matrixMarkersPlaced: 0
   currentMatrixMarkers: 0
   maxMatrixMarkerCharges: 0
   currentMatrixMarkerCharges: 0
-  matrixMarkerCooldown: 0
-  lastMatrixMarkerTime: 0
   matrixMarkerSize: 0
   matrixMarkerOnGridLimit: 0
   matrixMarkerMaterial: {fileID: 0}
@@ -14890,8 +14885,6 @@ MonoBehaviour:
   currentInfinityMarkers: 0
   maxInfinityMarkerCharges: 0
   currentInfinityMarkerCharges: 0
-  infinityMarkerCooldown: 15
-  lastInfinityMarkerTime: 0
   infinityMarkerMaterial: {fileID: 0}
   useMarkerEconomy: 1
   stageGrantRecursion: 5
@@ -14906,10 +14899,6 @@ MonoBehaviour:
   unitMarkerKey: 102
   recursionMarkerKey: 118
   matrixMarkerKey: 103
-  infinityMarkerKey: 104
-  triggerUnitKey: 114
-  triggerRecursionKey: 121
-  triggerMatrixKey: 116
   triggerCubeMarkerKey: 113
   currentMarkerMode: 1
 --- !u!114 &8656265648072650657
@@ -14997,7 +14986,7 @@ MonoBehaviour:
   - {r: 0.6, g: 0.1, b: 0.1, a: 1}
   playerActionManager: {fileID: 8656265648072650656}
   animationTriggerManager: {fileID: 0}
-  unitMarkerCooldownTime: 6
+  unitMarkerRechargeProgress: 0
   recursionMarkerCooldownTime: 8
   matrixMarkerCooldownTime: 12
   infinityMarkerCooldownTime: 15

@@ -37,14 +37,15 @@ public class PlayerActionUI : MonoBehaviour
         new Color(0.3f, 0.8f, 0.9f, 1f)     // Cyan for Infinity mode (index 3 = Infinity=4)
     };
 
-    [Header("Cooldown/Recharge Settings")]
+    [Header("Recharge Settings")]
     [SerializeField] private PlayerActionManager playerActionManager;
     [SerializeField] private AnimationTriggerManager animationTriggerManager;
     [Tooltip("Unit marker uses move-based recharge (0-1 progress fraction)")]
     public float unitMarkerRechargeProgress = 0f; // Move-based: fraction of progress toward next charge
-    public float recursionMarkerCooldownTime = 8f;
-    public float matrixMarkerCooldownTime = 12f;
-    public float infinityMarkerCooldownTime = 15f;
+    // Non-Unit markers use inventory grants only - no cooldown regeneration
+    public float recursionMarkerCooldownTime = 0f;
+    public float matrixMarkerCooldownTime = 0f;
+    public float infinityMarkerCooldownTime = 0f;
 
     // Cached references
     public int unitCharges;
@@ -67,11 +68,8 @@ public class PlayerActionUI : MonoBehaviour
             recursionMaxCharges = playerActionManager.maxRecursionMarkerCharges;
             matrixMaxCharges = playerActionManager.maxMatrixMarkerCharges;
             infinityMaxCharges = playerActionManager.maxInfinityMarkerCharges;
-            // Unit markers use move-based recharge, not time-based cooldown
+            // Unit markers use move-based recharge, non-Unit use inventory grants only
             unitMarkerRechargeProgress = 0f;
-            recursionMarkerCooldownTime = playerActionManager.recursionMarkerCooldown;
-            matrixMarkerCooldownTime = playerActionManager.matrixMarkerCooldown;
-            infinityMarkerCooldownTime = playerActionManager.infinityMarkerCooldown;
         }
 
         UpdateDisplay();
@@ -215,7 +213,7 @@ public class PlayerActionUI : MonoBehaviour
             infinityMarkerCooldownTime
         );
 
-        // Update Unit Marker UI - Unit markers are ALWAYS available (infinite with cooldown)
+        // Update Unit Marker UI - Unit markers are ALWAYS available (infinite with move-based regeneration)
         // unitMaxCharges represents the regenerating charge pool, not total available
         if (UnitMarkerUI != null)
         {
@@ -454,7 +452,7 @@ public class PlayerActionUI : MonoBehaviour
         bool modeChanged = false;
         
         // Check which markers are available
-        // Unit markers are ALWAYS available (infinite with cooldown)
+        // Unit markers are ALWAYS available (infinite with move-based regeneration)
         bool unitMarkersAvailable = true;
         bool matrixMarkersAvailable = matrixMaxCharges > 0;
         bool recursionMarkersAvailable = recursionMaxCharges > 0;

@@ -223,6 +223,17 @@ public class GameUI : MonoBehaviour
             {
                 GUILayout.Label($"Detonations Ready: {cubeMarkers}", textStyle);
             }
+            
+            // Show Unit marker recharge progress (tutorial-friendly)
+            int currentCharges = playerActionManager.GetCurrentUnitCharges();
+            int maxCharges = playerActionManager.maxUnitMarkerCharges;
+            if (maxCharges > 0)
+            {
+                string rechargeText = currentCharges < maxCharges 
+                    ? $"Unit Markers: {currentCharges}/{maxCharges} (recharging...)" 
+                    : $"Unit Markers: {currentCharges}/{maxCharges}";
+                GUILayout.Label(rechargeText, textStyle);
+            }
         }
 
         GUILayout.EndVertical();

@@ -13,12 +13,19 @@ MonoBehaviour:
   m_Name: Wave_0_01
   m_EditorClassIdentifier: 
   Index: 0
-  waveName: Basic Movement
+  waveName: Basic Movement and Capture
   GridWidth: 5
   GridHeight: 2
   CubesData:
   - type: 0
     position: {x: 0, y: 0}
+    level: 1
+    hasPaintedFaces: 0
+    frontFaceStatus: 0
+    frontFaceCharges: 0
+    spawnDelay: 0
+  - type: 0
+    position: {x: 1, y: 0}
     level: 1
     hasPaintedFaces: 0
     frontFaceStatus: 0
@@ -32,7 +39,21 @@ MonoBehaviour:
     frontFaceCharges: 0
     spawnDelay: 0
   - type: 0
+    position: {x: 3, y: 0}
+    level: 1
+    hasPaintedFaces: 0
+    frontFaceStatus: 0
+    frontFaceCharges: 0
+    spawnDelay: 0
+  - type: 0
     position: {x: 4, y: 0}
+    level: 1
+    hasPaintedFaces: 0
+    frontFaceStatus: 0
+    frontFaceCharges: 0
+    spawnDelay: 0
+  - type: 0
+    position: {x: 0, y: 1}
     level: 1
     hasPaintedFaces: 0
     frontFaceStatus: 0
@@ -45,8 +66,22 @@ MonoBehaviour:
     frontFaceStatus: 0
     frontFaceCharges: 0
     spawnDelay: 0
+  - type: 2
+    position: {x: 2, y: 1}
+    level: 1
+    hasPaintedFaces: 0
+    frontFaceStatus: 0
+    frontFaceCharges: 0
+    spawnDelay: 0
   - type: 0
     position: {x: 3, y: 1}
+    level: 1
+    hasPaintedFaces: 0
+    frontFaceStatus: 0
+    frontFaceCharges: 0
+    spawnDelay: 0
+  - type: 0
+    position: {x: 4, y: 1}
     level: 1
     hasPaintedFaces: 0
     frontFaceStatus: 0
@@ -60,27 +95,54 @@ MonoBehaviour:
   overrideMatrixMaxOnGrid: 0
   overrideRecursionMaxOnGrid: 0
   overrideInfinityMaxOnGrid: 0
+  overrideUnitMarkerRechargeRate: 0
   waveStartDelay: 1.5
-  moveInterval: 2
+  moveInterval: 2.5
   fastMoveInterval: 0.1
   hasOwnSuccessCriteria: 0
   requiredCaptureCount: 0
   maxAllowedEscapes: -1
   messages:
-  - Message: Stage 0 - Playtest Sandbox
+  - Message: Welcome! Use WASD to move, F to place markers.
     DisplayMoveStep: 0
-    RequirePause: 0
-    AutoHideDelay: 3
+    RequirePause: 1
+    AutoHideDelay: 0
     HighlightTile: 0
     highlightTiles: []
     highlightColor: {r: 1, g: 1, b: 0, a: 1}
-  - Message: Wave 1 - Just Unit cubes
-    DisplayMoveStep: 1
-    RequirePause: 0
-    AutoHideDelay: 3
-    HighlightTile: 0
-    highlightTiles: []
-    highlightColor: {r: 1, g: 1, b: 0, a: 1}
+  highlightSequences:
+  - DisplayMoveStep: 0
+    pauseGame: 1
+    messageText: Place your marker here.
+    messageRequirePause: 1
+    messageAutoHideDelay: 0
+    targetType: 1
+    targetPosition: {x: 2, y: 0}
+    targetCubeType: 0
+    highlightColor: {r: 0.3, g: 0.8, b: 0.3, a: 0.4}
+    shouldPulse: 0
+    highlightDuration: 0
+    clearOnCapture: 0
+    resumeGame: 1
+    triggerOnMarkerAtPosition: {x: 0, y: 0}
+    triggerOnCaptureAtPosition: {x: 0, y: 0}
+    requireMarkerPlacementValidation: 1
+    validationFailureMessage: Place your marker on the highlighted tile.
+  - DisplayMoveStep: 0
+    pauseGame: 1
+    messageText: Your marker will spawn a cube that will capture this cube
+    messageRequirePause: 1
+    messageAutoHideDelay: 0
+    targetType: 2
+    targetPosition: {x: 2, y: 0}
+    targetCubeType: 0
+    highlightColor: {r: 0.3, g: 0.8, b: 0.3, a: 0.4}
+    shouldPulse: 0
+    highlightDuration: 0
+    clearOnCapture: 1
+    resumeGame: 1
+    triggerOnMarkerAtPosition: {x: 2, y: 0}
+    triggerOnCaptureAtPosition: {x: 0, y: 0}
   _runtimeStats:
     unitCubesCaptured: 0
     matrixCubesCaptured: 0
@@ -90,12 +152,3 @@ MonoBehaviour:
     markersPlaced: 0
     markersTriggererd: 0
     completionTime: 0
-  grantUnitCharges: 15
-  maxLightMarkerCharge: 0
-  maxLightMarkerCount: 0
-  unitCubesCaptured: 0
-  MatrixCubesCaptured: 0
-  infinityCubesEscaped: 0
-  recursionCubesCaptured: 0
-  markersPlaced: 0
-  detonationsUsed: 0

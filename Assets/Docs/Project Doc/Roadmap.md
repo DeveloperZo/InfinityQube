@@ -12,7 +12,7 @@ This roadmap outlines the development path from current production-ready state t
 ## Current Status
 
 ### 📍 **Current Phase**: Phase 1 - Core Innovation & Content
-### 📍 **Current Milestone**: 1.4 - Stage Content Creation
+### 📍 **Current Milestone**: 1.4 - Stage Content Creation 🔄 IN PROGRESS
 
 ### 🔴 **TOP PRIORITIES**
 | Priority | Item | Status | Points |
@@ -43,7 +43,7 @@ Points reflect actual development time, not complexity. A "week gap" between com
 | | 1.1 Refine Markers | ✅ Complete | 14 pts |
 | | 1.2 RPG/Progression | ✅ Complete | 12 pts |
 | | 1.3 Database Enhancement | ✅ Complete | 6 pts |
-| | **1.4 Stage Content Creation** | 🔄 **In Progress** | 20 pts |
+| | **1.4 Stage Content Creation** | 🔄 **In Progress** | 20 pts (4/13 stages, ~6 pts completed) |
 | | 1.5 Demo Stage Content | ⬜ Pending | 5 pts |
 | | 1.6 Visual Polish Pass | ⬜ Pending | 5 pts |
 | **Phase 2** | 2.1-2.10 Content & Polish | ⬜ Pending | 68 pts |
@@ -210,10 +210,10 @@ One attunement per marker type. Modifies cube properties, not collision matrix.
 
 ### Tasks
 
-- [ ] Hub architecture design (3 areas, functions, unlock flow)
-- [ ] Attunement system design (9 attunements with exact values)
-- [ ] Economy design (earn rates, costs, pacing)
-- [ ] Technical prep (data structures, integration points)
+- [x] Hub architecture design (3 areas, functions, unlock flow)
+- [x] Attunement system design (9 attunements with exact values)
+- [x] Economy design (earn rates, costs, pacing)
+- [x] Technical prep (data structures, integration points)
 
 ---
 
@@ -243,19 +243,22 @@ One attunement per marker type. Modifies cube properties, not collision matrix.
 
 ---
 
-### Milestone 1.4: Stage Content Creation
+### Milestone 1.4: Stage Content Creation 🔄 IN PROGRESS
 - **Target**: 12-13 stages defined with waves, 4-5 complete stages with progression
 - **Points**: 20 (~4 weeks active development)
-- **Status**: ⬜ Pending
-- **Dependencies**: Milestone 1.3
+- **Status**: 🔄 **IN PROGRESS** (December 11, 2025)
+- **Dependencies**: Milestone 1.3 ✅
+- **Progress**: 4/13 stages exist (0-3), design doc complete for all 13 stages
 - **Tasks**:
-  - [ ] Design remaining 9-10 stages
-  - [ ] Create wave configurations for each stage
-  - [ ] Implement proper difficulty curve across all stages
-  - [ ] Create tutorial stages teaching core mechanics
-  - [ ] Ensure debuggers allow easy tuning of stages/waves
-  - [ ] Create stage progression flow (tutorial → standard → challenge → bonus)
-  - [ ] Validate all stages with StageDB validation tools
+  - [x] Design 13 stages (1 tutorial/demo stage and 12 game stages) - **COMPLETE** (Level Design doc updated)
+  - [x] Establish stage numbering convention (Stage 0 = Tutorial, Stages 1-12 = Core game) - **COMPLETE**
+  - [x] Update StageManager with IsTutorialStage property - **COMPLETE**
+  - [ ] Design wave configurations for each stage - **IN PROGRESS** (Stages 0-3 have waves, need refinement)
+  - [ ] Implement proper difficulty curve across all stages - **PENDING**
+  - [ ] Create tutorial/demo stage teaching core mechanics - **IN PROGRESS** (Stage 0 exists, needs refinement)
+  - [x] Ensure debuggers allow easy tuning of stages/waves - **COMPLETE** (Prototyping panel exists)
+  - [ ] Implement stages 4-12 (rough first pass) - **PENDING**
+  - [ ] Validate and playtest implemented stages - **PENDING** 
 
 ---
 
@@ -264,11 +267,12 @@ One attunement per marker type. Modifies cube properties, not collision matrix.
 - **Points**: 5 (measured: ~1 week work)
 - **Status**: ✅ **Partially started** (July 8, 2025)
 - **Tasks**:
-  - [ ] Foundational Message System
-  - [ ] Modal Control Scheme Implementation
+  - [ ] Further refine tutorial/demo stage and waves
+  - [ ] Ensure proper messaging is implemented to convery game mechanics
   - [ ] Wave Completion Messages
-  - [ ] Stage Success Transitions
+  - [ ] Stage Success Transition
   - [ ] Stage/Wave Sequence Framework
+  - [ ] Data collection on play session
   - [ ] Complete Splash to Stage loop
 
 ---
@@ -636,7 +640,7 @@ Milestone 1.0 ✅ → 1.1 ✅ → 1.2 🔄 → 1.3 → 1.4 → 2.x → 3.x → 4
 
 ---
 
-*Last Updated: December 9, 2025*  
+*Last Updated: December 11, 2025*  
 *Current Phase: Phase 1 - Core Innovation & Content*  
-*Current Milestone: 1.2 - RPG/Progression Ideation*  
-*Total Points: 297 | Completed: 89 | Remaining: 208*
+*Current Milestone: 1.4 - Stage Content Creation*  
+*Total Points: 297 | Completed: 95 | Remaining: 202*

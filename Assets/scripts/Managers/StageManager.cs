@@ -38,6 +38,12 @@ public class StageManager : MonoBehaviour, IManagerDebugInterface
     public int CurrentStageIndex { get; private set; }
     public StageData CurrentStage { get; private set; }
     public bool IsStageInProgress { get; private set; }
+    
+    /// <summary>
+    /// Returns true if the current stage is a tutorial stage (Stage 0 or StageType.Tutorial).
+    /// Use this instead of checking CurrentStageIndex == 0 directly.
+    /// </summary>
+    public bool IsTutorialStage => CurrentStageIndex == 0 || CurrentStage?.stageType == StageType.Tutorial;
 
     // Stage Statistics
     private int capturedCubeCount = 0;
@@ -386,6 +392,14 @@ public class StageManager : MonoBehaviour, IManagerDebugInterface
             }
         }
         
+        // Destroy scene root objects (GameWorld and its children)
+        GameObject gameWorld = GameObject.Find("GameWorld");
+        if (gameWorld != null)
+        {
+            DebugLog("CleanupBeforeSceneChange: Destroying GameWorld and children");
+            Destroy(gameWorld);
+        }
+        
         // Also find and destroy the game grid and other core game objects
         GameObject grid = GameObject.Find("Grid");
         if (grid != null) 
@@ -428,12 +442,12 @@ public class StageManager : MonoBehaviour, IManagerDebugInterface
         bool success = false;
         bool failure = false;
 
-        // For Stage 1 demo, DON'T check completion here - it's handled by OnAllWavesCompleted
-        if (CurrentStageIndex == 0)
+        // For Tutorial stage (Stage 0), DON'T check completion here - it's handled by OnAllWavesCompleted
+        if (IsTutorialStage)
         {
-            // Stage 1 demo should ONLY complete when OnAllWavesCompleted is called
+            // Tutorial stage should ONLY complete when OnAllWavesCompleted is called
             // This method is called after individual cube captures, so we should NOT complete here
-            DebugLog("CheckStageCompletion: Stage 1 demo - skipping check (will complete via OnAllWavesCompleted)");
+            DebugLog("CheckStageCompletion: Tutorial stage - skipping check (will complete via OnAllWavesCompleted)");
             return;
         }
         else if (CurrentStage.requiredCaptureCount > 0)
@@ -495,10 +509,10 @@ public class StageManager : MonoBehaviour, IManagerDebugInterface
         // Brief pause before showing completion message
         yield return new WaitForSeconds(stageTransitionDelay);
 
-        // Check if this is Stage 1 (CurrentStageIndex == 0) - Demo completion
-        if (CurrentStageIndex == 0)
+        // Check if this is the Tutorial stage (Stage 0) - special completion sequence
+        if (IsTutorialStage)
         {
-            DebugLog("HandleStageSuccess: Demo stage detected, preparing completion sequence");
+            DebugLog("HandleStageSuccess: Tutorial stage detected, preparing completion sequence");
             
             // Show demo completion message
             if (waveManager != null && waveManager.showMessages)
@@ -509,7 +523,7 @@ public class StageManager : MonoBehaviour, IManagerDebugInterface
                 
                 var completionMessage = new WaveMessage
                 {
-                    Message = "Demo Complete\n\n" +
+                    Message = "Tutorial Complete\n\n" +
                              $"Time: {timeStr}\n" +
                              $"Cubes Captured: {capturedCubeCount}\n\n" +
                              "Press K to return to menu",
@@ -729,10 +743,10 @@ public class StageManager : MonoBehaviour, IManagerDebugInterface
             return;
         }
 
-        // For Stage 1 demo, this is when we complete the stage
-        if (CurrentStageIndex == 0)
+        // For Tutorial stage (Stage 0), this is when we complete the stage
+        if (IsTutorialStage)
         {
-            DebugLog("OnAllWavesCompleted: Stage 1 demo - all waves complete, marking stage as success");
+            DebugLog("OnAllWavesCompleted: Tutorial stage - all waves complete, marking stage as success");
             CompleteStage(true);
         }
         else
@@ -748,7 +762,7 @@ public class StageManager : MonoBehaviour, IManagerDebugInterface
         
         // POC: Ensure minimum transition time for tutorial readability
         float adjustedDelay = stageTransitionDelay;
-        if (CurrentStageIndex == 0) // Tutorial stage
+        if (IsTutorialStage)
         {
             adjustedDelay = Mathf.Max(stageTransitionDelay, 3f); // At least 3 seconds for tutorial
             if (adjustedDelay != stageTransitionDelay)
