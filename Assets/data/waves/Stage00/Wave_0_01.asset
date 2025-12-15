@@ -102,14 +102,6 @@ MonoBehaviour:
   hasOwnSuccessCriteria: 0
   requiredCaptureCount: 0
   maxAllowedEscapes: -1
-  messages:
-  - Message: Welcome! Use WASD to move, F to place markers.
-    DisplayMoveStep: 0
-    RequirePause: 1
-    AutoHideDelay: 0
-    HighlightTile: 0
-    highlightTiles: []
-    highlightColor: {r: 1, g: 1, b: 0, a: 1}
   highlightSequences:
   - DisplayMoveStep: 0
     pauseGame: 1
@@ -143,6 +135,23 @@ MonoBehaviour:
     resumeGame: 1
     triggerOnMarkerAtPosition: {x: 2, y: 0}
     triggerOnCaptureAtPosition: {x: 0, y: 0}
+  - DisplayMoveStep: 0
+    pauseGame: 1
+    messageText: Try capturing the other cubes! You can place markers on multiple tiles.
+    messageRequirePause: 1
+    messageAutoHideDelay: 0
+    targetType: 0
+    targetPosition: {x: 0, y: 0}
+    targetCubeType: 0
+    highlightColor: {r: 0.3, g: 0.8, b: 0.3, a: 0.4}
+    shouldPulse: 0
+    highlightDuration: 0
+    clearOnCapture: 0
+    resumeGame: 1
+    triggerOnMarkerAtPosition: {x: 0, y: 0}
+    triggerOnCaptureAtPosition: {x: 2, y: 0}
+    requireMarkerPlacementValidation: 0
+    validationFailureMessage: 
   _runtimeStats:
     unitCubesCaptured: 0
     matrixCubesCaptured: 0

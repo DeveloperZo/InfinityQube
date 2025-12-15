@@ -19,7 +19,7 @@ public class TileFacePainting
     #region Runtime State
     private Transform parentTransform;
     private Tile parentTile;
-    private bool enableDebugLogs = false;
+    private bool enableDebugLogs;
     #endregion
 
     #region Properties

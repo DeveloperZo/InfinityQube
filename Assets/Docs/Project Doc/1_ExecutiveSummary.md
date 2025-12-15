@@ -102,5 +102,6 @@ Infinity Cube transforms the classic Intelligence Qube formula through its Symme
 The game combines this core innovation with face painting mechanics, resonance systems, and a four-tier marker system, creating layers of strategic depth. The dynamic line divider system creates tension as threats approach, while the cosmic lo-fi aesthetic provides atmospheric context without overwhelming the precise, mathematical nature of the gameplay.
 
 ---
-**Last Updated:** 11/17/2025  
-**Core Innovation:** Symmetrical Wave System - markers that move backward to intercept threats
+**Last Updated:** December 14, 2025  
+**Core Innovation:** Symmetrical Wave System - markers that move backward to intercept threats  
+**Tutorial System:** Highlight sequences provide guided instruction with messages, visual highlights, and interactive validation

@@ -36,7 +36,11 @@ public class CubeCollisionManager : MonoBehaviour, IManagerDebugInterface
 
     #region Properties
 
-    public bool EnableDebugLogs { get; set; } = true;
+    public bool EnableDebugLogs 
+    { 
+        get => enableDebugLogs; 
+        set => enableDebugLogs = value; 
+    }
 
     #endregion
 

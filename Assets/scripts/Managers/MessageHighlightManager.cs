@@ -34,7 +34,7 @@ public class MessageHighlightManager : MonoBehaviour, IManagerDebugInterface
     [SerializeField] private float highlightEmissionIntensity = 0.3f; // Much more subtle emission
     
     [Header("Auto-Highlight Settings")]
-    [SerializeField] private bool enableAutoHighlighting = true;
+    [SerializeField] private bool enableAutoHighlighting = false; // Disabled by default - use highlight sequences instead
     [SerializeField] private bool autoHighlightFirstCapturable = true;
     [SerializeField] private bool autoHighlightInfinityCubes = true;
     [SerializeField] private float autoHighlightDuration = 3f;
@@ -43,6 +43,7 @@ public class MessageHighlightManager : MonoBehaviour, IManagerDebugInterface
     [SerializeField] private float highlightSequenceDelay = 2f; // Delay between sequenced highlights
     
     [Header("Debug")]
+    [Tooltip("Enable debug logging for this manager")]
     [SerializeField] private bool enableDebugLogs = true;
     
     #endregion
@@ -99,7 +100,11 @@ public class MessageHighlightManager : MonoBehaviour, IManagerDebugInterface
     
     #region Properties
     
-    public bool EnableDebugLogs { get; set; } = true;
+    public bool EnableDebugLogs 
+    { 
+        get => enableDebugLogs; 
+        set => enableDebugLogs = value; 
+    }
     
     #endregion
     
@@ -183,78 +188,18 @@ public class MessageHighlightManager : MonoBehaviour, IManagerDebugInterface
     
     private void HandleWaveStart(int waveIndex, WaveData waveData)
     {
-        // Clear previous highlights
+        // Clear previous highlights from previous wave
         ClearAllHighlights();
         
-        // If wave has sequences, they'll be handled by WaveManager - don't run old auto-highlighting
+        // All highlighting is now driven by highlight sequences
+        // Sequences are handled by WaveManager at the appropriate move steps
         if (waveData.highlightSequences != null && waveData.highlightSequences.Count > 0)
         {
-            DebugLog("HandleWaveStart", $"Wave {waveIndex} has {waveData.highlightSequences.Count} sequences - skipping old auto-highlighting");
-            return;
-        }
-        
-        // Only run old auto-highlighting if enabled and no sequences exist
-        if (!enableAutoHighlighting) return;
-        
-        DebugLog("HandleWaveStart", $"Wave {waveIndex} started - setting up old auto-highlighting");
-        
-        // Wait a frame for cubes to spawn
-        StartCoroutine(SetupWaveHighlightsDelayed(waveIndex, waveData));
-    }
-    
-    private IEnumerator SetupWaveHighlightsDelayed(int waveIndex, WaveData waveData)
-    {
-        yield return null; // Wait for cubes to spawn
-        
-        if (waveManager == null || gridManager == null) yield break;
-        
-        // If wave has highlight sequences, disable old auto-highlighting completely
-        if (waveData.highlightSequences != null && waveData.highlightSequences.Count > 0)
-        {
-            DebugLog("SetupWaveHighlightsDelayed", $"Wave has {waveData.highlightSequences.Count} sequences - disabling old auto-highlighting");
-            // Sequences will be handled by WaveManager at the appropriate move steps
-            yield break;
-        }
-        
-        // Old auto-highlighting behavior (only if no sequences defined)
-        // Wait for initial message to be shown and dismissed
-        yield return new WaitForSeconds(messageToHighlightDelay);
-        
-        // Check if there's a message panel - wait for it to be dismissed
-        if (waveManager.messagePanel != null)
-        {
-            // Wait for message panel to be hidden (message dismissed)
-            yield return new WaitUntil(() => !waveManager.messagePanel.activeInHierarchy || Time.time > Time.time + 5f);
-        }
-        
-        // Sequence highlights: show one at a time
-        if (sequenceHighlights)
-        {
-            // First highlight capturable cube
-            if (autoHighlightFirstCapturable)
-            {
-                HighlightFirstCapturableCube();
-                yield return new WaitForSeconds(highlightSequenceDelay);
-            }
-            
-            // Then highlight Infinity cubes
-            if (autoHighlightInfinityCubes)
-            {
-                HighlightInfinityCubes();
-            }
+            DebugLog("HandleWaveStart", $"Wave {waveIndex} has {waveData.highlightSequences.Count} sequences - they will be executed by WaveManager");
         }
         else
         {
-            // Show all highlights at once (old behavior)
-            if (autoHighlightFirstCapturable)
-            {
-                HighlightFirstCapturableCube();
-            }
-            
-            if (autoHighlightInfinityCubes)
-            {
-                HighlightInfinityCubes();
-            }
+            DebugLog("HandleWaveStart", $"Wave {waveIndex} has no highlight sequences - no highlights will be shown");
         }
     }
     
@@ -316,16 +261,7 @@ public class MessageHighlightManager : MonoBehaviour, IManagerDebugInterface
             DebugLog("HandleMarkerPlaced", $"Validation passed - marker placed correctly at ({position.x}, {position.y})");
             
             // Check if any sequences should trigger on marker placement
-            if (waveManager != null && waveManager.CurrentWave != null && waveManager.CurrentWave.highlightSequences != null)
-            {
-                foreach (var seq in waveManager.CurrentWave.highlightSequences)
-                {
-                    if (seq != null && seq.triggerOnMarkerAtPosition == position)
-                    {
-                        ExecuteSequence(seq);
-                    }
-                }
-            }
+            CheckAndTriggerMarkerSequences(position);
         }
         else
         {
@@ -363,16 +299,48 @@ public class MessageHighlightManager : MonoBehaviour, IManagerDebugInterface
             }
             
             // Check if any sequences should trigger on marker placement
-            if (waveManager != null && waveManager.CurrentWave != null && waveManager.CurrentWave.highlightSequences != null)
+            CheckAndTriggerMarkerSequences(position);
+        }
+    }
+    
+    /// <summary>
+    /// Checks all sequences in the current wave and triggers any that match the marker placement position
+    /// </summary>
+    private void CheckAndTriggerMarkerSequences(Vector2Int position)
+    {
+        if (waveManager == null || waveManager.CurrentWave == null || waveManager.CurrentWave.highlightSequences == null)
+        {
+            DebugLog("CheckAndTriggerMarkerSequences", "No wave or sequences available");
+            return;
+        }
+        
+        DebugLog("CheckAndTriggerMarkerSequences", $"Checking {waveManager.CurrentWave.highlightSequences.Count} sequences for trigger at ({position.x}, {position.y})");
+        
+        int sequenceIndex = 0;
+        foreach (var sequence in waveManager.CurrentWave.highlightSequences)
+        {
+            if (sequence == null)
             {
-                foreach (var sequence in waveManager.CurrentWave.highlightSequences)
-                {
-                    if (sequence != null && sequence.triggerOnMarkerAtPosition == position)
-                    {
-                        ExecuteSequence(sequence);
-                    }
-                }
+                DebugLog("CheckAndTriggerMarkerSequences", $"Sequence {sequenceIndex} is null, skipping");
+                sequenceIndex++;
+                continue;
             }
+            
+            DebugLog("CheckAndTriggerMarkerSequences", $"Sequence {sequenceIndex}: triggerOnMarkerAtPosition=({sequence.triggerOnMarkerAtPosition.x}, {sequence.triggerOnMarkerAtPosition.y}), targetType={sequence.targetType}, targetPosition=({sequence.targetPosition.x}, {sequence.targetPosition.y})");
+            
+            // Check if this sequence should trigger on marker placement
+            if (sequence.triggerOnMarkerAtPosition != Vector2Int.zero && 
+                sequence.triggerOnMarkerAtPosition == position)
+            {
+                DebugLog("CheckAndTriggerMarkerSequences", $"✅ MATCH! Triggering sequence {sequenceIndex} with trigger position ({sequence.triggerOnMarkerAtPosition.x}, {sequence.triggerOnMarkerAtPosition.y})");
+                ExecuteSequence(sequence);
+            }
+            else
+            {
+                DebugLog("CheckAndTriggerMarkerSequences", $"Sequence {sequenceIndex} skipped - trigger: ({sequence.triggerOnMarkerAtPosition.x}, {sequence.triggerOnMarkerAtPosition.y}), placed: ({position.x}, {position.y})");
+            }
+            
+            sequenceIndex++;
         }
     }
     
@@ -440,11 +408,19 @@ public class MessageHighlightManager : MonoBehaviour, IManagerDebugInterface
             // Check if any sequences should trigger on cube capture
             if (waveManager.CurrentWave != null && waveManager.CurrentWave.highlightSequences != null)
             {
+                DebugLog("HandleCubeCaptured", $"Cube captured at ({position.x}, {position.y}), checking {waveManager.CurrentWave.highlightSequences.Count} sequences");
+                
                 foreach (var sequence in waveManager.CurrentWave.highlightSequences)
                 {
-                    if (sequence != null && sequence.triggerOnCaptureAtPosition == position)
+                    if (sequence != null)
                     {
-                        ExecuteSequence(sequence);
+                        DebugLog("HandleCubeCaptured", $"Sequence triggerOnCaptureAtPosition=({sequence.triggerOnCaptureAtPosition.x}, {sequence.triggerOnCaptureAtPosition.y}), captured at=({position.x}, {position.y})");
+                        
+                        if (sequence.triggerOnCaptureAtPosition == position)
+                        {
+                            DebugLog("HandleCubeCaptured", $"✅ Triggering sequence with message: '{sequence.messageText}'");
+                            ExecuteSequence(sequence);
+                        }
                     }
                 }
             }
@@ -688,6 +664,8 @@ public class MessageHighlightManager : MonoBehaviour, IManagerDebugInterface
     
     private IEnumerator ExecuteSequenceCoroutine(HighlightSequence sequence)
     {
+        DebugLog("ExecuteSequenceCoroutine", $"Starting sequence: targetType={sequence.targetType}, targetPosition=({sequence.targetPosition.x}, {sequence.targetPosition.y}), pauseGame={sequence.pauseGame}, messageText='{sequence.messageText}'");
+        
         // Step 1: Pause game (optional) - only for message display
         if (sequence.pauseGame)
         {
@@ -699,6 +677,7 @@ public class MessageHighlightManager : MonoBehaviour, IManagerDebugInterface
         // Step 2: Show message (optional)
         if (!string.IsNullOrEmpty(sequence.messageText))
         {
+            DebugLog("ExecuteSequenceCoroutine", $"Showing message: '{sequence.messageText}'");
             yield return ShowMessageSequence(sequence.messageText, sequence.messageRequirePause, sequence.messageAutoHideDelay, 0);
         }
         
@@ -861,13 +840,18 @@ public class MessageHighlightManager : MonoBehaviour, IManagerDebugInterface
     
     private IEnumerator HighlightTargetSequence(HighlightSequence sequence)
     {
+        DebugLog("HighlightTargetSequence", $"Starting highlight sequence: targetType={sequence.targetType}, targetPosition=({sequence.targetPosition.x}, {sequence.targetPosition.y})");
+        
         if (sequence.targetType == HighlightTargetType.Tile)
         {
+            DebugLog("HighlightTargetSequence", $"Highlighting TILE at ({sequence.targetPosition.x}, {sequence.targetPosition.y})");
             HighlightTile(sequence.targetPosition, sequence.highlightColor);
             
             // Store sequence for cleanup
             int tileKey = GetPositionHash(sequence.targetPosition);
             activeSequences[tileKey] = sequence;
+            
+            DebugLog("HighlightTargetSequence", $"Tile highlighted, requireMarkerPlacementValidation={sequence.requireMarkerPlacementValidation}, waveActive={waveManager?.waveActive}");
             
             // If validation is required, pause wave and wait for marker placement
             if (sequence.requireMarkerPlacementValidation)
@@ -883,10 +867,16 @@ public class MessageHighlightManager : MonoBehaviour, IManagerDebugInterface
                     
                     DebugLog("HighlightTargetSequence", $"Wave paused for validation at ({sequence.targetPosition.x}, {sequence.targetPosition.y})");
                 }
+                else
+                {
+                    DebugLog("HighlightTargetSequence", $"⚠️ Cannot pause wave - waveManager={waveManager != null}, waveActive={waveManager?.waveActive}");
+                }
                 
                 // Wait for validation to complete (handled in HandleMarkerPlaced)
                 // The sequence will continue when marker is placed correctly
                 yield return new WaitUntil(() => !pendingValidations.ContainsKey(sequence.targetPosition));
+                
+                DebugLog("HighlightTargetSequence", $"Validation completed for tile at ({sequence.targetPosition.x}, {sequence.targetPosition.y})");
                 
                 // Wave will be resumed in HandleMarkerPlaced when validation passes
             }
@@ -903,18 +893,24 @@ public class MessageHighlightManager : MonoBehaviour, IManagerDebugInterface
         }
         else if (sequence.targetType == HighlightTargetType.Cube)
         {
+            // targetPosition is already in grid coordinates
+            DebugLog("HighlightTargetSequence", $"Looking for cube at grid position ({sequence.targetPosition.x}, {sequence.targetPosition.y}), type={sequence.targetCubeType}");
+            
             // Find cube at initial position (position is only used to locate the cube initially)
             // Once highlighted, the cube is tracked by instance ID, so highlight persists even when cube moves
             CubeManager cube = FindCubeAtPosition(sequence.targetPosition, sequence.targetCubeType);
             
             if (cube != null)
             {
+                DebugLog("HighlightTargetSequence", $"✅ Cube found! ID={cube.GetInstanceID()}, type={cube.type}, position=({cube.position.x}, {cube.position.y})");
                 int cubeId = cube.GetInstanceID();
-                // Highlight the cube (uses position to find it, but tracks by instance ID)
+                // Highlight the cube (uses grid position to find it, but tracks by instance ID)
                 HighlightCube(sequence.targetPosition, sequence.highlightColor, sequence.shouldPulse);
                 
                 // Store sequence for cleanup (tracked by instance ID, not position)
                 activeSequences[cubeId] = sequence;
+                
+                DebugLog("HighlightTargetSequence", $"Cube highlighted, clearOnCapture={sequence.clearOnCapture}, highlightDuration={sequence.highlightDuration}");
                 
                 // Auto-clear after duration if specified (and not waiting for capture)
                 if (sequence.highlightDuration > 0 && !sequence.clearOnCapture)
@@ -928,7 +924,20 @@ public class MessageHighlightManager : MonoBehaviour, IManagerDebugInterface
             }
             else
             {
-                DebugLog("HighlightTargetSequence", $"Cube not found at ({sequence.targetPosition.x}, {sequence.targetPosition.y})");
+                DebugLog("HighlightTargetSequence", $"❌ Cube not found at grid position ({sequence.targetPosition.x}, {sequence.targetPosition.y})");
+                
+                // Additional debugging: list all active cubes
+                if (waveManager != null && waveManager.activeCubes != null)
+                {
+                    DebugLog("HighlightTargetSequence", $"Active cubes count: {waveManager.activeCubes.Count}");
+                    foreach (var activeCube in waveManager.activeCubes)
+                    {
+                        if (activeCube != null && !activeCube.isDestroyed)
+                        {
+                            DebugLog("HighlightTargetSequence", $"  - Cube at ({activeCube.position.x}, {activeCube.position.y}), type={activeCube.type}");
+                        }
+                    }
+                }
             }
         }
     }
@@ -938,7 +947,13 @@ public class MessageHighlightManager : MonoBehaviour, IManagerDebugInterface
     /// </summary>
     public void HighlightTile(Vector2Int position, Color color)
     {
-        if (gridManager == null) return;
+        DebugLog("HighlightTile", $"Called for position ({position.x}, {position.y}), color={color}");
+        
+        if (gridManager == null)
+        {
+            DebugLog("HighlightTile", "❌ GridManager is null!");
+            return;
+        }
         
         // Clear existing tile highlight
         ClearTileHighlight(position);
@@ -946,9 +961,11 @@ public class MessageHighlightManager : MonoBehaviour, IManagerDebugInterface
         Tile tile = gridManager.GetTileAt(position.x, position.y);
         if (tile == null)
         {
-            DebugLog("HighlightTile", $"No tile found at ({position.x}, {position.y})");
+            DebugLog("HighlightTile", $"❌ No tile found at ({position.x}, {position.y})");
             return;
         }
+        
+        DebugLog("HighlightTile", $"✅ Tile found, creating highlight overlay");
         
         // Create highlight overlay
         GameObject highlight = GameObject.CreatePrimitive(PrimitiveType.Cube);
@@ -974,10 +991,15 @@ public class MessageHighlightManager : MonoBehaviour, IManagerDebugInterface
             mat.SetColor("_EmissionColor", color * highlightEmissionIntensity);
             
             renderer.material = mat;
+            DebugLog("HighlightTile", $"✅ Highlight material created and applied");
+        }
+        else
+        {
+            DebugLog("HighlightTile", "❌ Renderer component not found on highlight object");
         }
         
         highlightedTiles[position] = highlight;
-        DebugLog("HighlightTile", $"Highlighted tile at ({position.x}, {position.y})");
+        DebugLog("HighlightTile", $"✅ Tile highlighted at ({position.x}, {position.y}), stored in highlightedTiles dictionary");
     }
     
     /// <summary>

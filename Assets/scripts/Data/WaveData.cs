@@ -111,13 +111,7 @@ public class WaveData : ScriptableObject
     
     #endregion
 
-    #region Messages
-    
-    [Header("Wave Messages")]
-    [Tooltip("Tutorial/guidance messages shown during this wave")]
-    public List<WaveMessage> messages = new List<WaveMessage>();
-    
-    #endregion
+    // Messages removed - use highlightSequences instead (sequences contain messageText field)
     
     #region Highlight Sequences
     

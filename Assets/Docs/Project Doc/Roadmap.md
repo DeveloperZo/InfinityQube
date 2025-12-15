@@ -246,7 +246,7 @@ One attunement per marker type. Modifies cube properties, not collision matrix.
 ### Milestone 1.4: Stage Content Creation 🔄 IN PROGRESS
 - **Target**: 12-13 stages defined with waves, 4-5 complete stages with progression
 - **Points**: 20 (~4 weeks active development)
-- **Status**: 🔄 **IN PROGRESS** (December 11, 2025)
+- **Status**: 🔄 **IN PROGRESS** (December 14, 2025)
 - **Dependencies**: Milestone 1.3 ✅
 - **Progress**: 4/13 stages exist (0-3), design doc complete for all 13 stages
 - **Tasks**:
@@ -255,7 +255,7 @@ One attunement per marker type. Modifies cube properties, not collision matrix.
   - [x] Update StageManager with IsTutorialStage property - **COMPLETE**
   - [ ] Design wave configurations for each stage - **IN PROGRESS** (Stages 0-3 have waves, need refinement)
   - [ ] Implement proper difficulty curve across all stages - **PENDING**
-  - [ ] Create tutorial/demo stage teaching core mechanics - **IN PROGRESS** (Stage 0 exists, needs refinement)
+  - [x] Create tutorial/demo stage teaching core mechanics - **COMPLETE** (Stage 0 with highlight sequence system)
   - [x] Ensure debuggers allow easy tuning of stages/waves - **COMPLETE** (Prototyping panel exists)
   - [ ] Implement stages 4-12 (rough first pass) - **PENDING**
   - [ ] Validate and playtest implemented stages - **PENDING** 
@@ -265,15 +265,15 @@ One attunement per marker type. Modifies cube properties, not collision matrix.
 ### Milestone 1.5: Demo Stage Content
 - **Target**: Foundational Systems + One Complete Demo Stage
 - **Points**: 5 (measured: ~1 week work)
-- **Status**: ✅ **Partially started** (July 8, 2025)
+- **Status**: 🔄 **IN PROGRESS** (December 14, 2025)
 - **Tasks**:
-  - [ ] Further refine tutorial/demo stage and waves
-  - [ ] Ensure proper messaging is implemented to convery game mechanics
-  - [ ] Wave Completion Messages
-  - [ ] Stage Success Transition
-  - [ ] Stage/Wave Sequence Framework
-  - [ ] Data collection on play session
-  - [ ] Complete Splash to Stage loop
+  - [x] Further refine tutorial/demo stage and waves - **COMPLETE** (Stage 0 with highlight sequences)
+  - [x] Ensure proper messaging is implemented to convey game mechanics - **COMPLETE** (Highlight sequence system)
+  - [x] Wave Completion Messages - **COMPLETE** (Integrated into sequence system)
+  - [ ] Stage Success Transition - **PENDING**
+  - [x] Stage/Wave Sequence Framework - **COMPLETE** (Highlight sequences with timing, triggers, validation)
+  - [ ] Data collection on play session - **PENDING**
+  - [ ] Complete Splash to Stage loop - **PENDING**
 
 ---
 
@@ -314,7 +314,17 @@ One attunement per marker type. Modifies cube properties, not collision matrix.
 
 ### Milestone 2.4: Interactive Tutorial System
 - **Points**: 10 (~2 weeks)
-- Comprehensive tutorial teaching all mechanics
+- **Status**: 🔄 **IN PROGRESS** (December 14, 2025)
+- **Progress**: Framework complete, tutorial content in progress
+- **Completed**:
+  - [x] Highlight sequence system with messages, visual highlights, and interactive validation
+  - [x] Sequence timing (wave start, move steps, wave end)
+  - [x] Event triggers (marker placement, cube capture)
+  - [x] Tutorial stage (Stage 0) with guided sequences
+- **Remaining**:
+  - [ ] Complete tutorial sequences for all core mechanics
+  - [ ] Expand tutorial to cover all marker types and cube interactions
+  - [ ] Polish sequence timing and messaging
 
 ### Milestone 2.5: Stage Progression & Unlock System
 - **Points**: 5 (~1 week)
@@ -501,7 +511,7 @@ Milestone 1.0 ✅ → 1.1 ✅ → 1.2 🔄 → 1.3 → 1.4 → 2.x → 3.x → 4
 | **Collision Matrix** | Full 16 combos | Full 16 combos | Core differentiation |
 | **Face Painting** | Full system | Basic (Unit trigger only) | Can simplify |
 | **Line Divider** | Dynamic | Static position | Can simplify |
-| **Tutorial** | Interactive | Message-based | Can simplify |
+| **Tutorial** | Interactive sequences | Highlight sequences | Framework complete |
 | **Achievements** | 20+ | 10 basic | Reduce scope |
 | **Controller** | Full support | Full support | Steam expectation |
 
@@ -537,8 +547,8 @@ Milestone 1.0 ✅ → 1.1 ✅ → 1.2 🔄 → 1.3 → 1.4 → 2.x → 3.x → 4
 | Phase 4 | Steam Integration & Release | 50 pts | ⬜ Pending |
 | **TOTAL** | | **297 pts** | |
 
-**Completed**: 75 pts (Milestone 1.0 + 1.2)  
-**Remaining**: ~222 pts
+**Completed**: ~100 pts (Milestone 1.0 + 1.1 + 1.2 + 1.3 + partial 1.4 + partial 1.5)  
+**Remaining**: ~197 pts
 
 **Note**: Phases can overlap; calendar time will vary based on availability.
 
@@ -549,8 +559,8 @@ Milestone 1.0 ✅ → 1.1 ✅ → 1.2 🔄 → 1.3 → 1.4 → 2.x → 3.x → 4
 | Metric | Value |
 |--------|-------|
 | **Measured Velocity** | **22 points/month** (active periods) |
-| **Completed Points** | 75 pts |
-| **Remaining Points** | ~222 pts |
+| **Completed Points** | ~100 pts |
+| **Remaining Points** | ~197 pts |
 | **Point Definition** | 1 pt ≈ 1 day active work |
 | **Week Definition** | 5 pts ≈ 1 week active work |
 | **Measurement Rule** | Gap < 1 week = same-day continuation |
@@ -640,7 +650,7 @@ Milestone 1.0 ✅ → 1.1 ✅ → 1.2 🔄 → 1.3 → 1.4 → 2.x → 3.x → 4
 
 ---
 
-*Last Updated: December 11, 2025*  
+*Last Updated: December 14, 2025*  
 *Current Phase: Phase 1 - Core Innovation & Content*  
 *Current Milestone: 1.4 - Stage Content Creation*  
-*Total Points: 297 | Completed: 95 | Remaining: 202*
+*Total Points: 297 | Completed: ~100 | Remaining: ~197*

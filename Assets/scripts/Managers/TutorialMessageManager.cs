@@ -34,6 +34,8 @@ public class TutorialMessageManager : MonoBehaviour, IMessageSystem, IManagerDeb
     private GameObject continuePrompt;
     
     [Header("Debug")]
+    [Tooltip("Enable debug logging for this manager")]
+    [SerializeField] private bool enableDebugLogs;
     public bool enableContextualMessages = true;
     public bool showTestMessages = false;
     #endregion
@@ -86,7 +88,7 @@ public class TutorialMessageManager : MonoBehaviour, IMessageSystem, IManagerDeb
 
     private void Start()
     {
-        EnableDebugLogs = true;
+        
         CacheManagerReferences();
         InitializeMessageSystem();
         StartContextMonitoring();
@@ -917,7 +919,11 @@ public class TutorialMessageManager : MonoBehaviour, IMessageSystem, IManagerDeb
     #endregion
 
     #region IManagerDebugInterface Implementation
-    public bool EnableDebugLogs { get; set; } = true;
+    public bool EnableDebugLogs 
+    { 
+        get => enableDebugLogs; 
+        set => enableDebugLogs = value; 
+    }
 
     public string GetDebugStatus()
     {

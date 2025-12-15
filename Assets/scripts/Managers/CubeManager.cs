@@ -44,6 +44,10 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
     [SerializeField] private GameObject[] faceIndicators = new GameObject[4]; // Visual indicators
     [SerializeField] private bool showFaceIndicators = true;
     private CubeFace[] currentFaceMapping = new CubeFace[4];
+    
+    [Header("Debug")]
+    [Tooltip("Enable debug logging for this manager")]
+    [SerializeField] private bool enableDebugLogs ;
 
     private GridManager grid;
     private PlayerActionManager playerActionManager;
@@ -66,7 +70,6 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
 
     public void Init(GridManager gridManager, CubeData cubeData, float spawnHeight = 2f)
     {
-        EnableDebugLogs = true;
         grid = gridManager;
         tileSize = grid.TileSize;
 
@@ -1504,7 +1507,11 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
 
     #region IManagerDebugInterface Implementation
 
-    public bool EnableDebugLogs { get; set; } = true;
+    public bool EnableDebugLogs 
+    { 
+        get => enableDebugLogs; 
+        set => enableDebugLogs = value; 
+    }
 
     /// <summary>
     /// [POC] Spawns a simple visual effect when cube escapes

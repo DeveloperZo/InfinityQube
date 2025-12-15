@@ -30,6 +30,8 @@ public class PlayerManager : MonoBehaviour, IManagerDebugInterface
     public float collisionCheckRadius = 0.5f;
 
     [Header("Debug")]
+    [Tooltip("Enable debug logging for this manager")]
+    [SerializeField] private bool enableDebugLogs;
     public bool showTileInfo = false;
     #endregion
 
@@ -87,7 +89,7 @@ public class PlayerManager : MonoBehaviour, IManagerDebugInterface
     #region Unity Lifecycle
     private void Start()
     {
-        EnableDebugLogs = true;
+        
         InitializePlayer();
     }
 
@@ -671,7 +673,11 @@ public class PlayerManager : MonoBehaviour, IManagerDebugInterface
 
     #region IManagerDebugInterface Implementation
 
-    public bool EnableDebugLogs { get; set; } = true;
+    public bool EnableDebugLogs 
+    { 
+        get => enableDebugLogs; 
+        set => enableDebugLogs = value; 
+    }
 
     public string GetDebugStatus()
     {

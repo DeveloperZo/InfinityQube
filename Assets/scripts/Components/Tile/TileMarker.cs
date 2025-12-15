@@ -17,7 +17,7 @@ public class TileMarker
     private Transform parentTransform;
     private TileVisuals tileVisuals;
     private Tile parentTile;
-    private bool enableDebugLogs = false;
+    private bool enableDebugLogs;
     #endregion
 
     #region Properties

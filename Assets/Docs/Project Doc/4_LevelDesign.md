@@ -158,10 +158,10 @@ Procedural generation can be configured with:
 Each wave within a stage can be individually configured:
 
 - **Cube Placement**: Exact positions where cubes spawn at the start of the wave
-- **Marker Availability**: Each wave can specify how many marker charges and counts are available (Light, Heavy, Matrix markers)
+- **Marker Availability**: Each wave can specify how many marker charges and counts are available (Unit, Matrix, Recursion, Infinity markers)
 - **Timing Settings**: Wave-specific movement speeds and start delays
 - **Success Criteria**: Waves can have their own completion requirements (capture counts, escape limits)
-- **Instructional Messages**: Waves can display messages at specific movement steps to guide players
+- **Highlight Sequences**: Waves can define guided sequences that combine messages, visual highlights, and interactive validation to teach mechanics
 
 ### Grid Configuration Per Stage
 Stages can configure grid dimensions to create different tactical challenges:
@@ -186,15 +186,16 @@ Tutorial stages follow a specific structure to maximize learning effectiveness:
 
 #### Introduction Phase
 - **Single Mechanic Focus**: Each tutorial introduces one new concept
-- **Clear Instructions**: Objectives explicitly state what players should learn
+- **Guided Sequences**: Highlight sequences combine messages, visual highlights, and pauses to clearly communicate objectives
 - **Generous Resources**: Extra charges and forgiving conditions allow experimentation
-- **Immediate Feedback**: Visual and audio cues reinforce correct actions
+- **Immediate Feedback**: Visual highlights, audio cues, and interactive validation reinforce correct actions
 
 #### Practice Phase
 - **Reinforcement**: Same mechanic repeated with slight variations
 - **Gradual Complexity**: Subtle increases in difficulty within the same mechanic
 - **Safe Failure**: Mistakes don't immediately end the stage
 - **Pattern Recognition**: Players begin to see optimal strategies
+- **Sequence Guidance**: Highlight sequences can trigger at specific moments to reinforce learning
 
 #### Mastery Phase
 - **Integration**: New mechanic combined with previously learned concepts
@@ -248,7 +249,7 @@ After basic mechanics are established, the game introduces its core innovation: 
 ### Tutorial Stage (Stage 0)
 **Focus**: Core fundamentals before the real game begins
 
-The tutorial stage teaches basic movement, marker placement, and capture mechanics in a safe environment with no Infinity cubes. This is Stage 0 and is separate from the main campaign progression.
+The tutorial stage teaches basic movement, marker placement, and capture mechanics in a safe environment. Guided highlight sequences provide step-by-step instruction, highlighting specific tiles and cubes to guide player actions. This is Stage 0 and is separate from the main campaign progression.
 
 ### Act 1: Learn the Rules (Stages 1-3)
 **Focus**: Establishing core loop and primary danger
@@ -503,13 +504,15 @@ Waves can have individual success criteria that differ from the stage's overall 
 - **Wave-Specific Capture Requirements**: A wave might require capturing a minimum number of cubes to succeed
 - **Default Behavior**: If a wave doesn't specify its own criteria, it uses the stage's success conditions
 
-### Wave Message System
-Waves can display instructional messages to guide players:
+### Wave Highlight Sequence System
+Waves use guided highlight sequences to teach mechanics and provide context:
 
-- **Initial Messages**: Shown when the wave starts, providing context or instructions
-- **Step Messages**: Displayed at specific movement steps to highlight important moments
-- **Completion Messages**: Shown when the wave completes, providing feedback and statistics
-- **Pause on Messages**: Important messages can pause the wave, requiring player confirmation before continuing
+- **Highlight Sequences**: Each wave can define sequences that combine messages, visual highlights, and game pauses
+- **Sequence Timing**: Sequences can trigger at wave start (move step 0), specific movement steps, or wave end
+- **Event Triggers**: Sequences can trigger when markers are placed at specific positions or when cubes are captured
+- **Visual Guidance**: Sequences can highlight specific tiles or cubes to guide player attention
+- **Interactive Validation**: Sequences can pause the wave and require players to place markers at specific positions before continuing
+- **Completion Feedback**: Wave completion shows progress (e.g., "Wave 2/5") and capture statistics
 
 ### Wave Event System
 Waves trigger events that affect stage progression:
@@ -566,7 +569,7 @@ Waves trigger events that affect stage progression:
 - **Performance Optimization**: Maintain 60 FPS with enhanced audio-visual systems
 
 ---
-**Last Updated**: December 11, 2025  
+**Last Updated**: December 14, 2025  
 **Document Type**: Project Design Document  
 **Related Documents:**
 - [Game Design Document](GameDesignDocument.md)

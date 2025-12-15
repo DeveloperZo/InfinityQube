@@ -381,7 +381,7 @@ Areas requiring player testing and iteration:
 - **Rotation Schedule**: Rotation schedule timing (every N advances)
 
 ---
-**Last Updated:** December 8, 2025  
+**Last Updated:** December 14, 2025  
 **Implementation Status:** Core mechanics production-ready, line divider and resonance systems in design phase  
 **Major Systems:** Collision matrix, face painting with resonance, penalty/reward system, marker economy, line divider
 **Related Documents:**

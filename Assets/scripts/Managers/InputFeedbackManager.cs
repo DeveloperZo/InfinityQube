@@ -14,6 +14,10 @@ public class InputFeedbackManager : MonoBehaviour, IManagerDebugInterface
     [SerializeField] private bool enableFeedbackSystem = true;
     [SerializeField] private float globalIntensityMultiplier = 1.0f;
     [SerializeField] private int maxHooksPerFrame = 10;
+    
+    [Header("Debug")]
+    [Tooltip("Enable debug logging for this manager")]
+    [SerializeField] private bool enableDebugLogs;
 
     // Hook storage - optimized for minimal allocation when empty
     private readonly List<IInputFeedbackHook> feedbackHooks = new List<IInputFeedbackHook>();
@@ -329,7 +333,11 @@ public class InputFeedbackManager : MonoBehaviour, IManagerDebugInterface
 
     #region IManagerDebugInterface Implementation
 
-    public bool EnableDebugLogs { get; set; } = false;
+    public bool EnableDebugLogs 
+    { 
+        get => enableDebugLogs; 
+        set => enableDebugLogs = value; 
+    }
 
     public string GetDebugStatus()
     {

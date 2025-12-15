@@ -28,6 +28,8 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
     public int pooledTileCount = 100;
 
     [Header("Debug")]
+    [Tooltip("Enable debug logging for this manager")]
+    [SerializeField] private bool enableDebugLogs;
     public bool showGridGizmos = false;
     public Color gizmoColor = Color.cyan;
     
@@ -89,7 +91,7 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
 
     private void Start()
     {
-        EnableDebugLogs = true;
+        
         GenerateGrid();
         // NOTE: Do NOT call InitializeLineDivider() here - line divider is configured
         // by stage data via HandleStageStart() → ConfigureLineDivider()
@@ -1448,7 +1450,11 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
 
     #region IManagerDebugInterface Implementation
 
-    public bool EnableDebugLogs { get; set; } = true;
+    public bool EnableDebugLogs 
+    { 
+        get => enableDebugLogs; 
+        set => enableDebugLogs = value; 
+    }
 
     public string GetDebugStatus()
     {

@@ -117,6 +117,10 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
     [Header("Infinity Marker Settings")]
     [SerializeField] public int maxInfinityMarkers = 2;
     [SerializeField] public int infinityMarkersPlaced;
+    
+    [Header("Debug")]
+    [Tooltip("Enable debug logging for this manager")]
+    [SerializeField] private bool enableDebugLogs;
     [SerializeField] public int currentInfinityMarkers;
     [SerializeField] public int maxInfinityMarkerCharges = 1;
     [SerializeField] private int currentInfinityMarkerCharges;
@@ -168,7 +172,7 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
 
     private void Start()
     {
-        EnableDebugLogs = true;
+        
         InitializeReferences();
         InitializeCharges();
         InitializeMarkerMode();
@@ -1929,7 +1933,11 @@ MarkerMode currentMode = GetCurrentMode();
 
     #region IManagerDebugInterface Implementation
 
-    public bool EnableDebugLogs { get; set; } = true;
+    public bool EnableDebugLogs 
+    { 
+        get => enableDebugLogs; 
+        set => enableDebugLogs = value; 
+    }
 
     public string GetDebugStatus()
     {

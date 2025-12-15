@@ -227,31 +227,9 @@ public class IQWaveGenerator : MonoBehaviour, IManagerDebugInterface
             {
                 var analysisResult = waveAnalyzer.AnalyzeWave(waveData);
                 
-                // Store key analysis results in wave data messages for now
-                if (analysisResult != null)
-                {
-                    // Add analysis info as debug messages
-                    if (waveData.messages == null)
-                        waveData.messages = new List<WaveMessage>();
-                    
-                    waveData.messages.Add(new WaveMessage
-                    {
-                        Message = $"Analysis: Solvable={analysisResult.isSolvable}, MinSlack={analysisResult.minimumSlackSpace}, Markers={analysisResult.requiredMarkers}",
-                        AutoHideDelay = 0f,
-                        
-                    });
-                    
-                    // Add warnings
-                    foreach (var warning in analysisResult.warnings)
-                    {
-                        waveData.messages.Add(new WaveMessage
-                        {
-                            Message = $"Warning: {warning}",
-                            AutoHideDelay = 0f,
-                            
-                        });
-                    }
-                }
+                // Analysis results can be added as HighlightSequence objects if needed
+                // For debug/analysis info, create sequences with messageText and targetType = None
+                // Example: waveData.highlightSequences.Add(new HighlightSequence { messageText = "...", targetType = HighlightTargetType.None, DisplayMoveStep = 0 });
             }
             
             successfulGenerations++;

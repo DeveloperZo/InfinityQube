@@ -16,6 +16,8 @@ public class AnimationTriggerManager : MonoBehaviour, IManagerDebugInterface
     [SerializeField] private AnimationCurve defaultIntensityCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
     
     [Header("Debug Settings")]
+    [Tooltip("Enable debug logging for this manager")]
+    [SerializeField] private bool enableDebugLogs;
     [SerializeField] private bool showDebugLogs = false;
     [SerializeField] private bool logAllTriggers = false;
     [SerializeField] private bool visualizeTriggersInScene = false;
@@ -462,7 +464,11 @@ public class AnimationTriggerManager : MonoBehaviour, IManagerDebugInterface
 
     #region IManagerDebugInterface Implementation
 
-    public bool EnableDebugLogs { get => showDebugLogs; set => showDebugLogs = value; }
+    public bool EnableDebugLogs 
+    { 
+        get => enableDebugLogs; 
+        set => enableDebugLogs = value; 
+    }
 
     public string GetDebugStatus()
     {

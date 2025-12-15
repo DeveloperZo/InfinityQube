@@ -30,6 +30,8 @@ public class StageManager : MonoBehaviour, IManagerDebugInterface
     [SerializeField] private bool disableAutoStart = true;
 
     [Header("Debug")]
+    [Tooltip("Enable debug logging for this manager")]
+    [SerializeField] private bool enableDebugLogs;
     [SerializeField] private bool showStageInfo = false;
     #endregion
 
@@ -60,7 +62,7 @@ public class StageManager : MonoBehaviour, IManagerDebugInterface
     {
         FindReferences();
         InitializeStageDatabase();
-        EnableDebugLogs = true;
+        
     }
 
     private void Start()
@@ -603,7 +605,11 @@ public class StageManager : MonoBehaviour, IManagerDebugInterface
 
     #region IManagerDebugInterface Implementation
 
-    public bool EnableDebugLogs { get; set; } = true;
+    public bool EnableDebugLogs 
+    { 
+        get => enableDebugLogs; 
+        set => enableDebugLogs = value; 
+    }
 
     public string GetDebugStatus()
     {

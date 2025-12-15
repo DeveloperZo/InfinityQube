@@ -39,6 +39,8 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
     [Range(0f, 1f)] public float blueCubeChance = 0.2f;
 
     [Header("Debug & Testing")]
+    [Tooltip("Enable debug logging for this manager")]
+    [SerializeField] private bool enableDebugLogs;
     public bool debugMode = false;
     public bool manualControl = false;
     public bool showDebugInfo = false;
@@ -101,7 +103,6 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
     {
         FindReferences();
         InitializeState();
-        EnableDebugLogs = true;
     }
 
     private void Update()
@@ -449,8 +450,7 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
             playerActionManager.MarkerSystem.CheckPlayerCubeCollisions();
         }
         
-        ProcessStepMessages();
-        ProcessStepSequences();
+        ProcessStepSequences(); // Sequences handle both messages and highlights
         NotifyStepComplete();
 
         yield return null;
@@ -480,7 +480,7 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
         GameEvents.FireWaveComplete(currentWaveIndex);
         DebugLog($"Fired GameEvents.OnWaveComplete for wave {currentWaveIndex}");
 
-        ProcessEndMessages();
+        ProcessEndSequences(); // Sequences handle end-of-wave messages
 
         // POC: Show wave completion message before advancing
         ShowWaveCompletionMessage();
@@ -694,7 +694,7 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
 
         MoveCubesForward();
         MoveStep++;
-        ProcessStepMessages();
+        ProcessStepSequences(); // Sequences handle both messages and highlights
         NotifyStepComplete();
 
         DebugLog($"🔧 Manual Step Forward: {MoveStep}");
@@ -749,7 +749,7 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
         }
         
         if (MoveStep > 0) MoveStep--;
-        ProcessStepMessages();
+        ProcessStepSequences(); // Sequences handle both messages and highlights
         NotifyStepComplete();
 
         DebugLog($"🔧 Manual Step Backward: {MoveStep}");
@@ -781,9 +781,8 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
     #region Message System
     private void ShowInitialMessages()
     {
-        if (CurrentWave?.messages == null || !showMessages) return;
-
-        // Start coroutine to delay messages until camera has panned to position
+        // Start coroutine to delay sequences until camera has panned to position
+        // Sequences handle messages internally, so we don't need to check for messages
         StartCoroutine(ShowInitialMessagesDelayed());
     }
     
@@ -793,24 +792,8 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
         // Add extra buffer to ensure camera is fully positioned before showing messages
         yield return new WaitForSeconds(0.6f);
 
-        // Process initial sequences first (if any)
+        // Process initial sequences (sequences handle messages internally)
         ProcessInitialSequences();
-        
-        // Then show initial messages (using MessageHighlightManager if available, otherwise fallback)
-        var initialMessages = CurrentWave.messages.Where(m => m.DisplayMoveStep == 0);
-        foreach (var message in initialMessages)
-        {
-            if (messageHighlightManager != null)
-            {
-                // Use MessageHighlightManager for unified message handling
-                messageHighlightManager.ShowMessage(message.Message, message.RequirePause, message.AutoHideDelay, MoveStep);
-            }
-            else
-            {
-                // Fallback to old system
-                ShowMessage(message);
-            }
-        }
     }
     
     /// <summary>
@@ -833,25 +816,7 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
         }
     }
 
-    private void ProcessStepMessages()
-    {
-        if (CurrentWave?.messages == null || !showMessages) return;
-
-        var stepMessages = CurrentWave.messages.Where(m => m.DisplayMoveStep == MoveStep);
-        foreach (var message in stepMessages)
-        {
-            if (messageHighlightManager != null)
-            {
-                // Use MessageHighlightManager for unified message handling
-                messageHighlightManager.ShowMessage(message.Message, message.RequirePause, message.AutoHideDelay, MoveStep);
-            }
-            else
-            {
-                // Fallback to old system
-                ShowMessage(message);
-            }
-        }
-    }
+    // ProcessStepMessages removed - sequences now handle all messages via ProcessStepSequences
     
     /// <summary>
     /// Processes highlight sequences at the current move step
@@ -860,6 +825,8 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
     {
         if (CurrentWave?.highlightSequences == null || messageHighlightManager == null) return;
         
+        DebugLog($"ProcessStepSequences: Checking sequences for MoveStep={MoveStep}, total sequences={CurrentWave.highlightSequences.Count}");
+        
         // Get sequences for current move step that aren't event-triggered
         var stepSequences = CurrentWave.highlightSequences.Where(s => 
             s != null && 
@@ -867,29 +834,32 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
             s.triggerOnMarkerAtPosition == Vector2Int.zero && 
             s.triggerOnCaptureAtPosition == Vector2Int.zero);
         
-        foreach (var sequence in stepSequences)
+        var sequencesList = stepSequences.ToList();
+        DebugLog($"ProcessStepSequences: Found {sequencesList.Count} sequences to execute at MoveStep={MoveStep}");
+        
+        foreach (var sequence in sequencesList)
         {
+            DebugLog($"ProcessStepSequences: Executing sequence with DisplayMoveStep={sequence.DisplayMoveStep}, targetType={sequence.targetType}, targetPosition=({sequence.targetPosition.x}, {sequence.targetPosition.y})");
             messageHighlightManager.ExecuteSequence(sequence);
         }
     }
 
-    private void ProcessEndMessages()
+    /// <summary>
+    /// Processes highlight sequences at wave end (DisplayMoveStep == -1)
+    /// </summary>
+    private void ProcessEndSequences()
     {
-        if (CurrentWave?.messages == null || !showMessages) return;
+        if (CurrentWave?.highlightSequences == null || messageHighlightManager == null) return;
 
-        var endMessages = CurrentWave.messages.Where(m => m.DisplayMoveStep == -1);
-        foreach (var message in endMessages)
+        var endSequences = CurrentWave.highlightSequences.Where(s => 
+            s != null && 
+            s.DisplayMoveStep == -1 &&
+            s.triggerOnMarkerAtPosition == Vector2Int.zero && 
+            s.triggerOnCaptureAtPosition == Vector2Int.zero);
+
+        foreach (var sequence in endSequences)
         {
-            if (messageHighlightManager != null)
-            {
-                // Use MessageHighlightManager for unified message handling
-                messageHighlightManager.ShowMessage(message.Message, message.RequirePause, message.AutoHideDelay, MoveStep);
-            }
-            else
-            {
-                // Fallback to old system
-                ShowMessage(message);
-            }
+            messageHighlightManager.ExecuteSequence(sequence);
         }
     }
 
@@ -1406,7 +1376,11 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
 
     #region IManagerDebugInterface Implementation
 
-    public bool EnableDebugLogs { get; set; } = true;
+    public bool EnableDebugLogs 
+    { 
+        get => enableDebugLogs; 
+        set => enableDebugLogs = value; 
+    }
 
     public string GetDebugStatus()
     {

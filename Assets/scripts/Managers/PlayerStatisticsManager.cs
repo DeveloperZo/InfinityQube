@@ -22,6 +22,8 @@ public class PlayerStatisticsManager : MonoBehaviour, IManagerDebugInterface
     public bool emergencySaveOnQuit = true;
     
     [Header("Debug & Testing")]
+    [Tooltip("Enable debug logging for this manager")]
+    [SerializeField] private bool enableDebugLogs;
     public bool showCollectionStatus = false;
     #endregion
 
@@ -92,7 +94,7 @@ public class PlayerStatisticsManager : MonoBehaviour, IManagerDebugInterface
     
     private void Start()
     {
-        EnableDebugLogs = true;
+        
         InitializeManager();
     }
     
@@ -1263,7 +1265,11 @@ public class PlayerStatisticsManager : MonoBehaviour, IManagerDebugInterface
     #endregion
 
     #region IManagerDebugInterface Implementation
-    public bool EnableDebugLogs { get; set; } = true;
+    public bool EnableDebugLogs 
+    { 
+        get => enableDebugLogs; 
+        set => enableDebugLogs = value; 
+    }
 
     public string GetDebugStatus()
     {

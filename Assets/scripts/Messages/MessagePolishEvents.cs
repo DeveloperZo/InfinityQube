@@ -96,7 +96,7 @@ public class MessagePolishEvents : MonoBehaviour
     public AudioManager audioManager;
     
     [Header("Debug")]
-    public bool EnableDebugLogs = true;
+    public bool EnableDebugLogs;
     #endregion
 
     #region Runtime State
