@@ -25,9 +25,9 @@ MonoBehaviour:
   lineDividerEscapePenalty: 0
   lineDividerCaptureReward: 0
   stageGrants:
-    unitMaxOnGrid: 5
+    unitMaxOnGrid: 1
     unitMarkerRechargeRate: 2
-    maxUnitMarkerCharges: 4
+    maxUnitMarkerCharges: 3
     matrixCharges: 0
     matrixMaxOnGrid: 0
     recursionCharges: 0
@@ -38,8 +38,6 @@ MonoBehaviour:
   lockAttunements: 0
   allowedAttunementIds: []
   waveConfigurations:
-  - {fileID: 11400000, guid: a1b2c3d4e5f6789012345678901234a1, type: 2}
-  - {fileID: 11400000, guid: a1b2c3d4e5f6789012345678901234a2, type: 2}
   - {fileID: 11400000, guid: a1b2c3d4e5f6789012345678901234a3, type: 2}
   requireAllCubesDestroyed: 0
   requiredCaptureCount: 0

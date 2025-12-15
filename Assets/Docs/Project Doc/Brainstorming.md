@@ -4,6 +4,14 @@
 
 ## Brainstorm Items
 
+
+### Hire youtube creator daafrikan (Yannick)
+- **Description**: Hire youtube creator daafrikan (Yannick)
+- **Unique Value**: daafrikan (Yannick)
+- **Constraints**: 
+- **Rating**: ??/10
+- **Notes**: 
+
 ### Turn-Based element (enables tetris like blocks)
 - **Description**: Allow the player to increment move forward manually
 - **Unique Value**: Allow for contiguous set of markers to form tetris like blocks with their own properties (e.g. if  you mix unit, matrix, recursion, infinity)

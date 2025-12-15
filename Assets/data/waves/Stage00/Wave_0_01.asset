@@ -105,7 +105,7 @@ MonoBehaviour:
   highlightSequences:
   - DisplayMoveStep: 2
     pauseGame: 1
-    messageText: Place your marker here.
+    messageText: Place your marker here.\n (Press K to Continue)
     messageRequirePause: 1
     messageAutoHideDelay: 0
     targetType: 1
@@ -122,7 +122,8 @@ MonoBehaviour:
     validationFailureMessage: Place your marker on the highlighted tile.
   - DisplayMoveStep: 4
     pauseGame: 1
-    messageText: Your marker will spawn a cube that will capture this cube
+    messageText: Your marker will spawn a cube that will capture this cube\n (Press
+      K to Continue)
     messageRequirePause: 1
     messageAutoHideDelay: 0
     targetType: 2
@@ -140,7 +141,7 @@ MonoBehaviour:
   - DisplayMoveStep: 7
     pauseGame: 1
     messageText: Try capturing the other cubes! You can place markers on multiple
-      tiles.
+      tiles.\n (Press K to Continue)
     messageRequirePause: 1
     messageAutoHideDelay: 0
     targetType: 0
@@ -158,11 +159,11 @@ MonoBehaviour:
   - DisplayMoveStep: 9
     pauseGame: 1
     messageText: This is an Infinity cube. It's dangerous and cannot be captured
-      - avoid it!
+      - avoid it!\n (Press K to Continue)
     messageRequirePause: 1
     messageAutoHideDelay: 0
     targetType: 2
-    targetPosition: {x: 2, y: 9}
+    targetPosition: {x: 2, y: 10}
     targetCubeType: 2
     highlightColor: {r: 1, g: 0.2, b: 0.2, a: 0.5}
     shouldPulse: 1

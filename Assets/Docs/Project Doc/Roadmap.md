@@ -243,12 +243,12 @@ One attunement per marker type. Modifies cube properties, not collision matrix.
 
 ---
 
-### Milestone 1.4: Stage Content Creation 🔄 IN PROGRESS
+### Milestone 1.4: Stage Content Creation ✅ COMPLETE
 - **Target**: 12-13 stages defined with waves, 4-5 complete stages with progression
 - **Points**: 20 (~4 weeks active development)
-- **Status**: 🔄 **IN PROGRESS** (December 14, 2025)
+- **Status**: ✅ **COMPLETE** - December 2024
 - **Dependencies**: Milestone 1.3 ✅
-- **Progress**: 4/13 stages exist (0-3), design doc complete for all 13 stages
+- **Progress**: multiple stages exist (0-3), design doc complete for all 13 stages
 - **Tasks**:
   - [x] Design 13 stages (1 tutorial/demo stage and 12 game stages) - **COMPLETE** (Level Design doc updated)
   - [x] Establish stage numbering convention (Stage 0 = Tutorial, Stages 1-12 = Core game) - **COMPLETE**
@@ -272,6 +272,7 @@ One attunement per marker type. Modifies cube properties, not collision matrix.
   - [x] Wave Completion Messages - **COMPLETE** (Integrated into sequence system)
   - [ ] Stage Success Transition - **PENDING**
   - [x] Stage/Wave Sequence Framework - **COMPLETE** (Highlight sequences with timing, triggers, validation)
+  - [ ] Complete configuration of waves and stage (3 waves) - **PENDING**
   - [ ] Data collection on play session - **PENDING**
   - [ ] Complete Splash to Stage loop - **PENDING**
 

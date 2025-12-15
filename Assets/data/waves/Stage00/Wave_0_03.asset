@@ -38,7 +38,7 @@ MonoBehaviour:
     frontFaceStatus: 0
     frontFaceCharges: 0
     spawnDelay: 0
-  - type: 0
+  - type: 2
     position: {x: 3, y: 0}
     level: 1
     hasPaintedFaces: 0
@@ -137,14 +137,113 @@ MonoBehaviour:
   hasOwnSuccessCriteria: 0
   requiredCaptureCount: 0
   maxAllowedEscapes: -1
-  messages:
-  - Message: Infinity cubes block capture - plan your positioning!
-    DisplayMoveStep: 0
-    RequirePause: 1
-    AutoHideDelay: 0
-    HighlightTile: 0
-    highlightTiles: []
-    highlightColor: {r: 1, g: 0, b: 0, a: 1}
+  highlightSequences:
+  - DisplayMoveStep: 2
+    pauseGame: 1
+    messageText: Infinity cubes block capture - they prevent your player cubes from
+      reaching Unit cubes behind them. Infinity cubes are positioned to block columns
+      0, 1, 2, and 3.
+    messageRequirePause: 1
+    messageAutoHideDelay: 0
+    targetType: 0
+    targetPosition: {x: 0, y: 0}
+    targetCubeType: 0
+    highlightColor: {r: 1, g: 0.2, b: 0.2, a: 0.5}
+    shouldPulse: 0
+    highlightDuration: 0
+    clearOnCapture: 0
+    resumeGame: 1
+    triggerOnMarkerAtPosition: {x: 0, y: 0}
+    triggerOnCaptureAtPosition: {x: 0, y: 0}
+    requireMarkerPlacementValidation: 0
+    validationFailureMessage: 
+  - DisplayMoveStep: 4
+    pauseGame: 0
+    messageText: 
+    messageRequirePause: 0
+    messageAutoHideDelay: 0
+    targetType: 2
+    targetPosition: {x: 0, y: 15}
+    targetCubeType: 2
+    highlightColor: {r: 1, g: 0.2, b: 0.2, a: 0.4}
+    shouldPulse: 1
+    highlightDuration: 3
+    clearOnCapture: 0
+    resumeGame: 1
+    triggerOnMarkerAtPosition: {x: 0, y: 0}
+    triggerOnCaptureAtPosition: {x: 0, y: 0}
+    requireMarkerPlacementValidation: 0
+    validationFailureMessage: 
+  - DisplayMoveStep: 4
+    pauseGame: 0
+    messageText: 
+    messageRequirePause: 0
+    messageAutoHideDelay: 0
+    targetType: 2
+    targetPosition: {x: 2, y: 14}
+    targetCubeType: 2
+    highlightColor: {r: 1, g: 0.2, b: 0.2, a: 0.4}
+    shouldPulse: 1
+    highlightDuration: 3
+    clearOnCapture: 0
+    resumeGame: 1
+    triggerOnMarkerAtPosition: {x: 0, y: 0}
+    triggerOnCaptureAtPosition: {x: 0, y: 0}
+    requireMarkerPlacementValidation: 0
+    validationFailureMessage: 
+  - DisplayMoveStep: 4
+    pauseGame: 0
+    messageText: 
+    messageRequirePause: 0
+    messageAutoHideDelay: 0
+    targetType: 2
+    targetPosition: {x: 3, y: 15}
+    targetCubeType: 2
+    highlightColor: {r: 1, g: 0.2, b: 0.2, a: 0.4}
+    shouldPulse: 1
+    highlightDuration: 3
+    clearOnCapture: 0
+    resumeGame: 1
+    triggerOnMarkerAtPosition: {x: 0, y: 0}
+    triggerOnCaptureAtPosition: {x: 0, y: 0}
+    requireMarkerPlacementValidation: 0
+    validationFailureMessage: 
+  - DisplayMoveStep: 4
+    pauseGame: 0
+    messageText: 
+    messageRequirePause: 0
+    messageAutoHideDelay: 0
+    targetType: 2
+    targetPosition: {x: 4, y: 13}
+    targetCubeType: 2
+    highlightColor: {r: 1, g: 0.2, b: 0.2, a: 0.4}
+    shouldPulse: 1
+    highlightDuration: 3
+    clearOnCapture: 0
+    resumeGame: 1
+    triggerOnMarkerAtPosition: {x: 0, y: 0}
+    triggerOnCaptureAtPosition: {x: 0, y: 0}
+    requireMarkerPlacementValidation: 0
+    validationFailureMessage: 
+  - DisplayMoveStep: 6
+    pauseGame: 1
+    messageText: Since Infinity cubes block columns 0, 1, 2, and 3, focus on capturing
+      Unit cubes in column 4. Plan your marker placement to avoid the blocking Infinity
+      cubes.
+    messageRequirePause: 1
+    messageAutoHideDelay: 0
+    targetType: 0
+    targetPosition: {x: 0, y: 0}
+    targetCubeType: 0
+    highlightColor: {r: 0.3, g: 0.8, b: 0.3, a: 0.4}
+    shouldPulse: 0
+    highlightDuration: 0
+    clearOnCapture: 0
+    resumeGame: 1
+    triggerOnMarkerAtPosition: {x: 0, y: 0}
+    triggerOnCaptureAtPosition: {x: 0, y: 0}
+    requireMarkerPlacementValidation: 0
+    validationFailureMessage: 
   _runtimeStats:
     unitCubesCaptured: 0
     matrixCubesCaptured: 0
