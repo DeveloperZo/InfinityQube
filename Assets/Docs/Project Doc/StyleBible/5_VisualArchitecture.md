@@ -78,9 +78,9 @@ Rule: **One channel ≈ one meaning**. Adding new meanings must reuse existing c
 Each cube type must remain recognizable with overlays active and in dense scenes.
 
 **Unit**
-- **Signature:** warm, foundational “default” presence.
-- **Do:** simple surface, calm readability, minimal special effects.
-- **Don’t:** add strong glow or high-detail texture that competes with overlays.
+- **Signature:** gray-ish, neutral, foundational "default" presence.
+- **Do:** simple surface, calm readability, minimal special effects, neutral gray appearance.
+- **Don't:** add strong glow or high-detail texture that competes with overlays.
 
 **Matrix**
 - **Signature:** cool, “valuable/strategic” presence with gentle emphasis.
@@ -237,7 +237,7 @@ Provide:
 > This appendix captures what is implemented today. It is not the source of truth for the style; the sections above are.
 
 ### A.1 Cube type palette (implemented)
-- Unit: warm/orange family  
+- Unit: gray/neutral family  
 - Matrix: cool/blue family  
 - Recursion: purple family (darker/heavier)  
 - Infinity: near-black family (ominous)

@@ -103,13 +103,13 @@ MonoBehaviour:
   requiredCaptureCount: 0
   maxAllowedEscapes: -1
   highlightSequences:
-  - DisplayMoveStep: 0
+  - DisplayMoveStep: 2
     pauseGame: 1
     messageText: Place your marker here.
     messageRequirePause: 1
     messageAutoHideDelay: 0
     targetType: 1
-    targetPosition: {x: 2, y: 0}
+    targetPosition: {x: 2, y: 8}
     targetCubeType: 0
     highlightColor: {r: 0.3, g: 0.8, b: 0.3, a: 0.4}
     shouldPulse: 0
@@ -120,24 +120,27 @@ MonoBehaviour:
     triggerOnCaptureAtPosition: {x: 0, y: 0}
     requireMarkerPlacementValidation: 1
     validationFailureMessage: Place your marker on the highlighted tile.
-  - DisplayMoveStep: 0
+  - DisplayMoveStep: 4
     pauseGame: 1
     messageText: Your marker will spawn a cube that will capture this cube
     messageRequirePause: 1
     messageAutoHideDelay: 0
     targetType: 2
-    targetPosition: {x: 2, y: 0}
+    targetPosition: {x: 2, y: 14}
     targetCubeType: 0
     highlightColor: {r: 0.3, g: 0.8, b: 0.3, a: 0.4}
     shouldPulse: 0
     highlightDuration: 0
     clearOnCapture: 1
     resumeGame: 1
-    triggerOnMarkerAtPosition: {x: 2, y: 0}
+    triggerOnMarkerAtPosition: {x: 0, y: 0}
     triggerOnCaptureAtPosition: {x: 0, y: 0}
-  - DisplayMoveStep: 0
+    requireMarkerPlacementValidation: 0
+    validationFailureMessage: Place your marker on the highlighted tile.
+  - DisplayMoveStep: 7
     pauseGame: 1
-    messageText: Try capturing the other cubes! You can place markers on multiple tiles.
+    messageText: Try capturing the other cubes! You can place markers on multiple
+      tiles.
     messageRequirePause: 1
     messageAutoHideDelay: 0
     targetType: 0
@@ -149,7 +152,25 @@ MonoBehaviour:
     clearOnCapture: 0
     resumeGame: 1
     triggerOnMarkerAtPosition: {x: 0, y: 0}
-    triggerOnCaptureAtPosition: {x: 2, y: 0}
+    triggerOnCaptureAtPosition: {x: 0, y: 0}
+    requireMarkerPlacementValidation: 0
+    validationFailureMessage: 
+  - DisplayMoveStep: 9
+    pauseGame: 1
+    messageText: This is an Infinity cube. It's dangerous and cannot be captured
+      - avoid it!
+    messageRequirePause: 1
+    messageAutoHideDelay: 0
+    targetType: 2
+    targetPosition: {x: 2, y: 9}
+    targetCubeType: 2
+    highlightColor: {r: 1, g: 0.2, b: 0.2, a: 0.5}
+    shouldPulse: 1
+    highlightDuration: 0
+    clearOnCapture: 0
+    resumeGame: 1
+    triggerOnMarkerAtPosition: {x: 0, y: 0}
+    triggerOnCaptureAtPosition: {x: 0, y: 0}
     requireMarkerPlacementValidation: 0
     validationFailureMessage: 
   _runtimeStats:

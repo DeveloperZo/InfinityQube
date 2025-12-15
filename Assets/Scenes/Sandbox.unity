@@ -3001,6 +3001,63 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 706732435}
   m_CullTransparentMesh: 0
+--- !u!1 &748298963
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 748298964}
+  - component: {fileID: 748298965}
+  m_Layer: 0
+  m_Name: MessageHighlightManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &748298964
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 748298963}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1349580503744953451}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &748298965
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 748298963}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1a8d65d46ccba9b44bebc4c03e33f511, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MessageHighlightManager
+  capturableCubeColor: {r: 0.3, g: 0.8, b: 0.3, a: 0.4}
+  infinityCubeColor: {r: 0.8, g: 0.2, b: 0.2, a: 0.4}
+  highlightPulseSpeed: 1.5
+  highlightPulseIntensity: 0.2
+  highlightEmissionIntensity: 0.3
+  enableAutoHighlighting: 1
+  autoHighlightFirstCapturable: 1
+  autoHighlightInfinityCubes: 1
+  autoHighlightDuration: 3
+  messageToHighlightDelay: 1.5
+  sequenceHighlights: 1
+  highlightSequenceDelay: 2
+  enableDebugLogs: 1
 --- !u!1 &758072847
 GameObject:
   m_ObjectHideFlags: 0
@@ -11938,6 +11995,7 @@ MonoBehaviour:
   enablePatternPreviews: 1
   previewMaterial: {fileID: 0}
   previewAlpha: 0.5
+  enableDebugLogs: 0
 --- !u!1 &1922694877
 GameObject:
   m_ObjectHideFlags: 0
@@ -13287,6 +13345,7 @@ Transform:
   - {fileID: 336190003}
   - {fileID: 1233890407}
   - {fileID: 1168389966}
+  - {fileID: 748298964}
   m_Father: {fileID: 239699829}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1383029016935945871
@@ -13391,6 +13450,7 @@ MonoBehaviour:
   stageTransitionDelay: 2
   restartOnFailure: 1
   disableAutoStart: 0
+  enableDebugLogs: 0
   showStageInfo: 1
 --- !u!4 &1918197466871702463
 Transform:
@@ -13432,6 +13492,7 @@ MonoBehaviour:
   specialTileMaterials: []
   useObjectPooling: 0
   pooledTileCount: 100
+  enableDebugLogs: 0
   showGridGizmos: 0
   gizmoColor: {r: 0, g: 1, b: 1, a: 1}
   enableLineDivider: 1
@@ -13861,9 +13922,10 @@ MonoBehaviour:
   waveSize: 3
   normalCubeChance: 0.7
   blueCubeChance: 0.2
+  enableDebugLogs: 0
   debugMode: 0
   manualControl: 0
-  showDebugInfo: 0
+  showDebugInfo: 1
   showMessages: 1
   messagePanel: {fileID: 1753889799}
   messageText: {fileID: 1883002200}
@@ -14597,6 +14659,7 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 4294967295
   collisionCheckRadius: 0.5
+  enableDebugLogs: 0
   showTileInfo: 0
   currentTilePosition: {x: 0, y: 0}
   isDead: 0
@@ -14688,6 +14751,7 @@ MonoBehaviour:
   enableDetailedTracking: 1
   autoSaveOnCompletion: 1
   emergencySaveOnQuit: 1
+  enableDebugLogs: 0
   showCollectionStatus: 0
 --- !u!4 &7705285898521335331
 Transform:
@@ -14882,6 +14946,7 @@ MonoBehaviour:
   matrixMarkerMaterial: {fileID: 0}
   maxInfinityMarkers: 0
   infinityMarkersPlaced: 0
+  enableDebugLogs: 1
   currentInfinityMarkers: 0
   maxInfinityMarkerCharges: 0
   currentInfinityMarkerCharges: 0

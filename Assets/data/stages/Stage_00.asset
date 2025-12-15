@@ -15,7 +15,7 @@ MonoBehaviour:
   stageNumber: 0
   stageName: Tutorial - Pure Fundamentals
   stageType: 0
-  description: Learn the basics: movement, marker placement, and cube capture. You'll encounter both Unit cubes (capturable) and Infinity cubes (dangerous - avoid them!).
+  description: 
   objective: Capture Unit cubes with Unit markers while avoiding Infinity cubes
   gridWidth: 5
   gridHeight: 20
@@ -26,8 +26,8 @@ MonoBehaviour:
   lineDividerCaptureReward: 0
   stageGrants:
     unitMaxOnGrid: 5
-    unitMarkerRechargeRate: 3
-    maxUnitMarkerCharges: 3
+    unitMarkerRechargeRate: 2
+    maxUnitMarkerCharges: 4
     matrixCharges: 0
     matrixMaxOnGrid: 0
     recursionCharges: 0
