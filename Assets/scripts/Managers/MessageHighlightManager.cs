@@ -79,6 +79,7 @@ public class MessageHighlightManager : MonoBehaviour, IManagerDebugInterface
     
     // Sequence tracking
     private Dictionary<int, HighlightSequence> activeSequences = new Dictionary<int, HighlightSequence>(); // Key: cube.GetInstanceID() or position hash
+    private Dictionary<int, int> highlightCreationSteps = new Dictionary<int, int>(); // Key: cube.GetInstanceID() or position hash, Value: move step when created
     private bool isPaused = false;
     
     // Validation tracking
@@ -166,6 +167,7 @@ public class MessageHighlightManager : MonoBehaviour, IManagerDebugInterface
     {
         GameEvents.OnWaveStart += HandleWaveStart;
         GameEvents.OnWaveComplete += HandleWaveComplete;
+        GameEvents.OnWaveStep += HandleWaveStep;
         GameEvents.OnCubeCaptured += HandleCubeCaptured;
         GameEvents.OnCubeMove += HandleCubeMove;
         GameEvents.OnCubeEscaped += HandleCubeEscaped;
@@ -176,6 +178,7 @@ public class MessageHighlightManager : MonoBehaviour, IManagerDebugInterface
     {
         GameEvents.OnWaveStart -= HandleWaveStart;
         GameEvents.OnWaveComplete -= HandleWaveComplete;
+        GameEvents.OnWaveStep -= HandleWaveStep;
         GameEvents.OnCubeCaptured -= HandleCubeCaptured;
         GameEvents.OnCubeMove -= HandleCubeMove;
         GameEvents.OnCubeEscaped -= HandleCubeEscaped;
@@ -203,10 +206,17 @@ public class MessageHighlightManager : MonoBehaviour, IManagerDebugInterface
         }
     }
     
+    private void HandleWaveStep(int waveIndex, int stepNumber)
+    {
+        // Check and clear highlights that have exceeded their duration (in move steps)
+        CheckHighlightDurations(stepNumber);
+    }
+    
     private void HandleWaveComplete(int waveIndex)
     {
         // Clear all highlights when wave completes
         ClearAllHighlights();
+        highlightCreationSteps.Clear();
         DebugLog("HandleWaveComplete", $"Wave {waveIndex} completed - cleared all highlights");
     }
     
@@ -624,6 +634,85 @@ public class MessageHighlightManager : MonoBehaviour, IManagerDebugInterface
     }
     
     /// <summary>
+    /// Checks all active highlights and clears those that have exceeded their duration (in move steps)
+    /// </summary>
+    private void CheckHighlightDurations(int currentStep)
+    {
+        if (waveManager == null) return;
+        
+        var cubeIdsToClear = new List<int>();
+        var tileKeysToClear = new List<int>();
+        
+        foreach (var kvp in activeSequences.ToList())
+        {
+            int key = kvp.Key;
+            var sequence = kvp.Value;
+            
+            if (!highlightCreationSteps.ContainsKey(key)) continue;
+            
+            int creationStep = highlightCreationSteps[key];
+            int stepsElapsed = currentStep - creationStep;
+            
+            // Skip if duration is 0 (infinite) or not yet elapsed
+            if (sequence.highlightDuration == 0 || stepsElapsed < sequence.highlightDuration) continue;
+            
+            // Determine if this is a cube or tile highlight
+            if (highlightedCubes.ContainsKey(key))
+            {
+                // This is a cube highlight (key is cube instance ID)
+                // Only clear if not waiting for capture
+                if (!sequence.clearOnCapture)
+                {
+                    DebugLog("CheckHighlightDurations", $"Clearing cube highlight (ID={key}) after {stepsElapsed} steps (duration={sequence.highlightDuration})");
+                    cubeIdsToClear.Add(key);
+                }
+            }
+            else
+            {
+                // Try to get position from hash - if it exists in highlightedTiles, it's a tile highlight
+                Vector2Int position = GetPositionFromHash(key);
+                if (highlightedTiles.ContainsKey(position))
+                {
+                    // Only clear if not waiting for validation
+                    if (!sequence.requireMarkerPlacementValidation)
+                    {
+                        DebugLog("CheckHighlightDurations", $"Clearing tile highlight at ({position.x}, {position.y}) after {stepsElapsed} steps (duration={sequence.highlightDuration})");
+                        tileKeysToClear.Add(key);
+                    }
+                }
+            }
+        }
+        
+        // Clear cube highlights
+        foreach (var cubeId in cubeIdsToClear)
+        {
+            ClearCubeHighlightById(cubeId);
+            activeSequences.Remove(cubeId);
+            highlightCreationSteps.Remove(cubeId);
+        }
+        
+        // Clear tile highlights
+        foreach (var tileKey in tileKeysToClear)
+        {
+            Vector2Int position = GetPositionFromHash(tileKey);
+            ClearTileHighlight(position);
+            activeSequences.Remove(tileKey);
+            highlightCreationSteps.Remove(tileKey);
+        }
+    }
+    
+    /// <summary>
+    /// Helper to get position from hash (reverse of GetPositionHash)
+    /// </summary>
+    private Vector2Int GetPositionFromHash(int hash)
+    {
+        // Simple reverse of GetPositionHash: hash = x * 1000 + y
+        int x = hash / 1000;
+        int y = hash % 1000;
+        return new Vector2Int(x, y);
+    }
+    
+    /// <summary>
     /// Clears all active highlights (cubes and tiles)
     /// </summary>
     public void ClearAllHighlights()
@@ -882,12 +971,11 @@ public class MessageHighlightManager : MonoBehaviour, IManagerDebugInterface
             }
             else
             {
-                // Auto-clear after duration if specified
-                if (sequence.highlightDuration > 0)
+                // Store creation step for duration tracking (if duration is specified)
+                if (sequence.highlightDuration > 0 && waveManager != null)
                 {
-                    yield return new WaitForSecondsRealtime(sequence.highlightDuration);
-                    ClearTileHighlight(sequence.targetPosition);
-                    activeSequences.Remove(tileKey);
+                    highlightCreationSteps[tileKey] = waveManager.MoveStep;
+                    DebugLog("HighlightTargetSequence", $"Tile highlight created at step {waveManager.MoveStep}, duration={sequence.highlightDuration} steps");
                 }
             }
         }
@@ -912,12 +1000,11 @@ public class MessageHighlightManager : MonoBehaviour, IManagerDebugInterface
                 
                 DebugLog("HighlightTargetSequence", $"Cube highlighted, clearOnCapture={sequence.clearOnCapture}, highlightDuration={sequence.highlightDuration}");
                 
-                // Auto-clear after duration if specified (and not waiting for capture)
-                if (sequence.highlightDuration > 0 && !sequence.clearOnCapture)
+                // Store creation step for duration tracking (if duration is specified and not waiting for capture)
+                if (sequence.highlightDuration > 0 && !sequence.clearOnCapture && waveManager != null)
                 {
-                    yield return new WaitForSecondsRealtime(sequence.highlightDuration);
-                    ClearCubeHighlightById(cubeId);
-                    activeSequences.Remove(cubeId);
+                    highlightCreationSteps[cubeId] = waveManager.MoveStep;
+                    DebugLog("HighlightTargetSequence", $"Cube highlight created at step {waveManager.MoveStep}, duration={sequence.highlightDuration} steps");
                 }
                 // If clearOnCapture is true, highlight stays until cube is captured (handled in HandleCubeCaptured)
                 // Note: Highlight will remain on cube even if it moves to different positions

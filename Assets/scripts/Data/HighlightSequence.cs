@@ -42,8 +42,8 @@ public class HighlightSequence
     [Tooltip("Should highlight pulse")]
     public bool shouldPulse = false;
     
-    [Tooltip("How long to show highlight before auto-clearing (0 = until manually cleared or target captured)")]
-    public float highlightDuration = 3f;
+    [Tooltip("Number of move steps to show highlight before auto-clearing (0 = until manually cleared or target captured)")]
+    public int highlightDuration = 0;
     
     [Tooltip("Clear highlight when target is captured (for cubes)")]
     public bool clearOnCapture = true;

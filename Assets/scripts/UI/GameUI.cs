@@ -189,7 +189,7 @@ public class GameUI : MonoBehaviour
         scaleFactor = Mathf.Clamp(scaleFactor, 0.5f, 2f); // Reasonable limits
         
         int width = Mathf.RoundToInt(300 * scaleFactor);
-        int height = Mathf.RoundToInt(270 * scaleFactor);
+        int height = Mathf.RoundToInt(280 * scaleFactor);
         int margin = Mathf.RoundToInt(20 * scaleFactor);
         
         Rect controlsRect = new Rect(margin, Screen.height - height - margin, width, height);
@@ -200,18 +200,24 @@ public class GameUI : MonoBehaviour
         GUILayout.Label("CONTROLS", headerStyle);
         GUILayout.Space(8);
 
-        // Essential controls
-        GUILayout.Label("K      Skip/Close Dialog", textStyle);
-        GUILayout.Label("WASD  Move Player", textStyle);
-        GUILayout.Label("1/2      Change Mode", textStyle);
-        GUILayout.Label("F      Place Marker", textStyle);
-        GUILayout.Label("R      Trigger Marker", textStyle);
+        // Movement controls
+        GUILayout.Label("WASD / Arrow Keys", textStyle);
+        GUILayout.Label("  Move Player", textStyle);
+        GUILayout.Space(3);
 
-        GUILayout.Space(5);
+        // Marker controls
+        GUILayout.Label("F        Place/Remove Marker", textStyle);
+        GUILayout.Space(3);
+
+        // Wave controls
+        GUILayout.Label("ENTER    Start Wave", textStyle);
+        GUILayout.Label("K        Skip/Close Dialog", textStyle);
+        GUILayout.Space(3);
 
         // System controls
-        GUILayout.Label("P      Restart Level", textStyle);
-        GUILayout.Label("ESC    Quit Game", textStyle);
+        GUILayout.Label("TAB      Toggle UI", textStyle);
+        GUILayout.Label("P        Restart Level", textStyle);
+        GUILayout.Label("ESC      Quit Game", textStyle);
 
         GUILayout.Space(5);
 
@@ -260,10 +266,10 @@ public class GameUI : MonoBehaviour
         GUILayout.Space(8);
 
         // Helpful gameplay tips
-        GUILayout.Label("• Place markers in cube paths", textStyle);
-        GUILayout.Label("• Infinity cubes create detonations", textStyle);
-        GUILayout.Label("• Avoid recursion cubes!", textStyle);
-        GUILayout.Label("• Recursion markers for recursion cubes", textStyle);
+        GUILayout.Label("• Cubes move forward automatically", textStyle);
+        GUILayout.Label("• Place markers where cubes will be", textStyle);
+        GUILayout.Label("• Infinity cubes cannot be captured", textStyle);
+        GUILayout.Label("• Markers spawn cubes when wave moves", textStyle);
 
         // Dynamic tip based on game state
         string dynamicTip = GetDynamicTip();
