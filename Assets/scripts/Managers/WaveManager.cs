@@ -84,7 +84,19 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
     private int blueCubesCaptured = 0;
     private int reinforcedCubesCaptured = 0;
     private int cubesEscaped = 0;
-    private int unitCubesEscaped = 0; // Track Unit cube escapes for bottom row penalty
+    /// <summary>
+    /// Tracks Unit cube escapes for row penalty system.
+    /// When unitCubesEscaped >= grid.Width, the bottom row is removed as a penalty.
+    /// Counter resets after penalty is applied and at the start of each new wave.
+    /// </summary>
+    private int unitCubesEscaped = 0;
+    
+    /// <summary>
+    /// Tracks player deaths for row penalty system.
+    /// When playerDeaths >= 2, the bottom row is removed as a penalty.
+    /// Counter resets after penalty is applied and at the start of each new wave.
+    /// </summary>
+    private int playerDeaths = 0;
     private int markersPlaced = 0;
     private int detonationsUsed = 0;
 
@@ -167,6 +179,16 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
             DebugLog("🔊 Audio: Wave start event triggered");
         }
         
+        // Configure player respawn delay from wave data (if set) or stage default
+        if (player != null && CurrentWave != null)
+        {
+            int waveRespawnMoves = CurrentWave.respawnDelayMoves;
+            // Get stage default from StageManager if available
+            var stageManager = FindFirstObjectByType<StageManager>();
+            int stageDefault = stageManager?.CurrentStage?.respawnDelayMoves ?? 1;
+            player.ConfigureRespawnDelay(stageDefault, waveRespawnMoves);
+        }
+        
         // Fire GameEvents
         GameEvents.FireWaveStart(currentWaveIndex, CurrentWave);
         gameUI.ToggleWaveIcon(currentWaveIndex, true);
@@ -204,6 +226,16 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
         {
             audioManager.TriggerAudioEvent(GameAudioEvent.WaveStarted, Vector3.zero);
             DebugLog("🔊 Audio: Wave start event triggered");
+        }
+        
+        // Configure player respawn delay from wave data (if set) or stage default
+        if (player != null && CurrentWave != null)
+        {
+            int waveRespawnMoves = CurrentWave.respawnDelayMoves;
+            // Get stage default from StageManager if available
+            var stageManager = FindFirstObjectByType<StageManager>();
+            int stageDefault = stageManager?.CurrentStage?.respawnDelayMoves ?? 1;
+            player.ConfigureRespawnDelay(stageDefault, waveRespawnMoves);
         }
         
         // Fire GameEvents
@@ -658,6 +690,17 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
         }
         MoveStep++;
         
+        // Track free moves: moves where only Infinity cubes (or no cubes) are present
+        bool onlyInfinityOrEmpty = activeCubes.Count == 0 || activeCubes.All(c => c != null && c.type == CubeType.Infinity);
+        if (onlyInfinityOrEmpty)
+        {
+            var scoreManager = ScoreManager.Instance;
+            if (scoreManager != null)
+            {
+                scoreManager.RecordFreeMove();
+            }
+        }
+        
         // Fire GameEvents
         GameEvents.FireWaveStep(currentWaveIndex, MoveStep);
         
@@ -1043,24 +1086,25 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
             }
         }
         
-        // Task 6: Apply line divider penalty for cube escape
-        int penaltyRows = GetPenaltyRowsForCubeType(cubeType);
-        if (penaltyRows > 0 && grid != null)
-        {
-            grid.MoveLineDivider(-penaltyRows, false);
-            DebugLog($"[Task 6] Applied {penaltyRows} row penalty for {cubeType} escape");
-        }
+        // Line divider system paused - unneeded complexity for now
+        // TODO: Re-enable if needed after testing row penalty system
+        // int penaltyRows = GetPenaltyRowsForCubeType(cubeType);
+        // if (penaltyRows > 0 && grid != null)
+        // {
+        //     grid.MoveLineDivider(-penaltyRows, false);
+        //     DebugLog($"[Task 6] Applied {penaltyRows} row penalty for {cubeType} escape");
+        // }
         
         // Process as normal cube behavior for wave completion tracking
         if (cubeType == CubeType.Unit)
         {
             unitCubesEscaped++;
-            DebugLog($"Unit cube escaped. Total Unit escapes: {unitCubesEscaped}/{grid?.Width ?? 0}");
+            DebugLog($"Unit cube escaped. Total Unit escapes: {unitCubesEscaped}/{grid?.Width ?? 0} (threshold: {grid?.Width ?? 0} for row penalty)");
             
-            // Penalty: When escaped Unit cubes equals number of columns, remove bottom row
+            // Row Penalty: When escaped Unit cubes equals number of columns, remove bottom row
             if (grid != null && unitCubesEscaped >= grid.Width)
             {
-                DebugLog($"⚠️ PENALTY: {unitCubesEscaped} Unit cubes escaped (equals grid width {grid.Width}). Removing bottom row!");
+                DebugLog($"⚠️ ROW PENALTY TRIGGERED: {unitCubesEscaped} Unit cubes escaped (equals grid width {grid.Width}). Removing bottom row!");
                 grid.RemoveBottomRow();
                 unitCubesEscaped = 0; // Reset counter after penalty
             }
@@ -1087,6 +1131,23 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
                 return 0; // No penalty for Infinity (intended behavior)
             default:
                 return 1;
+        }
+    }
+
+    /// <summary>
+    /// Called when player dies. Tracks deaths and applies row penalty at 2 deaths.
+    /// </summary>
+    public void OnPlayerDeath()
+    {
+        playerDeaths++;
+        DebugLog($"💀 Player death recorded. Total deaths this wave: {playerDeaths}/2 (threshold: 2 for row penalty)");
+        
+        // Death Penalty: When player dies 2 times, remove bottom row
+        if (grid != null && playerDeaths >= 2)
+        {
+            DebugLog($"⚠️ DEATH PENALTY TRIGGERED: {playerDeaths} player deaths (threshold: 2). Removing bottom row!");
+            grid.RemoveBottomRow();
+            playerDeaths = 0; // Reset counter after penalty
         }
     }
 
@@ -1250,6 +1311,7 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
         reinforcedCubesCaptured = 0;
         cubesEscaped = 0;
         unitCubesEscaped = 0;
+        playerDeaths = 0; // Reset death counter at wave start
         markersPlaced = 0;
         detonationsUsed = 0;
         totalNonBlackCubes = 0;

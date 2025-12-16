@@ -99,11 +99,10 @@ Teaching immediate tactics and cube interactions:
 
 | Stage | Focus | Lesson |
 |-------|-------|--------|
-| 1-2 | Basic markers | Unit marker basics |
-| 3-4 | Matrix markers | Area effects |
-| 5-6 | Infinity cubes | Face painting |
-| 7-8 | Recursion | Multi-hit mechanics |
-| 9-10 | Full integration | All systems |
+| 0-2 | Unit markers, Infinite Cube | Unit marker basics |
+| 3-5 | Matrix cube/markers | Area effects |
+| 6-8 | Recursion cube/marker | Multi-hit mechanics |
+| 9-10 | Infinity Marker | All systems |
 | 11-12 | Mastery | Complex strategies |
 
 ### Learning Curve Design

@@ -350,8 +350,12 @@ public class StageManager : MonoBehaviour, IManagerDebugInterface
         if (playerController == null) return;
 
         DebugLog($"Setting player start position: ({stage.playerStartPosition.x}, {stage.playerStartPosition.y})");
+        playerController.SetStartPosition(stage.playerStartPosition.x, stage.playerStartPosition.y);
         playerController.SetPosition(stage.playerStartPosition.x, stage.playerStartPosition.y);
         playerController.ResetStatistics();
+        
+        // Configure respawn delay from stage default (wave will override if set)
+        playerController.ConfigureRespawnDelay(stage.respawnDelayMoves);
     }
 
     private void ConfigureDetonationManager(StageData stage)

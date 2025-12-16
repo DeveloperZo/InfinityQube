@@ -82,8 +82,10 @@ public class ScoreManager : MonoBehaviour, IManagerDebugInterface
         GameEvents.OnWaveComplete += HandleWaveComplete;
         GameEvents.OnCubeCaptured += HandleCubeCapture;
         GameEvents.OnCubeEscaped += HandleCubeEscape;
+        GameEvents.OnMarkerPlaced += HandleMarkerPlaced;
         
         DebugLog("Subscribed to game events");
+        Debug.Log($"[ScoreManager] OnEnable: ScoreManager initialized and subscribed to events. Instance: {_instance != null}");
     }
     
     private void OnDisable()
@@ -93,6 +95,7 @@ public class ScoreManager : MonoBehaviour, IManagerDebugInterface
         GameEvents.OnWaveComplete -= HandleWaveComplete;
         GameEvents.OnCubeCaptured -= HandleCubeCapture;
         GameEvents.OnCubeEscaped -= HandleCubeEscape;
+        GameEvents.OnMarkerPlaced -= HandleMarkerPlaced;
     }
     
     private void OnDestroy()
@@ -141,11 +144,12 @@ public class ScoreManager : MonoBehaviour, IManagerDebugInterface
     
     private void HandleWaveComplete(int waveIndex)
     {
-        // Record final move count
+        // Record final move count and moves to clear wave
         var waveManager = Object.FindFirstObjectByType<WaveManager>();
         if (waveManager != null)
         {
             _currentWaveScore.RecordMove(waveManager.MoveStep);
+            _currentWaveScore.movesToClearWave = waveManager.MoveStep;
         }
         
         // Store completed wave score
@@ -154,13 +158,16 @@ public class ScoreManager : MonoBehaviour, IManagerDebugInterface
         _waveScores.Add(completedWave);
         
         int waveScore = completedWave.CalculateBaseScore();
-        DebugLog($"Wave {waveIndex} complete. Wave score: {waveScore}, Moves: {completedWave.movesUsed}/{completedWave.maxPossibleMoves}");
+        DebugLog($"Wave {waveIndex} complete. Wave score: {waveScore}, Moves: {completedWave.movesUsed}/{completedWave.maxPossibleMoves}, Free moves: {completedWave.freeMoves}");
     }
     
     private void HandleCubeCapture(Vector2Int position, CubeType cubeType)
     {
+        Debug.Log($"[ScoreManager] HandleCubeCapture CALLED: {cubeType} at ({position.x}, {position.y})");
         _currentWaveScore.RecordCapture(cubeType);
-        DebugLog($"Capture: {cubeType} at {position}. Running score: {RunningBaseScore}");
+        int newScore = RunningBaseScore;
+        DebugLog($"Capture: {cubeType} at {position}. Running score: {newScore}");
+        Debug.Log($"[ScoreManager] Capture recorded: {cubeType} at ({position.x}, {position.y}). Score: {newScore}");
     }
     
     private void HandleCubeEscape(Vector2Int position, CubeType cubeType)
@@ -169,6 +176,12 @@ public class ScoreManager : MonoBehaviour, IManagerDebugInterface
         
         string penalty = cubeType != CubeType.Infinity ? $" (-{ScoreConstants.PENALTY_ESCAPE})" : " (no penalty)";
         DebugLog($"Escape: {cubeType} at {position}{penalty}. Running score: {RunningBaseScore}");
+    }
+    
+    private void HandleMarkerPlaced(Vector2Int position, MarkerType markerType)
+    {
+        _currentWaveScore.RecordMarkerPlaced();
+        DebugLog($"Marker placed: {markerType} at {position}. Total markers: {_currentWaveScore.markersPlaced}");
     }
     
     #endregion
@@ -198,6 +211,74 @@ public class ScoreManager : MonoBehaviour, IManagerDebugInterface
     public void RecordMoveStep(int moveStep)
     {
         _currentWaveScore.RecordMove(moveStep);
+    }
+    
+    /// <summary>
+    /// Record a free move (only Infinity cubes or no cubes present).
+    /// </summary>
+    public void RecordFreeMove()
+    {
+        _currentWaveScore.freeMoves++;
+    }
+    
+    /// <summary>
+    /// Calculate current score (base score from current wave + completed waves).
+    /// </summary>
+    public int CalculateCurrentScore()
+    {
+        // Base score from current wave
+        int baseScore = _currentWaveScore.CalculateBaseScore();
+        
+        // Add completed waves
+        foreach (var wave in _waveScores)
+        {
+            baseScore += wave.CalculateBaseScore();
+        }
+        
+        return baseScore;
+    }
+    
+    /// <summary>
+    /// Calculate current move efficiency multiplier (1.0 to 1.3).
+    /// Uses effective moves (total moves - free moves) vs grid height.
+    /// </summary>
+    public float CalculateCurrentMoveEfficiency()
+    {
+        var waveManager = Object.FindFirstObjectByType<WaveManager>();
+        if (waveManager == null || !waveManager.waveActive) return 1.0f;
+        
+        int currentMoves = waveManager.MoveStep;
+        int freeMoves = _currentWaveScore.freeMoves;
+        
+        // Effective moves = total moves - free moves
+        int effectiveMoves = currentMoves - freeMoves;
+        
+        // Calculate efficiency based on effective moves vs grid height
+        // Faster clear (fewer effective moves) = higher multiplier
+        int maxEffectiveMoves = _currentWaveScore.maxPossibleMoves; // Grid height
+        if (maxEffectiveMoves <= 0) return 1.0f;
+        
+        float moveRatio = Mathf.Clamp01((float)effectiveMoves / maxEffectiveMoves);
+        return 1f + (ScoreConstants.MOVE_EFFICIENCY_MAX_BONUS * (1f - moveRatio));
+    }
+    
+    /// <summary>
+    /// Calculate marker efficiency bonus (bonus for markers ≤ captures).
+    /// </summary>
+    public int CalculateMarkerEfficiencyBonus()
+    {
+        int captures = _currentWaveScore.TotalCubesCaptured;
+        int markers = _currentWaveScore.markersPlaced;
+        
+        // Bonus: markers ≤ captures (efficient marker usage)
+        if (captures > 0 && markers <= captures)
+        {
+            // Bonus: 5 points per efficient marker (markers ≤ captures)
+            int efficientMarkers = Mathf.Min(markers, captures);
+            return efficientMarkers * 5; // Configurable bonus
+        }
+        
+        return 0;
     }
     
     /// <summary>

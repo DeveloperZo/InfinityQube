@@ -25,6 +25,9 @@ public class StageData : ScriptableObject
     [Range(10, 30)] public int gridHeight = 20;
     public Vector2Int playerStartPosition = new Vector2Int(2, 0);
     
+    [Tooltip("Number of move steps before player respawns after death (default: 1 move)")]
+    [Range(1, 10)] public int respawnDelayMoves = 1;
+    
     #endregion
 
     #region Line Divider

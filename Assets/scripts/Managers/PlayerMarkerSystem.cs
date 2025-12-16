@@ -677,6 +677,9 @@ public class PlayerMarkerSystem : MonoBehaviour
             PlayerStatisticsManager.Instance.OnCubeCaptured(position, cube.type.ToString(), markerType.ToString());
         }
 
+        // Fire cube capture event (this triggers GameEvents.OnCubeCaptured)
+        cube.OnCubeCapture();
+
         // Show capture success visual feedback
         if (visualManager != null)
         {

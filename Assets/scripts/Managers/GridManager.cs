@@ -1375,18 +1375,28 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
     {
         isRemovingBottomRow = true;
         int rowToRemove = bottom;
-        DebugLog($"Removing bottom row {rowToRemove} due to Unit cube escape penalty");
-        
-        // Fire start event (for future animation systems)
-        OnBottomRowRemovalStarted?.Invoke(rowToRemove);
         
         // Safety check: ensure we have a valid row to remove
         if (rowToRemove >= height)
         {
-            DebugLog($"⚠️ Cannot remove row {rowToRemove} - exceeds grid height {height}. Aborting.");
+            DebugLog($"⚠️ ROW PENALTY: Cannot remove row {rowToRemove} - exceeds grid height {height}. Aborting.");
             isRemovingBottomRow = false;
             yield break;
         }
+        
+        // Safety check: prevent removing if we'd have too few rows left
+        int remainingRows = height - (rowToRemove + 1);
+        if (remainingRows < 3)
+        {
+            DebugLog($"⚠️ ROW PENALTY: Cannot remove row {rowToRemove} - would leave only {remainingRows} rows. Minimum 3 rows required. Aborting.");
+            isRemovingBottomRow = false;
+            yield break;
+        }
+        
+        DebugLog($"⚠️ ROW PENALTY: Removing bottom row {rowToRemove} due to Unit cube escape penalty (will leave {remainingRows} rows)");
+        
+        // Fire start event (for future animation systems)
+        OnBottomRowRemovalStarted?.Invoke(rowToRemove);
         
         // Collect all tiles and cubes in the row
         List<Tile> tilesToRemove = new List<Tile>();
@@ -1519,18 +1529,49 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
             }
         }
         
-        // Adjust player position if they were on the removed row
-        AdjustPlayerPosition();
-        
-        // Update grid bounds (persists between waves)
-        // Safety: Clamp bottom to ensure it doesn't exceed grid height
+        // Update grid bounds BEFORE adjusting player (so AdjustPlayerPosition knows the old bottom)
+        int oldBottom = bottom;
         bottom = Mathf.Min(bottom + 1, height - 1);
+        
+        // Adjust player position if they were on the removed row
+        // Pass rowToRemove to the adjustment method
+        AdjustPlayerPositionAfterRowRemoval(rowToRemove);
         
         // Fire completion event (for future animation systems)
         OnBottomRowRemovalCompleted?.Invoke(rowToRemove);
         
         isRemovingBottomRow = false;
-        DebugLog($"Bottom row {rowToRemove} removal complete. New bottom: {bottom} (grid height: {height})");
+        DebugLog($"✅ ROW PENALTY: Bottom row {rowToRemove} removal complete. New bottom: {bottom}, Grid height: {height}, Remaining playable rows: {height - bottom}");
+    }
+    
+    /// <summary>
+    /// Adjusts player position after a row has been removed.
+    /// Called from RemoveBottomRowCoroutine with the specific row that was removed.
+    /// </summary>
+    private void AdjustPlayerPositionAfterRowRemoval(int removedRow)
+    {
+        var playerManager = FindFirstObjectByType<PlayerManager>();
+        if (playerManager == null) return;
+        
+        int playerY = playerManager.currentTilePosition.y;
+        
+        // If player was on or below the removed row, move them up
+        if (playerY <= removedRow)
+        {
+            // Find the lowest available row above the removed row
+            int safeRow = FindLowestPlayableRow();
+            if (safeRow > removedRow)
+            {
+                DebugLog($"⚠️ ROW PENALTY: Moving player from row {playerY} (removed row {removedRow}) to safe row {safeRow}");
+                playerManager.SetPosition(playerManager.currentTilePosition.x, safeRow);
+            }
+            else
+            {
+                DebugLog($"⚠️ ROW PENALTY: Player at row {playerY} but no safe row found above {removedRow}. Grid may be too small.");
+                // Emergency fallback: move to top row
+                playerManager.SetPosition(playerManager.currentTilePosition.x, height - 1);
+            }
+        }
     }
 
     private void RemoveCubesOnRow(int row)
@@ -1546,24 +1587,16 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
         }
     }
 
-    private void AdjustPlayerPosition()
-    {
-        var playerManager = FindFirstObjectByType<PlayerManager>();
-        if (playerManager != null && playerManager.currentTilePosition.y == 0)
-        {
-            // Find the lowest available row
-            int safeRow = FindLowestPlayableRow();
-            if (safeRow > 0)
-            {
-                DebugLog($"Moving player from fallen row 0 to row {safeRow}");
-                playerManager.SetPosition(playerManager.currentTilePosition.x, safeRow);
-            }
-        }
-    }
-
+    /// <summary>
+    /// Finds the lowest playable row in the grid.
+    /// Starts from bottom+1 (above the current bottom row) to avoid removed rows.
+    /// </summary>
     private int FindLowestPlayableRow()
     {
-        for (int y = 1; y < height; y++)
+        // Start from one row above the current bottom (which may have been removed)
+        int startRow = Mathf.Max(bottom + 1, 1);
+        
+        for (int y = startRow; y < height; y++)
         {
             bool rowIsPlayable = false;
             for (int x = 0; x < width; x++)

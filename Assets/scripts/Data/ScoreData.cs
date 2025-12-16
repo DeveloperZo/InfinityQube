@@ -41,6 +41,8 @@ public class WaveScoreData
     public int markersPlaced = 0;
     public int playerDeaths = 0;
     public int totalCubesInWave = 0; // Total cubes spawned in this wave
+    public int movesToClearWave = 0; // Total moves when wave cleared (all cubes left grid)
+    public int freeMoves = 0; // Moves where only Infinity cubes (or no cubes) were present
     
     #endregion
     
@@ -113,6 +115,8 @@ public class WaveScoreData
         unitCubesCaptured = matrixCubesCaptured = recursionCubesCaptured = infinityCubesCaptured = 0;
         unitEscapes = matrixEscapes = recursionEscapes = infinityEscapes = 0;
         movesUsed = markersPlaced = playerDeaths = 0;
+        movesToClearWave = 0;
+        freeMoves = 0;
     }
     
     #endregion

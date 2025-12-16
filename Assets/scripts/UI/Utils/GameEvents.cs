@@ -203,6 +203,7 @@ public static class GameEvents
     /// </summary>
     public static void FireCubeCaptured(Vector2Int position, CubeType cubeType)
     {
+        Debug.Log($"[GameEvents] FireCubeCaptured: {cubeType} at ({position.x}, {position.y}). Subscribers: {(OnCubeCaptured?.GetInvocationList().Length ?? 0)}");
         if (debugEvents)
             Debug.Log($"[GameEvents] FireCubeCaptured: {cubeType} at ({position.x}, {position.y})");
         

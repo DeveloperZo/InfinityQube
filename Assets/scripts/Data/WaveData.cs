@@ -95,6 +95,9 @@ public class WaveData : ScriptableObject
     [Tooltip("Time between cube movements (fast-forward)")]
     [Range(0.05f, 1f)] public float fastMoveInterval = 0.1f;
     
+    [Tooltip("Number of move steps before player respawns after death (0 = use stage default, typically 1)")]
+    [Range(0, 10)] public int respawnDelayMoves = 0;
+    
     #endregion
 
     #region Wave Success Criteria
