@@ -364,7 +364,7 @@ public class PlayerActionUI : MonoBehaviour
             // Show cooldown remaining when charging (not at max and cooldown active)
             if (charges < maxCharges && cooldownRemaining > 0f)
             {
-                chargeText.text = $"{charges}/{maxCharges} ({cooldownRemaining:F1}s)";
+                chargeText.text = $"{charges}/{maxCharges} \n{cooldownRemaining:F1} step(s)";
             }
             else
             {

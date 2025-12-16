@@ -131,6 +131,11 @@ public class SplashScreenManager : MonoBehaviour
         if (showDebugLogs)
             Debug.Log($"SplashScreenManager: Loading scene '{nextSceneName}'");
 
+        // Set flag to start tutorial when Sandbox scene loads
+        // This allows tutorial to start even if disableAutoStart is true
+        PlayerPrefs.SetInt("StartTutorial", 1);
+        PlayerPrefs.Save();
+
         // Use Single mode to ensure current scene is fully unloaded before loading new scene
         // This prevents object duplication when returning to splash and starting again
         SceneManager.LoadScene(nextSceneName, LoadSceneMode.Single);

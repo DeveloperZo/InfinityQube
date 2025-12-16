@@ -693,8 +693,7 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
         // Allow manual movement when wave is stopped (debug mode) or when wave is active
         if (!debugMode && !waveActive) return;
 
-        MoveCubesForward();
-        MoveStep++;
+        MoveCubesForward(); // MoveCubesForward() already increments MoveStep
         ProcessStepSequences(); // Sequences handle both messages and highlights
         NotifyStepComplete();
 

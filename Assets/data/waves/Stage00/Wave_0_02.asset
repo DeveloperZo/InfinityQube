@@ -104,10 +104,11 @@ MonoBehaviour:
   maxAllowedEscapes: -1
   highlightSequences:
   - DisplayMoveStep: 2
-    pauseGame: 1
-    messageText: There are multiple Infinity cubes here. Plan your marker placement carefully to avoid them.
-    messageRequirePause: 1
-    messageAutoHideDelay: 0
+    pauseGame: 0
+    messageText: There are multiple Infinity cubes here. Plan your marker placement
+      carefully to avoid them.
+    messageRequirePause: 0
+    messageAutoHideDelay: 3
     targetType: 0
     targetPosition: {x: 0, y: 0}
     targetCubeType: 0
@@ -138,10 +139,11 @@ MonoBehaviour:
     requireMarkerPlacementValidation: 0
     validationFailureMessage: 
   - DisplayMoveStep: 5
-    pauseGame: 1
-    messageText: Place markers to capture Unit cubes, but avoid the Infinity cubes. They cannot be captured.
-    messageRequirePause: 1
-    messageAutoHideDelay: 0
+    pauseGame: 0
+    messageText: Place markers to capture Unit cubes, but avoid the Infinity cubes.
+      They cannot be captured.
+    messageRequirePause: 0
+    messageAutoHideDelay: 4
     targetType: 2
     targetPosition: {x: 3, y: 14}
     targetCubeType: 2

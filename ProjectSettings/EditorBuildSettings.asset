@@ -9,6 +9,7 @@ EditorBuildSettings:
     path: Assets/Scenes/Splash.unity
     guid: fd72015620c108243b6834b2249b92dc
   - enabled: 1
-    path: Assets/Scenes/Sandbox.unity
+    path: Assets/Scenes/Stage.unity
     guid: 4d601ed4cd9939d48a6aa63880ed0b22
   m_configObjects: {}
+  m_UseUCBPForAssetBundles: 0

@@ -763,14 +763,52 @@ public class MessageHighlightManager : MonoBehaviour, IManagerDebugInterface
             DebugLog("ExecuteSequence", "Game paused for sequence");
         }
         
-        // Step 2: Show message (optional)
+        // Step 2: Highlight target FIRST (before or at same time as message)
+        // This ensures highlight appears immediately, not after message is dismissed
+        // Execute highlight synchronously for immediate visual feedback
+        if (sequence.targetType != HighlightTargetType.None)
+        {
+            // Highlight immediately (synchronous) - works regardless of pauseGame setting
+            if (sequence.targetType == HighlightTargetType.Tile)
+            {
+                HighlightTile(sequence.targetPosition, sequence.highlightColor);
+                int tileKey = GetPositionHash(sequence.targetPosition);
+                activeSequences[tileKey] = sequence;
+                DebugLog("ExecuteSequenceCoroutine", $"Tile highlighted immediately at ({sequence.targetPosition.x}, {sequence.targetPosition.y})");
+            }
+            else if (sequence.targetType == HighlightTargetType.Cube)
+            {
+                CubeManager cube = FindCubeAtPosition(sequence.targetPosition, sequence.targetCubeType);
+                if (cube != null)
+                {
+                    HighlightCube(sequence.targetPosition, sequence.highlightColor, sequence.shouldPulse);
+                    int cubeId = cube.GetInstanceID();
+                    activeSequences[cubeId] = sequence;
+                    if (sequence.highlightDuration > 0 && !sequence.clearOnCapture && waveManager != null)
+                    {
+                        highlightCreationSteps[cubeId] = waveManager.MoveStep;
+                    }
+                    DebugLog("ExecuteSequenceCoroutine", $"Cube highlighted immediately at ({sequence.targetPosition.x}, {sequence.targetPosition.y})");
+                }
+                else
+                {
+                    DebugLog("ExecuteSequenceCoroutine", $"⚠️ Cube not found at ({sequence.targetPosition.x}, {sequence.targetPosition.y})");
+                }
+            }
+            
+            // Start coroutine for validation/wait logic (if needed)
+            // This handles validation waiting and duration tracking, but highlight is already visible
+            StartCoroutine(HighlightTargetSequenceWaitLogic(sequence));
+        }
+        
+        // Step 3: Show message (optional) - highlight is already visible
         if (!string.IsNullOrEmpty(sequence.messageText))
         {
             DebugLog("ExecuteSequenceCoroutine", $"Showing message: '{sequence.messageText}'");
             yield return ShowMessageSequence(sequence.messageText, sequence.messageRequirePause, sequence.messageAutoHideDelay, 0);
         }
         
-        // Step 3: Resume game BEFORE highlighting (so player can interact)
+        // Step 4: Resume game AFTER message (so player can interact)
         // If validation is required, we'll pause the wave instead (game must run for input)
         if (sequence.pauseGame)
         {
@@ -788,12 +826,6 @@ public class MessageHighlightManager : MonoBehaviour, IManagerDebugInterface
                 isPaused = false;
                 DebugLog("ExecuteSequence", "Game resumed after message");
             }
-        }
-        
-        // Step 4: Highlight target (optional)
-        if (sequence.targetType != HighlightTargetType.None)
-        {
-            yield return HighlightTargetSequence(sequence);
         }
         
         // Step 5: Final resume (if we didn't resume earlier and no validation)
@@ -927,20 +959,16 @@ public class MessageHighlightManager : MonoBehaviour, IManagerDebugInterface
         DebugLog("ShowMessageSequence", "Message hidden");
     }
     
-    private IEnumerator HighlightTargetSequence(HighlightSequence sequence)
+    /// <summary>
+    /// Handles validation waiting and duration tracking for highlights (highlight itself is done synchronously in ExecuteSequenceCoroutine)
+    /// </summary>
+    private IEnumerator HighlightTargetSequenceWaitLogic(HighlightSequence sequence)
     {
-        DebugLog("HighlightTargetSequence", $"Starting highlight sequence: targetType={sequence.targetType}, targetPosition=({sequence.targetPosition.x}, {sequence.targetPosition.y})");
+        DebugLog("HighlightTargetSequenceWaitLogic", $"Starting wait logic: targetType={sequence.targetType}, targetPosition=({sequence.targetPosition.x}, {sequence.targetPosition.y})");
         
         if (sequence.targetType == HighlightTargetType.Tile)
         {
-            DebugLog("HighlightTargetSequence", $"Highlighting TILE at ({sequence.targetPosition.x}, {sequence.targetPosition.y})");
-            HighlightTile(sequence.targetPosition, sequence.highlightColor);
-            
-            // Store sequence for cleanup
             int tileKey = GetPositionHash(sequence.targetPosition);
-            activeSequences[tileKey] = sequence;
-            
-            DebugLog("HighlightTargetSequence", $"Tile highlighted, requireMarkerPlacementValidation={sequence.requireMarkerPlacementValidation}, waveActive={waveManager?.waveActive}");
             
             // If validation is required, pause wave and wait for marker placement
             if (sequence.requireMarkerPlacementValidation)
@@ -954,20 +982,17 @@ public class MessageHighlightManager : MonoBehaviour, IManagerDebugInterface
                     // Track this sequence as waiting for validation
                     pendingValidations[sequence.targetPosition] = sequence;
                     
-                    DebugLog("HighlightTargetSequence", $"Wave paused for validation at ({sequence.targetPosition.x}, {sequence.targetPosition.y})");
+                    DebugLog("HighlightTargetSequenceWaitLogic", $"Wave paused for validation at ({sequence.targetPosition.x}, {sequence.targetPosition.y})");
                 }
                 else
                 {
-                    DebugLog("HighlightTargetSequence", $"⚠️ Cannot pause wave - waveManager={waveManager != null}, waveActive={waveManager?.waveActive}");
+                    DebugLog("HighlightTargetSequenceWaitLogic", $"⚠️ Cannot pause wave - waveManager={waveManager != null}, waveActive={waveManager?.waveActive}");
                 }
                 
                 // Wait for validation to complete (handled in HandleMarkerPlaced)
-                // The sequence will continue when marker is placed correctly
                 yield return new WaitUntil(() => !pendingValidations.ContainsKey(sequence.targetPosition));
                 
-                DebugLog("HighlightTargetSequence", $"Validation completed for tile at ({sequence.targetPosition.x}, {sequence.targetPosition.y})");
-                
-                // Wave will be resumed in HandleMarkerPlaced when validation passes
+                DebugLog("HighlightTargetSequenceWaitLogic", $"Validation completed for tile at ({sequence.targetPosition.x}, {sequence.targetPosition.y})");
             }
             else
             {
@@ -975,58 +1000,17 @@ public class MessageHighlightManager : MonoBehaviour, IManagerDebugInterface
                 if (sequence.highlightDuration > 0 && waveManager != null)
                 {
                     highlightCreationSteps[tileKey] = waveManager.MoveStep;
-                    DebugLog("HighlightTargetSequence", $"Tile highlight created at step {waveManager.MoveStep}, duration={sequence.highlightDuration} steps");
+                    DebugLog("HighlightTargetSequenceWaitLogic", $"Tile highlight created at step {waveManager.MoveStep}, duration={sequence.highlightDuration} steps");
                 }
             }
         }
         else if (sequence.targetType == HighlightTargetType.Cube)
         {
-            // targetPosition is already in grid coordinates
-            DebugLog("HighlightTargetSequence", $"Looking for cube at grid position ({sequence.targetPosition.x}, {sequence.targetPosition.y}), type={sequence.targetCubeType}");
-            
-            // Find cube at initial position (position is only used to locate the cube initially)
-            // Once highlighted, the cube is tracked by instance ID, so highlight persists even when cube moves
-            CubeManager cube = FindCubeAtPosition(sequence.targetPosition, sequence.targetCubeType);
-            
-            if (cube != null)
-            {
-                DebugLog("HighlightTargetSequence", $"✅ Cube found! ID={cube.GetInstanceID()}, type={cube.type}, position=({cube.position.x}, {cube.position.y})");
-                int cubeId = cube.GetInstanceID();
-                // Highlight the cube (uses grid position to find it, but tracks by instance ID)
-                HighlightCube(sequence.targetPosition, sequence.highlightColor, sequence.shouldPulse);
-                
-                // Store sequence for cleanup (tracked by instance ID, not position)
-                activeSequences[cubeId] = sequence;
-                
-                DebugLog("HighlightTargetSequence", $"Cube highlighted, clearOnCapture={sequence.clearOnCapture}, highlightDuration={sequence.highlightDuration}");
-                
-                // Store creation step for duration tracking (if duration is specified and not waiting for capture)
-                if (sequence.highlightDuration > 0 && !sequence.clearOnCapture && waveManager != null)
-                {
-                    highlightCreationSteps[cubeId] = waveManager.MoveStep;
-                    DebugLog("HighlightTargetSequence", $"Cube highlight created at step {waveManager.MoveStep}, duration={sequence.highlightDuration} steps");
-                }
-                // If clearOnCapture is true, highlight stays until cube is captured (handled in HandleCubeCaptured)
-                // Note: Highlight will remain on cube even if it moves to different positions
-            }
-            else
-            {
-                DebugLog("HighlightTargetSequence", $"❌ Cube not found at grid position ({sequence.targetPosition.x}, {sequence.targetPosition.y})");
-                
-                // Additional debugging: list all active cubes
-                if (waveManager != null && waveManager.activeCubes != null)
-                {
-                    DebugLog("HighlightTargetSequence", $"Active cubes count: {waveManager.activeCubes.Count}");
-                    foreach (var activeCube in waveManager.activeCubes)
-                    {
-                        if (activeCube != null && !activeCube.isDestroyed)
-                        {
-                            DebugLog("HighlightTargetSequence", $"  - Cube at ({activeCube.position.x}, {activeCube.position.y}), type={activeCube.type}");
-                        }
-                    }
-                }
-            }
+            // For cubes, duration tracking already done in ExecuteSequenceCoroutine, nothing more needed here
+            DebugLog("HighlightTargetSequenceWaitLogic", "Cube highlight tracking complete");
         }
+        
+        yield return null;
     }
     
     /// <summary>

@@ -121,11 +121,10 @@ MonoBehaviour:
     requireMarkerPlacementValidation: 1
     validationFailureMessage: Place your marker on the highlighted tile.
   - DisplayMoveStep: 4
-    pauseGame: 1
-    messageText: Your marker will spawn a cube that will capture this cube\n (Press
-      K to Continue)
-    messageRequirePause: 1
-    messageAutoHideDelay: 0
+    pauseGame: 0
+    messageText: Your marker will spawn a cube that will capture this cube
+    messageRequirePause: 0
+    messageAutoHideDelay: 3
     targetType: 2
     targetPosition: {x: 2, y: 14}
     targetCubeType: 0
@@ -139,11 +138,11 @@ MonoBehaviour:
     requireMarkerPlacementValidation: 0
     validationFailureMessage: Place your marker on the highlighted tile.
   - DisplayMoveStep: 7
-    pauseGame: 1
+    pauseGame: 0
     messageText: Try capturing the other cubes! You can place markers on multiple
-      tiles.\n (Press K to Continue)
-    messageRequirePause: 1
-    messageAutoHideDelay: 0
+      tiles.
+    messageRequirePause: 0
+    messageAutoHideDelay: 3
     targetType: 0
     targetPosition: {x: 0, y: 0}
     targetCubeType: 0
@@ -160,14 +159,14 @@ MonoBehaviour:
     pauseGame: 1
     messageText: This is an Infinity cube. It's dangerous and cannot be captured
       - avoid it!\n (Press K to Continue)
-    messageRequirePause: 1
-    messageAutoHideDelay: 0
+    messageRequirePause: 0
+    messageAutoHideDelay: 4
     targetType: 2
     targetPosition: {x: 2, y: 10}
     targetCubeType: 2
     highlightColor: {r: 1, g: 0.2, b: 0.2, a: 0.5}
     shouldPulse: 1
-    highlightDuration: 0
+    highlightDuration: 5
     clearOnCapture: 0
     resumeGame: 1
     triggerOnMarkerAtPosition: {x: 0, y: 0}

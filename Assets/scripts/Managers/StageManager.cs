@@ -74,6 +74,20 @@ public class StageManager : MonoBehaviour, IManagerDebugInterface
             SubscribeToWaveEvents();
         }
 
+        // Check if tutorial should be started from Splash screen (bypasses disableAutoStart)
+        bool shouldStartTutorial = PlayerPrefs.GetInt("StartTutorial", 0) == 1;
+        if (shouldStartTutorial)
+        {
+            PlayerPrefs.DeleteKey("StartTutorial");
+            PlayerPrefs.Save();
+            DebugLog("StartTutorial flag detected from Splash screen, starting tutorial stage");
+            if (startingStageIndex != -1)
+            {
+                LoadStage(startingStageIndex);
+                return;
+            }
+        }
+
         // Only auto-start if not disabled (for prototyping mode)
         if (!disableAutoStart && startingStageIndex != -1)
         {
@@ -536,11 +550,31 @@ public class StageManager : MonoBehaviour, IManagerDebugInterface
                 DebugLog($"HandleStageSuccess: Showing completion message with stats - Time: {timeStr}, Captured: {capturedCubeCount}");
                 waveManager.ShowMessage(completionMessage);
                 
-                // Wait for player to dismiss message
-                while (waveManager.messagePanel != null && waveManager.messagePanel.activeSelf)
+                // Wait for player to dismiss message (K key press)
+                // The message uses RequirePause=true, so WaveManager will wait for K key
+                // We wait for the panel to become inactive, with a fallback K key check
+                float timeout = 30f; // Safety timeout
+                float elapsed = 0f;
+                while (waveManager.messagePanel != null && waveManager.messagePanel.activeSelf && elapsed < timeout)
                 {
+                    // Fallback: Check for K key directly in case message system has issues
+                    if (Input.GetKeyDown(KeyCode.K))
+                    {
+                        DebugLog("HandleStageSuccess: K key detected, forcing message dismissal");
+                        if (waveManager.messagePanel != null)
+                        {
+                            waveManager.messagePanel.SetActive(false);
+                        }
+                        // Resume time in case it's still paused
+                        Time.timeScale = 1f;
+                        break;
+                    }
+                    elapsed += Time.unscaledDeltaTime;
                     yield return null;
                 }
+                
+                // Ensure time is resumed
+                Time.timeScale = 1f;
                 
                 DebugLog("HandleStageSuccess: Completion message dismissed by player");
             }

@@ -265,16 +265,16 @@ One attunement per marker type. Modifies cube properties, not collision matrix.
 ### Milestone 1.5: Demo Stage Content
 - **Target**: Foundational Systems + One Complete Demo Stage
 - **Points**: 5 (measured: ~1 week work)
-- **Status**: 🔄 **IN PROGRESS** (December 14, 2025)
+- **Status**: 🔄 **IN PROGRESS** (December 15, 2025)
 - **Tasks**:
   - [x] Further refine tutorial/demo stage and waves - **COMPLETE** (Stage 0 with highlight sequences)
   - [x] Ensure proper messaging is implemented to convey game mechanics - **COMPLETE** (Highlight sequence system)
   - [x] Wave Completion Messages - **COMPLETE** (Integrated into sequence system)
-  - [ ] Stage Success Transition - **PENDING**
+  - [ ] Stage Success Transition - **PENDING** (Implementation exists, needs polish verification)
   - [x] Stage/Wave Sequence Framework - **COMPLETE** (Highlight sequences with timing, triggers, validation)
-  - [ ] Complete configuration of waves and stage (3 waves) - **PENDING**
-  - [ ] Data collection on play session - **PENDING**
-  - [ ] Complete Splash to Stage loop - **PENDING**
+  - [x] Complete configuration of waves and stage (3 waves) - **COMPLETE** (All sequences working for all 3 waves)
+  - [ ] Data collection on play session - **PENDING** (System exists, needs verification)
+  - [x] Complete Splash to Stage loop - **COMPLETE** (Tutorial loop working)
 
 ---
 
