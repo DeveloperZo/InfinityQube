@@ -12,15 +12,15 @@ This roadmap outlines the development path from current production-ready state t
 ## Current Status
 
 ### 📍 **Current Phase**: Phase 1 - Core Innovation & Content
-### 📍 **Current Milestone**: 1.6 - Visual Polish Pass ⬜ Pending
+### 📍 **Current Milestone**: 1.6 - Stage Content Implementation ⬜ Pending
 
 ### 🔴 **TOP PRIORITIES**
 | Priority | Item | Status | Points |
 |----------|------|--------|--------|
-| 🔴 Critical | Design remaining stages | Ready to start | 8 pts |
-| 🔴 Critical | Create wave configurations | Ready to start | 8 pts |
-| 🔴 High | Implement difficulty curve | After stages | 4 pts |
+| 🔴 Critical | Stage Content Implementation (Milestone 1.6) | Ready to start | 12 pts |
+| 🔴 High | Stage Content Refinement (Milestone 1.7) | After 1.6 | 8 pts |
 | 🟡 Medium | File Size Refactoring | 12 files over limit | 15 pts |
+| 🟢 Low | Visual Polish Pass (Milestone 1.7) | After 1.6 | 5 pts |
 | 🟢 Low | Hub polish pass | Deferred | 2 pts |
 
 ---
@@ -45,7 +45,9 @@ Points reflect actual development time, not complexity. A "week gap" between com
 | | 1.3 Database Enhancement | ✅ Complete | 6 pts |
 | | **1.4 Stage Content Creation** | ✅ **Complete** | 20 pts |
 | | **1.5 Demo Stage Content** | ✅ **Complete** | 5 pts |
-| | 1.6 Visual Polish Pass | ⬜ Pending | 5 pts |
+| | 1.6 Stage Content Implementation | ⬜ Pending | 12 pts |
+| | 1.7 Stage Content Refinement & Difficulty Curve | ⬜ Pending | 8 pts |
+| | 1.8 Visual Effects & Juice Pass | ⬜ Pending | 5 pts |
 | **Phase 2** | 2.1-2.10 Content & Polish | ⬜ Pending | 68 pts |
 | **Phase 3** | 3.1-3.8 Polish & Commercial Prep | ⬜ Pending | 55 pts |
 | **Phase 4** | 4.1-4.9 Steam & Release | ⬜ Pending | 50 pts |
@@ -54,7 +56,7 @@ Points reflect actual development time, not complexity. A "week gap" between com
 
 ## Phase 1: Core Innovation & Content (Current Phase)
 **Goal**: Implement core gameplay systems and complete foundational content  
-**Estimated Total**: ~124 pts (~5-6 months at 22 pts/month)
+**Estimated Total**: ~147 pts (~6-7 months at 22 pts/month)
 
 ### Milestone 1.0: Core Game Development ✅ COMPLETE
 - **Target**: Establish all foundational game systems
@@ -253,12 +255,9 @@ One attunement per marker type. Modifies cube properties, not collision matrix.
   - [x] Design 13 stages (1 tutorial/demo stage and 12 game stages) - **COMPLETE** (Level Design doc updated)
   - [x] Establish stage numbering convention (Stage 0 = Tutorial, Stages 1-12 = Core game) - **COMPLETE**
   - [x] Update StageManager with IsTutorialStage property - **COMPLETE**
-  - [ ] Design wave configurations for each stage - **IN PROGRESS** (Stages 0-3 have waves, need refinement)
-  - [ ] Implement proper difficulty curve across all stages - **PENDING**
   - [x] Create tutorial/demo stage teaching core mechanics - **COMPLETE** (Stage 0 with highlight sequence system)
   - [x] Ensure debuggers allow easy tuning of stages/waves - **COMPLETE** (Prototyping panel exists)
-  - [ ] Implement stages 4-12 (rough first pass) - **PENDING**
-  - [ ] Validate and playtest implemented stages - **PENDING** 
+  - [x] Remaining content tasks moved to Milestone 1.6 - **COMPLETE** 
 
 ---
 
@@ -278,10 +277,41 @@ One attunement per marker type. Modifies cube properties, not collision matrix.
 
 ---
 
-### Milestone 1.6: Visual Polish Pass
-- **Target**: Enhanced game feel and visual feedback
+### Milestone 1.6: Stage Content Implementation
+- **Target**: Implement all remaining stages (4-12) with initial wave configurations
+- **Points**: 12 (~2.5 weeks active development)
+- **Status**: ⬜ Pending
+- **Dependencies**: Milestone 1.5 ✅
+- **Tasks**:
+  - [ ] Design wave configurations for stages 4-12
+  - [ ] Implement stages 4-12 (rough first pass)
+  - [ ] Basic wave configurations for all stages
+  - [ ] Ensure all stages are playable end-to-end
+- **Note**: Focus on getting content in place. Refinement and balancing come in 1.7.
+
+---
+
+### Milestone 1.7: Stage Content Refinement & Difficulty Curve
+- **Target**: Balance, tune, and establish proper difficulty progression across all stages
+- **Points**: 8 (~1.5 weeks active development)
+- **Status**: ⬜ Pending
+- **Dependencies**: Milestone 1.6
+- **Tasks**:
+  - [ ] Playtest all stages (0-12)
+  - [ ] Implement proper difficulty curve across all stages
+  - [ ] Refine wave configurations based on playtesting feedback
+  - [ ] Balance marker economy and cube spawn rates
+  - [ ] Validate stage progression feels rewarding
+- **Note**: Iterative refinement work. Can be done in cycles with playtesting.
+
+---
+
+### Milestone 1.8: Visual Effects & Juice Pass
+- **Target**: Core visual feedback and effects for gameplay actions
 - **Points**: 5 (~1 week active development)
 - **Status**: ⬜ Pending
+- **Dependencies**: Milestone 1.7 (can start in parallel with 1.7 refinement)
+- **Note**: Focuses on visual effects and feedback. Gameplay feel polish comes in 2.6.
 - **Tasks**:
   - [ ] Improved particle effects for all major actions
   - [ ] Screen shake and juice for impacts
@@ -295,59 +325,48 @@ One attunement per marker type. Modifies cube properties, not collision matrix.
 
 ## Phase 2: Content Completion & First Polish Pass
 **Goal**: Complete all content and achieve first polish level  
-**Estimated Total**: ~68 pts
+**Estimated Total**: ~48 pts
 
-### Milestone 2.1: Complete Stage Content
-- **Points**: 10 (~2 weeks)
-- Finish all 12-13 stages with full configurations
+**Note**: Stage content completion moved to Milestone 1.6
 
-### Milestone 2.2: Save/Load & Progress Persistence
+### Milestone 2.1: Save/Load & Progress Persistence
 - **Points**: 5 (~1 week)
 - Complete save/load system for game progress
+- **Note**: SaveManager exists, this milestone completes/enhances it
+
+**Note**: Interactive Tutorial System completed in Milestone 1.5
+
+### Milestone 2.2: Stage Progression & Unlock System
+- **Points**: 5 (~1 week)
+- Stage unlock system and progression flow
+- **Dependencies**: Milestone 2.1 (needs save system for progression persistence)
 
 ### Milestone 2.3: Menu & UI Systems
 - **Points**: 8 (~1.5 weeks)
+- **Dependencies**: Milestone 2.2 (UI needs progression logic to display unlocks)
 - **Tasks**:
   - [ ] Pause menu (resume, settings, quit to menu)
-  - [ ] Stage select screen
+  - [ ] Stage select screen (requires unlock system from 2.2)
   - [ ] Settings persistence (audio, display)
-  - [ ] Stage results/rating display
+  - [ ] Stage results/rating display (requires progression from 2.2)
 
-### Milestone 2.4: Interactive Tutorial System
-- **Points**: 10 (~2 weeks)
-- **Status**: 🔄 **IN PROGRESS** (December 14, 2025)
-- **Progress**: Framework complete, tutorial content in progress
-- **Completed**:
-  - [x] Highlight sequence system with messages, visual highlights, and interactive validation
-  - [x] Sequence timing (wave start, move steps, wave end)
-  - [x] Event triggers (marker placement, cube capture)
-  - [x] Tutorial stage (Stage 0) with guided sequences
-- **Remaining**:
-  - [ ] Complete tutorial sequences for all core mechanics
-  - [ ] Expand tutorial to cover all marker types and cube interactions
-  - [ ] Polish sequence timing and messaging
-
-### Milestone 2.5: Stage Progression & Unlock System
-- **Points**: 5 (~1 week)
-- Stage unlock system and progression flow
-
-### Milestone 2.6: Cosmic Theme Integration
+### Milestone 2.4: Cosmic Theme Integration
 - **Points**: 7 (~1.5 weeks)
 - Deliver on aesthetic vision
 
-### Milestone 2.7: Audio Content & Polish
+### Milestone 2.5: Audio Content & Polish
 - **Points**: 5 (~1 week)
 - Add actual audio content to completed system
 
-### Milestone 2.8: First Polish Pass - Gameplay
+### Milestone 2.6: First Polish Pass - Gameplay
 - **Points**: 8 (~1.5 weeks)
 - First comprehensive polish pass focusing on gameplay feel
 
-### Milestone 2.9: Meta-Progression Systems
+### Milestone 2.7: Meta-Progression Systems
 - **Points**: 5 (~1 week)
 - Player retention, achievement, and expressive progression
 
-### Milestone 2.10: Analytics Dashboard
+### Milestone 2.8: Analytics Dashboard
 - **Points**: 5 (~1 week)
 - **Goal**: Simple web tool to visualize player stats JSON for playtesting insights
 - **Tasks**:
@@ -542,14 +561,14 @@ Milestone 1.0 ✅ → 1.1 ✅ → 1.2 🔄 → 1.3 → 1.4 → 2.x → 3.x → 4
 
 | Phase | Focus | Points | Status |
 |-------|-------|--------|--------|
-| Phase 1 | Core Innovation & Content | 124 pts | 🔄 In Progress |
-| Phase 2 | Content Completion & Polish | 68 pts | ⬜ Pending |
+| Phase 1 | Core Innovation & Content | 147 pts | 🔄 In Progress |
+| Phase 2 | Content Completion & Polish | 48 pts | ⬜ Pending |
 | Phase 3 | Polish & Commercial Prep | 55 pts | ⬜ Pending |
 | Phase 4 | Steam Integration & Release | 50 pts | ⬜ Pending |
-| **TOTAL** | | **297 pts** | |
+| **TOTAL** | | **300 pts** | |
 
 **Completed**: 122 pts (Milestone 1.0 + 1.1 + 1.2 + 1.3 + 1.4 + 1.5)  
-**Remaining**: ~175 pts
+**Remaining**: ~178 pts
 
 **Note**: Phases can overlap; calendar time will vary based on availability.
 
@@ -561,7 +580,7 @@ Milestone 1.0 ✅ → 1.1 ✅ → 1.2 🔄 → 1.3 → 1.4 → 2.x → 3.x → 4
 |--------|-------|
 | **Measured Velocity** | **22 points/month** (active periods) |
 | **Completed Points** | 122 pts |
-| **Remaining Points** | ~175 pts |
+| **Remaining Points** | ~178 pts |
 | **Point Definition** | 1 pt ≈ 1 day active work |
 | **Week Definition** | 5 pts ≈ 1 week active work |
 | **Measurement Rule** | Gap < 1 week = same-day continuation |
