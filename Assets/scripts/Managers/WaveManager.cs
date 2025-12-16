@@ -84,6 +84,7 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
     private int blueCubesCaptured = 0;
     private int reinforcedCubesCaptured = 0;
     private int cubesEscaped = 0;
+    private int unitCubesEscaped = 0; // Track Unit cube escapes for bottom row penalty
     private int markersPlaced = 0;
     private int detonationsUsed = 0;
 
@@ -1054,6 +1055,17 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
         // Process as normal cube behavior for wave completion tracking
         if (cubeType == CubeType.Unit)
         {
+            unitCubesEscaped++;
+            DebugLog($"Unit cube escaped. Total Unit escapes: {unitCubesEscaped}/{grid?.Width ?? 0}");
+            
+            // Penalty: When escaped Unit cubes equals number of columns, remove bottom row
+            if (grid != null && unitCubesEscaped >= grid.Width)
+            {
+                DebugLog($"⚠️ PENALTY: {unitCubesEscaped} Unit cubes escaped (equals grid width {grid.Width}). Removing bottom row!");
+                grid.RemoveBottomRow();
+                unitCubesEscaped = 0; // Reset counter after penalty
+            }
+            
             OnNonBlackCubeProcessed(cubeType, false); // false = not captured
             this.Log($"Normal cube escaped - wave completion check triggered", showDebugInfo);
         }
@@ -1238,6 +1250,7 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
         blueCubesCaptured = 0;
         reinforcedCubesCaptured = 0;
         cubesEscaped = 0;
+        unitCubesEscaped = 0;
         markersPlaced = 0;
         detonationsUsed = 0;
         totalNonBlackCubes = 0;

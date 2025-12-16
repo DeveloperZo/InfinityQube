@@ -279,16 +279,35 @@ public class Tile : MonoBehaviour
         Debug.Log($"Tile ({x},{y}): Detonation point set to {hasPoint}");
     }
 
+    /// <summary>
+    /// Event fired when tile starts falling (for animation hooks)
+    /// </summary>
+    public System.Action<Tile> OnTileFallStarted;
+    
+    /// <summary>
+    /// Event fired when tile fall completes (for animation hooks)
+    /// </summary>
+    public System.Action<Tile> OnTileFallCompleted;
+    
     public void MakeTileFall()
     {
         if (hasFallen) return;
 
+        // Fire start event (for future animation systems)
+        OnTileFallStarted?.Invoke(this);
+        
         hasFallen = true;
         ClearMarker();
         ResetTile();
 
         // Visual indication - make tile disappear
+        // Note: Actual visual transition is handled by GridManager.RemoveBottomRowCoroutine()
+        // This method is called after the transition completes
         gameObject.SetActive(false);
+        
+        // Fire completion event (for future animation systems)
+        OnTileFallCompleted?.Invoke(this);
+        
         Debug.Log($"Tile ({x},{y}) has fallen");
     }
 

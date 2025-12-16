@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using static Enumerations;
@@ -1340,34 +1341,201 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
     #endregion
 
     #region Row Management
+    
+    /// <summary>
+    /// Event fired when bottom row removal starts (for animation hooks)
+    /// </summary>
+    public System.Action<int> OnBottomRowRemovalStarted;
+    
+    /// <summary>
+    /// Event fired when bottom row removal completes (for animation hooks)
+    /// </summary>
+    public System.Action<int> OnBottomRowRemovalCompleted;
+    
+    private bool isRemovingBottomRow = false; // Prevent concurrent removals
+    
+    /// <summary>
+    /// Removes the bottom row with a controlled visual transition.
+    /// Uses coroutine for smooth animation and provides hooks for future animation systems.
+    /// Works even if called at wave end - coroutine completes independently.
+    /// </summary>
     public void RemoveBottomRow()
     {
         if (!IsGridReady) return;
-
-        DebugLog("Removing bottom row due to normal cube escape");
-
-        // Make all tiles in row 0 fall
+        if (isRemovingBottomRow) 
+        {
+            DebugLog("RemoveBottomRow: Already removing a row, skipping duplicate call");
+            return;
+        }
+        
+        StartCoroutine(RemoveBottomRowCoroutine());
+    }
+    
+    private IEnumerator RemoveBottomRowCoroutine()
+    {
+        isRemovingBottomRow = true;
+        int rowToRemove = bottom;
+        DebugLog($"Removing bottom row {rowToRemove} due to Unit cube escape penalty");
+        
+        // Fire start event (for future animation systems)
+        OnBottomRowRemovalStarted?.Invoke(rowToRemove);
+        
+        // Safety check: ensure we have a valid row to remove
+        if (rowToRemove >= height)
+        {
+            DebugLog($"⚠️ Cannot remove row {rowToRemove} - exceeds grid height {height}. Aborting.");
+            isRemovingBottomRow = false;
+            yield break;
+        }
+        
+        // Collect all tiles and cubes in the row
+        List<Tile> tilesToRemove = new List<Tile>();
+        List<CubeManager> cubesToRemove = new List<CubeManager>();
+        
         for (int x = 0; x < width; x++)
         {
-            Tile tile = GetTileAt(x, bottom);
+            Tile tile = GetTileAt(x, rowToRemove);
+            if (tile != null)
+            {
+                tilesToRemove.Add(tile);
+            }
+        }
+        
+        // Find cubes on this row
+        var allCubes = FindObjectsByType<CubeManager>(FindObjectsSortMode.None);
+        foreach (var cube in allCubes)
+        {
+            if (cube != null && !cube.isDestroyed && cube.position.y == rowToRemove)
+            {
+                cubesToRemove.Add(cube);
+            }
+        }
+        
+        // Simple transition: fade out tiles and cubes
+        // TODO: Replace with proper animation system in future
+        float transitionDuration = 0.5f; // Simple fade duration
+        float elapsed = 0f;
+        
+        // Store initial renderers for fade (using MaterialPropertyBlock to avoid modifying shared materials)
+        Dictionary<Tile, Renderer> tileRenderers = new Dictionary<Tile, Renderer>();
+        Dictionary<CubeManager, Renderer> cubeRenderers = new Dictionary<CubeManager, Renderer>();
+        Dictionary<Tile, MaterialPropertyBlock> tilePropertyBlocks = new Dictionary<Tile, MaterialPropertyBlock>();
+        Dictionary<CubeManager, MaterialPropertyBlock> cubePropertyBlocks = new Dictionary<CubeManager, MaterialPropertyBlock>();
+        
+        foreach (var tile in tilesToRemove)
+        {
+            Renderer renderer = tile.GetComponent<Renderer>();
+            if (renderer != null)
+            {
+                tileRenderers[tile] = renderer;
+                MaterialPropertyBlock block = new MaterialPropertyBlock();
+                renderer.GetPropertyBlock(block);
+                tilePropertyBlocks[tile] = block;
+            }
+        }
+        
+        foreach (var cube in cubesToRemove)
+        {
+            Renderer renderer = cube.GetComponent<Renderer>();
+            if (renderer != null)
+            {
+                cubeRenderers[cube] = renderer;
+                MaterialPropertyBlock block = new MaterialPropertyBlock();
+                renderer.GetPropertyBlock(block);
+                cubePropertyBlocks[cube] = block;
+            }
+        }
+        
+        // Fade out animation using MaterialPropertyBlock (safe for shared materials)
+        while (elapsed < transitionDuration)
+        {
+            elapsed += Time.deltaTime;
+            float alpha = 1f - (elapsed / transitionDuration);
+            
+            // Fade tiles
+            foreach (var tile in tilesToRemove)
+            {
+                if (tile != null && tileRenderers.ContainsKey(tile) && tilePropertyBlocks.ContainsKey(tile))
+                {
+                    Renderer renderer = tileRenderers[tile];
+                    MaterialPropertyBlock block = tilePropertyBlocks[tile];
+                    
+                    Color color = block.GetColor("_Color");
+                    if (color == Color.clear) color = Color.white; // Default if no color property
+                    color.a = alpha;
+                    block.SetColor("_Color", color);
+                    renderer.SetPropertyBlock(block);
+                }
+            }
+            
+            // Fade cubes (handle gracefully if destroyed during wave end)
+            foreach (var cube in cubesToRemove)
+            {
+                if (cube != null && !cube.isDestroyed && cubeRenderers.ContainsKey(cube) && cubePropertyBlocks.ContainsKey(cube))
+                {
+                    Renderer renderer = cubeRenderers[cube];
+                    if (renderer != null) // Additional null check in case cube was destroyed
+                    {
+                        MaterialPropertyBlock block = cubePropertyBlocks[cube];
+                        
+                        Color color = block.GetColor("_Color");
+                        if (color == Color.clear) color = Color.white; // Default if no color property
+                        color.a = alpha;
+                        block.SetColor("_Color", color);
+                        renderer.SetPropertyBlock(block);
+                    }
+                }
+            }
+            
+            yield return null;
+        }
+        
+        // Safety check: Verify grid is still valid and row is still within bounds
+        // (Grid might have been resized during transition, though unlikely between waves)
+        if (!IsGridReady || rowToRemove >= height)
+        {
+            DebugLog($"⚠️ Grid state changed during removal. Row {rowToRemove} no longer valid (height: {height}). Aborting cleanup.");
+            isRemovingBottomRow = false;
+            yield break;
+        }
+        
+        // Cleanup: Actually remove tiles and cubes
+        // Note: This happens even if wave ended - grid state persists between waves
+        foreach (var tile in tilesToRemove)
+        {
             if (tile != null)
             {
                 tile.MakeTileFall();
             }
         }
-
-        // Remove any cubes that were on row 0
-        RemoveCubesOnRow(bottom);
-
-        // Adjust player position if they were on row 0
+        
+        // Remove cubes that still exist (some may have been destroyed at wave end)
+        foreach (var cube in cubesToRemove)
+        {
+            if (cube != null && !cube.isDestroyed)
+            {
+                DebugLog($"Removing cube at ({cube.position.x}, {cube.position.y}) - row fell");
+                Destroy(cube.gameObject);
+            }
+        }
+        
+        // Adjust player position if they were on the removed row
         AdjustPlayerPosition();
-        bottom++;
-        DebugLog("Bottom row removal complete");
+        
+        // Update grid bounds (persists between waves)
+        // Safety: Clamp bottom to ensure it doesn't exceed grid height
+        bottom = Mathf.Min(bottom + 1, height - 1);
+        
+        // Fire completion event (for future animation systems)
+        OnBottomRowRemovalCompleted?.Invoke(rowToRemove);
+        
+        isRemovingBottomRow = false;
+        DebugLog($"Bottom row {rowToRemove} removal complete. New bottom: {bottom} (grid height: {height})");
     }
 
     private void RemoveCubesOnRow(int row)
     {
-        var allCubes = FindObjectsOfType<CubeManager>();
+        var allCubes = FindObjectsByType<CubeManager>(FindObjectsSortMode.None);
         foreach (var cube in allCubes)
         {
             if (cube != null && !cube.isDestroyed && cube.position.y == row)

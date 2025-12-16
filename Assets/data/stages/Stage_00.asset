@@ -26,8 +26,8 @@ MonoBehaviour:
   lineDividerCaptureReward: 0
   stageGrants:
     unitMaxOnGrid: 1
-    unitMarkerRechargeRate: 2
-    maxUnitMarkerCharges: 3
+    unitMarkerRechargeRate: 0
+    maxUnitMarkerCharges: 0
     matrixCharges: 0
     matrixMaxOnGrid: 0
     recursionCharges: 0
