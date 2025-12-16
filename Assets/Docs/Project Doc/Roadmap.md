@@ -12,7 +12,7 @@ This roadmap outlines the development path from current production-ready state t
 ## Current Status
 
 ### 📍 **Current Phase**: Phase 1 - Core Innovation & Content
-### 📍 **Current Milestone**: 1.4 - Stage Content Creation 🔄 IN PROGRESS
+### 📍 **Current Milestone**: 1.6 - Visual Polish Pass ⬜ Pending
 
 ### 🔴 **TOP PRIORITIES**
 | Priority | Item | Status | Points |
@@ -43,8 +43,8 @@ Points reflect actual development time, not complexity. A "week gap" between com
 | | 1.1 Refine Markers | ✅ Complete | 14 pts |
 | | 1.2 RPG/Progression | ✅ Complete | 12 pts |
 | | 1.3 Database Enhancement | ✅ Complete | 6 pts |
-| | **1.4 Stage Content Creation** | 🔄 **In Progress** | 20 pts (4/13 stages, ~6 pts completed) |
-| | 1.5 Demo Stage Content | ⬜ Pending | 5 pts |
+| | **1.4 Stage Content Creation** | ✅ **Complete** | 20 pts |
+| | **1.5 Demo Stage Content** | ✅ **Complete** | 5 pts |
 | | 1.6 Visual Polish Pass | ⬜ Pending | 5 pts |
 | **Phase 2** | 2.1-2.10 Content & Polish | ⬜ Pending | 68 pts |
 | **Phase 3** | 3.1-3.8 Polish & Commercial Prep | ⬜ Pending | 55 pts |
@@ -262,19 +262,19 @@ One attunement per marker type. Modifies cube properties, not collision matrix.
 
 ---
 
-### Milestone 1.5: Demo Stage Content
+### Milestone 1.5: Demo Stage Content ✅ COMPLETE
 - **Target**: Foundational Systems + One Complete Demo Stage
 - **Points**: 5 (measured: ~1 week work)
-- **Status**: 🔄 **IN PROGRESS** (December 15, 2025)
+- **Status**: ✅ **COMPLETE** (December 16, 2025)
 - **Tasks**:
   - [x] Further refine tutorial/demo stage and waves - **COMPLETE** (Stage 0 with highlight sequences)
   - [x] Ensure proper messaging is implemented to convey game mechanics - **COMPLETE** (Highlight sequence system)
   - [x] Wave Completion Messages - **COMPLETE** (Integrated into sequence system)
-  - [ ] Stage Success Transition - **PENDING** (Implementation exists, needs polish verification)
+  - [x] Stage Success Transition - **COMPLETE** (Completion message with stats, K key handling, return to Splash)
   - [x] Stage/Wave Sequence Framework - **COMPLETE** (Highlight sequences with timing, triggers, validation)
   - [x] Complete configuration of waves and stage (3 waves) - **COMPLETE** (All sequences working for all 3 waves)
-  - [ ] Data collection on play session - **PENDING** (System exists, needs verification)
-  - [x] Complete Splash to Stage loop - **COMPLETE** (Tutorial loop working)
+  - [x] Data collection on play session - **COMPLETE** (PlayerStatisticsManager tracks tutorial progress, messages, actions)
+  - [x] Complete Splash to Stage loop - **COMPLETE** (Tutorial loop working, PlayerPrefs flag system)
 
 ---
 
@@ -548,8 +548,8 @@ Milestone 1.0 ✅ → 1.1 ✅ → 1.2 🔄 → 1.3 → 1.4 → 2.x → 3.x → 4
 | Phase 4 | Steam Integration & Release | 50 pts | ⬜ Pending |
 | **TOTAL** | | **297 pts** | |
 
-**Completed**: ~100 pts (Milestone 1.0 + 1.1 + 1.2 + 1.3 + partial 1.4 + partial 1.5)  
-**Remaining**: ~197 pts
+**Completed**: 122 pts (Milestone 1.0 + 1.1 + 1.2 + 1.3 + 1.4 + 1.5)  
+**Remaining**: ~175 pts
 
 **Note**: Phases can overlap; calendar time will vary based on availability.
 
@@ -560,8 +560,8 @@ Milestone 1.0 ✅ → 1.1 ✅ → 1.2 🔄 → 1.3 → 1.4 → 2.x → 3.x → 4
 | Metric | Value |
 |--------|-------|
 | **Measured Velocity** | **22 points/month** (active periods) |
-| **Completed Points** | ~100 pts |
-| **Remaining Points** | ~197 pts |
+| **Completed Points** | 122 pts |
+| **Remaining Points** | ~175 pts |
 | **Point Definition** | 1 pt ≈ 1 day active work |
 | **Week Definition** | 5 pts ≈ 1 week active work |
 | **Measurement Rule** | Gap < 1 week = same-day continuation |

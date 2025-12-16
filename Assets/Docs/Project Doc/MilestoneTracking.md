@@ -35,7 +35,20 @@
 |--------|--------|-----------------|--------|
 | Wave completion messages | 2 | July 8, 2025 | `62f574f` |
 | Stage transition system | 2 | July 8, 2025 | - |
-| Demo loop completion | 1 | July 8, 2025 | - |
+| Demo loop completion | 1 | July 8, 2025 | -
+
+### Milestone 1.5: Demo Stage Content (5 pts) ✅
+*December 2025 (~1 week work)*
+
+| System | Points | Completion Date | Notes |
+|--------|--------|-----------------|-------|
+| Tutorial/demo stage refinement | 1 | Dec 15, 2025 | Stage 0 with highlight sequences |
+| Messaging system | 1 | Dec 15, 2025 | MessageHighlightManager system |
+| Stage/Wave sequence framework | 1 | Dec 15, 2025 | Highlight sequences with timing, triggers, validation |
+| Complete 3-wave configuration | 0.5 | Dec 16, 2025 | All sequences working for all 3 waves |
+| Splash to Stage loop | 0.5 | Dec 16, 2025 | Tutorial loop with PlayerPrefs flag system |
+| Stage success transition | 0.5 | Dec 16, 2025 | Completion message, K key handling, return to Splash |
+| Data collection verification | 0.5 | Dec 16, 2025 | PlayerStatisticsManager tracks tutorial progress | |
 
 ### Milestone 1.1: Refine Markers Implementation (14 pts) ✅
 *December 2025 (~2 weeks active work)*
@@ -52,7 +65,7 @@
 | Penalty/Reward System | 1 | Dec 9, 2025 | Line movement on escape/success |
 | Marker Economy | 2 | Dec 9, 2025 | Stage/wave grants with caps |
 
-**Total Completed**: 89 points (normalized)
+**Total Completed**: 94 points (normalized)
 
 ---
 
