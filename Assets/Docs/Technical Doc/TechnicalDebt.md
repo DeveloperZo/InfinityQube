@@ -203,7 +203,8 @@ private int corruptionDuration = 5;
 
 ## 8. File Size Violations (CRITICAL Priority)
 
-> **Updated November 28, 2025**: Comprehensive audit reveals 10 files exceeding limits.
+> **Updated December 8, 2025**: Fresh audit reveals 12 files exceeding limits.
+> **Note**: Full analysis and extraction plans now in [Technical Critiques](TechnicalCritiques.md).
 
 ### 8.1 Critical Violations Summary
 
@@ -214,18 +215,20 @@ private int corruptionDuration = 5;
 
 | File | Current | Limit | Over By | Priority |
 |------|---------|-------|---------|----------|
-| WaveManager.cs | 1949 | 600 | **225%** | 🔴 CRITICAL |
-| PlayerActionManager.cs | 1655 | 600 | **176%** | 🔴 CRITICAL |
-| CubeManager.cs | 1378 | 600 | **130%** | 🔴 CRITICAL |
-| PlayerStatisticsManager.cs | 1347 | 600 | **125%** | 🔴 CRITICAL |
-| PlayerMarkerSystem.cs | 1347 | 600 | **125%** | 🔴 CRITICAL |
-| GridManager.cs | 1276 | 600 | **113%** | 🔴 CRITICAL |
+| WaveManager.cs | 2083 | 600 | **247%** | 🔴 CRITICAL |
+| PlayerActionManager.cs | 1936 | 600 | **223%** | 🔴 CRITICAL |
+| CubeManager.cs | 1535 | 600 | **156%** | 🔴 CRITICAL |
+| GridManager.cs | 1384 | 600 | **131%** | 🔴 CRITICAL |
+| PlayerStatisticsManager.cs | 1352 | 600 | **125%** | 🔴 CRITICAL |
+| PlayerMarkerSystem.cs | 1122 | 600 | **87%** | 🔴 CRITICAL |
 | IQWaveGenerator.cs | 1043 | 750 | **39%** | 🟡 HIGH |
+| **CubeCollisionManager.cs (NEW)** | 1017 | 600 | **70%** | 🟡 HIGH |
 | TutorialMessageManager.cs | 997 | 600 | **66%** | 🟡 HIGH |
-| FacePaintingManager.cs | 861 | 600 | **44%** | 🟡 MEDIUM |
-| MessageProgressTracker.cs | 775 | 750 | **3%** | 🟢 LOW |
+| FacePaintingManager.cs | 869 | 600 | **45%** | 🟡 MEDIUM |
+| Tile.cs | 878 | 750 | **17%** | 🟡 MEDIUM |
+| MarkerVisualManager.cs | 537 | 600 | - | ✅ OK |
 
-**Note**: Tile.cs (602 lines) was previously flagged but has been successfully refactored into component system (TileVisuals, TileMarker, TileCorruption, TileFacePainting).
+**Note**: Tile.cs was previously well-decomposed but has grown again during Milestone 1.2 work.
 
 ### 8.2 Extraction Plans
 
@@ -233,7 +236,6 @@ private int corruptionDuration = 5;
 
 **Current Responsibilities**:
 - Wave spawning and configuration
-- Paired wave system / marker inheritance
 - Cube management and tracking
 - Statistics and completion tracking
 - UI message display
@@ -243,7 +245,6 @@ private int corruptionDuration = 5;
 ```
 WaveManager.cs (600 lines - coordination)
 ├── WaveSpawnSystem.cs (~400 lines) - Cube spawning logic
-├── WavePairingSystem.cs (~300 lines) - Marker inheritance
 ├── WaveStatistics.cs (~200 lines) - Tracking & stats
 └── WaveUIController.cs (~150 lines) - Message display
 ```
@@ -411,9 +412,9 @@ GridManager.cs (600 lines - core grid)
 
 ---
 
-**Last Updated**: November 28, 2025 - Comprehensive file size audit completed  
+**Last Updated**: December 8, 2025 - Fresh file size audit completed  
 **Next Review**: After file size refactoring begins  
-**Related Documents**: [Architectural Critiques](ArchitecturalCritiques.md), [Development Velocity](DevelopmentVelocity.md)  
+**Related Documents**: [Technical Critiques](TechnicalCritiques.md), [Development Velocity](DevelopmentVelocity.md)  
 **Maintained By**: Development Team
 
 ---
@@ -442,10 +443,10 @@ GridManager.cs (600 lines - core grid)
 - **Documentation**: Updated and comprehensive
 
 ---
-*Last Updated: November 28, 2025*  
+*Last Updated: December 8, 2025*  
 *Next Review: After file size refactoring begins*  
-*Critical Path Status: IN PROGRESS - Post-hiatus resumption*  
-*File Size Status: 10 VIOLATIONS - Requires attention (~4-5 weeks effort)*  
-*Related: See [Architectural Critiques](ArchitecturalCritiques.md) for detailed analysis*
+*Critical Path Status: Milestone 1.2 - Marker System Refinement*  
+*File Size Status: 12 VIOLATIONS - Requires attention (~4-5 weeks effort)*  
+*Related: See [Technical Critiques](TechnicalCritiques.md) for detailed analysis*
 
 ## (END OF DOCUMENT)

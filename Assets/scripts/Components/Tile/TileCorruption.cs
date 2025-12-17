@@ -21,7 +21,7 @@ public class TileCorruption
     private TextMesh countdownText;
     private Transform parentTransform;
     private Tile parentTile;
-    private bool enableDebugLogs = false;
+    private bool enableDebugLogs;
     #endregion
 
     #region Properties

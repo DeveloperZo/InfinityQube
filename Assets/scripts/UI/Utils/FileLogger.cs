@@ -89,14 +89,15 @@ public class FileLogger : MonoBehaviour
     {
         if (enableFileLogging)
         {
-            Application.logMessageReceived += HandleLog;
+            // Only subscribe to logMessageReceivedThreaded - it handles ALL logs (main thread + background threads)
+            // Using both logMessageReceived AND logMessageReceivedThreaded causes duplicate entries
+            // since logMessageReceivedThreaded is fired for main thread logs too
             Application.logMessageReceivedThreaded += HandleLogThreaded;
         }
     }
 
     private void OnDisable()
     {
-        Application.logMessageReceived -= HandleLog;
         Application.logMessageReceivedThreaded -= HandleLogThreaded;
     }
 
@@ -237,13 +238,6 @@ public class FileLogger : MonoBehaviour
     #endregion
 
     #region Log Handling
-    private void HandleLog(string logString, string stackTrace, LogType type)
-    {
-        if (!enableFileLogging || isQuitting) return;
-
-        LogToFile(logString, type, stackTrace);
-    }
-
     private void HandleLogThreaded(string logString, string stackTrace, LogType type)
     {
         if (!enableFileLogging || isQuitting) return;

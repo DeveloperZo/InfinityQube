@@ -129,7 +129,7 @@ public class IQWaveGenerator : MonoBehaviour, IManagerDebugInterface
             DebugLog("CacheManagerReferences", "GridManager not found - wave generation will be limited");
         }
         
-        waveManager = FindObjectOfType<WaveManager>();
+        waveManager = FindFirstObjectByType<WaveManager>();
         if (waveManager == null)
         {
             DebugLog("CacheManagerReferences", "WaveManager not found - generation results cannot be played");
@@ -197,13 +197,13 @@ public class IQWaveGenerator : MonoBehaviour, IManagerDebugInterface
         DebugLog("GenerateWave", $"Generating wave {totalWavesGenerated} with difficulty {difficulty}, strategy {strategy}");
         
         WaveData waveData = ScriptableObject.CreateInstance<WaveData>();
-        waveData.Index = totalWavesGenerated;
-        waveData.GridWidth = gridManager.Width;
-        waveData.GridHeight = gridManager.Height;
+        waveData.waveIndex = totalWavesGenerated;
+        waveData.spawnWidth = gridManager.Width;
+        waveData.spawnHeight = gridManager.Height;
         
         // Calculate wave parameters based on difficulty
         int cubeCount = CalculateCubeCount(difficulty);
-        waveData.CubesData = new List<CubeData>();
+        waveData.cubes = new List<CubeData>();
         
         bool success = false;
         
@@ -227,31 +227,9 @@ public class IQWaveGenerator : MonoBehaviour, IManagerDebugInterface
             {
                 var analysisResult = waveAnalyzer.AnalyzeWave(waveData);
                 
-                // Store key analysis results in wave data messages for now
-                if (analysisResult != null)
-                {
-                    // Add analysis info as debug messages
-                    if (waveData.messages == null)
-                        waveData.messages = new List<WaveMessage>();
-                    
-                    waveData.messages.Add(new WaveMessage
-                    {
-                        Message = $"Analysis: Solvable={analysisResult.isSolvable}, MinSlack={analysisResult.minimumSlackSpace}, Markers={analysisResult.requiredMarkers}",
-                        AutoHideDelay = 0f,
-                        
-                    });
-                    
-                    // Add warnings
-                    foreach (var warning in analysisResult.warnings)
-                    {
-                        waveData.messages.Add(new WaveMessage
-                        {
-                            Message = $"Warning: {warning}",
-                            AutoHideDelay = 0f,
-                            
-                        });
-                    }
-                }
+                // Analysis results can be added as HighlightSequence objects if needed
+                // For debug/analysis info, create sequences with messageText and targetType = None
+                // Example: waveData.highlightSequences.Add(new HighlightSequence { messageText = "...", targetType = HighlightTargetType.None, DisplayMoveStep = 0 });
             }
             
             successfulGenerations++;
@@ -284,7 +262,7 @@ public class IQWaveGenerator : MonoBehaviour, IManagerDebugInterface
             CubeData entry = GenerateRandomCubeEntry(usedPositions, difficulty);
             if (entry != null)
             {
-                waveData.CubesData.Add(entry);
+                waveData.cubes.Add(entry);
                 usedPositions.Add(entry.position);
             }
             else
@@ -293,7 +271,7 @@ public class IQWaveGenerator : MonoBehaviour, IManagerDebugInterface
             }
         }
         
-        return waveData.CubesData.Count > 0;
+        return waveData.cubes.Count > 0;
     }
     
     private bool GeneratePatternWave(WaveData waveData, int cubeCount, int difficulty)
@@ -527,24 +505,24 @@ public class IQWaveGenerator : MonoBehaviour, IManagerDebugInterface
                     level = Mathf.Max(1, difficulty / 3)
                 };
                 
-                waveData.CubesData.Add(cube);
+                waveData.cubes.Add(cube);
                 usedPositions.Add(basePos);
             }
         }
         
         // Fill remaining cube count with random cubes
-        int remaining = cubeCount - waveData.CubesData.Count;
+        int remaining = cubeCount - waveData.cubes.Count;
         for (int i = 0; i < remaining; i++)
         {
             CubeData entry = GenerateRandomCubeEntry(usedPositions, difficulty);
             if (entry != null)
             {
-                waveData.CubesData.Add(entry);
+                waveData.cubes.Add(entry);
                 usedPositions.Add(entry.position);
             }
         }
         
-        return waveData.CubesData.Count > 0;
+        return waveData.cubes.Count > 0;
     }
     #endregion
     
@@ -703,7 +681,7 @@ public class IQWaveGenerator : MonoBehaviour, IManagerDebugInterface
     private bool ValidateWaveSolvability(WaveData waveData)
     {
         // Basic solvability checks
-        if (waveData.CubesData.Count == 0)
+        if (waveData.cubes.Count == 0)
         {
             DebugLog("ValidateWaveSolvability", "Wave has no cubes");
             return false;
@@ -711,9 +689,9 @@ public class IQWaveGenerator : MonoBehaviour, IManagerDebugInterface
         
         // Check for impossible configurations
         int infinityCount = 0;
-        int totalCubes = waveData.CubesData.Count;
+        int totalCubes = waveData.cubes.Count;
         
-        foreach (var cube in waveData.CubesData)
+        foreach (var cube in waveData.cubes)
         {
             if (cube.type == CubeType.Infinity)
                 infinityCount++;
@@ -727,7 +705,7 @@ public class IQWaveGenerator : MonoBehaviour, IManagerDebugInterface
         }
         
         // Check for clustering issues
-        if (DetectAdvantageCubeClustering(waveData.CubesData))
+        if (DetectAdvantageCubeClustering(waveData.cubes))
         {
             // Clustering is okay but log it
             DebugLog("ValidateWaveSolvability", "Wave contains matrix cube clusters");
@@ -778,7 +756,7 @@ public class IQWaveGenerator : MonoBehaviour, IManagerDebugInterface
             if (position.x >= 0)
             {
                 // Additional validation for special cube types
-                if (ValidateCubePlacement(type, position, waveData.CubesData))
+                if (ValidateCubePlacement(type, position, waveData.cubes))
                 {
                     CubeData cube = new CubeData
                     {
@@ -787,7 +765,7 @@ public class IQWaveGenerator : MonoBehaviour, IManagerDebugInterface
                         level = Mathf.Max(1, difficulty / 3)
                     };
                     
-                    waveData.CubesData.Add(cube);
+                    waveData.cubes.Add(cube);
                     usedPositions.Add(position);
                     placed++;
                 }

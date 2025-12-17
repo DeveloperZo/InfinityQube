@@ -4,6 +4,21 @@
 
 ## Brainstorm Items
 
+
+### Hire youtube creator daafrikan (Yannick)
+- **Description**: Hire youtube creator daafrikan (Yannick)
+- **Unique Value**: daafrikan (Yannick)
+- **Constraints**: 
+- **Rating**: ??/10
+- **Notes**: 
+
+### Turn-Based element (enables tetris like blocks)
+- **Description**: Allow the player to increment move forward manually
+- **Unique Value**: Allow for contiguous set of markers to form tetris like blocks with their own properties (e.g. if  you mix unit, matrix, recursion, infinity)
+- **Constraints**: Must be easily discoverable and intuitive after learning individual marker/cube properties
+- **Rating**: ??/10
+- **Notes**: Special stage/rule mechanic
+
 ### Visual Marker Mode Indicators
 - **Description**: Screen accents or character model changes (like Dead Space) to show current marker mode
 - **Unique Value**: Clear visual feedback without UI clutter, immersive indication

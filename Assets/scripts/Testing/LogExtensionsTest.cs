@@ -7,7 +7,7 @@ using UnityEngine;
 public class LogExtensionsTest : MonoBehaviour
 {
     [Header("Test Settings")]
-    [SerializeField] private bool EnableDebugLogs = true;
+    [SerializeField] private bool EnableDebugLogs;
     
     private void Start()
     {

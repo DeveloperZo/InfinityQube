@@ -10,321 +10,569 @@ This roadmap outlines the development path from current production-ready state t
 ---
 
 ## Current Status
-### ✅ **COMPLETED SYSTEMS** 
-- **Four-tier marker system** (Light/Heavy/Matrix/Cube) - ✅ (June 23, 2025)
-- **Face painting mechanics** with rotation tracking - ✅ Fully operational
-- **Corruption/enhancement tile system** - ✅ Integrated and tested
-- **Recursion cube multi-hit mechanics** - ✅ Working with Recursion Markers
-- **Comprehensive debug infrastructure** - ✅ Production quality (OnGUI used only for debuggers)
-- **Statistics and analytics system** - ✅ Complete tracking implemented
-- **Integration testing framework** - ✅ All systems validated
-- **Wave management system** - ✅ Functional with editor tools
-- **Player action system** - ✅ Full input handling operational
-- **Technical debt management** - ✅ Phase 1 validation completed
-- **Wave completion messages** - ✅ Progress tracking with pause system (July 8, 2025)
-- **Stage transition system** - ✅ Demo completion flow and splash return (July 8, 2025)
-- **Audio system** - ✅ Complete AudioManager implementation with 7+ subsystems:
-  - AudioManager.cs (singleton core)
-  - AudioSourcePool.cs (resource management)
-  - AudioPlaybackSystem.cs (playback control)
-  - AudioVolumeController.cs (volume management)
-  - CubeAudioSystem.cs (cube-specific sounds)
-  - CubeAudioConfiguration.cs (configuration data)
-  - AudioTesting.cs (debug tools)
-- **Production UI System** - ✅ Unity UI implementation complete:
-  - PlayerActionUI.cs (charge indicators, cooldown displays)
-  - StageTransitionUI.cs (stage intro/completion screens)
-  - WaveProgressUI.cs (wave progress tracking)
-  - PlayerUI.cs, StageInfoUI.cs (status displays)
 
-### 🔄 **TOP PRIORITY - IN PROGRESS** 
-- **Line Divider System** - Designed, needs implementation (dynamic difficulty mechanism)
-- **Resonance System** - Designed, needs implementation (Infinity vs Infinity interaction)
-- **Enhanced Face Painting** - Rotation mechanics and visual feedback need implementation
-- **Penalty/Reward System** - Designed, needs implementation (line movement based on performance)
-- **Marker Economy** - Per-stage grant system designed, needs implementation
+### 📍 **Current Phase**: Phase 1 - Core Innovation & Content
+### 📍 **Current Milestone**: 1.6 - Unit Markers & Infinite Cube (Stages 1-2) ⬜ Pending
+
+### 🔴 **TOP PRIORITIES**
+| Priority | Item | Status | Points |
+|----------|------|--------|--------|
+| 🔴 Critical | Unit Markers & Infinite Cube (Milestone 1.6) | Ready to start | 4 pts |
+| 🔴 High | Matrix Cube/Markers (Milestone 1.7) | After 1.6 | 6 pts |
+| 🔴 High | Recursion Cube/Marker (Milestone 1.8) | After 1.7 | 6 pts |
+| 🟡 Medium | Infinity Marker (Milestone 1.9) | After 1.8 | 5 pts |
+| 🟡 Medium | Mastery (Milestone 1.10) | After 1.9 | 4 pts |
+| 🟡 Medium | RPG Implementation (Milestone 1.11) | After 1.10 | 5 pts |
+| 🟡 Medium | Hub Implementation (Milestone 1.12) | After 1.11 | 4 pts |
+| 🟡 Medium | File Size Refactoring | 12 files over limit | 15 pts |
+| 🟢 Low | Stage Content Refinement (Milestone 1.13) | After 1.12 | 5 pts |
+| 🟢 Low | Visual Effects & Juice Pass (Milestone 1.14) | After 1.13 | 5 pts |
+| 🟢 Low | Hub polish pass | Deferred | 2 pts |
+
+---
+
+## Point Estimation Scale
+
+> **1 point ≈ 1 day of active development**  
+> **5 points ≈ 1 week of active development**  
+> **22 points ≈ 1 month of active development** (measured velocity)
+
+Points reflect actual development time, not complexity. A "week gap" between commits counts as same-day start for the next commit.
+
+---
+
+## Phase & Milestone Summary
+
+| Phase | Milestone | Status | Points |
+|-------|-----------|--------|--------|
+| **Phase 1** | 1.0 Core Game Development | ✅ Complete | 65 pts |
+| | 1.1 Refine Markers | ✅ Complete | 14 pts |
+| | 1.2 RPG/Progression | ✅ Complete | 12 pts |
+| | 1.3 Database Enhancement | ✅ Complete | 6 pts |
+| | **1.4 Stage Content Creation** | ✅ **Complete** | 20 pts |
+| | **1.5 Demo Stage Content** | ✅ **Complete** | 5 pts |
+| | 1.6 Unit Markers & Infinite Cube (Stages 1-2) | ⬜ Pending | 4 pts |
+| | 1.7 Matrix Cube/Markers (Stages 3-5) | ⬜ Pending | 6 pts |
+| | 1.8 Recursion Cube/Marker (Stages 6-8) | ⬜ Pending | 6 pts |
+| | 1.9 Infinity Marker (Stages 9-10) | ⬜ Pending | 5 pts |
+| | 1.10 Mastery (Stages 11-12) | ⬜ Pending | 4 pts |
+| | 1.11 RPG Implementation (Attunements & Progression) | ⬜ Pending | 5 pts |
+| | 1.12 Hub Implementation | ⬜ Pending | 4 pts |
+| | 1.13 Stage Content Refinement & Difficulty Curve | ⬜ Pending | 5 pts |
+| | 1.14 Visual Effects & Juice Pass | ⬜ Pending | 5 pts |
+| **Phase 2** | 2.1-2.10 Content & Polish | ⬜ Pending | 68 pts |
+| **Phase 3** | 3.1-3.8 Polish & Commercial Prep | ⬜ Pending | 55 pts |
+| **Phase 4** | 4.1-4.9 Steam & Release | ⬜ Pending | 50 pts |
 
 ---
 
 ## Phase 1: Core Innovation & Content (Current Phase)
-**Goal**: Implement core paired wave system and complete foundational content
-**Estimated Total Effort**: 6-8 weeks active development
+**Goal**: Implement core gameplay systems and complete foundational content  
+**Estimated Total**: ~160 pts (~7-8 months at 22 pts/month)
 
-### Milestone 1.1: Paired Wave System Implementation - HIGHEST PRIORITY
-- **Target**: Implement marker inheritance system where Wave A marker placements become Wave B cube spawns
-- **Complexity**: 6 points
-- **Effort Estimate**: 1-2 weeks active development
-- **Status**: ✅ **COMPLETE** - Core innovation mechanic implemented and functional
-- **Dependencies**: None (foundational system)
-- **Tasks**:
-  - [x] Extend WaveData ScriptableObject with paired wave fields (pairID, isPrimaryWave, markerSpawnRules, inheritanceDelay)
-  - [x] Should be no need to **Update StageDB/StageData** to support paired wave configuration and validation
-  - [x] Implement marker position recording system in GridManager/PlayerActionManager
-  - [x] Ensure wave manager alternates between wave and mirror wave
-  - [x] Implement marker-to-cube conversion rules (Light→Unit, Heavy→Recursion, Matrix→Matrix, Infinity→Infinity)
-  - [x] Add visual feedback (placement echo, inheritance trail, type indicators)
-  - [x] Update debug panels for paired wave visualization
-  - [x] Integration testing with existing wave system
-- **Acceptance Criteria**:
-  - ✅ Marker placements in Wave A are recorded and visible in debug panel
-  - ✅ Wave B spawns cubes at recorded marker positions from Wave A
-  - ✅ Marker-to-cube conversion works correctly (Light→Unit, Heavy→Recursion, Matrix→Matrix, Infinity→Infinity)
-  - ✅ Visual feedback clearly shows inheritance connections (debug logging and prototype system)
-  - ✅ Existing 3 stages can be loaded and played with paired waves
-- **Playtesting Checkpoint**:
-  - Playtest: Create a simple 2-wave pair, place markers in Wave A, verify they spawn as cubes in Wave B
-  - Verify: Inheritance is visually clear and gameplay feels strategic
-  - Iterate: Adjust visual feedback and conversion rules based on playtest feedback
-
-### Milestone 1.2: Refine Markers Implementation
-- **Target**: Review and refine marker system (placement, cube spawn, cube collision/interactions) + Core gameplay systems
-- **Complexity**: 5 points (increased due to new systems)
-- **Effort Estimate**: ~2 weeks active development
-- **Status**: Partial design, collision matrix complete, new systems designed
-- **Dependencies**: Milestone 1.1 ✅ (paired wave system complete)
-- **Tasks**:
-  - [x] Define marker placement and spawning for all markers ✅
-  - [x] Design/Define cube collisions for all combinations ✅ (including resonance)
-  - [ ] Design/Define how and which markers should get mirrored and potential gameplay mechanics
-  - [ ] Ensure charge system and regeneration mechanics are coherent
-  - [ ] Visual feedback for markers (distinct color per marker type) and suggest interaction indicators if applicable
-  - [ ] Ensure cohesive marker system
-  - [ ] **NEW**: Implement Line Divider System (dynamic difficulty, marker placement restriction)
-  - [ ] **NEW**: Implement Resonance System (Infinity vs Infinity phaseable effect)
-  - [ ] **NEW**: Implement Enhanced Face Painting (rotation mechanics, visual feedback, timing)
-  - [ ] **NEW**: Implement Penalty/Reward System (line movement based on cube falls and achievements)
-  - [ ] **NEW**: Implement Marker Economy (per-stage grants, cross-wave resource management)
-- **Acceptance Criteria**:
-  - ✅ Markers can be placed and spawn the appropriate cube
-  - ✅ Collision logic has been defined for all scenarios (including resonance)
-  - ✅ Charge system and regeneration work correctly
-  - ✅ Visual feedback clearly shows marker and spawned cube
-  - ✅ Line divider restricts marker placement and moves based on performance
-  - ✅ Resonance system makes Infinity cubes phaseable when triggered
-  - ✅ Face painting rotation mechanics work predictably
-  - ✅ Penalty/reward system moves line appropriately
-  - ✅ Marker economy creates strategic scarcity across waves
-- **Playtesting Checkpoint**:
-  - Playtest: Place markers verify mechanics work
-  - Verify: Marker dynamics creates strategic depth
-  - Test: Line divider creates tension and strategic decisions
-  - Test: Resonance enables advanced Infinity strategies
-  - Test: Face painting timing is learnable and rewarding
-  - Iterate: Balance charge system, line movement, and visual feedback
-
-### Milestone 1.3: First Pass at Complete Stage 1 Content
-- **Target**: Foundational Systems + One Complete Demo Stage
-- **Complexity**: 3 points
-- **Status**: ✅ **COMPLETE**
-- **Tasks**:
-  - [x] Foundational Message System ✅ (July 8, 2025)
-  - [x] Modal Control Scheme Implementation ✅
-  - [x] Wave Completion Messages ✅ (July 8, 2025)
-  - [x] Stage Success Transitions ✅ (July 8, 2025)
-  - [x] Stage/Wave Sequence Framework  ✅ (July 8, 2025)
-  - [x] Complete Splash to Stage loop  ✅ (July 8, 2025)
-
-### Milestone 1.4: StageDB Enhancement & Migration
-- **Target**: Update StageDB system to fully support paired waves and migrate existing content
-- **Complexity**: 3 points
-- **Effort Estimate**: ~1 week active development
-- **Dependencies**: Milestone 1.1 ✅ (paired wave system complete)
-- **Tasks**:
-  - [ ] Extend StageDB validation to check paired wave integrity
-  - [ ] Create StageDB migration tools for converting existing stages to paired wave format
-  - [ ] Update StageData inspector/editor tools for paired wave configuration
-  - [ ] Add StageDB validation for pairID consistency and wave relationships
-  - [ ] Create StageDB debug tools for visualizing paired wave relationships
-  - [ ] Migrate existing 3 stages (stage_01, stage_02, stage_03) to paired wave format
-  - [ ] Test StageDB loading/saving with paired wave data
-- **Acceptance Criteria**:
-  - ✅ StageDB validates paired wave integrity (all waves have valid pairIDs)
-  - ✅ Migration tool successfully converts existing stages
-  - ✅ Editor tools allow easy configuration of paired waves
-  - ✅ All 3 existing stages load and play correctly with paired waves
-  - ✅ Debug tools visualize wave relationships clearly
-- **Playtesting Checkpoint**:
-  - Playtest: Load migrated stages, verify they play correctly with paired waves
-  - Verify: Stage progression feels natural with paired wave mechanics
-  - Iterate: Adjust stage configurations based on playtest experience
-
-### Milestone 1.5: Stage Content Creation
-- **Target**: 12-13 stages defined with waves, 4-5 complete stages with progression
-- **Complexity**: 7 points
-- **Effort Estimate**: 3-4 weeks active development
-- **Dependencies**: Milestone 1.1 ✅, 1.4 (needs paired waves ✅ and StageDB tools)
-- **Tasks**:
-  - [ ] Design remaining 9-10 stages with paired wave mechanics
-  - [ ] Create wave pairs for each stage (Wave A → Wave B structure)
-  - [ ] Implement proper difficulty curve across all stages
-  - [ ] Create tutorial stages specifically teaching paired wave mechanics
-  - [ ] Ensure debuggers allow easy tuning of stages/waves
-  - [ ] Balance marker inheritance rules per stage difficulty
-  - [ ] Create stage progression flow (tutorial → standard → challenge → bonus stages)
-  - [ ] Validate all stages with StageDB validation tools
-- **Acceptance Criteria**:
-  - ✅ 12-13 stages designed and configured in StageDB
-  - ✅ At least 4-5 stages are fully playable end-to-end
-  - ✅ Tutorial stages clearly teach paired wave mechanics
-  - ✅ Difficulty curve is smooth and progressive
-  - ✅ All stages pass StageDB validation
-  - ✅ Debug tools allow rapid iteration on stage design
-- **Playtesting Checkpoint**:
-  - Playtest: Play through all 4-5 complete stages, verify difficulty curve
-  - Verify: Tutorial stages effectively teach paired wave mechanics
-  - Iterate: Adjust difficulty, wave composition, and inheritance rules based on playtest
-  - **Note**: This milestone can be split into smaller playtestable chunks (2-3 stages at a time)
-
-### Milestone 1.6: RPG/Progression Ideation
-- **Target**: Establish framework to deliver progression and RPG vibes for player
-- **Complexity**: 4 points
-- **Effort Estimate**: 1-2 weeks active development
-- **Tasks**:
-  - [ ] Brainstorm and design RPG elements and progression
-  - [ ] Design hub area concept and layout
-  - [ ] Plan meta-progression systems (unlocks, upgrades, character growth)
-  - [ ] Create progression economy design (resources, currencies, rewards)
-
-### Milestone 1.7: Visual Polish Pass
-- **Target**: Enhanced game feel and visual feedback
-- **Complexity**: 2 points
-- **Effort Estimate**: 1-2 weeks active development
-- **Tasks**:
-  - [ ] Improved particle effects for all major actions
-  - [ ] Screen shake and juice for impacts
-  - [ ] Enhanced face painting visualization
-  - [ ] Tile state change visual effects
-  - [ ] Marker placement/detonation polish
-  - [ ] Animation/scripted sequence placeholders for key events (stage intro, wave intro, etc)
-  - [ ] Event hooks for identifying and triggering major gameplay moments (stage start, wave start, boss intro, etc)
+### Milestone 1.0: Core Game Development ✅ COMPLETE
+- **Target**: Establish all foundational game systems
+- **Points**: 65 (measured: ~3 months active work)
+- **Status**: ✅ **COMPLETE** (April-July 2025)
+- **Systems Delivered**:
+  - Four-tier marker system (Unit/Recursion/Matrix/Infinity)
+  - Unified input system (mode keys 1-4, F for placement)
+  - Basic face painting mechanics
+  - Corruption/enhancement tile system
+  - Recursion cube multi-hit mechanics
+  - Comprehensive debug infrastructure
+  - Statistics and analytics system
+  - Integration testing framework
+  - Wave management system with editor tools
+  - Player action system with full input handling
+  - Wave completion messages with progress tracking
+  - Stage transition system with demo flow
+  - Audio system (7+ subsystem files):
+    - AudioManager.cs, AudioSourcePool.cs, AudioPlaybackSystem.cs
+    - AudioVolumeController.cs, CubeAudioSystem.cs, CubeAudioConfiguration.cs
+  - Production UI system:
+    - PlayerActionUI.cs, StageTransitionUI.cs, WaveProgressUI.cs
+    - PlayerUI.cs, StageInfoUI.cs
 
 ---
 
-## Phase 2: Content Completion & First Polish Pass
-**Goal**: Complete all content and achieve first polish level
-**Estimated Total Effort**: 8-10 weeks active development
+### Milestone 1.1: Refine Markers Implementation ✅ COMPLETE
+- **Target**: Review and refine marker system (placement, cube spawn, cube collision/interactions) + Core gameplay systems
+- **Points**: 14 (~2-3 weeks active development)
+- **Status**: ✅ **COMPLETE** - All systems implemented and verified
+- **Dependencies**: Milestone 1.0 ✅
+- **Completed**: December 2024
 
-### Milestone 2.1: Complete Stage Content
-- **Target**: Finish all 12-13 stages with full wave pairs
-- **Complexity**: 5 points
-- **Effort Estimate**: 2-3 weeks active development
-- **Dependencies**: Milestone 1.5 (builds on initial stage content)
+#### Completed Tasks:
+- [x] Define marker placement and spawning for all markers
+- [x] Design/Define cube collisions for all 16 combinations (including resonance)
+- [x] Unified input system (mode keys 1-4, placement key F)
+- [x] CubeCollisionManager created with full collision matrix implementation
+- [x] **Collision matrix code** - All 16 cube type combinations implemented
+- [x] **Line Divider System** - Dynamic difficulty with visual feedback (blue=safe, red=danger)
+- [x] **Resonance System** - Infinity+Infinity makes all Infinity cubes phaseable (2 moves)
+- [x] **Enhanced Face Painting** - Front face painting with 3-move telegraph system
+- [x] **Penalty/Reward System** - Line movement based on cube escapes and achievements
+- [x] **Marker Economy** - Per-stage/wave grants with inventory caps (toggleable)
+- [x] Visual feedback for phaseable cubes (material swapping)
+- [x] Grid telegraph shows painted face trigger location 1-3 moves ahead
+- [x] Charge system coherent with economy toggle for testing
+
+#### Implementation Details:
+- **Face Painting**: Paints Front face → triggers after 3 moves (learnable rhythm)
+- **Telegraph**: Progressive visual (dim→bright, small→large, slow→fast pulse)
+- **Materials**: CosmicBlack (opaque), CosmicBlack_Transparent (player), CosmicBlack_Phaseable
+- **Economy**: Stage grants (set inventory) + Wave grants (add to inventory) + Caps
+
+#### Playtesting Notes:
+- Line divider creates tension when player is above the line (red zone)
+- Resonance requires sacrificing player Infinity cube (meaningful cost)
+- Face painting telegraph gives clear 3-turn warning
+- Marker economy forces strategic conservation across waves
+
+---
+
+### Milestone 1.2: RPG/Progression ✅ COMPLETE
+
+**Target:** Establish framework to deliver progression and RPG vibes for player
+
+**Points:** 12 (exceeded original 10-point ideation scope with full implementation)
+
+**Status:** ✅ **COMPLETE** - December 2024
+
+**Planning Document:** [Milestone1.2_RPGProgressionPlan.md](CurrentFocus/Milestone1.2_RPGProgressionPlan.md)
+
+#### Completed Deliverables:
+- [x] **SaveManager** - Full persistence system (JSON, Steam Cloud ready)
+- [x] **PlayerProgression** - Data structure for currency, attunements, stage progress
+- [x] **AttunementManager** - 9 attunement definitions with query API
+- [x] **All 9 attunements integrated** into CubeCollisionManager
+- [x] **Economy wired** to GameEvents (100 shards/wave, first playthrough only)
+- [x] **Hub scene foundation** - 3 clickable buildings, UI panel system
+- [x] **Debug panel** for attunement testing (F12 → Player → Attunements)
+
+#### Implementation Beyond Original Scope:
+Original milestone was ideation/design docs. Delivered full working implementation:
+- Concentrated Expansion: Matrix markers trigger twice
+- Expanded Concentration: Recursion creates 2-tile vertical pattern
+- Phaseable attunements: Same-type collisions paint wave cube faces
+- Untethered: Infinity vs Unit destroys and continues (no wave join)
+
+---
+
+### Hub: Infinity's Axiom
+
+| Area | Function | Unlock |
+|------|----------|--------|
+| Celestial Atlas | Stage selection | Always |
+| Resonance Alignment Chamber | Marker attunements | Stage 3 |
+| Observation Chronicle | Stats/history | Stage 3 |
+
+---
+
+### Marker Attunements
+
+One attunement per marker type. Modifies cube properties, not collision matrix.
+
+#### Matrix Attunements (Expansion Theme)
+
+| Attunement | Effect |
+|------------|--------|
+| Expanded Expansion | +1 area dimensions (2x2 → 3x3) |
+| Concentrated Expansion | +1 charge per tile |
+| Phaseable Expansion | Matrix vs Matrix also paints wave cube face |
+
+#### Recursion Attunements (Concentration Theme)
+
+| Attunement | Effect |
+|------------|--------|
+| Concentrated Concentration | +2 charges (3 → 5) |
+| Expanded Concentration | +1 tile to pattern |
+| Phaseable Concentration | Recursion vs Recursion also paints wave cube face |
+
+#### Infinity Attunements (Phaseability Theme)
+
+| Attunement | Effect |
+|------------|--------|
+| Potent Matrix Paint | +1 charge on Matrix painted faces |
+| Potent Recursion Paint | +1 charge on Recursion painted faces |
+| Untethered | vs Unit = destroy + continue (no wave join) |
+
+---
+
+### Economy
+
+| Aspect | Value |
+|--------|-------|
+| Currency | Axiom Shards |
+| Earn | 100 shards flat per wave |
+| Spend | Attunement unlocks (100-250 each) |
+| Replay | No currency (anti-farming) |
+
+---
+
+### Key Design Decisions
+
+| Decision | Rationale |
+|----------|-----------|
+| Attunements modify cube, not collision matrix | Players learn collision matrix once, attunements layer on top |
+| Phaseable attunements enable same-type face painting | High-skill reward, extends existing mechanic |
+| Locked per stage | Forces commitment, meaningful choice |
+| Passives removed | Attunements provide sufficient expression |
+
+---
+
+### Tasks
+
+- [x] Hub architecture design (3 areas, functions, unlock flow)
+- [x] Attunement system design (9 attunements with exact values)
+- [x] Economy design (earn rates, costs, pacing)
+- [x] Technical prep (data structures, integration points)
+
+---
+
+### Milestone 1.3: Database & Configuration Enhancement ✅ COMPLETE
+- **Target**: Enhance core databases for easier content creation and balance tuning
+- **Points**: 6 (~1 week active development)
+- **Status**: ✅ **COMPLETE** - December 2024
+- **Dependencies**: Milestone 1.2 ✅
+- **Planning Document**: [Milestone1.3_DatabaseEnhancement.md](CurrentFocus/Milestone1.3_DatabaseEnhancement.md)
+
+#### Completed Deliverables
+
+**StageDB + WaveData**
+- [x] Enhanced StageData with line divider, marker grants, attunement locking, validation
+- [x] Enhanced WaveData with Infinity markers, grants system, validation  
+- [x] Enhanced CubeData with pre-painted faces, spawn delay
+- [x] Enhanced StageDB with validation, query methods
+
+**AttunementDatabase**
+- [x] Created AttunementData ScriptableObject
+- [x] Created AttunementDatabase ScriptableObject
+- [x] Migrated 9 attunement definitions
+- [x] Updated AttunementManager to load from DB (with fallback)
+
+**PlayerProgression**
+- [x] Added lifetime statistics (cubes captured, play time, best times)
+
+---
+
+### Milestone 1.4: Stage Content Creation ✅ COMPLETE
+- **Target**: 12-13 stages defined with waves, 4-5 complete stages with progression
+- **Points**: 20 (~4 weeks active development)
+- **Status**: ✅ **COMPLETE** - December 2024
+- **Dependencies**: Milestone 1.3 ✅
+- **Progress**: multiple stages exist (0-3), design doc complete for all 13 stages
 - **Tasks**:
-  - [ ] Complete remaining stage designs and implementations
-  - [ ] Create all wave pairs for each stage
-  - [ ] Balance difficulty curve across all stages
-  - [ ] Create challenge and bonus stage variants
-  - [ ] Validate all stages with comprehensive testing
-  - [ ] StageDB final validation and integrity checks
-- **Acceptance Criteria**:
-  - ✅ All 12-13 stages are complete and playable
-  - ✅ All stages have properly configured wave pairs
-  - ✅ Difficulty curve is balanced across all stages
-  - ✅ Challenge and bonus stages provide variety
-  - ✅ All stages pass comprehensive testing
-- **Playtesting Checkpoint**:
-  - Playtest: Full playthrough of all stages, verify progression feels good
-  - Verify: No stages feel too easy or too hard
-  - Iterate: Fine-tune difficulty and wave composition
+  - [x] Design 13 stages (1 tutorial/demo stage and 12 game stages) - **COMPLETE** (Level Design doc updated)
+  - [x] Establish stage numbering convention (Stage 0 = Tutorial, Stages 1-12 = Core game) - **COMPLETE**
+  - [x] Update StageManager with IsTutorialStage property - **COMPLETE**
+  - [x] Create tutorial/demo stage teaching core mechanics - **COMPLETE** (Stage 0 with highlight sequence system)
+  - [x] Ensure debuggers allow easy tuning of stages/waves - **COMPLETE** (Prototyping panel exists)
+  - [x] Remaining content tasks moved to Milestone 1.6 - **COMPLETE** 
 
-### Milestone 2.2: Save/Load & Progress Persistence
-- **Target**: Complete save/load system for game progress
-- **Complexity**: 3 points
-- **Effort Estimate**: 1-2 weeks active development
-- **Dependencies**: Milestone 2.1 (needs stages to save progress for)
+---
+
+### Milestone 1.5: Demo Stage Content ✅ COMPLETE
+- **Target**: Foundational Systems + One Complete Demo Stage
+- **Points**: 5 (measured: ~1 week work)
+- **Status**: ✅ **COMPLETE** (December 16, 2025)
 - **Tasks**:
-  - [ ] Design save data structure (stage progress, unlocks, statistics)
-  - [ ] Implement save/load system (extend existing PlayerPrefs/JSON system)
-  - [ ] Add save slot management (multiple save files)
-  - [ ] Implement progress persistence across sessions
-  - [ ] Create save data migration system (for future updates)
-  - [ ] Add save/load UI (save game, load game, delete save)
-  - [ ] Test save/load with all game systems
-- **Acceptance Criteria**:
-  - ✅ Save data structure captures all necessary progress
-  - ✅ Save/load works correctly (can save, quit, reload, continue)
-  - ✅ Multiple save slots work independently
-  - ✅ Progress persists correctly across game sessions
-  - ✅ Save/load UI is functional and clear
-  - ✅ Save system handles edge cases (corrupted saves, missing files)
-- **Playtesting Checkpoint**:
-  - Playtest: Play stages, save, quit, reload, verify progress is correct
-  - Verify: Save/load feels seamless and reliable
-  - Iterate: Improve UI and error handling based on testing
+  - [x] Further refine tutorial/demo stage and waves - **COMPLETE** (Stage 0 with highlight sequences)
+  - [x] Ensure proper messaging is implemented to convey game mechanics - **COMPLETE** (Highlight sequence system)
+  - [x] Wave Completion Messages - **COMPLETE** (Integrated into sequence system)
+  - [x] Stage Success Transition - **COMPLETE** (Completion message with stats, K key handling, return to Splash)
+  - [x] Stage/Wave Sequence Framework - **COMPLETE** (Highlight sequences with timing, triggers, validation)
+  - [x] Complete configuration of waves and stage (3 waves) - **COMPLETE** (All sequences working for all 3 waves)
+  - [x] Data collection on play session - **COMPLETE** (PlayerStatisticsManager tracks tutorial progress, messages, actions)
+  - [x] Complete Splash to Stage loop - **COMPLETE** (Tutorial loop working, PlayerPrefs flag system)
 
-### Milestone 2.3: Settings & Options System
-- **Target**: Complete settings menu with persistence
-- **Complexity**: 2 points
-- **Effort Estimate**: ~1 week active development
+---
+
+### Milestone 1.6: Unit Markers & Infinite Cube (Stages 1-2)
+- **Target**: Implement stages 1-2 and validate Unit marker and Infinity cube mechanics
+- **Points**: 4 (~1 week active development)
+- **Status**: ⬜ Pending
+- **Dependencies**: Milestone 1.5 ✅
+- **Stages**: 1-2 (Unit markers, Infinite Cube)
+- **Lesson**: Unit marker basics
+- **Mechanics to Validate**:
+  - [ ] Unit marker placement and cube capture
+  - [ ] Infinity cube avoidance and danger recognition
+  - [ ] Basic movement and positioning
+  - [ ] Core collision mechanics (Unit vs Unit, Unit vs Infinity)
 - **Tasks**:
-  - [ ] Create settings menu UI (graphics, audio, controls, gameplay)
-  - [ ] Implement settings persistence (PlayerPrefs/JSON)
-  - [ ] Add graphics options (resolution, quality, fullscreen)
-  - [ ] Add audio options (master, music, SFX volume sliders)
-  - [ ] Add control rebinding system
-  - [ ] Add accessibility options (colorblind mode, subtitles, etc.)
-  - [ ] Settings reset to defaults functionality
+  - [ ] Design wave configurations for stages 1-2
+  - [ ] Implement stages 1-2 with wave configs
+  - [ ] Validate Unit marker and Infinity cube mechanics work correctly
+  - [ ] Define and Implement Penalty system
+  - [ ] Define and Implement Scoring System
+  - [ ] Fix bugs/edge cases discovered
+  - [ ] Ensure stages are playable end-to-end
 
-### Milestone 2.4: Interactive Tutorial System
-- **Target**: Comprehensive tutorial teaching all mechanics including paired waves
-- **Complexity**: 4 points
-- **Effort Estimate**: 1-2 weeks active development
-- **Dependencies**: Milestone 1.1 ✅, 1.5 (needs paired waves ✅ and stages)
+---
+
+### Milestone 1.7: Matrix Cube/Markers (Stages 3-5)
+- **Target**: Implement stages 3-5 and validate Matrix cube and marker mechanics
+- **Points**: 6 (~1.5 weeks active development)
+- **Status**: ⬜ Pending
+- **Dependencies**: Milestone 1.6
+- **Stages**: 3-5 (Matrix cube/markers)
+- **Lesson**: Area effects
+- **Mechanics to Validate**:
+  - [ ] Matrix cube introduction and area capture
+  - [ ] Matrix vs Infinity face painting mechanics
+  - [ ] Matrix marker placement and area coverage
+  - [ ] Cube marker generation from Matrix captures
+  - [ ] Spatial management and area control strategies
+  - [ ] Resource management (marker economy)
 - **Tasks**:
-  - [ ] Design tutorial flow for all mechanics
-  - [ ] Create interactive tutorial stages (guided placement, step-by-step)
-  - [ ] Implement tutorial for paired wave mechanics (visual demonstrations)
-  - [ ] Add tutorial skip/resume functionality
-  - [ ] Create tutorial progress tracking
-  - [ ] Test tutorial with new players (usability testing)
-- **Acceptance Criteria**:
-  - ✅ Tutorial covers all core mechanics (markers, cubes, paired waves)
-  - ✅ Tutorial is interactive and guides player step-by-step
-  - ✅ Paired wave mechanics are clearly demonstrated
-  - ✅ Tutorial can be skipped or resumed
-  - ✅ Tutorial progress is tracked and saved
-  - ✅ New players can complete tutorial and understand game
-- **Playtesting Checkpoint**:
-  - Playtest: Have someone new to the game play through tutorial
-  - Verify: They understand all mechanics after tutorial
-  - Iterate: Refine tutorial based on where players get confused
-  - **Critical**: This is essential for first-time game dev - get external playtesters
+  - [ ] Design wave configurations for stages 3-5
+  - [ ] Implement stages 3-5 with wave configs
+  - [ ] Validate Matrix cube and marker mechanics work correctly
+  - [ ] Improve UI around markers
+  - [ ] Assess and improve face painting implementation if needed
+  - [ ] Fix bugs/edge cases discovered
+  - [ ] Test area effect systems
 
-### Milestone 2.5: Stage Progression & Unlock System
-- **Target**: Stage unlock system and progression flow
-- **Complexity**: 2 points
+---
+
+### Milestone 1.8: Recursion Cube/Marker (Stages 6-8)
+- **Target**: Implement stages 6-8 and validate Recursion cube and marker mechanics
+- **Points**: 6 (~1.5 weeks active development)
+- **Status**: ⬜ Pending
+- **Dependencies**: Milestone 1.7
+- **Stages**: 6-8 (Recursion cube/marker)
+- **Lesson**: Multi-hit mechanics
+- **Mechanics to Validate**:
+  - [ ] Recursion cube multi-hit mechanics
+  - [ ] Recursion marker placement and patterns
+  - [ ] Chain reaction detonations
+  - [ ] Multi-step strategic planning
+  - [ ] Complex interaction chains
 - **Tasks**:
-  - [ ] Implement stage unlock logic (complete stage N to unlock N+1)
-  - [ ] Create stage select screen/menu
-  - [ ] Add stage completion tracking and display
-  - [ ] Implement stage replay functionality
-  - [ ] Add stage difficulty indicators
-  - [ ] Create stage completion rewards/unlocks
+  - [ ] Design wave configurations for stages 6-8
+  - [ ] Implement stages 6-8 with wave configs
+  - [ ] Validate Recursion mechanics work correctly
+  - [ ] Assess and improve face painting implementation if needed
+  - [ ] Fix bugs/edge cases discovered
+  - [ ] Test multi-hit and chain reaction systems
 
-### Milestone 2.6: Cosmic Theme Integration
-- **Target**: Deliver on aesthetic vision
-- **Complexity**: 3 points
+---
+
+### Milestone 1.9: Infinity Marker (Stages 9-10)
+- **Target**: Implement stages 9-10 and validate Infinity marker mechanics
+- **Points**: 5 (~1 week active development)
+- **Status**: ⬜ Pending
+- **Dependencies**: Milestone 1.8
+- **Stages**: 9-10 (Infinity Marker)
+- **Lesson**: All systems
+- **Mechanics to Validate**:
+  - [ ] Infinity marker placement and spawning
+  - [ ] Resonance mechanics (Infinity + Infinity = phaseable)
+  - [ ] Infinity marker strategic value
+  - [ ] All marker types working together
+  - [ ] Complete marker system integration
 - **Tasks**:
-  - [ ] Cosmic background and environment art
-  - [ ] Enhanced particle systems with stellar effects
-  - [ ] Visual theme consistency across all systems
-  - [ ] Cosmic liquid animations for face painting
-  - [ ] Atmospheric visual enhancement
+  - [ ] Design wave configurations for stages 9-10
+  - [ ] Implement stages 9-10 with wave configs
+  - [ ] Validate Infinity marker mechanics work correctly
+  - [ ] Assess and improve face painting implementation if needed
+  - [ ] Fix bugs/edge cases discovered
+  - [ ] Test all systems in combination
 
-### Milestone 2.7: Audio Content & Polish
-- **Target**: Add actual audio content to completed system
-- **Complexity**: 2 points (system already complete)
+---
+### Milestone 1.10: RPG Implementation (Attunements & Progression)
+- **Target**: Complete RPG systems - attunement UI, progression integration, economy polish
+- **Points**: 5 (~1 week active development)
+- **Status**: ⬜ Pending
+- **Dependencies**: Milestone 1.10
+- **Note**: Framework exists from Milestone 1.2. This milestone completes the UI and integration.
+
+#### RPG Systems Overview
+**Foundation (from Milestone 1.2):**
+- SaveManager - Full persistence system (JSON, Steam Cloud ready)
+- PlayerProgression - Data structure for currency, attunements, stage progress
+- AttunementManager - 9 attunement definitions with query API
+- All 9 attunements integrated into CubeCollisionManager
+- Economy wired to GameEvents (100 shards/wave, first playthrough only)
+- Hub scene foundation - 3 clickable buildings, UI panel system
+
+**This Milestone Completes:**
+- Full UI implementation for all RPG systems
+- Attunement unlock/purchase flow
+- Stage selection interface
+- Stats/history display
+- Economy feedback and polish
+
+#### Marker Attunements System
+One attunement per marker type. Modifies cube properties, not collision matrix.
+
+**Matrix Attunements (Expansion Theme):**
+- Expanded Expansion: +1 area dimensions (2x2 → 3x3)
+- Concentrated Expansion: +1 charge per tile
+- Phaseable Expansion: Matrix vs Matrix also paints wave cube face
+
+**Recursion Attunements (Concentration Theme):**
+- Concentrated Concentration: +2 charges (3 → 5)
+- Expanded Concentration: +1 tile to pattern
+- Phaseable Concentration: Recursion vs Recursion also paints wave cube face
+
+**Infinity Attunements (Phaseability Theme):**
+- Potent Matrix Paint: +1 charge on Matrix painted faces
+- Potent Recursion Paint: +1 charge on Recursion painted faces
+- Untethered: vs Unit = destroy + continue (no wave join)
+
+#### Economy System
+| Aspect | Value |
+|--------|-------|
+| Currency | Axiom Shards |
+| Earn | 100 shards flat per wave |
+| Spend | Attunement unlocks (100-250 each) |
+| Replay | No currency (anti-farming) |
+
+#### Tasks:
+- [ ] Complete attunement selection UI (Resonance Alignment Chamber panel)
+  - [ ] Display all 9 attunements with descriptions
+  - [ ] Show unlock status and costs
+  - [ ] Implement purchase/unlock flow
+  - [ ] Attunement preview/description system
+  - [ ] Visual feedback for equipped attunements
+- [ ] Complete stage selection UI (Celestial Atlas panel)
+  - [ ] Display all available stages
+  - [ ] Show stage completion status
+  - [ ] Stage selection and launch functionality
+  - [ ] Stage preview/description
+- [ ] Complete stats/history UI (Observation Chronicle panel)
+  - [ ] Display player statistics
+  - [ ] Show stage completion history
+  - [ ] Display attunement usage stats
+  - [ ] Session history and analytics
+- [ ] Polish economy integration
+  - [ ] Shard earning feedback (visual/audio)
+  - [ ] Purchase confirmation flows
+  - [ ] Currency display updates
+  - [ ] Economy balance validation
+- [ ] Validate attunement effects work correctly in gameplay
+  - [ ] Test all 9 attunements in actual stages
+  - [ ] Verify attunement effects apply correctly
+  - [ ] Validate attunement persistence across sessions
+
+---
+
+### Milestone 1.11: Mastery (Stages 11-12)
+- **Target**: Implement final stages and validate complete mastery scenario
+- **Points**: 4 (~1 week active development)
+- **Status**: ⬜ Pending
+- **Dependencies**: Milestone 1.9
+- **Stages**: 11-12 (Mastery)
+- **Lesson**: Complex strategies
+- **Mechanics to Validate**:
+  - [ ] All cube types working together
+  - [ ] All marker types in combination
+  - [ ] Full strategic depth and complexity
+  - [ ] Complete system integration
+  - [ ] Mastery-level challenge validation
 - **Tasks**:
-  - [ ] Source/create audio clips for existing AudioManager system
-  - [ ] Test audio integration with all 7+ subsystems
-  - [ ] Balance volume levels across categories
-  - [ ] Add music and ambient sounds
-  - [ ] Add audio for paired wave mechanics (inheritance feedback sounds)
-  - [ ] Polish audio timing and synchronization
+  - [ ] Design wave configurations for stages 11-12
+  - [ ] Implement stages 11-12 with wave configs
+  - [ ] Validate all mechanics work in synthesis
+  - [ ] Fix bugs/edge cases discovered
+  - [ ] Test complete mastery scenario
 
-### Milestone 2.8: First Polish Pass - Gameplay
-- **Target**: First comprehensive polish pass focusing on gameplay feel
-- **Complexity**: 4 points
+---
+
+---
+
+### Milestone 1.12: Hub Implementation
+- **Target**: Complete hub scene with full functionality and scene transitions
+- **Points**: 4 (~1 week active development)
+- **Status**: ⬜ Pending
+- **Dependencies**: Milestone 1.11 (RPG Implementation)
+- **Note**: Hub scene foundation exists. This milestone completes functionality and polish.
+
+#### Hub: Infinity's Axiom
+The hub serves as the central navigation point between gameplay sessions.
+
+**Hub Areas:**
+| Area | Function | Unlock |
+|------|----------|--------|
+| Celestial Atlas | Stage selection | Always |
+| Resonance Alignment Chamber | Marker attunements | Stage 3 |
+| Observation Chronicle | Stats/history | Stage 3 |
+
+**Foundation (from Milestone 1.2):**
+- Hub scene exists with 3 clickable buildings
+- HubBuilding component with click handling
+- HubUIManager for panel management
+- Basic building unlock system (checks SaveManager.Progression)
+
+**This Milestone Completes:**
+- Full scene transitions (hub ↔ stage)
+- Complete visual polish
+- Navigation and camera systems
+- Building unlock feedback
+- Complete hub loop validation
+
+#### Tasks:
+- [ ] Complete hub scene layout and visuals
+  - [ ] Finalize building placement and layout
+  - [ ] Visual polish for buildings and environment
+  - [ ] Lighting and atmosphere
+  - [ ] Building hover/click visual feedback
+- [ ] Implement hub-to-stage scene transitions
+  - [ ] Stage selection triggers scene load
+  - [ ] Transition animations/effects
+  - [ ] Stage loading with selected stage index
+  - [ ] Error handling for invalid selections
+- [ ] Implement stage-to-hub return flow
+  - [ ] Return to hub after stage completion
+  - [ ] Return to hub after stage failure/quit
+  - [ ] Preserve hub state across transitions
+  - [ ] Update hub UI based on progression changes
+- [ ] Complete building unlock system
+  - [ ] Unlock Resonance Alignment Chamber after Stage 3
+  - [ ] Unlock Observation Chronicle after Stage 3
+  - [ ] Visual feedback for locked buildings
+  - [ ] Unlock animation/celebration
+- [ ] Hub navigation and camera system
+  - [ ] Camera positioning and movement
+  - [ ] Navigation between buildings (if needed)
+  - [ ] Smooth camera transitions
+- [ ] Hub UI polish and feedback
+  - [ ] Panel animations (open/close)
+  - [ ] Building tooltips/descriptions
+  - [ ] Currency display in hub
+  - [ ] Visual feedback for all interactions
+- [ ] Validate complete hub → stage → hub loop
+  - [ ] Test full flow: Hub → Select Stage → Play → Return to Hub
+  - [ ] Verify progression updates reflect in hub
+  - [ ] Test attunement changes persist
+  - [ ] Validate save/load integration
+
+---
+
+### Milestone 1.13: Stage Content Refinement & Difficulty Curve
+- **Target**: Balance, tune, and establish proper difficulty progression across all stages
+- **Points**: 5 (~1 week active development)
+- **Status**: ⬜ Pending
+- **Dependencies**: Milestone 1.12 (Hub Implementation)
+- **Tasks**:
+  - [ ] Playtest all stages (0-12) for balance and feel
+  - [ ] Implement proper difficulty curve across all stages
+  - [ ] Refine wave configurations based on playtesting feedback
+  - [ ] Balance marker economy and cube spawn rates
+  - [ ] Validate stage progression feels rewarding
+- **Note**: Focus on tuning and balance. Mechanics should be validated in 1.6-1.10.
+
+---
+
+### Milestone 1.14: Visual Effects & Juice Pass
+- **Target**: Core visual feedback and effects for gameplay actions
+- **Points**: 5 (~1 week active development)
+- **Status**: ⬜ Pending
+- **Dependencies**: Milestone 1.13 (can start in parallel with refinement)
+- **Note**: Focuses on visual effects and feedback. Gameplay feel polish comes in 2.6.
 - **Tasks**:
   - [ ] Improved particle effects for all major actions
   - [ ] Screen shake and juice for impacts
@@ -332,356 +580,346 @@ This roadmap outlines the development path from current production-ready state t
   - [ ] Tile state change visual effects
   - [ ] Marker placement/detonation polish
   - [ ] Animation/scripted sequence placeholders for key events
-  - [ ] Event hooks for identifying and triggering major gameplay moments
-  - [ ] Polish paired wave visual feedback (inheritance trails, previews)
-  - [ ] Improve game feel and responsiveness
-
-### Milestone 2.9: Meta-Progression Systems
-- **Target**: Player retention, achievement, and expressive progression
-- **Complexity**: 2 points
-- **Tasks**:
-  - [ ] Achievement system implementation
-  - [ ] Performance ratings (bronze/silver/gold)
-  - [ ] Post-stage breakdown and statistics
-  - [ ] Unlockable content or modes
-  - [ ] Settings persistence system
-  - [ ] **RPG-like progression system** (character growth, unlockable abilities, or upgrades)
-  - [ ] **Hub area (village/town)**: A central location where player progression is visually and interactively expressed (inspired by Bastion's village)
-  - [ ] Visual and interactive feedback for progression in the hub
-  - [ ] Integration of meta-progression with core gameplay and hub
+  - [ ] Event hooks for major gameplay moments
 
 ---
 
-## Phase 3: Polish, Refinement & QA
-**Goal**: Achieve commercial polish level through iterative refinement
-**Estimated Total Effort**: 4-6 weeks active development
+## Phase 2: Content Completion & First Polish Pass
+**Goal**: Complete all content and achieve first polish level  
+**Estimated Total**: ~48 pts
+
+**Note**: Stage content completion moved to Milestone 1.6
+
+### Milestone 2.1: Save/Load & Progress Persistence
+- **Points**: 5 (~1 week)
+- Complete save/load system for game progress
+- **Note**: SaveManager exists, this milestone completes/enhances it
+
+**Note**: Interactive Tutorial System completed in Milestone 1.5
+
+### Milestone 2.2: Stage Progression & Unlock System
+- **Points**: 5 (~1 week)
+- Stage unlock system and progression flow
+- **Dependencies**: Milestone 2.1 (needs save system for progression persistence)
+
+### Milestone 2.3: Menu & UI Systems
+- **Points**: 8 (~1.5 weeks)
+- **Dependencies**: Milestone 2.2 (UI needs progression logic to display unlocks)
+- **Tasks**:
+  - [ ] Pause menu (resume, settings, quit to menu)
+  - [ ] Stage select screen (requires unlock system from 2.2)
+  - [ ] Settings persistence (audio, display)
+  - [ ] Stage results/rating display (requires progression from 2.2)
+
+### Milestone 2.4: Cosmic Theme Integration
+- **Points**: 7 (~1.5 weeks)
+- Deliver on aesthetic vision
+
+### Milestone 2.5: Audio Content & Polish
+- **Points**: 5 (~1 week)
+- Add actual audio content to completed system
+
+### Milestone 2.6: First Polish Pass - Gameplay
+- **Points**: 8 (~1.5 weeks)
+- First comprehensive polish pass focusing on gameplay feel
+
+### Milestone 2.7: Meta-Progression Systems
+- **Points**: 5 (~1 week)
+- Player retention, achievement, and expressive progression
+
+### Milestone 2.8: Analytics Dashboard
+- **Points**: 5 (~1 week)
+- **Goal**: Simple web tool to visualize player stats JSON for playtesting insights
+- **Tasks**:
+  - [ ] Parse InfinityQube stats JSON format (DemoStats, EmergencyStats, player_statistics)
+  - [ ] Session overview (duration, completion status, APM over time)
+  - [ ] Movement heatmap visualization
+  - [ ] Marker usage breakdown (placement timing, trigger success rate)
+  - [ ] Cube capture/escape timeline
+  - [ ] Tutorial message read times and skip rates
+  - [ ] Export/share session summaries
+- **Tech**: Static HTML/JS site (no backend needed)
+
+---
+
+## Phase 3: Polish, Refinement & Commercial Prep
+**Goal**: Achieve commercial polish level and prepare for Steam release  
+**Estimated Total**: ~55 pts
 
 ### Milestone 3.1: Second Polish Pass - Balance & Tuning
-- **Target**: Comprehensive balance pass and difficulty tuning
-- **Complexity**: 4 points
-- **Tasks**:
-  - [ ] Balance all stages for difficulty curve
-  - [ ] Tune paired wave inheritance rules per stage
-  - [ ] Balance marker resource economy
-  - [ ] Tune cube movement speeds and timing
-  - [ ] Balance marker cooldowns and charges
-  - [ ] Playtest all stages with multiple skill levels
-  - [ ] Iterate on difficulty based on playtest feedback
-  - [ ] Create difficulty variants if needed (easy/normal/hard)
+- **Points**: 10
+- Comprehensive balance pass and difficulty tuning
 
 ### Milestone 3.2: UI/UX Polish Pass
-- **Target**: Polish all user interfaces and user experience
-- **Complexity**: 3 points
-- **Tasks**:
-  - [ ] Polish main menu and navigation
-  - [ ] Improve stage select screen
-  - [ ] Enhance HUD clarity and information display
-  - [ ] Polish settings menu and options
-  - [ ] Improve tutorial UI and flow
-  - [ ] Add tooltips and help text where needed
-  - [ ] Polish transitions between screens
-  - [ ] Improve error messages and feedback
+- **Points**: 7
+- Polish all user interfaces and user experience
 
-### Milestone 3.3: Performance Optimization
-- **Target**: Optimize performance for commercial release
-- **Complexity**: 3 points
+### Milestone 3.3: Input & Display Systems
+- **Points**: 8
 - **Tasks**:
-  - [ ] Profile performance on minimum spec hardware
-  - [ ] Optimize frame rate (target 60 FPS consistent)
-  - [ ] Optimize memory usage
-  - [ ] Optimize load times (target <3 seconds)
-  - [ ] Optimize particle systems and visual effects
-  - [ ] Optimize audio system performance
-  - [ ] Stress test with maximum cubes/markers on screen
-  - [ ] Performance testing across different hardware configurations
+  - [ ] Controller support (full gamepad playability)
+  - [ ] Keyboard/controller rebinding
+  - [ ] Resolution and display mode options
+  - [ ] UI scaling for different resolutions
 
-### Milestone 3.4: Comprehensive QA & Bug Fixing
-- **Target**: Find and fix all critical bugs
-- **Complexity**: 4 points
+### Milestone 3.4: Performance Optimization
+- **Points**: 5
+- Optimize performance for commercial release
+
+### Milestone 3.5: Comprehensive QA & Bug Fixing
+- **Points**: 8
+- Find and fix all critical bugs
+
+### Milestone 3.6: Accessibility & Localization Prep
+- **Points**: 5
+- Ensure game is accessible and ready for localization
+
+### Milestone 3.7: Business & Legal Setup
+- **Points**: 5
 - **Tasks**:
-  - [ ] Create comprehensive test plan
-  - [ ] Execute full game playthrough testing
-  - [ ] Test all edge cases and error conditions
-  - [ ] Test save/load system thoroughly
-  - [ ] Test paired wave system edge cases
-  - [ ] Test stage progression and unlocks
-  - [ ] Fix all critical and high-priority bugs
-  - [ ] Regression testing after bug fixes
-  - [ ] Create bug tracking and prioritization system
+  - [ ] Steamworks Partner account registration
+  - [ ] Privacy Policy creation
+  - [ ] EULA preparation
+  - [ ] IARC age rating questionnaire
+  - [ ] Business entity decisions (if needed)
 
-### Milestone 3.5: Accessibility & Localization Prep
-- **Target**: Ensure game is accessible and ready for localization
-- **Complexity**: 2 points
+### Milestone 3.8: Demo Build (Steam Next Fest)
+- **Points**: 7
 - **Tasks**:
-  - [ ] Implement colorblind-friendly color schemes
-  - [ ] Add subtitle support for audio cues
-  - [ ] Test with screen readers (if applicable)
-  - [ ] Add keyboard-only navigation support
-  - [ ] Prepare text for localization (externalize all strings)
-  - [ ] Create localization framework (if planning multiple languages)
-  - [ ] Test UI with different text lengths (for future localization)
-
-## Phase 4: Steam Integration & Release Preparation
-**Goal**: Platform integration and commercial release readiness
-**Estimated Total Effort**: 4-5 weeks active development
-
-### Milestone 4.1: Steam SDK Integration
-- **Target**: Integrate Steamworks SDK
-- **Complexity**: 3 points
-- **Tasks**:
-  - [ ] Install and configure Steamworks SDK
-  - [ ] Implement Steam initialization
-  - [ ] Add Steam overlay support
-  - [ ] Test Steam integration in development
-  - [ ] Handle Steam API errors gracefully
-  - [ ] Test offline mode functionality
-
-### Milestone 4.2: Steam Achievements & Stats
-- **Target**: Implement Steam achievements and statistics
-- **Complexity**: 2 points
-- **Tasks**:
-  - [ ] Design achievement list (20-30 achievements)
-  - [ ] Implement achievement unlocking system
-  - [ ] Integrate with Steam achievement API
-  - [ ] Add Steam statistics tracking
-  - [ ] Test achievement unlocking in Steam
-  - [ ] Create achievement icons and descriptions
-
-### Milestone 4.3: Steam Cloud Saves
-- **Target**: Implement Steam cloud save functionality
-- **Complexity**: 2 points
-- **Tasks**:
-  - [ ] Integrate Steam cloud save API
-  - [ ] Implement cloud save upload/download
-  - [ ] Handle save conflict resolution
-  - [ ] Test cloud saves across multiple devices
-  - [ ] Add cloud save status indicators
-  - [ ] Test cloud saves with Steam offline mode
-
-### Milestone 4.4: Steam Store Page & Marketing Assets
-- **Target**: Create Steam store presence
-- **Complexity**: 3 points
-- **Tasks**:
-  - [ ] Write store page copy (description, features, etc.)
-  - [ ] Create store page screenshots (10+ images)
-  - [ ] Create store page capsule images (header, main, small)
-  - [ ] Create store page trailer video
-  - [ ] Set up Steam store page (categories, tags, pricing)
-  - [ ] Create press kit with screenshots and assets
-  - [ ] Prepare Steam community hub content
-
-### Milestone 4.5: Final Polish & Release Candidate
-- **Target**: Final polish pass and release candidate build
-- **Complexity**: 3 points
-- **Tasks**:
-  - [ ] Final visual polish pass
-  - [ ] Final audio polish pass
-  - [ ] Final balance tuning pass
-  - [ ] Create release candidate build
-  - [ ] Comprehensive testing of release candidate
-  - [ ] Fix any release-blocking issues
-  - [ ] Prepare release notes and changelog
-  - [ ] Create build verification checklist
-
-### Milestone 4.6: Beta Testing Program
-- **Target**: Execute beta testing and gather feedback
-- **Complexity**: 2 points
-- **Tasks**:
-  - [ ] Recruit beta testers (10-20 testers)
-  - [ ] Create beta testing feedback forms
-  - [ ] Distribute beta builds via Steam
-  - [ ] Collect and analyze beta feedback
-  - [ ] Prioritize and implement critical beta feedback
-  - [ ] Iterate on beta builds based on feedback
-  - [ ] Thank beta testers and prepare credits
-
-### Milestone 4.7: Launch Day Preparation
-- **Target**: Prepare for commercial launch
-- **Complexity**: 2 points
-- **Tasks**:
-  - [ ] Create launch day checklist
-  - [ ] Prepare launch day communications (social media, etc.)
-  - [ ] Set up community moderation tools
-  - [ ] Prepare customer support resources
-  - [ ] Create launch day monitoring plan
-  - [ ] Prepare hotfix process for launch issues
-  - [ ] Final build verification and upload
-  - [ ] Launch day execution and monitoring
+  - [ ] Define demo scope (stages 1-3 or subset)
+  - [ ] Demo-specific intro/outro messaging
+  - [ ] Wishlist CTA integration
+  - [ ] Demo build pipeline
+  - [ ] Apply to Steam Next Fest (4-6 weeks before event)
 
 ---
 
-## Implementation & Playtesting Guidelines
+## Phase 4: Steam Integration & Release
+**Goal**: Platform integration, store presence, and commercial launch  
+**Estimated Total**: ~50 pts
 
-### Milestone Implementation Process
-For each milestone, follow this process:
+### Milestone 4.1: Steam SDK Integration
+- **Points**: 7
+- **Tasks**:
+  - [ ] Steamworks.NET integration
+  - [ ] Steam initialization and error handling
+  - [ ] Steam overlay support
+  - [ ] Build pipeline for Steam uploads
 
-1. **Review Milestone**
-   - Read all tasks and acceptance criteria
-   - Check dependencies (ensure prerequisites are complete)
-   - Understand the playtesting checkpoint
+### Milestone 4.2: Steam Achievements & Stats
+- **Points**: 5
+- **Tasks**:
+  - [ ] Define achievement list (10-15 achievements MVP)
+  - [ ] Implement achievement triggers
+  - [ ] Steam stats tracking integration
 
-2. **Implementation**
-   - Implement tasks in logical order
-   - Use existing debug tools for rapid iteration
-   - Follow project coding standards and patterns
-   - Mark tasks complete as you go
+### Milestone 4.3: Steam Cloud Saves
+- **Points**: 5
+- Implement Steam cloud save functionality
 
-3. **Validation**
-   - Run build validation (Unity compiles, no errors)
-   - Run integration tests if complexity ≥ 5
-   - Verify acceptance criteria are met
-   - Check that existing functionality still works
+### Milestone 4.4: Steam Store Page & Assets
+- **Points**: 8
+- **Tasks**:
+  - [ ] Capsule images (header, library, small, hero)
+  - [ ] 5+ high-quality screenshots
+  - [ ] Store description and tags
+  - [ ] System requirements
+  - [ ] "Coming Soon" page live (start wishlist building)
 
-4. **Playtesting Checkpoint**
-   - Playtest the milestone feature in-game
-   - Verify it works as intended
-   - Check for obvious issues or missing polish
-   - Iterate based on playtest feedback
-   - **Note**: Don't skip playtesting - it's critical for first-time game dev
+### Milestone 4.5: Launch Trailer
+- **Points**: 5
+- **Tasks**:
+  - [ ] Gameplay capture
+  - [ ] Trailer editing (30-60 seconds)
+  - [ ] Trailer thumbnail
+  - [ ] Upload to Steam and YouTube
 
-5. **Mark Complete**
-   - All tasks checked off
-   - All acceptance criteria met
-   - Playtesting checkpoint passed
-   - Ready to move to next milestone
+### Milestone 4.6: Final Polish & Release Candidate
+- **Points**: 7
+- Final polish pass and release candidate build
 
-### Playtesting Best Practices
-- **After Each Milestone**: Quick playtest to verify feature works
-- **After Major Milestones**: More thorough playtest with focus on that feature
-- **After Phase Completion**: Full playthrough to check integration
-- **External Playtesters**: Get fresh eyes, especially for tutorial and onboarding
-- **Document Feedback**: Keep notes on what feels good/bad, iterate quickly
+### Milestone 4.7: Beta Testing (Steam Playtest)
+- **Points**: 5
+- **Tasks**:
+  - [ ] Steam Playtest branch setup
+  - [ ] Recruit beta testers
+  - [ ] Feedback collection and triage
+  - [ ] Critical bug fixes
 
-### Milestone Dependencies
-Milestones are ordered to minimize dependencies, but some key paths:
-- **1.1 → 1.4 → 1.5**: Paired waves → StageDB → Content creation
-- **1.1 → 1.2**: Paired waves → Infinity markers (needs inheritance)
-- **2.1 → 2.2**: Complete stages → Save/load (needs content to save)
-- **All → 3.x**: Polish phases need complete content
+### Milestone 4.8: Launch Preparation
+- **Points**: 5
+- **Tasks**:
+  - [ ] Press/streamer key distribution
+  - [ ] Launch day announcement prep
+  - [ ] Community response plan
+  - [ ] Day-1 patch pipeline ready
+
+### Milestone 4.9: Post-Launch Buffer
+- **Points**: 3
+- **Tasks**:
+  - [ ] Day-1/Week-1 patch releases
+  - [ ] Review monitoring and response
+  - [ ] Critical bug triage
+
+---
+
+## Critical Path
+
+```
+Milestone 1.0 ✅ → 1.1 ✅ → 1.2 🔄 → 1.3 → 1.4 → 2.x → 3.x → 4.x → Release
+                            ↑
+                      YOU ARE HERE
+                            │
+                      Hub Architecture
+                      Attunement System
+                      Progression Economy
+                      Technical Prep
+```
+
+---
+
+## Minimum Viable Product (MVP) Definition
+
+**Purpose**: Define the shippable floor if timeline compresses. This gives permission to cut scope without compromising core identity.
+
+### MVP Requirements (Must Ship)
+
+| Element | Full Scope | MVP Scope | Notes |
+|---------|------------|-----------|-------|
+| **Stages** | 12-13 | 8 (incl. tutorial) | Quality over quantity |
+| **Cube Types** | All 4 | All 4 | Core identity |
+| **Marker Types** | All 4 | All 4 | Core identity |
+| **Collision Matrix** | Full 16 combos | Full 16 combos | Core differentiation |
+| **Face Painting** | Full system | Basic (Unit trigger only) | Can simplify |
+| **Line Divider** | Dynamic | Static position | Can simplify |
+| **Tutorial** | Interactive sequences | Highlight sequences | Framework complete |
+| **Achievements** | 20+ | 10 basic | Reduce scope |
+| **Controller** | Full support | Full support | Steam expectation |
+
+### MVP Cuts (Can Defer to Post-Launch)
+
+| Feature | Reason to Cut |
+|---------|---------------|
+| Resonance System | Advanced mechanic, not core loop |
+| RPG/Progression Systems | Nice-to-have, not core puzzle |
+| Localization | English-only is acceptable for launch |
+| Leaderboards | Can add post-launch |
+| Advanced accessibility | Basic options sufficient for launch |
+
+### MVP Quality Bar
+
+- All 4 cube types feel distinct and purposeful
+- Player understands core loop within 2 minutes
+- 60 FPS on mid-range hardware
+- No game-breaking bugs
+- Complete gameplay loop (start → stages → completion)
+- Save/load works reliably
+- Controller and keyboard both work
+
+---
+
+## Effort Summary
+
+| Phase | Focus | Points | Status |
+|-------|-------|--------|--------|
+| Phase 1 | Core Innovation & Content | 160 pts | 🔄 In Progress |
+| Phase 2 | Content Completion & Polish | 48 pts | ⬜ Pending |
+| Phase 3 | Polish & Commercial Prep | 55 pts | ⬜ Pending |
+| Phase 4 | Steam Integration & Release | 50 pts | ⬜ Pending |
+| **TOTAL** | | **313 pts** | |
+
+**Completed**: 122 pts (Milestone 1.0 + 1.1 + 1.2 + 1.3 + 1.4 + 1.5)  
+**Remaining**: ~191 pts
+
+**Note**: Phases can overlap; calendar time will vary based on availability.
+
+---
+
+## Development Velocity
+
+| Metric | Value |
+|--------|-------|
+| **Measured Velocity** | **22 points/month** (active periods) |
+| **Completed Points** | 122 pts |
+| **Remaining Points** | ~191 pts |
+| **Point Definition** | 1 pt ≈ 1 day active work |
+| **Week Definition** | 5 pts ≈ 1 week active work |
+| **Measurement Rule** | Gap < 1 week = same-day continuation |
 
 ---
 
 ## High-Value Parallel Activities
 
 ### Throughout All Phases:
-1. **Playtesting Pipeline** ✅ **Framework exists**
-   - [ ] Weekly playtesting sessions (after each milestone)
-   - [ ] Analytics integration for player behavior
-   - [ ] A/B testing for difficulty curves
-   - [ ] Document playtest feedback and iterate
-
-2. **Technical Debt Management** ✅ **System operational**
-   - [ ] Bi-weekly code quality reviews
-   - [ ] Performance profiling checkpoints
-   - [ ] Documentation maintenance
-   - [ ] Refactor as needed between milestones
-
-3. **Community Building**
-   - [ ] Development blog/devlog with milestone updates
-   - [ ] GIF creation pipeline for progress sharing
-   - [ ] Discord community setup
-   - [ ] Beta testing program (Phase 4)
+1. **Playtesting Pipeline** ✅ Framework exists
+2. **Technical Debt Management** ✅ System operational (12 file size violations)
+3. **Community Building** - Development blog, Discord setup
+4. **Analytics Dashboard** - Can start early to support playtesting (Milestone 2.10)
 
 ---
 
 ## Risk Mitigation
 
-### Identified Risks:
-1. **Paired Wave System Complexity**: Core innovation requires careful implementation
-   - **Mitigation**: Start with simple 1:1 marker-to-cube conversion, iterate
-   - **Fallback**: Phased implementation - basic inheritance first, advanced features later
+| Risk | Mitigation | Fallback |
+|------|------------|----------|
+| Velocity Sustainability | Weekly tracking | Conservative 15 pts/month |
+| Content Creation Scope | Quality over quantity | Launch with 8-10 stages (MVP) |
+| Scope Creep | Feature freeze after Phase 1 | Focus on polish |
+| File Size Violations | Phased refactoring | Prioritize critical managers |
+| Store Page Too Late | Start assets in Phase 3 | Simple capsules, iterate |
+| Launch Without Wishlists | Demo in Next Fest | Direct community outreach |
 
-2. **Velocity Sustainability**: Development velocity may fluctuate
-   - **Mitigation**: Weekly velocity tracking with rolling averages
-   - **Fallback**: Conservative 15 points/month estimate for planning
+---
 
-3. **Content Creation Scope**: Remaining stage content and polish
-   - **Mitigation**: Focus on quality over quantity for initial release
-   - **Fallback**: Launch with fewer but more polished stages
+## Steam Release Guardrails
 
-4. **Scope Creep**: Feature additions could derail timeline
-   - **Mitigation**: Strict feature freeze after Phase 1, focus on polish only
+**Checkpoints to ensure commercial readiness:**
 
-5. **Infinity Marker Integration**: New marker type requires system integration
-   - **Mitigation**: Follow existing marker system patterns, reuse infrastructure
-   - **Fallback**: Defer to Phase 2 if Phase 1 priorities require focus
+| Checkpoint | When | Gate |
+|------------|------|------|
+| **MVP Scope Locked** | End of Phase 1 | Know exactly what's shipping |
+| **Feature Freeze** | Start of Phase 3 | No new features, polish only |
+| **Business/Legal Complete** | Mid Phase 3 | Steamworks account, policies ready |
+| **Store Page Live** | End of Phase 3 | "Coming Soon" visible, wishlisting active |
+| **Controller Verified** | End of Phase 3 | Full gamepad playability confirmed |
+| **Demo Submitted** | Phase 3 (if Next Fest) | Apply 4-6 weeks before event |
+| **Content Freeze** | Start of Phase 4 | No new stages, bugs only |
+| **Beta Complete** | Mid Phase 4 | Critical feedback addressed |
+| **Release Candidate** | End of 4.6 | Build that could ship |
+| **Launch** | After 4.8 | Store page updated, build live |
 
-6. **StageDB Migration Complexity**: Updating existing stages to paired wave format
-   - **Mitigation**: Create migration tools and validation systems early
-   - **Fallback**: Manual migration with careful testing
+### Steam Store Requirements Checklist
 
-7. **First-Time Game Dev Learning Curve**: Additional polish/refinement time needed
-   - **Mitigation**: Built-in polish phases (Phase 3) and beta testing
-   - **Fallback**: Extended polish timeline, focus on core experience first
+**Required for Store Page:**
+- [ ] Header capsule (460x215, 920x430)
+- [ ] Small capsule (231x87)
+- [ ] Main capsule (616x353)
+- [ ] Library capsule (600x900) - for library view
+- [ ] Hero image (3840x1240) - optional but recommended
+- [ ] 5+ screenshots (1920x1080 recommended)
+- [ ] Short description (< 300 chars)
+- [ ] Full description
+- [ ] System requirements
+- [ ] Privacy policy URL
+- [ ] IARC age rating
 
-8. **Content Creation Scope**: 12-13 stages is significant content work
-   - **Mitigation**: Reuse patterns, create stage templates, use debug tools
-   - **Fallback**: Launch with 8-10 polished stages, add more post-launch
+**Required for Launch:**
+- [ ] Gameplay trailer
+- [ ] All store assets finalized
+- [ ] Build uploaded and tested
+- [ ] Achievements configured
+- [ ] Cloud saves tested
+- [ ] Pricing set
+- [ ] Release date set
 
 ---
 
 ## Success Metrics
 
-### Development Velocity Tracking:
-- **Target Velocity**: 15+ complexity points/month (conservative estimate)
-- **Weekly Check-ins**: Velocity recalculation as milestones complete
-- **Milestone Gates**: No phase advancement without 90% completion
-
-### Quality Gates:
-- **Fundamentals**: 90% of players understand core loop in < 2 minutes
-- **Performance**: Consistent 60 FPS on minimum spec hardware
-- **Player Experience**: Average session length > 20 minutes
-- **Stage Completion**: >70% completion rate for early stages
-- **Paired Wave Understanding**: Players recognize marker inheritance within 3 wave pairs
-
----
-
-## Development Velocity Dashboard
-
-### **Current Metrics**:
-- **Measured Velocity**: ~22 complexity points/month (active periods)
-- **Completed Complexity**: 55 points
-- **Remaining Work**: ~38 complexity points (across remaining phases)
-- **Estimated Total Effort**: ~8-12 weeks of active development
-
-### **Effort Summary by Phase**:
-| Phase | Focus | Effort Estimate |
-|-------|-------|-----------------|
-| Phase 1 | Core Innovation & Content | 6-8 weeks active |
-| Phase 2 | Content Completion & Polish | 8-10 weeks active |
-| Phase 3 | Polish, Refinement & QA | 4-6 weeks active |
-| Phase 4 | Steam Integration & Release | 4-5 weeks active |
-
-**Note**: Phases can overlap; some work can be parallelized.
-
-### **Priority Tracking**:
-| Priority | Item | Status | Effort |
-|----------|------|--------|--------|
-| 🔴 Critical | Paired Wave System Implementation | ✅ Complete | 1-2 weeks |
-| 🔴 High | Milestone 1.2: Core Gameplay Systems | In Progress | ~2 weeks |
-|   | - Line Divider System | Designed | ~3 days |
-|   | - Resonance System | Designed | ~2 days |
-|   | - Enhanced Face Painting | Designed | ~2 days |
-|   | - Penalty/Reward System | Designed | ~2 days |
-|   | - Marker Economy | Designed | ~2 days |
-| 🔴 High | File Size Refactoring (WaveManager) | Planned | 2-3 weeks |
-| 🟡 High | Infinity Markers Implementation | Designed | ~1 week |
-| 🟡 Medium | Stage Content Creation | Not Started | 3-4 weeks |
-
-### **System Status**:
-| System | Status | Notes |
-|--------|--------|-------|
-| Audio System | ✅ Complete | 7+ files implemented |
-| Production UI | ✅ Complete | Unity UI systems operational |
-| Debug Systems | ✅ Complete | OnGUI (intentional for debug) |
-| Paired Wave System | ✅ Complete | Core innovation implemented |
-| File Size Compliance | 🔴 Violation | 10 files exceed limits |
-
-### **Critical Path**:
-```
-Paired Wave System ✅ → Core Gameplay Systems (1.2: 2 wks) → Stage Content (3-4 wks) → Tutorial (1-2 wks) → Polish (2-4 wks) → Release
-  └─ Line Divider, Resonance, Face Painting, Penalty/Reward, Marker Economy
-```
+- **Fundamentals**: 90% understand core loop in < 2 minutes
+- **Performance**: Consistent 60 FPS
+- **Session Length**: Average > 20 minutes
+- **Stage Completion**: >70% for early stages
 
 ---
 
@@ -689,9 +927,11 @@ Paired Wave System ✅ → Core Gameplay Systems (1.2: 2 wks) → Stage Content 
 - [Milestone Tracking](MilestoneTracking.md) - Historical record
 - [Development Velocity](../Technical%20Doc/DevelopmentVelocity.md) - Detailed metrics
 - [Technical Debt](../Technical%20Doc/TechnicalDebt.md) - Debt tracking
-- [Architectural Critiques](../Technical%20Doc/ArchitecturalCritiques.md) - Code analysis
+- [Technical Critiques](../Technical%20Doc/TechnicalCritiques.md) - Code analysis
 
 ---
 
-*Last Updated: December 2025*  
-*Development Phase: Phase 1 - Infinity Markers & Content Creation*
+*Last Updated: December 14, 2025*  
+*Current Phase: Phase 1 - Core Innovation & Content*  
+*Current Milestone: 1.4 - Stage Content Creation*  
+*Total Points: 297 | Completed: ~100 | Remaining: ~197*

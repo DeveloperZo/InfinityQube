@@ -20,7 +20,7 @@ public class QuickAudioVerification : MonoBehaviour
         Debug.Log("=== QUICK AUDIO VERIFICATION ===");
         
         // 1. Check WaveManager has AudioManager reference
-        var waveManager = FindObjectOfType<WaveManager>();
+        var waveManager = FindFirstObjectByType<WaveManager>();
         if (waveManager == null)
         {
             Debug.LogError("❌ WaveManager not found!");

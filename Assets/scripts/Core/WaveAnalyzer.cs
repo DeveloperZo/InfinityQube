@@ -35,7 +35,7 @@ public class WaveAnalyzer
     /// </summary>
     public WaveAnalysisResult AnalyzeWave(WaveData waveData)
     {
-        if (waveData == null || waveData.CubesData == null || waveData.CubesData.Count == 0)
+        if (waveData == null || waveData.cubes == null || waveData.cubes.Count == 0)
         {
             return new WaveAnalysisResult
             {
@@ -46,7 +46,7 @@ public class WaveAnalyzer
             };
         }
         
-        DebugLog("AnalyzeWave", $"Analyzing wave with {waveData.CubesData.Count} cubes");
+        DebugLog("AnalyzeWave", $"Analyzing wave with {waveData.cubes.Count} cubes");
         
         // Step 1: Analyze cube positions and types
         CubeAnalysis cubeAnalysis = AnalyzeCubePositions(waveData);
@@ -84,7 +84,7 @@ public class WaveAnalyzer
         CubeAnalysis analysis = new CubeAnalysis();
         
         // Count cubes by type
-        foreach (var cube in waveData.CubesData)
+        foreach (var cube in waveData.cubes)
         {
             switch (cube.type)
             {
@@ -140,7 +140,7 @@ public class WaveAnalyzer
                     Vector2Int coveragePos = matrixCube.position + new Vector2Int(dx, dy);
                     
                     // Find cubes at this position
-                    var cubesAtPos = waveData.CubesData.Where(c => c.position == coveragePos).ToList();
+                    var cubesAtPos = waveData.cubes.Where(c => c.position == coveragePos).ToList();
                     
                     if (cubesAtPos.Count > 0)
                     {

@@ -18,7 +18,7 @@ public class TileVisuals
     #region Runtime State
     private GameObject stateOverlay;
     private Transform parentTransform;
-    private bool enableDebugLogs = false;
+    private bool enableDebugLogs;
     #endregion
 
     #region Constructor

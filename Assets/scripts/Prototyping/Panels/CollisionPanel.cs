@@ -687,31 +687,7 @@ public class CollisionPanel : PrototypingPanelBase
     private void MakeCubeTranslucent(CubeManager cube)
     {
         if (cube == null) return;
-        
-        Renderer renderer = cube.GetComponent<Renderer>();
-        if (renderer == null) return;
-        
-        Material originalMaterial = renderer.material;
-        if (originalMaterial == null) return;
-        
-        Material translucentMaterial = new Material(originalMaterial);
-        Color color = translucentMaterial.color;
-        color.a = 0.35f;
-        translucentMaterial.color = color;
-        
-        if (translucentMaterial.HasProperty("_Mode"))
-        {
-            translucentMaterial.SetFloat("_Mode", 3);
-            translucentMaterial.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
-            translucentMaterial.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
-            translucentMaterial.SetInt("_ZWrite", 0);
-            translucentMaterial.DisableKeyword("_ALPHATEST_ON");
-            translucentMaterial.EnableKeyword("_ALPHABLEND_ON");
-            translucentMaterial.DisableKeyword("_ALPHAPREMULTIPLY_ON");
-            translucentMaterial.renderQueue = 3000;
-        }
-        
-        renderer.material = translucentMaterial;
+        cube.ApplyPlayerCubeMaterial();
     }
     
     #endregion

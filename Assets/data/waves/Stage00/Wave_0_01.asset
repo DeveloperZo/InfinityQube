@@ -1,0 +1,184 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 78c3fb7cc917307469018838241693f1, type: 3}
+  m_Name: Wave_0_01
+  m_EditorClassIdentifier: 
+  Index: 0
+  waveName: Basic Movement and Capture
+  GridWidth: 5
+  GridHeight: 2
+  CubesData:
+  - type: 0
+    position: {x: 0, y: 0}
+    level: 1
+    hasPaintedFaces: 0
+    frontFaceStatus: 0
+    frontFaceCharges: 0
+    spawnDelay: 0
+  - type: 0
+    position: {x: 1, y: 0}
+    level: 1
+    hasPaintedFaces: 0
+    frontFaceStatus: 0
+    frontFaceCharges: 0
+    spawnDelay: 0
+  - type: 0
+    position: {x: 2, y: 0}
+    level: 1
+    hasPaintedFaces: 0
+    frontFaceStatus: 0
+    frontFaceCharges: 0
+    spawnDelay: 0
+  - type: 0
+    position: {x: 3, y: 0}
+    level: 1
+    hasPaintedFaces: 0
+    frontFaceStatus: 0
+    frontFaceCharges: 0
+    spawnDelay: 0
+  - type: 0
+    position: {x: 4, y: 0}
+    level: 1
+    hasPaintedFaces: 0
+    frontFaceStatus: 0
+    frontFaceCharges: 0
+    spawnDelay: 0
+  - type: 0
+    position: {x: 0, y: 1}
+    level: 1
+    hasPaintedFaces: 0
+    frontFaceStatus: 0
+    frontFaceCharges: 0
+    spawnDelay: 0
+  - type: 0
+    position: {x: 1, y: 1}
+    level: 1
+    hasPaintedFaces: 0
+    frontFaceStatus: 0
+    frontFaceCharges: 0
+    spawnDelay: 0
+  - type: 2
+    position: {x: 2, y: 1}
+    level: 1
+    hasPaintedFaces: 0
+    frontFaceStatus: 0
+    frontFaceCharges: 0
+    spawnDelay: 0
+  - type: 0
+    position: {x: 3, y: 1}
+    level: 1
+    hasPaintedFaces: 0
+    frontFaceStatus: 0
+    frontFaceCharges: 0
+    spawnDelay: 0
+  - type: 0
+    position: {x: 4, y: 1}
+    level: 1
+    hasPaintedFaces: 0
+    frontFaceStatus: 0
+    frontFaceCharges: 0
+    spawnDelay: 0
+  grantsAddToInventory: 1
+  grantMatrixCharges: 0
+  grantRecursionCharges: 0
+  grantInfinityCharges: 0
+  overrideUnitMaxOnGrid: 4
+  overrideMatrixMaxOnGrid: 0
+  overrideRecursionMaxOnGrid: 0
+  overrideInfinityMaxOnGrid: 0
+  overrideUnitMarkerRechargeRate: 0
+  waveStartDelay: 1.5
+  moveInterval: 2.5
+  fastMoveInterval: 0.1
+  hasOwnSuccessCriteria: 0
+  requiredCaptureCount: 0
+  maxAllowedEscapes: -1
+  highlightSequences:
+  - DisplayMoveStep: 2
+    pauseGame: 1
+    messageText: Place your marker here.\n (Press K to Continue)
+    messageRequirePause: 1
+    messageAutoHideDelay: 0
+    targetType: 1
+    targetPosition: {x: 2, y: 8}
+    targetCubeType: 0
+    highlightColor: {r: 0.3, g: 0.8, b: 0.3, a: 0.4}
+    shouldPulse: 0
+    highlightDuration: 0
+    clearOnCapture: 0
+    resumeGame: 1
+    triggerOnMarkerAtPosition: {x: 0, y: 0}
+    triggerOnCaptureAtPosition: {x: 0, y: 0}
+    requireMarkerPlacementValidation: 1
+    validationFailureMessage: Place your marker on the highlighted tile.
+  - DisplayMoveStep: 4
+    pauseGame: 0
+    messageText: Your marker will spawn a cube that will capture this cube
+    messageRequirePause: 0
+    messageAutoHideDelay: 3
+    targetType: 2
+    targetPosition: {x: 2, y: 14}
+    targetCubeType: 0
+    highlightColor: {r: 0.3, g: 0.8, b: 0.3, a: 0.4}
+    shouldPulse: 0
+    highlightDuration: 0
+    clearOnCapture: 1
+    resumeGame: 1
+    triggerOnMarkerAtPosition: {x: 0, y: 0}
+    triggerOnCaptureAtPosition: {x: 0, y: 0}
+    requireMarkerPlacementValidation: 0
+    validationFailureMessage: Place your marker on the highlighted tile.
+  - DisplayMoveStep: 7
+    pauseGame: 0
+    messageText: Try capturing the other cubes! You can place markers on multiple
+      tiles.
+    messageRequirePause: 0
+    messageAutoHideDelay: 3
+    targetType: 0
+    targetPosition: {x: 0, y: 0}
+    targetCubeType: 0
+    highlightColor: {r: 0.3, g: 0.8, b: 0.3, a: 0.4}
+    shouldPulse: 0
+    highlightDuration: 0
+    clearOnCapture: 0
+    resumeGame: 1
+    triggerOnMarkerAtPosition: {x: 0, y: 0}
+    triggerOnCaptureAtPosition: {x: 0, y: 0}
+    requireMarkerPlacementValidation: 0
+    validationFailureMessage: 
+  - DisplayMoveStep: 9
+    pauseGame: 1
+    messageText: This is an Infinity cube. It's dangerous and cannot be captured
+      - avoid it!\n (Press K to Continue)
+    messageRequirePause: 0
+    messageAutoHideDelay: 4
+    targetType: 2
+    targetPosition: {x: 2, y: 10}
+    targetCubeType: 2
+    highlightColor: {r: 1, g: 0.2, b: 0.2, a: 0.5}
+    shouldPulse: 1
+    highlightDuration: 5
+    clearOnCapture: 0
+    resumeGame: 1
+    triggerOnMarkerAtPosition: {x: 0, y: 0}
+    triggerOnCaptureAtPosition: {x: 0, y: 0}
+    requireMarkerPlacementValidation: 0
+    validationFailureMessage: 
+  _runtimeStats:
+    unitCubesCaptured: 0
+    matrixCubesCaptured: 0
+    recursionCubesCaptured: 0
+    infinityCubesCaptured: 0
+    cubesEscaped: 0
+    markersPlaced: 0
+    markersTriggererd: 0
+    completionTime: 0

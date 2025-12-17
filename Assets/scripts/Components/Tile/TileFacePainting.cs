@@ -19,7 +19,7 @@ public class TileFacePainting
     #region Runtime State
     private Transform parentTransform;
     private Tile parentTile;
-    private bool enableDebugLogs = false;
+    private bool enableDebugLogs;
     #endregion
 
     #region Properties
@@ -54,7 +54,7 @@ public class TileFacePainting
         paintOnExit = onExit;
 
         // Register with FacePaintingManager
-        FacePaintingManager facePaintingManager = Object.FindObjectOfType<FacePaintingManager>();
+        FacePaintingManager facePaintingManager = Object.FindFirstObjectByType<FacePaintingManager>();
         if (facePaintingManager != null)
         {
             facePaintingManager.RegisterFacePaintingTile(parentTile);
@@ -114,7 +114,7 @@ public class TileFacePainting
         paintStatus = FaceStatus.None;
         
         // Unregister from FacePaintingManager
-        FacePaintingManager facePaintingManager = Object.FindObjectOfType<FacePaintingManager>();
+        FacePaintingManager facePaintingManager = Object.FindFirstObjectByType<FacePaintingManager>();
         if (facePaintingManager != null)
         {
             facePaintingManager.UnregisterFacePaintingTile(parentTile);
@@ -128,7 +128,7 @@ public class TileFacePainting
     {
         if (!canPaintCubes) return;
         
-        FacePaintingManager facePaintingManager = Object.FindObjectOfType<FacePaintingManager>();
+        FacePaintingManager facePaintingManager = Object.FindFirstObjectByType<FacePaintingManager>();
         if (facePaintingManager != null)
         {
             facePaintingManager.OnCubeMoved(cube, pos, pos); // Update tracking

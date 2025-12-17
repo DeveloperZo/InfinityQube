@@ -20,15 +20,13 @@ public class PlayerPanel : PrototypingPanelBase
     private bool showMarkerSettings = true;
     private bool showMarkerPlacement = true;
     private bool showPlayerControl = false;
+    private bool showAttunements = true;
     
     // Unlimited mode
     private bool unlimitedMode = false;
     
     // Stored values for restoring after unlimited mode
-    private float storedUnitCooldown;
-    private float storedRecursionCooldown;
-    private float storedMatrixCooldown;
-    private float storedInfinityCooldown;
+    private int storedUnitRechargeRate;
     private int storedUnitCharges;
     private int storedRecursionCharges;
     private int storedMatrixCharges;
@@ -80,6 +78,13 @@ public class PlayerPanel : PrototypingPanelBase
         {
             DrawPlayerControl();
         }
+        
+        // Attunements
+        showAttunements = DrawToggleSection("ATTUNEMENTS", showAttunements);
+        if (showAttunements)
+        {
+            DrawAttunements();
+        }
     }
     
     #region Marker Settings
@@ -126,35 +131,57 @@ public class PlayerPanel : PrototypingPanelBase
             }
             GUI.backgroundColor = Color.white;
             
+            GUILayout.Space(5);
+            
+            // Marker Economy toggle
+            GUI.backgroundColor = actionManager.useMarkerEconomy ? Color.cyan : Color.gray;
+            if (GUILayout.Button(actionManager.useMarkerEconomy ? "✓ MARKER ECONOMY ON" : "✗ Marker Economy OFF"))
+            {
+                actionManager.useMarkerEconomy = !actionManager.useMarkerEconomy;
+                LogAction($"Marker Economy: {(actionManager.useMarkerEconomy ? "ON" : "OFF")}");
+            }
+            GUI.backgroundColor = Color.white;
+            
+            // Manual grant buttons (when economy is enabled)
+            if (actionManager.useMarkerEconomy)
+            {
+                GUILayout.BeginHorizontal();
+                if (GUILayout.Button("Apply Stage Grants"))
+                {
+                    actionManager.ApplyStageGrants();
+                    LogAction("Applied stage grants");
+                }
+                if (GUILayout.Button("Apply Wave Grants"))
+                {
+                    actionManager.ApplyWaveGrants();
+                    LogAction("Applied wave grants");
+                }
+                GUILayout.EndHorizontal();
+            }
+            
             GUILayout.Space(10);
             
-            // UnitMarker settings
-            DrawMarkerTypeSettings("UnitMarker", 
+            // UnitMarker settings (move-based recharge)
+            DrawUnitMarkerSettings("UnitMarker", 
                 ref actionManager.maxUnitMarkerCharges, 
-                ref actionManager.unitMarkerCooldown,
+                ref actionManager.unitMarkerRechargeRate,
                 ref actionManager.maxUnitMarkers,
                 actionManager.GetUnitMarkerCooldownRemaining());
             
-            // MatrixMarker settings
+            // MatrixMarker settings (inventory-based)
             DrawMarkerTypeSettings("MatrixMarker", 
                 ref actionManager.maxMatrixMarkerCharges, 
-                ref actionManager.matrixMarkerCooldown,
-                ref actionManager.maxMatrixMarkers,
-                actionManager.GetMatrixMarkerCooldownRemaining());
+                ref actionManager.maxMatrixMarkers);
             
-            // RecursionMarker settings
+            // RecursionMarker settings (inventory-based)
             DrawMarkerTypeSettings("RecursionMarker", 
                 ref actionManager.maxRecursionMarkerCharges, 
-                ref actionManager.recursionMarkerCooldown,
-                ref actionManager.maxRecursionMarkers,
-                actionManager.GetRecursionMarkerCooldownRemaining());
+                ref actionManager.maxRecursionMarkers);
             
-            // InfinityMarker settings
+            // InfinityMarker settings (inventory-based)
             DrawMarkerTypeSettings("InfinityMarker", 
                 ref actionManager.maxInfinityMarkerCharges, 
-                ref actionManager.infinityMarkerCooldown,
-                ref actionManager.maxInfinityMarkers,
-                actionManager.GetInfinityMarkerCooldownRemaining());
+                ref actionManager.maxInfinityMarkers);
             
             GUILayout.Space(5);
             
@@ -177,13 +204,45 @@ public class PlayerPanel : PrototypingPanelBase
         });
     }
     
-    private void DrawMarkerTypeSettings(string label, ref int maxCharges, ref float cooldown, ref int maxOnGrid, float cooldownRemaining)
+    /// <summary>
+    /// Draw marker settings for inventory-based markers (Recursion, Matrix, Infinity)
+    /// These markers use inventory grants only - no cooldown regeneration
+    /// </summary>
+    private void DrawMarkerTypeSettings(string label, ref int maxCharges, ref int maxOnGrid)
+    {
+        GUILayout.BeginVertical(GUI.skin.box);
+        
+        GUILayout.Label($"{label} (Inventory-based)", GUILayout.Width(180));
+        
+        // Max charges (inventory cap)
+        GUILayout.BeginHorizontal();
+        GUILayout.Label("Inventory:", GUILayout.Width(60));
+        if (GUILayout.Button("-", GUILayout.Width(25)) && maxCharges > 0) maxCharges--;
+        GUILayout.Label($"{maxCharges}", GUILayout.Width(25));
+        if (GUILayout.Button("+", GUILayout.Width(25)) && maxCharges < 20) maxCharges++;
+        GUILayout.EndHorizontal();
+        
+        // Max on grid
+        GUILayout.BeginHorizontal();
+        GUILayout.Label("Max Grid:", GUILayout.Width(60));
+        if (GUILayout.Button("-", GUILayout.Width(25)) && maxOnGrid > 1) maxOnGrid--;
+        GUILayout.Label($"{maxOnGrid}", GUILayout.Width(25));
+        if (GUILayout.Button("+", GUILayout.Width(25)) && maxOnGrid < 20) maxOnGrid++;
+        GUILayout.EndHorizontal();
+        
+        GUILayout.EndVertical();
+    }
+    
+    /// <summary>
+    /// Draw Unit marker settings with move-based recharge rate instead of time-based cooldown
+    /// </summary>
+    private void DrawUnitMarkerSettings(string label, ref int maxCharges, ref int rechargeRate, ref int maxOnGrid, float movesRemaining)
     {
         GUILayout.BeginVertical(GUI.skin.box);
         
         GUILayout.BeginHorizontal();
         GUILayout.Label($"{label}", GUILayout.Width(110));
-        GUILayout.Label($"CD: {cooldownRemaining:F1}s", GUILayout.Width(70));
+        GUILayout.Label($"Moves: {movesRemaining:F0}", GUILayout.Width(70));
         GUILayout.EndHorizontal();
         
         // Max charges
@@ -194,12 +253,12 @@ public class PlayerPanel : PrototypingPanelBase
         if (GUILayout.Button("+", GUILayout.Width(25)) && maxCharges < 20) maxCharges++;
         GUILayout.EndHorizontal();
         
-        // Cooldown
+        // Recharge rate (moves per charge)
         GUILayout.BeginHorizontal();
-        GUILayout.Label("Cooldown:", GUILayout.Width(60));
-        cooldown = GUILayout.HorizontalSlider(cooldown, 0f, 10f, GUILayout.Width(100));
-        GUILayout.Label($"{cooldown:F1}s", GUILayout.Width(40));
-        if (GUILayout.Button("0", GUILayout.Width(25))) cooldown = 0;
+        GUILayout.Label("Recharge:", GUILayout.Width(60));
+        if (GUILayout.Button("-", GUILayout.Width(25)) && rechargeRate > 1) rechargeRate--;
+        GUILayout.Label($"{rechargeRate}m", GUILayout.Width(25));
+        if (GUILayout.Button("+", GUILayout.Width(25)) && rechargeRate < 10) rechargeRate++;
         GUILayout.EndHorizontal();
         
         // Max on grid
@@ -208,7 +267,7 @@ public class PlayerPanel : PrototypingPanelBase
         if (GUILayout.Button("-", GUILayout.Width(25)) && maxOnGrid > 1) maxOnGrid--;
         GUILayout.Label($"{maxOnGrid}", GUILayout.Width(25));
         if (GUILayout.Button("+", GUILayout.Width(25)) && maxOnGrid < 20) maxOnGrid++;
-        GUILayout.EndHorizontal();;
+        GUILayout.EndHorizontal();
         
         GUILayout.EndVertical();
     }
@@ -222,10 +281,7 @@ public class PlayerPanel : PrototypingPanelBase
         if (unlimitedMode)
         {
             // Store current values
-            storedUnitCooldown = actionManager.unitMarkerCooldown;
-            storedRecursionCooldown = actionManager.recursionMarkerCooldown;
-            storedMatrixCooldown = actionManager.matrixMarkerCooldown;
-            storedInfinityCooldown = actionManager.infinityMarkerCooldown;
+            storedUnitRechargeRate = actionManager.unitMarkerRechargeRate;
             storedUnitCharges = actionManager.maxUnitMarkerCharges;
             storedRecursionCharges = actionManager.maxRecursionMarkerCharges;
             storedMatrixCharges = actionManager.maxMatrixMarkerCharges;
@@ -233,10 +289,7 @@ public class PlayerPanel : PrototypingPanelBase
             storedMatrixMarkerOnGridLimit = actionManager.matrixMarkerOnGridLimit;
             
             // Set unlimited for all marker types
-            actionManager.unitMarkerCooldown = 0;
-            actionManager.recursionMarkerCooldown = 0;
-            actionManager.matrixMarkerCooldown = 0;
-            actionManager.infinityMarkerCooldown = 0;
+            actionManager.unitMarkerRechargeRate = 1; // Recharge every move
             actionManager.maxUnitMarkerCharges = 99;
             actionManager.maxRecursionMarkerCharges = 99;
             actionManager.maxMatrixMarkerCharges = 99;
@@ -253,10 +306,7 @@ public class PlayerPanel : PrototypingPanelBase
         else
         {
             // Restore values
-            actionManager.unitMarkerCooldown = storedUnitCooldown;
-            actionManager.recursionMarkerCooldown = storedRecursionCooldown;
-            actionManager.matrixMarkerCooldown = storedMatrixCooldown;
-            actionManager.infinityMarkerCooldown = storedInfinityCooldown;
+            actionManager.unitMarkerRechargeRate = storedUnitRechargeRate;
             actionManager.maxUnitMarkerCharges = storedUnitCharges;
             actionManager.maxRecursionMarkerCharges = storedRecursionCharges;
             actionManager.maxMatrixMarkerCharges = storedMatrixCharges;
@@ -270,11 +320,10 @@ public class PlayerPanel : PrototypingPanelBase
     private void SetAllCooldowns(float value)
     {
         if (actionManager == null) return;
-        actionManager.unitMarkerCooldown = value;
-        actionManager.recursionMarkerCooldown = value;
-        actionManager.matrixMarkerCooldown = value;
-        actionManager.infinityMarkerCooldown = value;
-        LogAction($"All cooldowns set to {value}");
+        // Unit marker uses move-based recharge - set recharge rate
+        // Non-Unit markers use inventory grants only (no cooldowns)
+        actionManager.unitMarkerRechargeRate = value <= 0 ? 1 : (int)value;
+        LogAction($"Unit recharge rate set to {actionManager.unitMarkerRechargeRate} moves");
     }
     
     private void RefillAllCharges()
@@ -291,15 +340,14 @@ public class PlayerPanel : PrototypingPanelBase
     {
         if (actionManager == null) return;
         unlimitedMode = false;
-        actionManager.unitMarkerCooldown = 5f;
-        actionManager.recursionMarkerCooldown = 5f;
-        actionManager.matrixMarkerCooldown = 5f;
-        actionManager.infinityMarkerCooldown = 15f;
+        // Unit marker settings (move-based regeneration)
+        actionManager.unitMarkerRechargeRate = 3; // 3 moves per charge
         actionManager.maxUnitMarkerCharges = 3;
+        actionManager.maxUnitMarkers = 3;
+        // Non-Unit markers (inventory-based, no cooldowns)
         actionManager.maxRecursionMarkerCharges = 2;
         actionManager.maxMatrixMarkerCharges = 2;
         actionManager.maxInfinityMarkerCharges = 1;
-        actionManager.maxUnitMarkers = 3;
         actionManager.maxRecursionMarkers = 2;
         actionManager.maxMatrixMarkers = 2;
         actionManager.maxInfinityMarkers = 2;
@@ -379,6 +427,161 @@ public class PlayerPanel : PrototypingPanelBase
         int x = gridManager.Width / 2;
         playerManager.currentTilePosition = new Vector2Int(x, 0);
         playerManager.transform.position = gridManager.GridToWorldPosition(x, 0, 0);
+    }
+    #endregion
+    
+    #region Attunements
+    private void DrawAttunements()
+    {
+        DrawSection("", () =>
+        {
+            // Check if managers are available
+            if (!SaveManager.IsInitialized)
+            {
+                GUILayout.Label("SaveManager not initialized");
+                if (GUILayout.Button("Add SaveManager to Scene"))
+                {
+                    var go = new GameObject("SaveManager");
+                    go.AddComponent<SaveManager>();
+                    LogAction("Created SaveManager");
+                }
+                return;
+            }
+            
+            if (!AttunementManager.IsInitialized)
+            {
+                GUILayout.Label("AttunementManager not initialized");
+                if (GUILayout.Button("Add AttunementManager to Scene"))
+                {
+                    var go = new GameObject("AttunementManager");
+                    go.AddComponent<AttunementManager>();
+                    LogAction("Created AttunementManager");
+                }
+                return;
+            }
+            
+            // Currency display and controls
+            GUILayout.BeginHorizontal();
+            GUILayout.Label($"Axiom Shards: {SaveManager.Instance.AxiomShards}", GUILayout.Width(150));
+            if (GUILayout.Button("+100")) 
+            {
+                SaveManager.Instance.AwardShards(100, "Debug");
+                LogAction("Awarded 100 shards");
+            }
+            if (GUILayout.Button("+1000")) 
+            {
+                SaveManager.Instance.AwardShards(1000, "Debug");
+                LogAction("Awarded 1000 shards");
+            }
+            GUILayout.EndHorizontal();
+            
+            GUILayout.Space(5);
+            
+            // Matrix Attunements
+            DrawAttunementRow("Matrix", MarkerMode.Matrix);
+            
+            // Recursion Attunements
+            DrawAttunementRow("Recursion", MarkerMode.Recursion);
+            
+            // Infinity Attunements
+            DrawAttunementRow("Infinity", MarkerMode.Infinity);
+            
+            GUILayout.Space(5);
+            
+            // Quick actions
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button("Unlock All"))
+            {
+                UnlockAllAttunements();
+            }
+            if (GUILayout.Button("Unequip All"))
+            {
+                UnequipAllAttunements();
+            }
+            if (GUILayout.Button("Reset Save"))
+            {
+                SaveManager.Instance.DeleteSave();
+                LogAction("Save reset");
+            }
+            GUILayout.EndHorizontal();
+        });
+    }
+    
+    private void DrawAttunementRow(string label, MarkerMode mode)
+    {
+        var attunements = AttunementManager.Instance.GetAttunmentsForMarker(mode);
+        string equipped = AttunementManager.Instance.GetEquippedAttunementName(mode);
+        
+        GUILayout.BeginVertical(GUI.skin.box);
+        GUILayout.Label($"{label}: {equipped}");
+        
+        GUILayout.BeginHorizontal();
+        
+        // None button (unequip)
+        GUI.backgroundColor = string.IsNullOrEmpty(SaveManager.Instance.GetEquippedAttunement(mode)) ? Color.green : Color.white;
+        if (GUILayout.Button("None", GUILayout.Width(50)))
+        {
+            SaveManager.Instance.EquipAttunement(mode, "");
+            LogAction($"Unequipped {mode} attunement");
+        }
+        
+        // Attunement buttons
+        foreach (var att in attunements)
+        {
+            bool isUnlocked = AttunementManager.Instance.IsUnlocked(att.id);
+            bool isEquipped = SaveManager.Instance.GetEquippedAttunement(mode) == att.id;
+            
+            GUI.backgroundColor = isEquipped ? Color.green : (isUnlocked ? Color.cyan : Color.gray);
+            
+            string buttonText = isUnlocked ? att.displayName.Split(' ')[0] : $"🔒{att.unlockCost}";
+            
+            if (GUILayout.Button(buttonText, GUILayout.MinWidth(60)))
+            {
+                if (isUnlocked)
+                {
+                    SaveManager.Instance.EquipAttunement(mode, att.id);
+                    LogAction($"Equipped {att.displayName}");
+                }
+                else
+                {
+                    if (SaveManager.Instance.TryUnlockAttunement(att.id, att.unlockCost))
+                    {
+                        LogAction($"Unlocked {att.displayName}");
+                    }
+                    else
+                    {
+                        LogAction($"Not enough shards for {att.displayName}");
+                    }
+                }
+            }
+        }
+        
+        GUI.backgroundColor = Color.white;
+        GUILayout.EndHorizontal();
+        GUILayout.EndVertical();
+    }
+    
+    private void UnlockAllAttunements()
+    {
+        if (!AttunementManager.IsInitialized) return;
+        
+        foreach (var def in AttunementManager.Instance.Definitions.Values)
+        {
+            if (!SaveManager.Instance.Progression.IsAttunementUnlocked(def.id))
+            {
+                SaveManager.Instance.Progression.UnlockAttunement(def.id);
+            }
+        }
+        SaveManager.Instance.Save();
+        LogAction("Unlocked all attunements");
+    }
+    
+    private void UnequipAllAttunements()
+    {
+        SaveManager.Instance.EquipAttunement(MarkerMode.Matrix, "");
+        SaveManager.Instance.EquipAttunement(MarkerMode.Recursion, "");
+        SaveManager.Instance.EquipAttunement(MarkerMode.Infinity, "");
+        LogAction("Unequipped all attunements");
     }
     #endregion
 }

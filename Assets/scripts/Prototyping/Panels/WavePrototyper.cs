@@ -154,18 +154,32 @@ public class WavePrototyper : PrototypingPanelBase
                     (isPaused ? "Resume" : "Pause", TogglePause)
                 );
                 
-                // Manual step controls (only when wave is stopped)
-                bool waveStopped = waveManager != null && !waveManager.waveActive;
-                GUI.enabled = waveStopped && GetActiveCubes().Count > 0;
-                DrawButtonRow(
-                    ("Step Back", StepBackward),
-                    ("Step Fwd", StepForward)
-                );
-                GUI.enabled = true;
+                // Manual step controls - for testing highlight sequences
+                GUILayout.Space(5);
+                GUILayout.Label("Step Control:");
+                GUILayout.Label($"Current Step: {waveManager?.MoveStep ?? 0}");
+                GUILayout.BeginHorizontal();
                 
-                if (waveStopped && GetActiveCubes().Count > 0)
+                // Step backward - only enabled if MoveStep > 0
+                bool canStepBack = waveManager != null && waveManager.MoveStep > 0;
+                GUI.enabled = canStepBack;
+                if (GUILayout.Button("◄ Step -"))
                 {
-                    DrawStatus($"Step: {waveManager?.MoveStep ?? 0} (Manual mode)");
+                    StepBackward();
+                }
+                
+                // Step forward - always enabled (will auto-enable debug mode if needed)
+                GUI.enabled = true;
+                if (GUILayout.Button("Step + ►"))
+                {
+                    StepForward();
+                }
+                GUI.enabled = true;
+                GUILayout.EndHorizontal();
+                
+                if (waveManager != null && !waveManager.waveActive)
+                {
+                    GUILayout.Label("⚠ Decrement doesn't restore state (uncapture cubes, despawn player cubes)", GUI.skin.box);
                 }
                 
                 DrawButtonRow(
@@ -687,6 +701,13 @@ public class WavePrototyper : PrototypingPanelBase
     private void StepForward()
     {
         if (waveManager == null) return;
+        
+        // Enter debug mode if needed to allow manual control
+        if (!waveManager.debugMode && !waveManager.waveActive)
+        {
+            waveManager.EnterDebugMode(true);
+        }
+        
         waveManager.ManualMoveWaveForward();
         LogAction($"Stepped wave forward to step {waveManager.MoveStep}");
     }
@@ -694,6 +715,13 @@ public class WavePrototyper : PrototypingPanelBase
     private void StepBackward()
     {
         if (waveManager == null) return;
+        
+        // Enter debug mode if needed to allow manual control
+        if (!waveManager.debugMode && waveManager.waveActive)
+        {
+            waveManager.EnterDebugMode(true);
+        }
+        
         waveManager.ManualMoveWaveBackward();
         LogAction($"Stepped wave backward to step {waveManager.MoveStep}");
     }

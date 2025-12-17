@@ -12,14 +12,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: faaa491ad539cb444afed02f7554648d, type: 3}
   m_Name: stage_01
   m_EditorClassIdentifier: 
-  stageNumber: 0
-  stageName: First contact
-  description: Learn basic movement and marker placement. Use WASD to move and F/R
-    to place and trigger individual markers.
-  objective: Capture gray cubes using F to place markers, R to trigger them
+  stageNumber: 1
+  stageName: First Contact
+  description: Your first encounter with Infinity cubes. Learn that some cubes cannot be captured and must be avoided.
+  objective: Capture Unit cubes while avoiding Infinity cubes - they are lethal and cannot be captured
   gridWidth: 5
   gridHeight: 15
   playerStartPosition: {x: 2, y: 0}
+  enableLineDivider: 0
+  lineDividerStartY: 10
+  lineDividerEscapePenalty: 0
+  lineDividerCaptureReward: 0
   waveConfigurations:
   - {fileID: 11400000, guid: 52039f55bbc24df458bee29ef04e1a6e, type: 2}
   - {fileID: 11400000, guid: 26a86d8b588967f45b04cdf43bc15c49, type: 2}

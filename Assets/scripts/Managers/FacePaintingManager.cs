@@ -39,8 +39,16 @@ public class FacePaintingManager : MonoBehaviour, IManagerDebugInterface
     public int ActivePatternsCount => activePatterns.Count;
     public int FacePaintingTilesCount => facePaintingTiles.Count;
 
+    [Header("Debug")]
+    [Tooltip("Enable debug logging for this manager")]
+    [SerializeField] private bool enableDebugLogs;
+    
     // IManagerDebugInterface Properties
-    public bool EnableDebugLogs { get; set; } = true;
+    public bool EnableDebugLogs 
+    { 
+        get => enableDebugLogs; 
+        set => enableDebugLogs = value; 
+    }
     #endregion
 
     #region Unity Lifecycle
@@ -48,7 +56,7 @@ public class FacePaintingManager : MonoBehaviour, IManagerDebugInterface
     {
         InitializeSingleton();
         InitializePreviewMaterial();
-        EnableDebugLogs = true;
+        
     }
 
     private void Start()
@@ -80,7 +88,7 @@ public class FacePaintingManager : MonoBehaviour, IManagerDebugInterface
     private void InitializeManager()
     {
         // Get reference to GridManager
-        gridManager = FindObjectOfType<GridManager>();
+        gridManager = FindFirstObjectByType<GridManager>();
         if (gridManager == null)
         {
             Debug.LogError("FacePaintingManager requires GridManager to function!");
@@ -640,7 +648,7 @@ public class FacePaintingManager : MonoBehaviour, IManagerDebugInterface
         defaultPaintDuration = 3;
         enablePatternPreviews = true;
         previewAlpha = 0.5f;
-        EnableDebugLogs = true;
+        
         
         // Reinitialize preview material with defaults
         InitializePreviewMaterial();

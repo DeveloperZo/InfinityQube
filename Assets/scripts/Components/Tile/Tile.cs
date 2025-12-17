@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using static Enumerations;
 
@@ -112,8 +113,8 @@ public class Tile : MonoBehaviour
         
         // Cache manager references (Task 6/7/8) - done once per tile
         cachedGridManager = GridManager.Instance;
-        cachedWaveManager = FindObjectOfType<WaveManager>();
-        cachedPlayerActionManager = FindObjectOfType<PlayerActionManager>();
+        cachedWaveManager = FindFirstObjectByType<WaveManager>();
+        cachedPlayerActionManager = FindFirstObjectByType<PlayerActionManager>();
 
         // Initialize hover material
         if (playerHoverMaterial == null)
@@ -278,16 +279,35 @@ public class Tile : MonoBehaviour
         Debug.Log($"Tile ({x},{y}): Detonation point set to {hasPoint}");
     }
 
+    /// <summary>
+    /// Event fired when tile starts falling (for animation hooks)
+    /// </summary>
+    public System.Action<Tile> OnTileFallStarted;
+    
+    /// <summary>
+    /// Event fired when tile fall completes (for animation hooks)
+    /// </summary>
+    public System.Action<Tile> OnTileFallCompleted;
+    
     public void MakeTileFall()
     {
         if (hasFallen) return;
 
+        // Fire start event (for future animation systems)
+        OnTileFallStarted?.Invoke(this);
+        
         hasFallen = true;
         ClearMarker();
         ResetTile();
 
         // Visual indication - make tile disappear
+        // Note: Actual visual transition is handled by GridManager.RemoveBottomRowCoroutine()
+        // This method is called after the transition completes
         gameObject.SetActive(false);
+        
+        // Fire completion event (for future animation systems)
+        OnTileFallCompleted?.Invoke(this);
+        
         Debug.Log($"Tile ({x},{y}) has fallen");
     }
 
@@ -319,7 +339,7 @@ public class Tile : MonoBehaviour
 
         // Register with PlayerActionManager
         // Default size is 2x2 for Matrix tile detonation (from marker capture)
-        PlayerActionManager playerActionManager = FindObjectOfType<PlayerActionManager>();
+        PlayerActionManager playerActionManager = FindFirstObjectByType<PlayerActionManager>();
         if (playerActionManager != null)
         {
             playerActionManager.CreateCubeMarker(new Vector2Int(x, y), PlayerMarkerSystem.CubeMarkerType.Matrix, 2);
@@ -525,29 +545,46 @@ public class Tile : MonoBehaviour
     }
     
     /// <summary>
-    /// Task 8: Updates telegraph visualization for painted faces that will touch grid in 1 turn
+    /// Task 8: Updates telegraph visualization for painted faces
+    /// Shows telegraph on the DESTINATION tile where the painted face will actually touch
+    /// Checks up to 3 moves ahead (for Front face painted cubes)
     /// </summary>
     private void UpdatePaintedFaceTelegraph(CubeManager cube)
     {
-        if (cube == null) return;
+        if (cube == null || cachedGridManager == null) return;
         
-        // Check if a painted face will touch grid in 1 move
-        if (cube.WillPaintedFaceTouchGrid(1))
+        // Check if any painted face will touch grid within 3 moves
+        for (int movesAhead = 1; movesAhead <= 3; movesAhead++)
         {
-            FaceStatus predictedStatus = cube.GetPredictedFaceStatus(1);
-            ShowTelegraphEffect(predictedStatus);
-            Debug.Log($"[Task 8] Telegraph: Painted face ({predictedStatus}) will touch grid at ({x},{y}) in 1 move");
+            if (cube.WillPaintedFaceTouchGrid(movesAhead))
+            {
+                FaceStatus predictedStatus = cube.GetPredictedFaceStatus(movesAhead);
+                
+                // Calculate destination position based on movement direction and moves ahead
+                // Wave cubes move down (Y-1 per move), Player cubes move up (Y+1 per move)
+                int destY = cube.isPlayerCube ? y + movesAhead : y - movesAhead;
+                Vector2Int destPosition = new Vector2Int(x, destY);
+                
+                // Get destination tile and show telegraph there
+                Tile destTile = cachedGridManager.GetTileAt(destPosition.x, destPosition.y);
+                if (destTile != null)
+                {
+                    destTile.ShowTelegraphEffect(predictedStatus, movesAhead);
+                    Debug.Log($"[Task 8] Telegraph: Painted face ({predictedStatus}) will touch grid at ({destPosition.x},{destPosition.y}) in {movesAhead} move(s)");
+                }
+                break; // Only show telegraph for the soonest painted face
+            }
         }
-        else
-        {
-            HideTelegraphEffect();
-        }
+        
+        // Always hide telegraph on current tile (in case it was showing from a previous cube)
+        HideTelegraphEffect();
     }
     
     /// <summary>
     /// Task 8: Shows telegraph pulse effect on tile
+    /// movesUntilTrigger: 1 = imminent (bright, fast pulse), 3 = distant (dim, slow pulse)
     /// </summary>
-    private void ShowTelegraphEffect(FaceStatus faceStatus)
+    public void ShowTelegraphEffect(FaceStatus faceStatus, int movesUntilTrigger = 1)
     {
         // Create telegraph visual if needed
         if (telegraphObject == null)
@@ -574,9 +611,15 @@ public class Tile : MonoBehaviour
             rend.material = mat;
         }
         
-        // Set color based on face status
+        // Set color based on face status - intensity varies by proximity
+        // 1 move = bright (0.8 alpha), 2 moves = medium (0.5 alpha), 3 moves = dim (0.3 alpha)
         Color telegraphColor = GetTelegraphColor(faceStatus);
-        telegraphColor.a = 0.6f;
+        telegraphColor.a = movesUntilTrigger switch
+        {
+            1 => 0.8f,  // Imminent - bright
+            2 => 0.5f,  // Soon - medium
+            _ => 0.3f   // Distant - dim
+        };
         
         Renderer renderer = telegraphObject.GetComponent<Renderer>();
         if (renderer != null && renderer.material != null)
@@ -584,14 +627,23 @@ public class Tile : MonoBehaviour
             renderer.material.color = telegraphColor;
         }
         
+        // Scale grows as trigger approaches
+        float scale = movesUntilTrigger switch
+        {
+            1 => 0.95f, // Almost full tile
+            2 => 0.8f,  // Medium
+            _ => 0.65f  // Small indicator
+        };
+        telegraphObject.transform.localScale = new Vector3(scale, scale, 1f);
+        
         telegraphObject.SetActive(true);
         
-        // Stop existing pulse and start new one
+        // Stop existing pulse and start new one - faster pulse when closer
         if (telegraphPulseCoroutine != null)
         {
             StopCoroutine(telegraphPulseCoroutine);
         }
-        telegraphPulseCoroutine = StartCoroutine(PulseTelegraph());
+        telegraphPulseCoroutine = StartCoroutine(PulseTelegraph(movesUntilTrigger));
     }
     
     /// <summary>
@@ -625,14 +677,34 @@ public class Tile : MonoBehaviour
     
     /// <summary>
     /// Task 8: Pulses the telegraph effect
+    /// Pulse speed varies by proximity: closer = faster pulse
     /// </summary>
-    private System.Collections.IEnumerator PulseTelegraph()
+    private System.Collections.IEnumerator PulseTelegraph(int movesUntilTrigger = 1)
     {
         if (telegraphObject == null) yield break;
         
-        float pulseSpeed = 2f;
-        float minAlpha = 0.3f;
-        float maxAlpha = 0.8f;
+        // Pulse speed: 1 move = fast (4x), 2 moves = medium (2x), 3 moves = slow (1x)
+        float pulseSpeed = movesUntilTrigger switch
+        {
+            1 => 4f,   // Fast - urgent
+            2 => 2.5f, // Medium
+            _ => 1.5f  // Slow - distant warning
+        };
+        
+        // Alpha range varies by proximity
+        float minAlpha = movesUntilTrigger switch
+        {
+            1 => 0.5f,
+            2 => 0.3f,
+            _ => 0.15f
+        };
+        float maxAlpha = movesUntilTrigger switch
+        {
+            1 => 0.9f,
+            2 => 0.6f,
+            _ => 0.4f
+        };
+        
         float elapsed = 0f;
         
         Renderer renderer = telegraphObject.GetComponent<Renderer>();
@@ -658,19 +730,29 @@ public class Tile : MonoBehaviour
     {
         if (cachedPlayerActionManager == null) return;
         
+        // Hide any telegraph effect on this tile (the prediction came true)
+        HideTelegraphEffect();
+        
         Vector2Int centerPosition = new Vector2Int(x, y);
+        
+        // Consume one charge from the painted face (unpaints when charges reach 0)
+        if (!cube.ConsumeActiveFaceCharge())
+        {
+            Debug.Log($"[Task 8] Painted face at ({x},{y}) has no charges remaining - skipping trigger");
+            return;
+        }
         
         switch (faceStatus)
         {
             case FaceStatus.MatrixFace:
-                Debug.Log($"[Task 8] MatrixFace touched grid at ({x},{y}) - creating 3x3 detonation marker");
-                cachedPlayerActionManager.CreateCubeMarker(centerPosition, PlayerMarkerSystem.CubeMarkerType.Matrix, 3);
+                Debug.Log($"[Task 8] MatrixFace touched grid at ({x},{y}) - creating 2x2 detonation marker");
+                cachedPlayerActionManager.CreateCubeMarker(centerPosition, PlayerMarkerSystem.CubeMarkerType.Matrix, 2);
                 ApplyLineDividerReward(1); // Task 6: Reward for painted face trigger
                 break;
                 
             case FaceStatus.RecursionFace:
-                Debug.Log($"[Task 8] RecursionFace touched grid at ({x},{y}) - creating 5 tile cross marker");
-                CreateRecursionCrossMarker(centerPosition);
+                Debug.Log($"[Task 8] RecursionFace touched grid at ({x},{y}) - creating auto-capture marker (3 charges)");
+                CreateRecursionFaceMarker(centerPosition);
                 ApplyLineDividerReward(1); // Task 6: Reward for painted face trigger
                 break;
                 
@@ -683,24 +765,28 @@ public class Tile : MonoBehaviour
     }
     
     /// <summary>
-    /// Task 8: Creates a 5-tile cross marker pattern for RecursionFace
+    /// Task 8: Creates a single-tile auto-capture marker for RecursionFace
+    /// Per design doc: "auto-capture marker placed at that tile; captures 3 cubes as wave passes"
     /// </summary>
-    private void CreateRecursionCrossMarker(Vector2Int centerPosition)
+    private void CreateRecursionFaceMarker(Vector2Int centerPosition)
     {
         if (cachedPlayerActionManager == null || cachedGridManager == null) return;
         
-        // Build cross pattern: center + 4 adjacent tiles
-        Vector2Int[] offsets = { Vector2Int.zero, Vector2Int.up, Vector2Int.down, Vector2Int.left, Vector2Int.right };
+        // Single tile position (not a cross pattern - cross is for Recursion+Recursion collision)
+        List<Vector2Int> positions = new List<Vector2Int> { centerPosition };
         
-        foreach (var offset in offsets)
+        // Create auto-capture marker via PlayerMarkerSystem
+        // Per design: auto-capture marker that captures 3 cubes as wave passes
+        var markerSystem = cachedPlayerActionManager.MarkerSystem;
+        if (markerSystem != null)
         {
-            Vector2Int pos = centerPosition + offset;
-            if (cachedGridManager.IsValidGridPosition(pos) && 
-                cachedPlayerActionManager.CanPlaceRecursionMarker() && 
-                cachedPlayerActionManager.PlaceRecursionMarker(pos))
-            {
-                Debug.Log($"[Task 8] Created Recursion marker at ({pos.x},{pos.y}) for cross pattern");
-            }
+            markerSystem.CreateAutoCaptureAreaMarker(positions, "RecursionFaceMarker", 
+                new Color(0.8f, 0.5f, 0.2f, 0.8f), 5, 3); // 5 moves expiration, 3 charges (captures 3 cubes)
+            Debug.Log($"[Task 8] Created RecursionFace auto-capture marker at ({centerPosition.x},{centerPosition.y}) with 3 charges");
+        }
+        else
+        {
+            Debug.LogWarning("[Task 8] MarkerSystem not available for RecursionFace marker");
         }
     }
     
@@ -750,7 +836,7 @@ public class Tile : MonoBehaviour
             Debug.Log($"Reinforced cube destroyed at ({x}, {y}) after taking damage");
             NotifyPlayerCubeCapture(CubeType.Recursion);
             
-            WaveManager waveManager = FindObjectOfType<WaveManager>();
+            WaveManager waveManager = FindFirstObjectByType<WaveManager>();
             if (waveManager != null)
             {
                 waveManager.OnNonBlackCubeProcessed(CubeType.Recursion, true);
@@ -766,7 +852,7 @@ public class Tile : MonoBehaviour
 
     private void NotifyPlayerCubeCapture(CubeType cubeType)
     {
-        WaveManager waveManager = FindObjectOfType<WaveManager>();
+        WaveManager waveManager = FindFirstObjectByType<WaveManager>();
         if (waveManager != null)
         {
             waveManager.OnCubeCaptured(cubeType);

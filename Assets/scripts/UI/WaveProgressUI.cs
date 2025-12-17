@@ -34,7 +34,7 @@ public class WaveProgressUI : MonoBehaviour
     [SerializeField] private float dangerThreshold = 0.25f;
     
     [Header("Debug")]
-    [SerializeField] private bool EnableDebugLogs = true;
+    [SerializeField] private bool EnableDebugLogs;
     #endregion
 
     #region Runtime State

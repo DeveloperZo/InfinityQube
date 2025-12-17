@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using static Enumerations;
@@ -28,6 +29,8 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
     public int pooledTileCount = 100;
 
     [Header("Debug")]
+    [Tooltip("Enable debug logging for this manager")]
+    [SerializeField] private bool enableDebugLogs;
     public bool showGridGizmos = false;
     public Color gizmoColor = Color.cyan;
     
@@ -35,6 +38,8 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
     [SerializeField] private bool enableLineDivider = false; // Toggle line divider system on/off (default: OFF for testing)
     [SerializeField] private int lineDividerRow = 10; // Default divider position (middle of 20-row grid)
     [SerializeField] private GameObject lineDividerVisual; // Visual indicator for line divider
+    [SerializeField] private Color lineDividerColorSafe = new Color(0.2f, 0.5f, 1f, 0.7f); // Blue - player below line
+    [SerializeField] private Color lineDividerColorDanger = new Color(1f, 0.2f, 0.2f, 0.7f); // Red - player above line
     #endregion
 
     #region Runtime State
@@ -50,6 +55,12 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
     // Object pooling (if enabled)
     private Queue<GameObject> tilePool = new Queue<GameObject>();
     private List<GameObject> activeTiles = new List<GameObject>();
+    
+    // Task 6: Line divider runtime state
+    private bool lineDividerStyled = false;
+    private Material lineDividerMaterial;
+    private PlayerManager playerManager;
+    private bool playerWasBelowLine = true; // Track previous state to avoid constant updates
     #endregion
 
     #region Properties
@@ -81,9 +92,106 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
 
     private void Start()
     {
-        EnableDebugLogs = true;
+        
         GenerateGrid();
-        InitializeLineDivider();
+        // NOTE: Do NOT call InitializeLineDivider() here - line divider is configured
+        // by stage data via HandleStageStart() → ConfigureLineDivider()
+        // The serialized Inspector values are only used as fallback defaults.
+        
+        // Get PlayerManager reference for line divider color updates
+        playerManager = FindFirstObjectByType<PlayerManager>();
+        
+        // Ensure line divider visual is hidden until stage configures it
+        if (lineDividerVisual != null)
+        {
+            lineDividerVisual.SetActive(false);
+        }
+    }
+    
+    private void OnEnable()
+    {
+        // Subscribe to stage events for line divider configuration
+        GameEvents.OnStageStart += HandleStageStart;
+    }
+    
+    private void OnDisable()
+    {
+        GameEvents.OnStageStart -= HandleStageStart;
+    }
+    
+    private void Update()
+    {
+        // Task 6: Update line divider color based on player position
+        UpdateLineDividerColor();
+    }
+    
+    /// <summary>
+    /// Configure grid and line divider from StageData
+    /// </summary>
+    private void HandleStageStart(int stageIndex, StageData stageData)
+    {
+        if (stageData == null) return;
+        
+        // Configure line divider from stage data
+        ConfigureLineDivider(stageData);
+        
+        DebugLog($"Grid configured for stage {stageIndex}: LineDivider at row {lineDividerRow}");
+    }
+    
+    /// <summary>
+    /// Configure line divider settings from StageData
+    /// </summary>
+    public void ConfigureLineDivider(StageData stageData)
+    {
+        if (stageData == null) return;
+        
+        // Check explicit enable flag first, then validate position is meaningful
+        bool positionValid = stageData.lineDividerStartY > 0 && stageData.lineDividerStartY < stageData.gridHeight;
+        bool shouldEnable = stageData.enableLineDivider && positionValid;
+        enableLineDivider = shouldEnable;
+        
+        if (shouldEnable)
+        {
+            lineDividerRow = stageData.lineDividerStartY;
+            
+            // Store penalty/reward values for use in MoveLineDivider
+            _lineDividerEscapePenalty = stageData.lineDividerEscapePenalty;
+            _lineDividerCaptureReward = stageData.lineDividerCaptureReward;
+            
+            DebugLog($"Line divider configured: Row={lineDividerRow}, Penalty={_lineDividerEscapePenalty}, Reward={_lineDividerCaptureReward}");
+        }
+        else
+        {
+            DebugLog($"Line divider DISABLED for stage (enableLineDivider={stageData.enableLineDivider}, positionValid={positionValid})");
+        }
+        
+        UpdateLineDividerVisual();
+    }
+    
+    // Cached line divider movement values
+    private int _lineDividerEscapePenalty = 1;
+    private int _lineDividerCaptureReward = 1;
+    
+    /// <summary>
+    /// Move line divider based on escape (penalty) or capture (reward)
+    /// </summary>
+    public void OnCubeEscaped()
+    {
+        if (_lineDividerEscapePenalty > 0)
+        {
+            MoveLineDivider(_lineDividerEscapePenalty, false); // Move up (penalty)
+        }
+    }
+    
+    /// <summary>
+    /// Move line divider based on capture (reward)
+    /// </summary>
+    public void OnCubeCaptured()
+    {
+        if (_lineDividerCaptureReward > 0)
+        {
+            MoveLineDivider(-_lineDividerCaptureReward, true); // Move down (reward)
+        }
     }
     
     /// <summary>
@@ -162,14 +270,116 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
             return;
         }
         
-        // Create or update visual indicator (mock with log for now)
-        DebugLog($"[Task 6] Line divider visual at row {lineDividerRow}");
-        // TODO: Add visual line indicator when visual system is ready
-        
         if (lineDividerVisual != null)
         {
+            // Style the assigned visual (only once)
+            if (!lineDividerStyled)
+            {
+                StyleLineDividerVisual();
+                lineDividerStyled = true;
+            }
+            
             lineDividerVisual.SetActive(true);
+            PositionLineDividerVisual();
+            DebugLog($"[Task 6] Line divider visual positioned at row {lineDividerRow}");
         }
+        else
+        {
+            DebugLog($"[Task 6] Line divider at row {lineDividerRow} (no visual assigned)");
+        }
+    }
+    
+    /// <summary>
+    /// Task 6: Styles an assigned line divider visual (removes collider, applies material)
+    /// Assign any Cube or GameObject in the Inspector - this will style it at runtime
+    /// </summary>
+    private void StyleLineDividerVisual()
+    {
+        if (lineDividerVisual == null) return;
+        
+        // Remove collider if present - visual only, no physics
+        Collider col = lineDividerVisual.GetComponent<Collider>();
+        if (col != null) Destroy(col);
+        
+        // Create and apply transparent material (start with safe/blue color)
+        Renderer renderer = lineDividerVisual.GetComponent<Renderer>();
+        if (renderer != null)
+        {
+            lineDividerMaterial = new Material(Shader.Find("Standard"));
+            lineDividerMaterial.color = lineDividerColorSafe; // Start with blue (safe)
+            lineDividerMaterial.SetFloat("_Mode", 3); // Transparent mode
+            lineDividerMaterial.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
+            lineDividerMaterial.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+            lineDividerMaterial.SetInt("_ZWrite", 0);
+            lineDividerMaterial.DisableKeyword("_ALPHATEST_ON");
+            lineDividerMaterial.EnableKeyword("_ALPHABLEND_ON");
+            lineDividerMaterial.DisableKeyword("_ALPHAPREMULTIPLY_ON");
+            lineDividerMaterial.renderQueue = 3000;
+            renderer.material = lineDividerMaterial;
+        }
+        
+        DebugLog("[Task 6] Styled line divider visual");
+    }
+    
+    /// <summary>
+    /// Task 6: Updates line divider color based on player position
+    /// Blue = player below line (safe, can place markers)
+    /// Red = player above line (danger, cannot place markers)
+    /// </summary>
+    private void UpdateLineDividerColor()
+    {
+        // Skip if line divider disabled or no visual/material
+        if (!enableLineDivider || lineDividerMaterial == null || playerManager == null) return;
+        
+        // Check if player is below the line
+        bool playerIsBelowLine = playerManager.currentTilePosition.y < lineDividerRow;
+        
+        // Only update color if state changed (performance optimization)
+        if (playerIsBelowLine != playerWasBelowLine)
+        {
+            playerWasBelowLine = playerIsBelowLine;
+            Color targetColor = playerIsBelowLine ? lineDividerColorSafe : lineDividerColorDanger;
+            lineDividerMaterial.color = targetColor;
+            
+            DebugLog($"[Task 6] Line divider color changed: {(playerIsBelowLine ? "BLUE (safe)" : "RED (danger)")}");
+        }
+    }
+    
+    /// <summary>
+    /// Task 6: Checks if player is currently in safe zone (below line divider)
+    /// Returns true if line divider is disabled OR player is below the line
+    /// </summary>
+    public bool IsPlayerInSafeZone()
+    {
+        if (!enableLineDivider) return true; // Always safe if disabled
+        if (playerManager == null) return true; // Default to safe if no player
+        return playerManager.currentTilePosition.y < lineDividerRow;
+    }
+    
+    /// <summary>
+    /// Task 6: Positions the line divider visual at the current divider row
+    /// </summary>
+    private void PositionLineDividerVisual()
+    {
+        if (lineDividerVisual == null) return;
+        
+        // Position: center of grid width, at the divider row boundary
+        // The line sits at the BOTTOM edge of the divider row (markers allowed below, not on or above)
+        float gridWidth = (width - 1) * tileSize;
+        float centerX = gridWidth / 2f;
+        
+        // Position at the boundary between lineDividerRow-1 and lineDividerRow
+        Vector3 lineWorldPos = GridToWorldPosition(0, lineDividerRow, 0.1f); // Slightly above ground
+        lineWorldPos.x = centerX + (transform.position + calculatedGridOffset).x;
+        lineWorldPos.z -= tileSize * 0.5f; // Position at the boundary between rows
+        
+        lineDividerVisual.transform.position = lineWorldPos;
+        
+        // Scale: span full grid width, thin line
+        float lineWidth = gridWidth + tileSize; // Extend slightly past edges
+        float lineHeight = 5f; // Vertical height
+        float lineDepth = 0.08f; // Thin depth
+        lineDividerVisual.transform.localScale = new Vector3(lineWidth, lineHeight, lineDepth);
     }
 
     private void OnDrawGizmosSelected()
@@ -487,7 +697,7 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
         UpdateWorldBounds();
         
         // Clamp player position to new grid bounds
-        var playerManager = FindObjectOfType<PlayerManager>();
+        var playerManager = FindFirstObjectByType<PlayerManager>();
         if (playerManager != null)
         {
             // Get player's current world position and convert to grid position
@@ -503,14 +713,14 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
         }
 
         // Update camera if it exists
-        var cameraFollow = FindObjectOfType<CameraFollow>();
+        var cameraFollow = FindFirstObjectByType<CameraFollow>();
         if (cameraFollow != null)
         {
             cameraFollow.ForceUpdatePosition();
         }
 
         // Clear any wave cubes that are now outside bounds
-        var waveManager = FindObjectOfType<WaveManager>();
+        var waveManager = FindFirstObjectByType<WaveManager>();
         if (waveManager != null)
         {
             CleanupOutOfBoundsCubes(waveManager);
@@ -863,10 +1073,6 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
             DestroyGrid();
         }
     }
-
-    // Keep backward compatibility
-    [System.Obsolete("Use TileSize instead")]
-    public float TileScale => tileSize;
     #endregion
 
     #region Batch Tile Operations
@@ -1135,34 +1341,242 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
     #endregion
 
     #region Row Management
+    
+    /// <summary>
+    /// Event fired when bottom row removal starts (for animation hooks)
+    /// </summary>
+    public System.Action<int> OnBottomRowRemovalStarted;
+    
+    /// <summary>
+    /// Event fired when bottom row removal completes (for animation hooks)
+    /// </summary>
+    public System.Action<int> OnBottomRowRemovalCompleted;
+    
+    private bool isRemovingBottomRow = false; // Prevent concurrent removals
+    
+    /// <summary>
+    /// Removes the bottom row with a controlled visual transition.
+    /// Uses coroutine for smooth animation and provides hooks for future animation systems.
+    /// Works even if called at wave end - coroutine completes independently.
+    /// </summary>
     public void RemoveBottomRow()
     {
         if (!IsGridReady) return;
-
-        DebugLog("Removing bottom row due to normal cube escape");
-
-        // Make all tiles in row 0 fall
+        if (isRemovingBottomRow) 
+        {
+            DebugLog("RemoveBottomRow: Already removing a row, skipping duplicate call");
+            return;
+        }
+        
+        StartCoroutine(RemoveBottomRowCoroutine());
+    }
+    
+    private IEnumerator RemoveBottomRowCoroutine()
+    {
+        isRemovingBottomRow = true;
+        int rowToRemove = bottom;
+        
+        // Safety check: ensure we have a valid row to remove
+        if (rowToRemove >= height)
+        {
+            DebugLog($"⚠️ ROW PENALTY: Cannot remove row {rowToRemove} - exceeds grid height {height}. Aborting.");
+            isRemovingBottomRow = false;
+            yield break;
+        }
+        
+        // Safety check: prevent removing if we'd have too few rows left
+        int remainingRows = height - (rowToRemove + 1);
+        if (remainingRows < 3)
+        {
+            DebugLog($"⚠️ ROW PENALTY: Cannot remove row {rowToRemove} - would leave only {remainingRows} rows. Minimum 3 rows required. Aborting.");
+            isRemovingBottomRow = false;
+            yield break;
+        }
+        
+        DebugLog($"⚠️ ROW PENALTY: Removing bottom row {rowToRemove} due to Unit cube escape penalty (will leave {remainingRows} rows)");
+        
+        // Fire start event (for future animation systems)
+        OnBottomRowRemovalStarted?.Invoke(rowToRemove);
+        
+        // Collect all tiles and cubes in the row
+        List<Tile> tilesToRemove = new List<Tile>();
+        List<CubeManager> cubesToRemove = new List<CubeManager>();
+        
         for (int x = 0; x < width; x++)
         {
-            Tile tile = GetTileAt(x, bottom);
+            Tile tile = GetTileAt(x, rowToRemove);
+            if (tile != null)
+            {
+                tilesToRemove.Add(tile);
+            }
+        }
+        
+        // Find cubes on this row
+        var allCubes = FindObjectsByType<CubeManager>(FindObjectsSortMode.None);
+        foreach (var cube in allCubes)
+        {
+            if (cube != null && !cube.isDestroyed && cube.position.y == rowToRemove)
+            {
+                cubesToRemove.Add(cube);
+            }
+        }
+        
+        // Simple transition: fade out tiles and cubes
+        // TODO: Replace with proper animation system in future
+        float transitionDuration = 0.5f; // Simple fade duration
+        float elapsed = 0f;
+        
+        // Store initial renderers for fade (using MaterialPropertyBlock to avoid modifying shared materials)
+        Dictionary<Tile, Renderer> tileRenderers = new Dictionary<Tile, Renderer>();
+        Dictionary<CubeManager, Renderer> cubeRenderers = new Dictionary<CubeManager, Renderer>();
+        Dictionary<Tile, MaterialPropertyBlock> tilePropertyBlocks = new Dictionary<Tile, MaterialPropertyBlock>();
+        Dictionary<CubeManager, MaterialPropertyBlock> cubePropertyBlocks = new Dictionary<CubeManager, MaterialPropertyBlock>();
+        
+        foreach (var tile in tilesToRemove)
+        {
+            Renderer renderer = tile.GetComponent<Renderer>();
+            if (renderer != null)
+            {
+                tileRenderers[tile] = renderer;
+                MaterialPropertyBlock block = new MaterialPropertyBlock();
+                renderer.GetPropertyBlock(block);
+                tilePropertyBlocks[tile] = block;
+            }
+        }
+        
+        foreach (var cube in cubesToRemove)
+        {
+            Renderer renderer = cube.GetComponent<Renderer>();
+            if (renderer != null)
+            {
+                cubeRenderers[cube] = renderer;
+                MaterialPropertyBlock block = new MaterialPropertyBlock();
+                renderer.GetPropertyBlock(block);
+                cubePropertyBlocks[cube] = block;
+            }
+        }
+        
+        // Fade out animation using MaterialPropertyBlock (safe for shared materials)
+        while (elapsed < transitionDuration)
+        {
+            elapsed += Time.deltaTime;
+            float alpha = 1f - (elapsed / transitionDuration);
+            
+            // Fade tiles
+            foreach (var tile in tilesToRemove)
+            {
+                if (tile != null && tileRenderers.ContainsKey(tile) && tilePropertyBlocks.ContainsKey(tile))
+                {
+                    Renderer renderer = tileRenderers[tile];
+                    MaterialPropertyBlock block = tilePropertyBlocks[tile];
+                    
+                    Color color = block.GetColor("_Color");
+                    if (color == Color.clear) color = Color.white; // Default if no color property
+                    color.a = alpha;
+                    block.SetColor("_Color", color);
+                    renderer.SetPropertyBlock(block);
+                }
+            }
+            
+            // Fade cubes (handle gracefully if destroyed during wave end)
+            foreach (var cube in cubesToRemove)
+            {
+                if (cube != null && !cube.isDestroyed && cubeRenderers.ContainsKey(cube) && cubePropertyBlocks.ContainsKey(cube))
+                {
+                    Renderer renderer = cubeRenderers[cube];
+                    if (renderer != null) // Additional null check in case cube was destroyed
+                    {
+                        MaterialPropertyBlock block = cubePropertyBlocks[cube];
+                        
+                        Color color = block.GetColor("_Color");
+                        if (color == Color.clear) color = Color.white; // Default if no color property
+                        color.a = alpha;
+                        block.SetColor("_Color", color);
+                        renderer.SetPropertyBlock(block);
+                    }
+                }
+            }
+            
+            yield return null;
+        }
+        
+        // Safety check: Verify grid is still valid and row is still within bounds
+        // (Grid might have been resized during transition, though unlikely between waves)
+        if (!IsGridReady || rowToRemove >= height)
+        {
+            DebugLog($"⚠️ Grid state changed during removal. Row {rowToRemove} no longer valid (height: {height}). Aborting cleanup.");
+            isRemovingBottomRow = false;
+            yield break;
+        }
+        
+        // Cleanup: Actually remove tiles and cubes
+        // Note: This happens even if wave ended - grid state persists between waves
+        foreach (var tile in tilesToRemove)
+        {
             if (tile != null)
             {
                 tile.MakeTileFall();
             }
         }
-
-        // Remove any cubes that were on row 0
-        RemoveCubesOnRow(bottom);
-
-        // Adjust player position if they were on row 0
-        AdjustPlayerPosition();
-        bottom++;
-        DebugLog("Bottom row removal complete");
+        
+        // Remove cubes that still exist (some may have been destroyed at wave end)
+        foreach (var cube in cubesToRemove)
+        {
+            if (cube != null && !cube.isDestroyed)
+            {
+                DebugLog($"Removing cube at ({cube.position.x}, {cube.position.y}) - row fell");
+                Destroy(cube.gameObject);
+            }
+        }
+        
+        // Update grid bounds BEFORE adjusting player (so AdjustPlayerPosition knows the old bottom)
+        int oldBottom = bottom;
+        bottom = Mathf.Min(bottom + 1, height - 1);
+        
+        // Adjust player position if they were on the removed row
+        // Pass rowToRemove to the adjustment method
+        AdjustPlayerPositionAfterRowRemoval(rowToRemove);
+        
+        // Fire completion event (for future animation systems)
+        OnBottomRowRemovalCompleted?.Invoke(rowToRemove);
+        
+        isRemovingBottomRow = false;
+        DebugLog($"✅ ROW PENALTY: Bottom row {rowToRemove} removal complete. New bottom: {bottom}, Grid height: {height}, Remaining playable rows: {height - bottom}");
+    }
+    
+    /// <summary>
+    /// Adjusts player position after a row has been removed.
+    /// Called from RemoveBottomRowCoroutine with the specific row that was removed.
+    /// </summary>
+    private void AdjustPlayerPositionAfterRowRemoval(int removedRow)
+    {
+        var playerManager = FindFirstObjectByType<PlayerManager>();
+        if (playerManager == null) return;
+        
+        int playerY = playerManager.currentTilePosition.y;
+        
+        // If player was on or below the removed row, move them up
+        if (playerY <= removedRow)
+        {
+            // Find the lowest available row above the removed row
+            int safeRow = FindLowestPlayableRow();
+            if (safeRow > removedRow)
+            {
+                DebugLog($"⚠️ ROW PENALTY: Moving player from row {playerY} (removed row {removedRow}) to safe row {safeRow}");
+                playerManager.SetPosition(playerManager.currentTilePosition.x, safeRow);
+            }
+            else
+            {
+                DebugLog($"⚠️ ROW PENALTY: Player at row {playerY} but no safe row found above {removedRow}. Grid may be too small.");
+                // Emergency fallback: move to top row
+                playerManager.SetPosition(playerManager.currentTilePosition.x, height - 1);
+            }
+        }
     }
 
     private void RemoveCubesOnRow(int row)
     {
-        var allCubes = FindObjectsOfType<CubeManager>();
+        var allCubes = FindObjectsByType<CubeManager>(FindObjectsSortMode.None);
         foreach (var cube in allCubes)
         {
             if (cube != null && !cube.isDestroyed && cube.position.y == row)
@@ -1173,24 +1587,16 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
         }
     }
 
-    private void AdjustPlayerPosition()
-    {
-        var playerManager = FindObjectOfType<PlayerManager>();
-        if (playerManager != null && playerManager.currentTilePosition.y == 0)
-        {
-            // Find the lowest available row
-            int safeRow = FindLowestPlayableRow();
-            if (safeRow > 0)
-            {
-                DebugLog($"Moving player from fallen row 0 to row {safeRow}");
-                playerManager.SetPosition(playerManager.currentTilePosition.x, safeRow);
-            }
-        }
-    }
-
+    /// <summary>
+    /// Finds the lowest playable row in the grid.
+    /// Starts from bottom+1 (above the current bottom row) to avoid removed rows.
+    /// </summary>
     private int FindLowestPlayableRow()
     {
-        for (int y = 1; y < height; y++)
+        // Start from one row above the current bottom (which may have been removed)
+        int startRow = Mathf.Max(bottom + 1, 1);
+        
+        for (int y = startRow; y < height; y++)
         {
             bool rowIsPlayable = false;
             for (int x = 0; x < width; x++)
@@ -1245,7 +1651,11 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
 
     #region IManagerDebugInterface Implementation
 
-    public bool EnableDebugLogs { get; set; } = true;
+    public bool EnableDebugLogs 
+    { 
+        get => enableDebugLogs; 
+        set => enableDebugLogs = value; 
+    }
 
     public string GetDebugStatus()
     {

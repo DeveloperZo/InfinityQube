@@ -21,6 +21,7 @@ public class PlayerManager : MonoBehaviour, IManagerDebugInterface
     public int maxMarkerCount = 99;
 
     [Header("Death & Respawn")]
+    [Tooltip("Legacy: Time-based respawn delay (used as fallback if move-based system unavailable)")]
     public float respawnDelay = 2.0f;
     public float respawnInvulnerabilityTime = 2.0f;
     public bool debugDeathOverride = false;
@@ -30,6 +31,8 @@ public class PlayerManager : MonoBehaviour, IManagerDebugInterface
     public float collisionCheckRadius = 0.5f;
 
     [Header("Debug")]
+    [Tooltip("Enable debug logging for this manager")]
+    [SerializeField] private bool enableDebugLogs;
     public bool showTileInfo = false;
     #endregion
 
@@ -38,7 +41,6 @@ public class PlayerManager : MonoBehaviour, IManagerDebugInterface
     public Vector2Int currentTilePosition = new Vector2Int(0, 0);
     private Vector3 currentVelocity = Vector3.zero;
     private bool isMoving = false;
-    private bool isSpeedingUp = false;
 
     // Tile Interaction
     private Tile currentHoveredTile = null;
@@ -52,6 +54,9 @@ public class PlayerManager : MonoBehaviour, IManagerDebugInterface
     // Death System
     public bool isDead = false;
     private float respawnInvulnerabilityTimer = 0f;
+    private int respawnDelayMoves = 1; // Default: respawn after 1 move
+    private int movesUntilRespawn = 0; // Tracks moves remaining until respawn
+    private bool waitingForRespawn = false; // True when dead and waiting for move steps
 
     // Statistics
     public int normalCubesCaptured = 0;
@@ -77,6 +82,7 @@ public class PlayerManager : MonoBehaviour, IManagerDebugInterface
     private bool isInitialized = false;
     private Vector2Int lastPosition;
     private float sessionStartTime;
+    private Vector2Int playerStartPosition = Vector2Int.zero; // Store start position for respawn
     #endregion
 
     #region Events
@@ -88,8 +94,15 @@ public class PlayerManager : MonoBehaviour, IManagerDebugInterface
     #region Unity Lifecycle
     private void Start()
     {
-        EnableDebugLogs = true;
+        
         InitializePlayer();
+        SubscribeToEvents();
+    }
+    
+    private void OnDestroy()
+    {
+        UnsubscribeFromEvents();
+        CleanupPlayer();
     }
 
     private void Update()
@@ -106,10 +119,6 @@ public class PlayerManager : MonoBehaviour, IManagerDebugInterface
         CheckForCollisions();
     }
 
-    private void OnDestroy()
-    {
-        CleanupPlayer();
-    }
     #endregion
 
     #region Initialization
@@ -127,7 +136,7 @@ public class PlayerManager : MonoBehaviour, IManagerDebugInterface
     {
         if (grid == null)
         {
-            grid = GridManager.Instance ?? FindObjectOfType<GridManager>();
+            grid = GridManager.Instance ?? FindFirstObjectByType<GridManager>();
             if (grid == null)
             {
                 this.LogError("PlayerManager requires GridManager!");
@@ -136,13 +145,13 @@ public class PlayerManager : MonoBehaviour, IManagerDebugInterface
             }
         }
 
-        playerActionManager = FindObjectOfType<PlayerActionManager>();
+        playerActionManager = FindFirstObjectByType<PlayerActionManager>();
         if (playerActionManager == null)
         {
             this.LogWarning("PlayerActionManager not found - player actions features limited", EnableDebugLogs);
         }
 
-        waveManager = FindObjectOfType<WaveManager>();
+        waveManager = FindFirstObjectByType<WaveManager>();
         if (waveManager == null)
         {
             this.LogWarning("WaveManager not found - cube collision features limited", EnableDebugLogs);
@@ -155,11 +164,80 @@ public class PlayerManager : MonoBehaviour, IManagerDebugInterface
         lastPosition = new Vector2Int(-1, -1);
         sessionStartTime = Time.time;
         respawnInvulnerabilityTimer = 0f;
+        playerStartPosition = Vector2Int.zero; // Will be set by SetInitialPosition or ConfigurePlayer
+        waitingForRespawn = false;
+        movesUntilRespawn = 0;
+        respawnDelayMoves = 1; // Default until configured from stage/wave
+    }
+    
+    private void SubscribeToEvents()
+    {
+        GameEvents.OnWaveStep += OnWaveStep;
+        GameEvents.OnCubeCaptured += HandleCubeCaptured;
+        GameEvents.OnCubeEscaped += HandleCubeEscaped;
+    }
+    
+    private void UnsubscribeFromEvents()
+    {
+        GameEvents.OnWaveStep -= OnWaveStep;
+        GameEvents.OnCubeCaptured -= HandleCubeCaptured;
+        GameEvents.OnCubeEscaped -= HandleCubeEscaped;
+    }
+    
+    private void HandleCubeCaptured(Vector2Int position, Enumerations.CubeType cubeType)
+    {
+        // Update capture counters
+        switch (cubeType)
+        {
+            case Enumerations.CubeType.Unit: normalCubesCaptured++; break;
+            case Enumerations.CubeType.Matrix: blueCubesCaptured++; break;
+            case Enumerations.CubeType.Recursion: reinforcedCubesCaptured++; break;
+            case Enumerations.CubeType.Infinity: blackCubesCaptured++; break;
+        }
+        
+        UpdateStatistics();
+        DebugLog($"Cube captured: {cubeType}. Total: {normalCubesCaptured + blueCubesCaptured + reinforcedCubesCaptured + blackCubesCaptured}");
+    }
+    
+    private void HandleCubeEscaped(Vector2Int position, Enumerations.CubeType cubeType)
+    {
+        cubesEscaped++;
+        UpdateStatistics();
+        DebugLog($"Cube escaped: {cubeType}. Total escapes: {cubesEscaped}");
+    }
+
+    /// <summary>
+    /// Called by StageManager to set the player's start position from stage data.
+    /// </summary>
+    public void SetStartPosition(int x, int y)
+    {
+        playerStartPosition = new Vector2Int(x, y);
+        DebugLog($"Start position set to ({x}, {y})");
+    }
+    
+    /// <summary>
+    /// Configures respawn delay from stage/wave data.
+    /// Wave data takes precedence if set (non-zero), otherwise uses stage default.
+    /// </summary>
+    public void ConfigureRespawnDelay(int stageDefaultMoves, int waveMoves = 0)
+    {
+        if (waveMoves > 0)
+        {
+            respawnDelayMoves = waveMoves;
+            DebugLog($"Respawn delay configured from wave: {waveMoves} move(s)");
+        }
+        else
+        {
+            respawnDelayMoves = stageDefaultMoves;
+            DebugLog($"Respawn delay configured from stage: {stageDefaultMoves} move(s)");
+        }
     }
 
     private void SetInitialPosition()
     {
-        SetPosition(grid.Width / 2, 0); // Center bottom
+        // Store start position for respawn
+        playerStartPosition = new Vector2Int(grid.Width / 2, 0);
+        SetPosition(playerStartPosition.x, playerStartPosition.y);
     }
     #endregion
 
@@ -448,6 +526,19 @@ public class PlayerManager : MonoBehaviour, IManagerDebugInterface
 
         DebugLog($"💀 Player died! Total deaths: {playerDeaths}");
 
+        // Notify WaveManager for death penalty tracking
+        if (waveManager != null)
+        {
+            waveManager.OnPlayerDeath();
+        }
+
+        // Notify ScoreManager
+        var scoreManager = FindFirstObjectByType<ScoreManager>();
+        if (scoreManager != null)
+        {
+            scoreManager.RecordPlayerDeath();
+        }
+
         enabled = false;
         OnPlayerDied?.Invoke();
 
@@ -456,20 +547,137 @@ public class PlayerManager : MonoBehaviour, IManagerDebugInterface
 
     private IEnumerator HandleDeathSequence()
     {
-        yield return new WaitForSeconds(respawnDelay);
+        // Wait for move steps instead of time
+        waitingForRespawn = true;
+        movesUntilRespawn = respawnDelayMoves;
+        
+        DebugLog($"💀 Death sequence: Waiting for {movesUntilRespawn} move step(s) before respawn");
+        
+        // Fallback: If no move steps occur within reasonable time, use time-based respawn
+        float fallbackTime = respawnDelay * 2f; // Give extra time for moves to occur
+        float elapsed = 0f;
+        
+        while (waitingForRespawn && movesUntilRespawn > 0 && elapsed < fallbackTime)
+        {
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
+        
+        // If still waiting (moves didn't happen), use time-based fallback
+        if (waitingForRespawn)
+        {
+            DebugLog($"⚠️ Respawn: Move steps didn't occur, using time-based fallback");
+            yield return new WaitForSeconds(respawnDelay);
+        }
+        
         RespawnPlayer();
+    }
+    
+    /// <summary>
+    /// Called when a move step occurs. Counts down moves until respawn.
+    /// </summary>
+    private void OnWaveStep(int waveIndex, int stepNumber)
+    {
+        if (!waitingForRespawn || !isDead) return;
+        
+        movesUntilRespawn--;
+        DebugLog($"💀 Respawn countdown: {movesUntilRespawn} move(s) remaining");
+        
+        if (movesUntilRespawn <= 0)
+        {
+            waitingForRespawn = false;
+            RespawnPlayer();
+        }
     }
 
     private void RespawnPlayer()
     {
         isDead = false;
+        waitingForRespawn = false;
+        movesUntilRespawn = 0;
         respawnInvulnerabilityTimer = respawnInvulnerabilityTime;
         currentVelocity = Vector3.zero;
 
-        SetPosition(0, 0); // Respawn at center bottom
+        // Find a safe respawn position (no cubes, preferably at start position or bottom row)
+        Vector2Int respawnPos = FindSafeRespawnPosition();
+        SetPosition(respawnPos.x, respawnPos.y);
+        
         enabled = true;
-        DebugLog($"Player respawned with {respawnInvulnerabilityTime}s invulnerability");
+        DebugLog($"🔄 Player respawned at ({respawnPos.x}, {respawnPos.y}) with {respawnInvulnerabilityTime}s invulnerability");
         OnPlayerRespawned?.Invoke();
+    }
+
+    /// <summary>
+    /// Finds a safe position for respawn, avoiding cubes.
+    /// Prefers start position, then tries bottom row, then finds any safe position.
+    /// </summary>
+    private Vector2Int FindSafeRespawnPosition()
+    {
+        if (grid == null || waveManager == null)
+        {
+            // Fallback to start position if systems unavailable
+            return playerStartPosition;
+        }
+
+        // First, try the start position
+        if (IsPositionSafe(playerStartPosition))
+        {
+            DebugLog($"Respawn: Using start position ({playerStartPosition.x}, {playerStartPosition.y})");
+            return playerStartPosition;
+        }
+
+        // Try bottom row (above current bottom if rows were removed)
+        int bottomRow = grid.bottom;
+        for (int x = 0; x < grid.Width; x++)
+        {
+            Vector2Int pos = new Vector2Int(x, bottomRow);
+            if (IsPositionSafe(pos))
+            {
+                DebugLog($"Respawn: Using bottom row position ({x}, {bottomRow})");
+                return pos;
+            }
+        }
+
+        // Try rows above bottom
+        for (int y = bottomRow + 1; y < Mathf.Min(bottomRow + 5, grid.Height); y++)
+        {
+            for (int x = 0; x < grid.Width; x++)
+            {
+                Vector2Int pos = new Vector2Int(x, y);
+                if (IsPositionSafe(pos))
+                {
+                    DebugLog($"Respawn: Using safe position ({x}, {y})");
+                    return pos;
+                }
+            }
+        }
+
+        // Last resort: return start position even if not safe (better than crashing)
+        DebugLog($"⚠️ Respawn: No safe position found, using start position ({playerStartPosition.x}, {playerStartPosition.y})");
+        return playerStartPosition;
+    }
+
+    /// <summary>
+    /// Checks if a position is safe for respawn (no cubes present).
+    /// </summary>
+    private bool IsPositionSafe(Vector2Int pos)
+    {
+        if (grid == null || !IsValidTilePosition(pos)) return false;
+
+        // Check if any cube is at this position
+        if (waveManager?.activeCubes != null)
+        {
+            foreach (var cube in waveManager.activeCubes)
+            {
+                if (cube == null || cube.isDestroyed) continue;
+                if (cube.position.x == pos.x && cube.position.y == pos.y)
+                {
+                    return false; // Cube present, not safe
+                }
+            }
+        }
+
+        return true; // No cubes found, position is safe
     }
 
     private void CheckForCollisions() 
@@ -573,8 +781,10 @@ public class PlayerManager : MonoBehaviour, IManagerDebugInterface
 
     public void SetPosition(int x, int z)
     {
+        // Clamp to valid grid bounds (respecting removed rows)
+        int minY = grid != null ? grid.bottom : 0;
         x = Mathf.Clamp(x, 0, grid.Width - 1);
-        z = Mathf.Clamp(z, 0, grid.Height - 1);
+        z = Mathf.Clamp(z, minY, grid.Height - 1);
 
         if (currentHoveredTile != null)
         {
@@ -672,7 +882,11 @@ public class PlayerManager : MonoBehaviour, IManagerDebugInterface
 
     #region IManagerDebugInterface Implementation
 
-    public bool EnableDebugLogs { get; set; } = true;
+    public bool EnableDebugLogs 
+    { 
+        get => enableDebugLogs; 
+        set => enableDebugLogs = value; 
+    }
 
     public string GetDebugStatus()
     {

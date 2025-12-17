@@ -30,6 +30,8 @@ public class StageManager : MonoBehaviour, IManagerDebugInterface
     [SerializeField] private bool disableAutoStart = true;
 
     [Header("Debug")]
+    [Tooltip("Enable debug logging for this manager")]
+    [SerializeField] private bool enableDebugLogs;
     [SerializeField] private bool showStageInfo = false;
     #endregion
 
@@ -38,6 +40,12 @@ public class StageManager : MonoBehaviour, IManagerDebugInterface
     public int CurrentStageIndex { get; private set; }
     public StageData CurrentStage { get; private set; }
     public bool IsStageInProgress { get; private set; }
+    
+    /// <summary>
+    /// Returns true if the current stage is a tutorial stage (Stage 0 or StageType.Tutorial).
+    /// Use this instead of checking CurrentStageIndex == 0 directly.
+    /// </summary>
+    public bool IsTutorialStage => CurrentStageIndex == 0 || CurrentStage?.stageType == StageType.Tutorial;
 
     // Stage Statistics
     private int capturedCubeCount = 0;
@@ -54,7 +62,7 @@ public class StageManager : MonoBehaviour, IManagerDebugInterface
     {
         FindReferences();
         InitializeStageDatabase();
-        EnableDebugLogs = true;
+        
     }
 
     private void Start()
@@ -64,6 +72,20 @@ public class StageManager : MonoBehaviour, IManagerDebugInterface
         {
             // Subscribe to private UnityEvents via reflection or add public accessors
             SubscribeToWaveEvents();
+        }
+
+        // Check if tutorial should be started from Splash screen (bypasses disableAutoStart)
+        bool shouldStartTutorial = PlayerPrefs.GetInt("StartTutorial", 0) == 1;
+        if (shouldStartTutorial)
+        {
+            PlayerPrefs.DeleteKey("StartTutorial");
+            PlayerPrefs.Save();
+            DebugLog("StartTutorial flag detected from Splash screen, starting tutorial stage");
+            if (startingStageIndex != -1)
+            {
+                LoadStage(startingStageIndex);
+                return;
+            }
         }
 
         // Only auto-start if not disabled (for prototyping mode)
@@ -129,9 +151,9 @@ public class StageManager : MonoBehaviour, IManagerDebugInterface
     private void FindReferences()
     {
         if (gridManager == null) gridManager = GridManager.Instance;
-        if (waveManager == null) waveManager = FindObjectOfType<WaveManager>();
-        if (playerController == null) playerController = FindObjectOfType<PlayerManager>();
-        if (playerActionManager == null) playerActionManager = FindObjectOfType<PlayerActionManager>();
+        if (waveManager == null) waveManager = FindFirstObjectByType<WaveManager>();
+        if (playerController == null) playerController = FindFirstObjectByType<PlayerManager>();
+        if (playerActionManager == null) playerActionManager = FindFirstObjectByType<PlayerActionManager>();
     }
 
     private void InitializeStageDatabase()
@@ -319,7 +341,7 @@ public class StageManager : MonoBehaviour, IManagerDebugInterface
         for (int i = 0; i < stage.waveConfigurations.Count && i < 3; i++)
         {
             var wave = stage.waveConfigurations[i];
-            DebugLog($"ConfigureWaveManager: Wave {i + 1} - {wave.CubesData.Count} cubes");
+            DebugLog($"ConfigureWaveManager: Wave {i + 1} - {wave.cubes.Count} cubes");
         }
     }
 
@@ -328,8 +350,12 @@ public class StageManager : MonoBehaviour, IManagerDebugInterface
         if (playerController == null) return;
 
         DebugLog($"Setting player start position: ({stage.playerStartPosition.x}, {stage.playerStartPosition.y})");
+        playerController.SetStartPosition(stage.playerStartPosition.x, stage.playerStartPosition.y);
         playerController.SetPosition(stage.playerStartPosition.x, stage.playerStartPosition.y);
         playerController.ResetStatistics();
+        
+        // Configure respawn delay from stage default (wave will override if set)
+        playerController.ConfigureRespawnDelay(stage.respawnDelayMoves);
     }
 
     private void ConfigureDetonationManager(StageData stage)
@@ -386,6 +412,14 @@ public class StageManager : MonoBehaviour, IManagerDebugInterface
             }
         }
         
+        // Destroy scene root objects (GameWorld and its children)
+        GameObject gameWorld = GameObject.Find("GameWorld");
+        if (gameWorld != null)
+        {
+            DebugLog("CleanupBeforeSceneChange: Destroying GameWorld and children");
+            Destroy(gameWorld);
+        }
+        
         // Also find and destroy the game grid and other core game objects
         GameObject grid = GameObject.Find("Grid");
         if (grid != null) 
@@ -428,12 +462,12 @@ public class StageManager : MonoBehaviour, IManagerDebugInterface
         bool success = false;
         bool failure = false;
 
-        // For Stage 1 demo, DON'T check completion here - it's handled by OnAllWavesCompleted
-        if (CurrentStageIndex == 0)
+        // For Tutorial stage (Stage 0), DON'T check completion here - it's handled by OnAllWavesCompleted
+        if (IsTutorialStage)
         {
-            // Stage 1 demo should ONLY complete when OnAllWavesCompleted is called
+            // Tutorial stage should ONLY complete when OnAllWavesCompleted is called
             // This method is called after individual cube captures, so we should NOT complete here
-            DebugLog("CheckStageCompletion: Stage 1 demo - skipping check (will complete via OnAllWavesCompleted)");
+            DebugLog("CheckStageCompletion: Tutorial stage - skipping check (will complete via OnAllWavesCompleted)");
             return;
         }
         else if (CurrentStage.requiredCaptureCount > 0)
@@ -495,10 +529,10 @@ public class StageManager : MonoBehaviour, IManagerDebugInterface
         // Brief pause before showing completion message
         yield return new WaitForSeconds(stageTransitionDelay);
 
-        // Check if this is Stage 1 (CurrentStageIndex == 0) - Demo completion
-        if (CurrentStageIndex == 0)
+        // Check if this is the Tutorial stage (Stage 0) - special completion sequence
+        if (IsTutorialStage)
         {
-            DebugLog("HandleStageSuccess: Demo stage detected, preparing completion sequence");
+            DebugLog("HandleStageSuccess: Tutorial stage detected, preparing completion sequence");
             
             // Show demo completion message
             if (waveManager != null && waveManager.showMessages)
@@ -509,7 +543,7 @@ public class StageManager : MonoBehaviour, IManagerDebugInterface
                 
                 var completionMessage = new WaveMessage
                 {
-                    Message = "Demo Complete\n\n" +
+                    Message = "Tutorial Complete\n\n" +
                              $"Time: {timeStr}\n" +
                              $"Cubes Captured: {capturedCubeCount}\n\n" +
                              "Press K to return to menu",
@@ -520,11 +554,31 @@ public class StageManager : MonoBehaviour, IManagerDebugInterface
                 DebugLog($"HandleStageSuccess: Showing completion message with stats - Time: {timeStr}, Captured: {capturedCubeCount}");
                 waveManager.ShowMessage(completionMessage);
                 
-                // Wait for player to dismiss message
-                while (waveManager.messagePanel != null && waveManager.messagePanel.activeSelf)
+                // Wait for player to dismiss message (K key press)
+                // The message uses RequirePause=true, so WaveManager will wait for K key
+                // We wait for the panel to become inactive, with a fallback K key check
+                float timeout = 30f; // Safety timeout
+                float elapsed = 0f;
+                while (waveManager.messagePanel != null && waveManager.messagePanel.activeSelf && elapsed < timeout)
                 {
+                    // Fallback: Check for K key directly in case message system has issues
+                    if (Input.GetKeyDown(KeyCode.K))
+                    {
+                        DebugLog("HandleStageSuccess: K key detected, forcing message dismissal");
+                        if (waveManager.messagePanel != null)
+                        {
+                            waveManager.messagePanel.SetActive(false);
+                        }
+                        // Resume time in case it's still paused
+                        Time.timeScale = 1f;
+                        break;
+                    }
+                    elapsed += Time.unscaledDeltaTime;
                     yield return null;
                 }
+                
+                // Ensure time is resumed
+                Time.timeScale = 1f;
                 
                 DebugLog("HandleStageSuccess: Completion message dismissed by player");
             }
@@ -589,7 +643,11 @@ public class StageManager : MonoBehaviour, IManagerDebugInterface
 
     #region IManagerDebugInterface Implementation
 
-    public bool EnableDebugLogs { get; set; } = true;
+    public bool EnableDebugLogs 
+    { 
+        get => enableDebugLogs; 
+        set => enableDebugLogs = value; 
+    }
 
     public string GetDebugStatus()
     {
@@ -729,10 +787,10 @@ public class StageManager : MonoBehaviour, IManagerDebugInterface
             return;
         }
 
-        // For Stage 1 demo, this is when we complete the stage
-        if (CurrentStageIndex == 0)
+        // For Tutorial stage (Stage 0), this is when we complete the stage
+        if (IsTutorialStage)
         {
-            DebugLog("OnAllWavesCompleted: Stage 1 demo - all waves complete, marking stage as success");
+            DebugLog("OnAllWavesCompleted: Tutorial stage - all waves complete, marking stage as success");
             CompleteStage(true);
         }
         else
@@ -748,7 +806,7 @@ public class StageManager : MonoBehaviour, IManagerDebugInterface
         
         // POC: Ensure minimum transition time for tutorial readability
         float adjustedDelay = stageTransitionDelay;
-        if (CurrentStageIndex == 0) // Tutorial stage
+        if (IsTutorialStage)
         {
             adjustedDelay = Mathf.Max(stageTransitionDelay, 3f); // At least 3 seconds for tutorial
             if (adjustedDelay != stageTransitionDelay)

@@ -77,7 +77,6 @@ public class MessageProgressTracker : MonoBehaviour, IManagerDebugInterface
 
     private void Start()
     {
-        EnableDebugLogs = true;
         LoadProgress();
         StartAutoSave();
     }

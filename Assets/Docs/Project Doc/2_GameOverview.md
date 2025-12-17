@@ -207,7 +207,7 @@ Core mechanics are immediately understandable while mastery requires deep strate
 - **Wave Management**: Configurable wave parameters and progression tracking
 - **Grid Infrastructure**: Full tile system with state management
 - **Audio Integration**: Event-driven sound system for all actions
-- **Tutorial Framework**: Contextual message system with pause capabilities
+- **Tutorial Framework**: Highlight sequence system with guided messages, visual highlights, and interactive validation
 
 ### 🚧 To Be Implemented
 - **Symmetrical Wave System**: Marker-to-cube transformation mechanics
@@ -248,9 +248,9 @@ Core mechanics are immediately understandable while mastery requires deep strate
 - FaceStatus system provides efficient status tracking per cube face
 - Wave system uses event-driven architecture for flexible stage integration
 - Marker mode switching enables rapid tactical decisions
-- Tutorial system supports wave-specific instructional content
+- Tutorial system uses highlight sequences for guided instruction with messages, visual highlights, and interactive validation
 
 ---
-**Last Updated:** November 16, 2025  
+**Last Updated:** December 14, 2025  
 **Core System:** Symmetrical Wave Collision Mechanics  
 **Design Focus:** Strategic depth through bidirectional movement and collision-based gameplay

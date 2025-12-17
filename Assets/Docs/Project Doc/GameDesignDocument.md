@@ -2,307 +2,227 @@
 
 ## Executive Summary
 * **Title:** Infinity Cube
-* **Genre:** Grid-based Tactical Puzzle with Temporal Strategy
+* **Genre:** Grid-based Tactical Puzzle
 * **Target Platform:** PC (Windows) via Steam
 * **Target Audience:** Strategic puzzle enthusiasts and hardcore casual gamers
-* **Development Stage:** Functional Prototype with Paired Wave System
+* **Development Stage:** Functional Prototype
 * **Engine:** Unity 3D with component-based architecture
 
 ### High Concept
-A grid-based tactical puzzle game where players strategically place markers to intercept advancing cube formations, with the revolutionary twist that marker placements become cube spawn positions in paired waves. This creates a temporal strategy layer where every action has both immediate tactical value and future strategic consequences. Combined with Infinity cube pause mechanics and collision systems, players must balance present survival with future preparation.
+A grid-based tactical puzzle game where players strategically place markers to intercept advancing cube formations. Players spawn player cubes that move backward through the grid to capture wave cubes advancing toward them. Combined with Infinity cube pause mechanics, collision systems, and face painting mechanics, players must balance immediate tactical decisions with strategic planning.
 
 ### Key Features
-- **Paired Wave System**: Marker placements in one wave become cube spawns in the next
-- **Temporal Strategy**: Every decision affects both current and future gameplay
-- **Five-Tier Marker System**: Light, Heavy, Matrix, Cube, and Infinity markers with distinct applications
+- **Five-Tier Marker System**: Unit, Recursion, Matrix, Cube, and Infinity markers with distinct applications
 - **Advanced Cube Mechanics**: Four cube types with Infinity pause states and collision behaviors
 - **Dynamic Flow Control**: Infinity cube pause mechanics creating strategic bottlenecks
-- **Strategic Continuity**: Actions cascade across wave pairs creating emergent complexity
-- **Progressive Stage Design**: 12-stage structured learning curve teaching both systems
-- **Compressed Configuration**: Efficient wave data storage with inheritance rules
+- **Face Painting System**: Cube collisions paint faces that trigger effects when touching grid
+- **Progressive Stage Design**: Structured learning curve teaching all systems
+- **Line Divider System**: Dynamic difficulty mechanism restricting marker placement
 
 ## Game Overview
 
-### Core Gameplay Loop (Enhanced)
-**Wave Pair Selection** → **Wave A Execution** → **Marker Recording** → **Wave B Preparation** → **Inheritance Resolution** → **Pair Completion**
+### Core Gameplay Loop
+**Wave Start** → **Marker Placement** → **Cube Spawning** → **Collision Resolution** → **Wave Completion**
 
 #### Detailed Flow:
-1. **Wave Pair Initiation**: Player starts paired wave set (Wave A + Wave B)
-2. **Wave A - Tactical Phase**:
-   - Standard cube defense
+1. **Wave Initiation**: Player starts wave from configuration
+2. **Tactical Phase**:
+   - Wave cubes advance toward player
    - Strategic marker placement
-   - Position recording for Wave B
+   - Player cubes spawn from markers
    - Immediate survival focus
-3. **Transition Phase**:
-   - Preview inherited cube positions
-   - Prepare for Wave B challenges
-   - Resource regeneration
-4. **Wave B - Consequence Phase**:
-   - Previous markers spawn as cubes
-   - New wave configuration overlays
-   - Manage created complexity
-   - Adapt to self-created challenges
-5. **Pair Resolution**:
-   - Combined performance scoring
-   - Strategic assessment
-   - Progression to next pair
-
-### Revolutionary Mechanics
-**"Your Defense Becomes Your Offense"** - The paired wave system transforms defensive marker placement into future offensive challenges, creating a unique risk/reward dynamic where optimal immediate solutions may create future problems.
+3. **Collision Phase**:
+   - Player cubes move backward into wave cubes
+   - Collision behaviors resolve
+   - Face painting effects trigger
+4. **Resolution Phase**:
+   - Track captured/escaped cubes
+   - Apply penalties/rewards
+   - Advance to next wave
 
 ### Setting
-**Temporal Loop Arena** - A minimalist abstract world where time loops create echoes of past actions. Clean geometric shapes represent the eternal cycle of action and consequence. The cosmic backdrop emphasizes themes of infinity, recursion, and temporal causality. Visual design prioritizes functional clarity while conveying the weight of decisions that ripple through time.
+**Tactical Arena** - A minimalist abstract world with clean geometric shapes. The cosmic backdrop emphasizes themes of infinity and tactical precision. Visual design prioritizes functional clarity while conveying the weight of tactical decisions.
 
 ## Gameplay Mechanics
-
-### Paired Wave System (Core Innovation)
-
-#### Wave Pairing Structure
-```
-Wave Pair Components:
-├── Wave A (Primary)
-│   ├── Base cube configuration
-│   ├── Standard objectives
-│   ├── Marker placement recording
-│   └── Position inheritance encoding
-└── Wave B (Consequent)
-    ├── Inherited cube spawns
-    ├── Additional cube configuration
-    ├── Merged spawn resolution
-    └── Cascading objectives
-```
-
-#### Marker-to-Cube Conversion Table
-| Marker Type | Spawns in Next Wave | Strategic Implication |
-|-------------|-------------------|----------------------|
-| Light | 1x Unit Cube | Low risk, manageable consequence |
-| Heavy | 1x Recursion Cube | High durability future threat |
-| Matrix | 1x Matrix Cube (center) or 3x3 Units | Resource opportunity or swarm |
-| Infinity | 1x Infinity Cube | Extreme future danger for current control |
-| Cube | No inheritance | Pure immediate action |
-
-#### Strategic Depth Layers
-1. **Immediate Tactical Layer**: Survive current wave
-2. **Future Planning Layer**: Minimize next wave difficulty
-3. **Resource Optimization Layer**: Balance marker usage across pairs
-4. **Pattern Recognition Layer**: Learn optimal placement patterns
-5. **Sacrifice Strategy Layer**: Accept current difficulty for future advantage
 
 ### Core Systems Implementation
 
 #### **Grid System (GridManager)**
 - Singleton-based spatial management with configurable dimensions
-- Marker position recording for wave inheritance
-- Ghost preview system for future spawns
-- Tile state tracking including inheritance markers
+- Tile state tracking
+- Line divider system for dynamic difficulty
 - Corruption and enhancement mechanics
 
 #### **Player System (PlayerActionManager)**
-Enhanced with temporal awareness:
-- Five-tier marker system with inheritance tracking
-- Visual feedback showing future spawn positions
-- Resource management across wave pairs
-- Statistics tracking both immediate and inherited performance
-- Strategic decision indicators
+- Five-tier marker system
+- Resource management
+- Visual feedback for marker states
+- Statistics tracking
 
 #### **Cube System**
-| Type | Properties | Inheritance Behavior |
-|------|------------|---------------------|
-| **Unit** | Basic, capturable | Standard spawn from Unit Markers |
-| **Matrix** | Generates cube markers | Valuable spawn from Matrix markers |
-| **Infinity** | Uncapturable, pauseable | Dangerous spawn from Infinity markers |
-| **Recursion** | Multi-hit requirement | Challenging spawn from Recursion Markers |
+| Type | Properties | Behavior |
+|------|------------|----------|
+| **Unit** | Basic, capturable | Standard capture |
+| **Matrix** | Generates cube markers | Creates area capture resources |
+| **Infinity** | Uncapturable, pauseable | Face painting, resonance |
+| **Recursion** | Multi-hit requirement | Requires matching marker |
 
 #### **Wave Management (WaveManager)**
-Revolutionary paired wave configuration:
+Wave configuration system:
 ```
 WaveData Structure:
-- pairID: Links waves together
-- primaryWave: Configuration for Wave A
-- consequentWave: Configuration for Wave B
-- inheritanceRules: Marker-to-cube conversion
-- overlapStrategy: How inherited spawns merge
-- compressionFormat: Optimized data storage
-```
-
-### Compressed Configuration System
-Efficient storage of paired wave data:
-```json
-{
-  "pairID": "P1",
-  "waveA": {
-    "spawns": [[2,10,"Unit"], [4,12,"Matrix"]],
-    "resources": {"light": 5, "heavy": 2}
-  },
-  "waveB": {
-    "inheritedPositions": "auto",
-    "additionalSpawns": [[3,15,"Infinity"]],
-    "mergeRule": "overlay"
-  }
-}
+- Index: Wave number
+- GridHeight/Width: Grid dimensions
+- CubesData: Cube spawn positions and types
+- Marker Settings: Available markers per wave
+- Timing: Movement intervals
+- Success Criteria: Win/lose conditions
 ```
 
 ### Input System
 ```
 Core Controls:
 Movement: WASD/Arrows → Grid navigation
-Unit Marker: F → Place (spawns Unit in next wave)
-Recursion Marker: V → Place (spawns Recursion in next wave)
-Matrix Marker: G → Place (spawns Matrix in next wave)
-Infinity Marker: [TBD] → Place (spawns Infinity in next wave)
-Cube Marker: Q → Direct destruction (no inheritance)
-[Trigger keys remain the same]
-Preview Toggle: P → Show/hide inheritance ghosts
+Mode Selection: 1-4 → Switch marker mode
+  1 = Unit Marker mode
+  2 = Matrix Marker mode
+  3 = Recursion Marker mode
+  4 = Infinity Marker mode
+Marker Placement: F → Place marker of current mode
+Cube Marker Trigger: R → Trigger cube marker area effect
 ```
 
 ## Level Design
 
-### Stage Progression Philosophy (Revised)
-Teaching both immediate tactics and temporal strategy:
+### Stage Progression Philosophy
+Teaching immediate tactics and cube interactions:
 
-| Stage | Focus | Wave Pairing Lesson |
-|-------|-------|-------------------|
-| 1-2 | Basic markers | Introduction to inheritance |
-| 3-4 | Matrix/Area markers | Area inheritance patterns |
-| 5-6 | Infinity cubes | Dangerous inheritance |
-| 7-8 | Heavy/Recursion | Durability inheritance |
-| 9-10 | Full integration | Complex inheritance chains |
-| 11-12 | Mastery | Multi-pair planning |
+| Stage | Focus | Lesson |
+|-------|-------|--------|
+| 0-2 | Unit markers, Infinite Cube | Unit marker basics |
+| 3-5 | Matrix cube/markers | Area effects |
+| 6-8 | Recursion cube/marker | Multi-hit mechanics |
+| 9-10 | Infinity Marker | All systems |
+| 11-12 | Mastery | Complex strategies |
 
 ### Learning Curve Design
-1. **Discovery Phase**: Players learn marker placement affects next wave
-2. **Understanding Phase**: Recognition of conversion patterns
-3. **Planning Phase**: Deliberate future wave preparation
-4. **Mastery Phase**: Multi-wave strategic chains
-5. **Innovation Phase**: Creative use of inheritance for advantage
+1. **Discovery Phase**: Players learn marker placement
+2. **Understanding Phase**: Recognition of cube behaviors
+3. **Planning Phase**: Strategic marker positioning
+4. **Mastery Phase**: Complex collision chains
+5. **Innovation Phase**: Creative use of mechanics
 
 ## Strategic Implications
 
 ### Emergent Strategies
 
-#### "The Sacrifice Gambit"
-Deliberately struggle in Wave A by conserving markers, making Wave B easier due to fewer inherited spawns.
+#### "Area Control"
+Use Matrix markers to create large capture areas for incoming wave formations.
 
 #### "The Setup"
-Place markers in specific patterns during Wave A to create advantageous cube formations in Wave B that generate resources.
+Place markers in specific patterns to create advantageous cube collision chains.
 
-#### "The Cascade"
-Chain marker placements across multiple wave pairs to create long-term strategic advantages.
+#### "Infinity Timing"
+Use Infinity cubes strategically to pause and redirect cube flows.
 
-#### "The Clean Slate"
-Use Cube markers exclusively to avoid inheritance, accepting resource limitations for predictability.
+#### "Resource Management"
+Balance marker usage across waves to maintain strategic options.
 
 ### Risk/Reward Dynamics
-- **High Risk**: Aggressive marker use solves immediate problems but creates future chaos
-- **High Reward**: Strategic Matrix placement creates resource generation opportunities
+- **High Risk**: Aggressive marker use depletes resources
+- **High Reward**: Strategic Matrix placement creates resource generation
 - **Balanced Play**: Measured marker use with careful position selection
-- **Defensive Play**: Minimal marker use, relying on movement and Cube markers
+- **Defensive Play**: Minimal marker use, relying on Cube markers
 
 ## Technical Architecture
 
-### System Dependencies (Updated)
+### System Dependencies
 ```
-WaveManager (Enhanced)
-├── Pair Controller
-│   ├── Wave A Handler
-│   ├── Inheritance Recorder
-│   ├── Wave B Generator
-│   └── Merge Resolver
-├── Compression Engine
-│   ├── Data Optimizer
-│   ├── Pattern Library
-│   └── Replay System
-└── Preview System
-    ├── Ghost Renderer
-    ├── Timeline Visualizer
-    └── Impact Calculator
+WaveManager
+├── Cube Spawning
+│   ├── Configuration Handler
+│   ├── Position Calculator
+│   └── Cube Instantiation
+├── Wave Flow
+│   ├── Movement System
+│   ├── Completion Tracking
+│   └── Statistics
+└── Player Integration
+    ├── Marker System
+    └── Collision Resolution
 ```
 
 ## Design Philosophy
 
-### Core Pillars (Enhanced)
-1. **Temporal Consequence**: Every action echoes through time
-2. **Strategic Depth**: Simple rules create complex multi-wave strategies
-3. **Player Agency**: Choose between immediate success and future ease
-4. **Emergent Complexity**: Paired waves create unpredictable scenarios
-5. **Accessible Depth**: Easy to understand, lifetime to master
+### Core Pillars
+1. **Tactical Depth**: Simple rules create complex strategies
+2. **Player Agency**: Multiple valid approaches to each wave
+3. **Clear Feedback**: Visual clarity on all game states
+4. **Accessible Depth**: Easy to understand, lifetime to master
+5. **Strategic Variety**: Multiple marker types create diverse gameplay
 
 ### Unique Selling Points
-- **First puzzle game where defense becomes offense**
-- **Temporal strategy in bite-sized puzzle format**
-- **Every playthrough creates unique challenges**
-- **Player creates their own difficulty curve**
-- **Compression of strategic depth into simple mechanics**
+- **Grid-based tactical puzzle with cube collision mechanics**
+- **Five distinct marker types with unique behaviors**
+- **Face painting system creating strategic timing opportunities**
+- **Dynamic difficulty through line divider system**
+- **Infinity cubes creating flow control mechanics**
 
 ## Implementation Priorities
 
-### Phase 1: Core Pairing System
-1. Marker position recording infrastructure
-2. Basic inheritance rules (1:1 marker to cube)
-3. Wave B generation from Wave A markers
-4. Visual feedback for inheritance
+### Phase 1: Core Systems ✅
+1. Grid and wave management
+2. Basic marker placement
+3. Cube spawning and movement
+4. Collision detection
 
 ### Phase 2: Advanced Features
-1. Ghost preview system
-2. Compression algorithm for wave data
-3. Overlap resolution strategies
-4. Pattern library system
+1. Face painting system
+2. Line divider mechanics
+3. Resonance system
+4. Marker economy
 
 ### Phase 3: Polish and Balance
-1. Inheritance rule variations per stage
-2. Visual language for temporal connections
-3. Tutorial system for paired waves
-4. Difficulty curve refinement
+1. Visual feedback refinement
+2. Tutorial system
+3. Difficulty curve adjustment
+4. Stage content creation
 
-## Design Critique and Considerations
+## Design Considerations
 
-### Strengths of Paired Wave System
-- **Unique Mechanic**: No other puzzle game has this temporal strategy layer
-- **Emergent Gameplay**: Simple rule creates endless strategic possibilities
-- **Player Expression**: Multiple valid strategies for each wave pair
-- **Replayability**: Same wave pair plays differently based on Wave A choices
-- **Elegant Compression**: Entire system fits within existing framework
+### Strengths
+- **Clear Mechanics**: Each system has defined behavior
+- **Strategic Depth**: Multiple valid strategies
+- **Replayability**: Same wave can be approached differently
+- **Visual Clarity**: Distinct cube and marker types
 
 ### Potential Concerns and Mitigations
 
 #### Complexity Overload
-**Concern**: Players may struggle with planning for future waves
+**Concern**: Players may struggle with multiple systems
 **Mitigation**: 
-- Start with simple 1:1 conversions
-- Visual previews make consequences clear
-- Tutorial stages focus solely on inheritance
-- Optional "preview mode" for planning
+- Tutorial stages introduce one concept at a time
+- Visual previews make mechanics clear
+- Progressive complexity unlock
 
 #### Frustration Potential
-**Concern**: Players may feel punished for successful defense
+**Concern**: Players may feel overwhelmed by cube waves
 **Mitigation**:
-- Frame as strategic choice, not punishment
-- Provide Cube markers as inheritance-free option
-- Balance so inherited cubes are manageable
-- Reward good inheritance patterns
+- Line divider creates manageable challenge area
+- Cube markers provide emergency capture options
+- Balance wave difficulty appropriately
 
 #### Balancing Challenge
 **Concern**: Difficulty to balance across skill levels
 **Mitigation**:
-- Adjustable inheritance delays
-- Variable conversion rules per difficulty
-- Optional inheritance intensity settings
-- Pattern library for struggling players
-
-### Recommended Refinements
-1. **Inheritance Delay Options**: Configure how many rows back inherited cubes spawn
-2. **Conversion Variations**: Different stages could have unique conversion rules
-3. **Inheritance Bonuses**: Reward clever placement patterns with power-ups
-4. **Memory Aid**: Visual timeline showing marker history
-5. **Undo System**: Allow one undo per wave pair for learning
+- Configurable wave difficulty
+- Variable marker limits per stage
+- Adjustable line divider position
 
 ---
-**Last Updated:** November 17, 2025  
-**Major Innovation:** Paired Wave System with Marker Inheritance
-**Implementation Status:** Core systems complete, paired waves in design phase
-**Compression Benefit:** Reduces wave configuration size by 40%
+**Last Updated:** December 8, 2025  
+**Implementation Status:** Core systems complete, collision mechanics in refinement
 **Related Documents:**
-- [Gameplay Mechanics](3_GameplayMechanics_v2.md)
+- [Gameplay Mechanics](3_GameplayMechanics.md)
 - [Level Design](4_LevelDesign.md)
 - [Technical Architecture](TechnicalArchitecture.md)
-- [Wave Configuration Schema](WaveConfigSchema.md)

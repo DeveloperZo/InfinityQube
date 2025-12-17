@@ -21,7 +21,7 @@ public class CameraFollow : MonoBehaviour
         if (target == null)
         {
             // Find the player selector if not assigned
-            PlayerManager player = FindObjectOfType<PlayerManager>();
+            PlayerManager player = FindFirstObjectByType<PlayerManager>();
             if (player != null)
             {
                 target = player.transform;

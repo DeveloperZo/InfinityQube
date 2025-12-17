@@ -11,8 +11,8 @@ public class StageInfoUI : MonoBehaviour
 
     void Start()
     {
-        StageManager = FindObjectOfType<StageManager>();
-        WaveManager = FindObjectOfType<WaveManager>();
+        StageManager = FindFirstObjectByType<StageManager>();
+        WaveManager = FindFirstObjectByType<WaveManager>();
 
         UpdateDisplay();
     }

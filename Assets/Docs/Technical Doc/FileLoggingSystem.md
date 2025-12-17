@@ -37,9 +37,11 @@ The InfinityQube file logging system captures all Unity Debug.Log output to file
 ## Log File Location
 
 Log files are stored in Unity's persistent data path:
-- Windows: `%USERPROFILE%\AppData\LocalLow\<CompanyName>\<ProductName>\Logs\`
-- macOS: `~/Library/Application Support/<CompanyName>/<ProductName>/Logs/`
-- Linux: `~/.config/unity3d/<CompanyName>/<ProductName>/Logs/`
+- **Windows**: `C:\Users\<username>\AppData\LocalLow\DefaultCompany\InfinityQube\Logs\`
+- macOS: `~/Library/Application Support/DefaultCompany/InfinityQube/Logs/`
+- Linux: `~/.config/unity3d/DefaultCompany/InfinityQube/Logs/`
+
+**Quick Access**: Press F12 in-game → System panel → "Open Log Directory"
 
 ## Using the Debug Panel
 

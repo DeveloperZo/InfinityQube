@@ -40,9 +40,14 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
     [SerializeField] private FaceStatus[] faceStatuses = new FaceStatus[4]; // 4 cube faces
     [SerializeField] private Color[] faceColors = new Color[4]; // Visual colors for each face
     [SerializeField] private int[] faceDurations = new int[4]; // Remaining duration for each face (-1 = permanent)
+    [SerializeField] private int[] faceCharges = new int[4]; // Grid touch charges for each face (default 1)
     [SerializeField] private GameObject[] faceIndicators = new GameObject[4]; // Visual indicators
     [SerializeField] private bool showFaceIndicators = true;
     private CubeFace[] currentFaceMapping = new CubeFace[4];
+    
+    [Header("Debug")]
+    [Tooltip("Enable debug logging for this manager")]
+    [SerializeField] private bool enableDebugLogs ;
 
     private GridManager grid;
     private PlayerActionManager playerActionManager;
@@ -52,17 +57,19 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
     public bool isMatrixCube = false; // True for Matrix cubes that capture in an area
     [SerializeField] private bool isPhaseable = false; // Task 7: Phaseable state for resonance system
     [SerializeField] private int phaseableMovesRemaining = 0; // Task 7: Remaining moves in phaseable state
+    
+    [Header("Materials")]
+    [SerializeField] private Material phaseableMaterial; // Assign CosmicBlack_Transparent in Inspector
+    [SerializeField] private Material playerCubeMaterial; // Assign translucent material for player cubes
+    private Material originalMaterial; // Store original material before effects
     public float rainSpeed = 3f;
     public float rainHeight = 5f;
     public int targetRow = -1;
-    private bool isRainAnimating = false;
     public int moveCountRemaining = 0;
-    private float tileScale = 3f;
     private float tileSize = 1f;
 
     public void Init(GridManager gridManager, CubeData cubeData, float spawnHeight = 2f)
     {
-        EnableDebugLogs = true;
         grid = gridManager;
         tileSize = grid.TileSize;
 
@@ -98,7 +105,7 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
 
         this.Log($"Cube {type} initialized at grid ({position.x}, {position.y}) -> world {worldPos}, HP: {currentHitPoints}/{maxHitPoints}", EnableDebugLogs);
 
-        playerActionManager = FindAnyObjectByType<PlayerActionManager>();
+        playerActionManager = FindFirstObjectByType<PlayerActionManager>();
         gameObject.name = name;
 
         InitializeFaceSystem();
@@ -233,6 +240,73 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
 
         cubeCollider.isTrigger = true;
         this.Log($"Player cube collider configured as trigger for {name} (convex: {(cubeCollider is MeshCollider mc ? mc.convex.ToString() : "N/A")})", EnableDebugLogs);
+    }
+
+    /// <summary>
+    /// Applies the translucent material for player cubes.
+    /// Call this after spawning a player cube.
+    /// </summary>
+    public void ApplyPlayerCubeMaterial()
+    {
+        Renderer renderer = GetComponent<Renderer>();
+        if (renderer == null) return;
+
+        if (playerCubeMaterial != null)
+        {
+            renderer.material = playerCubeMaterial;
+        }
+        else
+        {
+            // Fallback: create translucent material at runtime
+            Material baseMaterial = renderer.material;
+            if (baseMaterial == null) return;
+
+            Material translucentMaterial = new Material(baseMaterial);
+            Color color = translucentMaterial.color;
+            color.a = 0.35f;
+            translucentMaterial.color = color;
+
+            if (translucentMaterial.HasProperty("_Mode"))
+            {
+                translucentMaterial.SetFloat("_Mode", 3);
+                translucentMaterial.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
+                translucentMaterial.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+                translucentMaterial.SetInt("_ZWrite", 0);
+                translucentMaterial.DisableKeyword("_ALPHATEST_ON");
+                translucentMaterial.EnableKeyword("_ALPHABLEND_ON");
+                translucentMaterial.DisableKeyword("_ALPHAPREMULTIPLY_ON");
+                translucentMaterial.renderQueue = 3000;
+            }
+
+            renderer.material = translucentMaterial;
+            Debug.LogWarning($"[CubeManager] playerCubeMaterial not assigned on {name} - using runtime fallback");
+        }
+    }
+
+    /// <summary>
+    /// Applies the wave cube material (opaque).
+    /// Call this when a player cube joins the wave.
+    /// </summary>
+    public void ApplyWaveCubeMaterial()
+    {
+        Renderer renderer = GetComponent<Renderer>();
+        if (renderer == null)
+        {
+            Debug.LogError($"[CubeManager] ApplyWaveCubeMaterial: No renderer found on {name}");
+            return;
+        }
+
+        string currentMat = renderer.material != null ? renderer.material.name : "null";
+        
+        if (material != null)
+        {
+            renderer.material = material;
+            Debug.Log($"[CubeManager] ApplyWaveCubeMaterial: {name} changed from '{currentMat}' to '{material.name}'");
+        }
+        else
+        {
+            Debug.LogWarning($"[CubeManager] waveCubeMaterial not assigned on {name} (current: '{currentMat}'). Assign 'Wave Cube Material' on the prefab.");
+        }
     }
 
     /// <summary>
@@ -483,7 +557,7 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
         }
 
         // Notify FacePaintingManager that cube is leaving
-        FacePaintingManager facePaintingManager = FindAnyObjectByType<FacePaintingManager>();
+        FacePaintingManager facePaintingManager = FindFirstObjectByType<FacePaintingManager>();
         if (facePaintingManager != null)
         {
             facePaintingManager.OnCubeLeft(position);
@@ -537,7 +611,7 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
                 {
                     // CUBE ESCAPE PROCESSING: Notify Wave system of cube escape
                     // Wave handles escape counting and failure conditions
-                    WaveManager waveManager = FindAnyObjectByType<WaveManager>();
+                    WaveManager waveManager = FindFirstObjectByType<WaveManager>();
                     if (waveManager != null)
                     {
                         waveManager.OnNonBlackCubeProcessed(effectiveType, false);
@@ -578,6 +652,7 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
             if (phaseableMovesRemaining <= 0)
             {
                 isPhaseable = false;
+                UpdatePhaseableVisual(); // Reset visual when phaseable expires
                 this.Log($"Phaseable state expired for {type} cube at ({position.x}, {position.y})", EnableDebugLogs);
             }
         }
@@ -587,7 +662,7 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
         this.Log($"Cube moved to ({position.x}, {position.y}), move count: {moveCount}", EnableDebugLogs);
 
         // Notify FacePaintingManager of movement
-        FacePaintingManager facePaintingManager = FindAnyObjectByType<FacePaintingManager>();
+        FacePaintingManager facePaintingManager = FindFirstObjectByType<FacePaintingManager>();
         if (facePaintingManager != null)
         {
             facePaintingManager.OnCubeMoved(this, oldPosition, position);
@@ -647,6 +722,7 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
             if (phaseableMovesRemaining <= 0)
             {
                 isPhaseable = false;
+                UpdatePhaseableVisual(); // Reset visual when phaseable expires
                 this.Log($"Phaseable state expired for {type} cube at ({position.x}, {position.y})", EnableDebugLogs);
             }
         }
@@ -656,7 +732,7 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
         this.Log($"Player cube moved to ({position.x}, {position.y}), move count: {moveCount}", EnableDebugLogs);
 
         // Notify FacePaintingManager of movement
-        FacePaintingManager facePaintingManager = FindAnyObjectByType<FacePaintingManager>();
+        FacePaintingManager facePaintingManager = FindFirstObjectByType<FacePaintingManager>();
         if (facePaintingManager != null)
         {
             facePaintingManager.OnCubeMoved(this, oldPosition, position);
@@ -685,7 +761,7 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
 
         this.Log($"Animating cube from {start} to {end} (grid pos {newPos})", EnableDebugLogs);
 
-        WaveManager waveManager = FindAnyObjectByType<WaveManager>();
+        WaveManager waveManager = FindFirstObjectByType<WaveManager>();
         float actualMoveDuration = moveDuration;
 
         if (waveManager != null)
@@ -853,14 +929,34 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
     
     /// <summary>
     /// Task 7: Updates visual feedback for phaseable state
-    /// Currently uses logs - can be enhanced with visual effects later
+    /// Swaps to transparent material when phaseable, back to original when expired
     /// </summary>
     private void UpdatePhaseableVisual()
     {
+        Renderer cubeRenderer = GetComponent<Renderer>();
+        if (cubeRenderer == null) return;
+        
         if (isPhaseable && phaseableMovesRemaining > 0)
         {
-            this.Log($"[Task 7] Phaseable visual: {type} cube at ({position.x}, {position.y}) is phaseable ({phaseableMovesRemaining} moves remaining)", EnableDebugLogs);
-            // TODO: Add visual effect (glow, transparency, etc.) when visual system is ready
+            // Store original material if not already stored
+            if (originalMaterial == null)
+            {
+                originalMaterial = cubeRenderer.material;
+            }
+            
+            // Apply phaseable material (assigned in Inspector on prefab)
+            if (phaseableMaterial != null)
+            {
+                cubeRenderer.material = phaseableMaterial;
+            }
+            
+            this.Log($"[Task 7] Phaseable visual: {type} cube at ({position.x}, {position.y}) is phaseable ({phaseableMovesRemaining} moves remaining) - TRANSPARENT", EnableDebugLogs);
+        }
+        else if (originalMaterial != null)
+        {
+            // Restore original material when no longer phaseable
+            cubeRenderer.material = originalMaterial;
+            this.Log($"[Task 7] Phaseable visual reset for {type} cube at ({position.x}, {position.y})", EnableDebugLogs);
         }
     }
 
@@ -870,12 +966,13 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
         return activeStatus == FaceStatus.MatrixFace || type == CubeType.Matrix;
     }
 
-    public void PaintFace(CubeFace face, FaceStatus status, Color color, int duration = -1)
+    public void PaintFace(CubeFace face, FaceStatus status, Color color, int duration = -1, int charges = 1)
     {
         int faceIndex = (int)face;
         faceStatuses[faceIndex] = status;
         faceColors[faceIndex] = color;
         faceDurations[faceIndex] = duration;
+        faceCharges[faceIndex] = charges;
         faceIndicators[faceIndex].SetActive(true);
         UpdateFaceVisuals();
         
@@ -885,7 +982,57 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
             PlayerStatisticsManager.Instance.OnFacePainted(position, face, status);
         }
         
-        this.Log($"Painted {face} of cube at ({position.x}, {position.y}) with {status} status, duration: {duration}", EnableDebugLogs);
+        this.Log($"Painted {face} of cube at ({position.x}, {position.y}) with {status} status, duration: {duration}, charges: {charges}", EnableDebugLogs);
+    }
+    
+    /// <summary>
+    /// Consumes one charge from the active (down) face when it triggers on grid touch.
+    /// Returns true if charge was consumed, false if no charges remain.
+    /// Unpaints the face when charges reach zero.
+    /// </summary>
+    public bool ConsumeActiveFaceCharge()
+    {
+        CubeFace downFace = GetCurrentDownFace();
+        int faceIndex = (int)downFace;
+        
+        if (faceStatuses[faceIndex] == FaceStatus.None)
+            return false;
+        
+        if (faceCharges[faceIndex] <= 0)
+            return false;
+        
+        faceCharges[faceIndex]--;
+        this.Log($"Face {downFace} charge consumed on cube at ({position.x}, {position.y}). Remaining: {faceCharges[faceIndex]}", EnableDebugLogs);
+        
+        // Unpaint the face when charges reach zero
+        if (faceCharges[faceIndex] <= 0)
+        {
+            FaceStatus oldStatus = faceStatuses[faceIndex];
+            faceStatuses[faceIndex] = FaceStatus.None;
+            faceColors[faceIndex] = Color.white;
+            faceIndicators[faceIndex].SetActive(false);
+            UpdateFaceVisuals();
+            this.Log($"Face {downFace} unpainted on cube at ({position.x}, {position.y}) - charges exhausted (was {oldStatus})", EnableDebugLogs);
+        }
+        
+        return true;
+    }
+    
+    /// <summary>
+    /// Gets remaining charges for the active (down) face.
+    /// </summary>
+    public int GetActiveFaceCharges()
+    {
+        CubeFace downFace = GetCurrentDownFace();
+        return faceCharges[(int)downFace];
+    }
+    
+    /// <summary>
+    /// Gets remaining charges for a specific face.
+    /// </summary>
+    public int GetFaceCharges(CubeFace face)
+    {
+        return faceCharges[(int)face];
     }
 
     public void PaintCurrentDownFace(FaceStatus status, Color color, int duration = -1)
@@ -926,6 +1073,7 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
             faceStatuses[i] = FaceStatus.None;
             faceColors[i] = Color.white;
             faceDurations[i] = 0;
+            faceCharges[i] = 0;
         }
 
         if (showFaceIndicators)
@@ -1231,6 +1379,7 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
             faceStatuses[i] = FaceStatus.None;
             faceColors[i] = Color.white;
             faceDurations[i] = 0;
+            faceCharges[i] = 0;
         }
         UpdateFaceVisuals();
         this.Log($"Cleared all face statuses on cube at ({position.x}, {position.y})", EnableDebugLogs);
@@ -1358,7 +1507,11 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
 
     #region IManagerDebugInterface Implementation
 
-    public bool EnableDebugLogs { get; set; } = true;
+    public bool EnableDebugLogs 
+    { 
+        get => enableDebugLogs; 
+        set => enableDebugLogs = value; 
+    }
 
     /// <summary>
     /// [POC] Spawns a simple visual effect when cube escapes

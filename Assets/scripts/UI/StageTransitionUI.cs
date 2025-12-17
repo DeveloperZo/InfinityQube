@@ -21,9 +21,9 @@ public class StageTransitionUI : MonoBehaviour
     [SerializeField] private float fadeInDuration = 0.5f;
     [SerializeField] private float displayDuration = 2f;
     [SerializeField] private float fadeOutDuration = 0.5f;
-    
+
     [Header("Debug")]
-    [SerializeField] private bool EnableDebugLogs = true;
+    [SerializeField] private bool EnableDebugLogs;
     #endregion
 
     #region Runtime State

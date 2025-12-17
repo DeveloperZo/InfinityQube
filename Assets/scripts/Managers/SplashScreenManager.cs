@@ -8,8 +8,10 @@ public class SplashScreenManager : MonoBehaviour
     [SerializeField] private string nextSceneName = "Sandbox";
 
     [Header("Playback Options")]
+    #pragma warning disable CS0414 // Reserved for future skip delay implementation
     [SerializeField] private bool canSkip = true;
     [SerializeField] private float skipDelay = 0.5f;
+    #pragma warning restore CS0414
     [SerializeField] private bool showDebugLogs = true;
 
     [Header("UI References")]
@@ -129,9 +131,14 @@ public class SplashScreenManager : MonoBehaviour
         if (showDebugLogs)
             Debug.Log($"SplashScreenManager: Loading scene '{nextSceneName}'");
 
-        // Don't unload the current scene first - just load the new scene
-        // This is more reliable for scene transitions
-        SceneManager.LoadSceneAsync(nextSceneName);
+        // Set flag to start tutorial when Sandbox scene loads
+        // This allows tutorial to start even if disableAutoStart is true
+        PlayerPrefs.SetInt("StartTutorial", 1);
+        PlayerPrefs.Save();
+
+        // Use Single mode to ensure current scene is fully unloaded before loading new scene
+        // This prevents object duplication when returning to splash and starting again
+        SceneManager.LoadScene(nextSceneName, LoadSceneMode.Single);
     }
 
     private void ShowSettingsPopup()

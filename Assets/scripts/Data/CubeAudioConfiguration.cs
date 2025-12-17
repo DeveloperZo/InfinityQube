@@ -171,23 +171,35 @@ public class CubeAudioConfiguration : ScriptableObject
             }
         }
         
-        // Check fallback audio
+        // Check fallback audio - note: fallbacks are optional but recommended
         if (!fallbackLandingSounds.HasClips() && 
             !fallbackCaptureSounds.HasClips() && 
             !fallbackDestructionSounds.HasClips() && 
             !fallbackSpecialEffectSounds.HasClips())
         {
-            issues.Add("No fallback audio clips assigned in any category");
-            isValid = false;
+            // Only log if debug is enabled - missing fallbacks is a soft warning, not an error
+            if (enableAudioDebugLogs)
+            {
+                issues.Add("No fallback audio clips assigned (optional - cube-specific audio will be used)");
+            }
+            // Don't mark as invalid - fallbacks are optional when cube-specific audio is configured
         }
         
         // Log results
         if (issues.Count > 0)
         {
             string issueList = string.Join("\n- ", issues);
-            Debug.LogWarning($"[CubeAudioConfiguration] Validation issues found:\n- {issueList}");
+            // Only use LogWarning for critical errors, use Log for optional items
+            if (!isValid)
+            {
+                Debug.LogWarning($"[CubeAudioConfiguration] Validation errors found:\n- {issueList}");
+            }
+            else if (enableAudioDebugLogs)
+            {
+                Debug.Log($"[CubeAudioConfiguration] Validation notes:\n- {issueList}");
+            }
         }
-        else
+        else if (enableAudioDebugLogs)
         {
             Debug.Log("[CubeAudioConfiguration] Configuration validation passed successfully");
         }
@@ -374,7 +386,7 @@ public class CubeAudioConfiguration : ScriptableObject
             }
         }
         
-        // Check fallback audio
+        // Check fallback audio - optional but recommended
         bool hasFallbacks = fallbackLandingSounds.HasClips() || 
                            fallbackCaptureSounds.HasClips() || 
                            fallbackDestructionSounds.HasClips() || 
@@ -382,15 +394,24 @@ public class CubeAudioConfiguration : ScriptableObject
         
         if (!hasFallbacks)
         {
-            errors.Add("No fallback audio clips assigned in any category");
-            isValid = false;
+            // Fallbacks are optional when cube-specific audio is configured
+            if (configuredTypes < cubeTypes.Length)
+            {
+                // Only a warning if some cube types don't have specific audio
+                warnings.Add("No fallback audio clips - some cube types may be silent");
+            }
+            else
+            {
+                // All cube types configured, fallbacks truly optional
+                suggestions.Add("Consider adding fallback audio clips for edge cases");
+            }
         }
         else
         {
             // Check individual fallback categories
             if (!fallbackLandingSounds.HasClips())
             {
-                warnings.Add("No fallback landing sounds - ensure cube-specific sounds cover all types");
+                suggestions.Add("Consider adding fallback landing sounds for better audio coverage");
             }
             if (!fallbackCaptureSounds.HasClips())
             {
