@@ -657,27 +657,34 @@ public class CubeCollisionManager : MonoBehaviour, IManagerDebugInterface
     #region Private Methods - Specific Collision Behaviors
 
     /// <summary>
-    /// Unit + Matrix: 2x2 area capture centered on collision point
+    /// Unit + Matrix: Creates 2x2 manual marker (player triggers with R)
+    /// Changed to manual trigger only to give player agency.
     /// </summary>
     private bool HandleUnitMatrixCollision(Vector2Int centerPosition)
     {
-        var areaPositions = markerSystem.GetAreaPositions(centerPosition, 2);
-        bool anyCaptured = false;
+        // Capture the Matrix cube at collision point first
+        var cubesAtPosition = markerSystem.FindAllCubesAt(centerPosition);
+        bool capturedMatrix = false;
 
-        foreach (var areaPos in areaPositions)
+        foreach (var cube in cubesAtPosition)
         {
-            var cubesAtArea = markerSystem.FindAllCubesAt(areaPos);
-            foreach (var cube in cubesAtArea)
+            if (cube == null || cube.isDestroyed || cube.isPlayerCube) continue;
+            if (cube.type == CubeType.Matrix)
             {
-                if (cube == null || cube.isDestroyed || cube.isPlayerCube) continue;
-                if (markerSystem.ProcessCubeCapture(cube, areaPos, PlayerMarkerSystem.MarkerType.Matrix, null, false))
+                if (markerSystem.ProcessCubeCapture(cube, centerPosition, PlayerMarkerSystem.MarkerType.Matrix, null, false))
                 {
-                    anyCaptured = true;
+                    capturedMatrix = true;
+                    break;
                 }
             }
         }
 
-        return anyCaptured;
+        // Create a 2x2 cube marker for manual triggering
+        int matrixAreaSize = AttunementManager.IsInitialized ? AttunementManager.Instance.GetMatrixAreaSize() : 2;
+        markerSystem.CreateCubeMarker(centerPosition, PlayerMarkerSystem.CubeMarkerType.Matrix, matrixAreaSize);
+        DebugLog("HandleUnitMatrixCollision", $"Unit+Matrix collision - created {matrixAreaSize}x{matrixAreaSize} manual cube marker at ({centerPosition.x}, {centerPosition.y})");
+
+        return capturedMatrix || true;
     }
 
     /// <summary>

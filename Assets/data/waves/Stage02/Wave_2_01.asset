@@ -11,7 +11,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 78c3fb7cc917307469018838241693f1, type: 3}
   m_Name: Wave_2_01
-  m_EditorClassIdentifier: 
+  m_EditorClassIdentifier: Assembly-CSharp::WaveData
   Index: 0
   waveName: 
   GridWidth: 5
@@ -31,14 +31,14 @@ MonoBehaviour:
     frontFaceStatus: 0
     frontFaceCharges: 0
     spawnDelay: 0
-  - type: 2
+  - type: 0
     position: {x: 2, y: 0}
     level: 1
     hasPaintedFaces: 0
     frontFaceStatus: 0
     frontFaceCharges: 0
     spawnDelay: 0
-  - type: 0
+  - type: 2
     position: {x: 3, y: 0}
     level: 1
     hasPaintedFaces: 0
@@ -66,7 +66,7 @@ MonoBehaviour:
     frontFaceStatus: 0
     frontFaceCharges: 0
     spawnDelay: 0
-  - type: 0
+  - type: 1
     position: {x: 2, y: 1}
     level: 1
     hasPaintedFaces: 0
@@ -80,7 +80,7 @@ MonoBehaviour:
     frontFaceStatus: 0
     frontFaceCharges: 0
     spawnDelay: 0
-  - type: 2
+  - type: 1
     position: {x: 4, y: 1}
     level: 1
     hasPaintedFaces: 0
@@ -101,14 +101,14 @@ MonoBehaviour:
     frontFaceStatus: 0
     frontFaceCharges: 0
     spawnDelay: 0
-  - type: 1
+  - type: 2
     position: {x: 2, y: 2}
     level: 1
     hasPaintedFaces: 0
     frontFaceStatus: 0
     frontFaceCharges: 0
     spawnDelay: 0
-  - type: 0
+  - type: 1
     position: {x: 3, y: 2}
     level: 1
     hasPaintedFaces: 0
@@ -150,7 +150,7 @@ MonoBehaviour:
     frontFaceStatus: 0
     frontFaceCharges: 0
     spawnDelay: 0
-  - type: 0
+  - type: 2
     position: {x: 4, y: 3}
     level: 1
     hasPaintedFaces: 0
@@ -183,4 +183,3 @@ MonoBehaviour:
     markersPlaced: 0
     markersTriggererd: 0
     completionTime: 0
-

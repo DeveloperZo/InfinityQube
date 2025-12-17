@@ -59,7 +59,7 @@ Dynamic difficulty mechanism that creates strategic tension:
 | Player Cube | Wave Cube | Behavior | Description |
 |-------------|-----------|----------|-------------|
 | Unit | Unit | Standard capture | Player Unit collides with Wave Unit and removes it from the grid |
-| Unit | Matrix | 2x2 area capture | Player Unit collides with Wave Matrix and triggers a 2x2 capture area centered on collision point |
+| Unit | Matrix | 2x2 manual marker | Player Unit collides with Wave Matrix, captures Matrix cube, and creates a 2x2 manual trigger marker (player triggers with R) |
 | Unit | Recursion | Recursion marker with 3 charges | Player Unit collides with Wave Recursion and creates a single marker; auto-captures 3 cubes or expires after 5 move forwards |
 | Unit | Infinity | Face paint, Unit destroyed | Player Unit collides with Wave Infinity, paints collision face, Unit destroyed; when face touches grid, Unit marker placed at that tile; auto-captures next cube that passes over |
 | Matrix | Unit | 2x2 area capture | Player Matrix collides with Wave Unit and triggers a 2x2 capture area expanding from Matrix's position |

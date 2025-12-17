@@ -14,15 +14,31 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   stageNumber: 2
   stageName: Strategic Choice
-  description: Resources are limited. Learn to prioritize which cubes to capture and which to let pass.
+  stageType: 1
+  description: Resources are limited. Learn to prioritize which cubes to capture
+    and which to let pass.
   objective: Not every cube needs a marker. Choose wisely and avoid Infinity cubes
-  gridWidth: 3
-  gridHeight: 15
+  gridWidth: 5
+  gridHeight: 20
   playerStartPosition: {x: 0, y: 1}
+  respawnDelayMoves: 1
   enableLineDivider: 0
   lineDividerStartY: 10
   lineDividerEscapePenalty: 0
   lineDividerCaptureReward: 0
+  stageGrants:
+    unitMaxOnGrid: 5
+    unitMarkerRechargeRate: 0
+    maxUnitMarkerCharges: 0
+    matrixCharges: 2
+    matrixMaxOnGrid: 2
+    recursionCharges: 2
+    recursionMaxOnGrid: 2
+    infinityCharges: 1
+    infinityMaxOnGrid: 1
+  waveGrantsFromWaveData: 0
+  lockAttunements: 1
+  allowedAttunementIds: []
   waveConfigurations:
   - {fileID: 11400000, guid: 17d72c1cb53a2e64db0dd043a4e376bb, type: 2}
   - {fileID: 11400000, guid: 2e465d29e5e1def48b4c17c56dbc282d, type: 2}
