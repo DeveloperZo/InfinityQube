@@ -214,9 +214,10 @@ Stages can configure grid dimensions to create different tactical challenges:
 
 #### Row Count Progression (Wave Spawn Area)
 - **Stage 0**: Starts at 2 rows, progresses to 3 rows across waves
-- **Stage 1**: 2-3 rows (maintains learning curve)
-- **Stages 2-3**: 3 rows (increased density)
-- **Stages 4-6**: 3-5 rows (medium complexity)
+- **Stage 1**: 3-4 rows (Waves 1-2: 3 rows, Waves 3-4: 4 rows)
+- **Stage 2**: 4-5 rows (Waves 1-2: 4 rows, Wave 3: 5 rows - progression curve maintained by increasing challenge as tools are gained)
+- **Stages 3-4**: 4-5 rows (increased density)
+- **Stages 5-6**: 5-6 rows (medium complexity)
 - **Stages 7-9**: 5-7 rows (high density)
 - **Stages 10-12**: 7+ rows (maximum density, mastery tests)
 
@@ -269,9 +270,9 @@ Tutorial stages follow a specific structure to maximize learning effectiveness:
 
 This is the only dedicated tutorial stage (Stage 0). Stages 1-12 are the core game stages that progressively introduce new mechanics while building on tutorial fundamentals.
 
-### Symmetrical Wave System Tutorial Progression
+### Marker to Cube System Tutorial Progression
 
-After basic mechanics are established, the game introduces its core innovation: the Symmetrical Wave System. This system teaches players to think about collisions, timing, and spatial relationships.
+After basic mechanics are established, the game introduces its core innovation: the Marker to Cube System. This system teaches players to think about collisions, timing, and spatial relationships.
 
 #### Phase 1: Collision Fundamentals (Stages 0-2)
 - **Static Marker Collisions**: Players learn that markers can intercept cubes at any point in their descent
@@ -283,14 +284,14 @@ After basic mechanics are established, the game introduces its core innovation: 
 - **Collision Prediction**: Learning to anticipate where collisions will occur
 - **Mid-Flight Conversions**: Converting Infinity cubes by colliding Unit cubes into them
 
-#### Phase 3: Symmetrical Patterns (Stages 7-9)
-- **Mirror Mechanics**: Waves spawn in symmetrical patterns requiring matching responses
+#### Phase 3: Advanced Collision Patterns (Stages 7-9)
+- **Complex Formations**: Waves spawn in complex patterns requiring strategic marker placement
 - **Collision Chains**: Setting up cascading collision sequences
 - **Spatial-Temporal Mastery**: Balancing immediate needs with future collision setup
 
 #### Phase 4: Advanced Orchestration (Stage 10-12)
 - **Dynamic Collision Zones**: Collision points that move during waves
-- **Infinity Patterns**: Waves forming infinity symbol shapes
+- **Pattern Recognition**: Identifying optimal marker placement for wave formations
 - **Complete System Mastery**: All collision mechanics combined
 
 ## 4.6 Progression Structure
@@ -300,75 +301,82 @@ After basic mechanics are established, the game introduces its core innovation: 
 **Focus**: Establishing core loop, Infinity cube avoidance, and Matrix cube discovery
 
 ### Tutorial Stage (Stage 0)
-- **Grid**: 5x20 (width 5)
-- **Wave Rows**: 2-3 rows
+- **Grid**: 5x20 (width 5, height 20)
+- **Wave Rows**: 2-3 rows (spawn area height)
 - **Tools**: Movement + Unit Markers (infinite with move-based regeneration)
 - **Cubes**: Unit + Infinity
 - **Learning Goal**: Core fundamentals before the real game begins
-
+- **Line Divider**: Disabled for tutorial
+- **Max Escapes**: 5 (forgiving for learning)
 
 The tutorial stage teaches basic movement, marker placement, and capture mechanics in a safe environment. Guided highlight sequences provide step-by-step instruction, highlighting specific tiles and cubes to guide player actions. This is Stage 0 and is separate from the main campaign progression.
 
-**Wave Progression** (based on existing wave data):
-- Wave 0_01: 2 rows, mix of Unit and one Infinity cubes
-- Wave 0_02: 2 rows, 2 infinity cube density
-- Wave 0_03: 3 rows, 3 infinity cubes that block 5 unit cubes total
+**Wave Progression** (from actual wave assets):
+- **Wave 0_01**: 2 rows (10 cubes: 9 Unit, 1 Infinity) - Basic movement and capture tutorial
+- **Wave 0_02**: 2 rows (10 cubes: 8 Unit, 2 Infinity) - Infinity cube danger introduction
+- **Wave 0_03**: 3 rows (15 cubes: 12 Unit, 3 Infinity) - Mixed challenge with Infinity blocking scenarios
 
 
 **Focus**: Establishing core loop and primary danger
 
 #### Stage 1: First Contact
-- **Grid**: 5x25 (width 5, standard starting size)
-- **Wave Spawn Area**: Minimum 5 width x 3 height (rows)
+- **Grid**: 5x15 (width 5, height 15)
+- **Wave Rows**: 3-4 rows (spawn area height)
 - **Tools**: Movement + Unit Markers (infinite with move-based regeneration)
 - **Cubes**: Unit + Infinity (Matrix introduced in Wave 1_04)
 - **Learning Goal**: Infinity cubes are dangerous and uncapturable; learn to avoid them. Matrix cubes introduced as capturable alternative.
+- **Line Divider**: Disabled
+- **Max Escapes**: 6
+- **Stage Grants**: Unit (5 max on grid), Matrix (2 charges, 2 max), Recursion (2 charges, 2 max), Infinity (1 charge, 1 max) - Note: Only Unit markers available to players at this stage
 
-**Wave Progression**:
-- Wave 1_01: 3 rows (15 cubes: 5×3), gentle progression from Wave_0_03 - similar 3 Infinity cube setup but with more Unit cubes accessible, reinforcing Infinity avoidance while maintaining manageable challenge
-- Wave 1_02: 3 rows (15 cubes: 5×3), increased challenge - more Infinity cubes (4-5), tighter spacing, requires careful positioning and strategic marker placement
-- Wave 1_03: 4 rows (20 cubes: 5×4), the blocking problem - Infinity cubes strategically positioned to block multiple Unit cubes, creating frustration and demonstrating the limitation of Unit-only strategies
-- Wave 1_04: 4 rows (20 cubes: 5×4), Matrix solution - Matrix cubes introduced to clear blocked paths, demonstrating their utility for accessing trapped Unit cubes 
+**Wave Progression** (from actual wave assets):
+- **Wave 1_01**: 3 rows (15 cubes: 12 Unit, 3 Infinity) - Gentle progression from tutorial, reinforcing Infinity avoidance
+- **Wave 1_02**: 3 rows (15 cubes: 12 Unit, 3 Infinity) - Increased challenge with strategic Infinity positioning
+- **Wave 1_03**: 4 rows (20 cubes: 14 Unit, 6 Infinity) - The blocking problem - Infinity cubes block multiple Unit cubes, demonstrating limitation of Unit-only strategies
+- **Wave 1_04**: 4 rows (20 cubes: 10 Unit, 2 Matrix, 8 Infinity) - Matrix solution - Matrix cubes introduced to demonstrate their utility for accessing trapped Unit cubes around Infinity barriers 
 
 #### Stage 2: Strategic Choice
-- **Grid**: 5x20 (width 5, maintaining focused learning)
-- **Wave Rows**: 3 rows (increased density)
-- **Tools**: Movement + Unit Markers
+- **Grid**: 5x20 (width 5, height 20)
+- **Wave Rows**: 4-5 rows (spawn area height)
+- **Tools**: Movement + Unit Markers (infinite with move-based regeneration)
 - **Cubes**: Unit + Matrix + Infinity
-- **Learning Goal**: Matrix cube strategy - prioritize Matrix cubes over Unit cubes; understand value hierarchy (Infinity = avoid, Matrix = pursue, Unit = capture when convenient)
+- **Learning Goal**: Matrix cube strategy - leverage Matrix cubes area capture to capture cubes around Infinity cubes. Players learn to prioritize Matrix cubes for their area capture potential.
+- **Line Divider**: Disabled
+- **Max Escapes**: 0 (strict - no escapes allowed)
+- **Stage Grants**: Unit (5 max on grid), Matrix (2 charges, 2 max), Recursion (2 charges, 2 max), Infinity (1 charge, 1 max) - Note: Only Unit markers available to players at this stage
 
-**Wave Progression**:
-- Wave 2_01: 3 rows, balanced mix with Matrix cubes - learn Matrix cube value
-- Wave 2_02: 3 rows, increased Matrix cube density - practice Matrix prioritization
-- Wave 2_03: 3 rows, strategic Matrix placement - test understanding of value hierarchy
+**Wave Progression** (from actual wave assets):
+- **Wave 2_01**: 4 rows (20 cubes: 14 Unit, 4 Matrix, 2 Infinity) - Matrix cubes demonstrate ability to capture around Infinity cubes, teaching that Matrix cubes solve the blocking problem from Stage 1
+- **Wave 2_02**: 4 rows (20 cubes: 14 Unit, 4 Matrix, 2 Infinity) - Matrix cube strategic positioning - Matrix cubes placed to demonstrate efficient area capture around Infinity cubes
+- **Wave 2_03**: 5 rows (25 cubes: 14 Unit, 5 Matrix, 6 Infinity) - Strategic Matrix placement mastery - increased row count maintains progression curve, testing understanding of value hierarchy and efficient area capture strategies
 
 ### Act 2: Matrix Marker Introduction (Stages 3-6)
 **Focus**: Learning Matrix marker mechanics (Matrix cubes already introduced in Stage 1)
 
 #### Stage 3: Matrix Discovery
-- **Grid**: 5x20 (width 5, transitioning to 6)
-- **Wave Rows**: 3-4 rows
+- **Grid**: 7x28
+- **Wave Rows**: 4-5 rows
 - **Tools**: Unit Markers + **Matrix Markers** (introduced)
 - **Cubes**: Unit + Matrix + Infinity
 - **Learning Goal**: Matrix markers enable area capture - learn to use Matrix markers for efficient multi-cube captures
 
 #### Stage 4: Matrix Strategy
-- **Grid**: 6x22 (width 6, expanded)
-- **Wave Rows**: 4 rows
+- **Grid**: 7x28 
+- **Wave Rows**: 5-6 rows
 - **Tools**: Unit + Matrix Markers
 - **Cubes**: Unit + Matrix + Infinity
 - **Learning Goal**: Efficient Matrix marker usage, resource management
 
 #### Stage 5: Matrix Mastery
-- **Grid**: 6-7x25 (width expanding)
-- **Wave Rows**: 4-5 rows
+- **Grid**: 7x35
+- **Wave Rows**: 5-6 rows
 - **Tools**: Unit + Matrix Markers
 - **Cubes**: Unit + Matrix + Infinity
 - **Learning Goal**: Optimal Matrix positioning and timing
 
 #### Stage 6: Matrix Integration
-- **Grid**: 7x25 (width 7, medium grid)
-- **Wave Rows**: 5 rows
+- **Grid**: 7x35
+- **Wave Rows**: 6-7 rows
 - **Tools**: Unit + Matrix Markers
 - **Cubes**: Unit + Matrix + Infinity
 - **Learning Goal**: Combine Matrix with Unit markers for complex solutions
@@ -377,22 +385,22 @@ The tutorial stage teaches basic movement, marker placement, and capture mechani
 **Focus**: Learning Recursion cube and Recursion marker mechanics
 
 #### Stage 7: Recursion Discovery
-- **Grid**: 7-8x28 (width expanding)
-- **Wave Rows**: 5 rows
+- **Grid**: 9x45 (width expanding)
+- **Wave Rows**: 6-7 rows
 - **Tools**: Unit + Matrix + **Recursion Markers** (introduced)
 - **Cubes**: Unit + Matrix + **Recursion** + Infinity
 - **Learning Goal**: Recursion cubes require multiple hits; Recursion markers are essential
 
 #### Stage 8: Recursion Strategy
-- **Grid**: 8x30 (width 8)
-- **Wave Rows**: 5-6 rows
+- **Grid**: 9x45 (width 8)
+- **Wave Rows**: 6-7 rows
 - **Tools**: Unit + Matrix + Recursion Markers
 - **Cubes**: Unit + Matrix + Recursion + Infinity
 - **Learning Goal**: Multi-hit mechanics, durability management
 
 #### Stage 9: Recursion Mastery
-- **Grid**: 9x32 (width 9, large grid)
-- **Wave Rows**: 6-7 rows
+- **Grid**: 9x45 (width 9, large grid)
+- **Wave Rows**: 7-8 rows
 - **Tools**: Unit + Matrix + Recursion Markers
 - **Cubes**: Unit + Matrix + Recursion + Infinity
 - **Learning Goal**: Combining Recursion with Matrix for complex solutions
@@ -401,7 +409,7 @@ The tutorial stage teaches basic movement, marker placement, and capture mechani
 **Focus**: Player Infinity and resonance mechanics
 
 #### Stage 10: Infinity Unlocked
-- **Grid**: 9-11x35 (width expanding to end game range)
+- **Grid**: 9x45 (width expanding to end game range)
 - **Wave Rows**: 7 rows
 - **Tools**: Unit + Matrix + Recursion + **Infinity Markers** (introduced)
 - **Cubes**: All types
@@ -411,14 +419,14 @@ The tutorial stage teaches basic movement, marker placement, and capture mechani
 **Focus**: Full strategic depth and optimal play
 
 #### Stage 11: Advanced Mastery
-- **Grid**: 11x38 (width 11, end game)
+- **Grid**: 11x55 (width 11, end game)
 - **Wave Rows**: 7+ rows
 - **Tools**: All marker types (balanced limits)
 - **Cubes**: All types
 - **Learning Goal**: Complex interactions, optimal resource usage, strategic depth
 
 #### Stage 12: Ultimate Test
-- **Grid**: 11-13x40+ (width 11-13, maximum end game)
+- **Grid**: 11x66 (width 11-13, maximum end game)
 - **Wave Rows**: 7+ rows
 - **Tools**: All marker types (precise allocations per wave)
 - **Cubes**: All types
@@ -559,7 +567,7 @@ Waves trigger events that affect stage progression:
 ## 4.10 Current Development Priorities
 
 ### ✅ Completed Foundation Systems (June 2025)
-- **Four-Tier Marker System**: Light/Heavy/Matrix/Cube markers fully implemented and integrated
+- **Four-Tier Marker System**: Unit/Matrix/Recursion/Infinity markers fully implemented and integrated
 - **Face Painting Integration**: Connected to stage progression with rotation tracking
 - **Tile State System**: Corrupted/Enhanced tile mechanics operational
 - **Cube Type Diversity**: Unit/Matrix/Infinity/Recursion cube system with multi-hit mechanics
@@ -571,7 +579,7 @@ Waves trigger events that affect stage progression:
    - Harmonic capture feedback
    - Ambient cosmic soundscape
    - Rhythmic wave progression audio
-   - Collision resonance for symmetrical waves
+   - Collision resonance for marker to cube interactions
 
 2. **UI Modernization & Polish**
    - OnGUI → Unity UI conversion for stage interface
@@ -581,7 +589,7 @@ Waves trigger events that affect stage progression:
 
 3. **Stage Design Enhancement**
    - Leverage completed four-tier system for advanced stage concepts
-   - Implement Symmetrical Wave System progression (Acts 4-5)
+   - Implement marker to cube system progression (Acts 4-5)
    - Create stages showcasing marker-to-cube transformation
    - Design collision-based puzzles and timing challenges
    - Integrate infinity symbol theme into level geometry
@@ -591,7 +599,7 @@ Waves trigger events that affect stage progression:
 - **Recursion Cube Scenarios**: Strategic multi-hit encounters requiring Recursion Markers
 - **Matrix Marker Techniques**: Stages emphasizing precision timing and positioning
 - **Cube Marker Tactics**: Advanced detonation strategy implementation
-- **Symmetrical Wave Training**: Stages introducing moving cube markers and collision mechanics
+- **Marker to Cube Training**: Stages introducing marker transformation and collision mechanics
 - **Infinity Bypass Puzzles**: Scenarios requiring Unit cube conversion tactics
 - **Pattern Mirroring Challenges**: Complex waves requiring perfect symmetrical responses
 - **Cosmic Lo-fi Experience**: Stage pacing synchronized with meditative audio feedback

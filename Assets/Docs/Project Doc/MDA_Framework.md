@@ -13,13 +13,14 @@
 
 ## 🔧 Mechanics (What Players Can Do)
 
-### Core Symmetrical Wave System
+### Core Marker to Cube System
 ```
-Marker-to-Cube Transformation (The Infinity Symbol ∞):
-- Unit Markers (F) → Light Cubes: Single-tile backward-moving interceptors
-- Recursion Markers (V) → Heavy Cubes: Multi-hit capable, Recursion destroyers
-- Matrix Markers (G) → Matrix Cubes: 3x3 area effect on collision
-- Cube Markers (Q): Direct detonation, no transformation needed
+Marker-to-Cube Transformation:
+- Unit Markers (Mode 1, F) → Unit Cubes: Single-tile backward-moving interceptors
+- Matrix Markers (Mode 2, F) → Matrix Cubes: Area-effect backward-moving interceptors
+- Recursion Markers (Mode 3, F) → Recursion Cubes: Multi-hit capable, Recursion destroyers
+- Infinity Markers (Mode 4, F) → Infinity Cubes: Pause-inducing backward-moving interceptors
+- Cube Markers (R): Generated resources, direct detonation when triggered
 
 Bidirectional Movement (Opposing Forces):
 - Wave cubes: Forward advancement toward escape line
@@ -60,7 +61,7 @@ Information Systems:
 
 ### The Dance Between Order and Chaos
 
-#### **Symmetrical Mastery Patterns**
+#### **Marker to Cube Mastery Patterns**
 - **Pattern Mirroring**: Creating reverse patterns to intercept waves
 - **Trajectory Calculation**: Predicting collision points in space-time
 - **Type Management**: Matching marker types to cube types (Unit, Matrix, Infinity, Recursion)
@@ -109,16 +110,16 @@ The synthesis of mathematical symmetry and cosmic atmosphere - where the infinit
 
 ### Primary Aesthetic Experiences
 
-#### ♾️ Symmetrical Mastery (Core Innovation)
+#### ♾️ Marker to Cube Mastery (Core Innovation)
 **"The satisfaction of perfect collision calculation"**
-- Understanding the infinity symbol through gameplay
-- Creating mirror patterns that intercept advancing threats
+- Understanding marker transformation through gameplay
+- Creating strategic patterns that intercept advancing threats
 - Optimization through trajectory prediction
 
 **Player Experience Arc:**
 1. Understanding transformation (markers become cubes)
 2. Calculating trajectories (predicting collision points)
-3. Pattern matching (mirroring wave formations)
+3. Pattern recognition (positioning markers for wave formations)
 4. Perfect interception (mastery of space-time)
 
 #### 🌌 Cosmic Atmosphere (Environmental Aesthetic)
@@ -136,7 +137,7 @@ The synthesis of mathematical symmetry and cosmic atmosphere - where the infinit
 
 #### 🎭 The Synthesis: Mathematical Poetry
 **"Where calculation meets cosmic beauty"**
-- Using the Symmetrical Wave System to create infinity patterns
+- Using the marker to cube system to create strategic collision patterns
 - Finding optimal collision points through spatial reasoning
 - The satisfaction of perfect resource management
 - Moments where strategy creates visual symmetry
@@ -219,22 +220,22 @@ Infinity Cube successfully merges two seemingly opposed aesthetics:
 ```
 Analyze Wave → Place Markers → Transform to Cubes → 
 Calculate Collisions → Capture Targets → Manage Resources →
-Optimize Efficiency → Master Symmetry → Seek Perfect Solutions
+Optimize Efficiency → Master Transformation → Seek Perfect Solutions
 ```
 
 ### Thematic Statement
-*"In Infinity Cube, the infinity symbol (∞) becomes gameplay - two opposing forces meeting at calculated points. Forward-moving threats meet backward-moving defenses in a dance of mathematical precision within a cosmic setting. Master the symmetry, calculate the collisions, achieve perfect interception."*
+*"In Infinity Cube, markers transform into backward-moving cubes that intercept forward-moving threats. The marker to cube system creates calculated collision points through mathematical precision within a cosmic setting. Master the transformation, calculate the collisions, achieve perfect interception."*
 
 ### Design Implications
 
 #### What's Working
-- Symmetrical Wave System creates unique gameplay identity
+- Marker to cube system creates unique gameplay identity
 - Four-tier marker system provides strategic depth
 - Face status effects add tactical complexity
 - Clear visual communication of mechanics
 
 #### What's Complete ✅
-- Four-tier marker system (Light/Heavy/Matrix/Cube)
+- Four-tier marker system (Unit/Matrix/Recursion/Infinity)
 - Face Status System with Corrupted/Enhanced states
 - Wave management with completion feedback
 - Comprehensive statistics tracking
@@ -271,5 +272,5 @@ Optimize Efficiency → Master Symmetry → Seek Perfect Solutions
 **Document Version:** 2.1 - Final Review and Polish Complete  
 **Core Aesthetic:** Cosmic Lo-fi Puzzle Strategy  
 **Design Philosophy:** Mathematical Symmetry in Cosmic Space  
-**Core Innovation:** Symmetrical Wave System - The Infinity Symbol as Gameplay  
+**Core Innovation:** Marker to Cube System - Markers Transform into Backward-Moving Cubes  
 **Document Status:** Aligned with consolidated Game Design Document v4.1

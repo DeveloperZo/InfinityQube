@@ -547,14 +547,18 @@ public class Tile : MonoBehaviour
     /// <summary>
     /// Task 8: Updates telegraph visualization for painted faces
     /// Shows telegraph on the DESTINATION tile where the painted face will actually touch
-    /// Checks up to 3 moves ahead (for Front face painted cubes)
+    /// Uses configurable move count from current wave (or default from FacePaintingManager)
+    /// Shows telegraphs for all moves within the configured window
     /// </summary>
     private void UpdatePaintedFaceTelegraph(CubeManager cube)
     {
         if (cube == null || cachedGridManager == null) return;
         
-        // Check if any painted face will touch grid within 3 moves
-        for (int movesAhead = 1; movesAhead <= 3; movesAhead++)
+        // Get configurable move count from current wave, or use default
+        int telegraphMoves = GetTelegraphMoveCount();
+        
+        // Check all moves within the configured window and show telegraphs for each
+        for (int movesAhead = 1; movesAhead <= telegraphMoves; movesAhead++)
         {
             if (cube.WillPaintedFaceTouchGrid(movesAhead))
             {
@@ -570,14 +574,40 @@ public class Tile : MonoBehaviour
                 if (destTile != null)
                 {
                     destTile.ShowTelegraphEffect(predictedStatus, movesAhead);
-                    Debug.Log($"[Task 8] Telegraph: Painted face ({predictedStatus}) will touch grid at ({destPosition.x},{destPosition.y}) in {movesAhead} move(s)");
+                    Debug.Log($"[Face Painting Telegraph] Painted face ({predictedStatus}) will touch grid at ({destPosition.x},{destPosition.y}) in {movesAhead} move(s)");
                 }
-                break; // Only show telegraph for the soonest painted face
             }
         }
         
         // Always hide telegraph on current tile (in case it was showing from a previous cube)
         HideTelegraphEffect();
+    }
+    
+    /// <summary>
+    /// Gets the configurable move count for face painting telegraphs.
+    /// Checks current wave configuration first, then falls back to FacePaintingManager default.
+    /// </summary>
+    private int GetTelegraphMoveCount()
+    {
+        // Try to get from current wave configuration
+        if (cachedWaveManager != null && cachedWaveManager.CurrentWave != null)
+        {
+            int waveTelegraphMoves = cachedWaveManager.CurrentWave.facePaintingTelegraphMoves;
+            if (waveTelegraphMoves > 0)
+            {
+                return waveTelegraphMoves;
+            }
+        }
+        
+        // Fall back to FacePaintingManager default
+        FacePaintingManager facePaintingManager = FindFirstObjectByType<FacePaintingManager>();
+        if (facePaintingManager != null)
+        {
+            return facePaintingManager.DefaultTelegraphMoves;
+        }
+        
+        // Final fallback
+        return 3;
     }
     
     /// <summary>

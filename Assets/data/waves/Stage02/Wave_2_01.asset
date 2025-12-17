@@ -17,7 +17,7 @@ MonoBehaviour:
   GridWidth: 5
   GridHeight: 4
   CubesData:
-  - type: 0
+  - type: 1
     position: {x: 0, y: 0}
     level: 1
     hasPaintedFaces: 0
@@ -59,7 +59,7 @@ MonoBehaviour:
     frontFaceStatus: 0
     frontFaceCharges: 0
     spawnDelay: 0
-  - type: 1
+  - type: 0
     position: {x: 1, y: 1}
     level: 1
     hasPaintedFaces: 0
@@ -73,7 +73,7 @@ MonoBehaviour:
     frontFaceStatus: 0
     frontFaceCharges: 0
     spawnDelay: 0
-  - type: 0
+  - type: 2
     position: {x: 3, y: 1}
     level: 1
     hasPaintedFaces: 0
@@ -108,7 +108,7 @@ MonoBehaviour:
     frontFaceStatus: 0
     frontFaceCharges: 0
     spawnDelay: 0
-  - type: 1
+  - type: 0
     position: {x: 3, y: 2}
     level: 1
     hasPaintedFaces: 0
@@ -136,7 +136,7 @@ MonoBehaviour:
     frontFaceStatus: 0
     frontFaceCharges: 0
     spawnDelay: 0
-  - type: 0
+  - type: 1
     position: {x: 2, y: 3}
     level: 1
     hasPaintedFaces: 0

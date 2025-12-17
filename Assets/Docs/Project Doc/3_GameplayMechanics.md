@@ -54,14 +54,26 @@ Dynamic difficulty mechanism that creates strategic tension:
 
 ### Cube Collision Matrix
 
-**Refined Collision Table**
+**Current Stage Design Focus**
+
+Current stages use only Unit markers (player) against Unit, Matrix, and Infinity cubes (wave). The collision matrix below documents these three collision types:
 
 | Player Cube | Wave Cube | Behavior | Description |
 |-------------|-----------|----------|-------------|
 | Unit | Unit | Standard capture | Player Unit collides with Wave Unit and removes it from the grid |
 | Unit | Matrix | 2x2 manual marker | Player Unit collides with Wave Matrix, captures Matrix cube, and creates a 2x2 manual trigger marker (player triggers with R) |
-| Unit | Recursion | Recursion marker with 3 charges | Player Unit collides with Wave Recursion and creates a single marker; auto-captures 3 cubes or expires after 5 move forwards |
-| Unit | Infinity | Face paint, Unit destroyed | Player Unit collides with Wave Infinity, paints collision face, Unit destroyed; when face touches grid, Unit marker placed at that tile; auto-captures next cube that passes over |
+| Unit | Infinity | Unit destroyed, marker placement | Player Unit collides with Wave Infinity, Unit destroyed (no face painting); when face touches grid, Unit marker placed at that tile; auto-captures next cube that passes over |
+
+**Future Collision Types** (To be documented when implementation reaches these combinations)
+
+The following collision combinations will be documented as Matrix, Recursion, and Infinity markers are introduced in later stages:
+- Matrix marker collisions (Matrix vs Unit, Matrix, Recursion, Infinity)
+- Recursion marker collisions (Recursion vs Unit, Matrix, Recursion, Infinity)
+- Infinity marker collisions (Infinity vs Unit, Matrix, Recursion, Infinity)
+
+Tentative Behavior 
+| Player Cube | Wave Cube | Behavior | Description |
+|-------------|-----------|----------|-------------|
 | Matrix | Unit | 2x2 area capture | Player Matrix collides with Wave Unit and triggers a 2x2 capture area expanding from Matrix's position |
 | Matrix | Matrix | Triggerable 3x3 marker | Player Matrix collides with Wave Matrix and creates a 3x3 manual marker centered on collision point; single trigger |
 | Matrix | Recursion | Degrading 2x2 marker | Player Matrix collides with Wave Recursion and creates a 2x2 area marker; each tile has 1 charge; collision point and diagonal opposite degrade last; player manually triggers; area shrinks over triggers |
@@ -74,6 +86,8 @@ Dynamic difficulty mechanism that creates strategic tension:
 | Infinity | Matrix | Face paint Player (1 charge), continue up | Player Infinity collides with Wave Matrix, paints Player Infinity's face with Matrix status (1 charge), captures Matrix, continues up; when face touches grid, 2x2 manual marker placed |
 | Infinity | Recursion | Face paint Player, continue up | Player Infinity collides with Wave Recursion, paints Player Infinity's face with Recursion status, captures Recursion, continues up; when face touches grid, auto-capture marker placed |
 | Infinity | Infinity | Face paint Wave, Player destroyed | Player Infinity collides with Wave Infinity, paints Wave Infinity's face with Infinity status, Player Infinity destroyed (cost); when face touches grid, ALL Infinity cubes become phaseable |
+
+---
 
 ---
 
@@ -91,11 +105,14 @@ Dynamic difficulty mechanism that creates strategic tension:
 Advanced cube state modification system that dynamically alters Infinity cube behavior through delayed marker placement:
 
 #### Core Mechanism
-- **Collision Trigger**: When any player cube collides with a Wave Infinity cube, the collision face gets painted
+- **Collision Trigger**: When Matrix, Recursion, or Infinity player cubes collide with a Wave Infinity cube, the collision face gets painted
+- **Unit Cube Exception**: Unit cubes do NOT paint Infinity cubes - they are destroyed on collision without painting
 - **Cube Continuation**: The painted Infinity cube continues moving with the wave after collision
 - **Predictable Rotation**: Cubes rotate on a fixed, predictable schedule as the wave advances
 - **Marker Placement**: When the painted face rotates down and touches the grid, a marker of the painted type appears at that tile
-- **Timing Mastery**: Players must learn the rotation rhythm to predict where markers will appear
+- **Configurable Telegraph Window**: Each wave can configure how many moves ahead to show telegraph indicators (default: 3 moves)
+- **Telegraph System**: Visual indicators show on destination tiles for all painted faces that will touch the grid within the configured window
+- **Timing Mastery**: Players learn the rotation rhythm and use telegraphs to predict where markers will appear
 
 #### Face Status Types
 - **None**: Standard behavior, no modification
@@ -188,7 +205,7 @@ Comprehensive marker and detonation management using unified input system:
 ### Player Statistics
 Comprehensive tracking system:
 - **Cube Captures**: By type (Unit, Matrix, Infinity attempts, Recursion)
-- **Marker Usage**: Five-tier marker placement/triggers
+- **Marker Usage**: Four-tier marker placement/triggers (Unit, Matrix, Recursion, Infinity)
 - **Wave Performance**: Success rate and efficiency metrics
 - **Movement Tracking**: Distance and time
 - **Death/Respawn**: Player mortality events
@@ -349,7 +366,7 @@ Core mechanics inherited from the inspiration:
 ### Evolution Beyond IQ
 Mechanical innovations that extend the formula:
 - **Player Cubes as Projectiles**: Player cubes as projectiles, not static markers
-- **Full Collision Matrix**: Complete collision matrix with meaningful combinations
+- **Collision Matrix**: Current focus on Unit marker collisions (Unit-Unit, Unit-Matrix, Unit-Infinity); other combinations documented as future additions
 - **Face Painting**: Face painting as delayed marker placement system
 - **Resonance**: Resonance as long-term strategic goal
 - **Trigger Split**: Trigger type split: Matrix = manual, Recursion = auto

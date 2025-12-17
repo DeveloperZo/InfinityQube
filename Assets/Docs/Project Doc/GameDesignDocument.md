@@ -12,7 +12,7 @@
 A grid-based tactical puzzle game where players strategically place markers to intercept advancing cube formations. Players spawn player cubes that move backward through the grid to capture wave cubes advancing toward them. Combined with Infinity cube pause mechanics, collision systems, and face painting mechanics, players must balance immediate tactical decisions with strategic planning.
 
 ### Key Features
-- **Five-Tier Marker System**: Unit, Recursion, Matrix, Cube, and Infinity markers with distinct applications
+- **Four-Tier Marker System**: Unit, Matrix, Recursion, and Infinity markers with distinct applications
 - **Advanced Cube Mechanics**: Four cube types with Infinity pause states and collision behaviors
 - **Dynamic Flow Control**: Infinity cube pause mechanics creating strategic bottlenecks
 - **Face Painting System**: Cube collisions paint faces that trigger effects when touching grid
@@ -54,7 +54,7 @@ A grid-based tactical puzzle game where players strategically place markers to i
 - Corruption and enhancement mechanics
 
 #### **Player System (PlayerActionManager)**
-- Five-tier marker system
+- Four-tier marker system (Unit, Matrix, Recursion, Infinity)
 - Resource management
 - Visual feedback for marker states
 - Statistics tracking

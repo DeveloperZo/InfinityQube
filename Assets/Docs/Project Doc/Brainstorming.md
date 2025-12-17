@@ -61,7 +61,7 @@
 - **Rating**: 7/10
 - **Notes**: Alternative to toggle system that feels more natural, could highlight existing markers when targeting
 
-### Moving Cube Markers (Symmetrical Wave System)
+### Moving Cube Markers (Marker to Cube System)
 - **Description**: Markers transform into cubes that move backward toward incoming waves, creating a symmetrical gameplay system where players mirror the wave pattern with inverse timing. Collisions between player cubes and wave cubes function as captures.
 - **Unique Value**: Embodies the infinity symbol (∞) theme through actual gameplay symmetry. Transforms static defensive play into dynamic pattern mirroring. Creates visible, predictable collision points that clarify strategic planning.
 - **Constraints**: Maintains step-based movement rhythm. Resource costs follow existing marker system. Requires clear boundary line definition.

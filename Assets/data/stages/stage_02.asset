@@ -40,9 +40,7 @@ MonoBehaviour:
   lockAttunements: 1
   allowedAttunementIds: []
   waveConfigurations:
-  - {fileID: 11400000, guid: 17d72c1cb53a2e64db0dd043a4e376bb, type: 2}
-  - {fileID: 11400000, guid: 2e465d29e5e1def48b4c17c56dbc282d, type: 2}
-  - {fileID: 11400000, guid: b06a90d80aba1be4eab2e7d65ed85ee0, type: 2}
+  - {fileID: 0}
   requireAllCubesDestroyed: 0
   requiredCaptureCount: 0
   maxAllowedEscapes: 0

@@ -28,12 +28,13 @@ public class PlayerMarkerSystem : MonoBehaviour
 
     #region Runtime State
 
-    // Marker Collections - Five-tier system (Unit, Matrix, Recursion, Infinity, Cube)
+    // Marker Collections - Four-tier player-placed marker system (Unit, Matrix, Recursion, Infinity)
+    // Cube Markers are generated resources from collisions, not player-placed markers
     [SerializeField] public Queue<UnitMarker> UnitMarkers = new Queue<UnitMarker>();
     [SerializeField] public Queue<RecursionMarker> RecursionMarkers = new Queue<RecursionMarker>();
     [SerializeField] public Queue<MatrixMarker> MatrixMarkers = new Queue<MatrixMarker>();
     [SerializeField] public Queue<InfinityMarker> InfinityMarkers = new Queue<InfinityMarker>();
-    public List<CubeMarker> cubeMarkers = new List<CubeMarker>();
+    public List<CubeMarker> cubeMarkers = new List<CubeMarker>(); // Generated resources, separate from player-placed markers
 
     // Player cube tracking
     public List<CubeManager> playerCubes = new List<CubeManager>();

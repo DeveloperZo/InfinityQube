@@ -44,15 +44,17 @@ Cubes advance in synchronized steps toward the player:
 
 ### **Four-Tier Marker System**
 Resource-limited tools for cube capture:
-- **Unit Markers**: Single-tile captures for Unit and Matrix cubes
-- **Recursion Markers**: Multi-hit capability for Recursion cubes
+- **Unit Markers**: Single-tile captures for Unit cubes
 - **Matrix Markers**: 2x2 area coverage for group captures
-- **Cube Markers**: Generated from Matrix captures, used for direct detonation
+- **Recursion Markers**: Multi-hit capability for Recursion cubes
+- **Infinity Markers**: Spawn pause-inducing cubes that affect Infinity cubes
 
-### **Symmetrical Wave System**
-The infinity symbol (∞) as core gameplay:
-- **Moving Markers**: Placed markers transform into backward-moving cubes
-- **Pattern Mirroring**: Players duplicate wave patterns with inverse timing
+**Note:** Cube Markers are generated resources from collisions, not a player-placed marker type.
+
+### **Marker to Cube System**
+Core gameplay mechanic:
+- **Marker Transformation**: Placed markers transform into backward-moving cubes
+- **Bidirectional Movement**: Player cubes move backward while wave cubes move forward
 - **Collision Captures**: Player cubes and wave cubes collide for captures
 - **Mid-Flight Conversion**: Unit cubes convert back to markers for Infinity bypass
 
@@ -60,7 +62,7 @@ The infinity symbol (∞) as core gameplay:
 12-stage progression teaching core mechanics:
 - **Act 1**: Basic marker placement and cube types
 - **Act 2**: Face painting and tile effects
-- **Act 3**: Symmetrical wave system and collision timing
+- **Act 3**: Marker to cube system and collision timing
 - **Act 4**: Combined mechanics and optimization challenges
 
 ### **Performance Tracking**
@@ -97,11 +99,11 @@ Players find flow in calculating collision points and creating perfect symmetric
 
 ## 1.7 Conclusion
 
-Infinity Cube transforms the classic Intelligence Qube formula through its Symmetrical Wave System. Players don't just place static markers - they launch backward-moving cubes that create calculated collisions with advancing waves. This mirrors the infinity symbol (∞) in gameplay: two patterns meeting at their intersection point.
+Infinity Cube transforms the classic Intelligence Qube formula through its marker to cube system. Players don't just place static markers - they launch backward-moving cubes that create calculated collisions with advancing waves. The infinity symbol (∞) emerges in gameplay: two patterns meeting at their intersection point.
 
 The game combines this core innovation with face painting mechanics, resonance systems, and a four-tier marker system, creating layers of strategic depth. The dynamic line divider system creates tension as threats approach, while the cosmic lo-fi aesthetic provides atmospheric context without overwhelming the precise, mathematical nature of the gameplay.
 
 ---
 **Last Updated:** December 14, 2025  
-**Core Innovation:** Symmetrical Wave System - markers that move backward to intercept threats  
+**Core Innovation:** Marker to Cube System - markers that transform into backward-moving cubes to intercept threats  
 **Tutorial System:** Highlight sequences provide guided instruction with messages, visual highlights, and interactive validation

@@ -551,8 +551,10 @@ public class CubeCollisionManager : MonoBehaviour, IManagerDebugInterface
                 return new CollisionResult(HandleColumnCapture(position, 3));
 
             case CubeType.Infinity:
-                // Unit + Infinity: Paint Wave Infinity's face, Unit destroyed
-                return HandleWaveInfinityFacePaint(waveCube, playerCube, CubeType.Unit, position);
+                // Unit + Infinity: Unit destroyed, no face painting
+                // Unit cubes do NOT paint Infinity cubes - they are simply destroyed on collision
+                DebugLog("HandleUnitCollision", $"Unit cube destroyed by Infinity cube at ({position.x}, {position.y}) - no face painting");
+                return new CollisionResult(true, true); // Collision handled, destroy player cube
 
             default:
                 return new CollisionResult(false);

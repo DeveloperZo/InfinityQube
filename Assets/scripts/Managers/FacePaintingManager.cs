@@ -15,6 +15,8 @@ public class FacePaintingManager : MonoBehaviour, IManagerDebugInterface
     [SerializeField] private bool showPreviewEffects = true;
     [SerializeField] private Color defaultPaintColor = Color.red;
     [SerializeField] private int defaultPaintDuration = 3;
+    [Tooltip("Default number of moves ahead to show telegraph for painted faces (used when wave doesn't specify)")]
+    [Range(1, 10)] [SerializeField] private int defaultTelegraphMoves = 3;
 
     [Header("Pattern Settings")]
     [SerializeField] private bool enablePatternPreviews = true;
@@ -38,6 +40,7 @@ public class FacePaintingManager : MonoBehaviour, IManagerDebugInterface
     public bool IsFacePaintingEnabled => enableFacePainting;
     public int ActivePatternsCount => activePatterns.Count;
     public int FacePaintingTilesCount => facePaintingTiles.Count;
+    public int DefaultTelegraphMoves => defaultTelegraphMoves;
 
     [Header("Debug")]
     [Tooltip("Enable debug logging for this manager")]

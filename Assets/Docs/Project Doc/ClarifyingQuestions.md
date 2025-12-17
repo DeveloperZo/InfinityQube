@@ -181,19 +181,19 @@
 
 **Current Implementation**:
 - Cube markers generated when Matrix cubes are captured
-- Q key triggers next cube marker from FIFO queue
-- Cube markers provide 3x3 area detonation
+- R key triggers next cube marker from FIFO queue
+- Cube markers provide area detonation (size varies by collision type)
 - No placement phase - appear where Matrix cube was captured
 - No cooldowns - can be triggered immediately
 
 **Unclear Areas**:
-1. Activation method: Q key confirmed, but is there visual queue indicator?
+1. Activation method: R key confirmed, but is there visual queue indicator?
 2. Queue management: What happens if multiple cube markers are queued?
 3. Power scaling: How does marker type that captured Matrix affect cube marker power?
 4. Visual feedback: How do players see available cube markers?
 
 **Suggested Implementation**:
-- Q key activation confirmed
+- R key activation confirmed
 - Visual queue indicator showing number of available cube markers
 - FIFO queue: First generated = first triggered
 - Power scaling: Cube marker inherits power from capturing marker type
