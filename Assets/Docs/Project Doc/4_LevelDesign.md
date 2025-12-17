@@ -325,10 +325,10 @@ The tutorial stage teaches basic movement, marker placement, and capture mechani
 - **Learning Goal**: Infinity cubes are dangerous and uncapturable; learn to avoid them. Matrix cubes introduced as capturable alternative.
 
 **Wave Progression**:
-- Wave 1_01: 3 rows, gentle introduction - mix of Unit and Infinity cubes with clear capture paths
-- Wave 1_02: 3 rows, increased challenge - more Infinity cubes, tighter spacing, requires careful positioning
-- Wave 1_03: 4 rows, the blocking problem - Infinity cubes strategically positioned to block multiple Unit cubes, creating frustration and demonstrating the limitation of Unit-only strategies
-- Wave 1_04: 4 rows, Matrix solution - Matrix cubes introduced to clear blocked paths, demonstrating their utility for accessing trapped Unit cubes 
+- Wave 1_01: 3 rows (15 cubes: 5×3), gentle progression from Wave_0_03 - similar 3 Infinity cube setup but with more Unit cubes accessible, reinforcing Infinity avoidance while maintaining manageable challenge
+- Wave 1_02: 3 rows (15 cubes: 5×3), increased challenge - more Infinity cubes (4-5), tighter spacing, requires careful positioning and strategic marker placement
+- Wave 1_03: 4 rows (20 cubes: 5×4), the blocking problem - Infinity cubes strategically positioned to block multiple Unit cubes, creating frustration and demonstrating the limitation of Unit-only strategies
+- Wave 1_04: 4 rows (20 cubes: 5×4), Matrix solution - Matrix cubes introduced to clear blocked paths, demonstrating their utility for accessing trapped Unit cubes 
 
 #### Stage 2: Strategic Choice
 - **Grid**: 5x20 (width 5, maintaining focused learning)

@@ -12,8 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 78c3fb7cc917307469018838241693f1, type: 3}
   m_Name: Wave_1_03
   m_EditorClassIdentifier: 
-  Index: 0
-  GridHeight: 2
+  Index: 2
+  GridHeight: 4
   GridWidth: 5
   CubesData:
   - type: 2
@@ -22,7 +22,7 @@ MonoBehaviour:
   - type: 0
     position: {x: 1, y: 0}
     level: 1
-  - type: 2
+  - type: 0
     position: {x: 2, y: 0}
     level: 1
   - type: 0
@@ -31,10 +31,10 @@ MonoBehaviour:
   - type: 2
     position: {x: 4, y: 0}
     level: 1
-  - type: 2
+  - type: 0
     position: {x: 0, y: 1}
     level: 1
-  - type: 0
+  - type: 2
     position: {x: 1, y: 1}
     level: 1
   - type: 0
@@ -43,33 +43,61 @@ MonoBehaviour:
   - type: 2
     position: {x: 3, y: 1}
     level: 1
-  - type: 2
+  - type: 0
     position: {x: 4, y: 1}
     level: 1
-  maxLightMarkerCharge: 2
-  maxLightMarkerCount: 10
-  maxMatrixMarkerCharge: 1
-  maxMatrixMarkerCount: 5
-  maxRecursionMarkerCharge: 0
-  maxRecursionMarkerCount: 0
-  waveStartDelay: 0.8
-  moveInterval: 2
+  - type: 2
+    position: {x: 0, y: 2}
+    level: 1
+  - type: 0
+    position: {x: 1, y: 2}
+    level: 1
+  - type: 0
+    position: {x: 2, y: 2}
+    level: 1
+  - type: 0
+    position: {x: 3, y: 2}
+    level: 1
+  - type: 2
+    position: {x: 4, y: 2}
+    level: 1
+  - type: 0
+    position: {x: 0, y: 3}
+    level: 1
+  - type: 0
+    position: {x: 1, y: 3}
+    level: 1
+  - type: 0
+    position: {x: 2, y: 3}
+    level: 1
+  - type: 0
+    position: {x: 3, y: 3}
+    level: 1
+  - type: 0
+    position: {x: 4, y: 3}
+    level: 1
+  grantsAddToInventory: 1
+  grantMatrixCharges: 0
+  grantRecursionCharges: 0
+  grantInfinityCharges: 0
+  overrideUnitMaxOnGrid: 0
+  overrideMatrixMaxOnGrid: 0
+  overrideRecursionMaxOnGrid: 0
+  overrideInfinityMaxOnGrid: 0
+  overrideUnitMarkerRechargeRate: 0
+  waveStartDelay: 1.0
+  moveInterval: 1.75
   fastMoveInterval: 0.1
   hasOwnSuccessCriteria: 0
   requiredCaptureCount: 0
-  maxAllowedEscapes: 0
-  messages:
-  - Message: Matrix Mode [2] can capture multiple cubes. Use wisely as cooldowns are
-      long.
-    DisplayMoveStep: 0
-    RequirePause: 0
-    AutoHideDelay: 5
-    HighlightTile: 0
-    highlightTiles: []
-    highlightColor: {r: 1, g: 1, b: 0, a: 1}
-  unitCubesCaptured: 0
-  MatrixCubesCaptured: 0
-  infinityCubesEscaped: 0
-  recursionCubesCaptured: 0
-  markersPlaced: 0
-  detonationsUsed: 0
+  maxAllowedEscapes: -1
+  highlightSequences: []
+  _runtimeStats:
+    unitCubesCaptured: 0
+    matrixCubesCaptured: 0
+    recursionCubesCaptured: 0
+    infinityCubesCaptured: 0
+    cubesEscaped: 0
+    markersPlaced: 0
+    markersTriggererd: 0
+    completionTime: 0

@@ -14637,6 +14637,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   playerLevel: {fileID: 1576824678}
+  scoreGradeText: {fileID: 0}
+  scoreNumericText: {fileID: 0}
+  showNumericScore: 1
+  gradeCColor: {r: 1, g: 0.3, b: 0.3, a: 1}
+  gradeBColor: {r: 1, g: 0.8, b: 0.2, a: 1}
+  gradeAColor: {r: 0.2, g: 0.6, b: 1, a: 1}
+  gradeSColor: {r: 1, g: 0.8, b: 0, a: 1}
   playerManager: {fileID: 7665709929118310107}
 --- !u!114 &7665709929118310112
 MonoBehaviour:
