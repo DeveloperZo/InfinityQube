@@ -4,6 +4,26 @@
 
 ## Brainstorm Items
 
+### Iterate on face painting 
+- **Description**: Mine this mechanic for more fun and interesting concepts
+- **Unique Value**: gameplay differentiation
+- **Constraints**: 
+- **Rating**: 8/10
+- **Notes**: Expand face painting so painted tiles affect cubes that touch them, creating a unified painting theme. When a painted face touches a grid tile, the tile becomes painted and creates a static marker (preserving fixed positioning for strategic capture zones). Additionally, any cube touching the painted tile gets converted to the painted type (e.g., Unit cube → Matrix cube). Converted cubes are highlighted during a manual window where the player can trigger them to create area effects; after the window expires, the converted cube becomes permanent and must be collided with normally. This dual-purpose approach preserves strategic positioning control through static markers while adding mobile transformation that affects cubes behind Infinity. The painting theme flows naturally: collision paints face → face touches grid → tile becomes painted → cubes touching tile get affected. This could simplify the system by removing the need for separate cube marker manual triggering (R key), as painted tiles serve both as fixed capture zones and cube converters. Works for both wave cubes and player cubes touching painted tiles.
+
+### Advance Grid type
+- **Description**: Introduce grid movement paths with 90-degree turns (L, C, S shapes) where cubes maintain formation but movement direction rotates
+- **Unique Value**: gameplay differentiation
+- **Constraints**: 
+- **Rating**: 8/10
+- **Notes**: Grids define movement paths with 90-degree turns. Cubes maintain their formation (e.g., 5x5 array) but movement direction changes at corners. When a 5x5 formation reaches the bottom edge, it turns 90° and moves right, maintaining the same 5x5 arrangement. This creates direction-dependent puzzle difficulty: the same cube formation becomes easier or harder to intercept based on movement direction. Vertical movement (narrow intercept point) may be impossible to solve, but when cubes turn horizontal (wide intercept point), the same formation becomes trivial. Strategic timing: players wait for cubes to turn into favorable directions where marker placement is more effective. Path examples: L-shape (down → right), C-shape (down → right → up), S-shape (down → right → down → right).
+
+### Refactor Recursion
+- **Description**: Tweak recursion for more player agency and differentiation from matrix
+- **Unique Value**: Lets player solve more problems
+- **Constraints**: 
+- **Rating**: 8/10
+- **Notes**: Change Recursion from auto-trigger to manual trigger (player controls activation timing). Make Recursion shape dynamic based on placement position: when placed on grid edges (top, bottom, left, right boundaries), creates a 3 row × 1 column vertical area (good for vertical wave threats). When placed on non-edges (interior tiles), creates a 1 row × 3 column horizontal area (good for horizontal wave threats). This dynamic shape adaptation gives Recursion more versatility than Matrix's fixed squares (2×2, 3×3), creating clear differentiation: Matrix = area squares, Recursion = adaptive lines. Manual trigger gives players strategic timing control, allowing them to wait for optimal cube positions before activating. Visual preview shows which shape will be created based on placement position.
 
 ### Hire youtube creator daafrikan (Yannick)
 - **Description**: Hire youtube creator daafrikan (Yannick)
@@ -66,78 +86,7 @@
 - **Unique Value**: Embodies the infinity symbol (∞) theme through actual gameplay symmetry. Transforms static defensive play into dynamic pattern mirroring. Creates visible, predictable collision points that clarify strategic planning.
 - **Constraints**: Maintains step-based movement rhythm. Resource costs follow existing marker system. Requires clear boundary line definition.
 - **Rating**: 9/10 (Strong thematic coherence + strategic depth)
-
-#### Core System Design
-- **Movement Pattern**: 
-  - Place marker → Next step converts to cube → Moves backward each step on wave rhythm
-  - All movement synchronized to wave step cadence
-  - Player cubes and wave cubes are two halves of the same pattern
-  
-- **Marker-Cube Equivalence**:
-  - Moving cube = mobile version of its marker type
-  - Light cube = Unit Marker capture behavior
-  - Heavy cube = Recursion Marker (multi-hit for Recursion)
-  - Matrix cube = Matrix marker (area effect potential)
-  - Inherits all resource costs, cooldowns, and regeneration rules from marker system
-
-#### Strategic Depth
-- **Spatial-Temporal Trade-off**:
-  - Far marker placed early = late collision
-  - Close marker placed late = early collision
-  - Players must calculate collision points, not just positions
-  
-- **Pattern Mirroring**:
-  - Success requires duplicating wave patterns with markers
-  - Focus shifts from reactive placement to predictive mirroring
-  - Visible collision points provide strategic clarity
-  
-- **Boundary Line Significance**:
-  - Acts as axis of symmetry for the infinity theme
-  - Reinforces original IQ's boundary pressure
-  - Clear demarcation between player and wave space
-
-#### Thematic Integration
-- **Infinity Symbol (∞) as Gameplay**:
-  - Two loops meeting in the middle = wave and player cubes
-  - Symmetrical mechanics reflect mathematical infinity
-  - Boundary line where infinity folds on itself
-  - Converting cubes to markers = finding gaps in infinite loops
-  
-- **Visual Coherence**:
-  - Player literally creates mirror image of threats
-  - Collision points are where infinite loops complete
-  - Strategic mastery means perfect symmetrical play
-
-#### Key Interactions
-1. **Infinity Cube Bypass**: 
-   - Unit cube → travels backward → converts to marker before Infinity row
-   - Wave passes over marker → captures occur behind Infinity cubes
-   - Only Unit cubes can convert mid-flight (design decision)
-   
-2. **Same-Type Collisions**:
-   - Matrix player cube + Matrix wave cube = Matrix marker dropped at collision
-   - Recursion player cube + Recursion wave cube = Recursion Marker dropped
-   - Creates resource generation through successful interceptions
-   
-3. **Strategic Positioning**:
-   - Multiple markers at different distances = staggered interceptions
-   - Can create defensive walls or surgical strikes
-   - Timing of placement matters as much as position
-
-#### Simplified Design Decisions
-- **Resource Management**: Uses existing marker charge/cooldown system
-- **Collision Behavior**: Moving marker hitting cube = standard capture for that marker type
-- **Player Cube Interactions**: Pass through each other (no collision between player cubes)
-- **Conversion Rules**: Only Unit cubes can convert back to markers mid-flight
-- **Triggering**: Marker automatically becomes cube on next wave step (no manual trigger needed)
-
-#### Why This Works
-- **Not a new system**: Extension of existing markers with movement
-- **Thematically perfect**: Infinity symbol becomes core gameplay loop
-- **Strategic clarity**: Can see your plan executing in real-time
-- **Depth without complexity**: Simple rule (markers can move) creates emergent strategy
-- **Solves IQ's limitation**: Adds offensive play to defensive game
-- **Answers are in existing systems**: Most design questions resolve by following marker system logic
+-- **Outcome**: Accepted and implemented
 
 ---
 

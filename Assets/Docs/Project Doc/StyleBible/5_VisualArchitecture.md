@@ -60,7 +60,6 @@ Clean, minimalist cosmic puzzle grid where cube types are instantly recognizable
 ### 3.1 Core entities
 - **Cubes:** four types, ownership (player vs wave), state overlays (face paint, phaseable, damage).
 - **Tiles:** base state + state overlays (marked, blocked, special targets).
-- **Line Divider:** dynamic safety/danger indicator that is always readable but never dominant.
 - **Overlays:** telegraphs, highlights, selection/placement feedback.
 - **UI:** minimal, peripheral, grid-respecting, mode indicators.
 
@@ -248,7 +247,6 @@ Provide:
 - Type hue preserved across both
 
 ### A.3 Implemented core visual systems (high level)
-- Line divider communicates safe vs danger via color/contrast shift.
 - Tile overlays communicate key tile states (marked/blocked/special).
 - Face-paint telegraph uses progressive clarity escalation (approach-to-trigger).
 - Recursion communicates durability via damage expression.

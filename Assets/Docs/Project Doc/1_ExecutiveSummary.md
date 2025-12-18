@@ -101,7 +101,7 @@ Players find flow in calculating collision points and creating perfect symmetric
 
 Infinity Cube transforms the classic Intelligence Qube formula through its marker to cube system. Players don't just place static markers - they launch backward-moving cubes that create calculated collisions with advancing waves. The infinity symbol (∞) emerges in gameplay: two patterns meeting at their intersection point.
 
-The game combines this core innovation with face painting mechanics, resonance systems, and a four-tier marker system, creating layers of strategic depth. The dynamic line divider system creates tension as threats approach, while the cosmic lo-fi aesthetic provides atmospheric context without overwhelming the precise, mathematical nature of the gameplay.
+The game combines this core innovation with face painting mechanics, resonance systems, and a four-tier marker system, creating layers of strategic depth. The cosmic lo-fi aesthetic provides atmospheric context without overwhelming the precise, mathematical nature of the gameplay.
 
 ---
 **Last Updated:** December 14, 2025  

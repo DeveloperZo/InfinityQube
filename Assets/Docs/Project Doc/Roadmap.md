@@ -109,10 +109,9 @@ Points reflect actual development time, not complexity. A "week gap" between com
 - [x] Unified input system (mode keys 1-4, placement key F)
 - [x] CubeCollisionManager created with full collision matrix implementation
 - [x] **Collision matrix code** - All 16 cube type combinations implemented
-- [x] **Line Divider System** - Dynamic difficulty with visual feedback (blue=safe, red=danger)
 - [x] **Resonance System** - Infinity+Infinity makes all Infinity cubes phaseable (2 moves)
 - [x] **Enhanced Face Painting** - Front face painting with 3-move telegraph system
-- [x] **Penalty/Reward System** - Line movement based on cube escapes and achievements
+- [x] **Penalty/Reward System** - Rewards and penalties based on cube escapes and achievements
 - [x] **Marker Economy** - Per-stage/wave grants with inventory caps (toggleable)
 - [x] Visual feedback for phaseable cubes (material swapping)
 - [x] Grid telegraph shows painted face trigger location 1-3 moves ahead
@@ -125,7 +124,6 @@ Points reflect actual development time, not complexity. A "week gap" between com
 - **Economy**: Stage grants (set inventory) + Wave grants (add to inventory) + Caps
 
 #### Playtesting Notes:
-- Line divider creates tension when player is above the line (red zone)
 - Resonance requires sacrificing player Infinity cube (meaningful cost)
 - Face painting telegraph gives clear 3-turn warning
 - Marker economy forces strategic conservation across waves
@@ -241,7 +239,7 @@ One attunement per marker type. Modifies cube properties, not collision matrix.
 #### Completed Deliverables
 
 **StageDB + WaveData**
-- [x] Enhanced StageData with line divider, marker grants, attunement locking, validation
+- [x] Enhanced StageData with marker grants, attunement locking, validation
 - [x] Enhanced WaveData with Infinity markers, grants system, validation  
 - [x] Enhanced CubeData with pre-painted faces, spawn delay
 - [x] Enhanced StageDB with validation, query methods
@@ -791,7 +789,6 @@ Milestone 1.0 ✅ → 1.1 ✅ → 1.2 🔄 → 1.3 → 1.4 → 2.x → 3.x → 4
 | **Marker Types** | All 4 | All 4 | Core identity |
 | **Collision Matrix** | Full 16 combos | Full 16 combos | Core differentiation |
 | **Face Painting** | Full system | Basic (Unit trigger only) | Can simplify |
-| **Line Divider** | Dynamic | Static position | Can simplify |
 | **Tutorial** | Interactive sequences | Highlight sequences | Framework complete |
 | **Achievements** | 20+ | 10 basic | Reduce scope |
 | **Controller** | Full support | Full support | Steam expectation |

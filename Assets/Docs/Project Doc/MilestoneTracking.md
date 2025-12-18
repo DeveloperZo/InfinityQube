@@ -59,7 +59,6 @@
 | Unified marker input system | 2 | Nov 30, 2025 | Mode keys 1-4, F to place |
 | Collision matrix design | 1 | Dec 1, 2025 | All 16 combinations |
 | Collision matrix implementation | 3 | Dec 9, 2025 | CubeCollisionManager complete |
-| Line Divider System | 2 | Dec 9, 2025 | Blue/red zones, marker restriction |
 | Resonance System | 2 | Dec 9, 2025 | Phaseable state (2 moves) |
 | Enhanced Face Painting | 2 | Dec 9, 2025 | Front face, 3-move telegraph |
 | Penalty/Reward System | 1 | Dec 9, 2025 | Line movement on escape/success |

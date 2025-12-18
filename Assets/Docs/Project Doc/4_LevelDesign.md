@@ -306,7 +306,6 @@ After basic mechanics are established, the game introduces its core innovation: 
 - **Tools**: Movement + Unit Markers (infinite with move-based regeneration)
 - **Cubes**: Unit + Infinity
 - **Learning Goal**: Core fundamentals before the real game begins
-- **Line Divider**: Disabled for tutorial
 - **Max Escapes**: 5 (forgiving for learning)
 
 The tutorial stage teaches basic movement, marker placement, and capture mechanics in a safe environment. Guided highlight sequences provide step-by-step instruction, highlighting specific tiles and cubes to guide player actions. This is Stage 0 and is separate from the main campaign progression.
@@ -325,7 +324,6 @@ The tutorial stage teaches basic movement, marker placement, and capture mechani
 - **Tools**: Movement + Unit Markers (infinite with move-based regeneration)
 - **Cubes**: Unit + Infinity (Matrix introduced in Wave 1_04)
 - **Learning Goal**: Infinity cubes are dangerous and uncapturable; learn to avoid them. Matrix cubes introduced as capturable alternative.
-- **Line Divider**: Disabled
 - **Max Escapes**: 6
 - **Stage Grants**: Unit (5 max on grid), Matrix (2 charges, 2 max), Recursion (2 charges, 2 max), Infinity (1 charge, 1 max) - Note: Only Unit markers available to players at this stage
 
@@ -341,14 +339,14 @@ The tutorial stage teaches basic movement, marker placement, and capture mechani
 - **Tools**: Movement + Unit Markers (infinite with move-based regeneration)
 - **Cubes**: Unit + Matrix + Infinity
 - **Learning Goal**: Matrix cube strategy - leverage Matrix cubes area capture to capture cubes around Infinity cubes. Players learn to prioritize Matrix cubes for their area capture potential.
-- **Line Divider**: Disabled
 - **Max Escapes**: 0 (strict - no escapes allowed)
 - **Stage Grants**: Unit (5 max on grid), Matrix (2 charges, 2 max), Recursion (2 charges, 2 max), Infinity (1 charge, 1 max) - Note: Only Unit markers available to players at this stage
 
 **Wave Progression** (from actual wave assets):
 - **Wave 2_01**: 4 rows (20 cubes: 14 Unit, 4 Matrix, 2 Infinity) - Matrix cubes demonstrate ability to capture around Infinity cubes, teaching that Matrix cubes solve the blocking problem from Stage 1
 - **Wave 2_02**: 4 rows (20 cubes: 14 Unit, 4 Matrix, 2 Infinity) - Matrix cube strategic positioning - Matrix cubes placed to demonstrate efficient area capture around Infinity cubes
-- **Wave 2_03**: 5 rows (25 cubes: 14 Unit, 5 Matrix, 6 Infinity) - Strategic Matrix placement mastery - increased row count maintains progression curve, testing understanding of value hierarchy and efficient area capture strategies
+- **Wave 2_03**: 5 rows (25 cubes: 14 Unit, 5 Matrix, 6 Infinity) - Strategic Matrix placement mastery - increased row count maintains progression curve, testing understanding of value hierarchy and efficient area capture strategies ✅ Tested
+- **Wave 2_04**: 5 rows (25 cubes: 9 Unit, 5 Matrix, 11 Infinity) - Advanced Matrix prioritization - high Infinity density with strategic Matrix placement challenges players to maximize Matrix cube value through strategic area capture, requiring careful resource management ✅ Tested and corrected
 
 ### Act 2: Matrix Marker Introduction (Stages 3-6)
 **Focus**: Learning Matrix marker mechanics (Matrix cubes already introduced in Stage 1)

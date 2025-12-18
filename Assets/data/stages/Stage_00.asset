@@ -18,8 +18,9 @@ MonoBehaviour:
   description: 
   objective: Capture Unit cubes with Unit markers while avoiding Infinity cubes
   gridWidth: 5
-  gridHeight: 20
+  gridHeight: 15
   playerStartPosition: {x: 2, y: 0}
+  respawnDelayMoves: 1
   enableLineDivider: 0
   lineDividerStartY: 7
   lineDividerEscapePenalty: 0
