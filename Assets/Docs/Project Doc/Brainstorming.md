@@ -88,8 +88,25 @@
 - **Rating**: 9/10 (Strong thematic coherence + strategic depth)
 -- **Outcome**: Accepted and implemented
 
+### Efficient Single-Dev Testing Strategy
+- **Description**: Develop testing workflow that prevents combinatorial explosion as stages/waves multiply
+- **Unique Value**: Saves development time, enables faster iteration, prevents burnout
+- **Constraints**: Must provide confidence without full regression testing every change
+- **Rating**: 10/10 (Critical workflow improvement)
+- **Notes**: Current problem: Testing Stage 0 all waves → Stage 0+1 all waves → Stage 0-2 all waves becomes combinatorially intensive. Solutions to explore:
+  - **Incremental Validation**: Only test new/changed content. Once Stage 0 validated, only test Stage 1. Once Stage 1 validated, only test Stage 2. Don't retest everything.
+  - **Smoke Testing**: Quick critical path validation (can player place marker? Do cubes move? Do collisions work?) - 2-3 minutes per stage instead of full playthrough
+  - **Test Prioritization**: High-risk areas (new mechanics, changed systems) get full testing. Low-risk areas (unchanged waves) get spot checks
+  - **Automated Playtesting**: Record/playback system or AI-driven testing that can run overnight. Validate core mechanics automatically
+  - **Test Isolation**: Test individual waves/systems independently. Don't require full stage completion to validate a single wave
+  - **Regression Testing**: Only retest what changed. If penalty system unchanged, don't retest all penalty scenarios
+  - **Test Suites**: Organized test scenarios (e.g., "Unit marker basics", "Infinity avoidance", "Penalty triggers") that can be run selectively
+  - **Quick Validation Tools**: Fast feedback loops (prototyping panel, debug tools) that validate mechanics without full playthrough
+  - **Test Documentation**: Track what's been validated and when. Only retest if underlying systems changed
+  - **Milestone-Based Testing**: Test to milestone completion, then lock. Only retest locked content if critical bug found
+
 ---
 
-**Last Updated:** July 04, 2025  
+**Last Updated:** December 14, 2025  
 **Purpose:** Capture potential mechanics for future consideration
 **Next Steps:** Prototype highest rated mechanics
