@@ -290,7 +290,7 @@ One attunement per marker type. Modifies cube properties, not collision matrix.
 ### Milestone 1.6: Unit Markers & Infinite Cube (Stages 1-2)
 - **Target**: Implement stages 1-2 and validate Unit marker and Infinity cube mechanics
 - **Points**: 4 (~1 week active development)
-- **Status**: ⬜ Pending
+- **Status**: 🔄 In Progress
 - **Dependencies**: Milestone 1.5 ✅
 - **Stages**: 1-2 (Unit markers, Infinite Cube)
 - **Lesson**: Unit marker basics
@@ -300,12 +300,12 @@ One attunement per marker type. Modifies cube properties, not collision matrix.
   - [ ] Basic movement and positioning
   - [ ] Core collision mechanics (Unit vs Unit, Unit vs Infinity)
 - **Tasks**:
-  - [ ] Design wave configurations for stages 1-2
-  - [ ] Implement stages 1-2 with wave configs
+  - [x] Design wave configurations for stages 1-2
+  - [x] Implement stages 1-2 with wave configs
   - [ ] Validate Unit marker and Infinity cube mechanics work correctly
-  - [ ] Define and Implement Penalty system
-  - [ ] Define and Implement Scoring System
-  - [ ] Fix bugs/edge cases discovered
+  - [x] Define and Implement Penalty system
+  - [x] Define and Implement Scoring System
+  - [x] Fix bugs/edge cases discovered (max unit charges wave override)
   - [ ] Ensure stages are playable end-to-end
 
 ---

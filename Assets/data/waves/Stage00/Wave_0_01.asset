@@ -91,19 +91,22 @@ MonoBehaviour:
   grantMatrixCharges: 0
   grantRecursionCharges: 0
   grantInfinityCharges: 0
-  overrideUnitMaxOnGrid: 4
+  overrideUnitMaxOnGrid: 5
   overrideMatrixMaxOnGrid: 0
   overrideRecursionMaxOnGrid: 0
   overrideInfinityMaxOnGrid: 0
   overrideUnitMarkerRechargeRate: 0
+  overrideMaxUnitMarkerCharges: 0
   waveStartDelay: 1.5
   moveInterval: 2.5
   fastMoveInterval: 0.1
+  respawnDelayMoves: 0
+  facePaintingTelegraphMoves: 0
   hasOwnSuccessCriteria: 0
   requiredCaptureCount: 0
   maxAllowedEscapes: -1
   highlightSequences:
-  - DisplayMoveStep: 2
+  - DisplayMoveStep: 1
     pauseGame: 1
     messageText: Place your marker here.\n (Press K to Continue)
     messageRequirePause: 1
@@ -120,13 +123,13 @@ MonoBehaviour:
     triggerOnCaptureAtPosition: {x: 0, y: 0}
     requireMarkerPlacementValidation: 1
     validationFailureMessage: Place your marker on the highlighted tile.
-  - DisplayMoveStep: 4
+  - DisplayMoveStep: 3
     pauseGame: 0
     messageText: Your marker will spawn a cube that will capture this cube
     messageRequirePause: 0
-    messageAutoHideDelay: 3
+    messageAutoHideDelay: 2
     targetType: 2
-    targetPosition: {x: 2, y: 14}
+    targetPosition: {x: 2, y: 15}
     targetCubeType: 0
     highlightColor: {r: 0.3, g: 0.8, b: 0.3, a: 0.4}
     shouldPulse: 0
@@ -137,7 +140,7 @@ MonoBehaviour:
     triggerOnCaptureAtPosition: {x: 0, y: 0}
     requireMarkerPlacementValidation: 0
     validationFailureMessage: Place your marker on the highlighted tile.
-  - DisplayMoveStep: 7
+  - DisplayMoveStep: 5
     pauseGame: 0
     messageText: Try capturing the other cubes! You can place markers on multiple
       tiles.
@@ -155,18 +158,18 @@ MonoBehaviour:
     triggerOnCaptureAtPosition: {x: 0, y: 0}
     requireMarkerPlacementValidation: 0
     validationFailureMessage: 
-  - DisplayMoveStep: 9
+  - DisplayMoveStep: 8
     pauseGame: 1
     messageText: This is an Infinity cube. It's dangerous and cannot be captured
       - avoid it!\n (Press K to Continue)
     messageRequirePause: 0
     messageAutoHideDelay: 4
     targetType: 2
-    targetPosition: {x: 2, y: 10}
+    targetPosition: {x: 2, y: 11}
     targetCubeType: 2
     highlightColor: {r: 1, g: 0.2, b: 0.2, a: 0.5}
     shouldPulse: 1
-    highlightDuration: 5
+    highlightDuration: 3
     clearOnCapture: 0
     resumeGame: 1
     triggerOnMarkerAtPosition: {x: 0, y: 0}
