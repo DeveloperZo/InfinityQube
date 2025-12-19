@@ -1451,7 +1451,7 @@ MarkerMode currentMode = GetCurrentMode();
         string overrideLog = "";
         
         // Unit markers are INFINITE - wave grants don't affect charges
-        // But wave CAN override max-on-grid and recharge rate
+        // But wave CAN override max-on-grid, recharge rate, and max charges
         if (waveData.overrideUnitMaxOnGrid > 0)
         {
             maxUnitMarkers = waveData.overrideUnitMaxOnGrid;
@@ -1461,6 +1461,12 @@ MarkerMode currentMode = GetCurrentMode();
         {
             unitMarkerRechargeRate = waveData.overrideUnitMarkerRechargeRate;
             overrideLog += $" UnitRecharge:{unitMarkerRechargeRate}";
+        }
+        if (waveData.overrideMaxUnitMarkerCharges > 0)
+        {
+            maxUnitMarkerCharges = waveData.overrideMaxUnitMarkerCharges;
+            currentUnitMarkerCharges = Mathf.Min(currentUnitMarkerCharges, maxUnitMarkerCharges); // Cap current to new max
+            overrideLog += $" UnitMaxCharges:{maxUnitMarkerCharges}";
         }
         
         // Non-Unit markers use inventory system

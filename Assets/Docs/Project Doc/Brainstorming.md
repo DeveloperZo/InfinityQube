@@ -8,7 +8,7 @@
 - **Description**: Mine this mechanic for more fun and interesting concepts
 - **Unique Value**: gameplay differentiation
 - **Constraints**: 
-- **Rating**: 8/10
+- **Rating**: 6/10
 - **Notes**: Expand face painting so painted tiles affect cubes that touch them, creating a unified painting theme. When a painted face touches a grid tile, the tile becomes painted and creates a static marker (preserving fixed positioning for strategic capture zones). Additionally, any cube touching the painted tile gets converted to the painted type (e.g., Unit cube → Matrix cube). Converted cubes are highlighted during a manual window where the player can trigger them to create area effects; after the window expires, the converted cube becomes permanent and must be collided with normally. This dual-purpose approach preserves strategic positioning control through static markers while adding mobile transformation that affects cubes behind Infinity. The painting theme flows naturally: collision paints face → face touches grid → tile becomes painted → cubes touching tile get affected. This could simplify the system by removing the need for separate cube marker manual triggering (R key), as painted tiles serve both as fixed capture zones and cube converters. Works for both wave cubes and player cubes touching painted tiles.
 
 ### Advance Grid type
@@ -22,7 +22,7 @@
 - **Description**: Tweak recursion for more player agency and differentiation from matrix
 - **Unique Value**: Lets player solve more problems
 - **Constraints**: 
-- **Rating**: 8/10
+- **Rating**: 7/10
 - **Notes**: Change Recursion from auto-trigger to manual trigger (player controls activation timing). Make Recursion shape dynamic based on placement position: when placed on grid edges (top, bottom, left, right boundaries), creates a 3 row × 1 column vertical area (good for vertical wave threats). When placed on non-edges (interior tiles), creates a 1 row × 3 column horizontal area (good for horizontal wave threats). This dynamic shape adaptation gives Recursion more versatility than Matrix's fixed squares (2×2, 3×3), creating clear differentiation: Matrix = area squares, Recursion = adaptive lines. Manual trigger gives players strategic timing control, allowing them to wait for optimal cube positions before activating. Visual preview shows which shape will be created based on placement position.
 
 ### Hire youtube creator daafrikan (Yannick)

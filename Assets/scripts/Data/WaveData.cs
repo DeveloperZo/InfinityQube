@@ -81,6 +81,9 @@ public class WaveData : ScriptableObject
     [Tooltip("Override Unit marker recharge rate in moves per charge (0 = use stage default, typically 3 moves)")]
     [Range(0, 10)] public int overrideUnitMarkerRechargeRate = 0;
     
+    [Tooltip("Override max Unit marker charges in regeneration pool (0 = use stage default, typically 3)")]
+    [Range(0, 10)] public int overrideMaxUnitMarkerCharges = 0;
+    
     #endregion
 
     #region Wave Timing
