@@ -550,7 +550,19 @@ The hub serves as the central navigation point between gameplay sessions.
 
 ---
 
-### Milestone 1.13: Stage Content Refinement & Difficulty Curve
+### Milestone 1.13: Determine any brainstorm implementation
+- **Target**: Implement, balance, tune, and establish mechanics taken from brainstorm (if any are deemed worth complexity)
+- **Points**: 5 (~1 week active development)
+- **Status**: ⬜ Pending
+- **Dependencies**: Milestone 1.11
+- **Tasks**:
+  - [ ] Playtest select stages for balance and feel improvements
+  - [ ] Validate stages feel mor fun or rewarding
+- **Note**: Focus on play experience and fun.
+
+---
+
+### Milestone 1.14: Stage Content Refinement & Difficulty Curve
 - **Target**: Balance, tune, and establish proper difficulty progression across all stages
 - **Points**: 5 (~1 week active development)
 - **Status**: ⬜ Pending
@@ -565,7 +577,7 @@ The hub serves as the central navigation point between gameplay sessions.
 
 ---
 
-### Milestone 1.14: Visual Effects & Juice Pass
+### Milestone 1.15: Visual Effects & Juice Pass
 - **Target**: Core visual feedback and effects for gameplay actions
 - **Points**: 5 (~1 week active development)
 - **Status**: ⬜ Pending
