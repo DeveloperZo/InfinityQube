@@ -53,13 +53,6 @@ MonoBehaviour:
     frontFaceCharges: 0
     spawnDelay: 0
   - type: 0
-    position: {x: 0, y: 1}
-    level: 1
-    hasPaintedFaces: 0
-    frontFaceStatus: 0
-    frontFaceCharges: 0
-    spawnDelay: 0
-  - type: 0
     position: {x: 1, y: 1}
     level: 1
     hasPaintedFaces: 0
@@ -74,21 +67,7 @@ MonoBehaviour:
     frontFaceCharges: 0
     spawnDelay: 0
   - type: 0
-    position: {x: 3, y: 1}
-    level: 1
-    hasPaintedFaces: 0
-    frontFaceStatus: 0
-    frontFaceCharges: 0
-    spawnDelay: 0
-  - type: 0
     position: {x: 4, y: 1}
-    level: 1
-    hasPaintedFaces: 0
-    frontFaceStatus: 0
-    frontFaceCharges: 0
-    spawnDelay: 0
-  - type: 0
-    position: {x: 0, y: 2}
     level: 1
     hasPaintedFaces: 0
     frontFaceStatus: 0
@@ -102,21 +81,42 @@ MonoBehaviour:
     frontFaceCharges: 0
     spawnDelay: 0
   - type: 0
+    position: {x: 4, y: 2}
+    level: 1
+    hasPaintedFaces: 0
+    frontFaceStatus: 0
+    frontFaceCharges: 0
+    spawnDelay: 0
+  - type: 2
     position: {x: 2, y: 2}
     level: 1
     hasPaintedFaces: 0
     frontFaceStatus: 0
     frontFaceCharges: 0
     spawnDelay: 0
-  - type: 0
-    position: {x: 3, y: 2}
+  - type: 2
+    position: {x: 0, y: 1}
     level: 1
     hasPaintedFaces: 0
     frontFaceStatus: 0
     frontFaceCharges: 0
     spawnDelay: 0
-  - type: 0
-    position: {x: 4, y: 2}
+  - type: 2
+    position: {x: 0, y: 2}
+    level: 1
+    hasPaintedFaces: 0
+    frontFaceStatus: 0
+    frontFaceCharges: 0
+    spawnDelay: 0
+  - type: 2
+    position: {x: 3, y: 1}
+    level: 1
+    hasPaintedFaces: 0
+    frontFaceStatus: 0
+    frontFaceCharges: 0
+    spawnDelay: 0
+  - type: 2
+    position: {x: 3, y: 2}
     level: 1
     hasPaintedFaces: 0
     frontFaceStatus: 0
@@ -131,9 +131,12 @@ MonoBehaviour:
   overrideRecursionMaxOnGrid: 0
   overrideInfinityMaxOnGrid: 0
   overrideUnitMarkerRechargeRate: 3
+  overrideMaxUnitMarkerCharges: 0
   waveStartDelay: 1.5
   moveInterval: 1.75
   fastMoveInterval: 0.1
+  respawnDelayMoves: 0
+  facePaintingTelegraphMoves: 0
   hasOwnSuccessCriteria: 0
   requiredCaptureCount: 0
   maxAllowedEscapes: -1

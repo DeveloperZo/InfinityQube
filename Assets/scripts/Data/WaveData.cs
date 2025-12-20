@@ -31,6 +31,14 @@ public class WaveData : ScriptableObject
     public int spawnHeight { get => GridHeight; set => GridHeight = value; }
     
     #endregion
+    
+    #region Grid Override (Playable Grid)
+    
+    [Header("Grid Override (Optional)")]
+    [Tooltip("Override playable grid height for this wave (0 = use stage default). Width always uses stage default. Once overridden, grid stays at this height until stage end or another override.")]
+    [Range(0, 40)] public int overrideGridHeight = 0;
+    
+    #endregion
 
     #region Cube Configuration
     

@@ -292,21 +292,27 @@ One attunement per marker type. Modifies cube properties, not collision matrix.
 - **Points**: 4 (~1 week active development)
 - **Status**: 🔄 In Progress
 - **Dependencies**: Milestone 1.5 ✅
-- **Stages**: 1-2 (Unit markers, Infinite Cube)
+- **Stages**: 0-2 (Unit markers, Infinite Cube)
 - **Lesson**: Unit marker basics
 - **Mechanics to Validate**:
-  - [ ] Unit marker placement and cube capture
+  - [x] Unit marker placement and cube capture (Stage 0 validated)
   - [ ] Infinity cube avoidance and danger recognition
   - [ ] Basic movement and positioning
   - [ ] Core collision mechanics (Unit vs Unit, Unit vs Infinity)
 - **Tasks**:
   - [x] Design wave configurations for stages 1-2
   - [x] Implement stages 1-2 with wave configs
-  - [ ] Validate Unit marker and Infinity cube mechanics work correctly
+  - [x] Validate Stage 0 (all systems working, playable end-to-end)
+  - [ ] Validate Stages 1-2 (playtesting in progress)
   - [x] Define and Implement Penalty system
   - [x] Define and Implement Scoring System
   - [x] Fix bugs/edge cases discovered (max unit charges wave override)
-  - [ ] Ensure stages are playable end-to-end
+  - [x] Fix out of bounds error in Stage 1 Wave 4 spawn calculation
+  - [ ] Ensure stages 1-2 are playable end-to-end
+- **Playtesting Issues Found**:
+  - [x] **Out of bounds error**: Stage 1 Wave 4 - Fixed with bounds validation in spawn calculation
+  - [ ] **Wave similarity**: Stage 0 Wave 3 and Stage 1 Wave 1 are too similar (deferred to Milestone 1.14 for tuning)
+- **Note**: Tuning and balance deferred to Milestone 1.14 (Stage Content Refinement & Difficulty Curve)
 
 ---
 
@@ -315,8 +321,8 @@ One attunement per marker type. Modifies cube properties, not collision matrix.
 - **Points**: 6 (~1.5 weeks active development)
 - **Status**: ⬜ Pending
 - **Dependencies**: Milestone 1.6
-- **Stages**: 3-5 (Matrix cube/markers)
-- **Lesson**: Area effects
+- **Stages**: 3-5 (Matrix cube/markers introduced)
+- **Lesson**: Area effects and solving Infinity blocking problems
 - **Mechanics to Validate**:
   - [ ] Matrix cube introduction and area capture
   - [ ] Matrix vs Infinity face painting mechanics

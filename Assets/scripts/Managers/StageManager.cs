@@ -14,6 +14,7 @@ public class StageManager : MonoBehaviour, IManagerDebugInterface
     [SerializeField] private WaveManager waveManager;
     [SerializeField] private PlayerManager playerController;
     [SerializeField] private PlayerActionManager playerActionManager;
+    [SerializeField] private GameUI gameUI;
 
     [Header("Stage Database")]
     [SerializeField] private StageDB stageDatabase;
@@ -279,6 +280,13 @@ public class StageManager : MonoBehaviour, IManagerDebugInterface
         // Fire GameEvents
         GameEvents.FireStageStart(stageNumber, stage);
         DebugLog($"Fired GameEvents.OnStageStart for stage {stageNumber}");
+        gameUI.ResetWaveIcons();
+        var count = Enumerable.Range(0, stage.waveConfigurations.Count).ToList();
+
+        foreach (var waveIndex in count)
+        {
+            gameUI.ToggleWaveIcon(waveIndex, false);
+        }
 
         DebugLog($"Stage {stageNumber}: '{stage.stageName}' loaded successfully (Attempt #{stageAttempts[stageNumber]})");
 
@@ -371,6 +379,8 @@ public class StageManager : MonoBehaviour, IManagerDebugInterface
         if (waveManager != null)
         {
             waveManager.StopWave();
+            // Reset grid height override when stage ends
+            waveManager.ResetGridHeightOverride();
         }
 
         if (playerActionManager != null)
@@ -530,9 +540,8 @@ public class StageManager : MonoBehaviour, IManagerDebugInterface
         yield return new WaitForSeconds(stageTransitionDelay);
 
         // Check if this is the Tutorial stage (Stage 0) - special completion sequence
-        if (IsTutorialStage)
+        if (autoAdvanceStages)
         {
-            DebugLog("HandleStageSuccess: Tutorial stage detected, preparing completion sequence");
             
             // Show demo completion message
             if (waveManager != null && waveManager.showMessages)
@@ -543,7 +552,7 @@ public class StageManager : MonoBehaviour, IManagerDebugInterface
                 
                 var completionMessage = new WaveMessage
                 {
-                    Message = "Tutorial Complete\n\n" +
+                    Message = $"Stage {CurrentStageIndex} Complete\n\n" +
                              $"Time: {timeStr}\n" +
                              $"Cubes Captured: {capturedCubeCount}\n\n" +
                              "Press K to return to menu",
@@ -591,30 +600,23 @@ public class StageManager : MonoBehaviour, IManagerDebugInterface
             
             // Transition back to Splash scene
             DebugLog("HandleStageSuccess: Loading Splash scene...");
-            
-            // Do comprehensive cleanup before scene change
-            CleanupBeforeSceneChange();
-            
-            // Load splash scene with Single mode to ensure current scene is unloaded
-            SceneManager.LoadScene("Splash", LoadSceneMode.Single);
-            DebugLog("HandleStageSuccess: Scene load initiated");
-        }
-        else
-        {
-            // Normal stage progression for non-demo stages
-            if (autoAdvanceStages)
+
+            int nextStage = CurrentStageIndex + 1;
+            if (stageDatabase.GetStage(nextStage) != null)
             {
-                int nextStage = CurrentStageIndex + 1;
-                if (stageDatabase.GetStage(nextStage) != null)
-                {
-                    LoadStage(nextStage);
-                }
-                else
-                {
-                    DebugLog("All stages completed!");
-                }
+                LoadStage(nextStage);
             }
+            else
+            {
+                CleanupBeforeSceneChange();
+                DebugLog("All stages completed!");
+                 // Load splash scene with Single mode to ensure current scene is unloaded
+                SceneManager.LoadScene("Splash", LoadSceneMode.Single);
+                DebugLog("HandleStageSuccess: Scene load initiated");
+            }
+           
         }
+
     }
 
     private IEnumerator HandleStageFailure()
@@ -796,7 +798,28 @@ public class StageManager : MonoBehaviour, IManagerDebugInterface
         else
         {
             // For other stages, check normal completion criteria
-            CheckStageCompletion();
+            // If no specific requirements are set, completing all waves means stage success
+            if (CurrentStage != null)
+            {
+                bool hasNoRequirements = CurrentStage.requiredCaptureCount == 0 && !CurrentStage.requireAllCubesDestroyed;
+                DebugLog($"OnAllWavesCompleted: Stage {CurrentStageIndex} - requiredCaptureCount: {CurrentStage.requiredCaptureCount}, requireAllCubesDestroyed: {CurrentStage.requireAllCubesDestroyed}, hasNoRequirements: {hasNoRequirements}");
+                
+                if (hasNoRequirements)
+                {
+                    DebugLog("OnAllWavesCompleted: All waves complete with no specific requirements - completing stage as success");
+                    CompleteStage(true);
+                }
+                else
+                {
+                    // Check specific completion criteria (capture count, etc.)
+                    DebugLog("OnAllWavesCompleted: Stage has specific requirements - checking completion criteria");
+                    CheckStageCompletion();
+                }
+            }
+            else
+            {
+                DebugLog("OnAllWavesCompleted: CurrentStage is null - cannot check completion");
+            }
         }
     }
 

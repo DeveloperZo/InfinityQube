@@ -109,6 +109,10 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
     private bool isPaused = false;
     private Queue<WaveMessage> pendingMessages = new Queue<WaveMessage>();
     private bool isProcessingMessageQueue = false;
+    
+    // Grid Height Override Tracking
+    private int stageDefaultGridHeight = 0;  // Stored when stage starts
+    private int currentGridHeightOverride = 0;  // 0 = using stage default, >0 = overridden
     #endregion
 
     #region Unity Lifecycle
@@ -116,6 +120,17 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
     {
         FindReferences();
         InitializeState();
+    }
+    
+    private void OnEnable()
+    {
+        // Subscribe to stage events to track default grid height
+        GameEvents.OnStageStart += HandleStageStart;
+    }
+    
+    private void OnDisable()
+    {
+        GameEvents.OnStageStart -= HandleStageStart;
     }
 
     private void Update()
@@ -128,6 +143,19 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
     private void OnDestroy()
     {
         CleanupWave();
+    }
+    
+    /// <summary>
+    /// Handles stage start event to capture default grid height for override tracking.
+    /// </summary>
+    private void HandleStageStart(int stageIndex, StageData stageData)
+    {
+        if (stageData != null && grid != null)
+        {
+            stageDefaultGridHeight = stageData.gridHeight;
+            currentGridHeightOverride = 0;  // Reset override when stage starts
+            DebugLog($"Stage {stageIndex} started: Default grid height = {stageDefaultGridHeight}");
+        }
     }
     #endregion
 
@@ -455,6 +483,9 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
     {
         if (!resume)
         {
+            // Apply grid height override before spawning (if needed)
+            ApplyGridHeightOverride();
+            
             // Skip spawning if skipSpawn flag is set (custom waves already spawned)
             if (skipSpawn)
             {
@@ -578,6 +609,51 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
         // GridHeight is the number of rows of cubes at top of grid - this is fine as long as grid is tall enough
         DebugLog($"Wave spawn area: {wave.GridWidth}x{wave.GridHeight}, Grid: {grid.Width}x{grid.Height}");
     }
+    
+    /// <summary>
+    /// Applies grid height override from current wave if specified.
+    /// Once overridden, grid stays at that height until stage end or another override.
+    /// </summary>
+    private void ApplyGridHeightOverride()
+    {
+        if (CurrentWave == null || grid == null) return;
+        
+        int targetHeight = stageDefaultGridHeight;  // Default to stage height
+        
+        // Check if current wave has an override
+        if (CurrentWave.overrideGridHeight > 0)
+        {
+            targetHeight = CurrentWave.overrideGridHeight;
+            currentGridHeightOverride = targetHeight;
+            DebugLog($"📏 Wave {currentWaveIndex} overrides grid height to {targetHeight} (stage default: {stageDefaultGridHeight})");
+        }
+        else if (currentGridHeightOverride > 0)
+        {
+            // No override in this wave, but previous wave set an override - keep it
+            targetHeight = currentGridHeightOverride;
+            DebugLog($"📏 Keeping grid height override from previous wave: {targetHeight}");
+        }
+        
+        // Resize grid if height needs to change (width always uses stage default)
+        if (grid.Height != targetHeight)
+        {
+            var stageManager = FindFirstObjectByType<StageManager>();
+            int stageWidth = stageManager?.CurrentStage?.gridWidth ?? grid.Width;
+            
+            DebugLog($"📐 Resizing grid from {grid.Width}x{grid.Height} to {stageWidth}x{targetHeight}");
+            grid.ResizeGrid(stageWidth, targetHeight);
+        }
+    }
+    
+    /// <summary>
+    /// Resets grid height override tracking (called when stage ends).
+    /// </summary>
+    public void ResetGridHeightOverride()
+    {
+        currentGridHeightOverride = 0;
+        stageDefaultGridHeight = 0;
+        DebugLog("🔄 Grid height override reset");
+    }
 
     private void SpawnConfigurationCubes()
     {
@@ -614,6 +690,19 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
         // Calculate grid position WITHOUT modifying original cubeData
         var waveHeight = waveConfiguration.Count > 0 ? waveConfiguration[currentWaveIndex].GridHeight : waveSize;
         var gridLocalHeight = grid.Height - (waveHeight - cubeData.position.y);
+        
+        // Validate bounds before spawning
+        if (cubeData.position.x < 0 || cubeData.position.x >= grid.Width)
+        {
+            this.LogError($"Cube spawn X position ({cubeData.position.x}) out of bounds (0-{grid.Width - 1})");
+            return;
+        }
+        
+        if (gridLocalHeight < 0 || gridLocalHeight >= grid.Height)
+        {
+            this.LogError($"Cube spawn Y position ({gridLocalHeight}) out of bounds (0-{grid.Height - 1}). Wave height: {waveHeight}, cube Y: {cubeData.position.y}, grid height: {grid.Height}");
+            return;
+        }
         
         // Use local position for spawning (preserve original wave data)
         Vector2Int spawnPosition = new Vector2Int(cubeData.position.x, gridLocalHeight);
@@ -1288,6 +1377,16 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
     private bool HasActiveCubes()
     {
         return activeCubes.Count > 0 && !debugMode;
+    }
+    
+    /// <summary>
+    /// Checks if only Infinity cubes (or no cubes) remain in the wave.
+    /// This indicates a "safe" state where no penalties will occur from cube escapes.
+    /// </summary>
+    public bool HasOnlyInfinityCubesRemaining()
+    {
+        if (activeCubes.Count == 0) return true;
+        return activeCubes.All(c => c != null && !c.isDestroyed && c.type == CubeType.Infinity);
     }
 
     private CubeType GetRandomCubeType()

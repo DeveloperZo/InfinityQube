@@ -13,54 +13,115 @@ MonoBehaviour:
   m_Name: Wave_1_01
   m_EditorClassIdentifier: 
   Index: 0
-  GridHeight: 3
+  waveName: 
   GridWidth: 5
+  GridHeight: 3
   CubesData:
-  - type: 2
-    position: {x: 0, y: 0}
-    level: 1
-  - type: 0
-    position: {x: 1, y: 0}
-    level: 1
-  - type: 0
-    position: {x: 2, y: 0}
-    level: 1
   - type: 2
     position: {x: 3, y: 0}
     level: 1
+    hasPaintedFaces: 0
+    frontFaceStatus: 0
+    frontFaceCharges: 0
+    spawnDelay: 0
   - type: 0
     position: {x: 4, y: 0}
     level: 1
+    hasPaintedFaces: 0
+    frontFaceStatus: 0
+    frontFaceCharges: 0
+    spawnDelay: 0
   - type: 0
     position: {x: 0, y: 1}
     level: 1
+    hasPaintedFaces: 0
+    frontFaceStatus: 0
+    frontFaceCharges: 0
+    spawnDelay: 0
   - type: 0
-    position: {x: 1, y: 1}
-    level: 1
-  - type: 2
     position: {x: 2, y: 1}
     level: 1
-  - type: 0
-    position: {x: 3, y: 1}
-    level: 1
-  - type: 0
-    position: {x: 4, y: 1}
-    level: 1
-  - type: 0
+    hasPaintedFaces: 0
+    frontFaceStatus: 0
+    frontFaceCharges: 0
+    spawnDelay: 0
+  - type: 2
     position: {x: 0, y: 2}
     level: 1
-  - type: 0
-    position: {x: 1, y: 2}
-    level: 1
-  - type: 0
+    hasPaintedFaces: 0
+    frontFaceStatus: 0
+    frontFaceCharges: 0
+    spawnDelay: 0
+  - type: 2
     position: {x: 2, y: 2}
     level: 1
-  - type: 0
-    position: {x: 3, y: 2}
+    hasPaintedFaces: 0
+    frontFaceStatus: 0
+    frontFaceCharges: 0
+    spawnDelay: 0
+  - type: 2
+    position: {x: 1, y: 0}
     level: 1
+    hasPaintedFaces: 0
+    frontFaceStatus: 0
+    frontFaceCharges: 0
+    spawnDelay: 0
+  - type: 0
+    position: {x: 0, y: 0}
+    level: 1
+    hasPaintedFaces: 0
+    frontFaceStatus: 0
+    frontFaceCharges: 0
+    spawnDelay: 0
+  - type: 0
+    position: {x: 2, y: 0}
+    level: 1
+    hasPaintedFaces: 0
+    frontFaceStatus: 0
+    frontFaceCharges: 0
+    spawnDelay: 0
   - type: 0
     position: {x: 4, y: 2}
     level: 1
+    hasPaintedFaces: 0
+    frontFaceStatus: 0
+    frontFaceCharges: 0
+    spawnDelay: 0
+  - type: 2
+    position: {x: 1, y: 1}
+    level: 1
+    hasPaintedFaces: 0
+    frontFaceStatus: 0
+    frontFaceCharges: 0
+    spawnDelay: 0
+  - type: 2
+    position: {x: 1, y: 2}
+    level: 1
+    hasPaintedFaces: 0
+    frontFaceStatus: 0
+    frontFaceCharges: 0
+    spawnDelay: 0
+  - type: 2
+    position: {x: 3, y: 1}
+    level: 1
+    hasPaintedFaces: 0
+    frontFaceStatus: 0
+    frontFaceCharges: 0
+    spawnDelay: 0
+  - type: 2
+    position: {x: 3, y: 2}
+    level: 1
+    hasPaintedFaces: 0
+    frontFaceStatus: 0
+    frontFaceCharges: 0
+    spawnDelay: 0
+  - type: 0
+    position: {x: 4, y: 1}
+    level: 1
+    hasPaintedFaces: 0
+    frontFaceStatus: 0
+    frontFaceCharges: 0
+    spawnDelay: 0
   grantsAddToInventory: 1
   grantMatrixCharges: 0
   grantRecursionCharges: 0
@@ -70,9 +131,12 @@ MonoBehaviour:
   overrideRecursionMaxOnGrid: 0
   overrideInfinityMaxOnGrid: 0
   overrideUnitMarkerRechargeRate: 0
+  overrideMaxUnitMarkerCharges: 0
   waveStartDelay: 1.5
   moveInterval: 2.5
   fastMoveInterval: 0.1
+  respawnDelayMoves: 0
+  facePaintingTelegraphMoves: 0
   hasOwnSuccessCriteria: 0
   requiredCaptureCount: 0
   maxAllowedEscapes: -1

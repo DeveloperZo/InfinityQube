@@ -10,18 +10,17 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: faaa491ad539cb444afed02f7554648d, type: 3}
-  m_Name: stage_01
+  m_Name: stage_03
   m_EditorClassIdentifier: 
-  stageNumber: 1
-  stageName: First Contact
+  stageNumber: 3
+  stageName: Dancing with Danger
   stageType: 1
-  description: Your first encounter with Infinity cubes. Learn that some cubes cannot
-    be captured and must be avoided.
-  objective: Capture Unit cubes while avoiding Infinity cubes - they are lethal and
-    cannot be captured
-  gridWidth: 5
-  gridHeight: 15
-  playerStartPosition: {x: 2, y: 0}
+  description: 
+  objective: Capture Matrix cubes to create cube markers while avoiding Infinity
+    cubes
+  gridWidth: 7
+  gridHeight: 21
+  playerStartPosition: {x: 0, y: 1}
   respawnDelayMoves: 1
   enableLineDivider: 0
   lineDividerStartY: 10
@@ -41,10 +40,10 @@ MonoBehaviour:
   lockAttunements: 1
   allowedAttunementIds: []
   waveConfigurations:
-  - {fileID: 11400000, guid: 52039f55bbc24df458bee29ef04e1a6e, type: 2}
-  - {fileID: 11400000, guid: 26a86d8b588967f45b04cdf43bc15c49, type: 2}
-  - {fileID: 11400000, guid: 5650d342772b2074e8001895b067c673, type: 2}
-  - {fileID: 11400000, guid: f4cdbe06ad71e7948b9b79a0bac8b24b, type: 2}
+  - {fileID: 11400000, guid: 0fb9c9a4fe201c343b103a736a5eff52, type: 2}
+  - {fileID: 11400000, guid: a426cbc035c2f334d937ad7297db7200, type: 2}
+  - {fileID: 11400000, guid: b1f0c30a384ff31408c9c4dc1c4c704e, type: 2}
+  - {fileID: 11400000, guid: 03e82b6b2d466bf45b9579a8cc9798c8, type: 2}
   requireAllCubesDestroyed: 0
   requiredCaptureCount: 0
-  maxAllowedEscapes: 6
+  maxAllowedEscapes: 0

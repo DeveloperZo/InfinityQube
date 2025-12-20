@@ -10,15 +10,29 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 78c3fb7cc917307469018838241693f1, type: 3}
-  m_Name: Wave_2_03
-  m_EditorClassIdentifier: Assembly-CSharp::WaveData
+  m_Name: Wave_3_02
+  m_EditorClassIdentifier: 
   Index: 0
   waveName: 
-  GridWidth: 5
+  GridWidth: 7
   GridHeight: 5
   CubesData:
   - type: 0
-    position: {x: 2, y: 2}
+    position: {x: 0, y: 1}
+    level: 1
+    hasPaintedFaces: 0
+    frontFaceStatus: 0
+    frontFaceCharges: 0
+    spawnDelay: 0
+  - type: 0
+    position: {x: 0, y: 4}
+    level: 1
+    hasPaintedFaces: 0
+    frontFaceStatus: 0
+    frontFaceCharges: 0
+    spawnDelay: 0
+  - type: 0
+    position: {x: 2, y: 1}
     level: 1
     hasPaintedFaces: 0
     frontFaceStatus: 0
@@ -39,20 +53,6 @@ MonoBehaviour:
     frontFaceCharges: 0
     spawnDelay: 0
   - type: 0
-    position: {x: 1, y: 1}
-    level: 1
-    hasPaintedFaces: 0
-    frontFaceStatus: 0
-    frontFaceCharges: 0
-    spawnDelay: 0
-  - type: 0
-    position: {x: 2, y: 1}
-    level: 1
-    hasPaintedFaces: 0
-    frontFaceStatus: 0
-    frontFaceCharges: 0
-    spawnDelay: 0
-  - type: 0
     position: {x: 3, y: 0}
     level: 1
     hasPaintedFaces: 0
@@ -60,77 +60,70 @@ MonoBehaviour:
     frontFaceCharges: 0
     spawnDelay: 0
   - type: 0
-    position: {x: 3, y: 1}
-    level: 1
-    hasPaintedFaces: 0
-    frontFaceStatus: 0
-    frontFaceCharges: 0
-    spawnDelay: 0
-  - type: 2
-    position: {x: 0, y: 4}
-    level: 1
-    hasPaintedFaces: 0
-    frontFaceStatus: 0
-    frontFaceCharges: 0
-    spawnDelay: 0
-  - type: 2
-    position: {x: 4, y: 4}
-    level: 1
-    hasPaintedFaces: 0
-    frontFaceStatus: 0
-    frontFaceCharges: 0
-    spawnDelay: 0
-  - type: 2
-    position: {x: 4, y: 3}
-    level: 1
-    hasPaintedFaces: 0
-    frontFaceStatus: 0
-    frontFaceCharges: 0
-    spawnDelay: 0
-  - type: 2
-    position: {x: 3, y: 4}
-    level: 1
-    hasPaintedFaces: 0
-    frontFaceStatus: 0
-    frontFaceCharges: 0
-    spawnDelay: 0
-  - type: 2
-    position: {x: 0, y: 3}
-    level: 1
-    hasPaintedFaces: 0
-    frontFaceStatus: 0
-    frontFaceCharges: 0
-    spawnDelay: 0
-  - type: 2
-    position: {x: 1, y: 4}
-    level: 1
-    hasPaintedFaces: 0
-    frontFaceStatus: 0
-    frontFaceCharges: 0
-    spawnDelay: 0
-  - type: 2
-    position: {x: 1, y: 2}
-    level: 1
-    hasPaintedFaces: 0
-    frontFaceStatus: 0
-    frontFaceCharges: 0
-    spawnDelay: 0
-  - type: 2
-    position: {x: 0, y: 1}
-    level: 1
-    hasPaintedFaces: 0
-    frontFaceStatus: 0
-    frontFaceCharges: 0
-    spawnDelay: 0
-  - type: 2
     position: {x: 3, y: 2}
     level: 1
     hasPaintedFaces: 0
     frontFaceStatus: 0
     frontFaceCharges: 0
     spawnDelay: 0
-  - type: 2
+  - type: 0
     position: {x: 4, y: 1}
+    level: 1
+    hasPaintedFaces: 0
+    frontFaceStatus: 0
+    frontFaceCharges: 0
+    spawnDelay: 0
+  - type: 0
+    position: {x: 4, y: 3}
+    level: 1
+    hasPaintedFaces: 0
+    frontFaceStatus: 0
+    frontFaceCharges: 0
+    spawnDelay: 0
+  - type: 0
+    position: {x: 6, y: 3}
+    level: 1
+    hasPaintedFaces: 0
+    frontFaceStatus: 0
+    frontFaceCharges: 0
+    spawnDelay: 0
+  - type: 0
+    position: {x: 6, y: 4}
+    level: 1
+    hasPaintedFaces: 0
+    frontFaceStatus: 0
+    frontFaceCharges: 0
+    spawnDelay: 0
+  - type: 0
+    position: {x: 5, y: 4}
+    level: 1
+    hasPaintedFaces: 0
+    frontFaceStatus: 0
+    frontFaceCharges: 0
+    spawnDelay: 0
+  - type: 0
+    position: {x: 5, y: 3}
+    level: 1
+    hasPaintedFaces: 0
+    frontFaceStatus: 0
+    frontFaceCharges: 0
+    spawnDelay: 0
+  - type: 0
+    position: {x: 5, y: 2}
+    level: 1
+    hasPaintedFaces: 0
+    frontFaceStatus: 0
+    frontFaceCharges: 0
+    spawnDelay: 0
+  - type: 0
+    position: {x: 6, y: 1}
+    level: 1
+    hasPaintedFaces: 0
+    frontFaceStatus: 0
+    frontFaceCharges: 0
+    spawnDelay: 0
+  - type: 0
+    position: {x: 5, y: 0}
     level: 1
     hasPaintedFaces: 0
     frontFaceStatus: 0
@@ -144,7 +137,70 @@ MonoBehaviour:
     frontFaceCharges: 0
     spawnDelay: 0
   - type: 0
+    position: {x: 3, y: 1}
+    level: 1
+    hasPaintedFaces: 0
+    frontFaceStatus: 0
+    frontFaceCharges: 0
+    spawnDelay: 0
+  - type: 0
+    position: {x: 3, y: 3}
+    level: 1
+    hasPaintedFaces: 0
+    frontFaceStatus: 0
+    frontFaceCharges: 0
+    spawnDelay: 0
+  - type: 0
+    position: {x: 3, y: 4}
+    level: 1
+    hasPaintedFaces: 0
+    frontFaceStatus: 0
+    frontFaceCharges: 0
+    spawnDelay: 0
+  - type: 0
+    position: {x: 4, y: 4}
+    level: 1
+    hasPaintedFaces: 0
+    frontFaceStatus: 0
+    frontFaceCharges: 0
+    spawnDelay: 0
+  - type: 0
+    position: {x: 1, y: 4}
+    level: 1
+    hasPaintedFaces: 0
+    frontFaceStatus: 0
+    frontFaceCharges: 0
+    spawnDelay: 0
+  - type: 0
+    position: {x: 1, y: 3}
+    level: 1
+    hasPaintedFaces: 0
+    frontFaceStatus: 0
+    frontFaceCharges: 0
+    spawnDelay: 0
+  - type: 0
+    position: {x: 0, y: 3}
+    level: 1
+    hasPaintedFaces: 0
+    frontFaceStatus: 0
+    frontFaceCharges: 0
+    spawnDelay: 0
+  - type: 1
     position: {x: 0, y: 0}
+    level: 1
+    hasPaintedFaces: 0
+    frontFaceStatus: 0
+    frontFaceCharges: 0
+    spawnDelay: 0
+  - type: 0
+    position: {x: 1, y: 2}
+    level: 1
+    hasPaintedFaces: 0
+    frontFaceStatus: 0
+    frontFaceCharges: 0
+    spawnDelay: 0
+  - type: 0
+    position: {x: 0, y: 2}
     level: 1
     hasPaintedFaces: 0
     frontFaceStatus: 0
@@ -164,29 +220,43 @@ MonoBehaviour:
     frontFaceStatus: 0
     frontFaceCharges: 0
     spawnDelay: 0
-  - type: 2
-    position: {x: 0, y: 2}
+  - type: 0
+    position: {x: 6, y: 2}
     level: 1
     hasPaintedFaces: 0
     frontFaceStatus: 0
     frontFaceCharges: 0
     spawnDelay: 0
-  - type: 2
+  - type: 1
+    position: {x: 1, y: 1}
+    level: 1
+    hasPaintedFaces: 0
+    frontFaceStatus: 0
+    frontFaceCharges: 0
+    spawnDelay: 0
+  - type: 1
+    position: {x: 2, y: 2}
+    level: 1
+    hasPaintedFaces: 0
+    frontFaceStatus: 0
+    frontFaceCharges: 0
+    spawnDelay: 0
+  - type: 1
+    position: {x: 6, y: 0}
+    level: 1
+    hasPaintedFaces: 0
+    frontFaceStatus: 0
+    frontFaceCharges: 0
+    spawnDelay: 0
+  - type: 1
+    position: {x: 5, y: 1}
+    level: 1
+    hasPaintedFaces: 0
+    frontFaceStatus: 0
+    frontFaceCharges: 0
+    spawnDelay: 0
+  - type: 1
     position: {x: 4, y: 2}
-    level: 1
-    hasPaintedFaces: 0
-    frontFaceStatus: 0
-    frontFaceCharges: 0
-    spawnDelay: 0
-  - type: 2
-    position: {x: 3, y: 3}
-    level: 1
-    hasPaintedFaces: 0
-    frontFaceStatus: 0
-    frontFaceCharges: 0
-    spawnDelay: 0
-  - type: 2
-    position: {x: 1, y: 3}
     level: 1
     hasPaintedFaces: 0
     frontFaceStatus: 0
@@ -209,7 +279,7 @@ MonoBehaviour:
   facePaintingTelegraphMoves: 0
   hasOwnSuccessCriteria: 0
   requiredCaptureCount: 0
-  maxAllowedEscapes: -1
+  maxAllowedEscapes: 0
   highlightSequences: []
   _runtimeStats:
     unitCubesCaptured: 0

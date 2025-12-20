@@ -17,5 +17,5 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 135664d324eaba64191ca882f21f67a9, type: 2}
   - {fileID: 11400000, guid: 3c9b401723917c24bb17fa44ca55d756, type: 2}
   _stageCount: 3
-  _totalWaveCount: 10
+  _totalWaveCount: 11
   _validationErrors: []
