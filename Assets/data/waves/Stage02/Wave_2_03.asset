@@ -16,6 +16,7 @@ MonoBehaviour:
   waveName: 
   GridWidth: 5
   GridHeight: 5
+  overrideGridHeight: 0
   CubesData:
   - type: 0
     position: {x: 2, y: 2}
@@ -203,7 +204,7 @@ MonoBehaviour:
   overrideUnitMarkerRechargeRate: 0
   overrideMaxUnitMarkerCharges: 0
   waveStartDelay: 1
-  moveInterval: 1.75
+  moveInterval: 2.25
   fastMoveInterval: 0.1
   respawnDelayMoves: 0
   facePaintingTelegraphMoves: 0

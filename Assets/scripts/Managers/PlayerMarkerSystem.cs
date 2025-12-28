@@ -434,6 +434,20 @@ public class PlayerMarkerSystem : MonoBehaviour
             visualManager?.ShowMarkerTriggerEffect(position);
         }
 
+        // Hide icons after capture completes
+        foreach (var position in marker.affectedPositions)
+        {
+            Tile tile = actionManager.GridManager.GetTileAt(position.x, position.y);
+            if (tile != null)
+            {
+                CubeMarkerStrobeEffect effect = tile.GetComponent<CubeMarkerStrobeEffect>();
+                if (effect != null)
+                {
+                    effect.HideIcon();
+                }
+            }
+        }
+
         if (PlayerStatisticsManager.Instance != null)
         {
             PlayerStatisticsManager.Instance.OnMarkerTriggered(marker.centerPosition, "matrix", anySuccess, totalCubesAffected);
@@ -542,6 +556,15 @@ public class PlayerMarkerSystem : MonoBehaviour
 
     public void CreateCubeMarker(Vector2Int position, CubeMarkerType type = CubeMarkerType.Matrix, int size = 3, int uses = -1)
     {
+        // Check if a cube marker already exists at this position to prevent duplicates
+        // This prevents multiple detonations from the same collision
+        var existingMarker = cubeMarkers.FirstOrDefault(m => m.position == position && m.type == type);
+        if (existingMarker != null)
+        {
+            Debug.LogWarning($"[PlayerMarkerSystem] Cube marker already exists at ({position.x}, {position.y}), skipping duplicate creation");
+            return;
+        }
+        
         // If uses not specified, calculate from attunement (Matrix only)
         int finalUses = uses;
         if (uses < 0)
@@ -555,7 +578,7 @@ public class PlayerMarkerSystem : MonoBehaviour
         }
         
         var cubeMarker = new CubeMarker(position, type, size, finalUses);
-        cubeMarker.visualObject = visualManager?.CreateCubeMarkerVisual(position, type);
+        cubeMarker.visualObject = visualManager?.CreateCubeMarkerVisual(position, type, size);
 
         cubeMarkers.Add(cubeMarker);
 
@@ -568,17 +591,23 @@ public class PlayerMarkerSystem : MonoBehaviour
 
         var cubeMarker = cubeMarkers[0];
         
+        // Prevent multiple simultaneous triggers - remove marker from list immediately
+        // This ensures the marker can't be triggered again even if the method is called multiple times
+        cubeMarkers.RemoveAt(0);
+        
         // Decrement uses
         cubeMarker.remainingUses--;
         
-        // Only remove if no uses left
-        if (cubeMarker.remainingUses <= 0)
+        // If marker has remaining uses, add it back to the front of the queue
+        if (cubeMarker.remainingUses > 0)
         {
-            cubeMarkers.RemoveAt(0);
+            cubeMarkers.Insert(0, cubeMarker);
+            Debug.Log($"[Concentrated Expansion] Cube marker has {cubeMarker.remainingUses} uses remaining");
         }
         else
         {
-            Debug.Log($"[Concentrated Expansion] Cube marker has {cubeMarker.remainingUses} uses remaining");
+            // Marker is fully consumed, destroy visual immediately
+            visualManager?.DestroyMarkerVisual(cubeMarker.visualObject);
         }
 
         return TriggerCubeMarkerAt(cubeMarker, cubeMarker.remainingUses <= 0);
@@ -586,15 +615,54 @@ public class PlayerMarkerSystem : MonoBehaviour
 
     public bool TriggerCubeMarkerAt(CubeMarker cubeMarker, bool destroyVisual = true)
     {
+        // Prevent triggering if marker is null or already destroyed
+        if (cubeMarker == null)
+        {
+            Debug.LogWarning("[PlayerMarkerSystem] Attempted to trigger null cube marker");
+            return false;
+        }
+
         cubeMarkersTriggered++;
 
         Vector3 worldPosition = actionManager.GridManager.GridToWorldPosition(cubeMarker.position.x, cubeMarker.position.y);
         TriggerMarkerAudioEvent(GameAudioEvent.MarkerTriggered, worldPosition, 1.2f);
 
-        // Only destroy visual if this is the last use
-        if (destroyVisual)
+        // Get affected positions and show icons above tiles
+        List<Vector2Int> affectedPositions = GetAreaPositions(cubeMarker.position, cubeMarker.size);
+        Color iconColor = cubeMarker.type switch
         {
-            visualManager?.DestroyMarkerVisual(cubeMarker.visualObject);
+            CubeMarkerType.Unit => Color.magenta,
+            CubeMarkerType.Recursion => new Color(0.7f, 0.2f, 0.7f, 1f),
+            CubeMarkerType.Matrix => Color.cyan,
+            CubeMarkerType.Cube => Color.yellow,
+            _ => Color.white
+        };
+        
+        // Show icons above all affected tiles (including bottom-left which had the beam)
+        foreach (var pos in affectedPositions)
+        {
+            Tile tile = actionManager.GridManager.GetTileAt(pos.x, pos.y);
+            if (tile != null)
+            {
+                CubeMarkerStrobeEffect effect = tile.GetComponent<CubeMarkerStrobeEffect>();
+                if (effect != null)
+                {
+                    // Disable beam and show icon on all tiles
+                    effect.SetEnabled(false);
+                    effect.ShowIcon(iconColor);
+                }
+            }
+        }
+
+        // Disable or destroy visual based on remaining uses
+        if (cubeMarker.visualObject != null)
+        {
+            if (destroyVisual)
+            {
+                // Last use - destroy completely
+                visualManager?.DestroyMarkerVisual(cubeMarker.visualObject);
+                cubeMarker.visualObject = null;
+            }
         }
 
         var tempMatrixMarker = new MatrixMarker(cubeMarker.position, cubeMarker.size, Time.time);

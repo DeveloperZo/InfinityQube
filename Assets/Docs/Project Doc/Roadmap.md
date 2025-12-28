@@ -12,12 +12,12 @@ This roadmap outlines the development path from current production-ready state t
 ## Current Status
 
 ### 📍 **Current Phase**: Phase 1 - Core Innovation & Content
-### 📍 **Current Milestone**: 1.6 - Unit Markers & Infinite Cube (Stages 1-2) ⬜ Pending
+### 📍 **Current Milestone**: 1.7 - Matrix Cube/Markers (Stages 3-5) ⬜ Pending
 
 ### 🔴 **TOP PRIORITIES**
 | Priority | Item | Status | Points |
 |----------|------|--------|--------|
-| 🔴 Critical | Unit Markers & Infinite Cube (Milestone 1.6) | Ready to start | 4 pts |
+| 🔴 Critical | Matrix Cube/Markers (Milestone 1.7) | Ready to start | 6 pts |
 | 🔴 High | Matrix Cube/Markers (Milestone 1.7) | After 1.6 | 6 pts |
 | 🔴 High | Recursion Cube/Marker (Milestone 1.8) | After 1.7 | 6 pts |
 | 🟡 Medium | Infinity Marker (Milestone 1.9) | After 1.8 | 5 pts |
@@ -51,7 +51,7 @@ Points reflect actual development time, not complexity. A "week gap" between com
 | | 1.3 Database Enhancement | ✅ Complete | 6 pts |
 | | **1.4 Stage Content Creation** | ✅ **Complete** | 20 pts |
 | | **1.5 Demo Stage Content** | ✅ **Complete** | 5 pts |
-| | 1.6 Unit Markers & Infinite Cube (Stages 1-2) | ⬜ Pending | 4 pts |
+| | 1.6 Unit Markers & Infinite Cube (Stages 1-2) | ✅ Complete | 4 pts |
 | | 1.7 Matrix Cube/Markers (Stages 3-5) | ⬜ Pending | 6 pts |
 | | 1.8 Recursion Cube/Marker (Stages 6-8) | ⬜ Pending | 6 pts |
 | | 1.9 Infinity Marker (Stages 9-10) | ⬜ Pending | 5 pts |
@@ -290,27 +290,36 @@ One attunement per marker type. Modifies cube properties, not collision matrix.
 ### Milestone 1.6: Unit Markers & Infinite Cube (Stages 1-2)
 - **Target**: Implement stages 1-2 and validate Unit marker and Infinity cube mechanics
 - **Points**: 4 (~1 week active development)
-- **Status**: 🔄 In Progress
+- **Status**: ✅ **COMPLETE** - December 19, 2025
 - **Dependencies**: Milestone 1.5 ✅
 - **Stages**: 0-2 (Unit markers, Infinite Cube)
 - **Lesson**: Unit marker basics
 - **Mechanics to Validate**:
   - [x] Unit marker placement and cube capture (Stage 0 validated)
-  - [ ] Infinity cube avoidance and danger recognition
-  - [ ] Basic movement and positioning
-  - [ ] Core collision mechanics (Unit vs Unit, Unit vs Infinity)
+  - [x] Infinity cube avoidance and danger recognition (validated in Stages 1-2)
+  - [x] Basic movement and positioning (validated end-to-end)
+  - [x] Core collision mechanics (Unit vs Unit, Unit vs Infinity) (validated)
 - **Tasks**:
   - [x] Design wave configurations for stages 1-2
   - [x] Implement stages 1-2 with wave configs
   - [x] Validate Stage 0 (all systems working, playable end-to-end)
-  - [ ] Validate Stages 1-2 (playtesting in progress)
+  - [x] Validate Stages 1-2 (playtesting complete - all waves playable end-to-end)
   - [x] Define and Implement Penalty system
   - [x] Define and Implement Scoring System
   - [x] Fix bugs/edge cases discovered (max unit charges wave override)
   - [x] Fix out of bounds error in Stage 1 Wave 4 spawn calculation
-  - [ ] Ensure stages 1-2 are playable end-to-end
+  - [x] Ensure stages 1-2 are playable end-to-end
+  - [x] Fix stage progression bug (Stage 1 → Stage 2 transition)
+- **Playtesting Results** (December 19, 2025):
+  - [x] **Stage 0**: All 3 waves completed successfully (replay)
+  - [x] **Stage 1**: All 4 waves completed, Grade A (80%), 15 captured, 0 escaped
+  - [x] **Stage 2**: All 4 waves completed, Grade A (80%), 13 captured, 0 escaped
+  - [x] **Stage progression**: Stage 1 → Stage 2 transition working correctly
+  - [x] **Infinity avoidance**: Tutorial messages displayed, players successfully avoided Infinity cubes
+  - [x] **Collision mechanics**: Unit vs Unit and Unit vs Infinity collisions working correctly
 - **Playtesting Issues Found**:
   - [x] **Out of bounds error**: Stage 1 Wave 4 - Fixed with bounds validation in spawn calculation
+  - [x] **Stage progression bug**: Stage 1 not progressing to Stage 2 - Fixed in OnAllWavesCompleted()
   - [ ] **Wave similarity**: Stage 0 Wave 3 and Stage 1 Wave 1 are too similar (deferred to Milestone 1.14 for tuning)
 - **Note**: Tuning and balance deferred to Milestone 1.14 (Stage Content Refinement & Difficulty Curve)
 
@@ -940,7 +949,7 @@ Milestone 1.0 ✅ → 1.1 ✅ → 1.2 🔄 → 1.3 → 1.4 → 2.x → 3.x → 4
 
 **Related Documents**:
 - [Milestone Tracking](MilestoneTracking.md) - Historical record
-- [Development Velocity](../Technical%20Doc/DevelopmentVelocity.md) - Detailed metrics
+- [Milestone Tracking](MilestoneTracking.md) - Completed milestones and velocity metrics
 - [Technical Debt](../Technical%20Doc/TechnicalDebt.md) - Debt tracking
 - [Technical Critiques](../Technical%20Doc/TechnicalCritiques.md) - Code analysis
 

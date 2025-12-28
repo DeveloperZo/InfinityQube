@@ -88,6 +88,34 @@
 - **Rating**: 9/10 (Strong thematic coherence + strategic depth)
 -- **Outcome**: Accepted and implemented
 
+### Type-Based Player Cube Movement Ranges
+- **Description**: Player cubes have fixed travel distance that varies by cube type, creating different strategic profiles per marker type. Range could increase with game progression, requiring more captures to maintain effectiveness.
+- **Unique Value**: Creates strategic differentiation between marker types, forces closer placement decisions, adds resource tension
+- **Constraints**: Must be intuitive and clearly communicated to players. Need to balance ranges to maintain fun.
+- **Rating**: 7/10 (Future consideration - keeping move-until-collision for now)
+- **Notes**: 
+  - **Current Decision**: Keeping "move until collision" for now (Option A) - clearer when marker converts to cube
+  - **Future Option C**: Type-based ranges
+    - Unit cubes: 10 tiles max travel
+    - Matrix cubes: 8 tiles max travel
+    - Recursion cubes: 6 tiles max travel
+    - Infinity cubes: 12 tiles max travel
+  - **Progression Mechanic**: As game progresses, could increase captures needed per cube type to maintain range
+    - Early game: 1 capture = full range
+    - Mid game: 2 captures = full range
+    - Late game: 3 captures = full range
+    - Creates progression incentive: capture more cubes to extend range
+  - **Strategic Impact**: 
+    - Forces closer marker placement (more tactical)
+    - Creates resource tension (limited range = limited options)
+    - Different marker types have different "reach" profiles
+    - Progression system rewards skillful play (more captures = better range)
+  - **Design Considerations**:
+    - Need clear visual feedback for remaining travel distance
+    - Range could be displayed on marker placement preview
+    - Could show "range ring" around marker showing travel distance
+    - Balance: Too short = frustrating, too long = no strategic difference
+
 ### Efficient Single-Dev Testing Strategy
 - **Description**: Develop testing workflow that prevents combinatorial explosion as stages/waves multiply
 - **Unique Value**: Saves development time, enables faster iteration, prevents burnout

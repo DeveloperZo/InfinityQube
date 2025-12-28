@@ -959,7 +959,8 @@ MarkerMode currentMode = GetCurrentMode();
                 case MarkerMode.Matrix:
                     if (currentMatrixMarkerCharges <= 0)
                         return "No Matrix marker charges available.";
-                    if (currentMatrixMarkers >= matrixMarkerOnGridLimit)
+                    int effectiveMaxMatrix = maxMatrixMarkers > 0 ? maxMatrixMarkers : 2; // Default to 2 if not set
+                    if (currentMatrixMarkers >= effectiveMaxMatrix)
                         return "Maximum Matrix markers already placed on grid.";
                     break;
 
@@ -1290,7 +1291,7 @@ MarkerMode currentMode = GetCurrentMode();
                 break;
                 
             case MarkerMode.Recursion:
-                if (maxRecursionMarkerCharges <= 0)
+                if (maxRecursionInventory <= 0)
                 {
                     ShowActionErrorFeedback("Recursion markers are not available in this wave.");
                     return false;
@@ -1298,7 +1299,7 @@ MarkerMode currentMode = GetCurrentMode();
                 break;
                 
             case MarkerMode.Matrix:
-                if (maxMatrixMarkerCharges <= 0)
+                if (maxMatrixInventory <= 0)
                 {
                     ShowActionErrorFeedback("Matrix markers are not available in this wave.");
                     return false;
@@ -1306,7 +1307,7 @@ MarkerMode currentMode = GetCurrentMode();
                 break;
                 
             case MarkerMode.Infinity:
-                if (maxInfinityMarkerCharges <= 0)
+                if (maxInfinityInventory <= 0)
                 {
                     ShowActionErrorFeedback("Infinity markers are not available in this wave.");
                     return false;
@@ -1593,8 +1594,9 @@ MarkerMode currentMode = GetCurrentMode();
 
     public bool CanPlaceMatrixMarker()
     {
+        int effectiveMaxMatrix = maxMatrixMarkers > 0 ? maxMatrixMarkers : 2; // Default to 2 if not set
         return currentMatrixMarkerCharges > 0 &&
-               currentMatrixMarkers < matrixMarkerOnGridLimit;
+               currentMatrixMarkers < effectiveMaxMatrix;
                // Note: matrixMarkersPlaced is for statistics only, not for limiting placement
     }
 
@@ -2028,7 +2030,7 @@ MarkerMode currentMode = GetCurrentMode();
                 }
             }
             // Fallback to Recursion if Unit not available
-            else if (maxRecursionMarkerCharges > 0)
+            else if (maxRecursionInventory > 0)
             {
                 SetMode(MarkerMode.Recursion);
                 if (EnableDebugLogs)
@@ -2037,7 +2039,7 @@ MarkerMode currentMode = GetCurrentMode();
                 }
             }
             // Fallback to Matrix if Recursion not available
-            else if (maxMatrixMarkerCharges > 0)
+            else if (maxMatrixInventory > 0)
             {
                 SetMode(MarkerMode.Matrix);
                 if (EnableDebugLogs)
@@ -2046,7 +2048,7 @@ MarkerMode currentMode = GetCurrentMode();
                 }
             }
             // Fallback to Infinity if Matrix not available
-            else if (maxInfinityMarkerCharges > 0)
+            else if (maxInfinityInventory > 0)
             {
                 SetMode(MarkerMode.Infinity);
                 if (EnableDebugLogs)

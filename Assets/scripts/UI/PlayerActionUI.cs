@@ -65,9 +65,9 @@ public class PlayerActionUI : MonoBehaviour
         if (playerActionManager != null)
         {
             unitMaxCharges = playerActionManager.maxUnitMarkerCharges;
-            recursionMaxCharges = playerActionManager.maxRecursionMarkerCharges;
-            matrixMaxCharges = playerActionManager.maxMatrixMarkerCharges;
-            infinityMaxCharges = playerActionManager.maxInfinityMarkerCharges;
+            recursionMaxCharges = playerActionManager.maxRecursionInventory;
+            matrixMaxCharges = playerActionManager.maxMatrixInventory;
+            infinityMaxCharges = playerActionManager.maxInfinityInventory;
             // Unit markers use move-based recharge, non-Unit use inventory grants only
             unitMarkerRechargeProgress = 0f;
         }
@@ -102,15 +102,15 @@ public class PlayerActionUI : MonoBehaviour
             }
             if (recursionMaxCharges == 0)
             {
-                recursionMaxCharges = playerActionManager.maxRecursionMarkerCharges;
+                recursionMaxCharges = playerActionManager.maxRecursionInventory;
             }
             if (matrixMaxCharges == 0)
             {
-                matrixMaxCharges = playerActionManager.maxMatrixMarkerCharges;
+                matrixMaxCharges = playerActionManager.maxMatrixInventory;
             }
             if (infinityMaxCharges == 0)
             {
-                infinityMaxCharges = playerActionManager.maxInfinityMarkerCharges;
+                infinityMaxCharges = playerActionManager.maxInfinityInventory;
             }
         }
 
@@ -172,10 +172,12 @@ public class PlayerActionUI : MonoBehaviour
         int currentInfinityCharges = playerActionManager.GetCurrentInfinityCharges();
 
         // Get max charges from PlayerActionManager (may be updated from wave configuration)
+        // Unit markers use maxUnitMarkerCharges (regenerating pool)
+        // Non-Unit markers use inventory system (maxRecursionInventory, maxMatrixInventory, maxInfinityInventory)
         unitMaxCharges = playerActionManager.maxUnitMarkerCharges;
-        recursionMaxCharges = playerActionManager.maxRecursionMarkerCharges;
-        matrixMaxCharges = playerActionManager.maxMatrixMarkerCharges;
-        infinityMaxCharges = playerActionManager.maxInfinityMarkerCharges;
+        recursionMaxCharges = playerActionManager.maxRecursionInventory;
+        matrixMaxCharges = playerActionManager.maxMatrixInventory;
+        infinityMaxCharges = playerActionManager.maxInfinityInventory;
 
         // Update cached values for other methods that might need them
         unitCharges = currentUnitCharges;

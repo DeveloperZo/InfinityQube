@@ -16,6 +16,8 @@ MonoBehaviour:
   - {fileID: 11400000, guid: b1b2c3d4e5f6789012345678901234b0, type: 2}
   - {fileID: 11400000, guid: 135664d324eaba64191ca882f21f67a9, type: 2}
   - {fileID: 11400000, guid: 3c9b401723917c24bb17fa44ca55d756, type: 2}
-  _stageCount: 3
-  _totalWaveCount: 11
+  - {fileID: 11400000, guid: ce5011a7c62a75d4e9c2075f7ab1ed0e, type: 2}
+  - {fileID: 11400000, guid: 87dbe587abcf44145a4d772ef4f82285, type: 2}
+  _stageCount: 5
+  _totalWaveCount: 17
   _validationErrors: []

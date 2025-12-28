@@ -16,6 +16,7 @@ MonoBehaviour:
   waveName: Mixed Challenge
   GridWidth: 5
   GridHeight: 3
+  overrideGridHeight: 0
   CubesData:
   - type: 2
     position: {x: 0, y: 0}
@@ -126,11 +127,11 @@ MonoBehaviour:
   grantMatrixCharges: 0
   grantRecursionCharges: 0
   grantInfinityCharges: 0
-  overrideUnitMaxOnGrid: 3
+  overrideUnitMaxOnGrid: 0
   overrideMatrixMaxOnGrid: 0
   overrideRecursionMaxOnGrid: 0
   overrideInfinityMaxOnGrid: 0
-  overrideUnitMarkerRechargeRate: 3
+  overrideUnitMarkerRechargeRate: 0
   overrideMaxUnitMarkerCharges: 0
   waveStartDelay: 1.5
   moveInterval: 1.75

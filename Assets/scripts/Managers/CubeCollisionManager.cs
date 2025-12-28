@@ -724,21 +724,26 @@ public class CubeCollisionManager : MonoBehaviour, IManagerDebugInterface
     /// </summary>
     private bool HandleMatrixMatrixCollision(Vector2Int centerPosition, CubeManager waveMatrixCube = null)
     {
-        var areaPositions = markerSystem.GetAreaPositions(centerPosition, 3);
-        bool anyCaptured = false;
+        // Capture the Matrix cube at collision point first
+        // Pass isSameTypeMatch = true so ProcessCubeCapture creates a 3x3 marker (not 2x2)
+        var cubesAtPosition = markerSystem.FindAllCubesAt(centerPosition);
+        bool capturedMatrix = false;
 
-        foreach (var areaPos in areaPositions)
+        foreach (var cube in cubesAtPosition)
         {
-            var cubesAtArea = markerSystem.FindAllCubesAt(areaPos);
-            foreach (var cube in cubesAtArea)
+            if (cube == null || cube.isDestroyed || cube.isPlayerCube) continue;
+            if (cube.type == CubeType.Matrix)
             {
-                if (cube == null || cube.isDestroyed || cube.isPlayerCube) continue;
-                if (markerSystem.ProcessCubeCapture(cube, areaPos, PlayerMarkerSystem.MarkerType.Matrix, null, true))
+                // Matrix + Matrix is a same-type match, so ProcessCubeCapture will create 3x3 marker
+                if (markerSystem.ProcessCubeCapture(cube, centerPosition, PlayerMarkerSystem.MarkerType.Matrix, null, true))
                 {
-                    anyCaptured = true;
+                    capturedMatrix = true;
+                    break;
                 }
             }
         }
+
+        DebugLog("HandleMatrixMatrixCollision", $"Matrix+Matrix collision - captured Matrix cube, created 3x3 manual cube marker at ({centerPosition.x}, {centerPosition.y})");
 
         // Phaseable Expansion attunement: Paint wave Matrix cube's face
         if (waveMatrixCube != null && AttunementManager.IsInitialized && AttunementManager.Instance.ShouldMatrixMatrixPaintFace())
@@ -748,7 +753,7 @@ public class CubeCollisionManager : MonoBehaviour, IManagerDebugInterface
             DebugLog("HandleMatrixMatrixCollision", $"[Phaseable Expansion] Painted wave Matrix face at ({centerPosition.x}, {centerPosition.y})");
         }
 
-        return anyCaptured;
+        return capturedMatrix || true;
     }
 
     /// <summary>

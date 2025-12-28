@@ -1,0 +1,46 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: faaa491ad539cb444afed02f7554648d, type: 3}
+  m_Name: stage_04
+  m_EditorClassIdentifier: Assembly-CSharp::StageData
+  stageNumber: 4
+  stageName: Understanding Matrix
+  stageType: 1
+  description: 
+  objective: 
+  gridWidth: 7
+  gridHeight: 28
+  playerStartPosition: {x: 2, y: 0}
+  respawnDelayMoves: 1
+  enableLineDivider: 0
+  lineDividerStartY: 10
+  lineDividerEscapePenalty: 1
+  lineDividerCaptureReward: 1
+  stageGrants:
+    unitMaxOnGrid: 5
+    unitMarkerRechargeRate: 1
+    maxUnitMarkerCharges: 0
+    matrixCharges: 5
+    matrixMaxOnGrid: 2
+    recursionCharges: 0
+    recursionMaxOnGrid: 0
+    infinityCharges: 0
+    infinityMaxOnGrid: 0
+  waveGrantsFromWaveData: 0
+  lockAttunements: 1
+  allowedAttunementIds: []
+  waveConfigurations:
+  - {fileID: 11400000, guid: d83589e93d542724295c06681f523aa2, type: 2}
+  - {fileID: 11400000, guid: 9c4eab2470895734da131a09b9403b89, type: 2}
+  requireAllCubesDestroyed: 0
+  requiredCaptureCount: 0
+  maxAllowedEscapes: 0
