@@ -102,3 +102,7 @@ __pycache__/
 .local/
 .tmp/
 temp_*
+
+# MCP for Unity (development tooling - install separately)
+/Assets/MCPForUnity/
+/Assets/MCPForUnity.meta

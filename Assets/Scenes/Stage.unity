@@ -398,7 +398,7 @@ MonoBehaviour:
   - {fileID: 0}
   unitChargeText: {fileID: 585395268}
   recursionChargeText: {fileID: 367516662}
-  matrixChargeText: {fileID: 0}
+  matrixChargeText: {fileID: 622622456}
   infinityChargeText: {fileID: 1439720169}
   segmentFullColor: {r: 1, g: 0.7, b: 0.2, a: 1}
   segmentChargingColor: {r: 0.5, g: 0.5, b: 1, a: 0.8}
@@ -15500,15 +15500,9 @@ MonoBehaviour:
   currentInfinityMarkerCharges: 0
   infinityMarkerMaterial: {fileID: 0}
   useMarkerEconomy: 1
-  stageGrantRecursion: 5
-  stageGrantMatrix: 3
-  stageGrantInfinity: 2
-  waveGrantRecursion: 1
-  waveGrantMatrix: 1
-  waveGrantInfinity: 0
-  maxRecursionInventory: 8
-  maxMatrixInventory: 5
-  maxInfinityInventory: 3
+  maxRecursionInventory: 0
+  maxMatrixInventory: 0
+  maxInfinityInventory: 0
   unitMarkerKey: 102
   recursionMarkerKey: 118
   matrixMarkerKey: 103

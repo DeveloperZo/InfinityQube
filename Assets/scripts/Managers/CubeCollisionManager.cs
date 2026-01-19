@@ -576,6 +576,7 @@ public class CubeCollisionManager : MonoBehaviour, IManagerDebugInterface
             case CubeType.Matrix:
                 // Matrix + Matrix: 3x3 triggerable marker (enhanced reward)
                 // Phaseable Expansion attunement may paint wave cube face
+                DebugLog("HandleMatrixCollision", $"Matrix+Matrix collision detected at ({position.x}, {position.y})");
                 return new CollisionResult(HandleMatrixMatrixCollision(position, waveCube));
 
             case CubeType.Recursion:
@@ -725,7 +726,6 @@ public class CubeCollisionManager : MonoBehaviour, IManagerDebugInterface
     private bool HandleMatrixMatrixCollision(Vector2Int centerPosition, CubeManager waveMatrixCube = null)
     {
         // Capture the Matrix cube at collision point first
-        // Pass isSameTypeMatch = true so ProcessCubeCapture creates a 3x3 marker (not 2x2)
         var cubesAtPosition = markerSystem.FindAllCubesAt(centerPosition);
         bool capturedMatrix = false;
 
@@ -734,16 +734,23 @@ public class CubeCollisionManager : MonoBehaviour, IManagerDebugInterface
             if (cube == null || cube.isDestroyed || cube.isPlayerCube) continue;
             if (cube.type == CubeType.Matrix)
             {
+                DebugLog("HandleMatrixMatrixCollision", $"Found Matrix wave cube at ({centerPosition.x}, {centerPosition.y}), calling ProcessCubeCapture with isSameTypeMatch=true");
                 // Matrix + Matrix is a same-type match, so ProcessCubeCapture will create 3x3 marker
                 if (markerSystem.ProcessCubeCapture(cube, centerPosition, PlayerMarkerSystem.MarkerType.Matrix, null, true))
                 {
                     capturedMatrix = true;
+                    DebugLog("HandleMatrixMatrixCollision", $"Matrix+Matrix collision - ProcessCubeCapture created 3x3 manual cube marker at ({centerPosition.x}, {centerPosition.y})");
                     break;
                 }
             }
         }
 
-        DebugLog("HandleMatrixMatrixCollision", $"Matrix+Matrix collision - captured Matrix cube, created 3x3 manual cube marker at ({centerPosition.x}, {centerPosition.y})");
+        // If ProcessCubeCapture didn't create a marker (shouldn't happen), create one as fallback
+        if (!capturedMatrix)
+        {
+            markerSystem.CreateCubeMarker(centerPosition, PlayerMarkerSystem.CubeMarkerType.Matrix, 3);
+            DebugLog("HandleMatrixMatrixCollision", $"Matrix+Matrix collision - fallback: created 3x3 manual cube marker at ({centerPosition.x}, {centerPosition.y})");
+        }
 
         // Phaseable Expansion attunement: Paint wave Matrix cube's face
         if (waveMatrixCube != null && AttunementManager.IsInitialized && AttunementManager.Instance.ShouldMatrixMatrixPaintFace())

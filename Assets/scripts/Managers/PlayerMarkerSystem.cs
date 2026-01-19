@@ -314,7 +314,9 @@ public class PlayerMarkerSystem : MonoBehaviour
 
         foreach (var cube in cubes)
         {
-            success |= ProcessCubeCapture(cube, position, MarkerType.Recursion, marker);
+            // Check if this is a same-type match (Recursion marker capturing Recursion cube)
+            bool isSameTypeMatch = (cube.type == CubeType.Recursion);
+            success |= ProcessCubeCapture(cube, position, MarkerType.Recursion, marker, isSameTypeMatch);
         }
 
         if (success && IsWithinPerfectTimingWindow(marker.placementTime))
@@ -425,12 +427,29 @@ public class PlayerMarkerSystem : MonoBehaviour
                 visualManager?.SetTileHighlight(tile, new Color(0f, 1f, 0f, 0.7f), "AreaExpansion");
             }
 
+            // Process wave cubes
             var cubes = FindAllCubesAt(position);
             totalCubesAffected += cubes.Count;
             foreach (var cube in cubes)
             {
-                anySuccess |= ProcessCubeCapture(cube, position, MarkerType.Matrix);
+                // Check if this is a same-type match (Matrix marker capturing Matrix cube)
+                bool isSameTypeMatch = (cube.type == CubeType.Matrix);
+                anySuccess |= ProcessCubeCapture(cube, position, MarkerType.Matrix, null, isSameTypeMatch);
             }
+
+            // Process player cubes in the area (destroy them without creating cube markers)
+            var playerCubesAtPosition = FindPlayerCubesAt(position);
+            totalCubesAffected += playerCubesAtPosition.Count;
+            foreach (var playerCube in playerCubesAtPosition)
+            {
+                if (playerCube != null && !playerCube.isDestroyed && playerCube.type != CubeType.Infinity)
+                {
+                    Debug.Log($"Matrix marker destroying player {playerCube.type} cube at ({position.x}, {position.y})");
+                    DestroyPlayerCube(playerCube);
+                    anySuccess = true;
+                }
+            }
+
             visualManager?.ShowMarkerTriggerEffect(position);
         }
 
@@ -779,6 +798,42 @@ public class PlayerMarkerSystem : MonoBehaviour
         }
 
         return cubes;
+    }
+
+    public List<CubeManager> FindPlayerCubesAt(Vector2Int position)
+    {
+        var cubes = new List<CubeManager>();
+
+        if (playerCubes == null) return cubes;
+
+        foreach (var cube in playerCubes)
+        {
+            if (cube != null && !cube.isDestroyed &&
+                cube.position.x == position.x && cube.position.y == position.y &&
+                !cubes.Contains(cube))
+            {
+                cubes.Add(cube);
+            }
+        }
+
+        return cubes;
+    }
+
+    private void DestroyPlayerCube(CubeManager cube)
+    {
+        if (cube == null || cube.isDestroyed) return;
+
+        // Remove from player cubes list
+        if (playerCubes != null && playerCubes.Contains(cube))
+        {
+            playerCubes.Remove(cube);
+        }
+
+        // Destroy the game object
+        if (cube.gameObject != null)
+        {
+            Destroy(cube.gameObject);
+        }
     }
 
     private void RemoveCubeFromWaveManager(CubeManager cube)

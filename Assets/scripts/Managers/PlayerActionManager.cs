@@ -130,17 +130,6 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
     [Tooltip("Enable per-stage/wave grant system instead of time-based regeneration for non-Unit markers")]
     [SerializeField] public bool useMarkerEconomy = true;
     
-    [Header("Marker Economy - Debug/Prototyping Only (Production: Use StageData/WaveData)")]
-    [Tooltip("DEBUG ONLY: Stage grants. Production: Use StageData.stageGrants")]
-    [SerializeField] public int stageGrantRecursion = 5;
-    [SerializeField] public int stageGrantMatrix = 3;
-    [SerializeField] public int stageGrantInfinity = 2;
-    
-    [Tooltip("DEBUG ONLY: Wave grants. Production: Use WaveData.grant*Charges")]
-    [SerializeField] public int waveGrantRecursion = 1;
-    [SerializeField] public int waveGrantMatrix = 1;
-    [SerializeField] public int waveGrantInfinity = 0;
-    
     [Header("Marker Economy - Inventory Caps")]
     [SerializeField] public int maxRecursionInventory = 8;
     [SerializeField] public int maxMatrixInventory = 5;
@@ -1510,13 +1499,16 @@ MarkerMode currentMode = GetCurrentMode();
     }
     
     /// <summary>
-    /// DEBUG/PROTOTYPING ONLY: Apply stage grants from inspector fields
-    /// Production code should use ApplyStageGrants(StageData) instead
+    /// Fallback method when StageData is not available
+    /// Sets minimal defaults for Unit markers only (non-Unit markers get 0 charges)
+    /// Production code should always use ApplyStageGrants(StageData) instead
     /// </summary>
     public void ApplyStageGrantsDefault()
     {
+        Debug.LogWarning("[MarkerEconomy] StageData not available - using minimal defaults. Unit markers only. Non-Unit markers will have 0 charges until StageData is provided.");
+        
         // Unit markers are INFINITE with move-based regeneration
-        // Use inspector defaults (for prototyping when StageData not available)
+        // Use reasonable defaults for Unit markers only
         int defaultMaxCharges = maxUnitMarkerCharges > 0 ? maxUnitMarkerCharges : 3;
         int defaultRechargeRate = unitMarkerRechargeRate > 0 ? unitMarkerRechargeRate : 3;
         
@@ -1526,38 +1518,41 @@ MarkerMode currentMode = GetCurrentMode();
         unitMarkerRechargeRate = defaultRechargeRate;
         unitMarkerRechargeProgress = 0; // Start fresh
         
-        // Non-Unit markers use inventory system
+        // Non-Unit markers: Set to 0 since no StageData is available
+        // Ensure inventory caps are set (for UI display purposes)
         if (maxRecursionInventory <= 0) maxRecursionInventory = 8;
         if (maxMatrixInventory <= 0) maxMatrixInventory = 5;
         if (maxInfinityInventory <= 0) maxInfinityInventory = 3;
         
-        // Apply current charges from inspector stage grants
-        currentRecursionMarkerCharges = Mathf.Min(stageGrantRecursion, maxRecursionInventory);
-        currentMatrixMarkerCharges = Mathf.Min(stageGrantMatrix, maxMatrixInventory);
-        currentInfinityMarkerCharges = Mathf.Min(stageGrantInfinity, maxInfinityInventory);
+        // No stage grants without StageData - set to 0
+        currentRecursionMarkerCharges = 0;
+        currentMatrixMarkerCharges = 0;
+        currentInfinityMarkerCharges = 0;
         
         // Ensure max on grid for non-Unit if not set
         if (maxRecursionMarkers <= 0) maxRecursionMarkers = 3;
         if (maxMatrixMarkers <= 0) maxMatrixMarkers = 2;
         if (maxInfinityMarkers <= 0) maxInfinityMarkers = 1;
         
-        Debug.Log($"[MarkerEconomy] Stage grants applied (defaults): Unit=∞({currentUnitMarkerCharges}/{maxUnitMarkerCharges}, recharge:{unitMarkerRechargeRate} moves), Rec={stageGrantRecursion}, Mat={stageGrantMatrix}, Inf={stageGrantInfinity}");
+        Debug.Log($"[MarkerEconomy] Stage grants applied (minimal defaults - no StageData): Unit=∞({currentUnitMarkerCharges}/{maxUnitMarkerCharges}, recharge:{unitMarkerRechargeRate} moves), Rec=0/{maxRecursionInventory}, Mat=0/{maxMatrixInventory}, Inf=0/{maxInfinityInventory}");
         UpdateUI();
     }
     
     /// <summary>
-    /// DEBUG/PROTOTYPING ONLY: Apply wave grants from inspector fields
-    /// Production code should use ApplyWaveGrants(WaveData) instead
+    /// <summary>
+    /// Fallback method when WaveData is not available
+    /// Does not apply any wave grants (non-Unit markers remain unchanged)
+    /// Production code should always use ApplyWaveGrants(WaveData) instead
     /// </summary>
     public void ApplyWaveGrantsDefault()
     {
-        // Unit markers are INFINITE - no wave grants needed (recharge rate override handled in ApplyWaveGrants)
-        // Non-Unit markers add to inventory (using debug inspector defaults)
-        currentRecursionMarkerCharges = Mathf.Min(currentRecursionMarkerCharges + waveGrantRecursion, maxRecursionInventory);
-        currentMatrixMarkerCharges = Mathf.Min(currentMatrixMarkerCharges + waveGrantMatrix, maxMatrixInventory);
-        currentInfinityMarkerCharges = Mathf.Min(currentInfinityMarkerCharges + waveGrantInfinity, maxInfinityInventory);
+        Debug.LogWarning("[MarkerEconomy] WaveData not available - no wave grants applied. Non-Unit marker charges remain unchanged.");
         
-        Debug.Log($"[MarkerEconomy] Wave grants applied (debug defaults): Unit=∞, Rec=+{waveGrantRecursion}, Mat=+{waveGrantMatrix}, Inf=+{waveGrantInfinity}");
+        // Unit markers are INFINITE - no wave grants needed (recharge rate override handled in ApplyWaveGrants)
+        // Non-Unit markers: No grants without WaveData - charges remain unchanged
+        // (This method intentionally does nothing - it's a fallback that preserves current state)
+        
+        Debug.Log($"[MarkerEconomy] Wave grants applied (no WaveData): Unit=∞, Rec=+0, Mat=+0, Inf=+0");
         UpdateUI();
     }
     

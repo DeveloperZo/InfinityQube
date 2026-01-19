@@ -84,12 +84,19 @@ public class PrototypingSystem : MonoBehaviour
     {
         panels.Clear();
         
+        // Quick Debug Panel - First for fast access
+        panels.Add(new QuickDebugPanel());
+        
+        // Core panels
         panels.Add(new WavePrototyper());
         panels.Add(new CollisionPanel());
         panels.Add(new GridDesigner());
         panels.Add(new PlayerPanel());
         panels.Add(new StagePanel());
         panels.Add(new SystemPanel());
+        
+        // Console Panel - View logs in-game
+        panels.Add(new ConsolePanel());
         
         foreach (var panel in panels)
         {

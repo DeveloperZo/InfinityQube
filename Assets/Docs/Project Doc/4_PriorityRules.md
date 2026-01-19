@@ -280,9 +280,19 @@ When collision occurs, priority is determined by cube types:
 - We trigger cube markers in the order they were placed
 - Player can trigger during cube movement but should ensure consistent timing in respect to move forward
 - If wave cube is on tile with cube marker nothing happens unless marker is triggered for capture
-- If cube marker is on tile with player cube nothing happens
+- If cube marker is on tile with player cube nothing happens  unless marker is triggered for capture
 - Infinity cubes ignore cube markers they pass over (both ones they create and ones created by other collisions)
 - Infinity cubes pass over cube markers without interaction - they do not destroy or trigger them
+
+### 3.4 Player-Placed Marker Triggers (Unit, Matrix, Recursion, Infinity)
+
+- Player-placed markers are manually triggered by pressing R
+- When triggered, markers affect all cubes in their area (wave cubes and player cubes)
+- Matrix markers create area effects (2x2 or 3x3) that capture all non-Infinity cubes in the area
+- If matrix marker is triggered when player cubes are in its area, those player cubes are destroyed
+- Player cubes destroyed by marker triggers do not create cube markers or trigger other effects
+- Wave cubes captured by matrix markers create cube markers as normal (2x2 for non-matching, 3x3 for Matrix+Matrix)
+- Infinity cubes are not affected by marker triggers (cannot be captured)
 
 ---
 
