@@ -39,16 +39,12 @@ public class Tile : MonoBehaviour
     [SerializeField] private GameObject softHighlightObject;
     [SerializeField] private Material playerHoverMaterial;
     [SerializeField] private Color currentHoverColor = new Color(0.5f, 0.6f, 0.7f, 0.5f); // Default: Unit blue-gray
-    
-    [Header("Task 8: Face Painting Telegraph")]
-    [SerializeField] private GameObject telegraphObject; // Visual indicator for painted face grid touch
     #endregion
 
     #region Component Delegates
     private TileVisuals tileVisuals;
     private TileMarker tileMarker;
     private TileCorruption tileCorruption;
-    private TileFacePainting tileFacePainting;
     #endregion
 
     #region Private Fields
@@ -56,11 +52,10 @@ public class Tile : MonoBehaviour
     private bool isInitialized = false;
     private bool isBlackened = false;
     
-    // Cached manager references (Task 6/7/8)
+    // Cached manager references
     private GridManager cachedGridManager;
     private WaveManager cachedWaveManager;
     private PlayerActionManager cachedPlayerActionManager;
-    private Coroutine telegraphPulseCoroutine;
     #endregion
 
     #region Public Properties
@@ -80,11 +75,6 @@ public class Tile : MonoBehaviour
     public bool CanBeMarked => currentState == TileState.Normal && !isBlackened && !IsCorrupted;
     public bool CanAcceptMarkers => !IsCorrupted;
 
-    // Face painting properties
-    public bool CanPaintCubes => tileFacePainting?.CanPaintCubes ?? false;
-    public FaceStatus PaintStatus => tileFacePainting?.PaintStatus ?? FaceStatus.None;
-    public Color PaintColor => tileFacePainting?.PaintColor ?? Color.clear;
-    public int PaintDuration => tileFacePainting?.PaintDuration ?? 0;
     #endregion
 
     #region Unity Lifecycle
@@ -96,13 +86,6 @@ public class Tile : MonoBehaviour
         tileVisuals = new TileVisuals(transform);
         tileMarker = new TileMarker(transform, tileVisuals, this);
         tileCorruption = new TileCorruption(transform, this, showCorruptionCountdown);
-        tileFacePainting = new TileFacePainting(transform, this);
-        
-        // Set initial face painting configuration if needed
-        if (paintStatus != FaceStatus.None)
-        {
-            tileFacePainting.SetupFacePainting(paintStatus, paintColor, paintDuration, paintOnLanding, paintOnExit);
-        }
     }
 
     public void Init(int xPos, int yPos)
@@ -378,17 +361,9 @@ public class Tile : MonoBehaviour
         }
     }
 
-    public void TransformToPaintingTile(FaceStatus status, Color color, int duration = -1)
-    {
-        currentState = TileState.Transformed;
-        SetupFacePainting(status, color, duration);
-        Debug.Log($"Tile ({x},{y}) transformed to paint cubes with {status} status");
-    }
-
     private void ResetToNormalState()
     {
         currentState = TileState.Normal;
-        tileFacePainting?.DisableFacePainting();
         tileVisuals?.RemoveOverlay();
     }
     #endregion
@@ -501,22 +476,7 @@ public class Tile : MonoBehaviour
 
         currentCube = cube;
         
-        // Task 8: Grid touch detection for painted faces
-        // Check if a painted face has just touched the grid (become the down face)
-        FaceStatus activeFaceStatus = cube.GetActiveFaceStatus();
-        if (activeFaceStatus != FaceStatus.None)
-        {
-            HandlePaintedFaceGridTouch(cube, activeFaceStatus);
-        }
-        
-        // Check for corruption from infinity cubes with painted faces
-        if (cube.type == CubeType.Infinity && cube.GetActiveFaceStatus() == FaceStatus.InfinityFace)
-        {
-            CorruptTile(corruptionDuration, maxCorruptionInteractions);
-            Debug.Log($"Tile ({x},{y}) corrupted by infinity cube with painted face");
-        }
-        
-        // Handle corrupted tile behavior
+        // Handle corrupted tile behavior - corrupted tiles affect non-Infinity cubes
         if (IsCorrupted && cube.type != CubeType.Infinity)
         {
             cube.PaintCurrentDownFace(FaceStatus.InfinityFace, Color.black, -1);
@@ -530,331 +490,12 @@ public class Tile : MonoBehaviour
             }
         }
         
-        // Handle transformed tile behavior
-        if (currentState == TileState.Transformed && IsBlackened)
-        {
-            tileFacePainting?.UpdateForTransformedState(IsBlackened);
-        }
-
-        // Handle face painting
-        TryPaintCube(cube);
-        NotifyFacePaintingManager(cube);
-        
-        // Task 8: Update telegraph for painted faces that will touch grid soon
-        UpdatePaintedFaceTelegraph(cube);
+        // Note: Face painting system has been removed (Jan 2026)
+        // Infinity cubes are now truly immutable - resonance triggers immediately on Infinity+Infinity collision
     }
+    #endregion
     
-    /// <summary>
-    /// Task 8: Updates telegraph visualization for painted faces
-    /// Shows telegraph on the DESTINATION tile where the painted face will actually touch
-    /// Uses configurable move count from current wave (or default from FacePaintingManager)
-    /// Shows telegraphs for all moves within the configured window
-    /// </summary>
-    private void UpdatePaintedFaceTelegraph(CubeManager cube)
-    {
-        if (cube == null || cachedGridManager == null) return;
-        
-        // Get configurable move count from current wave, or use default
-        int telegraphMoves = GetTelegraphMoveCount();
-        
-        // Check all moves within the configured window and show telegraphs for each
-        for (int movesAhead = 1; movesAhead <= telegraphMoves; movesAhead++)
-        {
-            if (cube.WillPaintedFaceTouchGrid(movesAhead))
-            {
-                FaceStatus predictedStatus = cube.GetPredictedFaceStatus(movesAhead);
-                
-                // Calculate destination position based on movement direction and moves ahead
-                // Wave cubes move down (Y-1 per move), Player cubes move up (Y+1 per move)
-                int destY = cube.isPlayerCube ? y + movesAhead : y - movesAhead;
-                Vector2Int destPosition = new Vector2Int(x, destY);
-                
-                // Get destination tile and show telegraph there
-                Tile destTile = cachedGridManager.GetTileAt(destPosition.x, destPosition.y);
-                if (destTile != null)
-                {
-                    destTile.ShowTelegraphEffect(predictedStatus, movesAhead);
-                    Debug.Log($"[Face Painting Telegraph] Painted face ({predictedStatus}) will touch grid at ({destPosition.x},{destPosition.y}) in {movesAhead} move(s)");
-                }
-            }
-        }
-        
-        // Always hide telegraph on current tile (in case it was showing from a previous cube)
-        HideTelegraphEffect();
-    }
-    
-    /// <summary>
-    /// Gets the configurable move count for face painting telegraphs.
-    /// Checks current wave configuration first, then falls back to FacePaintingManager default.
-    /// </summary>
-    private int GetTelegraphMoveCount()
-    {
-        // Try to get from current wave configuration
-        if (cachedWaveManager != null && cachedWaveManager.CurrentWave != null)
-        {
-            int waveTelegraphMoves = cachedWaveManager.CurrentWave.facePaintingTelegraphMoves;
-            if (waveTelegraphMoves > 0)
-            {
-                return waveTelegraphMoves;
-            }
-        }
-        
-        // Fall back to FacePaintingManager default
-        FacePaintingManager facePaintingManager = FindFirstObjectByType<FacePaintingManager>();
-        if (facePaintingManager != null)
-        {
-            return facePaintingManager.DefaultTelegraphMoves;
-        }
-        
-        // Final fallback
-        return 3;
-    }
-    
-    /// <summary>
-    /// Task 8: Shows telegraph pulse effect on tile
-    /// movesUntilTrigger: 1 = imminent (bright, fast pulse), 3 = distant (dim, slow pulse)
-    /// </summary>
-    public void ShowTelegraphEffect(FaceStatus faceStatus, int movesUntilTrigger = 1)
-    {
-        // Create telegraph visual if needed
-        if (telegraphObject == null)
-        {
-            telegraphObject = GameObject.CreatePrimitive(PrimitiveType.Quad);
-            telegraphObject.name = $"Telegraph_{x}_{y}";
-            telegraphObject.transform.SetParent(transform);
-            telegraphObject.transform.localPosition = new Vector3(0, 0.52f, 0);
-            telegraphObject.transform.localRotation = Quaternion.Euler(90, 0, 0);
-            telegraphObject.transform.localScale = new Vector3(0.9f, 0.9f, 1f);
-            
-            // Remove collider
-            Destroy(telegraphObject.GetComponent<Collider>());
-            
-            // Set up transparent material
-            Renderer rend = telegraphObject.GetComponent<Renderer>();
-            Material mat = new Material(Shader.Find("Standard"));
-            mat.SetFloat("_Mode", 3); // Transparent
-            mat.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
-            mat.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
-            mat.SetInt("_ZWrite", 0);
-            mat.EnableKeyword("_ALPHABLEND_ON");
-            mat.renderQueue = 3000;
-            rend.material = mat;
-        }
-        
-        // Set color based on face status - intensity varies by proximity
-        // 1 move = bright (0.8 alpha), 2 moves = medium (0.5 alpha), 3 moves = dim (0.3 alpha)
-        Color telegraphColor = GetTelegraphColor(faceStatus);
-        telegraphColor.a = movesUntilTrigger switch
-        {
-            1 => 0.8f,  // Imminent - bright
-            2 => 0.5f,  // Soon - medium
-            _ => 0.3f   // Distant - dim
-        };
-        
-        Renderer renderer = telegraphObject.GetComponent<Renderer>();
-        if (renderer != null && renderer.material != null)
-        {
-            renderer.material.color = telegraphColor;
-        }
-        
-        // Scale grows as trigger approaches
-        float scale = movesUntilTrigger switch
-        {
-            1 => 0.95f, // Almost full tile
-            2 => 0.8f,  // Medium
-            _ => 0.65f  // Small indicator
-        };
-        telegraphObject.transform.localScale = new Vector3(scale, scale, 1f);
-        
-        telegraphObject.SetActive(true);
-        
-        // Stop existing pulse and start new one - faster pulse when closer
-        if (telegraphPulseCoroutine != null)
-        {
-            StopCoroutine(telegraphPulseCoroutine);
-        }
-        telegraphPulseCoroutine = StartCoroutine(PulseTelegraph(movesUntilTrigger));
-    }
-    
-    /// <summary>
-    /// Task 8: Hides telegraph effect
-    /// </summary>
-    private void HideTelegraphEffect()
-    {
-        if (telegraphObject != null)
-        {
-            telegraphObject.SetActive(false);
-        }
-    }
-    
-    /// <summary>
-    /// Task 8: Gets telegraph color based on face status
-    /// </summary>
-    private Color GetTelegraphColor(FaceStatus faceStatus)
-    {
-        switch (faceStatus)
-        {
-            case FaceStatus.MatrixFace:
-                return new Color(0.3f, 0.7f, 1f); // Light blue for Matrix
-            case FaceStatus.RecursionFace:
-                return new Color(0.8f, 0.5f, 0.2f); // Amber for Recursion
-            case FaceStatus.InfinityFace:
-                return new Color(0.2f, 0.2f, 0.2f); // Dark for Infinity
-            default:
-                return Color.white;
-        }
-    }
-    
-    /// <summary>
-    /// Task 8: Pulses the telegraph effect
-    /// Pulse speed varies by proximity: closer = faster pulse
-    /// </summary>
-    private System.Collections.IEnumerator PulseTelegraph(int movesUntilTrigger = 1)
-    {
-        if (telegraphObject == null) yield break;
-        
-        // Pulse speed: 1 move = fast (4x), 2 moves = medium (2x), 3 moves = slow (1x)
-        float pulseSpeed = movesUntilTrigger switch
-        {
-            1 => 4f,   // Fast - urgent
-            2 => 2.5f, // Medium
-            _ => 1.5f  // Slow - distant warning
-        };
-        
-        // Alpha range varies by proximity
-        float minAlpha = movesUntilTrigger switch
-        {
-            1 => 0.5f,
-            2 => 0.3f,
-            _ => 0.15f
-        };
-        float maxAlpha = movesUntilTrigger switch
-        {
-            1 => 0.9f,
-            2 => 0.6f,
-            _ => 0.4f
-        };
-        
-        float elapsed = 0f;
-        
-        Renderer renderer = telegraphObject.GetComponent<Renderer>();
-        if (renderer == null || renderer.material == null) yield break;
-        
-        while (telegraphObject != null && telegraphObject.activeSelf)
-        {
-            elapsed += Time.deltaTime;
-            float alpha = Mathf.Lerp(minAlpha, maxAlpha, (Mathf.Sin(elapsed * pulseSpeed) + 1f) / 2f);
-            
-            Color color = renderer.material.color;
-            color.a = alpha;
-            renderer.material.color = color;
-            
-            yield return null;
-        }
-    }
-    
-    /// <summary>
-    /// Task 8: Handles painted face grid touch detection and triggers appropriate effects
-    /// </summary>
-    private void HandlePaintedFaceGridTouch(CubeManager cube, FaceStatus faceStatus)
-    {
-        if (cachedPlayerActionManager == null) return;
-        
-        // Hide any telegraph effect on this tile (the prediction came true)
-        HideTelegraphEffect();
-        
-        Vector2Int centerPosition = new Vector2Int(x, y);
-        
-        // Consume one charge from the painted face (unpaints when charges reach 0)
-        if (!cube.ConsumeActiveFaceCharge())
-        {
-            Debug.Log($"[Task 8] Painted face at ({x},{y}) has no charges remaining - skipping trigger");
-            return;
-        }
-        
-        switch (faceStatus)
-        {
-            case FaceStatus.MatrixFace:
-                Debug.Log($"[Task 8] MatrixFace touched grid at ({x},{y}) - creating 2x2 detonation marker");
-                cachedPlayerActionManager.CreateCubeMarker(centerPosition, PlayerMarkerSystem.CubeMarkerType.Matrix, 2);
-                ApplyLineDividerReward(1); // Task 6: Reward for painted face trigger
-                break;
-                
-            case FaceStatus.RecursionFace:
-                Debug.Log($"[Task 8] RecursionFace touched grid at ({x},{y}) - creating auto-capture marker (3 charges)");
-                CreateRecursionFaceMarker(centerPosition);
-                ApplyLineDividerReward(1); // Task 6: Reward for painted face trigger
-                break;
-                
-            case FaceStatus.InfinityFace:
-                Debug.Log($"[Task 8] InfinityFace touched grid at ({x},{y}) - triggering resonance system");
-                TriggerResonanceEffect();
-                ApplyLineDividerReward(2); // Task 6: Reward for resonance trigger (2 rows)
-                break;
-        }
-    }
-    
-    /// <summary>
-    /// Task 8: Creates a single-tile auto-capture marker for RecursionFace
-    /// Per design doc: "auto-capture marker placed at that tile; captures 3 cubes as wave passes"
-    /// </summary>
-    private void CreateRecursionFaceMarker(Vector2Int centerPosition)
-    {
-        if (cachedPlayerActionManager == null || cachedGridManager == null) return;
-        
-        // Single tile position (not a cross pattern - cross is for Recursion+Recursion collision)
-        List<Vector2Int> positions = new List<Vector2Int> { centerPosition };
-        
-        // Create auto-capture marker via PlayerMarkerSystem
-        // Per design: auto-capture marker that captures 3 cubes as wave passes
-        var markerSystem = cachedPlayerActionManager.MarkerSystem;
-        if (markerSystem != null)
-        {
-            markerSystem.CreateAutoCaptureAreaMarker(positions, "RecursionFaceMarker", 
-                new Color(0.8f, 0.5f, 0.2f, 0.8f), 5, 3); // 5 moves expiration, 3 charges (captures 3 cubes)
-            Debug.Log($"[Task 8] Created RecursionFace auto-capture marker at ({centerPosition.x},{centerPosition.y}) with 3 charges");
-        }
-        else
-        {
-            Debug.LogWarning("[Task 8] MarkerSystem not available for RecursionFace marker");
-        }
-    }
-    
-    /// <summary>
-    /// Task 7: Triggers resonance effect when InfinityFace touches grid
-    /// Makes all Infinity cubes on grid phaseable for 2-4 moves
-    /// </summary>
-    private void TriggerResonanceEffect()
-    {
-        if (cachedWaveManager == null || cachedWaveManager.activeCubes == null)
-        {
-            Debug.LogWarning("[Task 7] WaveManager not found - cannot trigger resonance");
-            return;
-        }
-        
-        int phaseableMoves = UnityEngine.Random.Range(2, 5); // 2-4 moves
-        int infinityCubesAffected = 0;
-        
-        foreach (var activeCube in cachedWaveManager.activeCubes)
-        {
-            if (activeCube != null && !activeCube.isDestroyed && activeCube.type == CubeType.Infinity)
-            {
-                activeCube.SetPhaseable(phaseableMoves);
-                infinityCubesAffected++;
-            }
-        }
-        
-        Debug.Log($"[Task 7] Resonance: {infinityCubesAffected} Infinity cubes phaseable for {phaseableMoves} moves");
-    }
-    
-    /// <summary>
-    /// Task 6: Applies line divider reward (silently skips if disabled)
-    /// </summary>
-    private void ApplyLineDividerReward(int rows)
-    {
-        cachedGridManager?.MoveLineDivider(rows, true);
-    }
-
+    #region Cube Capture Helpers
     private void HandleReinforcedCube(CubeManager cube)
     {
         if (cube == null) return;
@@ -893,14 +534,6 @@ public class Tile : MonoBehaviour
             Debug.LogWarning($"Tile ({x},{y}): WaveManager not found for cube capture notification");
         }
     }
-
-    private void NotifyFacePaintingManager(CubeManager cube)
-    {
-        if (CanPaintCubes)
-        {
-            tileFacePainting?.NotifyFacePaintingManager(cube, new Vector2Int(x, y));
-        }
-    }
     #endregion
 
     #region Visual Management
@@ -915,51 +548,17 @@ public class Tile : MonoBehaviour
     }
     #endregion
 
-    #region Face Painting System
-    public void SetupFacePainting(FaceStatus status, Color color, int duration = -1, bool onLanding = true, bool onExit = false)
-    {
-        tileFacePainting?.SetupFacePainting(status, color, duration, onLanding, onExit);
-    }
-
-    public void TryPaintCube(CubeManager cube)
-    {
-        tileFacePainting?.TryPaintCube(cube);
-    }
-
-    public void TryPaintCubeOnExit(CubeManager cube)
-    {
-        tileFacePainting?.TryPaintCubeOnExit(cube);
-    }
-
-    public void SetupCorruptionPainting(int duration = 3)
-    {
-        tileFacePainting?.SetupCorruptionPainting(duration);
-    }
-
-    public void SetupEnhancementPainting(int duration = 3)
-    {
-        tileFacePainting?.SetupEnhancementPainting(duration);
-    }
-
-    public void DisableFacePainting()
-    {
-        tileFacePainting?.DisableFacePainting();
-    }
-    #endregion
-
     #region Corruption System
     public void CorruptTile(int duration = 5, int maxInteractions = 3)
     {
         tileCorruption?.CorruptTile(duration, maxInteractions);
         ClearMarker();
-        SetupCorruptionPainting(duration);
         UpdateTileVisuals();
     }
     
     public void CleanseCorruption()
     {
         tileCorruption?.CleanseCorruption();
-        DisableFacePainting();
         UpdateTileVisuals();
     }
     
@@ -969,7 +568,6 @@ public class Tile : MonoBehaviour
         
         if (!IsCorrupted)
         {
-            DisableFacePainting();
             UpdateTileVisuals();
         }
     }

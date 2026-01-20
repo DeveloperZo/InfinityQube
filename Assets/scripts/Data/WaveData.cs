@@ -111,14 +111,6 @@ public class WaveData : ScriptableObject
     
     #endregion
 
-    #region Face Painting Configuration
-    
-    [Header("Face Painting")]
-    [Tooltip("Number of moves ahead to show telegraph for painted faces (0 = use default, typically 3). Telegraph shows for all moves within this window.")]
-    [Range(0, 10)] public int facePaintingTelegraphMoves = 0;
-    
-    #endregion
-
     #region Wave Success Criteria
     
     [Header("Wave Success Criteria")]

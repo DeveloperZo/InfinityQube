@@ -1,0 +1,49 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: faaa491ad539cb444afed02f7554648d, type: 3}
+  m_Name: stage_05
+  m_EditorClassIdentifier: Assembly-CSharp::StageData
+  stageNumber: 5
+  stageName: Matrix Marker Introduction
+  stageType: 1
+  description: Learn to use Matrix Markers for efficient area capture
+  objective: Use Matrix Markers to capture groups of cubes efficiently
+  gridWidth: 8
+  gridHeight: 25
+  playerStartPosition: {x: 3, y: 0}
+  respawnDelayMoves: 1
+  enableLineDivider: 0
+  lineDividerStartY: 10
+  lineDividerEscapePenalty: 1
+  lineDividerCaptureReward: 1
+  stageGrants:
+    unitMaxOnGrid: 5
+    unitMarkerRechargeRate: 2
+    maxUnitMarkerCharges: 3
+    matrixCharges: 3
+    matrixMaxOnGrid: 2
+    recursionCharges: 0
+    recursionMaxOnGrid: 0
+    infinityCharges: 0
+    infinityMaxOnGrid: 0
+  waveGrantsFromWaveData: 1
+  lockAttunements: 1
+  allowedAttunementIds: []
+  waveConfigurations:
+  - {fileID: 11400000, guid: 33665227ecc99e840afa04aed08ea2ed, type: 2}
+  - {fileID: 11400000, guid: 22e71e887234f534896254954418d1d6, type: 2}
+  - {fileID: 11400000, guid: 63e3320f8bf26ea47ae396912d8efdfc, type: 2}
+  - {fileID: 11400000, guid: de1aa2793273620409fa187d3a3755bc, type: 2}
+  - {fileID: 11400000, guid: 0a3a5ea819183b84fbf19637fff4b5a5, type: 2}
+  requireAllCubesDestroyed: 0
+  requiredCaptureCount: 0
+  maxAllowedEscapes: 0

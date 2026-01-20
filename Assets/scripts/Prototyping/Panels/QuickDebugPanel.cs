@@ -421,10 +421,10 @@ public class QuickDebugPanel : PrototypingPanelBase
             waveIndex = waveManager?.currentWaveIndex ?? 0,
             timeScale = Time.timeScale,
             playerPosition = playerManager?.currentTilePosition ?? Vector2Int.zero,
-            unitCharges = actionManager?.GetUnitMarkerCharges() ?? 0,
-            matrixCharges = actionManager?.GetMatrixMarkerCharges() ?? 0,
-            recursionCharges = actionManager?.GetRecursionMarkerCharges() ?? 0,
-            infinityCharges = actionManager?.GetInfinityMarkerCharges() ?? 0,
+            unitCharges = actionManager?.GetCurrentUnitCharges() ?? 0,
+            matrixCharges = actionManager?.GetCurrentMatrixCharges() ?? 0,
+            recursionCharges = actionManager?.GetCurrentRecursionCharges() ?? 0,
+            infinityCharges = actionManager?.GetCurrentInfinityCharges() ?? 0,
             hasSnapshot = true
         };
         LogAction("Snapshot saved");

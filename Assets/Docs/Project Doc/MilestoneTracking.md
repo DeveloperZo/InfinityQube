@@ -237,15 +237,30 @@ As work is completed, compare estimated vs actual points:
 
 ## Active Development Tracking
 
-### Next Up: Milestone 1.7 (Matrix Cube/Markers)
-**Total Points**: 6 pts | **Status**: Ready to start
+### Milestone 1.7 (Matrix Cube/Markers) - IN PROGRESS
+**Total Points**: 6 pts | **Status**: Stage 5 Complete
 
 | Item | Points | Status | Notes |
 |------|--------|--------|-------|
-| Stage 3-5 wave design | 2 pts | Pending | Matrix cube/marker scenarios |
-| Stage 3-5 implementation | 2 pts | Pending | After design |
-| Matrix mechanics validation | 1 pts | Pending | After implementation |
+| Stage 3-4 wave design | 1 pts | ✅ Complete | Matrix cube learning (Dec 2025) |
+| Stage 3-4 implementation | 1 pts | ✅ Complete | Understanding Matrix stage |
+| Stage 5 wave design | 0.5 pts | ✅ Complete | Matrix Marker Introduction (Jan 18, 2026) |
+| Stage 5 implementation | 0.5 pts | ✅ Complete | 5 waves, Matrix marker grants |
+| Matrix mechanics validation | 1 pts | Pending | After playtesting |
 | Matrix marker UI improvements | 1 pts | Pending | After validation |
+
+**Stage 5 Details**:
+- **Name**: Matrix Marker Introduction
+- **Grid**: 8x25
+- **Tools**: Unit Markers + Matrix Markers (introduced)
+- **Cubes**: Unit + Matrix + Infinity barriers (strategic placement), Recursion tease
+- **Design Philosophy**: Test Matrix marker area-effect mastery by creating Infinity barriers that block direct Unit marker captures, forcing players to use Matrix markers to reach cubes behind barriers
+- **Waves**: 5 puzzle-focused waves
+  - Wave 5_01: Barrier Basics (35 cubes - Infinity barriers block Matrix cubes, teaching area capture)
+  - Wave 5_02: Walled Gardens (40 cubes - Two fortress sections with Infinity walls, cubes trapped inside)
+  - Wave 5_03: Fortress Lanes (48 cubes - Vertical Infinity lanes creating capture corridors)
+  - Wave 5_04: Gauntlet Lanes (48 cubes - Vertical Infinity lanes with Matrix cubes behind barriers)
+  - Wave 5_05: Matrix Mastery (48 cubes - Final test + 2 Recursion cubes center-top as mechanic tease)
 
 ### Velocity Summary
 | Metric | Value |
@@ -308,9 +323,13 @@ As work is completed, compare estimated vs actual points:
 
 ---
 
-**Last Updated**: December 19, 2025
+**Last Updated**: January 18, 2026
 
 ### Documentation Notes
 - **Point Scale**: 1 pt ≈ 1 day, 5 pts ≈ 1 week, 22 pts/month measured velocity
 - **File Size Violations**: 12 files exceed limits - see [Technical Critiques](../Technical%20Doc/TechnicalCritiques.md)
 - **Methodology Version**: 4.0 - Day-Based Point Estimation
+
+### Recent Changes
+- **Jan 18, 2026**: Stage 5 (Matrix Marker Introduction) implemented with 5 waves
+- **Jan 18, 2026**: Debug panel QoL improvements (QuickDebugPanel, ConsolePanel, enhanced SystemPanel)

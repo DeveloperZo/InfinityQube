@@ -556,13 +556,6 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
             PlayDestructionSound();
         }
 
-        // Notify FacePaintingManager that cube is leaving
-        FacePaintingManager facePaintingManager = FindFirstObjectByType<FacePaintingManager>();
-        if (facePaintingManager != null)
-        {
-            facePaintingManager.OnCubeLeft(position);
-        }
-
         // Clean up face indicators
         for (int i = 0; i < faceIndicators.Length; i++)
         {
@@ -661,13 +654,6 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
         
         this.Log($"Cube moved to ({position.x}, {position.y}), move count: {moveCount}", EnableDebugLogs);
 
-        // Notify FacePaintingManager of movement
-        FacePaintingManager facePaintingManager = FindFirstObjectByType<FacePaintingManager>();
-        if (facePaintingManager != null)
-        {
-            facePaintingManager.OnCubeMoved(this, oldPosition, position);
-        }
-
         StartCoroutine(AnimateMove(position));
 
         if (position.y >= 0 && position.x >= 0 && position.x < grid.Width)
@@ -727,16 +713,7 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
             }
         }
 
-        oldPosition = new Vector2Int(position.x, position.y - 1); // Previous position for face painting
-
         this.Log($"Player cube moved to ({position.x}, {position.y}), move count: {moveCount}", EnableDebugLogs);
-
-        // Notify FacePaintingManager of movement
-        FacePaintingManager facePaintingManager = FindFirstObjectByType<FacePaintingManager>();
-        if (facePaintingManager != null)
-        {
-            facePaintingManager.OnCubeMoved(this, oldPosition, position);
-        }
 
         StartCoroutine(AnimateMove(position));
 
@@ -975,12 +952,6 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
         faceCharges[faceIndex] = charges;
         faceIndicators[faceIndex].SetActive(true);
         UpdateFaceVisuals();
-        
-        // Notify PlayerStatisticsManager of face painting
-        if (PlayerStatisticsManager.Instance != null)
-        {
-            PlayerStatisticsManager.Instance.OnFacePainted(position, face, status);
-        }
         
         this.Log($"Painted {face} of cube at ({position.x}, {position.y}) with {status} status, duration: {duration}, charges: {charges}", EnableDebugLogs);
     }

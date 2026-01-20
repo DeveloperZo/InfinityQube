@@ -584,8 +584,9 @@ public class CubeCollisionManager : MonoBehaviour, IManagerDebugInterface
                 return new CollisionResult(HandleMatrixRecursionCollision(position));
 
             case CubeType.Infinity:
-                // Matrix + Infinity: Paint Wave Infinity's face with Matrix, Matrix destroyed
-                return HandleWaveInfinityFacePaint(waveCube, playerCube, CubeType.Matrix, position);
+                // Matrix + Infinity: Matrix destroyed - Infinity is immutable, nothing paints it
+                DebugLog("HandleMatrixCollision", $"Matrix+Infinity collision at ({position.x}, {position.y}) - Matrix destroyed (Infinity immutable)");
+                return new CollisionResult(true, true); // Collision handled, destroy player cube
 
             default:
                 return new CollisionResult(false);
@@ -613,8 +614,9 @@ public class CubeCollisionManager : MonoBehaviour, IManagerDebugInterface
                 return new CollisionResult(HandleRecursionRecursionCollision(position, waveCube));
 
             case CubeType.Infinity:
-                // Recursion + Infinity: Paint Wave Infinity's face, leave recursion marker, Recursion destroyed
-                return HandleRecursionInfinityCollision(waveCube, playerCube, position);
+                // Recursion + Infinity: Recursion destroyed - Infinity is immutable, nothing paints it
+                DebugLog("HandleRecursionCollision", $"Recursion+Infinity collision at ({position.x}, {position.y}) - Recursion destroyed (Infinity immutable)");
+                return new CollisionResult(true, true); // Collision handled, destroy player cube
 
             default:
                 return new CollisionResult(false);
@@ -639,12 +641,16 @@ public class CubeCollisionManager : MonoBehaviour, IManagerDebugInterface
                 return HandleInfinityWaveJoin(playerCube, waveCube, position);
 
             case CubeType.Matrix:
-                // Infinity + Matrix: Paint PLAYER Infinity's face with Matrix status, player continues up
-                return HandlePlayerInfinityFacePaint(playerCube, waveCube, CubeType.Matrix, position);
+                // Infinity + Matrix: Capture Matrix, player Infinity continues - Infinity is immutable
+                markerSystem.ProcessCubeCapture(waveCube, position, PlayerMarkerSystem.MarkerType.Infinity, null, false);
+                DebugLog("HandleInfinityCollision", $"Infinity+Matrix collision at ({position.x}, {position.y}) - Matrix captured, Infinity continues (immutable)");
+                return new CollisionResult(true, false); // Collision handled, player cube continues
 
             case CubeType.Recursion:
-                // Infinity + Recursion: Paint PLAYER Infinity's face with Recursion status, player continues up
-                return HandlePlayerInfinityFacePaint(playerCube, waveCube, CubeType.Recursion, position);
+                // Infinity + Recursion: Capture Recursion, player Infinity continues - Infinity is immutable
+                markerSystem.ProcessCubeCapture(waveCube, position, PlayerMarkerSystem.MarkerType.Infinity, null, false);
+                DebugLog("HandleInfinityCollision", $"Infinity+Recursion collision at ({position.x}, {position.y}) - Recursion captured, Infinity continues (immutable)");
+                return new CollisionResult(true, false); // Collision handled, player cube continues
 
             case CubeType.Infinity:
                 // Infinity + Infinity: Paint PLAYER Infinity's face with Infinity status, resonance
@@ -750,14 +756,6 @@ public class CubeCollisionManager : MonoBehaviour, IManagerDebugInterface
         {
             markerSystem.CreateCubeMarker(centerPosition, PlayerMarkerSystem.CubeMarkerType.Matrix, 3);
             DebugLog("HandleMatrixMatrixCollision", $"Matrix+Matrix collision - fallback: created 3x3 manual cube marker at ({centerPosition.x}, {centerPosition.y})");
-        }
-
-        // Phaseable Expansion attunement: Paint wave Matrix cube's face
-        if (waveMatrixCube != null && AttunementManager.IsInitialized && AttunementManager.Instance.ShouldMatrixMatrixPaintFace())
-        {
-            CubeFace collisionFace = CubeFace.Front;
-            waveMatrixCube.PaintFace(collisionFace, FaceStatus.MatrixFace, GetFaceColorForType(CubeType.Matrix), -1);
-            DebugLog("HandleMatrixMatrixCollision", $"[Phaseable Expansion] Painted wave Matrix face at ({centerPosition.x}, {centerPosition.y})");
         }
 
         return capturedMatrix || true;
@@ -978,14 +976,6 @@ public class CubeCollisionManager : MonoBehaviour, IManagerDebugInterface
 
         CreateCrossMarker(crossPositions, expiresAfterMoves, charges);
 
-        // Phaseable Concentration attunement: Paint wave Recursion cube's face
-        if (waveRecursionCube != null && AttunementManager.IsInitialized && AttunementManager.Instance.ShouldRecursionRecursionPaintFace())
-        {
-            CubeFace collisionFace = CubeFace.Front;
-            waveRecursionCube.PaintFace(collisionFace, FaceStatus.RecursionFace, GetFaceColorForType(CubeType.Recursion), -1);
-            DebugLog("HandleRecursionRecursionCollision", $"[Phaseable Concentration] Painted wave Recursion face at ({centerPosition.x}, {centerPosition.y})");
-        }
-
         var cubesAtCenter = markerSystem.FindAllCubesAt(centerPosition);
         bool capturedImmediately = false;
 
@@ -1186,18 +1176,43 @@ public class CubeCollisionManager : MonoBehaviour, IManagerDebugInterface
     }
 
     /// <summary>
-    /// Infinity + Infinity: Paint WAVE Infinity's face, destroy Player Infinity (cost of resonance)
-    /// When painted face touches grid, triggers resonance (all Infinity cubes become phaseable)
+    /// Infinity + Infinity: Trigger resonance immediately, destroy Player Infinity (cost)
+    /// All Infinity cubes on grid become phaseable - the only positive Infinity interaction
     /// </summary>
     private CollisionResult HandleInfinityInfinityCollision(CubeManager playerInfinity, CubeManager waveInfinity, Vector2Int position)
     {
-        // Paint the WAVE Infinity cube's face with Infinity status (resonance trigger)
-        CubeFace collisionFace = CubeFace.Front;
-        waveInfinity.PaintFace(collisionFace, FaceStatus.InfinityFace, GetFaceColorForType(CubeType.Infinity), -1);
+        // Trigger resonance immediately - all Infinity cubes become phaseable
+        TriggerResonanceEffect(position);
 
-        DebugLog("HandleInfinityInfinityCollision", $"Infinity+Infinity collision - painted Wave Infinity's {collisionFace} face for resonance, Player Infinity destroyed (cost)");
+        DebugLog("HandleInfinityInfinityCollision", $"Infinity+Infinity collision at ({position.x}, {position.y}) - Resonance triggered, Player Infinity destroyed (cost)");
 
         return new CollisionResult(true, true); // Player Infinity destroyed as cost of resonance
+    }
+
+    /// <summary>
+    /// Triggers resonance effect - all Infinity cubes become phaseable for 2-4 moves
+    /// </summary>
+    private void TriggerResonanceEffect(Vector2Int triggerPosition)
+    {
+        if (actionManager?.WaveManager == null || actionManager.WaveManager.activeCubes == null)
+        {
+            DebugWarning("TriggerResonanceEffect", "WaveManager not found - cannot trigger resonance");
+            return;
+        }
+
+        int phaseableMoves = UnityEngine.Random.Range(2, 5); // 2-4 moves
+        int infinityCubesAffected = 0;
+
+        foreach (var activeCube in actionManager.WaveManager.activeCubes)
+        {
+            if (activeCube != null && !activeCube.isDestroyed && activeCube.type == CubeType.Infinity)
+            {
+                activeCube.SetPhaseable(phaseableMoves);
+                infinityCubesAffected++;
+            }
+        }
+
+        DebugLog("TriggerResonanceEffect", $"Resonance triggered at ({triggerPosition.x}, {triggerPosition.y}) - {infinityCubesAffected} Infinity cubes now phaseable for {phaseableMoves} moves");
     }
 
     /// <summary>

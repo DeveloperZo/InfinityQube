@@ -132,7 +132,7 @@ Special markers created from collisions, not player-placed:
 |------|--------|----------|------------------|-------------------|
 | **Unit** | Gray | Moves one tile per step | Can be captured | Basic scoring value |
 | **Matrix** | Blue | Moves one tile per step | Can be captured | Creates cube markers when captured |
-| **Infinity** | Black | Moves one tile per step | **Cannot be captured** | Destroys player cubes, face paintable |
+| **Infinity** | Black | Moves one tile per step | **Cannot be captured** | Destroys player cubes, immutable (only Infinity affects Infinity) |
 | **Recursion** | Darker/Metallic | Moves one tile per step | Requires multiple hits to capture | More durable than other cubes |
 
 ### Movement System
@@ -163,15 +163,15 @@ As players progress, Matrix, Recursion, and Infinity markers unlock. These creat
 | Matrix | Unit | 2x2 area capture | Player Matrix collides with Wave Unit and triggers a 2x2 capture area expanding from Matrix's position |
 | Matrix | Matrix | Triggerable 3x3 marker | Player Matrix collides with Wave Matrix and creates a 3x3 manual marker centered on collision point; single trigger |
 | Matrix | Recursion | Degrading 2x2 marker | Player Matrix collides with Wave Recursion and creates a 2x2 area marker; each tile has 1 charge; collision point and diagonal opposite degrade last; player manually triggers; area shrinks over triggers |
-| Matrix | Infinity | Face paint, Matrix destroyed | Player Matrix collides with Wave Infinity, paints collision face, Matrix destroyed; when face touches grid, 2x2 manual marker placed at that tile |
-| Recursion | Unit | A recursion marker with 3 charges | Player Recursion collides with Wave Unit a creates a marker; auto-captures 3 cubes or expires after 5 move forwards |
+| Matrix | Infinity | Matrix destroyed | Player Matrix collides with Wave Infinity, Matrix is destroyed - Infinity is immutable |
+| Recursion | Unit | A recursion marker with 3 charges | Player Recursion collides with Wave Unit and creates a marker; auto-captures 3 cubes or expires after 5 move forwards |
 | Recursion | Matrix | Auto 3x1 horizontal marker | Player Recursion collides with Wave Matrix and creates a 3x1 horizontal marker (3 tiles wide); 2 charges total, auto-captures as wave passes |
 | Recursion | Recursion | Cross marker | Player Recursion collides with Wave Recursion and creates a cross-shaped marker (5 tiles - 1x3 vertical + 1x3 horizontal, overlapping at center); each tile auto-captures as wave passes |
-| Recursion | Infinity | Face paint + marker, Recursion destroyed | Player Recursion collides with Wave Infinity, paints Wave Infinity's face with Recursion status, leaves 1-charge recursion marker at collision point, Recursion destroyed |
+| Recursion | Infinity | Recursion destroyed | Player Recursion collides with Wave Infinity, Recursion is destroyed - Infinity is immutable |
 | Infinity | Unit | Wave join | Player Infinity destroys Wave Unit, takes its position, joins wave and moves downward with it |
-| Infinity | Matrix | Wave join + face paint | Player Infinity collides with Wave Matrix, paints Player Infinity's face with Matrix status, captures Matrix, joins wave and moves downward; when painted face touches grid, 2x2 manual marker placed |
-| Infinity | Recursion | Wave join + face paint | Player Infinity collides with Wave Recursion, paints Player Infinity's face with Recursion status, captures Recursion, joins wave and moves downward; when painted face touches grid, auto-capture marker placed |
-| Infinity | Infinity | Face paint Wave + consumed | Player Infinity collides with Wave Infinity, paints Wave Infinity's face with Infinity status, Player Infinity is consumed (cost); when painted face touches grid, ALL Infinity cubes become phaseable |
+| Infinity | Matrix | Capture and continue | Player Infinity captures Wave Matrix, continues moving upward - Infinity is immutable (no painting) |
+| Infinity | Recursion | Capture and continue | Player Infinity captures Wave Recursion, continues moving upward - Infinity is immutable (no painting) |
+| Infinity | Infinity | Resonance (immediate) | Player Infinity collides with Wave Infinity, triggers resonance immediately - ALL Infinity cubes become phaseable; Player Infinity consumed as cost |
 
 **Quick Reference: Cube Identities**
 
@@ -180,35 +180,29 @@ As players progress, Matrix, Recursion, and Infinity markers unlock. These creat
 | Unit | Simple, foundational | Instant | Single tile |
 | Matrix | Area, expansion | Manual | 2x2, 3x3 squares |
 | Recursion | Repetition, concentration | Auto | 1x3 lines, cross |
-| Infinity | Immutable, rhythmic | Painted face (inherits target behavior) | N/A - affects other cubes |
+| Infinity | Immutable, eternal | Resonance (only Infinity affects Infinity) | N/A - destroys other player cubes |
 
-### Face Painting System
-When certain player cubes collide with Infinity cubes, they paint the collision face. Later, when that painted face touches the grid, a marker appears:
+### Infinity Immutability Principle
+Infinity cubes are truly immutable - nothing can change them except another Infinity.
 
-#### Core Mechanism
-- **Collision Trigger**: When Matrix, Recursion, or Infinity player cubes collide with a Wave Infinity cube, the collision face gets painted
-- **Unit Cube Exception**: Unit cubes do NOT paint Infinity cubes - they are destroyed on collision without painting
-- **Cube Continuation**: The painted Infinity cube continues moving with the wave after collision
-- **Predictable Rotation**: Cubes rotate on a fixed, predictable schedule as the wave advances
-- **Marker Placement**: When the painted face rotates down and touches the grid, a marker of the painted type appears at that tile
-- **Configurable Telegraph Window**: Each wave can configure how many moves ahead to show telegraph indicators (default: 3 moves)
-- **Telegraph System**: Visual indicators show on destination tiles for all painted faces that will touch the grid within the configured window
-- **Timing Mastery**: Players learn the rotation rhythm and use telegraphs to predict where markers will appear
+#### Core Behavior
+- **Immutable Nature**: Infinity cubes cannot be painted, transformed, or captured by non-Infinity player cubes
+- **Destruction on Contact**: Matrix and Recursion player cubes are destroyed when colliding with Wave Infinity cubes
+- **Unit Exception**: Unit player cubes are also destroyed on contact with Wave Infinity (consistent with early design)
+- **Only Infinity Affects Infinity**: The sole positive interaction with Infinity cubes comes from the Infinity marker
 
-#### Face Status Types
-- **None**: Standard behavior, no modification
-- **Matrix**: When face touches the grid, a 2x2 manual marker is placed that player can trigger for area capture
-- **Recursion**: When face touches the grid, an auto-capture marker is placed that automatically captures 3 cubes as the wave passes over
-- **Unit**: When face touches the grid, a Unit marker is placed that auto-captures the next cube that passes over
-- **Infinity**: When face touches the grid, triggers Resonance effect (see Resonance System below)
+#### Player Infinity Behavior
+- **Infinity + Unit**: Player Infinity destroys Unit and joins wave (wave join)
+- **Infinity + Matrix/Recursion**: Player Infinity captures the wave cube and continues moving upward (no painting)
+- **Infinity + Infinity**: Triggers resonance immediately (see below)
 
 #### Resonance System (Infinity vs Infinity)
-Special interaction when Player Infinity collides with Wave Infinity:
-- **Face Painting**: Collision face is painted as normal
-- **Resonance Trigger**: When the painted face touches the grid, ALL Infinity cubes currently on the grid become phaseable for that turn
-- **Phaseable State**: Phaseable Infinity cubes can be passed through by other player cubes
-- **Strategic Sequencing**: Enables advanced strategy: paint multiple Infinity cubes, then sequence follow-up cubes to hit targets behind them
-- **High Reward**: Resonance triggers provide significant strategic advantage and reward
+The only positive interaction with Infinity cubes:
+- **Immediate Trigger**: When Player Infinity collides with Wave Infinity, resonance triggers immediately (no delay)
+- **Phaseable State**: ALL Infinity cubes currently on the grid become phaseable for 2-4 moves
+- **Pass-Through**: Phaseable Infinity cubes can be passed through by other player cubes
+- **Cost**: Player Infinity is consumed (destroyed) as the cost of triggering resonance
+- **Strategic Value**: Enables access to targets blocked by Infinity cubes - high skill, high reward
 
 ## 3.5 Player System
 ### Movement Mechanics
@@ -339,29 +333,26 @@ Currently, only one action provides rewards:
 
 ### Early Game Loop (No Player Infinity)
 Strategic pattern for stages before Infinity markers unlock:
-1. **Identify Infinity Threat**: See Infinity cube in wave
-2. **Sacrifice Decision**: Sacrifice Matrix/Recursion marker to paint it
-3. **Marker Destruction**: Marker is destroyed, face is painted
-4. **Timing Wait**: Wait for painted face to touch grid
-5. **Marker Appearance**: Marker appears on grid at that tile
-6. **Trigger Execution**: Marker triggers (manual or auto) to capture cubes
+1. **Identify Infinity Threat**: See Infinity cube in wave blocking valuable targets
+2. **Avoidance Strategy**: Navigate around Infinity cubes - they cannot be interacted with positively
+3. **Capture Priorities**: Focus on capturable cubes (Unit, Matrix, Recursion) while avoiding Infinity
+4. **Resource Conservation**: Don't waste Matrix/Recursion markers on Infinity (they will be destroyed)
 
 ### Late Game Loop (Player Infinity Unlocked)
 Advanced strategic pattern once Infinity markers are available:
 1. **Threat Assessment**: See Infinity cube blocking valuable targets
-2. **Infinity Placement**: Place Infinity marker first
-3. **Resonance Setup**: Infinity vs Infinity = face painted, resonance window coming
-4. **Follow-Up Placement**: Place Matrix/Recursion marker behind Infinity marker
-5. **Resonance Activation**: When resonance triggers, all Infinity cubes become phaseable
-6. **Target Access**: Follow-up marker's cube passes through phaseable Infinity
-7. **Target Capture**: Captures targets behind Infinity that were previously unreachable
+2. **Infinity Placement**: Place Infinity marker to trigger resonance
+3. **Immediate Resonance**: Infinity vs Infinity triggers resonance immediately - all Infinity cubes become phaseable
+4. **Follow-Up Timing**: Place Matrix/Recursion markers while resonance is active
+5. **Target Access**: Follow-up cubes pass through phaseable Infinity
+6. **Target Capture**: Capture targets that were previously blocked by Infinity
 
 ### Mastery Play
 Advanced techniques for expert players:
-- **Chain Painting**: Paint multiple Infinity cubes to create predictable resonance windows
-- **Timing Optimization**: Time marker placements so follow-up cubes arrive when Infinity cubes are phaseable
-- **Resource Management**: Save markers across waves to have the right tools when needed
-- **Pattern Reading**: Analyze wave composition to decide when to use scarce markers vs. rely on Unit markers
+- **Resonance Timing**: Use Infinity markers at optimal moments when multiple targets are blocked
+- **Follow-Up Coordination**: Time marker placements so follow-up cubes arrive during phaseable window (2-4 moves)
+- **Resource Management**: Save Infinity markers for high-value resonance opportunities
+- **Pattern Reading**: Analyze wave composition to identify when Infinity blocking creates capture opportunities
 
 ## 3.9 Trigger Consistency Rules
 
@@ -370,18 +361,19 @@ Core principles governing marker trigger behavior:
 - **Matrix Interactions** = Manual trigger (player detonates)
   - Matrix vs Matrix: 3x3 manual marker
   - Matrix vs Recursion: 2x2 degrading manual marker
-  - Matrix vs Infinity: 2x2 manual marker (from painted face)
+  - Matrix vs Infinity: Matrix destroyed (Infinity is immutable)
   - Matrix vs Unit: 2x2 area capture
 
 - **Recursion Interactions** = Auto trigger (wave movement triggers)
   - Recursion vs Recursion: Cross marker (auto-captures)
   - Recursion vs Matrix: 3x1 horizontal marker (auto-captures)
-  - Recursion vs Infinity: Auto-capture marker (from painted face)
+  - Recursion vs Infinity: Recursion destroyed (Infinity is immutable)
   - Recursion vs Unit: Column capture (auto)
 
-- **Infinity Painted Faces** = Inherit trigger type of painted cube
-  - Unit/Recursion painted = Auto trigger
-  - Matrix painted = Manual trigger
+- **Infinity Interactions** = Only Infinity affects Infinity
+  - Infinity vs Unit: Wave join (destroys Unit, joins wave)
+  - Infinity vs Matrix/Recursion: Captures wave cube, continues moving
+  - Infinity vs Infinity: Immediate resonance (all Infinity cubes phaseable)
 
 ## 3.10 Shape Language
 
@@ -397,14 +389,14 @@ Visual and mechanical patterns created by cube interactions:
 | Recursion vs Matrix | 3x1 horizontal line | Auto |
 | Recursion vs Recursion | Cross (5 tiles) | Auto |
 
-## 3.11 Face Painting Visual Feedback
+## 3.11 Resonance Visual Feedback
 
-Player communication system for painted face mechanics:
+Player communication system for resonance mechanics:
 
-1. **Visual Indicator on Cube**: Painted face has distinct color/glow to show modification
-2. **Grid Telegraph**: When painted face is 1 turn from touching grid, target tile pulses to indicate marker placement location
-3. **Fixed Rotation Schedule**: Cubes rotate predictably; players learn the rhythm through repeated exposure
-4. **Timing Mastery**: Visual feedback enables players to predict and plan marker placement locations
+1. **Phaseable State**: Infinity cubes become visually distinct when phaseable (material change, transparency)
+2. **Duration Indicator**: Visual feedback shows remaining phaseable duration
+3. **Pass-Through Confirmation**: Clear visual feedback when player cubes pass through phaseable Infinity
+4. **Resonance Trigger Effect**: Visual/audio effect when resonance is triggered
 
 ## 3.12 Design Principles
 
@@ -419,10 +411,11 @@ Core mechanics inherited from the inspiration:
 ### Evolution Beyond IQ
 Mechanical innovations that extend the formula:
 - **Player Cubes as Projectiles**: Player cubes as projectiles, not static markers
-- **Collision Matrix**: Current focus on Unit marker collisions (Unit-Unit, Unit-Matrix, Unit-Infinity); other combinations documented as future additions
-- **Face Painting**: Face painting as delayed marker placement system
-- **Resonance**: Resonance as long-term strategic goal
+- **Collision Matrix**: 16 cube type combinations with distinct behaviors
+- **Infinity Immutability**: Infinity cubes are truly immutable - only Infinity affects Infinity
+- **Resonance**: Immediate resonance trigger enables bypassing Infinity blockers
 - **Trigger Split**: Trigger type split: Matrix = manual, Recursion = auto
+- **Advance Grid** (Future): Grid paths with direction changes for spatial-temporal puzzles
 
 
 ## 3.13 Open Items for Playtesting
@@ -436,9 +429,9 @@ Areas requiring player testing and iteration:
 - **Rotation Schedule**: Rotation schedule timing (every N advances)
 
 ---
-**Last Updated:** December 14, 2025  
-**Implementation Status:** Core mechanics production-ready, Stages 0-2 validated, resonance systems implemented, all collision mechanics working, stage progression complete  
-**Major Systems:** Collision matrix, face painting with resonance, penalty/reward system, marker economy  
+**Last Updated:** January 18, 2026  
+**Implementation Status:** Core mechanics production-ready, Stages 0-4 validated, resonance systems implemented, collision matrix updated (Infinity immutability)  
+**Major Systems:** Collision matrix, Infinity immutability with immediate resonance, penalty/reward system, marker economy  
 **Related Documents:**
 - [Game Design Document](GameDesignDocument.md)
 - [Game Overview](2_GameOverview.md)

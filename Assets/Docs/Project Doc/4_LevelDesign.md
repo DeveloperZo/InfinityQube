@@ -366,10 +366,10 @@ The tutorial stage teaches basic movement, marker placement, and capture mechani
 - **Tools**: Unit Markers only
 - **Cubes**: Unit + Matrix + Infinity
 - **Learning Goal**: Efficient Matrix cube capture prioritization, value hierarchy mastery
-- **Special**: Stricter escape requirements; introduces face painting mechanics
+- **Special**: Stricter escape requirements
 
 **Wave Progression**:
-- **Early waves**: Focused scenarios introducing specific mechanics (Matrix collisions, face painting)
+- **Early waves**: Focused scenarios introducing specific mechanics (Matrix collisions, Infinity avoidance)
 - **Later waves**: Full complexity with Matrix cube prioritization amid Infinity obstacles; final wave provides reward with many capture opportunities
 
 ### Act 3: Matrix Marker Introduction (Stages 5-6)
@@ -576,7 +576,7 @@ Waves trigger events that affect stage progression:
 
 ### ✅ Completed Foundation Systems (June 2025)
 - **Four-Tier Marker System**: Unit/Matrix/Recursion/Infinity markers fully implemented and integrated
-- **Face Painting Integration**: Connected to stage progression with rotation tracking
+- **Infinity Immutability**: Infinity cubes are immutable - only Infinity affects Infinity (resonance)
 - **Tile State System**: Corrupted/Enhanced tile mechanics operational
 - **Cube Type Diversity**: Unit/Matrix/Infinity/Recursion cube system with multi-hit mechanics
 - **Technical Infrastructure**: Debug systems, analytics, and integration testing complete

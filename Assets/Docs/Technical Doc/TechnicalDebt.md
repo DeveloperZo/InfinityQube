@@ -412,9 +412,63 @@ GridManager.cs (600 lines - core grid)
 
 ---
 
-**Last Updated**: December 8, 2025 - Fresh file size audit completed  
+## 12. Recent Additions (January 2026)
+
+### 12.1 Prototyping System Improvements ✅
+**Status**: Implemented and operational  
+**Date**: January 18, 2026  
+**Implementation**: Enhanced IMGUI-based PrototypingSystem
+
+**New Panels Added**:
+- **QuickDebugPanel** (Priority 5): Fast access to common debug actions
+  - One-click time controls, wave controls, clear operations
+  - State snapshots (save/load game state)
+  - Quick test scenarios (collision tests, stress tests)
+  - Manual wave stepping (forward/backward)
+
+- **ConsolePanel** (Priority 55): In-game Unity console viewer
+  - Log/Warning/Error filtering
+  - Text search
+  - Collapse identical messages
+  - Stack trace viewer
+  - Copy to clipboard
+
+**Enhanced SystemPanel**:
+- FPS graph with 30-sample history
+- Min/Max FPS tracking
+- Debug toggles per manager (WaveManager, GridManager, AudioManager)
+- Force GC, Screenshot, Print Hierarchy tools
+
+**Global Keyboard Shortcuts Added**:
+| Shortcut | Action |
+|----------|--------|
+| `Ctrl+Shift+P` | Pause/Resume |
+| `Ctrl+Shift+R` | Respawn wave |
+| `Ctrl+Shift+C` | Clear everything |
+| `Ctrl+Shift+M` | Refill all markers |
+| `Ctrl+Shift+1-4` | Speed presets |
+
+**Files Created**:
+- `Assets/scripts/Prototyping/Panels/QuickDebugPanel.cs`
+- `Assets/scripts/Prototyping/Panels/ConsolePanel.cs`
+
+**Files Modified**:
+- `Assets/scripts/Prototyping/PrototypingSystem.cs` (global shortcuts, panel registration)
+- `Assets/scripts/Prototyping/Panels/SystemPanel.cs` (enhanced monitoring)
+
+**Documentation Updated**:
+- `Assets/Docs/Technical Doc/DebugPanelGuide.md` (complete rewrite for current system)
+
+**Known Limitations** (for polish pass):
+- State management when swapping stages/waves needs refinement
+- Wave index bounds checking on prev/next operations
+- StageManager integration bypassed in some prototyping scenarios
+
+---
+
+**Last Updated**: January 18, 2026 - Prototyping system improvements added  
 **Next Review**: After file size refactoring begins  
-**Related Documents**: [Technical Critiques](TechnicalCritiques.md), [Milestone Tracking](../Project%20Doc/MilestoneTracking.md)  
+**Related Documents**: [Technical Critiques](TechnicalCritiques.md), [Milestone Tracking](../Project%20Doc/MilestoneTracking.md), [Debug Panel Guide](DebugPanelGuide.md)  
 **Maintained By**: Development Team
 
 ---
@@ -443,7 +497,7 @@ GridManager.cs (600 lines - core grid)
 - **Documentation**: Updated and comprehensive
 
 ---
-*Last Updated: December 8, 2025*  
+*Last Updated: January 18, 2026*  
 *Next Review: After file size refactoring begins*  
 *Critical Path Status: Milestone 1.2 - Marker System Refinement*  
 *File Size Status: 12 VIOLATIONS - Requires attention (~4-5 weeks effort)*  

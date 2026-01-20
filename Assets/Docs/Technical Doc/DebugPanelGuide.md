@@ -2,435 +2,299 @@
 
 ## Overview
 
-The InfinityQube debug system has been refined to provide better testing workflows, clarity, and efficiency. The system maintains the existing architecture while improving separation of concerns, enhancing testing speed, and adding dedicated individual entity testing capabilities.
+The InfinityQube debug system provides comprehensive playtesting and prototyping tools through an in-game IMGUI panel system. Toggle the panel with **F12** to access all debug features without leaving the game.
 
 ## Architecture Summary
 
-The debug system consists of 6 specialized panels that work together through shared utilities and coordinated functionality:
+The system uses a tabbed IMGUI interface (`PrototypingSystem`) with specialized panels that share common utilities through `PrototypingPanelBase`.
 
-### 1. **Gameplay Debug Panel** - Overall Game State
-- **Focus**: StageManager + overall game state and progression
-- **Primary Use**: Monitoring and controlling high-level game flow
-- **Key Features**: Stage management, game state inspection, progression tracking
+### Panel Hierarchy
 
-### 2. **Wave Manager Panel** - Core Gameplay Loop  
-- **Focus**: WaveManager - wave control, cube spawning, and wave configuration
-- **Primary Use**: Rapid playtesting workflows and wave testing
-- **Key Features**: 
-  - Fast Testing Mode (disables messages for speed)
-  - Wave configuration and editing
-  - Batch testing capabilities
-  - Save/load wave workflows
-
-### 3. **Grid Debug Panel** - Grid-Wide Operations
-- **Focus**: GridManager - grid state, tiles, and markers
-- **Primary Use**: Testing grid-wide functions and tile manipulation oriented toward grid testing scenarios
-- **Key Features**: 
-  - Grid-wide tile operations
-  - Tile state visualization
-  - Grid pattern testing
-  - Bulk tile manipulation
-
-### 4. **Player Actions Panel** - Player and Actions Coordination
-- **Focus**: PlayerActionManager + PlayerManager coordination
-- **Primary Use**: Testing player actions, batch operations, and statistics tracking
-- **Key Features**:
-  - Enhanced batch operations
-  - Improved statistics tracking
-  - Player action testing workflows
-  - Action coordination testing
-
-### 5. **Cube-Tile Individual Panel** - Individual Entity Testing
-- **Focus**: One-on-one testing scenarios, cube lifecycle testing, detailed face painting
-- **Primary Use**: Testing individual cube and tile interactions with precision
-- **Key Features**:
-  - Individual cube spawning and manipulation
-  - Detailed face painting operations
-  - Cube lifecycle testing (spawn → paint → move → capture)
-  - Cube-tile interaction testing
-  - Individual entity inspection
-
-### 6. **Testing Debug Panel** - Complex Scenario Testing
-- **Focus**: Cross-system integration testing and complex scenarios
-- **Primary Use**: Testing complex interactions between multiple systems
-- **Key Features**:
-  - Cross-system integration testing
-  - Stress testing and performance testing
-  - Advanced edge case testing
-  - System coordination testing (Stage + Wave + Player interactions)
-  - Comprehensive system state validation
-
-## Shared Utilities
-
-The debug system now uses shared utility classes to eliminate code duplication and ensure consistency:
-
-### DebugUIHelpers
-- **Purpose**: Consistent UI styling, colors, and common UI patterns
-- **Key Methods**:
-  - `WithColor()` / `WithBackgroundColor()` - Temporary color overrides
-  - `GetCubeDisplayColor()` - Appropriate colors for cube types
-  - `DrawToggleButton()` - Styled toggle buttons
-  - `DrawTargetPositionControls()` - Position selection with auto-tracking
-  - `DrawDurationControl()` - Paint duration selection
-  - `DrawFaceStatusSelector()` - Face status (Corrupted/Enhanced) selection
-
-### DebugCubeSpawnHelper
-- **Purpose**: Consistent cube spawning, finding, and manipulation
-- **Key Methods**:
-  - `SpawnCubeAt()` - Spawn cube at specific grid position
-  - `SpawnCubeLinePattern()` / `SpawnCubeRectPattern()` - Pattern spawning
-  - `FindCubesAt()` - Find all cubes at position
-  - `GetCubeStatistics()` - Comprehensive cube analysis
-  - `QuickSpawnTestFormation()` - Pre-configured test setups
-
-### DebugTileHelper
-- **Purpose**: Tile manipulation and analysis across debug panels
-- **Key Methods**:
-  - `SetupTilePainting()` / `ClearTilePainting()` - Tile painter configuration
-  - `SetupAdvantaged()` / `ClearAdvantaged()` - Advantaged tile management
-  - `GetTileStateDescription()` - Human-readable tile state
-  - `GetTileDisplayColor()` - Appropriate colors for tile states
-  - `GetAreaSummary()` - Area-wide tile analysis
-
-## Panel Integration and Workflows
-
-### Typical Testing Workflows
-
-#### 1. Individual Entity Testing Workflow
-1. **Cube-Tile Individual Panel**: Spawn and configure individual cubes
-2. **Cube-Tile Individual Panel**: Set up tile painting
-3. **Cube-Tile Individual Panel**: Run lifecycle tests
-4. **Testing Debug Panel**: Validate cross-system interactions
-
-#### 2. Wave Testing Workflow
-1. **Wave Manager Panel**: Enable Fast Testing Mode
-2. **Wave Manager Panel**: Configure or load wave
-3. **Wave Manager Panel**: Batch test multiple waves
-4. **Grid Debug Panel**: Verify grid state
-5. **Testing Debug Panel**: Run integration tests
-
-#### 3. Grid-Wide Testing Workflow
-1. **Grid Debug Panel**: Set up grid patterns
-2. **Player Actions Panel**: Test player movement through grid
-3. **Wave Manager Panel**: Spawn cubes on configured grid
-4. **Testing Debug Panel**: Validate complete system interaction
-
-### Cross-Panel Communication
-
-Panels communicate through:
-- **Shared Utilities**: Common operations and state
-- **Manager References**: Direct access to game managers
-- **DebugCoordinator**: Cross-system operations and scenario management
-
-## Debug Panel Groups
-
-The debug system organizes panels into logical groups for better organization and navigation:
-
-### Core Group
-- **Grid Debug Panel**: Grid state, tiles, and markers
-- **Game Control**: System-wide operations and coordination
-- **System Management**: Core system state and configuration
-
-### Wave Group
-- **Wave Manager Panel**: Wave control, cube spawning, and wave configuration
-- **Wave Testing**: Batch testing and rapid iteration workflows
-
-### Cube Group
-- **Cube-Tile Individual Panel**: Individual entity testing and lifecycle testing
-- **Cube Management**: Cube spawning, manipulation, and inspection
-
-### Gameplay Group
-- **Gameplay Debug Panel**: Overall game state and progression
-- **Wave Manager Panel**: Core gameplay loop control
-- **Player Actions Panel**: Player and action coordination
-
-### Content Group
-- **Grid Debug Panel**: Tiles and grid patterns
-- **Cube-Tile Individual Panel**: Cubes and cube interactions
-- **Player Actions Panel**: Action testing and coordination
-
-### Testing Group
-- **Testing Debug Panel**: Cross-system integration testing
-- **Face Painting**: Detailed face painting operations
-- **Scenarios**: Complex scenario testing and validation
-
-## IManagerDebugInterface Pattern
-
-The debug system uses a standardized interface pattern that all game managers implement. This provides consistent debug capabilities across all systems.
-
-### Interface Capabilities
-
-All managers implementing this pattern provide:
-- **Debug Status**: Human-readable string describing current manager state
-- **Debug Data**: Dictionary of key-value pairs containing manager state information
-- **Reset to Defaults**: Restore manager to initial configuration
-- **Configuration Management**: Save and load named configurations
-- **Debug Logging Control**: Enable or disable debug logging per manager
-
-### Manager Discovery
-
-The DebugCoordinator automatically discovers all managers implementing this interface in the scene. This allows:
-- **Automatic Integration**: Managers are automatically available for debug operations
-- **Cross-System Operations**: Reset all managers, enable/disable logging across all systems
-- **Unified Status Reports**: Get status from all managers in a single operation
-- **Scenario Management**: Save and restore complete system states
-
-### Using Manager Debug Interface
-
-When working with debug panels:
-- Managers automatically appear in debug panels when they implement the interface
-- Status information is displayed in real-time
-- Debug data can be inspected for detailed state information
-- Managers can be reset individually or as part of system-wide operations
-
-## DebugCoordinator Integration
-
-The DebugCoordinator provides:
-- **Manager Discovery**: Automatic discovery of debug-capable managers
-- **Cross-System Operations**: Reset all, enable/disable logging, validation
-- **Scenario Management**: Save/load complete system states
-- **Performance Monitoring**: Operation timing and statistics
-- **Emergency Reset**: Safe system reset functionality
-
-### Key DebugCoordinator Operations
-- **Reset All Managers to Defaults**: Reset all systems to initial state
-- **Save Current Scenario**: Capture complete system state for later restoration
-- **Load Scenario**: Restore previously saved system state
-- **Validate All Systems**: Comprehensive system validation across all managers
-- **Generate System Report**: Detailed system status report with performance metrics
-- **Cross-System Integration Test**: Test coordination between multiple systems
-- **Stress Test**: Rapid operation testing for performance validation
-- **System Health Report**: Comprehensive health check of all discovered managers
-
-## Usage Guidelines
-
-### Panel Selection Guide
-
-**Use Gameplay Debug Panel when:**
-- Testing stage transitions
-- Monitoring overall game progression
-- Debugging high-level game flow issues
-
-**Use Wave Manager Panel when:**
-- Configuring waves for testing
-- Rapid iteration on wave parameters
-- Batch testing multiple wave configurations
-- Need fast testing without UI messages
-
-**Use Grid Debug Panel when:**
-- Setting up grid-wide tile configurations
-- Testing tile patterns and effects
-- Bulk manipulation of tile states
-- Grid-centric testing scenarios
-
-**Use Player Actions Panel when:**
-- Testing player movement and actions
-- Batch player operations
-- Player-centric statistics and analysis
-- Action coordination testing
-
-**Use Cube-Tile Individual Panel when:**
-- Testing specific cube behaviors
-- Detailed face painting operations
-- Cube lifecycle testing
-- One-on-one cube-tile interactions
-- Individual entity inspection and debugging
-
-**Use Testing Debug Panel when:**
-- Testing complex multi-system scenarios
-- Stress testing and performance analysis
-- Edge case testing
-- System integration validation
-- Comprehensive system coordination tests
-
-### Best Practices
-
-1. **Start Specific, Then Integrate**: Begin testing with individual panels, then move to integration testing
-2. **Use Fast Testing Mode**: Enable in Wave Manager Panel for rapid iteration
-3. **Save Scenarios**: Use DebugCoordinator to save interesting test states
-4. **Check Integration**: Always validate with Testing Debug Panel after making changes
-5. **Monitor Performance**: Use DebugCoordinator's performance monitoring for optimization
-
-### Common Patterns
-
-#### Setting Up Test Environment
 ```
-1. Grid Debug Panel: Configure tile patterns
-2. Cube-Tile Individual Panel: Spawn test cubes
-3. Player Actions Panel: Position player
-4. Save scenario via DebugCoordinator
+PrototypingSystem (F12 toggle)
+├── QuickDebugPanel    - Fast access to common actions
+├── WavePrototyper     - Wave design and control
+├── CollisionPanel     - Collision testing matrix
+├── GridDesigner       - Grid and tile manipulation
+├── PlayerPanel        - Marker settings and attunements
+├── StagePanel         - Time and stage control
+├── SystemPanel        - Performance and manager status
+└── ConsolePanel       - In-game console viewer
 ```
 
-#### Rapid Wave Testing
-```
-1. Wave Manager Panel: Enable Fast Testing Mode
-2. Wave Manager Panel: Load wave configurations
-3. Wave Manager Panel: Batch test all waves
-4. Testing Debug Panel: Validate results
+## Panel Reference
+
+### 1. Quick Debug Panel (Priority: First Tab)
+
+**Purpose**: One-click access to the most common debug actions for rapid iteration.
+
+**Features**:
+- **Time Controls**: Pause/Play, speed presets (0.25x, 0.5x, 1x, 2x)
+- **Wave Controls**: Start, Stop, Respawn current wave
+- **Clear Controls**: Clear Cubes, Clear Markers, Clear ALL
+- **Marker Shortcuts**: Refill All Markers, Enable Unlimited Mode
+- **State Snapshots**: Save/Load game state for quick iteration
+- **Manual Step Controls**: Step wave forward/backward for frame-by-frame testing
+- **Test Scenarios**: Pre-built collision tests (Unit vs Unit, Matrix 3x3, Recursion Cross)
+- **Quick Spawn**: Full Row, Mixed Wave, Stress Test
+
+**Keyboard Shortcuts** (when panel visible):
+- `P` - Pause/Resume
+- `R` - Respawn wave
+- `C` - Clear all
+
+### 2. Wave Prototyper Panel
+
+**Purpose**: Design, edit, and test wave configurations with a visual editor.
+
+**Features**:
+- **Track Board Mode**: Live view of current cubes on grid with edit capability
+- **Design New Mode**: Visual wave designer with grid-based editing
+- **Cube Brush**: Select cube type (Unit, Matrix, Recursion, Infinity) or Erase
+- **Wave Controls**: Start, Stop, Respawn, Pause/Resume, Step Forward/Back
+- **Speed Control**: Slider and presets (0.5x, 1x, 2x, 4x)
+- **Quick Spawn**: Spawn single cubes at specific columns
+- **Wave Asset Management**: Load, Save, Create wave ScriptableObjects
+
+**Wave Designer**:
+- Adjustable grid size (Width/Height)
+- Click cells to place/remove cubes
+- Fill patterns (Unit, Matrix, Recursion)
+- Copy live board to designer
+
+### 3. Collision Panel
+
+**Purpose**: Test all 16 cube collision combinations systematically.
+
+**Features**:
+- **Collision Matrix**: 4x4 grid showing all Player vs Wave combinations
+- **Quick Presets**: Test any cube type vs all wave types
+- **Special Tests**: Same-Type collisions, Area Effects, ALL 16 combinations
+- **Custom Test Setup**: Configure specific player/wave type combinations
+- **Test Controls**: Reset, Clear All, Step, Pause, Speed adjustment
+
+**Collision Icons**:
+- `1` - Single capture
+- `2x2` - 2x2 area capture
+- `3x3` - 3x3 triggerable marker
+- `C3` - Column capture (3 cubes)
+- `+` - Cross pattern (5 tiles)
+- `FP` - Face paint
+- `WJ` - Wave join
+
+### 4. Grid Designer Panel
+
+**Purpose**: Manipulate grid dimensions and tile states.
+
+**Features**:
+- **Resize Grid**: Width/Height controls with presets (6x15, 10x20, 15x30)
+- **Tile State**: Set individual tiles to Normal or Transformed
+- **Target Position**: X/Y controls to select specific tiles
+- **Apply Operations**: Single tile, Row, Column
+- **Patterns**: Checkerboard, Cross, Border, Diagonal, Random
+- **Utilities**: Regenerate grid, Debug info
+
+### 5. Player Panel
+
+**Purpose**: Configure marker settings, charges, and attunements.
+
+**Features**:
+- **Mode Selection**: Switch between Unit/Matrix/Recursion/Infinity modes
+- **Unlimited Mode**: Toggle unlimited markers for testing
+- **Marker Economy**: Toggle economy system, Apply Stage/Wave Grants
+- **Marker Settings**: Per-type charge limits, recharge rates, max on grid
+- **Quick Presets**: Reset Defaults, No Cooldowns, Refill Charges
+- **Marker Placement**: Place markers at player position
+- **Player Control**: Teleport player (directional, center)
+- **Attunements**: View/unlock/equip attunements, currency controls
+
+### 6. Stage Panel
+
+**Purpose**: Control time scale and navigate waves/stages.
+
+**Features**:
+- **Time Control**: Slider and presets (Pause, 0.25x, 0.5x, 1x, 2x, 4x)
+- **Wave Navigation**: Start/Stop/Skip wave, Clear cubes, Prev/Next wave
+- **Stage Control**: Previous/Restart/Next stage (when StageManager available)
+- **Auto-Advance Toggle**: Enable/disable automatic wave progression
+
+### 7. System Panel
+
+**Purpose**: Monitor performance and system health.
+
+**Features**:
+- **Performance Metrics**:
+  - FPS with color coding (green ≥60, yellow ≥30, red <30)
+  - Visual FPS graph (30-sample history)
+  - Min/Max FPS tracking with reset
+  - Memory usage and GC stats
+  - Active cube/marker counts
+- **Debug Toggles**: Enable/disable debug logging per manager
+  - WaveManager Debug
+  - GridManager Debug
+  - AudioManager Debug
+  - Enable/Disable All
+- **Manager Status**: Live status of all core managers with extra info
+- **Gameplay Toggles**: Line Divider controls, game state info
+- **Tools**: Validate Grid, Force GC, Screenshot, Print Hierarchy
+
+### 8. Console Panel
+
+**Purpose**: View Unity console logs without leaving the game.
+
+**Features**:
+- **Log Display**: Shows recent logs, warnings, errors
+- **Type Filtering**: Toggle visibility by log type (Log/Warning/Error)
+- **Text Search**: Filter logs by text content
+- **Collapse Identical**: Combine repeated messages with count badge
+- **Auto-Scroll**: Follow new logs automatically
+- **Stack Trace Viewer**: Click any log to see full message and stack trace
+- **Copy to Clipboard**: Share error details easily
+- **Clear**: Reset console view
+
+## Global Keyboard Shortcuts
+
+These shortcuts work regardless of panel visibility:
+
+| Shortcut | Action |
+|----------|--------|
+| `F12` | Toggle debug panel |
+| `Ctrl+Shift+P` | Pause/Resume game |
+| `Ctrl+Shift+R` | Respawn current wave |
+| `Ctrl+Shift+C` | Clear everything (cubes, markers, player cubes) |
+| `Ctrl+Shift+M` | Refill all marker charges |
+| `Ctrl+Shift+1` | Set speed to 0.25x |
+| `Ctrl+Shift+2` | Set speed to 0.5x |
+| `Ctrl+Shift+3` | Set speed to 1x (normal) |
+| `Ctrl+Shift+4` | Set speed to 2x |
+
+## Common Workflows
+
+### Rapid Wave Testing
+1. Open debug panel (F12)
+2. Go to **Quick** tab
+3. Click **Unlimited Mode** for infinite markers
+4. Use **Start Wave** / **Respawn** for quick iteration
+5. Adjust speed with time controls as needed
+
+### Testing Specific Collision
+1. Go to **Collision** tab
+2. Click the cell in the matrix for Player Type vs Wave Type
+3. Observe collision behavior at 0.5x speed
+4. Use **Reset** to repeat the test
+
+### Designing Custom Wave
+1. Go to **Wave** tab
+2. Click **Design New** mode
+3. Set grid size with W/H controls
+4. Select brush (cube type) and click grid cells
+5. Click **Spawn Wave** to test
+6. Click **Save to Current Wave** or **Create New Wave** to persist
+
+### Debugging Performance Issues
+1. Go to **System** tab
+2. Monitor FPS graph for drops
+3. Check Active Cubes count
+4. Use **Force GC** if memory is high
+5. Check **Console** tab for errors
+
+### Frame-by-Frame Analysis
+1. Go to **Quick** tab
+2. Click **Pause**
+3. Use **Step Fwd** to advance one wave move
+4. Observe cube positions and collisions
+5. Use **Step Back** to reverse (note: doesn't restore captured cubes)
+
+### Saving Test State
+1. Configure game to desired state
+2. Go to **Quick** tab
+3. Click **Save Snapshot**
+4. Test your changes
+5. Click **Load Snapshot** to return to saved state
+
+## IManagerDebugInterface
+
+Managers can implement this interface to integrate with the debug system:
+
+```csharp
+public interface IManagerDebugInterface
+{
+    bool EnableDebugLogs { get; set; }
+    string GetDebugStatus();
+    Dictionary<string, object> GetDebugData();
+    void ResetToDefaults();
+    void LoadConfiguration(string configName);
+    void SaveConfiguration(string configName);
+}
 ```
 
-#### Complex Integration Testing
-```
-1. Load saved scenario
-2. Testing Debug Panel: Run cross-system tests
-3. Testing Debug Panel: Monitor system coordination
-4. Generate system report for analysis
-```
+**Implementing managers gain**:
+- Toggle-able debug logging from System panel
+- Status display in Manager Status section
+- Integration with "Enable All Debug" / "Disable All Debug" buttons
+
+## Technical Details
+
+### Panel Base Class
+
+All panels extend `PrototypingPanelBase` which provides:
+- Manager reference caching (GridManager, WaveManager, PlayerManager, StageManager)
+- Common UI helpers (DrawSection, DrawToggleSection, DrawButtonRow, DrawSlider, DrawIntStepper)
+- Logging utility (LogAction)
+
+### Adding New Panels
+
+1. Create class extending `PrototypingPanelBase`
+2. Implement required properties: `PanelName`, `PanelIcon`, `Category`, `Priority`
+3. Implement `DrawGUI()` method
+4. Add panel to `PrototypingSystem.InitializePanels()`
+
+### Panel Priority
+
+Lower priority numbers appear first in tab order:
+- QuickDebugPanel: 5
+- WavePrototyper: 10
+- CollisionPanel: 15
+- GridDesigner: 25
+- PlayerPanel: 30
+- StagePanel: 40
+- SystemPanel: 50
+- ConsolePanel: 55
+
+### Window Controls
+
+- **Drag**: Click and drag header area to move window
+- **Resize**: Drag bottom-right corner (◢ indicator)
+- **Close**: Click X button or press F12
 
 ## Troubleshooting
 
-### Panel Not Responding
-- Check DebugCoordinator manager discovery
-- Verify required managers are present in scene
-- Use Emergency Reset if needed
+### Panel Not Showing
+- Press F12 to toggle visibility
+- Check if `PrototypingSystem` component exists in scene
+- Verify `showOnStart` is false if panel shouldn't auto-open
 
-### Inconsistent Behavior
-- Validate all systems via DebugCoordinator
-- Check for conflicting panel operations
-- Reset to known good scenario
+### Manager Shows NULL
+- Ensure manager GameObject exists in scene
+- Check manager initialization order (Awake vs Start)
+- Click "Refresh Refs" in System panel
 
-### Performance Issues
-- Disable Fast Testing Mode if enabled
-- Check DebugCoordinator performance statistics
-- Use Emergency Reset to clear complex states
+### Console Not Capturing Logs
+- ConsolePanel subscribes to `Application.logMessageReceived`
+- Ensure panel was initialized (check Console tab exists)
+- Logs before panel initialization won't be captured
 
-### Missing Functionality
-- Verify shared utilities are properly referenced
-- Check panel initialization in DebugSystem
-- Ensure all dependencies are satisfied
+### Performance Lag with Panel Open
+- IMGUI has some overhead; close panel for accurate FPS testing
+- Reduce Console panel log history if many logs
+- Disable auto-scroll in Console if log spam
 
-## Tutorial Message System
+## Best Practices
 
-The debug system integrates with the tutorial message system to provide comprehensive testing and monitoring capabilities.
-
-### Message Categories and Priorities
-
-Tutorial messages are organized by priority categories:
-
-- **Essential**: Critical messages that block gameplay until acknowledged. Highest priority (100).
-- **Important**: Important guidance that should be prominently displayed. High priority (75).
-- **Contextual**: Contextual hints that enhance understanding but don't interrupt flow. Medium priority (50).
-- **Debug**: Debug and development messages for testing. Lowest priority (25).
-
-### Message Priority System
-
-Messages are prioritized based on their category, with higher priority messages displayed first. The system ensures:
-- Essential messages always take precedence
-- Important messages are shown before contextual hints
-- Debug messages are shown only when appropriate
-- Messages are filtered and sorted by priority before display
-
-### Message Progress Tracking
-
-The MessageProgressTracker system provides:
-- **One-Time Message Tracking**: Tracks which messages have been shown once
-- **Cooldown Management**: Global and message-specific cooldowns prevent message spam
-- **Frequency Limiting**: Limits messages per minute (default: 8 messages/minute)
-- **Priority-Based Cooldowns**: Different cooldown multipliers per message category
-- **Progress Persistence**: Saves message progress using PlayerPrefs or JSON files
-- **Message Statistics**: Tracks message patterns, blocked messages, and completion rates
-
-### Message Filtering and Display
-
-The system filters messages based on:
-- **One-Time Status**: Messages marked as "show once" are only displayed once
-- **Global Cooldown**: Minimum time between any messages (default: 3 seconds)
-- **Message-Specific Cooldown**: Individual message cooldown periods
-- **Frequency Limits**: Maximum messages per minute (Essential messages can bypass)
-- **Priority Cooldowns**: Category-specific cooldown multipliers
-- **Context Relevance**: Messages are filtered based on current game context
-
-### Tutorial Message Manager Features
-
-The TutorialMessageManager provides:
-- **Contextual Message Triggering**: Messages triggered based on game state
-- **Message Queue Management**: Queues messages for sequential display
-- **Progressive Disclosure**: Messages adapt based on player experience level
-- **Message Formatting**: Automatic formatting for action-oriented, concise messages
-- **Player Capability Detection**: Messages filtered based on available player capabilities
-- **Statistics Integration**: Tracks message display and dismissal for analytics
-
-### Debug Integration
-
-The tutorial system integrates with debug panels to provide:
-- **Message Status Display**: Current message queue status and progress
-- **Message Statistics**: Display counts of shown, skipped, and queued messages
-- **Progress Tracking**: View one-time message progress and completion rates
-- **Context Monitoring**: View current game context and trigger conditions
-- **Message Validation**: Validate all messages for formatting compliance
-- **Progress Reset**: Clear all tutorial progress for testing
-
-## Debug Commands and Shortcuts
-
-### Activation
-- **F12**: Toggle the debug system on/off
-- **Tabbed Interface**: Switch between panels using tabs
-- **Panel State**: Panels maintain state when switching between tabs
-
-### Keyboard Shortcuts
-- **F12**: Toggle debug system visibility
-- **K**: Skip current tutorial message (when message is displayed)
-- **Tab Navigation**: Use mouse to switch between debug panels
-
-### Debug Panel Controls
-- **Toggle Buttons**: Enable/disable features and modes
-- **Fast Testing Mode**: Disable tutorial messages for rapid testing (Wave Manager Panel)
-- **Reset Operations**: Reset individual managers or all systems
-- **Scenario Management**: Save and load complete system states
-- **Validation Tools**: Run system validation and health checks
-
-### Common Debug Workflows
-
-#### Quick System Reset
-1. Open debug system (F12)
-2. Navigate to Testing Debug Panel
-3. Use "Reset All Managers" or "Emergency Reset"
-4. System returns to default state
-
-#### Save Test Scenario
-1. Configure desired game state using debug panels
-2. Navigate to Testing Debug Panel
-3. Use "Save Current Scenario" with a name
-4. Scenario can be loaded later for consistent testing
-
-#### Monitor System Health
-1. Open debug system (F12)
-2. Navigate to Testing Debug Panel
-3. Use "Generate System Report" or "System Health Report"
-4. Review manager statuses and performance metrics
-
-#### Rapid Wave Testing
-1. Open debug system (F12)
-2. Navigate to Wave Manager Panel
-3. Enable "Fast Testing Mode" (disables tutorial messages)
-4. Configure and test waves rapidly
-5. Disable Fast Testing Mode when done
-
-## Technical Notes
-
-### Activation
-- Press **F12** to toggle the debug system
-- Tabbed interface with panel switching
-- Panels maintain state when switching
-
-### Dependencies
-- All panels require their respective managers to be present
-- Shared utilities provide fallback behavior for missing dependencies
-- DebugCoordinator handles manager discovery automatically
-- Tutorial system requires MessageDatabase and UI components
-
-### Performance
-- Shared utilities minimize code duplication
-- Fast Testing Mode reduces UI overhead
-- Performance monitoring tracks operation costs
-- Emergency reset provides quick recovery
-- Message progress tracking uses efficient data structures
-
-### Integration Points
-- **DebugCoordinator**: Central coordination for all debug operations
-- **IManagerDebugInterface**: Standardized interface for manager debug capabilities
-- **TutorialMessageManager**: Message system integration and monitoring
-- **MessageProgressTracker**: Progress tracking and message filtering
-- **Debug Panels**: Specialized panels for different testing scenarios
-
-This refined debug system provides comprehensive testing capabilities while maintaining clear separation of concerns and efficient workflows for different testing scenarios.
+1. **Use Quick Panel First**: Most common actions are accessible here
+2. **Save Snapshots**: Before making experimental changes
+3. **Check Console**: When something unexpected happens
+4. **Use Ctrl+Shift Shortcuts**: Faster than opening panel
+5. **Slow Time for Observation**: 0.25x or 0.5x to see collision details
+6. **Step Mode for Debugging**: Pause + Step for precise control
+7. **Monitor FPS in System**: Especially when testing performance-sensitive changes

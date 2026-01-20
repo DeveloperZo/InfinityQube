@@ -76,8 +76,8 @@ public class FinalIntegrationTest : MonoBehaviour
         // Test 8: Corruption mechanics
         yield return TestCorruptionMechanics();
         
-        // Test 9: Face painting integration
-        yield return TestFacePaintingIntegration();
+        // Test 9: Cube face status (used by corruption system)
+        yield return TestCubeFaceStatus();
         
         // Test 10: UI integration with four-tier system
         yield return TestUIIntegration();
@@ -355,10 +355,10 @@ public class FinalIntegrationTest : MonoBehaviour
     }
     #endregion
 
-    #region Test 9: Face painting integration
-    private IEnumerator TestFacePaintingIntegration()
+    #region Test 9: Cube face status (corruption system)
+    private IEnumerator TestCubeFaceStatus()
     {
-        Log("Testing face painting integration...");
+        Log("Testing cube face status (used by corruption system)...");
         
         Vector2Int pos = new Vector2Int(6, 8);
         
@@ -366,19 +366,19 @@ public class FinalIntegrationTest : MonoBehaviour
         GameObject testCubeObj = CreateTestCube(CubeType.Unit, pos);
         CubeManager testCube = testCubeObj.GetComponent<CubeManager>();
         
-        // Test face painting
+        // Test face status modification (used by corrupted tiles)
         testCube.PaintFace(CubeFace.Bottom, FaceStatus.InfinityFace, Color.black, -1);
         
         FaceStatus bottomStatus = testCube.GetFaceStatus(CubeFace.Bottom);
-        AssertTrue(bottomStatus == FaceStatus.InfinityFace  , "Face painting applied correctly");
+        AssertTrue(bottomStatus == FaceStatus.InfinityFace, "Face status applied correctly");
         
-        // Test effective type change
+        // Test effective type change (corruption changes cube behavior)
         CubeType effectiveType = testCube.GetEffectiveType();
-        // Note: effective type changes based on active (down) face, not just painted faces
+        Log($"Effective type after corruption: {effectiveType}");
         
         // Test capture eligibility based on face status
         bool canCapture = testCube.CanBeCaptured();
-        Log($"Cube capture eligibility: {canCapture} (depends on active face)");
+        Log($"Cube capture eligibility: {canCapture} (corrupted cubes may not be capturable)");
         
         // Cleanup
         if (testCubeObj != null) Destroy(testCubeObj);

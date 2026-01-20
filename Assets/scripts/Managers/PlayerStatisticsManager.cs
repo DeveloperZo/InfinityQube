@@ -42,7 +42,6 @@ public class PlayerStatisticsManager : MonoBehaviour, IManagerDebugInterface
     
     // Advanced Analytics Tracking
     private Dictionary<string, float> strategicDecisionTimes = new Dictionary<string, float>();
-    private List<FacePaintingEvent> facePaintingEvents = new List<FacePaintingEvent>();
     private float sessionAPM = 0f;
     private int totalActions = 0;
     private float lastActionTime = 0f;
@@ -245,7 +244,6 @@ public class PlayerStatisticsManager : MonoBehaviour, IManagerDebugInterface
         
         // Clear advanced analytics tracking
         strategicDecisionTimes.Clear();
-        facePaintingEvents.Clear();
         sessionAPM = 0f;
         totalActions = 0;
         lastActionTime = 0f;
@@ -271,24 +269,6 @@ public class PlayerStatisticsManager : MonoBehaviour, IManagerDebugInterface
         
         isCollecting = false;
         DebugLog($"✅ Session completed: {currentSession.sessionId}");
-    }
-    
-    // Helper class for face painting tracking
-    [System.Serializable]
-    public class FacePaintingEvent
-    {
-        public float timestamp;
-        public Vector2Int cubePosition;
-        public string faceDirection;
-        public bool wasSuccessful;
-        
-        public FacePaintingEvent(float time, Vector2Int pos, string face)
-        {
-            timestamp = time;
-            cubePosition = pos;
-            faceDirection = face;
-            wasSuccessful = false;
-        }
     }
     
     private void FinalizeSessionData()
@@ -568,28 +548,6 @@ public class PlayerStatisticsManager : MonoBehaviour, IManagerDebugInterface
     #endregion
 
     #region Advanced Analytics Event Handlers
-    public void OnFacePainted(Vector2Int cubePosition, CubeFace face, FaceStatus status)
-    {
-        if (!isCollecting) return;
-        
-        string faceDirection = ConvertCubeFaceToString(face);
-        var paintingEvent = new FacePaintingEvent(Time.time, cubePosition, faceDirection);
-        paintingEvent.wasSuccessful = (status != FaceStatus.None);
-        
-        facePaintingEvents.Add(paintingEvent);
-        currentSession.facePaintingData.paintingEvents.Add(new CubePaintingEvent(Time.time, cubePosition, faceDirection, "paint"));
-        
-        // Update face painting statistics
-        if (!currentSession.facePaintingData.facesPaintedByType.ContainsKey(faceDirection))
-            currentSession.facePaintingData.facesPaintedByType[faceDirection] = 0;
-        currentSession.facePaintingData.facesPaintedByType[faceDirection]++;
-        
-        currentSession.facePaintingData.totalFacesPainted++;
-        
-        RecordAction("face_painting");
-        DebugLog($"🎨 Face painted: {faceDirection} at {cubePosition}, success: {paintingEvent.wasSuccessful}");
-    }
-    
     public void OnResourceWasted(string resourceType, float wasteAmount)
     {
         if (!isCollecting) return;
@@ -745,9 +703,6 @@ public class PlayerStatisticsManager : MonoBehaviour, IManagerDebugInterface
             }
         }
         
-        // Analyze face painting efficiency
-        AnalyzeFacePaintingEfficiency();
-        
         // Update learning progression
         UpdateLearningProgression();
         
@@ -880,45 +835,6 @@ public class PlayerStatisticsManager : MonoBehaviour, IManagerDebugInterface
         currentSession.resourceMetrics.currentAPM = sessionAPM;
         
         DebugLog($"📊 APM calculated: {sessionAPM:F1} (peak: {currentSession.resourceMetrics.peakAPM:F1})");
-    }
-    
-    private void AnalyzeFacePaintingEfficiency()
-    {
-        if (facePaintingEvents.Count == 0) return;
-        
-        int successfulPaints = facePaintingEvents.Count(e => e.wasSuccessful);
-        currentSession.facePaintingData.paintingSuccessRate = (float)successfulPaints / facePaintingEvents.Count;
-        
-        // Calculate most painted face
-        if (currentSession.facePaintingData.facesPaintedByType.Count > 0)
-        {
-            var mostPainted = currentSession.facePaintingData.facesPaintedByType
-                .OrderByDescending(kvp => kvp.Value)
-                .First();
-            currentSession.facePaintingData.mostPaintedFace = mostPainted.Key;
-            currentSession.facePaintingData.mostPaintedFaceCount = mostPainted.Value;
-        }
-        
-        // Calculate success rate by face
-        foreach (var faceGroup in facePaintingEvents.GroupBy(e => e.faceDirection))
-        {
-            string face = faceGroup.Key;
-            int total = faceGroup.Count();
-            int successful = faceGroup.Count(e => e.wasSuccessful);
-            currentSession.facePaintingData.successRateByFace[face] = total > 0 ? (float)successful / total : 0f;
-        }
-        
-        // Calculate average painting interval
-        if (facePaintingEvents.Count > 1)
-        {
-            var sortedEvents = facePaintingEvents.OrderBy(e => e.timestamp).ToList();
-            float totalInterval = 0f;
-            for (int i = 1; i < sortedEvents.Count; i++)
-            {
-                totalInterval += sortedEvents[i].timestamp - sortedEvents[i - 1].timestamp;
-            }
-            currentSession.facePaintingData.averagePaintingInterval = totalInterval / (sortedEvents.Count - 1);
-        }
     }
     
     private void UpdateLearningProgression()
@@ -1299,7 +1215,6 @@ public class PlayerStatisticsManager : MonoBehaviour, IManagerDebugInterface
             ["Current APM"] = sessionAPM,
             ["Total Actions"] = totalActions,
             ["Strategic Decisions"] = currentSession?.strategicData?.decisionEvents?.Count ?? 0,
-            ["Face Painting Events"] = facePaintingEvents?.Count ?? 0,
             ["APM Samples"] = currentSession?.resourceMetrics?.apmSamples?.Count ?? 0,
             ["Recent Actions (1min)"] = recentActionTimes?.Count ?? 0
         };
@@ -1320,7 +1235,6 @@ public class PlayerStatisticsManager : MonoBehaviour, IManagerDebugInterface
         
         // Reset advanced analytics tracking
         strategicDecisionTimes.Clear();
-        facePaintingEvents.Clear();
         sessionAPM = 0f;
         totalActions = 0;
         lastActionTime = 0f;
