@@ -53,7 +53,12 @@ I . . I I . . I    <- Player can move horizontally between lanes
 ## Matrix Marker Puzzle Design
 
 ### Design Philosophy
-Matrix markers have **2x2 area effect capture**. Puzzles should require this mechanic.
+Matrix markers have **2x2 area effect capture** by default.
+
+**Key Combo**: Matrix marker + Matrix cube = **3x3 area effect**
+- When a Matrix marker hits a Matrix cube specifically, the capture area expands to 3x3
+- This is the core mechanic Stage 4 teaches
+- Stage 5 then tests mastery with Infinity barriers
 
 ### Teaching Progression
 1. **Barrier Basics** - Simple Infinity walls blocking direct access to cubes
@@ -63,7 +68,34 @@ Matrix markers have **2x2 area effect capture**. Puzzles should require this mec
 5. **Mastery Test** - Combines all concepts + teaser for next mechanic
 
 ### Key Principle
-> **Without Matrix markers, the wave should be unsolvable** - Infinity barriers block direct Unit marker placement, forcing area-effect capture
+> **The puzzle must be uniquely solvable via the 3x3 combo** - Place capturable cubes **behind** Infinity barriers where Unit markers cannot reach. The 3x3 area effect "reaches around" the Infinity to capture blocked cubes.
+
+### Design Pattern: "Reach Behind"
+```
+Player side    |  Barrier  |  Blocked cubes
+   M           |     I     |     U U U
+               |           |
+```
+- Matrix cube (M) positioned **adjacent** to Infinity barrier
+- Infinity (I) blocks direct Unit marker access  
+- Unit cubes (U) behind barrier are ONLY capturable via 3x3 area effect
+- Hitting Matrix cube with Matrix marker creates 3x3 that includes blocked cubes
+
+### Critical: 3x3 Range Calculation
+The 3x3 is centered on the Matrix cube. For a Matrix at position (X,Y):
+- Area covers: (X-1 to X+1, Y-1 to Y+1)
+- To reach cubes at column X+2 (two columns away), the Matrix must be at X+1 (adjacent to barrier)
+
+**Example**: Matrix at (2,1), Infinity at (3,1)
+- 3x3 covers columns 1,2,3 - reaches the Infinity column but NOT column 4
+- Cubes at (3,0), (3,2) are capturable (same column as Infinity, different rows)
+- Cubes at (4,*) require Matrix at (3,1) which is blocked by Infinity
+
+### Timing Element
+When blocked cubes start above the 3x3 range:
+- Player must **wait** for cubes to move down into the capture zone
+- Then trigger the 3x3 at the right moment
+- This adds strategic timing to the "reach behind" mechanic
 
 ---
 
