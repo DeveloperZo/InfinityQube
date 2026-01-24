@@ -29,6 +29,32 @@ public class StageData : ScriptableObject
     [Range(1, 10)] public int respawnDelayMoves = 1;
     
     #endregion
+    
+    #region Advanced Grid Path
+    
+    [Header("Advanced Grid Path")]
+    [Tooltip("Path type for cube movement. Standard = normal down movement, others introduce 90-degree turns.")]
+    public GridPathType gridPathType = GridPathType.Standard;
+    
+    [Tooltip("Custom path configuration (used when gridPathType is Custom or for overriding defaults)")]
+    public GridPath customGridPath;
+    
+    /// <summary>
+    /// Gets the configured grid path for this stage.
+    /// Returns a new path based on type if no custom path is configured.
+    /// </summary>
+    public GridPath GetGridPath()
+    {
+        if (gridPathType == GridPathType.Custom && customGridPath != null)
+        {
+            return customGridPath;
+        }
+        
+        // Create path based on type
+        return GridPath.CreatePath(gridPathType, gridWidth, gridHeight);
+    }
+    
+    #endregion
 
     #region Line Divider
     
@@ -132,6 +158,21 @@ public class StageData : ScriptableObject
             foreach (var issue in waveIssues)
             {
                 issues.Add($"Wave {i}: {issue}");
+            }
+        }
+        
+        // ADVANCED GRID: Validate path configuration
+        if (gridPathType == GridPathType.Custom && customGridPath == null)
+        {
+            issues.Add("Custom grid path type selected but no custom path configured");
+        }
+        
+        if (customGridPath != null)
+        {
+            var pathIssues = customGridPath.Validate();
+            foreach (var issue in pathIssues)
+            {
+                issues.Add($"Grid Path: {issue}");
             }
         }
         

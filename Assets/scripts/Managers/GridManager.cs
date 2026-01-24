@@ -28,6 +28,13 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
     public bool useObjectPooling = false;
     public int pooledTileCount = 100;
 
+    [Header("Segment-Based Grid (New)")]
+    [Tooltip("Use segment controllers from scene instead of generating programmatically")]
+    public bool useSegmentControllers = false;
+    
+    [Tooltip("Segment controllers in scene. If empty and useSegmentControllers is true, will auto-find in children.")]
+    [SerializeField] private List<GridSegmentController> segmentControllers = new List<GridSegmentController>();
+    
     [Header("Debug")]
     [Tooltip("Enable debug logging for this manager")]
     [SerializeField] private bool enableDebugLogs;
@@ -51,6 +58,15 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
     private Vector3 minWorldBounds;
     private Vector3 maxWorldBounds;
     private Vector3 calculatedGridOffset;
+    
+    // ADVANCED GRID: Current path configuration
+    private GridPath currentPath;
+    private GridPathType currentPathType = GridPathType.Standard;
+    private List<GameObject> pathVisuals = new List<GameObject>();
+    
+    // ADVANCED GRID: Segment-based grid
+    private List<GridSegment> gridSegments = new List<GridSegment>();
+    private int activeSegmentIndex = 0;
 
     // Object pooling (if enabled)
     private Queue<GameObject> tilePool = new Queue<GameObject>();
@@ -76,6 +92,25 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
     // Task 6: Line divider properties
     public bool LineDividerEnabled => enableLineDivider;
     public int LineDividerRow => lineDividerRow;
+    
+    // ADVANCED GRID: Path properties
+    public GridPath CurrentPath => currentPath;
+    public GridPathType CurrentPathType => currentPathType;
+    public bool HasAdvancedPath => currentPathType != GridPathType.Standard;
+    
+    // ADVANCED GRID: Segment properties
+    public List<GridSegment> Segments => gridSegments;
+    public int ActiveSegmentIndex => activeSegmentIndex;
+    public GridSegment ActiveSegment => gridSegments.Count > activeSegmentIndex ? gridSegments[activeSegmentIndex] : null;
+    public int SegmentCount => gridSegments.Count;
+    public bool HasMultipleSegments => gridSegments.Count > 1;
+    
+    // SEGMENT CONTROLLERS: Scene-based segments
+    public List<GridSegmentController> SegmentControllers => segmentControllers;
+    public int SegmentControllerCount => segmentControllers.Count;
+    public bool HasSegmentControllers => useSegmentControllers && segmentControllers.Count > 0;
+    public GridSegmentController GetSegmentController(int index) => 
+        index >= 0 && index < segmentControllers.Count ? segmentControllers[index] : null;
     /// <summary>
     /// Task 6: Checks if a position is below the line divider (or always true if disabled)
     /// </summary>
@@ -135,7 +170,10 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
         // Configure line divider from stage data
         ConfigureLineDivider(stageData);
         
-        DebugLog($"Grid configured for stage {stageIndex}: LineDivider at row {lineDividerRow}");
+        // ADVANCED GRID: Configure path from stage data
+        ConfigureGridPath(stageData);
+        
+        DebugLog($"Grid configured for stage {stageIndex}: LineDivider at row {lineDividerRow}, Path type: {currentPathType}");
     }
     
     /// <summary>
@@ -387,6 +425,95 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
         if (showGridGizmos)
         {
             DrawGridGizmos();
+            DrawPathGizmos();
+        }
+    }
+    
+    /// <summary>
+    /// ADVANCED GRID: Draws the path and turn points in the Scene view.
+    /// </summary>
+    private void DrawPathGizmos()
+    {
+        if (currentPath == null || currentPath.IsStandardPath()) return;
+        
+        // Draw turn points
+        Gizmos.color = Color.yellow;
+        if (currentPath.turnPoints != null)
+        {
+            foreach (var turn in currentPath.turnPoints)
+            {
+                Vector3 worldPos = GridToWorldPosition(turn.position.x, turn.position.y, 0.5f);
+                
+                // Draw a sphere at turn point
+                Gizmos.DrawWireSphere(worldPos, tileSize * 0.5f);
+                
+                // Draw direction arrows
+                Vector3 fromDir = GetDirectionVector(turn.fromDirection) * tileSize;
+                Vector3 toDir = GetDirectionVector(turn.toDirection) * tileSize;
+                
+                Gizmos.color = Color.red;
+                Gizmos.DrawLine(worldPos - fromDir, worldPos);
+                
+                Gizmos.color = Color.green;
+                Gizmos.DrawLine(worldPos, worldPos + toDir);
+                
+                Gizmos.color = Color.yellow;
+            }
+        }
+        
+        // Draw path flow lines
+        DrawPathFlowLines();
+    }
+    
+    /// <summary>
+    /// ADVANCED GRID: Draws lines showing the path flow direction.
+    /// </summary>
+    private void DrawPathFlowLines()
+    {
+        if (currentPath == null || currentPath.segments == null) return;
+        
+        Gizmos.color = new Color(0f, 1f, 1f, 0.5f); // Cyan with transparency
+        
+        foreach (var segment in currentPath.segments)
+        {
+            Vector3 startPos, endPos;
+            
+            if (segment.direction == MovementDirection.Down || segment.direction == MovementDirection.Up)
+            {
+                // Vertical segment - draw for center column
+                int col = segment.column >= 0 ? segment.column : width / 2;
+                startPos = GridToWorldPosition(col, segment.startRow, 0.3f);
+                endPos = GridToWorldPosition(col, segment.endRow, 0.3f);
+            }
+            else
+            {
+                // Horizontal segment
+                startPos = GridToWorldPosition(segment.startColumn, segment.row, 0.3f);
+                endPos = GridToWorldPosition(segment.endColumn, segment.row, 0.3f);
+            }
+            
+            Gizmos.DrawLine(startPos, endPos);
+            
+            // Draw arrow head
+            Vector3 dir = (endPos - startPos).normalized;
+            Vector3 arrowPos = endPos - dir * tileSize * 0.5f;
+            Gizmos.DrawLine(arrowPos, arrowPos - dir * tileSize * 0.3f + Vector3.right * tileSize * 0.2f);
+            Gizmos.DrawLine(arrowPos, arrowPos - dir * tileSize * 0.3f - Vector3.right * tileSize * 0.2f);
+        }
+    }
+    
+    /// <summary>
+    /// ADVANCED GRID: Converts MovementDirection to a world-space direction vector.
+    /// </summary>
+    private Vector3 GetDirectionVector(MovementDirection direction)
+    {
+        switch (direction)
+        {
+            case MovementDirection.Down: return -Vector3.forward;
+            case MovementDirection.Up: return Vector3.forward;
+            case MovementDirection.Right: return Vector3.right;
+            case MovementDirection.Left: return -Vector3.right;
+            default: return -Vector3.forward;
         }
     }
 
@@ -478,9 +605,32 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
             return;
         }
 
-        DebugLog($"Generating grid: {width}x{height} with tile size {tileSize}");
+        DebugLog($"Generating grid: {width}x{height} with tile size {tileSize}, PathType: {currentPathType}");
 
-        StartGridGeneration();
+        // NEW: Check for segment controllers first (scene-based segments)
+        if (useSegmentControllers)
+        {
+            CollectSegmentControllers();
+            if (segmentControllers.Count > 0)
+            {
+                GenerateGridFromSegmentControllers();
+                return;
+            }
+            else
+            {
+                Debug.LogWarning("[GridManager] useSegmentControllers is true but no controllers found. Falling back to standard generation.");
+            }
+        }
+
+        // LEGACY: Check if we need to generate a segment-based grid (old L-shape logic)
+        if (currentPathType == GridPathType.L_Shape)
+        {
+            GenerateLShapeGrid();
+        }
+        else
+        {
+            StartGridGeneration();
+        }
     }
 
     private void StartGridGeneration()
@@ -495,6 +645,392 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
         GenerateAllTiles();
         FinalizeGridGeneration();
     }
+    
+    #region Segment Controller Grid Generation
+    
+    /// <summary>
+    /// Collects segment controllers from the scene.
+    /// If none are assigned in inspector, searches in children.
+    /// </summary>
+    private void CollectSegmentControllers()
+    {
+        // If already assigned in inspector, just validate and sort
+        if (segmentControllers.Count > 0)
+        {
+            // Remove any null entries
+            segmentControllers.RemoveAll(s => s == null);
+            
+            // Sort by segment index
+            segmentControllers.Sort((a, b) => a.segmentIndex.CompareTo(b.segmentIndex));
+            
+            Debug.Log($"[GridManager] Using {segmentControllers.Count} segment controllers from inspector");
+            return;
+        }
+        
+        // Auto-find in children
+        var foundControllers = GetComponentsInChildren<GridSegmentController>();
+        if (foundControllers.Length > 0)
+        {
+            segmentControllers.AddRange(foundControllers);
+            segmentControllers.Sort((a, b) => a.segmentIndex.CompareTo(b.segmentIndex));
+            Debug.Log($"[GridManager] Found {segmentControllers.Count} segment controllers in children");
+        }
+        else
+        {
+            // Try finding in scene (not recommended but fallback)
+            var allControllers = FindObjectsByType<GridSegmentController>(FindObjectsSortMode.None);
+            if (allControllers.Length > 0)
+            {
+                segmentControllers.AddRange(allControllers);
+                segmentControllers.Sort((a, b) => a.segmentIndex.CompareTo(b.segmentIndex));
+                Debug.Log($"[GridManager] Found {segmentControllers.Count} segment controllers in scene");
+            }
+        }
+    }
+    
+    /// <summary>
+    /// Generates the grid using segment controllers.
+    /// Each segment controller defines its own position, rotation, and dimensions.
+    /// Tiles are parented under each segment's transform.
+    /// </summary>
+    private void GenerateGridFromSegmentControllers()
+    {
+        Debug.Log($"[GridManager] Generating grid from {segmentControllers.Count} segment controllers");
+        
+        // Clear old grid segments (legacy)
+        gridSegments.Clear();
+        activeSegmentIndex = 0;
+        
+        // Use first segment's dimensions for main tiles array (backwards compatibility)
+        var primarySegment = segmentControllers[0];
+        width = primarySegment.width;
+        height = primarySegment.height;
+        tileSize = primarySegment.tileSize;
+        
+        // Initialize main tiles array (for segment 0 / backwards compatibility)
+        tiles = new Tile[width, height];
+        
+        if (useObjectPooling)
+        {
+            InitializeTilePool();
+        }
+        
+        // Generate tiles for each segment
+        int totalTiles = 0;
+        foreach (var segController in segmentControllers)
+        {
+            GenerateTilesForSegmentController(segController);
+            totalTiles += segController.width * segController.height;
+        }
+        
+        // Recalculate grid metrics based on all segments
+        CalculateGridMetricsFromSegments();
+        
+        FinalizeGridGeneration();
+        
+        Debug.Log($"[GridManager] Segment controller grid complete: {segmentControllers.Count} segments, {totalTiles} total tiles");
+    }
+    
+    /// <summary>
+    /// Generates tiles for a single segment controller.
+    /// Tiles are parented under the segment's transform.
+    /// </summary>
+    private void GenerateTilesForSegmentController(GridSegmentController segment)
+    {
+        if (segment == null) return;
+        
+        segment.InitializeTileArray();
+        int tilesCreated = 0;
+        
+        Debug.Log($"[GridManager] Generating tiles for Segment {segment.segmentIndex}: {segment.width}x{segment.height} at {segment.transform.position}");
+        
+        for (int x = 0; x < segment.width; x++)
+        {
+            for (int y = 0; y < segment.height; y++)
+            {
+                CreateTileForSegmentController(segment, x, y);
+                tilesCreated++;
+            }
+        }
+        
+        segment.MarkInitialized();
+        Debug.Log($"[GridManager] Segment {segment.segmentIndex} complete: {tilesCreated} tiles created");
+    }
+    
+    /// <summary>
+    /// Creates a single tile for a segment controller, parented under the segment.
+    /// </summary>
+    private void CreateTileForSegmentController(GridSegmentController segment, int localX, int localY)
+    {
+        // Calculate LOCAL position (segment's transform handles world position/rotation)
+        Vector3 localPosition = new Vector3(localX * segment.tileSize, 0f, localY * segment.tileSize);
+        
+        GameObject tileObj = GetTileObject();
+        if (tileObj == null)
+        {
+            Debug.LogError($"[GridManager] GetTileObject() returned null for Seg{segment.segmentIndex}_{localX}_{localY}!");
+            return;
+        }
+        
+        // Configure tile object - PARENT UNDER SEGMENT
+        tileObj.name = $"Tile_{localX}_{localY}";
+        tileObj.transform.SetParent(segment.transform);
+        tileObj.transform.localPosition = localPosition;
+        tileObj.transform.localRotation = Quaternion.identity; // No rotation - segment handles it
+        tileObj.transform.localScale = new Vector3(segment.tileSize, 1f, segment.tileSize);
+        
+        // Setup tile component
+        Tile tile = tileObj.GetComponent<Tile>();
+        if (tile == null)
+        {
+            tile = tileObj.AddComponent<Tile>();
+        }
+        tile.Init(localX, localY);
+        
+        // Register with segment controller
+        segment.RegisterTile(localX, localY, tile, tileObj);
+        
+        // Also store in main tiles array if this is segment 0 (backwards compatibility)
+        if (segment.segmentIndex == 0 && localX < width && localY < height)
+        {
+            tiles[localX, localY] = tile;
+        }
+        
+        if (useObjectPooling)
+        {
+            activeTiles.Add(tileObj);
+        }
+    }
+    
+    /// <summary>
+    /// Recalculates grid metrics (bounds) based on all segment controllers.
+    /// </summary>
+    private void CalculateGridMetricsFromSegments()
+    {
+        if (segmentControllers.Count == 0) return;
+        
+        var primarySegment = segmentControllers[0];
+        
+        // Set calculatedGridOffset to match primary segment's position
+        // This ensures legacy code that uses calculatedGridOffset works correctly
+        calculatedGridOffset = primarySegment.transform.position - transform.position;
+        
+        // Find bounding box across all segments
+        Vector3 minBounds = Vector3.one * float.MaxValue;
+        Vector3 maxBounds = Vector3.one * float.MinValue;
+        
+        foreach (var segment in segmentControllers)
+        {
+            // Check all corners of this segment
+            for (int x = 0; x <= 1; x++)
+            {
+                for (int y = 0; y <= 1; y++)
+                {
+                    int cornerX = x == 0 ? 0 : segment.width - 1;
+                    int cornerY = y == 0 ? 0 : segment.height - 1;
+                    Vector3 worldPos = segment.LocalToWorldPosition(cornerX, cornerY);
+                    
+                    minBounds = Vector3.Min(minBounds, worldPos);
+                    maxBounds = Vector3.Max(maxBounds, worldPos);
+                }
+            }
+        }
+        
+        // Add tile size padding
+        maxBounds += new Vector3(primarySegment.tileSize, 0, primarySegment.tileSize);
+        
+        minWorldBounds = minBounds;
+        maxWorldBounds = maxBounds;
+        
+        Debug.Log($"[GridManager] Grid bounds: min={minBounds}, max={maxBounds}");
+    }
+    
+    #endregion
+    
+    #region L-Shape Grid Generation
+    
+    /// <summary>
+    /// ADVANCED GRID: Generates an L-shaped grid using two segments.
+    /// Segment 1: Vertical (width x height) - standard orientation
+    /// Segment 2: Horizontal (width x (height + width)) - rotated 90°, with overlap
+    /// </summary>
+    private void GenerateLShapeGrid()
+    {
+        Debug.Log($"[GridManager] GenerateLShapeGrid() - Creating Segment 1 = {width}x{height}, Segment 2 = {width}x{height + width}");
+        DebugLog($"Generating L-Shape grid: Segment 1 = {width}x{height}, Segment 2 = {width}x{height + width}");
+        
+        // Clear existing segments
+        gridSegments.Clear();
+        activeSegmentIndex = 0;
+        
+        // Create the two segments
+        gridSegments = GridSegment.CreateLShape(width, height);
+        Debug.Log($"[GridManager] Created {gridSegments.Count} segments");
+        
+        // Calculate world offsets for segment 2
+        CalculateSegmentOffsets();
+        
+        // Generate tiles for segment 1 (uses standard tile array)
+        tiles = new Tile[width, height];
+        if (useObjectPooling)
+        {
+            InitializeTilePool();
+        }
+        Debug.Log($"[GridManager] Generating tiles for segment 0...");
+        GenerateSegmentTiles(gridSegments[0]);
+        
+        // Generate tiles for segment 2 (stored in segment's own array)
+        Debug.Log($"[GridManager] Generating tiles for segment 1...");
+        GenerateSegmentTiles(gridSegments[1]);
+        
+        FinalizeGridGeneration();
+        
+        int seg2TileCount = gridSegments[1].width * gridSegments[1].height;
+        int seg2NonOverlapTiles = seg2TileCount - (gridSegments[1].overlapRows * gridSegments[1].width);
+        Debug.Log($"[GridManager] L-Shape COMPLETE: Seg1={width * height} tiles, Seg2={seg2NonOverlapTiles} new tiles (+ {gridSegments[1].overlapRows * gridSegments[1].width} shared)");
+        DebugLog($"L-Shape grid generated: {gridSegments.Count} segments, Segment 1 tiles: {width * height}, Segment 2 tiles: {seg2TileCount}");
+    }
+    
+    /// <summary>
+    /// ADVANCED GRID: Calculates world offsets for each segment so they connect properly.
+    /// </summary>
+    private void CalculateSegmentOffsets()
+    {
+        if (gridSegments.Count < 2) return;
+        
+        var seg0 = gridSegments[0];
+        var seg1 = gridSegments[1];
+        
+        // Segment 0 starts at the calculated grid offset
+        seg0.worldOffset = transform.position + calculatedGridOffset;
+        
+        // L-SHAPE POSITIONING:
+        // We want seg1's entry point (col 0, row height-1) to be adjacent to seg0's exit (col 0, row 0)
+        //
+        // Step 1: Calculate where seg0 (0, 0) is in world space
+        Vector3 seg0ExitPoint = seg0.worldOffset; // col 0, row 0 is at the offset
+        
+        // Step 2: Calculate where we WANT seg1's entry point to be (one tile to the LEFT)
+        Vector3 desiredSeg1Entry = seg0ExitPoint + new Vector3(-tileSize, 0, 0);
+        
+        // Step 3: Calculate what offset seg1 needs so its (0, height-1) lands at desiredSeg1Entry
+        // With +90° rotation: local (0, 0, y*tileSize) → world-relative (y*tileSize, 0, 0)
+        int seg1EntryRow = seg1.height - 1;
+        Vector3 localToWorld_EntryOffset = new Vector3(seg1EntryRow * tileSize, 0, 0); // After +90° rotation
+        
+        // offset + localToWorld_EntryOffset = desiredSeg1Entry
+        // offset = desiredSeg1Entry - localToWorld_EntryOffset
+        seg1.worldOffset = desiredSeg1Entry - localToWorld_EntryOffset;
+        
+        Debug.Log($"[GridManager] L-Shape positioning:");
+        Debug.Log($"  tileSize={tileSize}");
+        Debug.Log($"  Seg0: offset={seg0.worldOffset}, size={width}x{height}");
+        Debug.Log($"  Seg1: offset={seg1.worldOffset}, size={seg1.width}x{seg1.height}, rotation={seg1.rotationAngle}°, entryRow={seg1EntryRow}");
+        Debug.Log($"  Seg0 exit (col 0, row 0): {seg0ExitPoint}");
+        Debug.Log($"  Desired Seg1 entry: {desiredSeg1Entry}");
+        Debug.Log($"  localToWorld offset for entry: {localToWorld_EntryOffset}");
+        
+        // Verify by computing seg1's entry point
+        Vector3 actualSeg1Entry = seg1.LocalToWorldPosition(0, seg1EntryRow, tileSize);
+        Debug.Log($"  Actual Seg1 entry (col 0, row {seg1EntryRow}): {actualSeg1Entry}");
+        Debug.Log($"  Gap: {Vector3.Distance(seg0ExitPoint, actualSeg1Entry)} units (should be ~{tileSize})");
+        
+        DebugLog($"Segment offsets calculated: Seg0={seg0.worldOffset}, Seg1={seg1.worldOffset}");
+    }
+    
+    /// <summary>
+    /// ADVANCED GRID: Generates tiles for a specific segment.
+    /// </summary>
+    private void GenerateSegmentTiles(GridSegment segment)
+    {
+        if (segment == null) return;
+        
+        // Initialize segment's tile array
+        segment.tiles = new Tile[segment.width, segment.height];
+        
+        int tilesCreated = 0;
+        int tilesLinked = 0;
+        
+        Debug.Log($"[GridManager] GenerateSegmentTiles: Seg{segment.segmentIndex} dimensions {segment.width}x{segment.height}, overlap={segment.overlapRows} at row {segment.overlapStartRow}");
+        
+        for (int x = 0; x < segment.width; x++)
+        {
+            for (int y = 0; y < segment.height; y++)
+            {
+                // Skip overlap zone tiles for segment 2 (they're already created by segment 1)
+                if (segment.segmentIndex > 0 && segment.IsInOverlapZone(x, y))
+                {
+                    // Link to segment 1's tile instead of creating new one
+                    // Overlap zone: seg2 local (x, y) corresponds to seg1 local (x, y - overlapStartRow)
+                    int seg1Y = y - segment.overlapStartRow;
+                    if (seg1Y >= 0 && seg1Y < height && x < width)
+                    {
+                        segment.tiles[x, y] = tiles[x, seg1Y];
+                        tilesLinked++;
+                    }
+                    continue;
+                }
+                
+                CreateSegmentTileAtPosition(segment, x, y);
+                tilesCreated++;
+            }
+        }
+        
+        segment.isInitialized = true;
+        Debug.Log($"[GridManager] Seg{segment.segmentIndex} complete: {tilesCreated} tiles created, {tilesLinked} tiles linked");
+        DebugLog($"Generated tiles for {segment.segmentName}: {segment.width}x{segment.height}");
+    }
+    
+    /// <summary>
+    /// ADVANCED GRID: Creates a tile at a specific position within a segment.
+    /// </summary>
+    private void CreateSegmentTileAtPosition(GridSegment segment, int localX, int localY)
+    {
+        Vector3 worldPosition = segment.LocalToWorldPosition(localX, localY, tileSize, 0f);
+        GameObject tileObj = GetTileObject();
+        
+        if (tileObj == null)
+        {
+            Debug.LogError($"[GridManager] GetTileObject() returned null for Seg{segment.segmentIndex}_{localX}_{localY}!");
+            return;
+        }
+        
+        // Configure tile object
+        tileObj.name = $"Tile_Seg{segment.segmentIndex}_{localX}_{localY}";
+        tileObj.transform.SetParent(transform);
+        tileObj.transform.position = worldPosition;
+        tileObj.transform.rotation = segment.GetWorldRotation();
+        tileObj.transform.localScale = new Vector3(tileSize, 1f, tileSize);
+        
+        // Ensure tile is at ground level
+        Vector3 finalPos = tileObj.transform.position;
+        finalPos.y = 0f;
+        tileObj.transform.position = finalPos;
+        
+        // Setup tile component
+        Tile tile = tileObj.GetComponent<Tile>();
+        if (tile == null)
+        {
+            tile = tileObj.AddComponent<Tile>();
+        }
+        tile.Init(localX, localY);
+        
+        // Store in segment's array
+        segment.tiles[localX, localY] = tile;
+        
+        // Also store in main tiles array if this is segment 0
+        if (segment.segmentIndex == 0 && localX < width && localY < height)
+        {
+            tiles[localX, localY] = tile;
+        }
+        
+        if (useObjectPooling)
+        {
+            activeTiles.Add(tileObj);
+        }
+    }
+    
+    #endregion
 
     private void GenerateAllTiles()
     {
@@ -576,6 +1112,29 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
         isGridReady = false;
         CalculateGridMetrics();
         GenerateGrid();
+    }
+    
+    /// <summary>
+    /// ADVANCED GRID: Regenerates the grid as an L-shape with multiple segments.
+    /// Called when switching from Standard to L_Shape path type.
+    /// </summary>
+    public void RegenerateAsLShape()
+    {
+        Debug.Log($"[GridManager] RegenerateAsLShape() called - destroying existing {width}x{height} grid");
+        DebugLog("Regenerating grid as L-Shape...");
+        
+        // Destroy existing tiles
+        DestroyGrid();
+        isGridGenerated = false;
+        isGridReady = false;
+        
+        // Recalculate metrics
+        CalculateGridMetrics();
+        
+        Debug.Log($"[GridManager] Metrics recalculated, calling GenerateLShapeGrid()");
+        
+        // Generate L-shape grid (this will be called since currentPathType is now L_Shape)
+        GenerateLShapeGrid();
     }
     #endregion
 
@@ -814,15 +1373,136 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
     }
     #endregion
 
+    #region Segment Management
+    
+    /// <summary>
+    /// ADVANCED GRID: Sets the active segment index.
+    /// </summary>
+    public void SetActiveSegment(int index)
+    {
+        if (index >= 0 && index < gridSegments.Count)
+        {
+            activeSegmentIndex = index;
+            DebugLog($"Active segment set to {index}: {gridSegments[index].segmentName}");
+        }
+    }
+    
+    /// <summary>
+    /// ADVANCED GRID: Gets a tile from the specified segment.
+    /// </summary>
+    public Tile GetSegmentTile(int segmentIndex, int localX, int localY)
+    {
+        if (segmentIndex < 0 || segmentIndex >= gridSegments.Count)
+            return null;
+        
+        var segment = gridSegments[segmentIndex];
+        if (!segment.IsValidLocalPosition(localX, localY))
+            return null;
+        
+        return segment.tiles?[localX, localY];
+    }
+    
+    /// <summary>
+    /// ADVANCED GRID: Gets a tile from the active segment.
+    /// </summary>
+    public Tile GetActiveSegmentTile(int localX, int localY)
+    {
+        return GetSegmentTile(activeSegmentIndex, localX, localY);
+    }
+    
+    /// <summary>
+    /// ADVANCED GRID: Checks if a position in the given segment is in the overlap zone.
+    /// </summary>
+    public bool IsInOverlapZone(int segmentIndex, int localX, int localY)
+    {
+        if (segmentIndex < 0 || segmentIndex >= gridSegments.Count)
+            return false;
+        
+        return gridSegments[segmentIndex].IsInOverlapZone(localX, localY);
+    }
+    
+    /// <summary>
+    /// ADVANCED GRID: Gets the overlap zone bounds for segment 1 (the first segment).
+    /// Returns (minY, maxY) where cubes entering this range should trigger transition.
+    /// </summary>
+    public (int minY, int maxY) GetSegment1OverlapBounds()
+    {
+        if (gridSegments.Count < 2)
+            return (-1, -1);
+        
+        // Segment 1's overlap zone is at its bottom rows
+        int overlapSize = gridSegments[1].overlapRows;
+        return (0, overlapSize - 1);
+    }
+    
+    /// <summary>
+    /// ADVANCED GRID: Checks if a cube at the given position should trigger segment transition.
+    /// For segment 1, this is when cubes enter the overlap zone at the bottom.
+    /// </summary>
+    public bool ShouldTriggerSegmentTransition(int segmentIndex, int localY)
+    {
+        if (!HasMultipleSegments || segmentIndex != 0)
+            return false;
+        
+        var bounds = GetSegment1OverlapBounds();
+        return localY >= bounds.minY && localY <= bounds.maxY;
+    }
+    
+    /// <summary>
+    /// ADVANCED GRID: Converts world position to segment and local coordinates.
+    /// Returns (segmentIndex, localX, localY). SegmentIndex is -1 if not on any segment.
+    /// </summary>
+    public (int segmentIndex, int localX, int localY) WorldToSegmentPosition(Vector3 worldPos)
+    {
+        for (int i = 0; i < gridSegments.Count; i++)
+        {
+            var localPos = gridSegments[i].WorldToLocalPosition(worldPos, tileSize);
+            if (localPos.x >= 0 && localPos.y >= 0)
+            {
+                return (i, localPos.x, localPos.y);
+            }
+        }
+        return (-1, -1, -1);
+    }
+    
+    /// <summary>
+    /// ADVANCED GRID: Gets the world position for a segment's tile.
+    /// </summary>
+    public Vector3 SegmentToWorldPosition(int segmentIndex, int localX, int localY, float heightOffset = 0f)
+    {
+        if (segmentIndex < 0 || segmentIndex >= gridSegments.Count)
+            return Vector3.zero;
+        
+        return gridSegments[segmentIndex].LocalToWorldPosition(localX, localY, tileSize, heightOffset);
+    }
+    
+    #endregion
+
     #region Coordinate Conversion
     public Vector3 GridToWorldPosition(int x, int y, float heightOffset = 0)
     {
+        // SEGMENT CONTROLLERS: Use first segment's coordinate system
+        if (HasSegmentControllers && segmentControllers.Count > 0)
+        {
+            var primarySegment = segmentControllers[0];
+            return primarySegment.LocalToWorldPosition(x, y, heightOffset);
+        }
+        
+        // Legacy: Use calculated grid offset
         Vector3 basePosition = transform.position + calculatedGridOffset;
         return new Vector3(x * tileSize, heightOffset, y * tileSize) + basePosition;
     }
 
     public Vector2Int WorldToGridPosition(Vector3 worldPosition)
     {
+        // SEGMENT CONTROLLERS: Use first segment's coordinate system
+        if (HasSegmentControllers && segmentControllers.Count > 0)
+        {
+            var primarySegment = segmentControllers[0];
+            return primarySegment.WorldToLocalPosition(worldPosition);
+        }
+        
+        // Legacy: Use calculated grid offset
         Vector3 basePosition = transform.position + calculatedGridOffset;
         Vector3 localPos = worldPosition - basePosition;
 
@@ -834,19 +1514,171 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
 
         return new Vector2Int(x, y);
     }
+    
+    /// <summary>
+    /// ADVANCED GRID: Converts world position to the appropriate segment's local coordinates.
+    /// Returns (segmentIndex, localX, localY). SegmentIndex is -1 if not on any segment.
+    /// </summary>
+    public (int segmentIndex, Vector2Int localPos) WorldToSegmentLocalPosition(Vector3 worldPosition)
+    {
+        // Check segment 0 first (main grid)
+        Vector3 seg0Base = transform.position + calculatedGridOffset;
+        Vector3 localPos0 = worldPosition - seg0Base;
+        int x0 = Mathf.RoundToInt(localPos0.x / tileSize);
+        int y0 = Mathf.RoundToInt(localPos0.z / tileSize);
+        
+        if (x0 >= 0 && x0 < width && y0 >= 0 && y0 < height)
+        {
+            return (0, new Vector2Int(x0, y0));
+        }
+        
+        // Check other segments
+        if (HasMultipleSegments)
+        {
+            for (int i = 1; i < gridSegments.Count; i++)
+            {
+                var segment = gridSegments[i];
+                var localCoord = segment.WorldToLocalPosition(worldPosition, tileSize);
+                
+                if (localCoord.x >= 0 && localCoord.y >= 0 && 
+                    localCoord.x < segment.width && localCoord.y < segment.height)
+                {
+                    return (i, localCoord);
+                }
+            }
+        }
+        
+        // Not on any segment - return segment 0's clamped position as fallback
+        x0 = Mathf.Clamp(x0, 0, width - 1);
+        y0 = Mathf.Clamp(y0, 0, height - 1);
+        return (-1, new Vector2Int(x0, y0));
+    }
+    
+    /// <summary>
+    /// ADVANCED GRID: Checks if a world position is on a valid, playable tile on ANY segment.
+    /// </summary>
+    public bool IsWorldPositionValid(Vector3 worldPosition)
+    {
+        var (segmentIndex, localPos) = WorldToSegmentLocalPosition(worldPosition);
+        
+        if (segmentIndex < 0)
+            return false;
+        
+        if (segmentIndex == 0)
+        {
+            Tile tile = GetTileAt(localPos);
+            return tile != null && tile.IsPlayable;
+        }
+        else
+        {
+            var segment = gridSegments[segmentIndex];
+            if (segment.tiles != null && segment.IsValidLocalPosition(localPos.x, localPos.y))
+            {
+                var tile = segment.tiles[localPos.x, localPos.y];
+                return tile != null && tile.IsPlayable;
+            }
+        }
+        
+        return false;
+    }
+    
+    /// <summary>
+    /// ADVANCED GRID: Gets the tile at a world position from any segment.
+    /// </summary>
+    public Tile GetTileAtWorldPositionAnySegment(Vector3 worldPosition)
+    {
+        // SEGMENT CONTROLLERS: Check segment controllers first
+        if (HasSegmentControllers)
+        {
+            return GetTileAtWorldPositionFromControllers(worldPosition);
+        }
+        
+        // Legacy multi-segment support
+        var (segmentIndex, localPos) = WorldToSegmentLocalPosition(worldPosition);
+        
+        if (segmentIndex < 0)
+            return null;
+        
+        if (segmentIndex == 0)
+        {
+            return GetTileAt(localPos);
+        }
+        else if (segmentIndex < gridSegments.Count)
+        {
+            var segment = gridSegments[segmentIndex];
+            if (segment.tiles != null && segment.IsValidLocalPosition(localPos.x, localPos.y))
+            {
+                return segment.tiles[localPos.x, localPos.y];
+            }
+        }
+        
+        return null;
+    }
 
     public bool IsValidGridPosition(int x, int y)
     {
-        if (x < 0 || x >= width || y < 0 || y >= height) return false;
-
-        // Check if the tile has fallen
-        Tile tile = GetTileAt(x, y);
-        return tile != null && tile.IsPlayable;
+        // For multi-segment grids, check segment 0 first (standard behavior)
+        if (x >= 0 && x < width && y >= 0 && y < height)
+        {
+            Tile tile = GetTileAt(x, y);
+            return tile != null && tile.IsPlayable;
+        }
+        
+        return false;
     }
 
     public bool IsValidGridPosition(Vector2Int pos)
     {
         return IsValidGridPosition(pos.x, pos.y);
+    }
+    
+    /// <summary>
+    /// ADVANCED GRID: Checks if a position is valid on ANY segment (for player movement across segments).
+    /// </summary>
+    public bool IsValidPositionOnAnySegment(int x, int y)
+    {
+        // Check segment 0 (main grid)
+        if (IsValidGridPosition(x, y))
+            return true;
+        
+        // For multi-segment grids, check other segments
+        if (HasMultipleSegments)
+        {
+            for (int i = 1; i < gridSegments.Count; i++)
+            {
+                var segment = gridSegments[i];
+                if (segment.IsValidLocalPosition(x, y) && segment.tiles != null)
+                {
+                    var tile = segment.tiles[x, y];
+                    if (tile != null && tile.IsPlayable)
+                        return true;
+                }
+            }
+        }
+        
+        return false;
+    }
+    
+    /// <summary>
+    /// ADVANCED GRID: Gets the segment index for a given position, or -1 if not on any segment.
+    /// </summary>
+    public int GetSegmentForPosition(int x, int y)
+    {
+        // Check segment 0 first
+        if (x >= 0 && x < width && y >= 0 && y < height)
+            return 0;
+        
+        // Check other segments
+        if (HasMultipleSegments)
+        {
+            for (int i = 1; i < gridSegments.Count; i++)
+            {
+                if (gridSegments[i].IsValidLocalPosition(x, y))
+                    return i;
+            }
+        }
+        
+        return -1;
     }
 
     public Tile GetTileAt(int x, int y)
@@ -867,6 +1699,129 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
         Vector2Int gridPos = WorldToGridPosition(worldPos);
         return GetTileAt(gridPos);
     }
+    
+    #region Segment Controller Tile Access
+    
+    /// <summary>
+    /// Gets the segment controller that contains the given world position.
+    /// Returns null if no segment contains the position.
+    /// </summary>
+    public GridSegmentController GetSegmentControllerAtWorldPosition(Vector3 worldPos)
+    {
+        if (!HasSegmentControllers) return null;
+        
+        foreach (var segment in segmentControllers)
+        {
+            if (segment != null && segment.ContainsWorldPosition(worldPos))
+            {
+                return segment;
+            }
+        }
+        
+        return null;
+    }
+    
+    /// <summary>
+    /// Gets the tile at a world position, checking all segment controllers.
+    /// </summary>
+    public Tile GetTileAtWorldPositionFromControllers(Vector3 worldPos)
+    {
+        if (!HasSegmentControllers)
+        {
+            return GetTileAtWorldPosition(worldPos);
+        }
+        
+        foreach (var segment in segmentControllers)
+        {
+            if (segment != null)
+            {
+                Tile tile = segment.GetTileAtWorldPosition(worldPos);
+                if (tile != null)
+                {
+                    return tile;
+                }
+            }
+        }
+        
+        return null;
+    }
+    
+    /// <summary>
+    /// Checks if a world position is valid (on any segment).
+    /// Works with both segment controllers and legacy segments.
+    /// </summary>
+    public bool IsValidWorldPosition(Vector3 worldPos)
+    {
+        if (HasSegmentControllers)
+        {
+            foreach (var segment in segmentControllers)
+            {
+                if (segment != null && segment.ContainsWorldPosition(worldPos))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+        else if (HasMultipleSegments)
+        {
+            // Use legacy segment checking
+            var (segmentIndex, localPos) = WorldToSegmentLocalPosition(worldPos);
+            return segmentIndex >= 0;
+        }
+        else
+        {
+            Vector2Int gridPos = WorldToGridPosition(worldPos);
+            return IsValidGridPosition(gridPos);
+        }
+    }
+    
+    /// <summary>
+    /// Gets segment index and local position for a world position (segment controllers).
+    /// Returns (-1, invalid) if position is not on any segment.
+    /// </summary>
+    public (int segmentIndex, Vector2Int localPos) WorldToSegmentControllerPosition(Vector3 worldPos)
+    {
+        if (!HasSegmentControllers)
+        {
+            // Fallback to legacy
+            return WorldToSegmentLocalPosition(worldPos);
+        }
+        
+        for (int i = 0; i < segmentControllers.Count; i++)
+        {
+            var segment = segmentControllers[i];
+            if (segment != null)
+            {
+                Vector2Int local = segment.WorldToLocalPosition(worldPos);
+                if (local.x >= 0 && local.y >= 0)
+                {
+                    return (segment.segmentIndex, local);
+                }
+            }
+        }
+        
+        return (-1, new Vector2Int(-1, -1));
+    }
+    
+    /// <summary>
+    /// Gets tile from a segment controller by index and local position.
+    /// </summary>
+    public Tile GetTileFromController(int segmentIndex, int localX, int localY)
+    {
+        var segment = GetSegmentController(segmentIndex);
+        return segment?.GetTile(localX, localY);
+    }
+    
+    /// <summary>
+    /// Gets tile from a segment controller by index and local position.
+    /// </summary>
+    public Tile GetTileFromController(int segmentIndex, Vector2Int localPos)
+    {
+        return GetTileFromController(segmentIndex, localPos.x, localPos.y);
+    }
+    
+    #endregion
     #endregion
 
     #region Marker Management
@@ -1649,6 +2604,333 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
     }
     #endregion
 
+    #region Advanced Grid Path
+    
+    /// <summary>
+    /// ADVANCED GRID: Configures the grid path from stage data.
+    /// Call this when a stage starts or when path changes.
+    /// </summary>
+    public void ConfigureGridPath(GridPathType pathType, GridPath customPath = null)
+    {
+        // SEGMENT CONTROLLERS: Skip legacy path configuration when using segment controllers
+        if (HasSegmentControllers)
+        {
+            Debug.Log($"[GridManager] ConfigureGridPath: Skipping - using segment controllers instead of GridPathType");
+            return;
+        }
+        
+        GridPathType previousPathType = currentPathType;
+        currentPathType = pathType;
+        
+        // Always log path configuration for debugging
+        Debug.Log($"[GridManager] ConfigureGridPath: {previousPathType} → {pathType}, isGridGenerated={isGridGenerated}");
+        
+        if (pathType == GridPathType.Custom && customPath != null)
+        {
+            currentPath = customPath;
+        }
+        else
+        {
+            currentPath = GridPath.CreatePath(pathType, width, height);
+        }
+        
+        DebugLog($"Grid path configured: {pathType}");
+        
+        // ADVANCED GRID: Regenerate grid if switching to/from L-shape
+        // This happens when stage starts after initial grid generation
+        if (isGridGenerated && pathType != previousPathType)
+        {
+            Debug.Log($"[GridManager] Path type changed and grid exists - will regenerate");
+            
+            if (pathType == GridPathType.L_Shape)
+            {
+                Debug.Log($"[GridManager] Calling RegenerateAsLShape()");
+                DebugLog($"Switching to L-Shape: Regenerating grid with segments");
+                RegenerateAsLShape();
+            }
+            else if (previousPathType == GridPathType.L_Shape && pathType == GridPathType.Standard)
+            {
+                Debug.Log($"[GridManager] Calling RegenerateGrid() - switching back to Standard");
+                DebugLog($"Switching from L-Shape to Standard: Regenerating grid");
+                RegenerateGrid();
+            }
+        }
+        else
+        {
+            Debug.Log($"[GridManager] NOT regenerating: isGridGenerated={isGridGenerated}, sameType={pathType == previousPathType}");
+        }
+        
+        // Create runtime visuals for non-standard paths
+        if (pathType != GridPathType.Standard)
+        {
+            CreatePathVisuals();
+        }
+        else
+        {
+            ClearPathVisuals();
+        }
+        
+        // Visualize turn points if debug gizmos enabled
+        if (showGridGizmos)
+        {
+            VisualizeTurnPoints();
+        }
+    }
+    
+    /// <summary>
+    /// ADVANCED GRID: Configures the grid path from StageData.
+    /// </summary>
+    public void ConfigureGridPath(StageData stageData)
+    {
+        if (stageData == null) return;
+        
+        ConfigureGridPath(stageData.gridPathType, stageData.customGridPath);
+    }
+    
+    /// <summary>
+    /// ADVANCED GRID: Gets turn point world positions for visualization.
+    /// </summary>
+    public List<Vector3> GetTurnPointWorldPositions()
+    {
+        var positions = new List<Vector3>();
+        
+        if (currentPath == null || currentPath.turnPoints == null)
+            return positions;
+        
+        foreach (var turn in currentPath.turnPoints)
+        {
+            Vector3 worldPos = GridToWorldPosition(turn.position.x, turn.position.y, 0.5f);
+            positions.Add(worldPos);
+        }
+        
+        return positions;
+    }
+    
+    /// <summary>
+    /// ADVANCED GRID: Gets the movement direction at a grid position.
+    /// </summary>
+    public MovementDirection GetDirectionAtPosition(Vector2Int position, MovementDirection currentDirection)
+    {
+        if (currentPath == null)
+            return MovementDirection.Down;
+        
+        return currentPath.GetDirectionAtPosition(position, currentDirection);
+    }
+    
+    /// <summary>
+    /// ADVANCED GRID: Visualizes turn points (editor/debug only).
+    /// </summary>
+    private void VisualizeTurnPoints()
+    {
+        if (currentPath == null || currentPath.turnPoints == null)
+            return;
+        
+        foreach (var turn in currentPath.turnPoints)
+        {
+            DebugLog($"Turn point at ({turn.position.x}, {turn.position.y}): {turn.fromDirection} → {turn.toDirection}");
+        }
+    }
+    
+    /// <summary>
+    /// ADVANCED GRID: Resets path to standard (no turns).
+    /// </summary>
+    public void ResetGridPath()
+    {
+        currentPathType = GridPathType.Standard;
+        currentPath = GridPath.CreatePath(GridPathType.Standard, width, height);
+        ClearPathVisuals();
+        DebugLog("Grid path reset to Standard");
+    }
+    
+    /// <summary>
+    /// ADVANCED GRID: Creates runtime visual indicators for the path.
+    /// Call this after ConfigureGridPath to show path to players.
+    /// </summary>
+    public void CreatePathVisuals()
+    {
+        ClearPathVisuals();
+        
+        if (currentPath == null || currentPath.IsStandardPath()) return;
+        
+        // Create turn point indicators
+        if (currentPath.turnPoints != null)
+        {
+            foreach (var turn in currentPath.turnPoints)
+            {
+                CreateTurnPointVisual(turn);
+            }
+        }
+        
+        // Create path direction indicators on tiles
+        CreatePathDirectionIndicators();
+        
+        DebugLog($"Created path visuals for {currentPathType}");
+    }
+    
+    /// <summary>
+    /// ADVANCED GRID: Creates a visual indicator at a turn point.
+    /// </summary>
+    private void CreateTurnPointVisual(TurnPoint turn)
+    {
+        // Create indicator for each column at the turn row if affectsAllColumns
+        if (turn.affectsAllColumns)
+        {
+            for (int x = 0; x < width; x++)
+            {
+                CreateSingleTurnIndicator(x, turn.position.y, turn);
+            }
+        }
+        else
+        {
+            CreateSingleTurnIndicator(turn.position.x, turn.position.y, turn);
+        }
+    }
+    
+    /// <summary>
+    /// ADVANCED GRID: Creates a single turn indicator at a position.
+    /// </summary>
+    private void CreateSingleTurnIndicator(int x, int y, TurnPoint turn)
+    {
+        GameObject indicator = GameObject.CreatePrimitive(PrimitiveType.Quad);
+        indicator.name = $"TurnIndicator_{x}_{y}";
+        indicator.transform.SetParent(transform);
+        
+        Vector3 worldPos = GridToWorldPosition(x, y, 0.05f);
+        indicator.transform.position = worldPos;
+        indicator.transform.rotation = Quaternion.Euler(90f, 0f, 0f); // Flat on ground
+        indicator.transform.localScale = new Vector3(tileSize * 0.8f, tileSize * 0.8f, 1f);
+        
+        // Remove collider
+        Destroy(indicator.GetComponent<Collider>());
+        
+        // Create arrow material pointing in the turn direction
+        Renderer renderer = indicator.GetComponent<Renderer>();
+        Material mat = new Material(Shader.Find("Standard"));
+        mat.color = new Color(1f, 0.8f, 0f, 0.6f); // Yellow/orange
+        mat.SetFloat("_Mode", 3); // Transparent
+        mat.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
+        mat.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+        mat.SetInt("_ZWrite", 0);
+        mat.EnableKeyword("_ALPHABLEND_ON");
+        mat.renderQueue = 3000;
+        renderer.material = mat;
+        
+        // Rotate to show direction of turn
+        float rotationY = GetRotationForTurn(turn.toDirection);
+        indicator.transform.rotation = Quaternion.Euler(90f, rotationY, 0f);
+        
+        pathVisuals.Add(indicator);
+    }
+    
+    /// <summary>
+    /// ADVANCED GRID: Creates direction indicators along the path.
+    /// </summary>
+    private void CreatePathDirectionIndicators()
+    {
+        if (currentPath.segments == null) return;
+        
+        foreach (var segment in currentPath.segments)
+        {
+            // Add arrows every few tiles along each segment
+            if (segment.direction == MovementDirection.Down || segment.direction == MovementDirection.Up)
+            {
+                // Vertical segment
+                int step = segment.direction == MovementDirection.Down ? -1 : 1;
+                int col = segment.column >= 0 ? segment.column : width / 2;
+                
+                for (int y = segment.startRow; y != segment.endRow; y += step * 3)
+                {
+                    if (y >= 0 && y < height)
+                    {
+                        CreateDirectionArrow(col, y, segment.direction);
+                    }
+                }
+            }
+            else
+            {
+                // Horizontal segment
+                int step = segment.direction == MovementDirection.Right ? 1 : -1;
+                
+                for (int x = segment.startColumn; x != segment.endColumn && x >= 0 && x < width * 2; x += step * 3)
+                {
+                    if (x >= 0 && x < width)
+                    {
+                        CreateDirectionArrow(x, segment.row, segment.direction);
+                    }
+                }
+            }
+        }
+    }
+    
+    /// <summary>
+    /// ADVANCED GRID: Creates a direction arrow indicator.
+    /// </summary>
+    private void CreateDirectionArrow(int x, int y, MovementDirection direction)
+    {
+        if (x < 0 || x >= width || y < 0 || y >= height) return;
+        
+        GameObject arrow = GameObject.CreatePrimitive(PrimitiveType.Quad);
+        arrow.name = $"PathArrow_{x}_{y}";
+        arrow.transform.SetParent(transform);
+        
+        Vector3 worldPos = GridToWorldPosition(x, y, 0.02f);
+        arrow.transform.position = worldPos;
+        arrow.transform.localScale = new Vector3(tileSize * 0.4f, tileSize * 0.4f, 1f);
+        
+        // Remove collider
+        Destroy(arrow.GetComponent<Collider>());
+        
+        // Create subtle arrow material
+        Renderer renderer = arrow.GetComponent<Renderer>();
+        Material mat = new Material(Shader.Find("Standard"));
+        mat.color = new Color(0.3f, 0.8f, 1f, 0.3f); // Light blue, subtle
+        mat.SetFloat("_Mode", 3);
+        mat.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
+        mat.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+        mat.SetInt("_ZWrite", 0);
+        mat.EnableKeyword("_ALPHABLEND_ON");
+        mat.renderQueue = 3000;
+        renderer.material = mat;
+        
+        // Rotate based on direction
+        float rotationY = GetRotationForTurn(direction);
+        arrow.transform.rotation = Quaternion.Euler(90f, rotationY, 0f);
+        
+        pathVisuals.Add(arrow);
+    }
+    
+    /// <summary>
+    /// ADVANCED GRID: Gets the Y rotation for a direction.
+    /// </summary>
+    private float GetRotationForTurn(MovementDirection direction)
+    {
+        switch (direction)
+        {
+            case MovementDirection.Down: return 180f;
+            case MovementDirection.Up: return 0f;
+            case MovementDirection.Right: return 90f;
+            case MovementDirection.Left: return -90f;
+            default: return 180f;
+        }
+    }
+    
+    /// <summary>
+    /// ADVANCED GRID: Clears all path visual indicators.
+    /// </summary>
+    public void ClearPathVisuals()
+    {
+        foreach (var visual in pathVisuals)
+        {
+            if (visual != null)
+            {
+                Destroy(visual);
+            }
+        }
+        pathVisuals.Clear();
+    }
+    
+    #endregion
+
     #region IManagerDebugInterface Implementation
 
     public bool EnableDebugLogs 
@@ -1660,7 +2942,8 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
     public string GetDebugStatus()
     {
         string status = isGridReady ? "READY" : "NOT_READY";
-        return $"Grid: {width}x{height} ({status}) Tiles:{width * height} Markers:{GetMarkerCount()} Playable:{GetPlayableRowCount()}rows";
+        string pathInfo = currentPathType != GridPathType.Standard ? $" Path:{currentPathType}" : "";
+        return $"Grid: {width}x{height} ({status}) Tiles:{width * height} Markers:{GetMarkerCount()} Playable:{GetPlayableRowCount()}rows{pathInfo}";
     }
 
     public Dictionary<string, object> GetDebugData()
@@ -1685,7 +2968,13 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
             ["Available Pool Tiles"] = useObjectPooling ? tilePool.Count : 0,
             ["Show Grid Gizmos"] = showGridGizmos,
             ["Tile Prefab Assigned"] = tilePrefab != null,
-            ["Cube Definitions Assigned"] = cubeTypeDefinitions != null
+            ["Cube Definitions Assigned"] = cubeTypeDefinitions != null,
+            
+            // ADVANCED GRID: Path information
+            ["Grid Path Type"] = currentPathType.ToString(),
+            ["Has Advanced Path"] = HasAdvancedPath,
+            ["Turn Point Count"] = currentPath?.turnPoints?.Count ?? 0,
+            ["Path Segment Count"] = currentPath?.segments?.Count ?? 0
         };
     }
 
@@ -1705,6 +2994,9 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
         bottom = 0;
         isGridGenerated = false;
         isGridReady = false;
+        
+        // ADVANCED GRID: Reset path to standard
+        ResetGridPath();
         
         // Clear any cached data
         if (useObjectPooling)

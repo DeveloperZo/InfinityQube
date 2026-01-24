@@ -23,6 +23,11 @@ MonoBehaviour:
   gridHeight: 20
   playerStartPosition: {x: 2, y: 0}
   respawnDelayMoves: 1
+  gridPathType: 1
+  customGridPath:
+    pathType: 0
+    segments: []
+    turnPoints: []
   enableLineDivider: 0
   lineDividerStartY: 10
   lineDividerEscapePenalty: 0

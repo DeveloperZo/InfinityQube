@@ -106,3 +106,6 @@ temp_*
 # MCP for Unity (development tooling - install separately)
 /Assets/MCPForUnity/
 /Assets/MCPForUnity.meta
+
+/Assets/Screenshots/
+/Assets/Screenshots.meta

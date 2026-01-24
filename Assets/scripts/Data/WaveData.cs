@@ -39,6 +39,47 @@ public class WaveData : ScriptableObject
     [Range(0, 40)] public int overrideGridHeight = 0;
     
     #endregion
+    
+    #region Advanced Grid Path Override
+    
+    [Header("Advanced Grid Path (Optional Override)")]
+    [Tooltip("If true, this wave overrides the stage's grid path type")]
+    public bool overrideGridPath = false;
+    
+    [Tooltip("Path type for this wave's cube movement (only used if overrideGridPath is true)")]
+    public GridPathType wavePathType = GridPathType.Standard;
+    
+    [Tooltip("Custom path for this wave (used when wavePathType is Custom)")]
+    public GridPath customWavePath;
+    
+    /// <summary>
+    /// Gets the effective grid path type for this wave.
+    /// Returns the override if set, otherwise returns Standard (stage will provide default).
+    /// </summary>
+    public GridPathType GetEffectivePathType(GridPathType stageDefault)
+    {
+        return overrideGridPath ? wavePathType : stageDefault;
+    }
+    
+    /// <summary>
+    /// Gets the grid path for this wave, considering overrides.
+    /// </summary>
+    public GridPath GetWavePath(GridPath stagePath, int gridWidth, int gridHeight)
+    {
+        if (!overrideGridPath)
+        {
+            return stagePath;
+        }
+        
+        if (wavePathType == GridPathType.Custom && customWavePath != null)
+        {
+            return customWavePath;
+        }
+        
+        return GridPath.CreatePath(wavePathType, gridWidth, gridHeight);
+    }
+    
+    #endregion
 
     #region Cube Configuration
     

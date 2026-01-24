@@ -45,3 +45,4 @@ MonoBehaviour:
   requireAllCubesDestroyed: 0
   requiredCaptureCount: 0
   maxAllowedEscapes: 5
+  gridPathType: 1

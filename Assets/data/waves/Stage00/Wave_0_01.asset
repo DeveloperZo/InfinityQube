@@ -16,6 +16,13 @@ MonoBehaviour:
   waveName: Basic Movement and Capture
   GridWidth: 5
   GridHeight: 2
+  overrideGridHeight: 0
+  overrideGridPath: 0
+  wavePathType: 1
+  customWavePath:
+    pathType: 0
+    segments: []
+    turnPoints: []
   CubesData:
   - type: 0
     position: {x: 0, y: 0}
@@ -101,7 +108,6 @@ MonoBehaviour:
   moveInterval: 2.5
   fastMoveInterval: 0.1
   respawnDelayMoves: 0
-  facePaintingTelegraphMoves: 0
   hasOwnSuccessCriteria: 0
   requiredCaptureCount: 0
   maxAllowedEscapes: -1

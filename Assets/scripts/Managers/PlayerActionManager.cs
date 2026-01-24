@@ -1929,8 +1929,12 @@ MarkerMode currentMode = GetCurrentMode();
     public int GetCurrentMatrixCharges() => currentMatrixMarkerCharges;
     public int GetCurrentInfinityCharges() => currentInfinityMarkerCharges;
     public int GetCurrentInfinityMarkers() => currentInfinityMarkers;
-
-
+    
+    // Setters for scenario system
+    public void SetUnitMarkerCharges(int value) => currentUnitMarkerCharges = Mathf.Clamp(value, 0, maxUnitMarkerCharges > 0 ? maxUnitMarkerCharges : 99);
+    public void SetRecursionMarkerCharges(int value) => currentRecursionMarkerCharges = Mathf.Clamp(value, 0, useMarkerEconomy ? maxRecursionInventory : 99);
+    public void SetMatrixMarkerCharges(int value) => currentMatrixMarkerCharges = Mathf.Clamp(value, 0, useMarkerEconomy ? maxMatrixInventory : 99);
+    public void SetInfinityMarkerCharges(int value) => currentInfinityMarkerCharges = Mathf.Clamp(value, 0, useMarkerEconomy ? maxInfinityInventory : 99);
 
     #endregion
 

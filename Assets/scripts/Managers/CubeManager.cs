@@ -16,6 +16,12 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
     [SerializeField] public int maxHitPoints = 3;
     [SerializeField] public int moveCount = 0;
     [System.NonSerialized] private CubeData cubeData;
+    
+    [Header("Advanced Grid Path")]
+    [SerializeField] private MovementDirection currentDirection = MovementDirection.Down;
+    [SerializeField] private GridPath currentPath;
+    [SerializeField] private bool hasPath = false;
+    [SerializeField] private int currentSegmentIndex = 0; // ADVANCED GRID: Which segment this cube is on
 
     [Header("Audio Configuration")]
     [SerializeField] 
@@ -57,6 +63,10 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
     public bool isMatrixCube = false; // True for Matrix cubes that capture in an area
     [SerializeField] private bool isPhaseable = false; // Task 7: Phaseable state for resonance system
     [SerializeField] private int phaseableMovesRemaining = 0; // Task 7: Remaining moves in phaseable state
+    
+    // SEGMENT CONTROLLER: Track which segment this cube is on
+    private GridSegmentController currentSegment;
+    public GridSegmentController CurrentSegment => currentSegment;
     
     [Header("Materials")]
     [SerializeField] private Material phaseableMaterial; // Assign CosmicBlack_Transparent in Inspector
@@ -117,6 +127,129 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
         // Fire spawn event
         GameEvents.FireCubeSpawn(position, type);
         this.Log($"Fired GameEvents.OnCubeSpawn for {type} cube at ({position.x}, {position.y})", EnableDebugLogs);
+    }
+    
+    /// <summary>
+    /// Configures the movement path for this cube (Advanced Grid feature).
+    /// Call this after Init() when using non-standard grid paths.
+    /// </summary>
+    public void ConfigurePath(GridPath path)
+    {
+        if (path == null)
+        {
+            hasPath = false;
+            currentPath = null;
+            currentDirection = MovementDirection.Down;
+            return;
+        }
+        
+        currentPath = path;
+        hasPath = !path.IsStandardPath();
+        currentDirection = path.GetInitialDirection();
+        
+        this.Log($"Path configured for {type} cube: PathType={path.pathType}, InitialDirection={currentDirection}", EnableDebugLogs);
+    }
+    
+    /// <summary>
+    /// Gets the current movement direction.
+    /// </summary>
+    public MovementDirection CurrentDirection => currentDirection;
+    
+    /// <summary>
+    /// ADVANCED GRID: Sets which segment this cube is on.
+    /// Call this when spawning cubes on segment 1+.
+    /// </summary>
+    public void SetSegment(int segmentIndex)
+    {
+        currentSegmentIndex = segmentIndex;
+        this.Log($"Cube {type} set to segment {segmentIndex}", EnableDebugLogs);
+    }
+    
+    /// <summary>
+    /// ADVANCED GRID: Gets which segment this cube is currently on.
+    /// </summary>
+    public int CurrentSegmentIndex => currentSegmentIndex;
+    
+    /// <summary>
+    /// SEGMENT CONTROLLER: Sets which segment controller this cube is on.
+    /// </summary>
+    public void SetSegmentController(GridSegmentController segment)
+    {
+        currentSegment = segment;
+        if (segment != null)
+        {
+            currentSegmentIndex = segment.segmentIndex;
+            currentDirection = segment.localDirection;
+            this.Log($"Cube {type} set to segment controller {segment.segmentIndex}, direction: {currentDirection}", EnableDebugLogs);
+        }
+    }
+    
+    /// <summary>
+    /// ADVANCED GRID: Checks if cube is escaping based on current direction and position.
+    /// For segment controllers, checks against the segment's bounds.
+    /// </summary>
+    private bool CheckEscapeCondition()
+    {
+        // SEGMENT CONTROLLER: Check against segment bounds
+        if (currentSegment != null)
+        {
+            return !currentSegment.IsValidLocalPosition(position);
+        }
+        
+        // Legacy: Check against grid bounds
+        switch (currentDirection)
+        {
+            case MovementDirection.Down:
+                return position.y < 0;
+            case MovementDirection.Up:
+                return position.y >= grid.Height;
+            case MovementDirection.Right:
+                return position.x >= grid.Width;
+            case MovementDirection.Left:
+                return position.x < 0;
+            default:
+                return position.y < 0 || position.x < 0 || position.x >= grid.Width;
+        }
+    }
+    
+    /// <summary>
+    /// ADVANCED GRID: Gets the next position based on the current movement direction.
+    /// </summary>
+    private Vector2Int GetNextPositionInDirection(MovementDirection direction)
+    {
+        switch (direction)
+        {
+            case MovementDirection.Down:
+                return new Vector2Int(position.x, position.y - 1);
+            case MovementDirection.Up:
+                return new Vector2Int(position.x, position.y + 1);
+            case MovementDirection.Right:
+                return new Vector2Int(position.x + 1, position.y);
+            case MovementDirection.Left:
+                return new Vector2Int(position.x - 1, position.y);
+            default:
+                return new Vector2Int(position.x, position.y - 1);
+        }
+    }
+    
+    /// <summary>
+    /// ADVANCED GRID: Gets the rotation needed for cube animation when moving in a direction.
+    /// </summary>
+    private Quaternion GetRotationForDirection(MovementDirection direction)
+    {
+        switch (direction)
+        {
+            case MovementDirection.Down:
+                return Quaternion.Euler(-90f, 0f, 0f);
+            case MovementDirection.Up:
+                return Quaternion.Euler(90f, 0f, 0f);
+            case MovementDirection.Right:
+                return Quaternion.Euler(0f, 0f, -90f);
+            case MovementDirection.Left:
+                return Quaternion.Euler(0f, 0f, 90f);
+            default:
+                return Quaternion.Euler(-90f, 0f, 0f);
+        }
     }
 
     public bool TakeDamage(int damage = 1)
@@ -574,8 +707,9 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
     }
 
     /// <summary>
-    /// Moves the cube forward (down) by one position. This is the core movement logic.
-    /// CUBE ESCAPE MECHANIC: When a cube moves below grid bounds (position.y < 0), it "escapes".
+    /// Moves the cube forward by one position along the current path direction.
+    /// ADVANCED GRID: Movement direction may change at turn points (L, C, S shapes).
+    /// CUBE ESCAPE MECHANIC: When a cube moves outside grid bounds, it "escapes".
     /// Escape triggers failure conditions and affects stage progression.
     /// </summary>
     /// <returns>True if cube continues moving, false if cube escapes or is destroyed</returns>
@@ -583,28 +717,65 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
     {
         if (isMoving || isDestroyed) return true;
 
-        this.Log($"Moving cube {GetEffectiveType()} from ({position.x}, {position.y}) forward", EnableDebugLogs);
+        this.Log($"Moving cube {GetEffectiveType()} from ({position.x}, {position.y}) forward (direction: {currentDirection})", EnableDebugLogs);
 
-        // CUBE ESCAPE CONDITION: Check if cube is outside grid bounds
-        // Primary escape condition: position.y < 0 (below grid)
-        // Secondary escape conditions: position.x < 0 or position.x >= grid.Width (outside horizontal bounds)
-        if (position.y < 0 || position.x < 0 || position.x >= grid.Width)
+        // ADVANCED GRID: Check for turn points before moving
+        if (hasPath && currentPath != null)
         {
-            this.Log($"🚨 CUBE ESCAPE: {GetEffectiveType()} at ({position.x}, {position.y}) is off-grid. Grid bounds: {grid.Width}x{grid.Height}", EnableDebugLogs);
+            MovementDirection newDirection = currentPath.GetDirectionAtPosition(position, currentDirection);
+            if (newDirection != currentDirection)
+            {
+                this.Log($"🔄 TURN POINT: {GetEffectiveType()} at ({position.x}, {position.y}) turning from {currentDirection} to {newDirection}", EnableDebugLogs);
+                currentDirection = newDirection;
+            }
+        }
+
+        // CUBE ESCAPE CONDITION: Check if cube is outside grid bounds based on current direction
+        bool isEscaping = CheckEscapeCondition();
+        if (isEscaping)
+        {
+            this.Log($"🚨 CUBE ESCAPE: {GetEffectiveType()} at ({position.x}, {position.y}) is off-grid. Direction: {currentDirection}", EnableDebugLogs);
 
             if (!isRainingCube || moveCountRemaining <= 0)
             {
                 CubeType effectiveType = GetEffectiveType();
+                WaveManager waveManager = FindFirstObjectByType<WaveManager>();
+                
+                // SEGMENT CONTROLLER: Check if we should transition instead of escape
+                if (currentSegment != null && waveManager != null)
+                {
+                    bool shouldTransition = waveManager.HandleCubeAtSegmentEdge(this);
+                    if (shouldTransition)
+                    {
+                        this.Log($"🔄 Cube {effectiveType} queued for segment transition", EnableDebugLogs);
+                        
+                        // Play fall-over effect and destroy (will be respawned at next segment)
+                        SpawnEscapeEffect();
+                        Destroy(gameObject);
+                        
+                        // Check if all cubes are ready for transition
+                        waveManager.CheckSegmentTransitionReady();
+                        return false;
+                    }
+                    // If not transitioning, this is a terminal escape - fall through to normal handling
+                }
 
+                // ADVANCED GRID: Check if we're on a legacy multi-segment grid
+                bool isMultiSegmentGrid = grid != null && grid.HasMultipleSegments;
+                
                 if (effectiveType == CubeType.Infinity)
                 {
                     this.Log("🌟 Infinity cube escaped (special behavior - no penalty)", EnableDebugLogs);
+                }
+                else if (isMultiSegmentGrid && currentSegment == null)
+                {
+                    // LEGACY ADVANCED GRID MVP: Skip escape penalty for multi-segment grids
+                    this.Log($"🔄 Cube escaped on multi-segment grid - no penalty (transition will occur)", EnableDebugLogs);
                 }
                 else
                 {
                     // CUBE ESCAPE PROCESSING: Notify Wave system of cube escape
                     // Wave handles escape counting and failure conditions
-                    WaveManager waveManager = FindFirstObjectByType<WaveManager>();
                     if (waveManager != null)
                     {
                         waveManager.OnNonBlackCubeProcessed(effectiveType, false);
@@ -628,7 +799,9 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
         }
 
         Vector2Int oldPosition = position;
-        position.y -= 1;
+        
+        // ADVANCED GRID: Move in current direction
+        position = GetNextPositionInDirection(currentDirection);
         moveCount++;
 
         // Fire move event
@@ -656,13 +829,20 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
 
         StartCoroutine(AnimateMove(position));
 
-        if (position.y >= 0 && position.x >= 0 && position.x < grid.Width)
+        // Get landing tile - from segment controller if available, otherwise from grid
+        Tile landingTile = null;
+        if (currentSegment != null)
         {
-            Tile landingTile = grid.tiles[position.x, position.y];
-            if (landingTile != null && !isDestroyed)
-            {
-                landingTile.HandleCubeLanding(this);
-            }
+            landingTile = currentSegment.GetTile(position.x, position.y);
+        }
+        else if (position.y >= 0 && position.x >= 0 && position.x < grid.Width)
+        {
+            landingTile = grid.tiles[position.x, position.y];
+        }
+        
+        if (landingTile != null && !isDestroyed)
+        {
+            landingTile.HandleCubeLanding(this);
         }
 
         return true;
@@ -734,9 +914,25 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
         isMoving = true;
 
         Vector3 start = transform.position;
-        Vector3 end = grid.GridToWorldPosition(newPos.x, newPos.y, 2f);
+        Vector3 end;
+        
+        // SEGMENT CONTROLLER: Use segment controller's coordinate system
+        if (currentSegment != null)
+        {
+            end = currentSegment.LocalToWorldPosition(newPos.x, newPos.y, 2f);
+        }
+        // ADVANCED GRID: Use correct segment's coordinate system (legacy)
+        else if (currentSegmentIndex > 0 && grid.HasMultipleSegments && currentSegmentIndex < grid.SegmentCount)
+        {
+            var segment = grid.Segments[currentSegmentIndex];
+            end = segment.LocalToWorldPosition(newPos.x, newPos.y, grid.TileSize, 2f);
+        }
+        else
+        {
+            end = grid.GridToWorldPosition(newPos.x, newPos.y, 2f);
+        }
 
-        this.Log($"Animating cube from {start} to {end} (grid pos {newPos})", EnableDebugLogs);
+        this.Log($"Animating cube from {start} to {end} (grid pos {newPos}, segment {currentSegmentIndex})", EnableDebugLogs);
 
         WaveManager waveManager = FindFirstObjectByType<WaveManager>();
         float actualMoveDuration = moveDuration;
@@ -750,7 +946,8 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
 
         float elapsed = 0f;
         Quaternion startRot = transform.rotation;
-        Quaternion endRot = startRot * Quaternion.Euler(-90f, 0f, 0f);
+        // ADVANCED GRID: Use direction-aware rotation
+        Quaternion endRot = startRot * GetRotationForDirection(currentDirection);
 
         while (elapsed < actualMoveDuration)
         {

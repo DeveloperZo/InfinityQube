@@ -4,6 +4,11 @@
 
 ## Brainstorm Items
 
+
+### Wave animation introduction
+Develop animation for wave intro for both single segment and multi-segment grids
+Ideally we can tease the infinity cubes resonance and when rebuilding a wave for the next segment we can have the cubes move into place and phase through infinity cubes. So infinity cubes reach bottom of grid in same orientation and instead of falling off. Cubes climb up the sides to move into configuration before starting (and phasing through infinity which should always be there) 
+
 ### Iterate on face painting 
 - **Description**: Mine this mechanic for more fun and interesting concepts
 - **Unique Value**: gameplay differentiation

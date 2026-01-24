@@ -312,7 +312,59 @@ public class PlayerManager : MonoBehaviour, IManagerDebugInterface
 
     private Vector3 CalculateCollisionSafePosition(Vector3 desiredPosition)
     {
-        // Get grid bounds
+        desiredPosition.y = 0f; // Keep at ground level
+        
+        // SEGMENT CONTROLLERS: For segment controller grids, check all segments
+        if (grid != null && grid.HasSegmentControllers)
+        {
+            // Check if position is valid on any segment
+            if (IsWorldPositionValidOnAnySegment(desiredPosition))
+            {
+                // Check for cube collisions at future position
+                if (!IsWorldPositionBlockedByCube(desiredPosition))
+                {
+                    return desiredPosition;
+                }
+                else
+                {
+                    // Find closest safe position
+                    Vector2Int blockedPos = grid.WorldToGridPosition(desiredPosition);
+                    return FindClosestSafePosition(desiredPosition, blockedPos);
+                }
+            }
+            else
+            {
+                // Position not valid on any segment - try sliding or stay at current position
+                return FindClosestSafePosition(desiredPosition, Vector2Int.zero);
+            }
+        }
+        
+        // ADVANCED GRID: For legacy multi-segment grids, don't clamp to segment 0 bounds
+        if (grid != null && grid.HasMultipleSegments)
+        {
+            // Check if position is valid on any segment
+            if (IsWorldPositionValidOnAnySegment(desiredPosition))
+            {
+                // Check for cube collisions at future position
+                if (!IsWorldPositionBlockedByCube(desiredPosition))
+                {
+                    return desiredPosition;
+                }
+                else
+                {
+                    // Find closest safe position
+                    Vector2Int blockedPos = grid.WorldToGridPosition(desiredPosition);
+                    return FindClosestSafePosition(desiredPosition, blockedPos);
+                }
+            }
+            else
+            {
+                // Position not valid on any segment - stay at current position
+                return transform.position;
+            }
+        }
+        
+        // Standard single-segment logic
         Vector3 minBounds = grid.GridToWorldPosition(0, 0);
         Vector3 maxBounds = grid.GridToWorldPosition(grid.Width - 1, grid.Height - 1);
 
@@ -320,7 +372,6 @@ public class PlayerManager : MonoBehaviour, IManagerDebugInterface
         Vector3 clampedPosition = desiredPosition;
         clampedPosition.x = Mathf.Clamp(clampedPosition.x, minBounds.x, maxBounds.x);
         clampedPosition.z = Mathf.Clamp(clampedPosition.z, minBounds.z, maxBounds.z);
-        clampedPosition.y = 0f; // Keep at ground level
 
         // Check for cube collisions at future position
         Vector2Int futureGridPos = grid.WorldToGridPosition(clampedPosition);
@@ -377,9 +428,8 @@ public class PlayerManager : MonoBehaviour, IManagerDebugInterface
         // Try moving along X-axis only
         Vector3 xOnlyMovement = new Vector3(slideDirection.x, 0, 0) * currentVelocity.magnitude * Time.deltaTime;
         Vector3 xOnlyPosition = currentPos + xOnlyMovement;
-        Vector2Int xOnlyGridPos = grid.WorldToGridPosition(xOnlyPosition);
 
-        if (!IsPositionBlockedByCube(xOnlyGridPos) && IsValidTilePosition(xOnlyGridPos))
+        if (IsWorldPositionValidOnAnySegment(xOnlyPosition) && !IsWorldPositionBlockedByCube(xOnlyPosition))
         {
             return ClampToGridBounds(xOnlyPosition);
         }
@@ -387,9 +437,8 @@ public class PlayerManager : MonoBehaviour, IManagerDebugInterface
         // Try moving along Z-axis only
         Vector3 zOnlyMovement = new Vector3(0, 0, slideDirection.z) * currentVelocity.magnitude * Time.deltaTime;
         Vector3 zOnlyPosition = currentPos + zOnlyMovement;
-        Vector2Int zOnlyGridPos = grid.WorldToGridPosition(zOnlyPosition);
 
-        if (!IsPositionBlockedByCube(zOnlyGridPos) && IsValidTilePosition(zOnlyGridPos))
+        if (IsWorldPositionValidOnAnySegment(zOnlyPosition) && !IsWorldPositionBlockedByCube(zOnlyPosition))
         {
             return ClampToGridBounds(zOnlyPosition);
         }
@@ -397,9 +446,77 @@ public class PlayerManager : MonoBehaviour, IManagerDebugInterface
         // If we can't slide, stay at current position
         return currentPos;
     }
+    
+    /// <summary>
+    /// ADVANCED GRID: Checks if a world position is blocked by a cube on any segment.
+    /// </summary>
+    private bool IsWorldPositionBlockedByCube(Vector3 worldPos)
+    {
+        if (!IsWorldPositionValidOnAnySegment(worldPos)) 
+            return true;
+        
+        // Check for cubes at this position using cached WaveManager reference
+        if (waveManager?.activeCubes == null) return false;
+        
+        // Get the tile at this world position
+        Tile tile = grid.GetTileAtWorldPositionAnySegment(worldPos);
+        if (tile == null || !tile.IsPlayable) return true;
+        
+        // For cube collision, need to check cube world positions
+        foreach (var cube in waveManager.activeCubes)
+        {
+            if (cube == null || cube.isDestroyed) continue;
+            if (cube.isPlayerCube) continue;
+            
+            // Skip phaseable Infinity cubes
+            if (cube.type == Enumerations.CubeType.Infinity && cube.IsPhaseable())
+                continue;
+            
+            // Check cube world position against our position
+            float distance = Vector3.Distance(
+                new Vector3(cube.transform.position.x, 0, cube.transform.position.z),
+                new Vector3(worldPos.x, 0, worldPos.z)
+            );
+            
+            if (distance < grid.TileSize * 0.5f)
+            {
+                return true;
+            }
+        }
+        
+        return false;
+    }
 
     private Vector3 ClampToGridBounds(Vector3 position)
     {
+        // SEGMENT CONTROLLERS: For segment controller grids, check if position is valid on ANY segment
+        if (grid != null && grid.HasSegmentControllers)
+        {
+            // If the position is valid on any segment, don't clamp
+            if (grid.IsValidWorldPosition(position))
+            {
+                position.y = 0f;
+                return position;
+            }
+            // Otherwise, use overall grid bounds
+            position.x = Mathf.Clamp(position.x, grid.MinWorldBounds.x, grid.MaxWorldBounds.x);
+            position.z = Mathf.Clamp(position.z, grid.MinWorldBounds.z, grid.MaxWorldBounds.z);
+            position.y = 0f;
+            return position;
+        }
+        
+        // ADVANCED GRID: For legacy multi-segment grids, check if position is valid on ANY segment
+        if (grid != null && grid.HasMultipleSegments)
+        {
+            // If the position is valid on any segment, don't clamp
+            if (grid.IsWorldPositionValid(position))
+            {
+                position.y = 0f;
+                return position;
+            }
+            // Otherwise, clamp to segment 0 bounds as fallback
+        }
+        
         Vector3 minBounds = grid.GridToWorldPosition(0, 0);
         Vector3 maxBounds = grid.GridToWorldPosition(grid.Width - 1, grid.Height - 1);
 
@@ -438,12 +555,77 @@ public class PlayerManager : MonoBehaviour, IManagerDebugInterface
 
     private void UpdateCurrentTilePosition()
     {
+        // SEGMENT CONTROLLERS: Use world position-based tile tracking for smoother transitions
+        if (grid.HasSegmentControllers)
+        {
+            UpdateCurrentTilePositionForSegments();
+            return;
+        }
+        
         Vector2Int newTilePosition = grid.WorldToGridPosition(transform.position);
         bool tileChanged = (currentTilePosition.x != newTilePosition.x || currentTilePosition.y != newTilePosition.y);
 
         if (tileChanged)
         {
             HandleTileChange(newTilePosition);
+        }
+    }
+    
+    /// <summary>
+    /// SEGMENT CONTROLLERS: Updates tile position tracking using world position for multi-segment grids.
+    /// This provides smoother transitions between segments.
+    /// </summary>
+    private void UpdateCurrentTilePositionForSegments()
+    {
+        // Get the tile at current world position from any segment
+        Tile newTile = grid.GetTileAtWorldPositionFromControllers(transform.position);
+        
+        // Only update if we're on a different tile
+        if (newTile != currentHoveredTile)
+        {
+            HandleTileChangeForSegments(newTile);
+        }
+    }
+    
+    /// <summary>
+    /// SEGMENT CONTROLLERS: Handles tile change for multi-segment grids using direct tile reference.
+    /// </summary>
+    private void HandleTileChangeForSegments(Tile newTile)
+    {
+        // Clear hover from old tile
+        if (currentHoveredTile != null)
+        {
+            currentHoveredTile.SetPlayerHover(false);
+        }
+        
+        // Update current tile reference
+        currentHoveredTile = newTile;
+        
+        // Update grid position for compatibility (use world-to-local conversion)
+        if (newTile != null)
+        {
+            // Find which segment this tile belongs to and get local position
+            var segment = grid.GetSegmentControllerAtWorldPosition(transform.position);
+            if (segment != null)
+            {
+                Vector2Int localPos = segment.WorldToLocalPosition(transform.position);
+                currentTilePosition = localPos;
+                DebugLog($"🚶 Player on Segment {segment.segmentIndex} at local ({localPos.x}, {localPos.y})");
+            }
+            
+            // Set hover color based on current marker mode
+            var actionManager = FindFirstObjectByType<PlayerActionManager>();
+            if (actionManager != null)
+            {
+                Color hoverColor = PlayerActionManager.GetMarkerModeColor(actionManager.GetCurrentMode());
+                newTile.SetHoverColor(hoverColor);
+            }
+            
+            newTile.SetPlayerHover(true);
+        }
+        else
+        {
+            DebugLog($"🚶 Player at world pos {transform.position} - no tile found");
         }
     }
 
@@ -862,8 +1044,33 @@ public class PlayerManager : MonoBehaviour, IManagerDebugInterface
 
     private bool IsValidTilePosition(Vector2Int pos)
     {
-        // Use GridManager's validation for consistency
-        return grid != null && grid.IsValidGridPosition(pos);
+        // Use GridManager's validation
+        if (grid == null) return false;
+        return grid.IsValidGridPosition(pos);
+    }
+    
+    /// <summary>
+    /// ADVANCED GRID: Checks if a world position is valid on any segment.
+    /// </summary>
+    private bool IsWorldPositionValidOnAnySegment(Vector3 worldPos)
+    {
+        if (grid == null) return false;
+        
+        // SEGMENT CONTROLLERS: Check all segment controllers
+        if (grid.HasSegmentControllers)
+        {
+            return grid.IsValidWorldPosition(worldPos);
+        }
+        
+        // For legacy multi-segment grids, check world position against all segments
+        if (grid.HasMultipleSegments)
+        {
+            return grid.IsWorldPositionValid(worldPos);
+        }
+        
+        // Standard single-segment check
+        Vector2Int gridPos = grid.WorldToGridPosition(worldPos);
+        return grid.IsValidGridPosition(gridPos);
     }
 
     private void CleanupPlayer()
