@@ -67,6 +67,12 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
     
     // Coordinate conversion helper (SRP extraction)
     private GridCoordinateConverter coordinateConverter;
+    
+    // Row management helper (SRP extraction)
+    [SerializeField] private GridRowManager rowManager;
+    
+    // Batch operations helper (SRP extraction)
+    private GridBatchOperations batchOperations;
     #endregion
 
     #region Properties
@@ -140,6 +146,33 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
         
         // Initialize coordinate converter after grid is ready
         coordinateConverter = new GridCoordinateConverter(this);
+        
+        // Initialize row manager (SRP extraction)
+        InitializeRowManager();
+        
+        // Initialize batch operations helper
+        batchOperations = new GridBatchOperations(this, enableDebugLogs);
+    }
+    
+    /// <summary>
+    /// Initializes the GridRowManager sub-component.
+    /// </summary>
+    private void InitializeRowManager()
+    {
+        if (rowManager == null)
+        {
+            rowManager = GetComponentInChildren<GridRowManager>();
+            
+            if (rowManager == null)
+            {
+                var managerObj = new GameObject("GridRowManager");
+                managerObj.transform.SetParent(transform);
+                rowManager = managerObj.AddComponent<GridRowManager>();
+                DebugLog("Created GridRowManager as child object");
+            }
+        }
+        
+        rowManager.Initialize(this, enableDebugLogs);
     }
     
     private void OnEnable()
@@ -1646,578 +1679,106 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
     }
     #endregion
 
-    #region Batch Tile Operations
+    #region Batch Tile Operations (Facade - delegates to GridBatchOperations)
+    
     /// <summary>
-    /// Applies tile states to multiple tiles in batch
+    /// Applies tile states to multiple tiles in batch. Delegates to batchOperations.
     /// </summary>
     public void BatchSetTileStates(Dictionary<Vector2Int, TileState> stateMap)
-    {
-        if (tiles == null || stateMap == null) return;
-
-        int appliedCount = 0;
-        foreach (var kvp in stateMap)
-        {
-            Vector2Int pos = kvp.Key;
-            TileState state = kvp.Value;
-            
-            Tile tile = GetTileAt(pos);
-            if (tile != null && tile.IsPlayable)
-            {
-                ApplyTileState(tile, state);
-                appliedCount++;
-            }
-        }
-
-        DebugLog($"Batch applied tile states to {appliedCount}/{stateMap.Count} tiles");
-    }
+        => batchOperations?.BatchSetTileStates(stateMap);
 
     /// <summary>
-    /// Applies a tile state pattern to the grid
+    /// Applies a tile state pattern to the grid. Delegates to batchOperations.
     /// </summary>
     public void ApplyTileStatePattern(TileStatePattern pattern)
-    {
-        if (pattern == null || tiles == null) return;
-
-        Dictionary<Vector2Int, TileState> stateMap = new Dictionary<Vector2Int, TileState>();
-        
-        foreach (var entry in pattern.entries)
-        {
-            Vector2Int pos = pattern.basePosition + entry.offset;
-            if (IsValidGridPosition(pos))
-            {
-                stateMap[pos] = entry.state;
-            }
-        }
-
-        BatchSetTileStates(stateMap);
-        DebugLog($"Applied tile state pattern '{pattern.name}' with {pattern.entries.Count} entries");
-    }
+        => batchOperations?.ApplyTileStatePattern(pattern);
 
     /// <summary>
-    /// Creates a tile state preset from current grid state
+    /// Creates a tile state preset from current grid state. Delegates to batchOperations.
     /// </summary>
     public TileStatePreset CreateTileStatePreset(string presetName, List<Vector2Int> positions)
-    {
-        TileStatePreset preset = new TileStatePreset
-        {
-            name = presetName,
-            entries = new List<TileStateEntry>()
-        };
-
-        foreach (var pos in positions)
-        {
-            Tile tile = GetTileAt(pos);
-            if (tile != null)
-            {
-                preset.entries.Add(new TileStateEntry
-                {
-                    position = pos,
-                    state = tile.currentState,
-                    hasMarker = tile.HasMarker,
-                    isBlackened = tile.IsBlackened,
-                    isMatrixd = tile.IsMatrixd
-                });
-            }
-        }
-
-        DebugLog($"Created tile state preset '{presetName}' with {preset.entries.Count} entries");
-        return preset;
-    }
+        => batchOperations?.CreateTileStatePreset(presetName, positions);
 
     /// <summary>
-    /// Restores grid state from a preset
+    /// Restores grid state from a preset. Delegates to batchOperations.
     /// </summary>
     public void RestoreFromPreset(TileStatePreset preset)
-    {
-        if (preset == null || tiles == null) return;
-
-        int restoredCount = 0;
-        foreach (var entry in preset.entries)
-        {
-            Tile tile = GetTileAt(entry.position);
-            if (tile != null && tile.IsPlayable)
-            {
-                RestoreTileFromEntry(tile, entry);
-                restoredCount++;
-            }
-        }
-
-        DebugLog($"Restored {restoredCount}/{preset.entries.Count} tiles from preset '{preset.name}'");
-    }
+        => batchOperations?.RestoreFromPreset(preset);
 
     /// <summary>
-    /// Batch operations for markers
+    /// Batch operations for markers. Delegates to batchOperations.
     /// </summary>
     public void BatchSetMarkers(List<Vector2Int> positions, bool placeMarkers)
-    {
-        if (tiles == null || positions == null) return;
-
-        int processedCount = 0;
-        foreach (var pos in positions)
-        {
-            bool success = placeMarkers ? PlaceMarker(pos.x, pos.y) : RemoveMarker(pos.x, pos.y);
-            if (success) processedCount++;
-        }
-
-        string action = placeMarkers ? "placed" : "removed";
-        DebugLog($"Batch {action} markers: {processedCount}/{positions.Count} successful");
-    }
+        => batchOperations?.BatchSetMarkers(positions, placeMarkers);
 
     /// <summary>
-    /// Batch tile transformation operations
+    /// Batch tile transformation operations. Delegates to batchOperations.
     /// </summary>
     public void BatchTransformTiles(List<Vector2Int> positions, CubeType transformType)
-    {
-        if (tiles == null || positions == null) return;
-
-        int transformedCount = 0;
-        foreach (var pos in positions)
-        {
-            Tile tile = GetTileAt(pos);
-            if (tile != null && tile.IsPlayable)
-            {
-                tile.TransformTile(transformType);
-                transformedCount++;
-            }
-        }
-
-        DebugLog($"Batch transformed {transformedCount}/{positions.Count} tiles to {transformType} type");
-    }
+        => batchOperations?.BatchTransformTiles(positions, transformType);
 
     /// <summary>
-    /// Get tiles in a rectangular area
+    /// Get tiles in a rectangular area. Delegates to batchOperations.
     /// </summary>
     public List<Tile> GetTilesInArea(Vector2Int topLeft, Vector2Int bottomRight)
-    {
-        List<Tile> tilesInArea = new List<Tile>();
-        
-        for (int x = topLeft.x; x <= bottomRight.x; x++)
-        {
-            for (int y = topLeft.y; y <= bottomRight.y; y++)
-            {
-                Tile tile = GetTileAt(x, y);
-                if (tile != null)
-                {
-                    tilesInArea.Add(tile);
-                }
-            }
-        }
-
-        return tilesInArea;
-    }
+        => batchOperations?.GetTilesInArea(topLeft, bottomRight) ?? new List<Tile>();
 
     /// <summary>
-    /// Get tiles matching specific criteria
+    /// Get tiles matching specific criteria. Delegates to batchOperations.
     /// </summary>
     public List<Tile> GetTilesWithState(TileState state)
-    {
-        List<Tile> matchingTiles = new List<Tile>();
-        
-        if (tiles == null) return matchingTiles;
-
-        for (int x = 0; x < width; x++)
-        {
-            for (int y = 0; y < height; y++)
-            {
-                Tile tile = GetTileAt(x, y);
-                if (tile != null && tile.currentState == state)
-                {
-                    matchingTiles.Add(tile);
-                }
-            }
-        }
-
-        return matchingTiles;
-    }
+        => batchOperations?.GetTilesWithState(state) ?? new List<Tile>();
 
     /// <summary>
-    /// Get all tiles with markers
+    /// Get all tiles with markers. Delegates to batchOperations.
     /// </summary>
     public List<Tile> GetMarkedTiles()
-    {
-        List<Tile> markedTiles = new List<Tile>();
-        
-        if (tiles == null) return markedTiles;
-
-        for (int x = 0; x < width; x++)
-        {
-            for (int y = 0; y < height; y++)
-            {
-                Tile tile = GetTileAt(x, y);
-                if (tile != null && tile.HasMarker)
-                {
-                    markedTiles.Add(tile);
-                }
-            }
-        }
-
-        return markedTiles;
-    }
+        => batchOperations?.GetMarkedTiles() ?? new List<Tile>();
 
     /// <summary>
-    /// Reset multiple tiles to normal state
+    /// Reset multiple tiles to normal state. Delegates to batchOperations.
     /// </summary>
     public void BatchResetTiles(List<Vector2Int> positions)
-    {
-        if (tiles == null || positions == null) return;
-
-        int resetCount = 0;
-        foreach (var pos in positions)
-        {
-            Tile tile = GetTileAt(pos);
-            if (tile != null)
-            {
-                tile.ResetTile();
-                resetCount++;
-            }
-        }
-
-        DebugLog($"Batch reset {resetCount}/{positions.Count} tiles to normal state");
-    }
-
-    private void ApplyTileState(Tile tile, TileState state)
-    {
-        switch (state)
-        {
-            case TileState.Normal:
-                tile.ResetTile();
-                break;
-            case TileState.Transformed:
-                // Keep existing transformation
-                break;
-        }
-    }
-
-    private void RestoreTileFromEntry(Tile tile, TileStateEntry entry)
-    {
-        // Reset tile first
-        tile.ResetTile();
-        
-        // Apply saved state
-        if (entry.isBlackened)
-        {
-            tile.BlackenTile();
-        }
-        else if (entry.isMatrixd)
-        {
-            tile.MatrixTile();
-        }
-        
-        // Apply marker if needed
-        if (entry.hasMarker && tile.CanBeMarked)
-        {
-            tile.PlaceMarker();
-        }
-    }
+        => batchOperations?.BatchResetTiles(positions);
     #endregion
 
-    #region Row Management
+    #region Row Management (Facade - delegates to GridRowManager)
     
     /// <summary>
-    /// Event fired when bottom row removal starts (for animation hooks)
+    /// Event fired when bottom row removal starts. Delegates to rowManager.
     /// </summary>
-    public System.Action<int> OnBottomRowRemovalStarted;
+    public System.Action<int> OnBottomRowRemovalStarted
+    {
+        get => rowManager?.OnBottomRowRemovalStarted;
+        set { if (rowManager != null) rowManager.OnBottomRowRemovalStarted = value; }
+    }
     
     /// <summary>
-    /// Event fired when bottom row removal completes (for animation hooks)
+    /// Event fired when bottom row removal completes. Delegates to rowManager.
     /// </summary>
-    public System.Action<int> OnBottomRowRemovalCompleted;
-    
-    private bool isRemovingBottomRow = false; // Prevent concurrent removals
+    public System.Action<int> OnBottomRowRemovalCompleted
+    {
+        get => rowManager?.OnBottomRowRemovalCompleted;
+        set { if (rowManager != null) rowManager.OnBottomRowRemovalCompleted = value; }
+    }
     
     /// <summary>
-    /// Removes the bottom row with a controlled visual transition.
-    /// Uses coroutine for smooth animation and provides hooks for future animation systems.
-    /// Works even if called at wave end - coroutine completes independently.
+    /// Removes the bottom row with visual transition. Delegates to rowManager.
     /// </summary>
     public void RemoveBottomRow()
-    {
-        if (!IsGridReady) return;
-        if (isRemovingBottomRow) 
-        {
-            DebugLog("RemoveBottomRow: Already removing a row, skipping duplicate call");
-            return;
-        }
-        
-        StartCoroutine(RemoveBottomRowCoroutine());
-    }
-    
-    private IEnumerator RemoveBottomRowCoroutine()
-    {
-        isRemovingBottomRow = true;
-        int rowToRemove = bottom;
-        
-        // Safety check: ensure we have a valid row to remove
-        if (rowToRemove >= height)
-        {
-            DebugLog($"⚠️ ROW PENALTY: Cannot remove row {rowToRemove} - exceeds grid height {height}. Aborting.");
-            isRemovingBottomRow = false;
-            yield break;
-        }
-        
-        // Safety check: prevent removing if we'd have too few rows left
-        int remainingRows = height - (rowToRemove + 1);
-        if (remainingRows < 3)
-        {
-            DebugLog($"⚠️ ROW PENALTY: Cannot remove row {rowToRemove} - would leave only {remainingRows} rows. Minimum 3 rows required. Aborting.");
-            isRemovingBottomRow = false;
-            yield break;
-        }
-        
-        DebugLog($"⚠️ ROW PENALTY: Removing bottom row {rowToRemove} due to Unit cube escape penalty (will leave {remainingRows} rows)");
-        
-        // Fire start event (for future animation systems)
-        OnBottomRowRemovalStarted?.Invoke(rowToRemove);
-        
-        // Collect all tiles and cubes in the row
-        List<Tile> tilesToRemove = new List<Tile>();
-        List<CubeManager> cubesToRemove = new List<CubeManager>();
-        
-        for (int x = 0; x < width; x++)
-        {
-            Tile tile = GetTileAt(x, rowToRemove);
-            if (tile != null)
-            {
-                tilesToRemove.Add(tile);
-            }
-        }
-        
-        // Find cubes on this row
-        var allCubes = FindObjectsByType<CubeManager>(FindObjectsSortMode.None);
-        foreach (var cube in allCubes)
-        {
-            if (cube != null && !cube.isDestroyed && cube.position.y == rowToRemove)
-            {
-                cubesToRemove.Add(cube);
-            }
-        }
-        
-        // Simple transition: fade out tiles and cubes
-        // TODO: Replace with proper animation system in future
-        float transitionDuration = 0.5f; // Simple fade duration
-        float elapsed = 0f;
-        
-        // Store initial renderers for fade (using MaterialPropertyBlock to avoid modifying shared materials)
-        Dictionary<Tile, Renderer> tileRenderers = new Dictionary<Tile, Renderer>();
-        Dictionary<CubeManager, Renderer> cubeRenderers = new Dictionary<CubeManager, Renderer>();
-        Dictionary<Tile, MaterialPropertyBlock> tilePropertyBlocks = new Dictionary<Tile, MaterialPropertyBlock>();
-        Dictionary<CubeManager, MaterialPropertyBlock> cubePropertyBlocks = new Dictionary<CubeManager, MaterialPropertyBlock>();
-        
-        foreach (var tile in tilesToRemove)
-        {
-            Renderer renderer = tile.GetComponent<Renderer>();
-            if (renderer != null)
-            {
-                tileRenderers[tile] = renderer;
-                MaterialPropertyBlock block = new MaterialPropertyBlock();
-                renderer.GetPropertyBlock(block);
-                tilePropertyBlocks[tile] = block;
-            }
-        }
-        
-        foreach (var cube in cubesToRemove)
-        {
-            Renderer renderer = cube.GetComponent<Renderer>();
-            if (renderer != null)
-            {
-                cubeRenderers[cube] = renderer;
-                MaterialPropertyBlock block = new MaterialPropertyBlock();
-                renderer.GetPropertyBlock(block);
-                cubePropertyBlocks[cube] = block;
-            }
-        }
-        
-        // Fade out animation using MaterialPropertyBlock (safe for shared materials)
-        while (elapsed < transitionDuration)
-        {
-            elapsed += Time.deltaTime;
-            float alpha = 1f - (elapsed / transitionDuration);
-            
-            // Fade tiles
-            foreach (var tile in tilesToRemove)
-            {
-                if (tile != null && tileRenderers.ContainsKey(tile) && tilePropertyBlocks.ContainsKey(tile))
-                {
-                    Renderer renderer = tileRenderers[tile];
-                    MaterialPropertyBlock block = tilePropertyBlocks[tile];
-                    
-                    Color color = block.GetColor("_Color");
-                    if (color == Color.clear) color = Color.white; // Default if no color property
-                    color.a = alpha;
-                    block.SetColor("_Color", color);
-                    renderer.SetPropertyBlock(block);
-                }
-            }
-            
-            // Fade cubes (handle gracefully if destroyed during wave end)
-            foreach (var cube in cubesToRemove)
-            {
-                if (cube != null && !cube.isDestroyed && cubeRenderers.ContainsKey(cube) && cubePropertyBlocks.ContainsKey(cube))
-                {
-                    Renderer renderer = cubeRenderers[cube];
-                    if (renderer != null) // Additional null check in case cube was destroyed
-                    {
-                        MaterialPropertyBlock block = cubePropertyBlocks[cube];
-                        
-                        Color color = block.GetColor("_Color");
-                        if (color == Color.clear) color = Color.white; // Default if no color property
-                        color.a = alpha;
-                        block.SetColor("_Color", color);
-                        renderer.SetPropertyBlock(block);
-                    }
-                }
-            }
-            
-            yield return null;
-        }
-        
-        // Safety check: Verify grid is still valid and row is still within bounds
-        // (Grid might have been resized during transition, though unlikely between waves)
-        if (!IsGridReady || rowToRemove >= height)
-        {
-            DebugLog($"⚠️ Grid state changed during removal. Row {rowToRemove} no longer valid (height: {height}). Aborting cleanup.");
-            isRemovingBottomRow = false;
-            yield break;
-        }
-        
-        // Cleanup: Actually remove tiles and cubes
-        // Note: This happens even if wave ended - grid state persists between waves
-        foreach (var tile in tilesToRemove)
-        {
-            if (tile != null)
-            {
-                tile.MakeTileFall();
-            }
-        }
-        
-        // Remove cubes that still exist (some may have been destroyed at wave end)
-        foreach (var cube in cubesToRemove)
-        {
-            if (cube != null && !cube.isDestroyed)
-            {
-                DebugLog($"Removing cube at ({cube.position.x}, {cube.position.y}) - row fell");
-                Destroy(cube.gameObject);
-            }
-        }
-        
-        // Update grid bounds BEFORE adjusting player (so AdjustPlayerPosition knows the old bottom)
-        int oldBottom = bottom;
-        bottom = Mathf.Min(bottom + 1, height - 1);
-        
-        // Adjust player position if they were on the removed row
-        // Pass rowToRemove to the adjustment method
-        AdjustPlayerPositionAfterRowRemoval(rowToRemove);
-        
-        // Fire completion event (for future animation systems)
-        OnBottomRowRemovalCompleted?.Invoke(rowToRemove);
-        
-        isRemovingBottomRow = false;
-        DebugLog($"✅ ROW PENALTY: Bottom row {rowToRemove} removal complete. New bottom: {bottom}, Grid height: {height}, Remaining playable rows: {height - bottom}");
-    }
-    
-    /// <summary>
-    /// Adjusts player position after a row has been removed.
-    /// Called from RemoveBottomRowCoroutine with the specific row that was removed.
-    /// </summary>
-    private void AdjustPlayerPositionAfterRowRemoval(int removedRow)
-    {
-        var playerManager = FindFirstObjectByType<PlayerManager>();
-        if (playerManager == null) return;
-        
-        int playerY = playerManager.currentTilePosition.y;
-        
-        // If player was on or below the removed row, move them up
-        if (playerY <= removedRow)
-        {
-            // Find the lowest available row above the removed row
-            int safeRow = FindLowestPlayableRow();
-            if (safeRow > removedRow)
-            {
-                DebugLog($"⚠️ ROW PENALTY: Moving player from row {playerY} (removed row {removedRow}) to safe row {safeRow}");
-                playerManager.SetPosition(playerManager.currentTilePosition.x, safeRow);
-            }
-            else
-            {
-                DebugLog($"⚠️ ROW PENALTY: Player at row {playerY} but no safe row found above {removedRow}. Grid may be too small.");
-                // Emergency fallback: move to top row
-                playerManager.SetPosition(playerManager.currentTilePosition.x, height - 1);
-            }
-        }
-    }
-
-    private void RemoveCubesOnRow(int row)
-    {
-        var allCubes = FindObjectsByType<CubeManager>(FindObjectsSortMode.None);
-        foreach (var cube in allCubes)
-        {
-            if (cube != null && !cube.isDestroyed && cube.position.y == row)
-            {
-                DebugLog($"Removing cube at ({cube.position.x}, {cube.position.y}) - row fell");
-                Destroy(cube.gameObject);
-            }
-        }
-    }
+        => rowManager?.RemoveBottomRow();
 
     /// <summary>
-    /// Finds the lowest playable row in the grid.
-    /// Starts from bottom+1 (above the current bottom row) to avoid removed rows.
+    /// Gets the count of playable rows. Delegates to rowManager.
     /// </summary>
-    private int FindLowestPlayableRow()
-    {
-        // Start from one row above the current bottom (which may have been removed)
-        int startRow = Mathf.Max(bottom + 1, 1);
-        
-        for (int y = startRow; y < height; y++)
-        {
-            bool rowIsPlayable = false;
-            for (int x = 0; x < width; x++)
-            {
-                Tile tile = GetTileAt(x, y);
-                if (tile != null && tile.IsPlayable)
-                {
-                    rowIsPlayable = true;
-                    break;
-                }
-            }
-            if (rowIsPlayable) return y;
-        }
-        return height - 1; // Fallback to top row
-    }
-
     public int GetPlayableRowCount()
-    {
-        int playableRows = 0;
-        for (int y = 0; y < height; y++)
-        {
-            bool hasPlayableTile = false;
-            for (int x = 0; x < width; x++)
-            {
-                Tile tile = GetTileAt(x, y);
-                if (tile != null && tile.IsPlayable)
-                {
-                    hasPlayableTile = true;
-                    break;
-                }
-            }
-            if (hasPlayableTile) playableRows++;
-        }
-        return playableRows;
-    }
+        => rowManager?.GetPlayableRowCount() ?? 0;
 
+    /// <summary>
+    /// Checks if a row is playable. Delegates to rowManager.
+    /// </summary>
     public bool IsRowPlayable(int row)
-    {
-        if (!IsValidGridPosition(0, row)) return false;
-
-        for (int x = 0; x < width; x++)
-        {
-            Tile tile = GetTileAt(x, row);
-            if (tile != null && tile.IsPlayable)
-            {
-                return true;
-            }
-        }
-        return false;
-    }
+        => rowManager?.IsRowPlayable(row) ?? false;
     #endregion
 
     #region IManagerDebugInterface Implementation
