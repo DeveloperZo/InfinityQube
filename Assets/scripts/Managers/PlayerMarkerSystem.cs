@@ -937,7 +937,7 @@ public class PlayerMarkerSystem : MonoBehaviour
             {
                 visualManager?.DestroyMarkerVisual(marker.visualObject);
                 actionManager.ReleaseUnitMarker(); // Release the on-grid slot
-                SpawnPlayerCubeAt(marker.position, CubeType.Unit, false);
+                SpawnPlayerCubeAt(marker.position, CubeType.Unit, false, marker.segment);
                 spawnedCount++;
             }
         }
@@ -954,7 +954,7 @@ public class PlayerMarkerSystem : MonoBehaviour
                     visualManager?.DestroyMarkerVisual(visual);
                 }
                 actionManager.ReleaseMatrixMarker(); // Release the on-grid slot
-                SpawnPlayerCubeAt(marker.centerPosition, CubeType.Matrix, true);
+                SpawnPlayerCubeAt(marker.centerPosition, CubeType.Matrix, true, marker.segment);
                 spawnedCount++;
             }
         }
@@ -968,7 +968,7 @@ public class PlayerMarkerSystem : MonoBehaviour
             {
                 visualManager?.DestroyMarkerVisual(marker.visualObject);
                 actionManager.ReleaseRecursionMarker(); // Release the on-grid slot
-                SpawnPlayerCubeAt(marker.position, CubeType.Recursion, false);
+                SpawnPlayerCubeAt(marker.position, CubeType.Recursion, false, marker.segment);
                 spawnedCount++;
             }
         }
@@ -982,7 +982,7 @@ public class PlayerMarkerSystem : MonoBehaviour
             {
                 visualManager?.DestroyMarkerVisual(marker.visualObject);
                 actionManager.ReleaseInfinityMarker(); // Release the on-grid slot
-                SpawnPlayerCubeAt(marker.position, CubeType.Infinity, false);
+                SpawnPlayerCubeAt(marker.position, CubeType.Infinity, false, marker.segment);
                 spawnedCount++;
             }
         }
@@ -994,7 +994,7 @@ public class PlayerMarkerSystem : MonoBehaviour
         }
     }
 
-    private void SpawnPlayerCubeAt(Vector2Int position, CubeType cubeType, bool isMatrixCube)
+    private void SpawnPlayerCubeAt(Vector2Int position, CubeType cubeType, bool isMatrixCube, GridSegmentController markerSegment = null)
     {
         var wm = actionManager.WaveManager;
         var grid = actionManager.GridManager;
@@ -1018,15 +1018,16 @@ public class PlayerMarkerSystem : MonoBehaviour
             level = 1
         };
 
-        // SEGMENT-AWARE: Calculate spawn position based on wave's current segment
+        // SEGMENT-AWARE: Use the marker's segment (where it was placed), fallback to wave's current segment
+        // This fixes a regression where cubes would spawn at wrong position after segment transition
+        GridSegmentController targetSegment = markerSegment ?? wm.CurrentSegmentController;
         Vector3 spawnPos;
-        GridSegmentController waveSegment = wm.CurrentSegmentController;
         
-        if (waveSegment != null)
+        if (targetSegment != null)
         {
-            // Use wave's segment for position calculation
-            spawnPos = waveSegment.LocalToWorldPosition(position.x, position.y, 2f);
-            Debug.Log($"[PlayerMarkerSystem] Spawning player cube on wave segment {waveSegment.segmentIndex}");
+            // Use marker's segment for position calculation (not wave's current segment)
+            spawnPos = targetSegment.LocalToWorldPosition(position.x, position.y, 2f);
+            Debug.Log($"[PlayerMarkerSystem] Spawning player cube on marker's segment {targetSegment.segmentIndex}");
         }
         else
         {
@@ -1048,16 +1049,16 @@ public class PlayerMarkerSystem : MonoBehaviour
         cube.usePhysics = false;
         cube.ConfigurePlayerCubePhysics();
         
-        // SEGMENT-AWARE: Assign player cube to wave's current segment
-        if (waveSegment != null)
+        // SEGMENT-AWARE: Assign player cube to marker's segment
+        if (targetSegment != null)
         {
-            cube.SetSegmentController(waveSegment);
+            cube.SetSegmentController(targetSegment);
         }
 
         MakeCubeTranslucent(cube);
         playerCubes.Add(cube);
 
-        Debug.Log($"[PlayerMarkerSystem] Spawned {cubeType} player cube at ({position.x}, {position.y}){(isMatrixCube ? " (area capture)" : "")}{(waveSegment != null ? $" on segment {waveSegment.segmentIndex}" : "")}");
+        Debug.Log($"[PlayerMarkerSystem] Spawned {cubeType} player cube at ({position.x}, {position.y}){(isMatrixCube ? " (area capture)" : "")}{(targetSegment != null ? $" on segment {targetSegment.segmentIndex}" : "")}");
     }
 
     private void MakeCubeTranslucent(CubeManager cube)
