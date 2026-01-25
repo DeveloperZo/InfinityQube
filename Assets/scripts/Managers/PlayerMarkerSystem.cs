@@ -829,10 +829,11 @@ public class PlayerMarkerSystem : MonoBehaviour
                 cube.position.x == position.x && cube.position.y == position.y &&
                 !cubes.Contains(cube))
             {
-                // SEGMENT-AWARE: Check segment match if segment is specified
+                // SEGMENT-AWARE: Check segment match by INDEX (not object reference)
+                // This prevents issues if segment controller references differ but represent same segment
                 if (segment != null && cube.CurrentSegment != null)
                 {
-                    if (cube.CurrentSegment != segment)
+                    if (cube.CurrentSegment.segmentIndex != segment.segmentIndex)
                         continue; // Skip cubes on different segments
                 }
                 cubes.Add(cube);
@@ -864,10 +865,11 @@ public class PlayerMarkerSystem : MonoBehaviour
                 cube.position.x == position.x && cube.position.y == position.y &&
                 !cubes.Contains(cube))
             {
-                // SEGMENT-AWARE: Check segment match if segment is specified
+                // SEGMENT-AWARE: Check segment match by INDEX (not object reference)
+                // This prevents issues if segment controller references differ but represent same segment
                 if (segment != null && cube.CurrentSegment != null)
                 {
-                    if (cube.CurrentSegment != segment)
+                    if (cube.CurrentSegment.segmentIndex != segment.segmentIndex)
                         continue; // Skip cubes on different segments
                 }
                 cubes.Add(cube);
