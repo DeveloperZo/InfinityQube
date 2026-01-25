@@ -1233,16 +1233,6 @@ public class PlayerMarkerSystem : MonoBehaviour
             return false;
         }
         
-        // Task 6: Check line divider restriction - player must be in safe zone (below line)
-        if (actionManager?.GridManager != null && actionManager.GridManager.LineDividerEnabled)
-        {
-            if (!actionManager.GridManager.IsPlayerInSafeZone())
-            {
-                Debug.Log($"[Task 6] Cannot place marker - player is above line divider (danger zone)");
-                return false;
-            }
-        }
-
         return !HasUnitMarkerAt(position) &&
                !HasRecursionMarkerAt(position) &&
                !HasMatrixMarkerAt(position) &&

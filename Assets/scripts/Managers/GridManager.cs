@@ -40,13 +40,6 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
     [SerializeField] private bool enableDebugLogs;
     public bool showGridGizmos = false;
     public Color gizmoColor = Color.cyan;
-    
-    [Header("Task 6: Line Divider System")]
-    [SerializeField] private bool enableLineDivider = false; // Toggle line divider system on/off (default: OFF for testing)
-    [SerializeField] private int lineDividerRow = 10; // Default divider position (middle of 20-row grid)
-    [SerializeField] private GameObject lineDividerVisual; // Visual indicator for line divider
-    [SerializeField] private Color lineDividerColorSafe = new Color(0.2f, 0.5f, 1f, 0.7f); // Blue - player below line
-    [SerializeField] private Color lineDividerColorDanger = new Color(1f, 0.2f, 0.2f, 0.7f); // Red - player above line
     #endregion
 
     #region Runtime State
@@ -59,8 +52,7 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
     private Vector3 maxWorldBounds;
     private Vector3 calculatedGridOffset;
     
-    // LEGACY: Path visuals (deprecated - use segment controllers instead)
-    private List<GameObject> pathVisuals = new List<GameObject>();
+    // NOTE: Path visuals removed - segment controllers handle visualization now
     
     // ADVANCED GRID: Segment-based grid
     private List<GridSegment> gridSegments = new List<GridSegment>();
@@ -70,14 +62,11 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
     private Queue<GameObject> tilePool = new Queue<GameObject>();
     private List<GameObject> activeTiles = new List<GameObject>();
     
-    // Task 6: Line divider runtime state
-    private bool lineDividerStyled = false;
-    private Material lineDividerMaterial;
-    private PlayerManager playerManager;
-    private bool playerWasBelowLine = true; // Track previous state to avoid constant updates
-    
     // Segment layout prefab instance tracking
     private GameObject instantiatedSegmentLayout = null;
+    
+    // Coordinate conversion helper (SRP extraction)
+    private GridCoordinateConverter coordinateConverter;
     #endregion
 
     #region Properties
@@ -90,10 +79,6 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
     public Vector3 CalculatedGridOffset => calculatedGridOffset;
     public Vector3 MinWorldBounds => minWorldBounds;
     public Vector3 MaxWorldBounds => maxWorldBounds;
-    
-    // Task 6: Line divider properties
-    public bool LineDividerEnabled => enableLineDivider;
-    public int LineDividerRow => lineDividerRow;
     
     // Multi-segment grid detection
     public bool HasAdvancedPath => HasSegmentControllers; // Uses segment controllers
@@ -139,10 +124,6 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
         }
     }
     
-    /// <summary>
-    /// Task 6: Checks if a position is below the line divider (or always true if disabled)
-    /// </summary>
-    public bool IsPositionBelowLine(int y) => !enableLineDivider || y < lineDividerRow;
     #endregion
 
     #region Unity Lifecycle
@@ -155,25 +136,15 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
 
     private void Start()
     {
-        
         GenerateGrid();
-        // NOTE: Do NOT call InitializeLineDivider() here - line divider is configured
-        // by stage data via HandleStageStart() → ConfigureLineDivider()
-        // The serialized Inspector values are only used as fallback defaults.
         
-        // Get PlayerManager reference for line divider color updates
-        playerManager = FindFirstObjectByType<PlayerManager>();
-        
-        // Ensure line divider visual is hidden until stage configures it
-        if (lineDividerVisual != null)
-        {
-            lineDividerVisual.SetActive(false);
-        }
+        // Initialize coordinate converter after grid is ready
+        coordinateConverter = new GridCoordinateConverter(this);
     }
     
     private void OnEnable()
     {
-        // Subscribe to stage events for line divider configuration
+        // Subscribe to stage events for segment configuration
         GameEvents.OnStageStart += HandleStageStart;
     }
     
@@ -182,14 +153,8 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
         GameEvents.OnStageStart -= HandleStageStart;
     }
     
-    private void Update()
-    {
-        // Task 6: Update line divider color based on player position
-        UpdateLineDividerColor();
-    }
-    
     /// <summary>
-    /// Configure grid and line divider from StageData
+    /// Configure grid from StageData
     /// </summary>
     private void HandleStageStart(int stageIndex, StageData stageData)
     {
@@ -198,10 +163,7 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
         // Configure segment layout from stage's prefab
         ConfigureSegmentLayoutFromStage(stageData);
         
-        // Configure line divider from stage data
-        ConfigureLineDivider(stageData);
-        
-        DebugLog($"Grid configured for stage {stageIndex}: LineDivider at row {lineDividerRow}, Segments: {SegmentControllerCount}");
+        DebugLog($"Grid configured for stage {stageIndex}: Segments: {SegmentControllerCount}");
     }
     
     /// <summary>
@@ -269,250 +231,6 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
             Destroy(instantiatedSegmentLayout);
             instantiatedSegmentLayout = null;
         }
-    }
-    
-    /// <summary>
-    /// Configure line divider settings from StageData
-    /// </summary>
-    public void ConfigureLineDivider(StageData stageData)
-    {
-        if (stageData == null) return;
-        
-        // Check explicit enable flag first, then validate position is meaningful
-        bool positionValid = stageData.lineDividerStartY > 0 && stageData.lineDividerStartY < stageData.gridHeight;
-        bool shouldEnable = stageData.enableLineDivider && positionValid;
-        enableLineDivider = shouldEnable;
-        
-        if (shouldEnable)
-        {
-            lineDividerRow = stageData.lineDividerStartY;
-            
-            // Store penalty/reward values for use in MoveLineDivider
-            _lineDividerEscapePenalty = stageData.lineDividerEscapePenalty;
-            _lineDividerCaptureReward = stageData.lineDividerCaptureReward;
-            
-            DebugLog($"Line divider configured: Row={lineDividerRow}, Penalty={_lineDividerEscapePenalty}, Reward={_lineDividerCaptureReward}");
-        }
-        else
-        {
-            DebugLog($"Line divider DISABLED for stage (enableLineDivider={stageData.enableLineDivider}, positionValid={positionValid})");
-        }
-        
-        UpdateLineDividerVisual();
-    }
-    
-    // Cached line divider movement values
-    private int _lineDividerEscapePenalty = 1;
-    private int _lineDividerCaptureReward = 1;
-    
-    /// <summary>
-    /// Move line divider based on escape (penalty) or capture (reward)
-    /// </summary>
-    public void OnCubeEscaped()
-    {
-        if (_lineDividerEscapePenalty > 0)
-        {
-            MoveLineDivider(_lineDividerEscapePenalty, false); // Move up (penalty)
-        }
-    }
-    
-    /// <summary>
-    /// Move line divider based on capture (reward)
-    /// </summary>
-    public void OnCubeCaptured()
-    {
-        if (_lineDividerCaptureReward > 0)
-        {
-            MoveLineDivider(-_lineDividerCaptureReward, true); // Move down (reward)
-        }
-    }
-    
-    /// <summary>
-    /// Task 6: Initializes the line divider system
-    /// </summary>
-    private void InitializeLineDivider()
-    {
-        if (!enableLineDivider)
-        {
-            DebugLog($"Line divider system DISABLED - marker placement unrestricted");
-            return;
-        }
-        
-        // Set default line divider position to middle of grid if not set
-        if (lineDividerRow <= 0 || lineDividerRow >= height)
-        {
-            lineDividerRow = height / 2;
-            DebugLog($"Line divider initialized to row {lineDividerRow} (middle of {height}-row grid)");
-        }
-        
-        UpdateLineDividerVisual();
-        DebugLog($"Line divider system ENABLED at row {lineDividerRow}");
-    }
-    
-    /// <summary>
-    /// Task 6: Moves the line divider up or down
-    /// </summary>
-    public void MoveLineDivider(int rows, bool isReward = true)
-    {
-        if (!enableLineDivider)
-        {
-            // Silently skip when disabled - no log spam
-            return;
-        }
-        
-        int oldRow = lineDividerRow;
-        lineDividerRow = Mathf.Clamp(lineDividerRow + rows, 1, height - 1);
-        
-        string direction = rows > 0 ? "up" : "down";
-        string reason = isReward ? "reward" : "penalty";
-        DebugLog($"[Task 6] Line divider moved {direction} from row {oldRow} to row {lineDividerRow} ({reason})");
-        
-        UpdateLineDividerVisual();
-    }
-    
-    /// <summary>
-    /// Task 6: Enables or disables the line divider system at runtime
-    /// </summary>
-    public void SetLineDividerEnabled(bool enabled)
-    {
-        enableLineDivider = enabled;
-        DebugLog($"[Task 6] Line divider system {(enabled ? "ENABLED" : "DISABLED")}");
-        
-        if (enabled)
-        {
-            InitializeLineDivider();
-        }
-        else
-        {
-            UpdateLineDividerVisual();
-        }
-    }
-    
-    /// <summary>
-    /// Task 6: Updates the visual indicator for the line divider
-    /// </summary>
-    private void UpdateLineDividerVisual()
-    {
-        if (!enableLineDivider)
-        {
-            // Hide visual when disabled
-            if (lineDividerVisual != null)
-            {
-                lineDividerVisual.SetActive(false);
-            }
-            return;
-        }
-        
-        if (lineDividerVisual != null)
-        {
-            // Style the assigned visual (only once)
-            if (!lineDividerStyled)
-            {
-                StyleLineDividerVisual();
-                lineDividerStyled = true;
-            }
-            
-            lineDividerVisual.SetActive(true);
-            PositionLineDividerVisual();
-            DebugLog($"[Task 6] Line divider visual positioned at row {lineDividerRow}");
-        }
-        else
-        {
-            DebugLog($"[Task 6] Line divider at row {lineDividerRow} (no visual assigned)");
-        }
-    }
-    
-    /// <summary>
-    /// Task 6: Styles an assigned line divider visual (removes collider, applies material)
-    /// Assign any Cube or GameObject in the Inspector - this will style it at runtime
-    /// </summary>
-    private void StyleLineDividerVisual()
-    {
-        if (lineDividerVisual == null) return;
-        
-        // Remove collider if present - visual only, no physics
-        Collider col = lineDividerVisual.GetComponent<Collider>();
-        if (col != null) Destroy(col);
-        
-        // Create and apply transparent material (start with safe/blue color)
-        Renderer renderer = lineDividerVisual.GetComponent<Renderer>();
-        if (renderer != null)
-        {
-            lineDividerMaterial = new Material(Shader.Find("Standard"));
-            lineDividerMaterial.color = lineDividerColorSafe; // Start with blue (safe)
-            lineDividerMaterial.SetFloat("_Mode", 3); // Transparent mode
-            lineDividerMaterial.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
-            lineDividerMaterial.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
-            lineDividerMaterial.SetInt("_ZWrite", 0);
-            lineDividerMaterial.DisableKeyword("_ALPHATEST_ON");
-            lineDividerMaterial.EnableKeyword("_ALPHABLEND_ON");
-            lineDividerMaterial.DisableKeyword("_ALPHAPREMULTIPLY_ON");
-            lineDividerMaterial.renderQueue = 3000;
-            renderer.material = lineDividerMaterial;
-        }
-        
-        DebugLog("[Task 6] Styled line divider visual");
-    }
-    
-    /// <summary>
-    /// Task 6: Updates line divider color based on player position
-    /// Blue = player below line (safe, can place markers)
-    /// Red = player above line (danger, cannot place markers)
-    /// </summary>
-    private void UpdateLineDividerColor()
-    {
-        // Skip if line divider disabled or no visual/material
-        if (!enableLineDivider || lineDividerMaterial == null || playerManager == null) return;
-        
-        // Check if player is below the line
-        bool playerIsBelowLine = playerManager.currentTilePosition.y < lineDividerRow;
-        
-        // Only update color if state changed (performance optimization)
-        if (playerIsBelowLine != playerWasBelowLine)
-        {
-            playerWasBelowLine = playerIsBelowLine;
-            Color targetColor = playerIsBelowLine ? lineDividerColorSafe : lineDividerColorDanger;
-            lineDividerMaterial.color = targetColor;
-            
-            DebugLog($"[Task 6] Line divider color changed: {(playerIsBelowLine ? "BLUE (safe)" : "RED (danger)")}");
-        }
-    }
-    
-    /// <summary>
-    /// Task 6: Checks if player is currently in safe zone (below line divider)
-    /// Returns true if line divider is disabled OR player is below the line
-    /// </summary>
-    public bool IsPlayerInSafeZone()
-    {
-        if (!enableLineDivider) return true; // Always safe if disabled
-        if (playerManager == null) return true; // Default to safe if no player
-        return playerManager.currentTilePosition.y < lineDividerRow;
-    }
-    
-    /// <summary>
-    /// Task 6: Positions the line divider visual at the current divider row
-    /// </summary>
-    private void PositionLineDividerVisual()
-    {
-        if (lineDividerVisual == null) return;
-        
-        // Position: center of grid width, at the divider row boundary
-        // The line sits at the BOTTOM edge of the divider row (markers allowed below, not on or above)
-        float gridWidth = (width - 1) * tileSize;
-        float centerX = gridWidth / 2f;
-        
-        // Position at the boundary between lineDividerRow-1 and lineDividerRow
-        Vector3 lineWorldPos = GridToWorldPosition(0, lineDividerRow, 0.1f); // Slightly above ground
-        lineWorldPos.x = centerX + (transform.position + calculatedGridOffset).x;
-        lineWorldPos.z -= tileSize * 0.5f; // Position at the boundary between rows
-        
-        lineDividerVisual.transform.position = lineWorldPos;
-        
-        // Scale: span full grid width, thin line
-        float lineWidth = gridWidth + tileSize; // Extend slightly past edges
-        float lineHeight = 5f; // Vertical height
-        float lineDepth = 0.08f; // Thin depth
-        lineDividerVisual.transform.localScale = new Vector3(lineWidth, lineHeight, lineDepth);
     }
 
     private void OnDrawGizmosSelected()
@@ -1519,227 +1237,84 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
     
     #endregion
 
-    #region Coordinate Conversion
-    public Vector3 GridToWorldPosition(int x, int y, float heightOffset = 0)
-    {
-        // SEGMENT CONTROLLERS: Use first segment's coordinate system
-        if (HasSegmentControllers && segmentControllers.Count > 0)
-        {
-            var primarySegment = segmentControllers[0];
-            return primarySegment.LocalToWorldPosition(x, y, heightOffset);
-        }
-        
-        // Legacy: Use calculated grid offset
-        Vector3 basePosition = transform.position + calculatedGridOffset;
-        return new Vector3(x * tileSize, heightOffset, y * tileSize) + basePosition;
-    }
-
-    public Vector2Int WorldToGridPosition(Vector3 worldPosition)
-    {
-        // SEGMENT CONTROLLERS: Use first segment's coordinate system
-        if (HasSegmentControllers && segmentControllers.Count > 0)
-        {
-            var primarySegment = segmentControllers[0];
-            return primarySegment.WorldToLocalPosition(worldPosition);
-        }
-        
-        // Legacy: Use calculated grid offset
-        Vector3 basePosition = transform.position + calculatedGridOffset;
-        Vector3 localPos = worldPosition - basePosition;
-
-        int x = Mathf.RoundToInt(localPos.x / tileSize);
-        int y = Mathf.RoundToInt(localPos.z / tileSize);
-
-        x = Mathf.Clamp(x, 0, width - 1);
-        y = Mathf.Clamp(y, 0, height - 1);
-
-        return new Vector2Int(x, y);
-    }
+    #region Coordinate Conversion (Facade - delegates to GridCoordinateConverter)
     
     /// <summary>
-    /// ADVANCED GRID: Converts world position to the appropriate segment's local coordinates.
-    /// Returns (segmentIndex, localX, localY). SegmentIndex is -1 if not on any segment.
+    /// Converts grid coordinates to world position. Delegates to coordinateConverter.
+    /// </summary>
+    public Vector3 GridToWorldPosition(int x, int y, float heightOffset = 0)
+        => coordinateConverter?.GridToWorldPosition(x, y, heightOffset) 
+           ?? (transform.position + calculatedGridOffset + new Vector3(x * tileSize, heightOffset, y * tileSize));
+
+    /// <summary>
+    /// Converts world position to grid coordinates. Delegates to coordinateConverter.
+    /// </summary>
+    public Vector2Int WorldToGridPosition(Vector3 worldPosition)
+        => coordinateConverter?.WorldToGridPosition(worldPosition) ?? Vector2Int.zero;
+    
+    /// <summary>
+    /// ADVANCED GRID: Converts world position to segment local coordinates. Delegates to coordinateConverter.
     /// </summary>
     public (int segmentIndex, Vector2Int localPos) WorldToSegmentLocalPosition(Vector3 worldPosition)
-    {
-        // Check segment 0 first (main grid)
-        Vector3 seg0Base = transform.position + calculatedGridOffset;
-        Vector3 localPos0 = worldPosition - seg0Base;
-        int x0 = Mathf.RoundToInt(localPos0.x / tileSize);
-        int y0 = Mathf.RoundToInt(localPos0.z / tileSize);
-        
-        if (x0 >= 0 && x0 < width && y0 >= 0 && y0 < height)
-        {
-            return (0, new Vector2Int(x0, y0));
-        }
-        
-        // Check other segments
-        if (HasMultipleSegments)
-        {
-            for (int i = 1; i < gridSegments.Count; i++)
-            {
-                var segment = gridSegments[i];
-                var localCoord = segment.WorldToLocalPosition(worldPosition, tileSize);
-                
-                if (localCoord.x >= 0 && localCoord.y >= 0 && 
-                    localCoord.x < segment.width && localCoord.y < segment.height)
-                {
-                    return (i, localCoord);
-                }
-            }
-        }
-        
-        // Not on any segment - return segment 0's clamped position as fallback
-        x0 = Mathf.Clamp(x0, 0, width - 1);
-        y0 = Mathf.Clamp(y0, 0, height - 1);
-        return (-1, new Vector2Int(x0, y0));
-    }
+        => coordinateConverter?.WorldToSegmentLocalPosition(worldPosition) ?? (-1, Vector2Int.zero);
     
     /// <summary>
-    /// ADVANCED GRID: Checks if a world position is on a valid, playable tile on ANY segment.
+    /// Checks if a world position is on a valid, playable tile. Delegates to coordinateConverter.
     /// </summary>
     public bool IsWorldPositionValid(Vector3 worldPosition)
-    {
-        var (segmentIndex, localPos) = WorldToSegmentLocalPosition(worldPosition);
-        
-        if (segmentIndex < 0)
-            return false;
-        
-        if (segmentIndex == 0)
-        {
-            Tile tile = GetTileAt(localPos);
-            return tile != null && tile.IsPlayable;
-        }
-        else
-        {
-            var segment = gridSegments[segmentIndex];
-            if (segment.tiles != null && segment.IsValidLocalPosition(localPos.x, localPos.y))
-            {
-                var tile = segment.tiles[localPos.x, localPos.y];
-                return tile != null && tile.IsPlayable;
-            }
-        }
-        
-        return false;
-    }
+        => coordinateConverter?.IsWorldPositionValid(worldPosition) ?? false;
     
     /// <summary>
-    /// ADVANCED GRID: Gets the tile at a world position from any segment.
+    /// Gets the tile at a world position from any segment. Delegates to coordinateConverter.
     /// </summary>
     public Tile GetTileAtWorldPositionAnySegment(Vector3 worldPosition)
-    {
-        // SEGMENT CONTROLLERS: Check segment controllers first
-        if (HasSegmentControllers)
-        {
-            return GetTileAtWorldPositionFromControllers(worldPosition);
-        }
-        
-        // Legacy multi-segment support
-        var (segmentIndex, localPos) = WorldToSegmentLocalPosition(worldPosition);
-        
-        if (segmentIndex < 0)
-            return null;
-        
-        if (segmentIndex == 0)
-        {
-            return GetTileAt(localPos);
-        }
-        else if (segmentIndex < gridSegments.Count)
-        {
-            var segment = gridSegments[segmentIndex];
-            if (segment.tiles != null && segment.IsValidLocalPosition(localPos.x, localPos.y))
-            {
-                return segment.tiles[localPos.x, localPos.y];
-            }
-        }
-        
-        return null;
-    }
+        => coordinateConverter?.GetTileAtWorldPositionAnySegment(worldPosition);
 
+    /// <summary>
+    /// Checks if grid position is valid. Delegates to coordinateConverter.
+    /// </summary>
     public bool IsValidGridPosition(int x, int y)
-    {
-        // For multi-segment grids, check segment 0 first (standard behavior)
-        if (x >= 0 && x < width && y >= 0 && y < height)
-        {
-            Tile tile = GetTileAt(x, y);
-            return tile != null && tile.IsPlayable;
-        }
-        
-        return false;
-    }
+        => coordinateConverter?.IsValidGridPosition(x, y) ?? false;
 
+    /// <summary>
+    /// Checks if grid position is valid. Overload for Vector2Int.
+    /// </summary>
     public bool IsValidGridPosition(Vector2Int pos)
-    {
-        return IsValidGridPosition(pos.x, pos.y);
-    }
+        => IsValidGridPosition(pos.x, pos.y);
     
     /// <summary>
-    /// ADVANCED GRID: Checks if a position is valid on ANY segment (for player movement across segments).
+    /// Checks if position is valid on ANY segment. Delegates to coordinateConverter.
     /// </summary>
     public bool IsValidPositionOnAnySegment(int x, int y)
-    {
-        // Check segment 0 (main grid)
-        if (IsValidGridPosition(x, y))
-            return true;
-        
-        // For multi-segment grids, check other segments
-        if (HasMultipleSegments)
-        {
-            for (int i = 1; i < gridSegments.Count; i++)
-            {
-                var segment = gridSegments[i];
-                if (segment.IsValidLocalPosition(x, y) && segment.tiles != null)
-                {
-                    var tile = segment.tiles[x, y];
-                    if (tile != null && tile.IsPlayable)
-                        return true;
-                }
-            }
-        }
-        
-        return false;
-    }
+        => coordinateConverter?.IsValidPositionOnAnySegment(x, y) ?? false;
     
     /// <summary>
-    /// ADVANCED GRID: Gets the segment index for a given position, or -1 if not on any segment.
+    /// Gets segment index for position. Delegates to coordinateConverter.
     /// </summary>
     public int GetSegmentForPosition(int x, int y)
-    {
-        // Check segment 0 first
-        if (x >= 0 && x < width && y >= 0 && y < height)
-            return 0;
-        
-        // Check other segments
-        if (HasMultipleSegments)
-        {
-            for (int i = 1; i < gridSegments.Count; i++)
-            {
-                if (gridSegments[i].IsValidLocalPosition(x, y))
-                    return i;
-            }
-        }
-        
-        return -1;
-    }
+        => coordinateConverter?.GetSegmentForPosition(x, y) ?? -1;
 
+    /// <summary>
+    /// Gets tile at grid coordinates. Direct array access (core method).
+    /// </summary>
     public Tile GetTileAt(int x, int y)
     {
         if (x < 0 || x >= width || y < 0 || y >= height || tiles == null)
             return null;
-
-        return tiles[x, y]; // Return the tile even if fallen - let caller check IsPlayable
+        return tiles[x, y];
     }
 
+    /// <summary>
+    /// Gets tile at grid coordinates. Overload for Vector2Int.
+    /// </summary>
     public Tile GetTileAt(Vector2Int pos)
-    {
-        return GetTileAt(pos.x, pos.y);
-    }
+        => GetTileAt(pos.x, pos.y);
 
+    /// <summary>
+    /// Gets tile at world position. Delegates to coordinateConverter.
+    /// </summary>
     public Tile GetTileAtWorldPosition(Vector3 worldPos)
-    {
-        Vector2Int gridPos = WorldToGridPosition(worldPos);
-        return GetTileAt(gridPos);
-    }
+        => coordinateConverter?.GetTileAtWorldPosition(worldPos);
     
     #region Segment Controller Tile Access
     
@@ -2645,92 +2220,6 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
     }
     #endregion
 
-    #region Advanced Grid Path (DEPRECATED)
-    
-    // NOTE: GridPathType-based configuration is deprecated
-    // Use GridSegmentController components in scene for multi-segment layouts
-    
-    /// <summary>
-    /// DEPRECATED: Use GridSegmentController for multi-segment layouts.
-    /// This method is kept for backward compatibility but does nothing.
-    /// </summary>
-    [System.Obsolete("Use GridSegmentController for multi-segment layouts")]
-    public void ConfigureGridPath(StageData stageData)
-    {
-        // No-op - segment controllers handle grid layouts now
-        Debug.Log("[GridManager] ConfigureGridPath is deprecated - use GridSegmentController");
-    }
-    
-    /// <summary>
-    /// DEPRECATED: Use segment controllers for multi-segment layouts.
-    /// </summary>
-    [System.Obsolete("Use GridSegmentController for multi-segment layouts")]
-    public List<Vector3> GetTurnPointWorldPositions()
-    {
-        return new List<Vector3>(); // No-op - segment controllers handle visualization
-    }
-    
-    /// <summary>
-    /// Gets the movement direction at a grid position.
-    /// For segment-based grids, returns the direction from the segment controller.
-    /// </summary>
-    public MovementDirection GetDirectionAtPosition(Vector2Int position, MovementDirection currentDirection)
-    {
-        // For segment controllers, each segment has its own localDirection
-        // The cube's direction is set by its segment controller
-        return currentDirection; // Return current - direction changes happen at segment transitions
-    }
-    
-    /// <summary>
-    /// DEPRECATED: Visualizes turn points - no longer used with segment controllers.
-    /// </summary>
-    private void VisualizeTurnPoints()
-    {
-        // No-op - segment controllers handle their own visualization
-    }
-    
-    /// <summary>
-    /// DEPRECATED: Resets path to standard. Use segment controllers instead.
-    /// </summary>
-    [System.Obsolete("Use GridSegmentController for multi-segment layouts")]
-    public void ResetGridPath()
-    {
-        ClearPathVisuals();
-        DebugLog("Grid path reset (deprecated - use segment controllers)");
-    }
-    
-    /// <summary>
-    /// DEPRECATED: Path visuals are no longer used. Segment controllers handle visualization.
-    /// </summary>
-    [System.Obsolete("Use GridSegmentController for multi-segment layouts")]
-    public void CreatePathVisuals()
-    {
-        ClearPathVisuals();
-        // No-op - segment controllers handle their own visualization
-    }
-    
-    // NOTE: TurnPoint visual methods removed - segment controllers handle visualization now
-    // The following methods were removed: CreateTurnPointVisual, CreateSingleTurnIndicator, CreatePathDirectionIndicators
-    // Segment boundaries are now managed by GridSegmentController components in the scene
-    
-    
-    /// <summary>
-    /// ADVANCED GRID: Clears all path visual indicators.
-    /// </summary>
-    public void ClearPathVisuals()
-    {
-        foreach (var visual in pathVisuals)
-        {
-            if (visual != null)
-            {
-                Destroy(visual);
-            }
-        }
-        pathVisuals.Clear();
-    }
-    
-    #endregion
-
     #region IManagerDebugInterface Implementation
 
     public bool EnableDebugLogs 
@@ -2793,9 +2282,6 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
         bottom = 0;
         isGridGenerated = false;
         isGridReady = false;
-        
-        // ADVANCED GRID: Reset path to standard
-        ResetGridPath();
         
         // Clear any cached data
         if (useObjectPooling)

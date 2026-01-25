@@ -244,13 +244,6 @@ public class WaveStatisticsTracker : MonoBehaviour
         {
             string reason = wasCaptured ? "All cubes captured!" : "All cubes processed!";
             
-            // Apply line divider reward for perfect wave clear
-            if (wasCaptured && grid != null)
-            {
-                grid.MoveLineDivider(1, true);
-                DebugLog($"[Task 6] Applied 1 row reward for perfect wave clear");
-            }
-            
             // Notify WaveManager to show completion message
             waveManager.ShowWaveCompletionFromTracker(reason);
         }

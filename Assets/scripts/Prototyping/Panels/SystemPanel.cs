@@ -294,35 +294,6 @@ public class SystemPanel : PrototypingPanelBase
     #region Gameplay Toggles
     private void DrawGameplayToggles()
     {
-        // Line Divider
-        GUILayout.Label("Line Divider:");
-        GUILayout.BeginHorizontal();
-        
-        bool lineDividerEnabled = gridManager?.LineDividerEnabled ?? false;
-        GUI.backgroundColor = lineDividerEnabled ? Color.green : Color.gray;
-        if (GUILayout.Button(lineDividerEnabled ? "ON" : "OFF", GUILayout.Width(50), GUILayout.Height(25)))
-        {
-            gridManager?.SetLineDividerEnabled(!lineDividerEnabled);
-            LogAction($"Line Divider: {(!lineDividerEnabled ? "ON" : "OFF")}");
-        }
-        GUI.backgroundColor = Color.white;
-        
-        if (lineDividerEnabled && gridManager != null)
-        {
-            GUILayout.Label($"Row: {gridManager.LineDividerRow}", GUILayout.Width(60));
-            if (GUILayout.Button("Up", GUILayout.Width(35)))
-            {
-                gridManager.MoveLineDivider(1, true);
-            }
-            if (GUILayout.Button("Down", GUILayout.Width(45)))
-            {
-                gridManager.MoveLineDivider(-1, false);
-            }
-        }
-        GUILayout.EndHorizontal();
-        
-        GUILayout.Space(5);
-        
         // Game state info
         GUILayout.Label("Game State:");
         int phaseableCubes = CountPhaseableCubes();
