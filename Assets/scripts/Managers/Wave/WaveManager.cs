@@ -17,6 +17,12 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
     [SerializeField] public GameUI gameUI;
     private AudioManager audioManager;
     private MessageHighlightManager messageHighlightManager;
+    
+    [Header("Sub-Controllers (SRP Extraction)")]
+    [Tooltip("Handles segment-to-segment transitions. Auto-created if null.")]
+    [SerializeField] private WaveSegmentController segmentController;
+    [Tooltip("Tracks wave statistics (captures, escapes, completion). Auto-created if null.")]
+    [SerializeField] private WaveStatisticsTracker statisticsTracker;
 
 
     [Header("Wave Configuration")]
@@ -137,6 +143,10 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
         grid != null && currentSegmentIndex < grid.SegmentControllerCount ? 
         grid.GetSegmentController(currentSegmentIndex) : null;
     
+    // Sub-controller access (for debugging/testing)
+    public WaveSegmentController SegmentControllerComponent => segmentController;
+    public WaveStatisticsTracker StatisticsTrackerComponent => statisticsTracker;
+    
     // NOTE: Segment layout prefab is now handled at stage level via StageData.segmentLayoutPrefab
     // GridManager.HandleStageStart() instantiates and configures segments for each stage
     #endregion
@@ -196,8 +206,62 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
         if (playerActionManager == null) playerActionManager = FindFirstObjectByType<PlayerActionManager>();
         if (messageHighlightManager == null) messageHighlightManager = FindFirstObjectByType<MessageHighlightManager>();
         if (audioManager == null) audioManager = AudioManager.Instance;
+        
+        // Initialize sub-controllers (SRP extraction)
+        InitializeSegmentController();
+        InitializeStatisticsTracker();
 
         ValidateReferences();
+    }
+    
+    /// <summary>
+    /// Initializes the WaveSegmentController sub-component.
+    /// Creates one if not assigned in Inspector.
+    /// </summary>
+    private void InitializeSegmentController()
+    {
+        if (segmentController == null)
+        {
+            // Try to find existing controller as child
+            segmentController = GetComponentInChildren<WaveSegmentController>();
+            
+            // Create new controller if not found
+            if (segmentController == null)
+            {
+                var controllerObj = new GameObject("WaveSegmentController");
+                controllerObj.transform.SetParent(transform);
+                segmentController = controllerObj.AddComponent<WaveSegmentController>();
+                DebugLog("Created WaveSegmentController as child object");
+            }
+        }
+        
+        // Initialize controller with references
+        segmentController.Initialize(this, grid, player, cubePrefabs, enableDebugLogs);
+    }
+    
+    /// <summary>
+    /// Initializes the WaveStatisticsTracker sub-component.
+    /// Creates one if not assigned in Inspector.
+    /// </summary>
+    private void InitializeStatisticsTracker()
+    {
+        if (statisticsTracker == null)
+        {
+            // Try to find existing tracker as child
+            statisticsTracker = GetComponentInChildren<WaveStatisticsTracker>();
+            
+            // Create new tracker if not found
+            if (statisticsTracker == null)
+            {
+                var trackerObj = new GameObject("WaveStatisticsTracker");
+                trackerObj.transform.SetParent(transform);
+                statisticsTracker = trackerObj.AddComponent<WaveStatisticsTracker>();
+                DebugLog("Created WaveStatisticsTracker as child object");
+            }
+        }
+        
+        // Initialize tracker with references
+        statisticsTracker.Initialize(this, grid, audioManager, enableDebugLogs);
     }
 
     private void ValidateReferences()
@@ -205,6 +269,7 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
         if (grid == null) this.LogError("GridManager not found!");
         if (cubePrefabs == null || cubePrefabs.Length < 3) this.LogError("Need at least 3 cube prefabs!");
         if (audioManager == null) this.LogWarning("AudioManager not found! Audio events will not be triggered.", showDebugInfo);
+        if (segmentController == null) this.LogWarning("WaveSegmentController not initialized!", showDebugInfo);
     }
 
     private void InitializeState()
@@ -2841,6 +2906,24 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
         // Trigger wave failure event for StageManager
         OnWaveFailed?.Invoke(currentWaveIndex);
         DebugLog($"🎯 Triggered OnWaveFailed event for wave {currentWaveIndex}");
+    }
+    
+    /// <summary>
+    /// Called by WaveStatisticsTracker when wave failure is triggered.
+    /// Public facade for the private TriggerWaveFailure method.
+    /// </summary>
+    public void TriggerWaveFailureFromTracker(string reason)
+    {
+        TriggerWaveFailure(reason);
+    }
+    
+    /// <summary>
+    /// Called by WaveStatisticsTracker when wave completion is detected.
+    /// Shows the completion message and handles wave ending.
+    /// </summary>
+    public void ShowWaveCompletionFromTracker(string reason)
+    {
+        StartCoroutine(ShowCompletionMessage(reason));
     }
 
     public void OnMarkerPlaced() => markersPlaced++;

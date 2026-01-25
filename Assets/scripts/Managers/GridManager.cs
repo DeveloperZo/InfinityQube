@@ -87,6 +87,7 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
     public float TileSize => tileSize;
     public bool IsGridReady => isGridReady && tiles != null;
     public Vector3 GridCenter => transform.position + calculatedGridOffset;
+    public Vector3 CalculatedGridOffset => calculatedGridOffset;
     public Vector3 MinWorldBounds => minWorldBounds;
     public Vector3 MaxWorldBounds => maxWorldBounds;
     
