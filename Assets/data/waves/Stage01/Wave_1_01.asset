@@ -15,24 +15,130 @@ MonoBehaviour:
   Index: 0
   waveName: 
   GridWidth: 5
-  GridHeight: 3
+  GridHeight: 5
   overrideGridHeight: 0
-  overrideGridPath: 0
-  wavePathType: 0
-  customWavePath:
-    pathType: 0
-    segments: []
-    turnPoints: []
   CubesData:
   - type: 2
-    position: {x: 3, y: 0}
+    position: {x: 3, y: 2}
     level: 1
     hasPaintedFaces: 0
     frontFaceStatus: 0
     frontFaceCharges: 0
     spawnDelay: 0
   - type: 0
-    position: {x: 4, y: 0}
+    position: {x: 4, y: 2}
+    level: 1
+    hasPaintedFaces: 0
+    frontFaceStatus: 0
+    frontFaceCharges: 0
+    spawnDelay: 0
+  - type: 0
+    position: {x: 2, y: 3}
+    level: 1
+    hasPaintedFaces: 0
+    frontFaceStatus: 0
+    frontFaceCharges: 0
+    spawnDelay: 0
+  - type: 2
+    position: {x: 0, y: 4}
+    level: 1
+    hasPaintedFaces: 0
+    frontFaceStatus: 0
+    frontFaceCharges: 0
+    spawnDelay: 0
+  - type: 2
+    position: {x: 2, y: 4}
+    level: 1
+    hasPaintedFaces: 0
+    frontFaceStatus: 0
+    frontFaceCharges: 0
+    spawnDelay: 0
+  - type: 2
+    position: {x: 1, y: 2}
+    level: 1
+    hasPaintedFaces: 0
+    frontFaceStatus: 0
+    frontFaceCharges: 0
+    spawnDelay: 0
+  - type: 0
+    position: {x: 2, y: 2}
+    level: 1
+    hasPaintedFaces: 0
+    frontFaceStatus: 0
+    frontFaceCharges: 0
+    spawnDelay: 0
+  - type: 0
+    position: {x: 4, y: 4}
+    level: 1
+    hasPaintedFaces: 0
+    frontFaceStatus: 0
+    frontFaceCharges: 0
+    spawnDelay: 0
+  - type: 2
+    position: {x: 1, y: 3}
+    level: 1
+    hasPaintedFaces: 0
+    frontFaceStatus: 0
+    frontFaceCharges: 0
+    spawnDelay: 0
+  - type: 2
+    position: {x: 1, y: 4}
+    level: 1
+    hasPaintedFaces: 0
+    frontFaceStatus: 0
+    frontFaceCharges: 0
+    spawnDelay: 0
+  - type: 2
+    position: {x: 3, y: 3}
+    level: 1
+    hasPaintedFaces: 0
+    frontFaceStatus: 0
+    frontFaceCharges: 0
+    spawnDelay: 0
+  - type: 2
+    position: {x: 3, y: 4}
+    level: 1
+    hasPaintedFaces: 0
+    frontFaceStatus: 0
+    frontFaceCharges: 0
+    spawnDelay: 0
+  - type: 0
+    position: {x: 4, y: 3}
+    level: 1
+    hasPaintedFaces: 0
+    frontFaceStatus: 0
+    frontFaceCharges: 0
+    spawnDelay: 0
+  - type: 0
+    position: {x: 4, y: 3}
+    level: 1
+    hasPaintedFaces: 0
+    frontFaceStatus: 0
+    frontFaceCharges: 0
+    spawnDelay: 0
+  - type: 0
+    position: {x: 4, y: 3}
+    level: 1
+    hasPaintedFaces: 0
+    frontFaceStatus: 0
+    frontFaceCharges: 0
+    spawnDelay: 0
+  - type: 0
+    position: {x: 4, y: 3}
+    level: 1
+    hasPaintedFaces: 0
+    frontFaceStatus: 0
+    frontFaceCharges: 0
+    spawnDelay: 0
+  - type: 0
+    position: {x: 4, y: 3}
+    level: 1
+    hasPaintedFaces: 0
+    frontFaceStatus: 0
+    frontFaceCharges: 0
+    spawnDelay: 0
+  - type: 0
+    position: {x: 4, y: 3}
     level: 1
     hasPaintedFaces: 0
     frontFaceStatus: 0
@@ -52,22 +158,8 @@ MonoBehaviour:
     frontFaceStatus: 0
     frontFaceCharges: 0
     spawnDelay: 0
-  - type: 2
-    position: {x: 0, y: 2}
-    level: 1
-    hasPaintedFaces: 0
-    frontFaceStatus: 0
-    frontFaceCharges: 0
-    spawnDelay: 0
-  - type: 2
-    position: {x: 2, y: 2}
-    level: 1
-    hasPaintedFaces: 0
-    frontFaceStatus: 0
-    frontFaceCharges: 0
-    spawnDelay: 0
-  - type: 2
-    position: {x: 1, y: 0}
+  - type: 0
+    position: {x: 4, y: 1}
     level: 1
     hasPaintedFaces: 0
     frontFaceStatus: 0
@@ -81,6 +173,13 @@ MonoBehaviour:
     frontFaceCharges: 0
     spawnDelay: 0
   - type: 0
+    position: {x: 1, y: 0}
+    level: 1
+    hasPaintedFaces: 0
+    frontFaceStatus: 0
+    frontFaceCharges: 0
+    spawnDelay: 0
+  - type: 0
     position: {x: 2, y: 0}
     level: 1
     hasPaintedFaces: 0
@@ -88,7 +187,14 @@ MonoBehaviour:
     frontFaceCharges: 0
     spawnDelay: 0
   - type: 0
-    position: {x: 4, y: 2}
+    position: {x: 3, y: 0}
+    level: 1
+    hasPaintedFaces: 0
+    frontFaceStatus: 0
+    frontFaceCharges: 0
+    spawnDelay: 0
+  - type: 0
+    position: {x: 4, y: 0}
     level: 1
     hasPaintedFaces: 0
     frontFaceStatus: 0
@@ -102,13 +208,6 @@ MonoBehaviour:
     frontFaceCharges: 0
     spawnDelay: 0
   - type: 2
-    position: {x: 1, y: 2}
-    level: 1
-    hasPaintedFaces: 0
-    frontFaceStatus: 0
-    frontFaceCharges: 0
-    spawnDelay: 0
-  - type: 2
     position: {x: 3, y: 1}
     level: 1
     hasPaintedFaces: 0
@@ -116,49 +215,14 @@ MonoBehaviour:
     frontFaceCharges: 0
     spawnDelay: 0
   - type: 2
-    position: {x: 3, y: 2}
+    position: {x: 0, y: 3}
     level: 1
     hasPaintedFaces: 0
     frontFaceStatus: 0
     frontFaceCharges: 0
     spawnDelay: 0
-  - type: 0
-    position: {x: 4, y: 1}
-    level: 1
-    hasPaintedFaces: 0
-    frontFaceStatus: 0
-    frontFaceCharges: 0
-    spawnDelay: 0
-  - type: 0
-    position: {x: 4, y: 1}
-    level: 1
-    hasPaintedFaces: 0
-    frontFaceStatus: 0
-    frontFaceCharges: 0
-    spawnDelay: 0
-  - type: 0
-    position: {x: 4, y: 1}
-    level: 1
-    hasPaintedFaces: 0
-    frontFaceStatus: 0
-    frontFaceCharges: 0
-    spawnDelay: 0
-  - type: 0
-    position: {x: 4, y: 1}
-    level: 1
-    hasPaintedFaces: 0
-    frontFaceStatus: 0
-    frontFaceCharges: 0
-    spawnDelay: 0
-  - type: 0
-    position: {x: 4, y: 1}
-    level: 1
-    hasPaintedFaces: 0
-    frontFaceStatus: 0
-    frontFaceCharges: 0
-    spawnDelay: 0
-  - type: 0
-    position: {x: 4, y: 1}
+  - type: 2
+    position: {x: 0, y: 2}
     level: 1
     hasPaintedFaces: 0
     frontFaceStatus: 0

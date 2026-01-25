@@ -50,6 +50,12 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
     [SerializeField] private bool showFaceIndicators = true;
     private CubeFace[] currentFaceMapping = new CubeFace[4];
     
+    // Face painting helper (SRP extraction)
+    private CubeFacePainter facePainter;
+    
+    // Audio handler (SRP extraction)
+    private CubeAudioHandler audioHandler;
+    
     [Header("Debug")]
     [Tooltip("Enable debug logging for this manager")]
     [SerializeField] private bool enableDebugLogs ;
@@ -118,8 +124,13 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
         playerActionManager = FindFirstObjectByType<PlayerActionManager>();
         gameObject.name = name;
 
-        InitializeFaceSystem();
-        InitializeFaceMapping();
+        // Initialize face painter (SRP extraction)
+        facePainter = new CubeFacePainter(
+            this, faceStatuses, faceColors, faceDurations, faceCharges,
+            faceIndicators, currentFaceMapping, showFaceIndicators, enableDebugLogs);
+        facePainter.InitializeFaceSystem();
+        facePainter.InitializeFaceMapping();
+        
         SetupPhysics();
         SetupAudioSystem();
         UpdateDamageVisual();
@@ -493,6 +504,9 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
         }
         
         this.Log($"Audio system setup complete for {type} cube (AudioSource: {cubeAudioSource != null}, Config: {cubeAudioConfig != null})", EnableDebugLogs);
+        
+        // Initialize audio handler (SRP extraction)
+        audioHandler = new CubeAudioHandler(this, cubeAudioSource, cubeAudioConfig, enableDebugLogs);
     }
     
     /// <summary>
@@ -522,165 +536,28 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
         isMoving = false;
     }
 
-    #region Cube Audio Playback
+    #region Cube Audio Playback (Facade - delegates to CubeAudioHandler)
     
-    /// <summary>
-    /// Plays cube audio for the specified sound category using CubeAudioConfiguration
-    /// </summary>
-    /// <param name="soundCategory">Type of sound to play (Landing, Capture, Destruction, SpecialEffect)</param>
-    /// <param name="volumeMultiplier">Optional volume multiplier (default 1.0)</param>
-    private void PlayCubeAudio(SoundCategory soundCategory, float volumeMultiplier = 1f)
-    {
-        if (cubeAudioConfig == null || cubeAudioSource == null)
-        {
-            // Fallback to AudioManager if no local configuration
-            if (AudioManager.Instance != null)
-            {
-                switch (soundCategory)
-                {
-                    case SoundCategory.Landing:
-                        AudioManager.Instance.PlayCubeLandingSound(GetEffectiveType(), transform.position);
-                        break;
-                    case SoundCategory.Capture:
-                        AudioManager.Instance.PlayCubeCaptureSound(GetEffectiveType(), transform.position);
-                        break;
-                    case SoundCategory.Destruction:
-                        AudioManager.Instance.PlayCubeDestructionSound(GetEffectiveType(), transform.position);
-                        break;
-                    case SoundCategory.SpecialEffect:
-                        AudioManager.Instance.PlayCubeSpecialEffectSound(GetEffectiveType(), transform.position);
-                        break;
-                }
-            }
-            return;
-        }
-        
-        // Get audio clip using effective type (considers face painting)
-        CubeType effectiveType = GetEffectiveType();
-        AudioClip audioClip = cubeAudioConfig.GetRandomClip(effectiveType, soundCategory);
-        
-        if (audioClip == null)
-        {
-            // Try with original type if effective type has no audio
-            audioClip = cubeAudioConfig.GetRandomClip(type, soundCategory);
-        }
-        
-        if (audioClip != null)
-        {
-            // Get playback settings from configuration
-            AudioPlaybackSettings settings = cubeAudioConfig.GetPlaybackSettings(effectiveType, soundCategory);
-            
-            // Apply volume multiplier and ensure reasonable values
-            float finalVolume = Mathf.Clamp01(settings.volume * volumeMultiplier);
-            float finalPitch = Mathf.Clamp(settings.pitch, 0.5f, 2f);
-            
-            // Configure and play audio
-            cubeAudioSource.clip = audioClip;
-            cubeAudioSource.volume = finalVolume;
-            cubeAudioSource.pitch = finalPitch;
-            cubeAudioSource.Play();
-            
-            this.Log($"Played {soundCategory} audio for {effectiveType} cube: {audioClip.name} (Vol: {finalVolume:F2}, Pitch: {finalPitch:F2})", EnableDebugLogs);
-        }
-        else
-        {
-            this.Log($"No {soundCategory} audio available for {effectiveType} cube (fallback also checked)", EnableDebugLogs);
-        }
-    }
-    
-    /// <summary>
-    /// Plays cube landing sound when cube lands on a tile
-    /// </summary>
     public void PlayLandingSound()
-    {
-        PlayCubeAudio(SoundCategory.Landing);
-    }
-    
-    /// <summary>
-    /// Plays cube capture sound when cube is captured by player
-    /// </summary>
+        => audioHandler?.PlayLandingSound();
+
     public void PlayCaptureSound()
-    {
-        PlayCubeAudio(SoundCategory.Capture);
-    }
-    
-    /// <summary>
-    /// Plays cube destruction sound when cube is destroyed
-    /// </summary>
+        => audioHandler?.PlayCaptureSound();
+
     public void PlayDestructionSound()
-    {
-        PlayCubeAudio(SoundCategory.Destruction);
-    }
-    
-    /// <summary>
-    /// Plays cube special effect sound for special cube interactions
-    /// </summary>
+        => audioHandler?.PlayDestructionSound();
+
     public void PlaySpecialEffectSound()
-    {
-        PlayCubeAudio(SoundCategory.SpecialEffect);
-    }
-    
-    /// <summary>
-    /// Called when this cube is captured - plays capture sound and any additional effects
-    /// This method should be called by external systems (like Tile.cs) when cube capture occurs
-    /// </summary>
+        => audioHandler?.PlaySpecialEffectSound();
+
     public void OnCubeCapture()
-    {
-        PlayCaptureSound();
-        
-        // Fire captured event
-        GameEvents.FireCubeCaptured(position, GetEffectiveType());
-        this.Log($"Fired GameEvents.OnCubeCaptured for {GetEffectiveType()} cube at ({position.x}, {position.y})", EnableDebugLogs);
-        
-        // Add any additional capture effects here if needed
-        this.Log($"Cube {GetEffectiveType()} captured at ({position.x}, {position.y}) - capture audio triggered", EnableDebugLogs);
-    }
-    
-    /// <summary>
-    /// Validates that audio system is properly configured for this cube
-    /// </summary>
-    /// <returns>True if audio system is configured and ready</returns>
+        => audioHandler?.OnCubeCapture();
+
     public bool IsAudioSystemReady()
-    {
-        bool hasAudioSource = cubeAudioSource != null;
-        bool hasAudioConfig = cubeAudioConfig != null;
-        bool hasAudioManager = AudioManager.Instance != null;
-        
-        return hasAudioSource && (hasAudioConfig || hasAudioManager);
-    }
-    
-    /// <summary>
-    /// Gets diagnostic information about the cube's audio system
-    /// </summary>
-    /// <returns>String containing audio diagnostic information</returns>
+        => audioHandler?.IsAudioSystemReady() ?? false;
+
     public string GetAudioDiagnostics()
-    {
-        var diagnostics = new System.Text.StringBuilder();
-        diagnostics.AppendLine($"=== Audio Diagnostics for {type} Cube ===");
-        diagnostics.AppendLine($"AudioSource: {(cubeAudioSource != null ? "Configured" : "Missing")}");
-        diagnostics.AppendLine($"CubeAudioConfig: {(cubeAudioConfig != null ? "Assigned" : "Not Assigned")}");
-        diagnostics.AppendLine($"AudioManager Available: {(AudioManager.Instance != null ? "Yes" : "No")}");
-        diagnostics.AppendLine($"Audio System Ready: {IsAudioSystemReady()}");
-        
-        if (cubeAudioConfig != null)
-        {
-            var audioData = cubeAudioConfig.GetAudioData(type);
-            if (audioData != null)
-            {
-                diagnostics.AppendLine($"Audio Data Available: {audioData.HasAnyAudioClips()}");
-                diagnostics.AppendLine($"Landing Clips: {(audioData.HasLandingClips() ? "Yes" : "No")}");
-                diagnostics.AppendLine($"Capture Clips: {(audioData.HasCaptureClips() ? "Yes" : "No")}");
-                diagnostics.AppendLine($"Destruction Clips: {(audioData.HasDestructionClips() ? "Yes" : "No")}");
-                diagnostics.AppendLine($"Special Effect Clips: {(audioData.HasSpecialEffectClips() ? "Yes" : "No")}");
-            }
-            else
-            {
-                diagnostics.AppendLine($"No audio data found for cube type: {type}");
-            }
-        }
-        
-        return diagnostics.ToString();
-    }
+        => audioHandler?.GetAudioDiagnostics() ?? "Audio handler not initialized";
     
     #endregion
 
@@ -695,21 +572,11 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
             PlayDestructionSound();
         }
 
-        // Clean up face indicators
-        for (int i = 0; i < faceIndicators.Length; i++)
-        {
-            if (faceIndicators[i] != null)
-            {
-                Destroy(faceIndicators[i]);
-                faceIndicators[i] = null;
-            }
-        }
+        // Clean up face indicators via painter
+        facePainter?.CleanupIndicators();
         
-        // Clean up audio source if it exists
-        if (cubeAudioSource != null)
-        {
-            cubeAudioSource.Stop();
-        }
+        // Clean up audio via handler
+        audioHandler?.Cleanup();
     }
 
     /// <summary>
@@ -830,8 +697,9 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
         // Fire move event
         GameEvents.FireCubeMove(oldPosition, position, type);
         
-        RotateFaceMapping();
-        ProcessFaceDurations();
+        // Update face painting system
+        facePainter?.RotateFaceMapping();
+        facePainter?.ProcessFaceDurations();
         UpdateFaceRotationTracking(); // Enhanced face rotation tracking
         
         // Task 7: Decrement phaseable moves remaining
@@ -900,8 +768,9 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
         // Fire move event
         GameEvents.FireCubeMove(oldPosition, position, type);
         
-        RotateFaceMapping();
-        ProcessFaceDurations();
+        // Update face painting system
+        facePainter?.RotateFaceMapping();
+        facePainter?.ProcessFaceDurations();
         UpdateFaceRotationTracking(); // Enhanced face rotation tracking
         
         // Task 7: Decrement phaseable moves remaining
@@ -1023,86 +892,29 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
     }
 
 
-    #region Face Painting System - FIXED
+    #region Face Painting System (Facade - delegates to CubeFacePainter)
 
     public CubeFace GetCurrentDownFace()
-    {
-        return currentFaceMapping[0];
-    }
+        => facePainter?.GetCurrentDownFace() ?? CubeFace.Bottom;
 
     public FaceStatus GetActiveFaceStatus()
-    {
-        CubeFace downFace = GetCurrentDownFace();
-        return faceStatuses[(int)downFace];
-    }
-    
-    /// <summary>
-    /// Task 8: Predicts which painted face will become the down face after N moves
-    /// Returns the face status that will be active after the specified number of moves
-    /// </summary>
+        => facePainter?.GetActiveFaceStatus() ?? FaceStatus.None;
+
     public FaceStatus GetPredictedFaceStatus(int movesAhead = 1)
-    {
-        if (movesAhead <= 0) return GetActiveFaceStatus();
-        
-        // Calculate which face will be at the bottom position after N rotations
-        // Rotation sequence: Back->Bottom, Top->Back, Front->Top, Bottom->Front
-        // After 1 move: Back (index 3) becomes Bottom (index 0)
-        // After 2 moves: Top (index 1) becomes Bottom (index 0)
-        // After 3 moves: Front (index 2) becomes Bottom (index 0)
-        // After 4 moves: Bottom (index 0) becomes Bottom again (cycle)
-        
-        // Mapping: 1 move → Back(3), 2 moves → Top(1), 3 moves → Front(2), 4 moves → Bottom(0)
-        int[] sourceIndices = { 0, 3, 1, 2 }; // Index by (movesAhead % 4)
-        int sourceIndex = sourceIndices[movesAhead % 4];
-        
-        CubeFace sourceFace = currentFaceMapping[sourceIndex];
-        return faceStatuses[(int)sourceFace];
-    }
-    
-    /// <summary>
-    /// Task 8: Checks if a painted face will touch the grid in the specified number of moves
-    /// </summary>
+        => facePainter?.GetPredictedFaceStatus(movesAhead) ?? FaceStatus.None;
+
     public bool WillPaintedFaceTouchGrid(int movesAhead = 1)
-    {
-        FaceStatus predictedStatus = GetPredictedFaceStatus(movesAhead);
-        return predictedStatus != FaceStatus.None;
-    }
+        => facePainter?.WillPaintedFaceTouchGrid(movesAhead) ?? false;
 
     public bool HasActiveFaceStatus(FaceStatus status)
-    {
-        return GetActiveFaceStatus() == status;
-    }
+        => facePainter?.HasActiveFaceStatus(status) ?? false;
 
     public CubeType GetEffectiveType()
-    {
-        FaceStatus activeStatus = GetActiveFaceStatus();
-
-        switch (activeStatus)
-        {
-            case FaceStatus.InfinityFace:
-                return CubeType.Infinity;
-            case FaceStatus.MatrixFace:
-                return CubeType.Matrix;
-            case FaceStatus.RecursionFace:
-                return CubeType.Recursion;
-            default:
-                return type;
-        }
-    }
+        => facePainter?.GetEffectiveType() ?? type;
 
     public bool CanBeCaptured()
-    {
-            FaceStatus activeStatus = GetActiveFaceStatus();
+        => facePainter?.CanBeCaptured() ?? (type != CubeType.Infinity);
 
-        switch (activeStatus)
-        {
-            case FaceStatus.InfinityFace:
-                return false;
-            default:
-                return type != CubeType.Infinity;
-        }
-    }
-    
     /// <summary>
     /// Task 7: Gets whether this cube is currently phaseable (can be passed through)
     /// </summary>
@@ -1125,15 +937,9 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
         isPhaseable = true;
         phaseableMovesRemaining = movesRemaining;
         this.Log($"Set phaseable state for {type} cube at ({position.x}, {position.y}) for {movesRemaining} moves", EnableDebugLogs);
-        
-        // Task 7: Visual feedback for phaseable state (mock with log for now)
         UpdatePhaseableVisual();
     }
     
-    /// <summary>
-    /// Task 7: Updates visual feedback for phaseable state
-    /// Swaps to transparent material when phaseable, back to original when expired
-    /// </summary>
     private void UpdatePhaseableVisual()
     {
         Renderer cubeRenderer = GetComponent<Renderer>();
@@ -1141,446 +947,65 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
         
         if (isPhaseable && phaseableMovesRemaining > 0)
         {
-            // Store original material if not already stored
             if (originalMaterial == null)
-            {
                 originalMaterial = cubeRenderer.material;
-            }
             
-            // Apply phaseable material (assigned in Inspector on prefab)
             if (phaseableMaterial != null)
-            {
                 cubeRenderer.material = phaseableMaterial;
-            }
             
-            this.Log($"[Task 7] Phaseable visual: {type} cube at ({position.x}, {position.y}) is phaseable ({phaseableMovesRemaining} moves remaining) - TRANSPARENT", EnableDebugLogs);
+            this.Log($"[Task 7] Phaseable visual: {type} cube is phaseable ({phaseableMovesRemaining} moves) - TRANSPARENT", EnableDebugLogs);
         }
         else if (originalMaterial != null)
         {
-            // Restore original material when no longer phaseable
             cubeRenderer.material = originalMaterial;
-            this.Log($"[Task 7] Phaseable visual reset for {type} cube at ({position.x}, {position.y})", EnableDebugLogs);
+            this.Log($"[Task 7] Phaseable visual reset for {type} cube", EnableDebugLogs);
         }
     }
 
     public bool ShouldCreateDetonation()
-    {
-        FaceStatus activeStatus = GetActiveFaceStatus();
-        return activeStatus == FaceStatus.MatrixFace || type == CubeType.Matrix;
-    }
+        => facePainter?.ShouldCreateDetonation() ?? (type == CubeType.Matrix);
 
     public void PaintFace(CubeFace face, FaceStatus status, Color color, int duration = -1, int charges = 1)
-    {
-        int faceIndex = (int)face;
-        faceStatuses[faceIndex] = status;
-        faceColors[faceIndex] = color;
-        faceDurations[faceIndex] = duration;
-        faceCharges[faceIndex] = charges;
-        faceIndicators[faceIndex].SetActive(true);
-        UpdateFaceVisuals();
-        
-        this.Log($"Painted {face} of cube at ({position.x}, {position.y}) with {status} status, duration: {duration}, charges: {charges}", EnableDebugLogs);
-    }
-    
-    /// <summary>
-    /// Consumes one charge from the active (down) face when it triggers on grid touch.
-    /// Returns true if charge was consumed, false if no charges remain.
-    /// Unpaints the face when charges reach zero.
-    /// </summary>
+        => facePainter?.PaintFace(face, status, color, duration, charges);
+
     public bool ConsumeActiveFaceCharge()
-    {
-        CubeFace downFace = GetCurrentDownFace();
-        int faceIndex = (int)downFace;
-        
-        if (faceStatuses[faceIndex] == FaceStatus.None)
-            return false;
-        
-        if (faceCharges[faceIndex] <= 0)
-            return false;
-        
-        faceCharges[faceIndex]--;
-        this.Log($"Face {downFace} charge consumed on cube at ({position.x}, {position.y}). Remaining: {faceCharges[faceIndex]}", EnableDebugLogs);
-        
-        // Unpaint the face when charges reach zero
-        if (faceCharges[faceIndex] <= 0)
-        {
-            FaceStatus oldStatus = faceStatuses[faceIndex];
-            faceStatuses[faceIndex] = FaceStatus.None;
-            faceColors[faceIndex] = Color.white;
-            faceIndicators[faceIndex].SetActive(false);
-            UpdateFaceVisuals();
-            this.Log($"Face {downFace} unpainted on cube at ({position.x}, {position.y}) - charges exhausted (was {oldStatus})", EnableDebugLogs);
-        }
-        
-        return true;
-    }
-    
-    /// <summary>
-    /// Gets remaining charges for the active (down) face.
-    /// </summary>
+        => facePainter?.ConsumeActiveFaceCharge() ?? false;
+
     public int GetActiveFaceCharges()
-    {
-        CubeFace downFace = GetCurrentDownFace();
-        return faceCharges[(int)downFace];
-    }
-    
-    /// <summary>
-    /// Gets remaining charges for a specific face.
-    /// </summary>
+        => facePainter?.GetActiveFaceCharges() ?? 0;
+
     public int GetFaceCharges(CubeFace face)
-    {
-        return faceCharges[(int)face];
-    }
+        => facePainter?.GetFaceCharges(face) ?? 0;
 
     public void PaintCurrentDownFace(FaceStatus status, Color color, int duration = -1)
-    {
-        CubeFace downFace = GetCurrentDownFace();
-        PaintFace(downFace, status, color, duration);
-    }
+        => facePainter?.PaintCurrentDownFace(status, color, duration);
 
-    private void ProcessFaceDurations()
-    {
-        bool anyChanged = false;
-        for (int i = 0; i < 4; i++)
-        {
-            if (faceDurations[i] > 0)
-            {
-                faceDurations[i]--;
-                if (faceDurations[i] == 0)
-                {
-                    faceStatuses[i] = FaceStatus.None;
-                    faceColors[i] = Color.white;
-                    anyChanged = true;
-                    faceIndicators[i].SetActive(false);
-                    this.Log($"Face {(CubeFace)i} paint status expired on cube at ({position.x}, {position.y})", EnableDebugLogs);
-                }
-            }
-        }
-
-        if (anyChanged)
-        {
-            UpdateFaceVisuals();
-        }
-    }
-
-    private void InitializeFaceSystem()
-    {
-        for (int i = 0; i < 4; i++)
-        {
-            faceStatuses[i] = FaceStatus.None;
-            faceColors[i] = Color.white;
-            faceDurations[i] = 0;
-            faceCharges[i] = 0;
-        }
-
-        if (showFaceIndicators)
-        {
-            CreateFaceIndicators();
-        }
-    }
-
-    private void CreateFaceIndicators()
-    {
-        for (int i = 0; i < 4; i++)
-        {
-            GameObject indicator = GameObject.CreatePrimitive(PrimitiveType.Quad);
-            indicator.name = $"FaceIndicator_{(CubeFace)i}_{position.x}_{position.y}";
-            indicator.transform.SetParent(transform);
-
-            // Position and orient the face indicator correctly
-            PositionFaceIndicator(indicator, (CubeFace)i);
-
-            // Set up renderer with proper material
-            Renderer renderer = indicator.GetComponent<Renderer>();
-            Material mat = CreateFaceIndicatorMaterial();
-            renderer.material = mat;
-
-            // Remove collider
-            Destroy(indicator.GetComponent<Collider>());
-
-            indicator.SetActive(false); // Hidden by default
-            faceIndicators[i] = indicator;
-        }
-    }
-
-    private void PositionFaceIndicator(GameObject indicator, CubeFace originalFace)
-    {
-        float offset = (0.55f); // Very close to cube surface, just barely hovering
-        Vector3 scale = new Vector3( 1f, 1f, 1f); // Larger indicators for better visibility
-
-        // Position based on the ORIGINAL face position on the cube
-        switch (originalFace)
-        {
-            case CubeFace.Bottom: // Original bottom face (Y-)
-                indicator.transform.localPosition = new Vector3(0, -offset, 0);
-                indicator.transform.localRotation = Quaternion.Euler(90, 180, 0); // Face up (outward from bottom)
-                break;
-
-            case CubeFace.Top: // Original top face (Y+)
-                indicator.transform.localPosition = new Vector3(0, offset, 0);
-                indicator.transform.localRotation = Quaternion.Euler(-90, 180, 0); // Face down (outward from top)
-                break;
-
-            case CubeFace.Front: // Original front face (Z+)
-                indicator.transform.localPosition = new Vector3(0, 0, offset);
-                indicator.transform.localRotation = Quaternion.Euler(0, 180, 0); // Face toward camera (outward from front)
-                break;
-
-            case CubeFace.Back: // Original back face (Z-)
-                indicator.transform.localPosition = new Vector3(0, 0, -offset);
-                indicator.transform.localRotation = Quaternion.Euler(0, 0, 0); // Face toward camera (outward from back)
-                break;
-        }
-
-        indicator.transform.localScale = scale;
-    }
-
-    private Material CreateFaceIndicatorMaterial()
-    {
-        Material mat = new Material(Shader.Find("Standard"));
-        mat.color = new Color(1, 1, 1, 0.8f);
-
-        // Set up for transparency
-        mat.SetFloat("_Mode", 3); // Transparent mode
-        mat.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
-        mat.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
-        mat.SetInt("_ZWrite", 0);
-        mat.DisableKeyword("_ALPHATEST_ON");
-        mat.EnableKeyword("_ALPHABLEND_ON");
-        mat.DisableKeyword("_ALPHAPREMULTIPLY_ON");
-        mat.renderQueue = 3000;
-
-        return mat;
-    }
-
-    private void UpdateFaceVisuals()
-    {
-
-        UpdateFaceIndicatorPositions();
-        
-    }
-
-    private void UpdateFaceIndicatorPositions()
-    {
-        if (!showFaceIndicators || faceIndicators == null) return;
-
-        float offset = (0.55f);
-
-        for (int i = 0; i < 4; i++)
-        {
-            if (faceIndicators[i] == null) continue;
-
-            CubeFace originalFace = (CubeFace)i;
-
-            // Find where this original face is currently positioned
-            FacePosition currentPosition = GetFacePosition(originalFace);
-
-            // Position the indicator based on the current FacePosition
-            Vector3 newPosition = Vector3.one;
-            Quaternion newRotation = Quaternion.identity;
-
-            switch (currentPosition)
-            {
-                case FacePosition.Down:
-                    newPosition = new Vector3(0, -offset, 0);
-                    newRotation = Quaternion.Euler(90, 180, 0);
-                    break;
-                case FacePosition.Up:
-                    newPosition = new Vector3(0, offset, 0);
-                    newRotation = Quaternion.Euler(-270, 180, 0);
-                    break;
-                case FacePosition.Forward:
-                    newPosition = new Vector3(0, 0, offset);
-                    newRotation = Quaternion.Euler(0, 180, 0);
-                    break;
-                case FacePosition.Back:
-                    newPosition = new Vector3(0, 0, -offset);
-                    newRotation = Quaternion.Euler(0, 0, 0);
-                    break;
-            }
-
-            faceIndicators[i].transform.localPosition = newPosition;
-            faceIndicators[i].transform.localRotation = newRotation;
-            faceIndicators[i].GetComponent<Renderer>().material.color = faceColors[i];
-        }
-    }
-
-    private FacePosition GetFacePosition(CubeFace originalFace)
-    {
-        // Find where this original face is currently positioned
-        for (int i = 0; i < 4; i++)
-        {
-            if (currentFaceMapping[i] == originalFace)
-            {
-                switch (i)
-                {
-                    case 0: return FacePosition.Down;
-                    case 1: return FacePosition.Up;
-                    case 2: return FacePosition.Forward;
-                    case 3: return FacePosition.Back;
-                    default: return FacePosition.Down;
-                }
-            }
-        }
-        return FacePosition.Down; // Fallback
-    }
-    private void EnsureFaceIndicatorOrientation(GameObject indicator, CubeFace originalFace)
-    {
-        if (indicator == null) return;
-
-        // Reset the indicator's rotation to always face outward from its assigned face
-        // This ensures that no matter how the cube has rotated, the painted surface is visible
-        switch (originalFace)
-        {
-            case CubeFace.Bottom:
-                // For bottom face, the quad should face upward (away from cube bottom)
-                indicator.transform.localRotation = Quaternion.Euler(90, 180, 0);
-                break;
-
-            case CubeFace.Top:
-                // For top face, the quad should face downward (away from cube top)
-                indicator.transform.localRotation = Quaternion.Euler(-90, 180, 0);
-                break;
-
-            case CubeFace.Front:
-                // For front face, the quad should face forward (away from cube front)
-                indicator.transform.localRotation = Quaternion.Euler(0, 180, 0);
-                break;
-
-            case CubeFace.Back:
-                // For back face, the quad should face backward (away from cube back)
-                indicator.transform.localRotation = Quaternion.Euler(0, 0, 0);
-                break;
-        }
-    }
-
-    private System.Collections.IEnumerator PulseFaceIndicator(GameObject indicator, int faceIndex)
-    {
-        if (indicator == null || isDestroyed) yield break;
-
-        // Only pulse if this is still the active face
-        CubeFace activeFace = GetCurrentDownFace();
-        if ((int)activeFace != faceIndex) yield break;
-
-        Vector3 originalScale = indicator.transform.localScale;
-        Vector3 pulseScale = originalScale * 1.2f;
-
-        float duration = 1f;
-        float elapsed = 0f;
-
-        while (elapsed < duration && indicator != null && indicator.activeInHierarchy && !isDestroyed)
-        {
-            // Check if still the active face
-            if ((int)GetCurrentDownFace() != faceIndex) break;
-
-            elapsed += Time.deltaTime;
-            float t = Mathf.PingPong(elapsed * 2f, 1f); // Pulse twice per duration
-            if (indicator != null)
-            {
-                indicator.transform.localScale = Vector3.Lerp(originalScale, pulseScale, t * 0.3f);
-            }
-            yield return null;
-        }
-
-        if (indicator != null && !isDestroyed)
-        {
-            indicator.transform.localScale = originalScale;
-        }
-    }
-
-    // Debug and testing methods
-    public void TestPaintFace(CubeFace face, FaceStatus status)
-    {
-        Color color = status == FaceStatus.InfinityFace ? Color.black : Color.blue;
-        PaintFace(face, status, color, 5);
-        this.Log($"Test painted {face} with {status} status", EnableDebugLogs);
-    }
-
-    public void DebugShowAllFaces()
-    {
-        if (!showFaceIndicators) return;
-
-        Color[] testColors = { Color.red, Color.green, Color.blue, Color.yellow };
-        FaceStatus[] testStatuses = { FaceStatus.InfinityFace, FaceStatus.MatrixFace, FaceStatus.RecursionFace, FaceStatus.RecursionFace };
-
-        for (int i = 0; i < 4; i++)
-        {
-            PaintFace((CubeFace)i, testStatuses[i], testColors[i], -1);
-        }
-
-        this.Log($"Debug: All faces painted with different colors. Current down face: {GetCurrentDownFace()}", EnableDebugLogs);
-    }
-
-    public void DebugPrintFaceMapping()
-    {
-        this.Log($"Face Mapping for cube at ({position.x}, {position.y}):", EnableDebugLogs);
-        this.Log($"  Bottom position: {currentFaceMapping[0]}", EnableDebugLogs);
-        this.Log($"  Top position: {currentFaceMapping[1]}", EnableDebugLogs);
-        this.Log($"  Front position: {currentFaceMapping[2]}", EnableDebugLogs);
-        this.Log($"  Back position: {currentFaceMapping[3]}", EnableDebugLogs);
-        this.Log($"  Current down face: {GetCurrentDownFace()}", EnableDebugLogs);
-        this.Log($"  Active face status: {GetActiveFaceStatus()}", EnableDebugLogs);
-    }
-
-    private void InitializeFaceMapping()
-    {
-        // Initially, faces are in their original positions
-        currentFaceMapping[0] = CubeFace.Bottom;  // Bottom position has original bottom face
-        currentFaceMapping[1] = CubeFace.Top;     // Top position has original top face  
-        currentFaceMapping[2] = CubeFace.Front;   // Front position has original front face
-        currentFaceMapping[3] = CubeFace.Back;    // Back position has original back face
-
-        this.Log($"Face mapping initialized for cube at ({position.x}, {position.y})", EnableDebugLogs);
-    }
-
-    private void RotateFaceMapping()
-    {
-        // Forward roll rotation: Bottom->Front, Front->Top, Top->Back, Back->Bottom
-        CubeFace temp = currentFaceMapping[0]; // Store current bottom
-        currentFaceMapping[0] = currentFaceMapping[3]; // Back moves to Bottom
-        currentFaceMapping[3] = currentFaceMapping[1]; // Top moves to Back  
-        currentFaceMapping[1] = currentFaceMapping[2]; // Front moves to Top
-        currentFaceMapping[2] = temp;                  // Bottom moves to Front
-
-        this.Log($"Face mapping rotated: Bottom={currentFaceMapping[0]}, Top={currentFaceMapping[1]}, Front={currentFaceMapping[2]}, Back={currentFaceMapping[3]}", EnableDebugLogs);
-
-        // Update visuals immediately after rotation to ensure proper orientation
-        UpdateFaceVisuals();
-        
-        // Enhanced face rotation tracking for corruption mechanics
-        UpdateFaceRotationTracking();
-    }
-
-    // Public methods for external testing
     public void SetFaceStatus(CubeFace face, FaceStatus status, int duration = -1)
-    {
-        Color color = status == FaceStatus.InfinityFace ? Color.red :
-                     status == FaceStatus.MatrixFace ? Color.blue : Color.white;
-        PaintFace(face, status, color, duration);
-    }
+        => facePainter?.SetFaceStatus(face, status, duration);
 
     public FaceStatus GetFaceStatus(CubeFace face)
-    {
-        return faceStatuses[(int)face];
-    }
+        => facePainter?.GetFaceStatus(face) ?? FaceStatus.None;
 
     public int GetFaceDuration(CubeFace face)
-    {
-        return faceDurations[(int)face];
-    }
+        => facePainter?.GetFaceDuration(face) ?? 0;
 
     public void ClearAllFaces()
-    {
-        for (int i = 0; i < 4; i++)
-        {
-            faceStatuses[i] = FaceStatus.None;
-            faceColors[i] = Color.white;
-            faceDurations[i] = 0;
-            faceCharges[i] = 0;
-        }
-        UpdateFaceVisuals();
-        this.Log($"Cleared all face statuses on cube at ({position.x}, {position.y})", EnableDebugLogs);
-    }
+        => facePainter?.ClearAllFaces();
+
+    public void TestPaintFace(CubeFace face, FaceStatus status)
+        => facePainter?.TestPaintFace(face, status);
+
+    public void DebugShowAllFaces()
+        => facePainter?.DebugShowAllFaces();
+
+    public void DebugPrintFaceMapping()
+        => facePainter?.DebugPrintFaceMapping();
+
+    public CubeFace GetTopFace()
+        => facePainter?.GetTopFace() ?? CubeFace.Top;
+
+    private bool HasCorruptedDownFace()
+        => facePainter?.HasCorruptedDownFace() ?? false;
 
     #endregion
 
@@ -1598,15 +1023,6 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
             CreateMarkerHitEffect();
             this.Log($"Infinity cube at ({position.x}, {position.y}) hit by marker - top face painted for corruption", EnableDebugLogs);
         }
-    }
-
-    /// <summary>
-    /// Gets the current top face of the cube based on face mapping
-    /// </summary>
-    /// <returns>The face currently positioned at the top</returns>
-    public CubeFace GetTopFace()
-    {
-        return currentFaceMapping[1]; // Index 1 is the top position
     }
 
     /// <summary>
@@ -1660,16 +1076,6 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
                 }
             }
         }
-    }
-
-    /// <summary>
-    /// Checks if the current down face has corrupted status
-    /// </summary>
-    /// <returns>True if the down face is corrupted</returns>
-    private bool HasCorruptedDownFace()
-    {
-        CubeFace downFace = GetCurrentDownFace();
-        return faceStatuses[(int)downFace] == FaceStatus.InfinityFace;
     }
 
     /// <summary>
@@ -1803,11 +1209,10 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
         }
         
         // Reset face mapping to original state
-        InitializeFaceMapping();
+        facePainter?.InitializeFaceMapping();
         
         // Update visuals
         UpdateDamageVisual();
-        UpdateFaceVisuals();
         
         if (EnableDebugLogs)
             this.Log($"Cube at ({position.x}, {position.y}) reset to defaults", EnableDebugLogs);
