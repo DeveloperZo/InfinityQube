@@ -113,24 +113,9 @@ public static class Enumerations
         Infinity = 4
     }
 
-    /// <summary>
-    /// Defines the grid path types for advanced grid movement
-    /// Cubes maintain formation but movement direction changes at path corners
-    /// </summary>
-    public enum GridPathType
-    {
-        /// <summary>Standard rectangular grid with single direction (down)</summary>
-        Standard,
-        /// <summary>L-shape: down → right turn</summary>
-        L_Shape,
-        /// <summary>C-shape: down → right → up (U-turn)</summary>
-        C_Shape,
-        /// <summary>S-shape: down → right → down → right (snake pattern)</summary>
-        S_Shape,
-        /// <summary>Custom path defined by waypoints</summary>
-        Custom
-    }
-
+    // NOTE: GridPathType enum removed - segment controllers now handle grid layouts
+    // See GridSegmentController for multi-segment grid configuration
+    
     /// <summary>
     /// Movement direction for cubes on the grid path
     /// </summary>

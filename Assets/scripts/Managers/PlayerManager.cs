@@ -235,7 +235,27 @@ public class PlayerManager : MonoBehaviour, IManagerDebugInterface
 
     private void SetInitialPosition()
     {
-        // Store start position for respawn
+        // SEGMENT CONTROLLERS: Use first segment for initial position
+        if (grid != null && grid.HasSegmentControllers)
+        {
+            var firstSegment = grid.GetSegmentController(0);
+            if (firstSegment != null)
+            {
+                int startX = firstSegment.width / 2;
+                int startY = 0;
+                playerStartPosition = new Vector2Int(startX, startY);
+                currentSegment = firstSegment;
+                
+                Vector3 worldPos = firstSegment.LocalToWorldPosition(startX, startY, 0f);
+                transform.position = worldPos;
+                currentTilePosition = playerStartPosition;
+                
+                DebugLog($"🎮 Initial position set on segment 0 at local ({startX}, {startY})");
+                return;
+            }
+        }
+        
+        // Legacy: Store start position for respawn
         playerStartPosition = new Vector2Int(grid.Width / 2, 0);
         SetPosition(playerStartPosition.x, playerStartPosition.y);
     }
@@ -253,15 +273,44 @@ public class PlayerManager : MonoBehaviour, IManagerDebugInterface
 
     private void ProcessMovementInput()
     {
-        Vector3 inputDirection = Vector3.zero;
-        if (Input.GetKey(KeyCode.LeftArrow) || Input.GetKey(KeyCode.A)) inputDirection.x = -1;
-        if (Input.GetKey(KeyCode.RightArrow) || Input.GetKey(KeyCode.D)) inputDirection.x = 1;
-        if (Input.GetKey(KeyCode.UpArrow) || Input.GetKey(KeyCode.W)) inputDirection.z = 1;
-        if (Input.GetKey(KeyCode.DownArrow) || Input.GetKey(KeyCode.S)) inputDirection.z = -1;
+        // Get raw input
+        float horizontal = 0f;
+        float vertical = 0f;
+        if (Input.GetKey(KeyCode.LeftArrow) || Input.GetKey(KeyCode.A)) horizontal = -1;
+        if (Input.GetKey(KeyCode.RightArrow) || Input.GetKey(KeyCode.D)) horizontal = 1;
+        if (Input.GetKey(KeyCode.UpArrow) || Input.GetKey(KeyCode.W)) vertical = 1;
+        if (Input.GetKey(KeyCode.DownArrow) || Input.GetKey(KeyCode.S)) vertical = -1;
 
-        if (inputDirection.magnitude > 1f)
+        Vector3 inputDirection = Vector3.zero;
+        
+        if (horizontal != 0f || vertical != 0f)
         {
-            inputDirection.Normalize();
+            // Get camera-relative directions (flattened to XZ plane)
+            Camera mainCam = Camera.main;
+            if (mainCam != null)
+            {
+                // Get camera forward and right vectors, flattened to XZ plane
+                Vector3 camForward = mainCam.transform.forward;
+                camForward.y = 0f;
+                camForward.Normalize();
+                
+                Vector3 camRight = mainCam.transform.right;
+                camRight.y = 0f;
+                camRight.Normalize();
+                
+                // Transform input to be camera-relative
+                inputDirection = (camRight * horizontal + camForward * vertical);
+                
+                if (inputDirection.magnitude > 1f)
+                {
+                    inputDirection.Normalize();
+                }
+            }
+            else
+            {
+                // Fallback to world-space if no camera
+                inputDirection = new Vector3(horizontal, 0f, vertical).normalized;
+            }
         }
 
         Vector3 targetVelocity = inputDirection * acceleration;
@@ -317,20 +366,19 @@ public class PlayerManager : MonoBehaviour, IManagerDebugInterface
         // SEGMENT CONTROLLERS: For segment controller grids, check all segments
         if (grid != null && grid.HasSegmentControllers)
         {
+            bool posValid = IsWorldPositionValidOnAnySegment(desiredPosition);
+            bool posBlocked = posValid && IsWorldPositionBlockedByCube(desiredPosition);
+            
             // Check if position is valid on any segment
-            if (IsWorldPositionValidOnAnySegment(desiredPosition))
+            if (posValid && !posBlocked)
             {
-                // Check for cube collisions at future position
-                if (!IsWorldPositionBlockedByCube(desiredPosition))
-                {
-                    return desiredPosition;
-                }
-                else
-                {
-                    // Find closest safe position
-                    Vector2Int blockedPos = grid.WorldToGridPosition(desiredPosition);
-                    return FindClosestSafePosition(desiredPosition, blockedPos);
-                }
+                return desiredPosition;
+            }
+            else if (posValid && posBlocked)
+            {
+                // Find closest safe position
+                Vector2Int blockedPos = grid.WorldToGridPosition(desiredPosition);
+                return FindClosestSafePosition(desiredPosition, blockedPos);
             }
             else
             {
@@ -448,7 +496,7 @@ public class PlayerManager : MonoBehaviour, IManagerDebugInterface
     }
     
     /// <summary>
-    /// ADVANCED GRID: Checks if a world position is blocked by a cube on any segment.
+    /// ADVANCED GRID: Checks if a world position is blocked by a cube on the same segment.
     /// </summary>
     private bool IsWorldPositionBlockedByCube(Vector3 worldPos)
     {
@@ -462,6 +510,9 @@ public class PlayerManager : MonoBehaviour, IManagerDebugInterface
         Tile tile = grid.GetTileAtWorldPositionAnySegment(worldPos);
         if (tile == null || !tile.IsPlayable) return true;
         
+        // Get which segment this position is on (for segment-aware cube checking)
+        var targetSegment = grid.GetSegmentControllerAtWorldPosition(worldPos);
+        
         // For cube collision, need to check cube world positions
         foreach (var cube in waveManager.activeCubes)
         {
@@ -470,6 +521,10 @@ public class PlayerManager : MonoBehaviour, IManagerDebugInterface
             
             // Skip phaseable Infinity cubes
             if (cube.type == Enumerations.CubeType.Infinity && cube.IsPhaseable())
+                continue;
+            
+            // SEGMENT CONTROLLER: Only check cubes on the same segment
+            if (targetSegment != null && cube.CurrentSegment != null && cube.CurrentSegment != targetSegment)
                 continue;
             
             // Check cube world position against our position
@@ -610,7 +665,18 @@ public class PlayerManager : MonoBehaviour, IManagerDebugInterface
             {
                 Vector2Int localPos = segment.WorldToLocalPosition(transform.position);
                 currentTilePosition = localPos;
-                DebugLog($"🚶 Player on Segment {segment.segmentIndex} at local ({localPos.x}, {localPos.y})");
+                
+                // Update currentSegment for segment-aware collision detection
+                if (currentSegment != segment)
+                {
+                    currentSegment = segment;
+                    playerStartPosition = localPos; // Update respawn point to this segment
+                    DebugLog($"🚶 Player ENTERED Segment {segment.segmentIndex} at local ({localPos.x}, {localPos.y})");
+                }
+                else
+                {
+                    DebugLog($"🚶 Player on Segment {segment.segmentIndex} at local ({localPos.x}, {localPos.y})");
+                }
             }
             
             // Set hover color based on current marker mode
@@ -780,13 +846,89 @@ public class PlayerManager : MonoBehaviour, IManagerDebugInterface
         respawnInvulnerabilityTimer = respawnInvulnerabilityTime;
         currentVelocity = Vector3.zero;
 
-        // Find a safe respawn position (no cubes, preferably at start position or bottom row)
-        Vector2Int respawnPos = FindSafeRespawnPosition();
-        SetPosition(respawnPos.x, respawnPos.y);
+        // SEGMENT CONTROLLER: Check if we should respawn on current segment
+        if (waveManager != null && waveManager.HasSegmentControllers && waveManager.CurrentSegmentController != null)
+        {
+            RespawnOnSegment(waveManager.CurrentSegmentController);
+        }
+        else
+        {
+            // Legacy respawn: Find a safe position on the global grid
+            Vector2Int respawnPos = FindSafeRespawnPosition();
+            SetPosition(respawnPos.x, respawnPos.y);
+            DebugLog($"🔄 Player respawned at ({respawnPos.x}, {respawnPos.y}) with {respawnInvulnerabilityTime}s invulnerability");
+        }
         
         enabled = true;
-        DebugLog($"🔄 Player respawned at ({respawnPos.x}, {respawnPos.y}) with {respawnInvulnerabilityTime}s invulnerability");
         OnPlayerRespawned?.Invoke();
+    }
+    
+    /// <summary>
+    /// SEGMENT CONTROLLER: Respawns player on the specified segment at a safe position.
+    /// </summary>
+    private void RespawnOnSegment(GridSegmentController segment)
+    {
+        if (segment == null)
+        {
+            DebugLog("⚠️ RespawnOnSegment: No segment provided, using legacy respawn");
+            Vector2Int respawnPos = FindSafeRespawnPosition();
+            SetPosition(respawnPos.x, respawnPos.y);
+            return;
+        }
+        
+        // Find a safe position on this segment (bottom row, center preferred)
+        int centerX = segment.width / 2;
+        int bottomY = 0;
+        
+        // Try center first, then sweep outward
+        Vector2Int safePos = new Vector2Int(centerX, bottomY);
+        
+        // Check if center is safe
+        if (!IsPositionSafeOnSegment(segment, safePos))
+        {
+            // Try other positions on bottom row
+            for (int offset = 1; offset <= segment.width / 2; offset++)
+            {
+                // Try left of center
+                if (centerX - offset >= 0 && IsPositionSafeOnSegment(segment, new Vector2Int(centerX - offset, bottomY)))
+                {
+                    safePos = new Vector2Int(centerX - offset, bottomY);
+                    break;
+                }
+                // Try right of center
+                if (centerX + offset < segment.width && IsPositionSafeOnSegment(segment, new Vector2Int(centerX + offset, bottomY)))
+                {
+                    safePos = new Vector2Int(centerX + offset, bottomY);
+                    break;
+                }
+            }
+        }
+        
+        // Use the consolidated segment positioning method
+        SetPositionOnSegment(segment, safePos.x, safePos.y);
+        
+        DebugLog($"🔄 Player respawned on segment {segment.segmentIndex} at local ({safePos.x}, {safePos.y})");
+    }
+    
+    /// <summary>
+    /// SEGMENT CONTROLLER: Checks if a position on a segment is safe (no cubes).
+    /// </summary>
+    private bool IsPositionSafeOnSegment(GridSegmentController segment, Vector2Int localPos)
+    {
+        if (segment == null || waveManager?.activeCubes == null) return true;
+        
+        // Check if any cube is at this local position on this segment
+        foreach (var cube in waveManager.activeCubes)
+        {
+            if (cube == null || cube.isDestroyed) continue;
+            if (cube.CurrentSegment == segment && 
+                cube.position.x == localPos.x && cube.position.y == localPos.y)
+            {
+                return false;
+            }
+        }
+        
+        return true;
     }
 
     /// <summary>
@@ -840,26 +982,31 @@ public class PlayerManager : MonoBehaviour, IManagerDebugInterface
     }
 
     /// <summary>
-    /// Checks if a position is safe for respawn (no cubes present).
+    /// Checks if a position is safe for respawn (no cubes present on same segment).
     /// </summary>
     private bool IsPositionSafe(Vector2Int pos)
     {
         if (grid == null || !IsValidTilePosition(pos)) return false;
 
-        // Check if any cube is at this position
+        // Check if any cube is at this position on the same segment
         if (waveManager?.activeCubes != null)
         {
             foreach (var cube in waveManager.activeCubes)
             {
                 if (cube == null || cube.isDestroyed) continue;
+                
+                // SEGMENT CONTROLLER: Only check cubes on the same segment as player
+                if (currentSegment != null && cube.CurrentSegment != null && cube.CurrentSegment != currentSegment)
+                    continue;
+                
                 if (cube.position.x == pos.x && cube.position.y == pos.y)
                 {
-                    return false; // Cube present, not safe
+                    return false; // Cube present on same segment, not safe
                 }
             }
         }
 
-        return true; // No cubes found, position is safe
+        return true; // No cubes found on same segment, position is safe
     }
 
     private void CheckForCollisions() 
@@ -875,6 +1022,13 @@ public class PlayerManager : MonoBehaviour, IManagerDebugInterface
 
             // Skip player cubes - player can pass through them unharmed
             if (cube.isPlayerCube) continue;
+            
+            // SEGMENT CONTROLLER: Only check collision if on same segment
+            if (currentSegment != null && cube.CurrentSegment != null)
+            {
+                // Skip cubes on different segments
+                if (cube.CurrentSegment != currentSegment) continue;
+            }
 
             if (cube.position.x == currentTilePosition.x && cube.position.y == currentTilePosition.y)
             {
@@ -1004,6 +1158,86 @@ public class PlayerManager : MonoBehaviour, IManagerDebugInterface
             }
         }
     }
+    
+    /// <summary>
+    /// SEGMENT CONTROLLER: Sets player position using segment's local coordinate system.
+    /// Used for respawning on a specific segment.
+    /// </summary>
+    public void SetPositionOnSegment(GridSegmentController segment, int localX, int localY)
+    {
+        if (segment == null)
+        {
+            DebugLog("⚠️ SetPositionOnSegment: No segment provided, using legacy SetPosition");
+            SetPosition(localX, localY);
+            return;
+        }
+        
+        // Clamp to segment bounds
+        localX = Mathf.Clamp(localX, 0, segment.width - 1);
+        localY = Mathf.Clamp(localY, 0, segment.height - 1);
+        
+        if (currentHoveredTile != null)
+        {
+            currentHoveredTile.SetPlayerHover(false);
+        }
+        
+        // Calculate world position using segment's coordinate system
+        Vector3 worldPos = segment.LocalToWorldPosition(localX, localY, 0f);
+        
+        // Handle CharacterController properly
+        CharacterController controller = GetComponent<CharacterController>();
+        if (controller != null)
+        {
+            controller.enabled = false;
+            transform.position = worldPos;
+            controller.enabled = true;
+        }
+        else
+        {
+            transform.position = worldPos;
+        }
+        
+        // Reset velocity to prevent sliding
+        currentVelocity = Vector3.zero;
+        
+        // Store the local position as current tile position
+        currentTilePosition = new Vector2Int(localX, localY);
+        lastLoggedTileX = localX;
+        lastLoggedTileZ = localY;
+        
+        // Update hovered tile using segment's tile
+        currentHoveredTile = segment.GetTile(localX, localY);
+        if (currentHoveredTile != null)
+        {
+            currentHoveredTile.SetPlayerHover(true);
+        }
+        
+        // Update start position for respawns on this segment
+        playerStartPosition = new Vector2Int(localX, localY);
+        
+        // Store reference to current segment for segment-aware collision detection
+        currentSegment = segment;
+        
+        DebugLog($"🎮 SetPositionOnSegment: segment {segment.segmentIndex} local ({localX}, {localY}) world {worldPos}");
+    }
+    
+    /// <summary>
+    /// Grants brief invulnerability to the player.
+    /// Called by WaveManager when wave respawns to prevent instant death from spawning cubes.
+    /// </summary>
+    public void GrantBriefInvulnerability(float duration = 0.5f)
+    {
+        respawnInvulnerabilityTimer = duration;
+        DebugLog($"🛡️ Player granted {duration}s invulnerability");
+    }
+    
+    /// <summary>
+    /// Gets the current segment the player is on (for segment-aware systems).
+    /// </summary>
+    public GridSegmentController CurrentSegment => currentSegment;
+    
+    // SEGMENT CONTROLLER: Reference to current segment for segment-aware operations
+    private GridSegmentController currentSegment;
 
     public void SetMaxMarkers(int max)
     {

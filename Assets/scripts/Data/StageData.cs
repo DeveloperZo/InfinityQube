@@ -28,31 +28,14 @@ public class StageData : ScriptableObject
     [Tooltip("Number of move steps before player respawns after death (default: 1 move)")]
     [Range(1, 10)] public int respawnDelayMoves = 1;
     
-    #endregion
-    
-    #region Advanced Grid Path
-    
-    [Header("Advanced Grid Path")]
-    [Tooltip("Path type for cube movement. Standard = normal down movement, others introduce 90-degree turns.")]
-    public GridPathType gridPathType = GridPathType.Standard;
-    
-    [Tooltip("Custom path configuration (used when gridPathType is Custom or for overriding defaults)")]
-    public GridPath customGridPath;
+    [Header("Segment Layout")]
+    [Tooltip("Prefab containing GridSegmentController objects for multi-segment stages. If null, uses single-segment grid.")]
+    public GameObject segmentLayoutPrefab;
     
     /// <summary>
-    /// Gets the configured grid path for this stage.
-    /// Returns a new path based on type if no custom path is configured.
+    /// Returns true if this stage has a segment layout prefab configured.
     /// </summary>
-    public GridPath GetGridPath()
-    {
-        if (gridPathType == GridPathType.Custom && customGridPath != null)
-        {
-            return customGridPath;
-        }
-        
-        // Create path based on type
-        return GridPath.CreatePath(gridPathType, gridWidth, gridHeight);
-    }
+    public bool HasSegmentLayoutPrefab => segmentLayoutPrefab != null;
     
     #endregion
 
@@ -161,20 +144,7 @@ public class StageData : ScriptableObject
             }
         }
         
-        // ADVANCED GRID: Validate path configuration
-        if (gridPathType == GridPathType.Custom && customGridPath == null)
-        {
-            issues.Add("Custom grid path type selected but no custom path configured");
-        }
-        
-        if (customGridPath != null)
-        {
-            var pathIssues = customGridPath.Validate();
-            foreach (var issue in pathIssues)
-            {
-                issues.Add($"Grid Path: {issue}");
-            }
-        }
+        // NOTE: GridPath validation removed - use GridSegmentController for multi-segment layouts
         
         return issues;
     }

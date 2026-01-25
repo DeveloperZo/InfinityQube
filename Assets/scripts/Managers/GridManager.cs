@@ -59,9 +59,7 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
     private Vector3 maxWorldBounds;
     private Vector3 calculatedGridOffset;
     
-    // ADVANCED GRID: Current path configuration
-    private GridPath currentPath;
-    private GridPathType currentPathType = GridPathType.Standard;
+    // LEGACY: Path visuals (deprecated - use segment controllers instead)
     private List<GameObject> pathVisuals = new List<GameObject>();
     
     // ADVANCED GRID: Segment-based grid
@@ -77,6 +75,9 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
     private Material lineDividerMaterial;
     private PlayerManager playerManager;
     private bool playerWasBelowLine = true; // Track previous state to avoid constant updates
+    
+    // Segment layout prefab instance tracking
+    private GameObject instantiatedSegmentLayout = null;
     #endregion
 
     #region Properties
@@ -93,10 +94,8 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
     public bool LineDividerEnabled => enableLineDivider;
     public int LineDividerRow => lineDividerRow;
     
-    // ADVANCED GRID: Path properties
-    public GridPath CurrentPath => currentPath;
-    public GridPathType CurrentPathType => currentPathType;
-    public bool HasAdvancedPath => currentPathType != GridPathType.Standard;
+    // Multi-segment grid detection
+    public bool HasAdvancedPath => HasSegmentControllers; // Uses segment controllers
     
     // ADVANCED GRID: Segment properties
     public List<GridSegment> Segments => gridSegments;
@@ -111,6 +110,34 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
     public bool HasSegmentControllers => useSegmentControllers && segmentControllers.Count > 0;
     public GridSegmentController GetSegmentController(int index) => 
         index >= 0 && index < segmentControllers.Count ? segmentControllers[index] : null;
+    
+    /// <summary>
+    /// Clears all registered segment controllers.
+    /// Used when switching to a wave with custom segment layout.
+    /// </summary>
+    public void ClearSegmentControllers()
+    {
+        segmentControllers.Clear();
+        DebugLog("Cleared all segment controllers");
+    }
+    
+    /// <summary>
+    /// Registers a segment controller for use.
+    /// Used when applying wave segment layout prefabs.
+    /// </summary>
+    public void RegisterSegmentController(GridSegmentController segment)
+    {
+        if (segment == null) return;
+        
+        if (!segmentControllers.Contains(segment))
+        {
+            segmentControllers.Add(segment);
+            // Keep sorted by segment index
+            segmentControllers.Sort((a, b) => a.segmentIndex.CompareTo(b.segmentIndex));
+            DebugLog($"Registered segment controller {segment.segmentIndex}");
+        }
+    }
+    
     /// <summary>
     /// Task 6: Checks if a position is below the line divider (or always true if disabled)
     /// </summary>
@@ -167,13 +194,80 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
     {
         if (stageData == null) return;
         
+        // Configure segment layout from stage's prefab
+        ConfigureSegmentLayoutFromStage(stageData);
+        
         // Configure line divider from stage data
         ConfigureLineDivider(stageData);
         
-        // ADVANCED GRID: Configure path from stage data
-        ConfigureGridPath(stageData);
+        DebugLog($"Grid configured for stage {stageIndex}: LineDivider at row {lineDividerRow}, Segments: {SegmentControllerCount}");
+    }
+    
+    /// <summary>
+    /// Instantiates and configures segment layout from stage's prefab.
+    /// </summary>
+    private void ConfigureSegmentLayoutFromStage(StageData stageData)
+    {
+        // Clean up any previously instantiated segment layout
+        CleanupInstantiatedSegmentLayout();
         
-        DebugLog($"Grid configured for stage {stageIndex}: LineDivider at row {lineDividerRow}, Path type: {currentPathType}");
+        if (!stageData.HasSegmentLayoutPrefab)
+        {
+            DebugLog("No segment layout prefab for this stage - using default single-segment grid");
+            return;
+        }
+        
+        DebugLog($"Instantiating segment layout prefab for stage: {stageData.stageName}");
+        
+        // Instantiate the segment layout prefab
+        instantiatedSegmentLayout = Instantiate(stageData.segmentLayoutPrefab);
+        instantiatedSegmentLayout.name = $"StageSegmentLayout_{stageData.stageNumber}";
+        
+        // Find all GridSegmentController components in the instantiated prefab
+        var newSegments = instantiatedSegmentLayout.GetComponentsInChildren<GridSegmentController>();
+        
+        if (newSegments.Length == 0)
+        {
+            DebugLog("WARNING: Segment layout prefab has no GridSegmentController components!");
+            Destroy(instantiatedSegmentLayout);
+            instantiatedSegmentLayout = null;
+            return;
+        }
+        
+        // Clear existing segment controllers and register the new ones
+        ClearSegmentControllers();
+        foreach (var segment in newSegments)
+        {
+            RegisterSegmentController(segment);
+        }
+        
+        // Enable segment controller mode
+        useSegmentControllers = true;
+        
+        // Generate tiles for each segment if not already initialized
+        foreach (var segment in newSegments)
+        {
+            if (!segment.isInitialized)
+            {
+                GenerateTilesForSegment(segment);
+                segment.MarkInitialized();
+            }
+        }
+        
+        DebugLog($"Registered {newSegments.Length} segments from stage layout prefab");
+    }
+    
+    /// <summary>
+    /// Cleans up any instantiated segment layout from a previous stage.
+    /// </summary>
+    private void CleanupInstantiatedSegmentLayout()
+    {
+        if (instantiatedSegmentLayout != null)
+        {
+            DebugLog("Cleaning up instantiated segment layout");
+            Destroy(instantiatedSegmentLayout);
+            instantiatedSegmentLayout = null;
+        }
     }
     
     /// <summary>
@@ -430,76 +524,19 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
     }
     
     /// <summary>
-    /// ADVANCED GRID: Draws the path and turn points in the Scene view.
+    /// DEPRECATED: Path gizmos removed - segment controllers handle their own visualization.
     /// </summary>
     private void DrawPathGizmos()
     {
-        if (currentPath == null || currentPath.IsStandardPath()) return;
-        
-        // Draw turn points
-        Gizmos.color = Color.yellow;
-        if (currentPath.turnPoints != null)
-        {
-            foreach (var turn in currentPath.turnPoints)
-            {
-                Vector3 worldPos = GridToWorldPosition(turn.position.x, turn.position.y, 0.5f);
-                
-                // Draw a sphere at turn point
-                Gizmos.DrawWireSphere(worldPos, tileSize * 0.5f);
-                
-                // Draw direction arrows
-                Vector3 fromDir = GetDirectionVector(turn.fromDirection) * tileSize;
-                Vector3 toDir = GetDirectionVector(turn.toDirection) * tileSize;
-                
-                Gizmos.color = Color.red;
-                Gizmos.DrawLine(worldPos - fromDir, worldPos);
-                
-                Gizmos.color = Color.green;
-                Gizmos.DrawLine(worldPos, worldPos + toDir);
-                
-                Gizmos.color = Color.yellow;
-            }
-        }
-        
-        // Draw path flow lines
-        DrawPathFlowLines();
+        // No-op - segment controllers handle visualization
     }
     
     /// <summary>
-    /// ADVANCED GRID: Draws lines showing the path flow direction.
+    /// DEPRECATED: Path flow lines removed - use segment controllers.
     /// </summary>
     private void DrawPathFlowLines()
     {
-        if (currentPath == null || currentPath.segments == null) return;
-        
-        Gizmos.color = new Color(0f, 1f, 1f, 0.5f); // Cyan with transparency
-        
-        foreach (var segment in currentPath.segments)
-        {
-            Vector3 startPos, endPos;
-            
-            if (segment.direction == MovementDirection.Down || segment.direction == MovementDirection.Up)
-            {
-                // Vertical segment - draw for center column
-                int col = segment.column >= 0 ? segment.column : width / 2;
-                startPos = GridToWorldPosition(col, segment.startRow, 0.3f);
-                endPos = GridToWorldPosition(col, segment.endRow, 0.3f);
-            }
-            else
-            {
-                // Horizontal segment
-                startPos = GridToWorldPosition(segment.startColumn, segment.row, 0.3f);
-                endPos = GridToWorldPosition(segment.endColumn, segment.row, 0.3f);
-            }
-            
-            Gizmos.DrawLine(startPos, endPos);
-            
-            // Draw arrow head
-            Vector3 dir = (endPos - startPos).normalized;
-            Vector3 arrowPos = endPos - dir * tileSize * 0.5f;
-            Gizmos.DrawLine(arrowPos, arrowPos - dir * tileSize * 0.3f + Vector3.right * tileSize * 0.2f);
-            Gizmos.DrawLine(arrowPos, arrowPos - dir * tileSize * 0.3f - Vector3.right * tileSize * 0.2f);
-        }
+        // No-op - segment controllers handle visualization
     }
     
     /// <summary>
@@ -605,7 +642,7 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
             return;
         }
 
-        DebugLog($"Generating grid: {width}x{height} with tile size {tileSize}, PathType: {currentPathType}");
+        DebugLog($"Generating grid: {width}x{height} with tile size {tileSize}, Segments: {SegmentControllerCount}");
 
         // NEW: Check for segment controllers first (scene-based segments)
         if (useSegmentControllers)
@@ -622,15 +659,9 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
             }
         }
 
-        // LEGACY: Check if we need to generate a segment-based grid (old L-shape logic)
-        if (currentPathType == GridPathType.L_Shape)
-        {
-            GenerateLShapeGrid();
-        }
-        else
-        {
-            StartGridGeneration();
-        }
+        // NOTE: L_Shape grid generation removed - use segment controllers for multi-segment layouts
+        // Segment controllers are configured in scene and provide their own tile generation
+        StartGridGeneration();
     }
 
     private void StartGridGeneration()
@@ -729,6 +760,15 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
         FinalizeGridGeneration();
         
         Debug.Log($"[GridManager] Segment controller grid complete: {segmentControllers.Count} segments, {totalTiles} total tiles");
+    }
+    
+    /// <summary>
+    /// Public method to generate tiles for a segment.
+    /// Used when applying wave segment layout prefabs at runtime.
+    /// </summary>
+    public void GenerateTilesForSegment(GridSegmentController segment)
+    {
+        GenerateTilesForSegmentController(segment);
     }
     
     /// <summary>
@@ -1131,10 +1171,10 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
         // Recalculate metrics
         CalculateGridMetrics();
         
-        Debug.Log($"[GridManager] Metrics recalculated, calling GenerateLShapeGrid()");
+        Debug.Log($"[GridManager] Metrics recalculated, regenerating grid");
         
-        // Generate L-shape grid (this will be called since currentPathType is now L_Shape)
-        GenerateLShapeGrid();
+        // Regenerate grid (segment controllers handle multi-segment layouts)
+        RegenerateGrid();
     }
     #endregion
 
@@ -2604,315 +2644,74 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
     }
     #endregion
 
-    #region Advanced Grid Path
+    #region Advanced Grid Path (DEPRECATED)
+    
+    // NOTE: GridPathType-based configuration is deprecated
+    // Use GridSegmentController components in scene for multi-segment layouts
     
     /// <summary>
-    /// ADVANCED GRID: Configures the grid path from stage data.
-    /// Call this when a stage starts or when path changes.
+    /// DEPRECATED: Use GridSegmentController for multi-segment layouts.
+    /// This method is kept for backward compatibility but does nothing.
     /// </summary>
-    public void ConfigureGridPath(GridPathType pathType, GridPath customPath = null)
-    {
-        // SEGMENT CONTROLLERS: Skip legacy path configuration when using segment controllers
-        if (HasSegmentControllers)
-        {
-            Debug.Log($"[GridManager] ConfigureGridPath: Skipping - using segment controllers instead of GridPathType");
-            return;
-        }
-        
-        GridPathType previousPathType = currentPathType;
-        currentPathType = pathType;
-        
-        // Always log path configuration for debugging
-        Debug.Log($"[GridManager] ConfigureGridPath: {previousPathType} → {pathType}, isGridGenerated={isGridGenerated}");
-        
-        if (pathType == GridPathType.Custom && customPath != null)
-        {
-            currentPath = customPath;
-        }
-        else
-        {
-            currentPath = GridPath.CreatePath(pathType, width, height);
-        }
-        
-        DebugLog($"Grid path configured: {pathType}");
-        
-        // ADVANCED GRID: Regenerate grid if switching to/from L-shape
-        // This happens when stage starts after initial grid generation
-        if (isGridGenerated && pathType != previousPathType)
-        {
-            Debug.Log($"[GridManager] Path type changed and grid exists - will regenerate");
-            
-            if (pathType == GridPathType.L_Shape)
-            {
-                Debug.Log($"[GridManager] Calling RegenerateAsLShape()");
-                DebugLog($"Switching to L-Shape: Regenerating grid with segments");
-                RegenerateAsLShape();
-            }
-            else if (previousPathType == GridPathType.L_Shape && pathType == GridPathType.Standard)
-            {
-                Debug.Log($"[GridManager] Calling RegenerateGrid() - switching back to Standard");
-                DebugLog($"Switching from L-Shape to Standard: Regenerating grid");
-                RegenerateGrid();
-            }
-        }
-        else
-        {
-            Debug.Log($"[GridManager] NOT regenerating: isGridGenerated={isGridGenerated}, sameType={pathType == previousPathType}");
-        }
-        
-        // Create runtime visuals for non-standard paths
-        if (pathType != GridPathType.Standard)
-        {
-            CreatePathVisuals();
-        }
-        else
-        {
-            ClearPathVisuals();
-        }
-        
-        // Visualize turn points if debug gizmos enabled
-        if (showGridGizmos)
-        {
-            VisualizeTurnPoints();
-        }
-    }
-    
-    /// <summary>
-    /// ADVANCED GRID: Configures the grid path from StageData.
-    /// </summary>
+    [System.Obsolete("Use GridSegmentController for multi-segment layouts")]
     public void ConfigureGridPath(StageData stageData)
     {
-        if (stageData == null) return;
-        
-        ConfigureGridPath(stageData.gridPathType, stageData.customGridPath);
+        // No-op - segment controllers handle grid layouts now
+        Debug.Log("[GridManager] ConfigureGridPath is deprecated - use GridSegmentController");
     }
     
     /// <summary>
-    /// ADVANCED GRID: Gets turn point world positions for visualization.
+    /// DEPRECATED: Use segment controllers for multi-segment layouts.
     /// </summary>
+    [System.Obsolete("Use GridSegmentController for multi-segment layouts")]
     public List<Vector3> GetTurnPointWorldPositions()
     {
-        var positions = new List<Vector3>();
-        
-        if (currentPath == null || currentPath.turnPoints == null)
-            return positions;
-        
-        foreach (var turn in currentPath.turnPoints)
-        {
-            Vector3 worldPos = GridToWorldPosition(turn.position.x, turn.position.y, 0.5f);
-            positions.Add(worldPos);
-        }
-        
-        return positions;
+        return new List<Vector3>(); // No-op - segment controllers handle visualization
     }
     
     /// <summary>
-    /// ADVANCED GRID: Gets the movement direction at a grid position.
+    /// Gets the movement direction at a grid position.
+    /// For segment-based grids, returns the direction from the segment controller.
     /// </summary>
     public MovementDirection GetDirectionAtPosition(Vector2Int position, MovementDirection currentDirection)
     {
-        if (currentPath == null)
-            return MovementDirection.Down;
-        
-        return currentPath.GetDirectionAtPosition(position, currentDirection);
+        // For segment controllers, each segment has its own localDirection
+        // The cube's direction is set by its segment controller
+        return currentDirection; // Return current - direction changes happen at segment transitions
     }
     
     /// <summary>
-    /// ADVANCED GRID: Visualizes turn points (editor/debug only).
+    /// DEPRECATED: Visualizes turn points - no longer used with segment controllers.
     /// </summary>
     private void VisualizeTurnPoints()
     {
-        if (currentPath == null || currentPath.turnPoints == null)
-            return;
-        
-        foreach (var turn in currentPath.turnPoints)
-        {
-            DebugLog($"Turn point at ({turn.position.x}, {turn.position.y}): {turn.fromDirection} → {turn.toDirection}");
-        }
+        // No-op - segment controllers handle their own visualization
     }
     
     /// <summary>
-    /// ADVANCED GRID: Resets path to standard (no turns).
+    /// DEPRECATED: Resets path to standard. Use segment controllers instead.
     /// </summary>
+    [System.Obsolete("Use GridSegmentController for multi-segment layouts")]
     public void ResetGridPath()
     {
-        currentPathType = GridPathType.Standard;
-        currentPath = GridPath.CreatePath(GridPathType.Standard, width, height);
         ClearPathVisuals();
-        DebugLog("Grid path reset to Standard");
+        DebugLog("Grid path reset (deprecated - use segment controllers)");
     }
     
     /// <summary>
-    /// ADVANCED GRID: Creates runtime visual indicators for the path.
-    /// Call this after ConfigureGridPath to show path to players.
+    /// DEPRECATED: Path visuals are no longer used. Segment controllers handle visualization.
     /// </summary>
+    [System.Obsolete("Use GridSegmentController for multi-segment layouts")]
     public void CreatePathVisuals()
     {
         ClearPathVisuals();
-        
-        if (currentPath == null || currentPath.IsStandardPath()) return;
-        
-        // Create turn point indicators
-        if (currentPath.turnPoints != null)
-        {
-            foreach (var turn in currentPath.turnPoints)
-            {
-                CreateTurnPointVisual(turn);
-            }
-        }
-        
-        // Create path direction indicators on tiles
-        CreatePathDirectionIndicators();
-        
-        DebugLog($"Created path visuals for {currentPathType}");
+        // No-op - segment controllers handle their own visualization
     }
     
-    /// <summary>
-    /// ADVANCED GRID: Creates a visual indicator at a turn point.
-    /// </summary>
-    private void CreateTurnPointVisual(TurnPoint turn)
-    {
-        // Create indicator for each column at the turn row if affectsAllColumns
-        if (turn.affectsAllColumns)
-        {
-            for (int x = 0; x < width; x++)
-            {
-                CreateSingleTurnIndicator(x, turn.position.y, turn);
-            }
-        }
-        else
-        {
-            CreateSingleTurnIndicator(turn.position.x, turn.position.y, turn);
-        }
-    }
+    // NOTE: TurnPoint visual methods removed - segment controllers handle visualization now
+    // The following methods were removed: CreateTurnPointVisual, CreateSingleTurnIndicator, CreatePathDirectionIndicators
+    // Segment boundaries are now managed by GridSegmentController components in the scene
     
-    /// <summary>
-    /// ADVANCED GRID: Creates a single turn indicator at a position.
-    /// </summary>
-    private void CreateSingleTurnIndicator(int x, int y, TurnPoint turn)
-    {
-        GameObject indicator = GameObject.CreatePrimitive(PrimitiveType.Quad);
-        indicator.name = $"TurnIndicator_{x}_{y}";
-        indicator.transform.SetParent(transform);
-        
-        Vector3 worldPos = GridToWorldPosition(x, y, 0.05f);
-        indicator.transform.position = worldPos;
-        indicator.transform.rotation = Quaternion.Euler(90f, 0f, 0f); // Flat on ground
-        indicator.transform.localScale = new Vector3(tileSize * 0.8f, tileSize * 0.8f, 1f);
-        
-        // Remove collider
-        Destroy(indicator.GetComponent<Collider>());
-        
-        // Create arrow material pointing in the turn direction
-        Renderer renderer = indicator.GetComponent<Renderer>();
-        Material mat = new Material(Shader.Find("Standard"));
-        mat.color = new Color(1f, 0.8f, 0f, 0.6f); // Yellow/orange
-        mat.SetFloat("_Mode", 3); // Transparent
-        mat.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
-        mat.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
-        mat.SetInt("_ZWrite", 0);
-        mat.EnableKeyword("_ALPHABLEND_ON");
-        mat.renderQueue = 3000;
-        renderer.material = mat;
-        
-        // Rotate to show direction of turn
-        float rotationY = GetRotationForTurn(turn.toDirection);
-        indicator.transform.rotation = Quaternion.Euler(90f, rotationY, 0f);
-        
-        pathVisuals.Add(indicator);
-    }
-    
-    /// <summary>
-    /// ADVANCED GRID: Creates direction indicators along the path.
-    /// </summary>
-    private void CreatePathDirectionIndicators()
-    {
-        if (currentPath.segments == null) return;
-        
-        foreach (var segment in currentPath.segments)
-        {
-            // Add arrows every few tiles along each segment
-            if (segment.direction == MovementDirection.Down || segment.direction == MovementDirection.Up)
-            {
-                // Vertical segment
-                int step = segment.direction == MovementDirection.Down ? -1 : 1;
-                int col = segment.column >= 0 ? segment.column : width / 2;
-                
-                for (int y = segment.startRow; y != segment.endRow; y += step * 3)
-                {
-                    if (y >= 0 && y < height)
-                    {
-                        CreateDirectionArrow(col, y, segment.direction);
-                    }
-                }
-            }
-            else
-            {
-                // Horizontal segment
-                int step = segment.direction == MovementDirection.Right ? 1 : -1;
-                
-                for (int x = segment.startColumn; x != segment.endColumn && x >= 0 && x < width * 2; x += step * 3)
-                {
-                    if (x >= 0 && x < width)
-                    {
-                        CreateDirectionArrow(x, segment.row, segment.direction);
-                    }
-                }
-            }
-        }
-    }
-    
-    /// <summary>
-    /// ADVANCED GRID: Creates a direction arrow indicator.
-    /// </summary>
-    private void CreateDirectionArrow(int x, int y, MovementDirection direction)
-    {
-        if (x < 0 || x >= width || y < 0 || y >= height) return;
-        
-        GameObject arrow = GameObject.CreatePrimitive(PrimitiveType.Quad);
-        arrow.name = $"PathArrow_{x}_{y}";
-        arrow.transform.SetParent(transform);
-        
-        Vector3 worldPos = GridToWorldPosition(x, y, 0.02f);
-        arrow.transform.position = worldPos;
-        arrow.transform.localScale = new Vector3(tileSize * 0.4f, tileSize * 0.4f, 1f);
-        
-        // Remove collider
-        Destroy(arrow.GetComponent<Collider>());
-        
-        // Create subtle arrow material
-        Renderer renderer = arrow.GetComponent<Renderer>();
-        Material mat = new Material(Shader.Find("Standard"));
-        mat.color = new Color(0.3f, 0.8f, 1f, 0.3f); // Light blue, subtle
-        mat.SetFloat("_Mode", 3);
-        mat.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
-        mat.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
-        mat.SetInt("_ZWrite", 0);
-        mat.EnableKeyword("_ALPHABLEND_ON");
-        mat.renderQueue = 3000;
-        renderer.material = mat;
-        
-        // Rotate based on direction
-        float rotationY = GetRotationForTurn(direction);
-        arrow.transform.rotation = Quaternion.Euler(90f, rotationY, 0f);
-        
-        pathVisuals.Add(arrow);
-    }
-    
-    /// <summary>
-    /// ADVANCED GRID: Gets the Y rotation for a direction.
-    /// </summary>
-    private float GetRotationForTurn(MovementDirection direction)
-    {
-        switch (direction)
-        {
-            case MovementDirection.Down: return 180f;
-            case MovementDirection.Up: return 0f;
-            case MovementDirection.Right: return 90f;
-            case MovementDirection.Left: return -90f;
-            default: return 180f;
-        }
-    }
     
     /// <summary>
     /// ADVANCED GRID: Clears all path visual indicators.
@@ -2942,8 +2741,8 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
     public string GetDebugStatus()
     {
         string status = isGridReady ? "READY" : "NOT_READY";
-        string pathInfo = currentPathType != GridPathType.Standard ? $" Path:{currentPathType}" : "";
-        return $"Grid: {width}x{height} ({status}) Tiles:{width * height} Markers:{GetMarkerCount()} Playable:{GetPlayableRowCount()}rows{pathInfo}";
+        string segmentInfo = HasSegmentControllers ? $" Segments:{SegmentControllerCount}" : "";
+        return $"Grid: {width}x{height} ({status}) Tiles:{width * height} Markers:{GetMarkerCount()} Playable:{GetPlayableRowCount()}rows{segmentInfo}";
     }
 
     public Dictionary<string, object> GetDebugData()
@@ -2970,11 +2769,10 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
             ["Tile Prefab Assigned"] = tilePrefab != null,
             ["Cube Definitions Assigned"] = cubeTypeDefinitions != null,
             
-            // ADVANCED GRID: Path information
-            ["Grid Path Type"] = currentPathType.ToString(),
-            ["Has Advanced Path"] = HasAdvancedPath,
-            ["Turn Point Count"] = currentPath?.turnPoints?.Count ?? 0,
-            ["Path Segment Count"] = currentPath?.segments?.Count ?? 0
+            // Segment information
+            ["Has Segment Controllers"] = HasSegmentControllers,
+            ["Segment Controller Count"] = SegmentControllerCount,
+            ["Has Advanced Path"] = HasAdvancedPath
         };
     }
 

@@ -60,14 +60,37 @@ public class CameraFollow : MonoBehaviour
     {
         if (target == null) return;
         
-        // Smoothly interpolate offset and rotation when not in transition
+        // SEGMENT CONTROLLERS: Auto-detect player's current segment and use its camera settings
         if (!isTransitioning)
         {
+            UpdateCameraForPlayerSegment();
+            
             currentOffset = Vector3.Lerp(currentOffset, targetOffset, Time.deltaTime / rotationSmoothTime);
             currentRotation = Vector3.Lerp(currentRotation, targetRotation, Time.deltaTime / rotationSmoothTime);
         }
         
         ApplyCameraTransform();
+    }
+    
+    /// <summary>
+    /// Automatically updates camera settings based on which segment the player is on.
+    /// </summary>
+    private void UpdateCameraForPlayerSegment()
+    {
+        var gridManager = GridManager.Instance;
+        if (gridManager == null || !gridManager.HasSegmentControllers) return;
+        
+        // Find which segment the player is on
+        var playerSegment = gridManager.GetSegmentControllerAtWorldPosition(target.position);
+        
+        // If player moved to a different segment, update camera settings
+        if (playerSegment != null && playerSegment != currentSegment)
+        {
+            currentSegment = playerSegment;
+            targetOffset = playerSegment.cameraOffset;
+            targetRotation = playerSegment.cameraRotation;
+            Debug.Log($"[CameraFollow] Player moved to segment {playerSegment.segmentIndex}, updating camera settings");
+        }
     }
     
     private void ApplyCameraTransform()

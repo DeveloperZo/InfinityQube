@@ -25,7 +25,7 @@ This roadmap outlines the development path from current production-ready state t
 | 🟡 Medium | RPG Implementation (Milestone 1.11) | After 1.10 | 5 pts |
 | 🟡 Medium | Hub Implementation (Milestone 1.12) | After 1.11 | 4 pts |
 | 🟡 Medium | File Size Refactoring | 12 files over limit | 15 pts |
-| 🟢 Low | Stage Content Refinement (Milestone 1.13) | After 1.12 | 5 pts |
+| ✅ Done | Advanced Grid System (Milestone 1.13) | Complete | 5 pts |
 | 🟢 Low | Visual Effects & Juice Pass (Milestone 1.14) | After 1.13 | 5 pts |
 | 🟢 Low | Hub polish pass | Deferred | 2 pts |
 
@@ -58,7 +58,7 @@ Points reflect actual development time, not complexity. A "week gap" between com
 | | 1.10 Mastery (Stages 11-12) | ⬜ Pending | 4 pts |
 | | 1.11 RPG Implementation (Attunements & Progression) | ⬜ Pending | 5 pts |
 | | 1.12 Hub Implementation | ⬜ Pending | 4 pts |
-| | 1.13 Stage Content Refinement & Difficulty Curve | ⬜ Pending | 5 pts |
+| | 1.13 Advanced Grid System (Multi-Segment Stages) | ✅ Complete | 5 pts |
 | | 1.14 Visual Effects & Juice Pass | ⬜ Pending | 5 pts |
 | **Phase 2** | 2.1-2.10 Content & Polish | ⬜ Pending | 68 pts |
 | **Phase 3** | 3.1-3.8 Polish & Commercial Prep | ⬜ Pending | 55 pts |
@@ -565,15 +565,28 @@ The hub serves as the central navigation point between gameplay sessions.
 
 ---
 
-### Milestone 1.13: Determine any brainstorm implementation
-- **Target**: Implement, balance, tune, and establish mechanics taken from brainstorm (if any are deemed worth complexity)
+### Milestone 1.13: Advanced Grid System (Multi-Segment Stages) ✅ COMPLETE
+- **Target**: Implement multi-segment grid system for advanced stage layouts (L-shape, etc.)
 - **Points**: 5 (~1 week active development)
-- **Status**: ⬜ Pending
+- **Status**: ✅ **COMPLETE** (January 2026)
 - **Dependencies**: Milestone 1.11
-- **Tasks**:
-  - [ ] Playtest select stages for balance and feel improvements
-  - [ ] Validate stages feel mor fun or rewarding
-- **Note**: Focus on play experience and fun.
+- **Deliverables**:
+  - [x] GridSegmentController component for defining individual grid segments
+  - [x] Stage-level segment layout prefabs (StageData.segmentLayoutPrefab)
+  - [x] Multi-segment wave transitions (cubes stop at edge, respawn missing, move onto next segment)
+  - [x] Transpose mapping for cube positions during segment transitions
+  - [x] Camera rotation per segment (cameraRotation, cameraOffset fields)
+  - [x] Camera-relative player controls across segment transitions
+  - [x] Segment-aware player marker system (placement, visuals, effects)
+  - [x] Segment-aware cube tracking and collision detection
+  - [x] Legacy GridPathType system removed (replaced by segment controllers)
+- **Technical Changes**:
+  - StageData: Added `segmentLayoutPrefab` field for stage segment configuration
+  - GridManager: Instantiates segment prefab at stage start, registers controllers
+  - WaveManager: Handles multi-segment wave transitions with edge stopping
+  - PlayerMarkerSystem: Full segment awareness for marker placement and effects
+  - CameraFollow: Reads segment-specific camera settings for smooth transitions
+- **Note**: Enables complex stage layouts like L-shapes, U-shapes, etc. First stage prefab created at `Assets/prefabs/stages/stage_segments_0.prefab`.
 
 ---
 
@@ -596,7 +609,7 @@ The hub serves as the central navigation point between gameplay sessions.
 - **Target**: Core visual feedback and effects for gameplay actions
 - **Points**: 5 (~1 week active development)
 - **Status**: ⬜ Pending
-- **Dependencies**: Milestone 1.13 (can start in parallel with refinement)
+- **Dependencies**: Milestone 1.13 ✅ (Advanced Grid System complete)
 - **Note**: Focuses on visual effects and feedback. Gameplay feel polish comes in 2.6.
 - **Tasks**:
   - [ ] Improved particle effects for all major actions

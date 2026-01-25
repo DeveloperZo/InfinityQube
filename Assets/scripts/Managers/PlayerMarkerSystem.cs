@@ -48,6 +48,10 @@ public class PlayerMarkerSystem : MonoBehaviour
 
     // Parent reference
     private PlayerActionManager actionManager;
+    
+    // Segment-aware references
+    private WaveManager waveManager;
+    private PlayerManager playerManager;
 
     #endregion
 
@@ -115,6 +119,10 @@ public class PlayerMarkerSystem : MonoBehaviour
     {
         if (actionManager == null) return;
 
+        // Cache segment-aware references
+        waveManager = actionManager.WaveManager;
+        playerManager = actionManager.PlayerManager;
+        
         // Initialize visual manager
         if (visualManager == null)
         {
@@ -160,13 +168,16 @@ public class PlayerMarkerSystem : MonoBehaviour
         if (!CanPlaceMarkerAt(position))
             return false;
 
-        var marker = new UnitMarker(position, Time.time);
-        marker.visualObject = visualManager?.CreateUnitMarkerVisual(position);
+        // SEGMENT-AWARE: Get the wave's current segment for marker placement
+        GridSegmentController waveSegment = waveManager?.CurrentSegmentController;
+        
+        var marker = new UnitMarker(position, Time.time, waveSegment);
+        marker.visualObject = visualManager?.CreateUnitMarkerVisual(position, waveSegment);
 
         UnitMarkers.Enqueue(marker);
         actionManager.ConsumeUnitCharge(position);
 
-        Debug.Log($"Unit marker placed at ({position.x}, {position.y})");
+        Debug.Log($"Unit marker placed at ({position.x}, {position.y}){(waveSegment != null ? $" on segment {waveSegment.segmentIndex}" : "")}");
         return true;
     }
 
@@ -213,10 +224,11 @@ public class PlayerMarkerSystem : MonoBehaviour
 
     private bool TriggerUnitMarkerAt(Vector2Int position, UnitMarker marker)
     {
-        var cubes = FindAllCubesAt(position);
+        // SEGMENT-AWARE: Use marker's segment for lookups
+        var cubes = FindAllCubesAt(position, marker.segment);
         bool success = false;
 
-        Vector3 worldPosition = actionManager.GridManager.GridToWorldPosition(position.x, position.y);
+        Vector3 worldPosition = GetWorldPositionOnSegment(position, marker.segment);
         TriggerMarkerAudioEvent(GameAudioEvent.MarkerTriggered, worldPosition);
 
         foreach (var cube in cubes)
@@ -236,7 +248,7 @@ public class PlayerMarkerSystem : MonoBehaviour
         }
 
         visualManager?.DestroyMarkerVisual(marker.visualObject);
-        visualManager?.ShowMarkerTriggerEffect(position);
+        visualManager?.ShowMarkerTriggerEffect(position, marker.segment);
 
         return success;
     }
@@ -253,13 +265,16 @@ public class PlayerMarkerSystem : MonoBehaviour
         if (!CanPlaceMarkerAt(position))
             return false;
 
-        var marker = new RecursionMarker(position, Time.time);
-        marker.visualObject = visualManager?.CreateRecursionMarkerVisual(position);
+        // SEGMENT-AWARE: Get the wave's current segment for marker placement
+        GridSegmentController waveSegment = waveManager?.CurrentSegmentController;
+        
+        var marker = new RecursionMarker(position, Time.time, waveSegment);
+        marker.visualObject = visualManager?.CreateRecursionMarkerVisual(position, waveSegment);
 
         RecursionMarkers.Enqueue(marker);
         actionManager.ConsumeRecursionCharge();
 
-        Debug.Log($"Recursion marker placed at ({position.x}, {position.y})");
+        Debug.Log($"Recursion marker placed at ({position.x}, {position.y}){(waveSegment != null ? $" on segment {waveSegment.segmentIndex}" : "")}");
         return true;
     }
 
@@ -306,10 +321,11 @@ public class PlayerMarkerSystem : MonoBehaviour
 
     private bool TriggerRecursionMarkerAt(Vector2Int position, RecursionMarker marker)
     {
-        var cubes = FindAllCubesAt(position);
+        // SEGMENT-AWARE: Use marker's segment for lookups
+        var cubes = FindAllCubesAt(position, marker.segment);
         bool success = false;
 
-        Vector3 worldPosition = actionManager.GridManager.GridToWorldPosition(position.x, position.y);
+        Vector3 worldPosition = GetWorldPositionOnSegment(position, marker.segment);
         TriggerMarkerAudioEvent(GameAudioEvent.MarkerTriggered, worldPosition);
 
         foreach (var cube in cubes)
@@ -331,7 +347,7 @@ public class PlayerMarkerSystem : MonoBehaviour
         }
 
         visualManager?.DestroyMarkerVisual(marker.visualObject);
-        visualManager?.ShowMarkerTriggerEffect(position);
+        visualManager?.ShowMarkerTriggerEffect(position, marker.segment);
 
         return success;
     }
@@ -348,15 +364,18 @@ public class PlayerMarkerSystem : MonoBehaviour
         if (!CanPlaceMarkerAt(centerPosition))
             return false;
 
-        MatrixMarker newMarker = new MatrixMarker(centerPosition, size, Time.time);
+        // SEGMENT-AWARE: Get the wave's current segment for marker placement
+        GridSegmentController waveSegment = waveManager?.CurrentSegmentController;
+        
+        MatrixMarker newMarker = new MatrixMarker(centerPosition, size, Time.time, waveSegment);
         newMarker.affectedPositions = GetAreaPositions(centerPosition, size);
-        GameObject visual = visualManager?.CreateMatrixMarkerVisual(centerPosition);
+        GameObject visual = visualManager?.CreateMatrixMarkerVisual(centerPosition, waveSegment);
         if (visual != null) newMarker.visualObjects.Add(visual);
 
         MatrixMarkers.Enqueue(newMarker);
         actionManager.ConsumeMatrixCharge();
 
-        Debug.Log($"Matrix marker placed at ({centerPosition.x}, {centerPosition.y})");
+        Debug.Log($"Matrix marker placed at ({centerPosition.x}, {centerPosition.y}){(waveSegment != null ? $" on segment {waveSegment.segmentIndex}" : "")}");
         return true;
     }
 
@@ -411,7 +430,8 @@ public class PlayerMarkerSystem : MonoBehaviour
 
         Debug.Log($"Triggering matrix marker - expanding from center ({marker.centerPosition.x}, {marker.centerPosition.y}) to {marker.affectedPositions.Count} tiles");
 
-        Vector3 centerWorldPosition = actionManager.GridManager.GridToWorldPosition(marker.centerPosition.x, marker.centerPosition.y);
+        // SEGMENT-AWARE: Use marker's segment for world position
+        Vector3 centerWorldPosition = GetWorldPositionOnSegment(marker.centerPosition, marker.segment);
         TriggerMarkerAudioEvent(GameAudioEvent.MarkerTriggered, centerWorldPosition);
 
         foreach (var visual in marker.visualObjects)
@@ -421,14 +441,15 @@ public class PlayerMarkerSystem : MonoBehaviour
 
         foreach (var position in marker.affectedPositions)
         {
-            Tile tile = actionManager.GridManager.GetTileAt(position.x, position.y);
+            // SEGMENT-AWARE: Get tile from marker's segment
+            Tile tile = GetTileOnSegment(position, marker.segment);
             if (tile != null && position != marker.centerPosition)
             {
                 visualManager?.SetTileHighlight(tile, new Color(0f, 1f, 0f, 0.7f), "AreaExpansion");
             }
 
-            // Process wave cubes
-            var cubes = FindAllCubesAt(position);
+            // Process wave cubes - SEGMENT-AWARE
+            var cubes = FindAllCubesAt(position, marker.segment);
             totalCubesAffected += cubes.Count;
             foreach (var cube in cubes)
             {
@@ -437,8 +458,8 @@ public class PlayerMarkerSystem : MonoBehaviour
                 anySuccess |= ProcessCubeCapture(cube, position, MarkerType.Matrix, null, isSameTypeMatch);
             }
 
-            // Process player cubes in the area (destroy them without creating cube markers)
-            var playerCubesAtPosition = FindPlayerCubesAt(position);
+            // Process player cubes in the area (destroy them without creating cube markers) - SEGMENT-AWARE
+            var playerCubesAtPosition = FindPlayerCubesAt(position, marker.segment);
             totalCubesAffected += playerCubesAtPosition.Count;
             foreach (var playerCube in playerCubesAtPosition)
             {
@@ -450,13 +471,14 @@ public class PlayerMarkerSystem : MonoBehaviour
                 }
             }
 
-            visualManager?.ShowMarkerTriggerEffect(position);
+            visualManager?.ShowMarkerTriggerEffect(position, marker.segment);
         }
 
         // Hide icons after capture completes
         foreach (var position in marker.affectedPositions)
         {
-            Tile tile = actionManager.GridManager.GetTileAt(position.x, position.y);
+            // SEGMENT-AWARE: Get tile from marker's segment
+            Tile tile = GetTileOnSegment(position, marker.segment);
             if (tile != null)
             {
                 CubeMarkerStrobeEffect effect = tile.GetComponent<CubeMarkerStrobeEffect>();
@@ -488,13 +510,16 @@ public class PlayerMarkerSystem : MonoBehaviour
         if (!CanPlaceMarkerAt(position))
             return false;
 
-        var marker = new InfinityMarker(position, Time.time);
-        marker.visualObject = visualManager?.CreateInfinityMarkerVisual(position);
+        // SEGMENT-AWARE: Get the wave's current segment for marker placement
+        GridSegmentController waveSegment = waveManager?.CurrentSegmentController;
+        
+        var marker = new InfinityMarker(position, Time.time, waveSegment);
+        marker.visualObject = visualManager?.CreateInfinityMarkerVisual(position, waveSegment);
 
         InfinityMarkers.Enqueue(marker);
         actionManager.ConsumeInfinityCharge();
 
-        Debug.Log($"Infinity marker placed at ({position.x}, {position.y})");
+        Debug.Log($"Infinity marker placed at ({position.x}, {position.y}){(waveSegment != null ? $" on segment {waveSegment.segmentIndex}" : "")}");
         return true;
     }
 
@@ -540,10 +565,11 @@ public class PlayerMarkerSystem : MonoBehaviour
 
     private bool TriggerInfinityMarkerAt(Vector2Int position, InfinityMarker marker)
     {
-        var cubes = FindAllCubesAt(position);
+        // SEGMENT-AWARE: Use marker's segment for lookups
+        var cubes = FindAllCubesAt(position, marker.segment);
         bool success = false;
 
-        Vector3 worldPosition = actionManager.GridManager.GridToWorldPosition(position.x, position.y);
+        Vector3 worldPosition = GetWorldPositionOnSegment(position, marker.segment);
         TriggerMarkerAudioEvent(GameAudioEvent.MarkerTriggered, worldPosition);
 
         foreach (var cube in cubes)
@@ -563,7 +589,7 @@ public class PlayerMarkerSystem : MonoBehaviour
         }
 
         visualManager?.DestroyMarkerVisual(marker.visualObject);
-        visualManager?.ShowMarkerTriggerEffect(position);
+        visualManager?.ShowMarkerTriggerEffect(position, marker.segment);
 
         Debug.Log($"Infinity marker triggered at ({position.x}, {position.y}) - Perfect: {marker.isPerfectTiming}");
         return success;
@@ -768,10 +794,10 @@ public class PlayerMarkerSystem : MonoBehaviour
         // Fire cube capture event (this triggers GameEvents.OnCubeCaptured)
         cube.OnCubeCapture();
 
-        // Show capture success visual feedback
+        // Show capture success visual feedback - SEGMENT-AWARE: use cube's segment
         if (visualManager != null)
         {
-            visualManager.ShowCaptureSuccessEffect(position, cube.type);
+            visualManager.ShowCaptureSuccessEffect(position, cube.type, cube.CurrentSegment);
         }
         
         RemoveCubeFromWaveManager(cube);
@@ -781,6 +807,16 @@ public class PlayerMarkerSystem : MonoBehaviour
     }
 
     public List<CubeManager> FindAllCubesAt(Vector2Int position)
+    {
+        // Default to wave's current segment for backward compatibility
+        return FindAllCubesAt(position, waveManager?.CurrentSegmentController);
+    }
+    
+    /// <summary>
+    /// Finds all cubes at a position on a specific segment.
+    /// Segment-aware: only returns cubes that are on the specified segment.
+    /// </summary>
+    public List<CubeManager> FindAllCubesAt(Vector2Int position, GridSegmentController segment)
     {
         var cubes = new List<CubeManager>();
 
@@ -793,6 +829,12 @@ public class PlayerMarkerSystem : MonoBehaviour
                 cube.position.x == position.x && cube.position.y == position.y &&
                 !cubes.Contains(cube))
             {
+                // SEGMENT-AWARE: Check segment match if segment is specified
+                if (segment != null && cube.CurrentSegment != null)
+                {
+                    if (cube.CurrentSegment != segment)
+                        continue; // Skip cubes on different segments
+                }
                 cubes.Add(cube);
             }
         }
@@ -801,6 +843,16 @@ public class PlayerMarkerSystem : MonoBehaviour
     }
 
     public List<CubeManager> FindPlayerCubesAt(Vector2Int position)
+    {
+        // Default to wave's current segment for backward compatibility
+        return FindPlayerCubesAt(position, waveManager?.CurrentSegmentController);
+    }
+    
+    /// <summary>
+    /// Finds all player cubes at a position on a specific segment.
+    /// Segment-aware: only returns cubes that are on the specified segment.
+    /// </summary>
+    public List<CubeManager> FindPlayerCubesAt(Vector2Int position, GridSegmentController segment)
     {
         var cubes = new List<CubeManager>();
 
@@ -812,6 +864,12 @@ public class PlayerMarkerSystem : MonoBehaviour
                 cube.position.x == position.x && cube.position.y == position.y &&
                 !cubes.Contains(cube))
             {
+                // SEGMENT-AWARE: Check segment match if segment is specified
+                if (segment != null && cube.CurrentSegment != null)
+                {
+                    if (cube.CurrentSegment != segment)
+                        continue; // Skip cubes on different segments
+                }
                 cubes.Add(cube);
             }
         }
@@ -938,14 +996,14 @@ public class PlayerMarkerSystem : MonoBehaviour
 
     private void SpawnPlayerCubeAt(Vector2Int position, CubeType cubeType, bool isMatrixCube)
     {
-        var waveManager = actionManager.WaveManager;
+        var wm = actionManager.WaveManager;
         var grid = actionManager.GridManager;
 
         int prefabIndex = (int)cubeType;
-        if (prefabIndex >= waveManager.cubePrefabs.Length || waveManager.cubePrefabs[prefabIndex] == null)
+        if (prefabIndex >= wm.cubePrefabs.Length || wm.cubePrefabs[prefabIndex] == null)
         {
             prefabIndex = (int)CubeType.Unit;
-            if (prefabIndex >= waveManager.cubePrefabs.Length || waveManager.cubePrefabs[prefabIndex] == null)
+            if (prefabIndex >= wm.cubePrefabs.Length || wm.cubePrefabs[prefabIndex] == null)
             {
                 Debug.LogWarning($"[PlayerMarkerSystem] No cube prefab available for type {cubeType}");
                 return;
@@ -960,8 +1018,23 @@ public class PlayerMarkerSystem : MonoBehaviour
             level = 1
         };
 
-        Vector3 spawnPos = grid.GridToWorldPosition(position.x, position.y, 2f);
-        GameObject cubeObj = Instantiate(waveManager.cubePrefabs[prefabIndex], spawnPos, Quaternion.identity);
+        // SEGMENT-AWARE: Calculate spawn position based on wave's current segment
+        Vector3 spawnPos;
+        GridSegmentController waveSegment = wm.CurrentSegmentController;
+        
+        if (waveSegment != null)
+        {
+            // Use wave's segment for position calculation
+            spawnPos = waveSegment.LocalToWorldPosition(position.x, position.y, 2f);
+            Debug.Log($"[PlayerMarkerSystem] Spawning player cube on wave segment {waveSegment.segmentIndex}");
+        }
+        else
+        {
+            // Fallback to grid-based position
+            spawnPos = grid.GridToWorldPosition(position.x, position.y, 2f);
+        }
+        
+        GameObject cubeObj = Instantiate(wm.cubePrefabs[prefabIndex], spawnPos, Quaternion.identity);
 
         var cube = cubeObj.GetComponent<CubeManager>();
         if (cube == null)
@@ -974,11 +1047,17 @@ public class PlayerMarkerSystem : MonoBehaviour
         cube.isMatrixCube = isMatrixCube;
         cube.usePhysics = false;
         cube.ConfigurePlayerCubePhysics();
+        
+        // SEGMENT-AWARE: Assign player cube to wave's current segment
+        if (waveSegment != null)
+        {
+            cube.SetSegmentController(waveSegment);
+        }
 
         MakeCubeTranslucent(cube);
         playerCubes.Add(cube);
 
-        Debug.Log($"[PlayerMarkerSystem] Spawned {cubeType} player cube at ({position.x}, {position.y}){(isMatrixCube ? " (area capture)" : "")}");
+        Debug.Log($"[PlayerMarkerSystem] Spawned {cubeType} player cube at ({position.x}, {position.y}){(isMatrixCube ? " (area capture)" : "")}{(waveSegment != null ? $" on segment {waveSegment.segmentIndex}" : "")}");
     }
 
     private void MakeCubeTranslucent(CubeManager cube)
@@ -1074,9 +1153,83 @@ public class PlayerMarkerSystem : MonoBehaviour
     {
         return actionManager.GridManager.IsValidGridPosition(position);
     }
+    
+    /// <summary>
+    /// Gets the world position for a local position, using segment if provided.
+    /// </summary>
+    private Vector3 GetWorldPositionOnSegment(Vector2Int position, GridSegmentController segment, float yOffset = 0f)
+    {
+        if (segment != null)
+        {
+            return segment.LocalToWorldPosition(position.x, position.y, yOffset);
+        }
+        return actionManager.GridManager.GridToWorldPosition(position.x, position.y, yOffset);
+    }
+    
+    /// <summary>
+    /// Gets the tile at position, using segment if provided, otherwise falling back to grid manager.
+    /// </summary>
+    private Tile GetTileOnSegment(Vector2Int position, GridSegmentController segment)
+    {
+        if (segment != null)
+        {
+            return segment.GetTile(position.x, position.y);
+        }
+        return actionManager.GridManager.GetTileAt(position.x, position.y);
+    }
+    
+    /// <summary>
+    /// Checks if the player is on the same segment as the wave.
+    /// Player actions (marker placement, triggering) require segment matching.
+    /// </summary>
+    /// <returns>True if player is on the same segment as the wave, false otherwise</returns>
+    public bool IsPlayerOnWaveSegment()
+    {
+        // If no segment controllers, always allow (single-segment stage)
+        if (waveManager == null || !waveManager.HasSegmentControllers)
+            return true;
+            
+        // Get player's current segment
+        var playerSegment = playerManager?.CurrentSegment;
+        
+        // Get wave's current segment
+        var waveSegment = waveManager.CurrentSegmentController;
+        
+        // If either is null, allow (fallback behavior)
+        if (playerSegment == null || waveSegment == null)
+            return true;
+            
+        // Compare segment indices
+        return playerSegment.segmentIndex == waveSegment.segmentIndex;
+    }
+    
+    /// <summary>
+    /// Gets the reason why player actions are blocked, if any.
+    /// </summary>
+    /// <returns>Error message if blocked, null if allowed</returns>
+    public string GetSegmentMismatchReason()
+    {
+        if (IsPlayerOnWaveSegment())
+            return null;
+            
+        var playerSegment = playerManager?.CurrentSegment;
+        var waveSegment = waveManager?.CurrentSegmentController;
+        
+        int playerSegIndex = playerSegment?.segmentIndex ?? -1;
+        int waveSegIndex = waveSegment?.segmentIndex ?? -1;
+        
+        return $"Player is on segment {playerSegIndex} but wave is on segment {waveSegIndex}. Move to the wave's segment to place markers.";
+    }
 
     private bool CanPlaceMarkerAt(Vector2Int position)
     {
+        // SEGMENT CHECK: Player must be on the same segment as the wave
+        if (!IsPlayerOnWaveSegment())
+        {
+            Debug.Log($"[PlayerMarkerSystem] Cannot place marker - player not on wave's segment. {GetSegmentMismatchReason()}");
+            return false;
+        }
+        
         // Task 6: Check line divider restriction - player must be in safe zone (below line)
         if (actionManager?.GridManager != null && actionManager.GridManager.LineDividerEnabled)
         {

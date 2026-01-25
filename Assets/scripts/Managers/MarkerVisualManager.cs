@@ -83,11 +83,35 @@ public class MarkerVisualManager : MonoBehaviour, IManagerDebugInterface
     #region Visual Creation Methods
 
     /// <summary>
+    /// Gets the tile at position, using segment if provided, otherwise falling back to grid manager.
+    /// </summary>
+    private Tile GetTileOnSegment(Vector2Int position, GridSegmentController segment)
+    {
+        if (segment != null)
+        {
+            return segment.GetTile(position.x, position.y);
+        }
+        return gridManager.GetTileAt(position.x, position.y);
+    }
+    
+    /// <summary>
+    /// Gets the world position for a local position, using segment if provided.
+    /// </summary>
+    private Vector3 GetWorldPositionOnSegment(Vector2Int position, GridSegmentController segment, float yOffset = 0f)
+    {
+        if (segment != null)
+        {
+            return segment.LocalToWorldPosition(position.x, position.y, yOffset);
+        }
+        return gridManager.GridToWorldPosition(position.x, position.y, yOffset);
+    }
+
+    /// <summary>
     /// Creates visual marker for Unit marker placement
     /// </summary>
-    public GameObject CreateUnitMarkerVisual(Vector2Int position)
+    public GameObject CreateUnitMarkerVisual(Vector2Int position, GridSegmentController segment = null)
     {
-        Tile tile = gridManager.GetTileAt(position.x, position.y);
+        Tile tile = GetTileOnSegment(position, segment);
         if (tile != null)
         {
             // Unit = Blue-gray (lighter variant for marker visibility)
@@ -95,16 +119,16 @@ public class MarkerVisualManager : MonoBehaviour, IManagerDebugInterface
         }
 
         GameObject dummy = new GameObject($"UnitMarker_{position.x}_{position.y}");
-        dummy.transform.position = gridManager.GridToWorldPosition(position.x, position.y, 0f);
+        dummy.transform.position = GetWorldPositionOnSegment(position, segment, 0f);
         return dummy;
     }
 
     /// <summary>
     /// Creates visual marker for Recursion marker placement
     /// </summary>
-    public GameObject CreateRecursionMarkerVisual(Vector2Int position)
+    public GameObject CreateRecursionMarkerVisual(Vector2Int position, GridSegmentController segment = null)
     {
-        Tile tile = gridManager.GetTileAt(position.x, position.y);
+        Tile tile = GetTileOnSegment(position, segment);
         if (tile != null)
         {
             // Recursion = Deep amber brown (warm brown-orange)
@@ -112,16 +136,16 @@ public class MarkerVisualManager : MonoBehaviour, IManagerDebugInterface
         }
 
         GameObject dummy = new GameObject($"RecursionMarker_{position.x}_{position.y}");
-        dummy.transform.position = gridManager.GridToWorldPosition(position.x, position.y, 0f);
+        dummy.transform.position = GetWorldPositionOnSegment(position, segment, 0f);
         return dummy;
     }
 
     /// <summary>
     /// Creates visual marker for Matrix marker placement
     /// </summary>
-    public GameObject CreateMatrixMarkerVisual(Vector2Int position)
+    public GameObject CreateMatrixMarkerVisual(Vector2Int position, GridSegmentController segment = null)
     {
-        Tile tile = gridManager.GetTileAt(position.x, position.y);
+        Tile tile = GetTileOnSegment(position, segment);
         if (tile != null)
         {
             // Matrix = Vibrant light blue
@@ -129,16 +153,16 @@ public class MarkerVisualManager : MonoBehaviour, IManagerDebugInterface
         }
 
         GameObject dummy = new GameObject($"MatrixMarker_{position.x}_{position.y}");
-        dummy.transform.position = gridManager.GridToWorldPosition(position.x, position.y, 0f);
+        dummy.transform.position = GetWorldPositionOnSegment(position, segment, 0f);
         return dummy;
     }
 
     /// <summary>
     /// Creates visual marker for Infinity marker placement
     /// </summary>
-    public GameObject CreateInfinityMarkerVisual(Vector2Int position)
+    public GameObject CreateInfinityMarkerVisual(Vector2Int position, GridSegmentController segment = null)
     {
-        Tile tile = gridManager.GetTileAt(position.x, position.y);
+        Tile tile = GetTileOnSegment(position, segment);
         if (tile != null)
         {
             // Infinity = Deep black (dark charcoal for visibility)
@@ -146,7 +170,7 @@ public class MarkerVisualManager : MonoBehaviour, IManagerDebugInterface
         }
 
         GameObject dummy = new GameObject($"InfinityMarker_{position.x}_{position.y}");
-        dummy.transform.position = gridManager.GridToWorldPosition(position.x, position.y, 0f);
+        dummy.transform.position = GetWorldPositionOnSegment(position, segment, 0f);
         return dummy;
     }
 
@@ -154,7 +178,7 @@ public class MarkerVisualManager : MonoBehaviour, IManagerDebugInterface
     /// Creates visual marker for Cube marker placement with strobe/beam effect
     /// Attaches beam effects directly to each affected tile
     /// </summary>
-    public GameObject CreateCubeMarkerVisual(Vector2Int position, PlayerMarkerSystem.CubeMarkerType type, int size = 2)
+    public GameObject CreateCubeMarkerVisual(Vector2Int position, PlayerMarkerSystem.CubeMarkerType type, int size = 2, GridSegmentController segment = null)
     {
         Color highlightColor = type switch
         {
@@ -166,7 +190,7 @@ public class MarkerVisualManager : MonoBehaviour, IManagerDebugInterface
         };
 
         // Get all affected positions for this marker area
-        List<Vector2Int> affectedPositions = GetAreaPositions(position, size);
+        List<Vector2Int> affectedPositions = GetAreaPositions(position, size, segment);
         
         // Create a simple container object to return (for tracking/destruction)
         GameObject container = new GameObject($"CubeMarkerStrobe_{type}_{position.x}_{position.y}");
@@ -175,7 +199,7 @@ public class MarkerVisualManager : MonoBehaviour, IManagerDebugInterface
         // All other tiles in the area get icons only
         foreach (Vector2Int pos in affectedPositions)
         {
-            Tile tile = gridManager.GetTileAt(pos.x, pos.y);
+            Tile tile = GetTileOnSegment(pos, segment);
             if (tile == null) continue;
             
             // Add effect component to tile
@@ -211,7 +235,7 @@ public class MarkerVisualManager : MonoBehaviour, IManagerDebugInterface
     /// <summary>
     /// Gets area positions for a given center and size
     /// </summary>
-    private List<Vector2Int> GetAreaPositions(Vector2Int center, int size)
+    private List<Vector2Int> GetAreaPositions(Vector2Int center, int size, GridSegmentController segment = null)
     {
         List<Vector2Int> positions = new List<Vector2Int>();
         
@@ -223,7 +247,7 @@ public class MarkerVisualManager : MonoBehaviour, IManagerDebugInterface
                 for (int y = 0; y < 2; y++)
                 {
                     Vector2Int pos = new Vector2Int(center.x + x, center.y + y);
-                    if (gridManager.IsValidGridPosition(pos))
+                    if (IsValidPositionOnSegment(pos, segment))
                     {
                         positions.Add(pos);
                     }
@@ -238,7 +262,7 @@ public class MarkerVisualManager : MonoBehaviour, IManagerDebugInterface
                 for (int y = -1; y <= 1; y++)
                 {
                     Vector2Int pos = new Vector2Int(center.x + x, center.y + y);
-                    if (gridManager.IsValidGridPosition(pos))
+                    if (IsValidPositionOnSegment(pos, segment))
                     {
                         positions.Add(pos);
                     }
@@ -252,6 +276,18 @@ public class MarkerVisualManager : MonoBehaviour, IManagerDebugInterface
         }
         
         return positions;
+    }
+    
+    /// <summary>
+    /// Checks if a position is valid on the given segment (or grid if no segment).
+    /// </summary>
+    private bool IsValidPositionOnSegment(Vector2Int position, GridSegmentController segment)
+    {
+        if (segment != null)
+        {
+            return segment.IsValidLocalPosition(position.x, position.y);
+        }
+        return gridManager.IsValidGridPosition(position);
     }
 
     /// <summary>
@@ -532,18 +568,22 @@ public class MarkerVisualManager : MonoBehaviour, IManagerDebugInterface
     #endregion
 
     #region Effects
+    
+    // Store segment for coroutine use (coroutines can't have ref parameters)
+    private GridSegmentController _effectSegment;
 
     /// <summary>
     /// Shows a trigger effect at the specified position
     /// </summary>
-    public void ShowMarkerTriggerEffect(Vector2Int position)
+    public void ShowMarkerTriggerEffect(Vector2Int position, GridSegmentController segment = null)
     {
-        StartCoroutine(MarkerTriggerEffectCoroutine(position));
+        _effectSegment = segment;
+        StartCoroutine(MarkerTriggerEffectCoroutine(position, segment));
     }
 
-    private IEnumerator MarkerTriggerEffectCoroutine(Vector2Int position)
+    private IEnumerator MarkerTriggerEffectCoroutine(Vector2Int position, GridSegmentController segment)
     {
-        Vector3 worldPos = gridManager.GridToWorldPosition(position.x, position.y, 0.1f);
+        Vector3 worldPos = GetWorldPositionOnSegment(position, segment, 0.1f);
 
         GameObject effect = GameObject.CreatePrimitive(PrimitiveType.Sphere);
         effect.name = $"TriggerEffect_{position.x}_{position.y}";
@@ -576,14 +616,14 @@ public class MarkerVisualManager : MonoBehaviour, IManagerDebugInterface
     /// <summary>
     /// Shows a success flash effect when a cube is captured
     /// </summary>
-    public void ShowCaptureSuccessEffect(Vector2Int position, CubeType cubeType)
+    public void ShowCaptureSuccessEffect(Vector2Int position, CubeType cubeType, GridSegmentController segment = null)
     {
-        StartCoroutine(CaptureSuccessEffectCoroutine(position, cubeType));
+        StartCoroutine(CaptureSuccessEffectCoroutine(position, cubeType, segment));
     }
     
-    private IEnumerator CaptureSuccessEffectCoroutine(Vector2Int position, CubeType cubeType)
+    private IEnumerator CaptureSuccessEffectCoroutine(Vector2Int position, CubeType cubeType, GridSegmentController segment)
     {
-        Vector3 worldPos = gridManager.GridToWorldPosition(position.x, position.y, 1.5f);
+        Vector3 worldPos = GetWorldPositionOnSegment(position, segment, 1.5f);
         
         // Create flash effect
         GameObject flash = GameObject.CreatePrimitive(PrimitiveType.Sphere);

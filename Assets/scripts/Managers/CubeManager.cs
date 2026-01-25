@@ -17,11 +17,10 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
     [SerializeField] public int moveCount = 0;
     [System.NonSerialized] private CubeData cubeData;
     
-    [Header("Advanced Grid Path")]
+    [Header("Movement Direction")]
     [SerializeField] private MovementDirection currentDirection = MovementDirection.Down;
-    [SerializeField] private GridPath currentPath;
-    [SerializeField] private bool hasPath = false;
-    [SerializeField] private int currentSegmentIndex = 0; // ADVANCED GRID: Which segment this cube is on
+    public MovementDirection CurrentDirection => currentDirection; // Public accessor
+    [SerializeField] private int currentSegmentIndex = 0; // Which segment this cube is on
 
     [Header("Audio Configuration")]
     [SerializeField] 
@@ -61,6 +60,7 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
     public bool isDestroyed = false;
     public bool isPlayerCube = false;
     public bool isMatrixCube = false; // True for Matrix cubes that capture in an area
+    public bool stoppedAtEdge = false; // SEGMENT CONTROLLER: Cube has stopped at segment edge, waiting for transition
     [SerializeField] private bool isPhaseable = false; // Task 7: Phaseable state for resonance system
     [SerializeField] private int phaseableMovesRemaining = 0; // Task 7: Remaining moves in phaseable state
     
@@ -129,34 +129,10 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
         this.Log($"Fired GameEvents.OnCubeSpawn for {type} cube at ({position.x}, {position.y})", EnableDebugLogs);
     }
     
-    /// <summary>
-    /// Configures the movement path for this cube (Advanced Grid feature).
-    /// Call this after Init() when using non-standard grid paths.
-    /// </summary>
-    public void ConfigurePath(GridPath path)
-    {
-        if (path == null)
-        {
-            hasPath = false;
-            currentPath = null;
-            currentDirection = MovementDirection.Down;
-            return;
-        }
-        
-        currentPath = path;
-        hasPath = !path.IsStandardPath();
-        currentDirection = path.GetInitialDirection();
-        
-        this.Log($"Path configured for {type} cube: PathType={path.pathType}, InitialDirection={currentDirection}", EnableDebugLogs);
-    }
+    // NOTE: ConfigurePath method removed - use SetSegmentController for segment-based direction
     
     /// <summary>
-    /// Gets the current movement direction.
-    /// </summary>
-    public MovementDirection CurrentDirection => currentDirection;
-    
-    /// <summary>
-    /// ADVANCED GRID: Sets which segment this cube is on.
+    /// Sets which segment this cube is on.
     /// Call this when spawning cubes on segment 1+.
     /// </summary>
     public void SetSegment(int segmentIndex)
@@ -185,15 +161,45 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
     }
     
     /// <summary>
+    /// SEGMENT CONTROLLER: Changes the cube's movement direction.
+    /// Used when wave transitions to move toward next segment.
+    /// </summary>
+    public void SetMovementDirection(MovementDirection direction)
+    {
+        currentDirection = direction;
+        stoppedAtEdge = false; // Reset edge stop state since we're now moving in a new direction
+        this.Log($"Cube {type} direction changed to {direction}", EnableDebugLogs);
+    }
+    
+    /// <summary>
     /// ADVANCED GRID: Checks if cube is escaping based on current direction and position.
-    /// For segment controllers, checks against the segment's bounds.
+    /// For segment controllers, checks in the direction of movement only.
+    /// Cubes can be "above" the grid (y >= height) when approaching from a segment transition.
     /// </summary>
     private bool CheckEscapeCondition()
     {
-        // SEGMENT CONTROLLER: Check against segment bounds
+        // SEGMENT CONTROLLER: Check escape based on movement direction
+        // Only escape if moving OFF the grid in the direction of travel
         if (currentSegment != null)
         {
-            return !currentSegment.IsValidLocalPosition(position);
+            switch (currentDirection)
+            {
+                case MovementDirection.Down:
+                    // Escaping when moving past bottom edge
+                    return position.y < 0;
+                case MovementDirection.Up:
+                    // Escaping when moving past top edge (but allow being above grid when moving down)
+                    return position.y >= currentSegment.height && currentDirection == MovementDirection.Up;
+                case MovementDirection.Right:
+                    // Escaping when moving past right edge
+                    return position.x >= currentSegment.width;
+                case MovementDirection.Left:
+                    // Escaping when moving past left edge
+                    return position.x < 0;
+                default:
+                    // Fallback: check X bounds and bottom edge only
+                    return position.y < 0 || position.x < 0 || position.x >= currentSegment.width;
+            }
         }
         
         // Legacy: Check against grid bounds
@@ -716,20 +722,29 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
     public bool MoveForward()
     {
         if (isMoving || isDestroyed) return true;
+        
+        // SEGMENT CONTROLLER: If stopped at edge, don't move
+        if (stoppedAtEdge)
+        {
+            this.Log($"🛑 Cube {GetEffectiveType()} at ({position.x}, {position.y}) is stopped at edge - skipping move", EnableDebugLogs);
+            return true; // Still alive, just not moving
+        }
 
         this.Log($"Moving cube {GetEffectiveType()} from ({position.x}, {position.y}) forward (direction: {currentDirection})", EnableDebugLogs);
 
-        // ADVANCED GRID: Check for turn points before moving
-        if (hasPath && currentPath != null)
-        {
-            MovementDirection newDirection = currentPath.GetDirectionAtPosition(position, currentDirection);
-            if (newDirection != currentDirection)
-            {
-                this.Log($"🔄 TURN POINT: {GetEffectiveType()} at ({position.x}, {position.y}) turning from {currentDirection} to {newDirection}", EnableDebugLogs);
-                currentDirection = newDirection;
-            }
-        }
+        // NOTE: GridPath turn point check removed - direction changes are handled by segment transitions
+        // Cubes get their direction from their current segment's localDirection
 
+        // SEGMENT CONTROLLER: Check if cube should STOP at segment edge (not escape)
+        // Wave transition is handled at the wave level in MoveCubesForward
+        WaveManager waveManager = FindFirstObjectByType<WaveManager>();
+        if (waveManager != null && waveManager.ShouldCubeStopAtEdge(this))
+        {
+            // Cube is at segment edge - just don't move, no notification needed
+            this.Log($"🛑 EDGE: {GetEffectiveType()} at ({position.x}, {position.y}) at segment edge - skipping move", EnableDebugLogs);
+            return true; // Cube is still alive, just not moving
+        }
+        
         // CUBE ESCAPE CONDITION: Check if cube is outside grid bounds based on current direction
         bool isEscaping = CheckEscapeCondition();
         if (isEscaping)
@@ -739,7 +754,6 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
             if (!isRainingCube || moveCountRemaining <= 0)
             {
                 CubeType effectiveType = GetEffectiveType();
-                WaveManager waveManager = FindFirstObjectByType<WaveManager>();
                 
                 // SEGMENT CONTROLLER: Check if we should transition instead of escape
                 if (currentSegment != null && waveManager != null)
@@ -749,7 +763,14 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
                     {
                         this.Log($"🔄 Cube {effectiveType} queued for segment transition", EnableDebugLogs);
                         
-                        // Play fall-over effect and destroy (will be respawned at next segment)
+                        // Mark as destroyed BEFORE checking transition ready
+                        // This ensures the cube count is accurate
+                        isDestroyed = true;
+                        
+                        // Remove from active cubes list
+                        waveManager.RemoveCubeFromActive(this);
+                        
+                        // Play fall-over effect and destroy
                         SpawnEscapeEffect();
                         Destroy(gameObject);
                         
@@ -801,7 +822,9 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
         Vector2Int oldPosition = position;
         
         // ADVANCED GRID: Move in current direction
-        position = GetNextPositionInDirection(currentDirection);
+        Vector2Int nextPos = GetNextPositionInDirection(currentDirection);
+        
+        position = nextPos;
         moveCount++;
 
         // Fire move event
@@ -946,8 +969,13 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
 
         float elapsed = 0f;
         Quaternion startRot = transform.rotation;
-        // ADVANCED GRID: Use direction-aware rotation
-        Quaternion endRot = startRot * GetRotationForDirection(currentDirection);
+        
+        // SEGMENT CONTROLLER: Get the base rotation for this segment
+        Quaternion segmentBaseRot = currentSegment != null ? currentSegment.WorldRotation : Quaternion.identity;
+        
+        // The tumbling rotation is in local space - multiplying applies it relative to startRot
+        Quaternion localTumble = GetRotationForDirection(currentDirection);
+        Quaternion endRot = startRot * localTumble;
 
         while (elapsed < actualMoveDuration)
         {
@@ -965,7 +993,8 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
         if (!isDestroyed)
         {
             transform.position = end;
-            transform.rotation = Quaternion.identity;
+            // SEGMENT CONTROLLER: Reset to segment's base rotation, not identity
+            transform.rotation = segmentBaseRot;
             PlayLandingSound();
         }
 

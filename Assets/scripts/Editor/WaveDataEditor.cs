@@ -34,7 +34,14 @@ public class WaveDataEditor : Editor
     {
         serializedObject.Update();
         
-        // Check for dimension changes before drawing
+        // Draw default inspector for non-cube fields FIRST
+        // This allows user to modify GridWidth/GridHeight
+        DrawDefaultInspectorWithoutCubes();
+        
+        // Apply changes so we can read updated values
+        serializedObject.ApplyModifiedProperties();
+        
+        // NOW check for dimension changes after user has edited
         int currentWidth = waveData.GridWidth;
         int currentHeight = waveData.GridHeight;
         
@@ -42,18 +49,17 @@ public class WaveDataEditor : Editor
         if (previousGridHeight != -1 && currentHeight != previousGridHeight)
         {
             HandleGridHeightChange(previousGridHeight, currentHeight);
+            EditorUtility.SetDirty(waveData);
         }
         
         if (previousGridWidth != -1 && currentWidth != previousGridWidth)
         {
             HandleGridWidthChange(previousGridWidth, currentWidth);
+            EditorUtility.SetDirty(waveData);
         }
         
         previousGridWidth = currentWidth;
         previousGridHeight = currentHeight;
-        
-        // Draw default inspector for non-cube fields
-        DrawDefaultInspectorWithoutCubes();
         
         EditorGUILayout.Space(10);
         
@@ -74,9 +80,7 @@ public class WaveDataEditor : Editor
             DrawListFallback();
         }
         
-        serializedObject.ApplyModifiedProperties();
-        
-        // Force repaint if list was modified to update grid visualization
+        // Force repaint if anything changed to update grid visualization
         if (GUI.changed)
         {
             Repaint();
@@ -106,9 +110,76 @@ public class WaveDataEditor : Editor
     {
         EditorGUILayout.BeginVertical(EditorStyles.helpBox);
         
-        // Grid dimensions info
-        EditorGUILayout.LabelField($"Grid Size: {waveData.GridWidth} × {waveData.GridHeight}", EditorStyles.boldLabel);
-        EditorGUILayout.LabelField($"Total Cubes: {waveData.CubesData.Count}", EditorStyles.miniLabel);
+        // Editable grid dimensions
+        EditorGUILayout.BeginHorizontal();
+        EditorGUILayout.LabelField("Grid Size:", GUILayout.Width(70));
+        
+        EditorGUI.BeginChangeCheck();
+        int newWidth = EditorGUILayout.IntField(waveData.GridWidth, GUILayout.Width(40));
+        EditorGUILayout.LabelField("×", GUILayout.Width(15));
+        int newHeight = EditorGUILayout.IntField(waveData.GridHeight, GUILayout.Width(40));
+        
+        if (EditorGUI.EndChangeCheck())
+        {
+            Undo.RecordObject(waveData, "Change Grid Size");
+            
+            // Clamp values
+            newWidth = Mathf.Clamp(newWidth, 1, 12);
+            newHeight = Mathf.Clamp(newHeight, 1, 10);
+            
+            // Handle dimension changes
+            if (newHeight != waveData.GridHeight)
+            {
+                HandleGridHeightChange(waveData.GridHeight, newHeight);
+                waveData.GridHeight = newHeight;
+                previousGridHeight = newHeight;
+            }
+            
+            if (newWidth != waveData.GridWidth)
+            {
+                HandleGridWidthChange(waveData.GridWidth, newWidth);
+                waveData.GridWidth = newWidth;
+                previousGridWidth = newWidth;
+            }
+            
+            EditorUtility.SetDirty(waveData);
+        }
+        
+        EditorGUILayout.EndHorizontal();
+        
+        // Check for out-of-bounds cubes
+        int outOfBoundsCubes = 0;
+        int maxX = 0, maxY = 0;
+        foreach (var cube in waveData.CubesData)
+        {
+            if (cube.position.x >= waveData.GridWidth || cube.position.y >= waveData.GridHeight)
+                outOfBoundsCubes++;
+            maxX = Mathf.Max(maxX, cube.position.x + 1);
+            maxY = Mathf.Max(maxY, cube.position.y + 1);
+        }
+        
+        // Show cube count and out-of-bounds warning
+        EditorGUILayout.BeginHorizontal();
+        if (outOfBoundsCubes > 0)
+        {
+            EditorGUILayout.LabelField($"Total Cubes: {waveData.CubesData.Count} ({outOfBoundsCubes} out of bounds!)", 
+                new GUIStyle(EditorStyles.miniLabel) { normal = { textColor = Color.red } });
+            
+            if (GUILayout.Button($"Auto-fit ({maxX}×{maxY})", GUILayout.Width(100)))
+            {
+                Undo.RecordObject(waveData, "Auto-fit Grid Size");
+                waveData.GridWidth = maxX;
+                waveData.GridHeight = maxY;
+                previousGridWidth = maxX;
+                previousGridHeight = maxY;
+                EditorUtility.SetDirty(waveData);
+            }
+        }
+        else
+        {
+            EditorGUILayout.LabelField($"Total Cubes: {waveData.CubesData.Count}", EditorStyles.miniLabel);
+        }
+        EditorGUILayout.EndHorizontal();
         
         EditorGUILayout.Space(5);
         

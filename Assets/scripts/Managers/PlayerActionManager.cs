@@ -11,11 +11,13 @@ public class UnitMarker
     public float placementTime;
     public GameObject visualObject;
     public bool isPerfectTiming = false;
+    public GridSegmentController segment; // Segment-aware: which segment this marker is on
 
-    public UnitMarker(Vector2Int pos, float time)
+    public UnitMarker(Vector2Int pos, float time, GridSegmentController seg = null)
     {
         position = pos;
         placementTime = time;
+        segment = seg;
     }
 }
 
@@ -26,11 +28,13 @@ public class RecursionMarker
     public float placementTime;
     public GameObject visualObject;
     public bool isPerfectTiming = false;
+    public GridSegmentController segment; // Segment-aware: which segment this marker is on
 
-    public RecursionMarker(Vector2Int pos, float time)
+    public RecursionMarker(Vector2Int pos, float time, GridSegmentController seg = null)
     {
         position = pos;
         placementTime = time;
+        segment = seg;
     }
 }
 
@@ -44,12 +48,14 @@ public class MatrixMarker
     public float placementTime;
     public List<GameObject> visualObjects = new List<GameObject>();
     public List<Vector2Int> affectedPositions = new List<Vector2Int>();
+    public GridSegmentController segment; // Segment-aware: which segment this marker is on
 
-    public MatrixMarker(Vector2Int center, int markerSize, float time)
+    public MatrixMarker(Vector2Int center, int markerSize, float time, GridSegmentController seg = null)
     {
         centerPosition = center;
         size = markerSize;
         placementTime = time;
+        segment = seg;
     }
 }
 
@@ -60,11 +66,13 @@ public class InfinityMarker
     public float placementTime;
     public GameObject visualObject;
     public bool isPerfectTiming = false;
+    public GridSegmentController segment; // Segment-aware: which segment this marker is on
 
-    public InfinityMarker(Vector2Int pos, float time)
+    public InfinityMarker(Vector2Int pos, float time, GridSegmentController seg = null)
     {
         position = pos;
         placementTime = time;
+        segment = seg;
     }
 }
 
@@ -525,8 +533,22 @@ MarkerMode previousMode = currentMarkerMode;
         if (Input.GetKeyDown(KeyCode.F))
         {
             Vector2Int playerPos = playerManager.currentTilePosition;
-MarkerMode currentMode = GetCurrentMode();
+            MarkerMode currentMode = GetCurrentMode();
             bool actionSuccessful = false;
+            
+            // SEGMENT CHECK: Verify player is on the same segment as the wave BEFORE any marker action
+            if (!markerSystem.IsPlayerOnWaveSegment())
+            {
+                string segmentError = markerSystem.GetSegmentMismatchReason() ?? "Move to the wave's segment to place markers.";
+                ShowActionErrorFeedback(segmentError);
+                TriggerInputFeedbackActionFailed("place", segmentError, playerPos, 0.7f);
+                
+                if (EnableDebugLogs)
+                {
+                    this.LogWarning($"Marker placement blocked: {segmentError}", EnableDebugLogs);
+                }
+                return; // Early exit - don't process marker placement
+            }
 
             switch (currentMode)
             {
@@ -730,8 +752,22 @@ MarkerMode currentMode = GetCurrentMode();
     {
         if (Input.GetKeyDown(KeyCode.R))
         {
-MarkerMode currentMode = GetCurrentMode();
+            MarkerMode currentMode = GetCurrentMode();
             bool actionSuccessful = false;
+            
+            // SEGMENT CHECK: Verify player is on the same segment as the wave for trigger actions
+            if (!markerSystem.IsPlayerOnWaveSegment())
+            {
+                string segmentError = markerSystem.GetSegmentMismatchReason() ?? "Move to the wave's segment to trigger markers.";
+                ShowActionErrorFeedback(segmentError);
+                TriggerInputFeedbackActionFailed("trigger", segmentError, GetCurrentPlayerPosition(), 0.6f);
+                
+                if (EnableDebugLogs)
+                {
+                    this.LogWarning($"Marker trigger blocked: {segmentError}", EnableDebugLogs);
+                }
+                return; // Early exit - don't process marker triggering
+            }
 
             switch (currentMode)
             {

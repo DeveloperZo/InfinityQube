@@ -114,22 +114,31 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
     private int stageDefaultGridHeight = 0;  // Stored when stage starts
     private int currentGridHeightOverride = 0;  // 0 = using stage default, >0 = overridden
     
-    // ADVANCED GRID: Path tracking
-    private GridPath currentGridPath;  // Current active grid path
-    private GridPathType stageDefaultPathType = GridPathType.Standard;  // Default path from stage
-    
-    // ADVANCED GRID: Segment transition tracking
+    // Segment transition tracking
     private int currentSegmentIndex = 0;
     private bool isTransitioning = false;
+    private bool isInLateralPhase = false; // Legacy - kept for compatibility
+    private bool waveStoppedAtEdge = false; // True when entire wave has stopped at segment edge
     private List<CubeData> transitionCubeData = new List<CubeData>(); // Cubes to respawn after transition
     
+    // SEGMENT CONTROLLER: Wave containment at segment edge
+    private List<CubeData> originalWaveFormation = new List<CubeData>(); // Original wave for respawn
+    private int originalWaveDepth = 0; // Number of rows in original wave
+    private int segmentStartMoveStep = 0; // MoveStep when wave started on current segment
+    private int movesUntilEdge = 0; // Calculated moves until front row reaches edge
+    private HashSet<CubeManager> stoppedAtEdge = new HashSet<CubeManager>(); // Legacy - kept for compatibility
+    private bool waveContainedAtEdge = false; // Legacy - kept for compatibility
+    
     // SEGMENT CONTROLLER: Multi-segment properties
-    private bool HasSegmentControllers => grid != null && grid.HasSegmentControllers;
+    public bool HasSegmentControllers => grid != null && grid.HasSegmentControllers;
     private int SegmentControllerCount => grid != null ? grid.SegmentControllerCount : 0;
     private bool IsOnTerminalSegment => currentSegmentIndex >= SegmentControllerCount - 1;
-    private GridSegmentController CurrentSegmentController => 
+    public GridSegmentController CurrentSegmentController => 
         grid != null && currentSegmentIndex < grid.SegmentControllerCount ? 
         grid.GetSegmentController(currentSegmentIndex) : null;
+    
+    // NOTE: Segment layout prefab is now handled at stage level via StageData.segmentLayoutPrefab
+    // GridManager.HandleStageStart() instantiates and configures segments for each stage
     #endregion
 
     #region Unity Lifecycle
@@ -172,11 +181,9 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
             stageDefaultGridHeight = stageData.gridHeight;
             currentGridHeightOverride = 0;  // Reset override when stage starts
             
-            // ADVANCED GRID: Capture stage's default path type and create path
-            stageDefaultPathType = stageData.gridPathType;
-            currentGridPath = stageData.GetGridPath();
+            // NOTE: GridPath configuration removed - use segment controllers for multi-segment layouts
             
-            DebugLog($"Stage {stageIndex} started: Default grid height = {stageDefaultGridHeight}, Path type = {stageDefaultPathType}");
+            DebugLog($"Stage {stageIndex} started: Default grid height = {stageDefaultGridHeight}");
         }
     }
     #endregion
@@ -556,19 +563,13 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
     
     /// <summary>
     /// ADVANCED GRID: Applies grid path override from current wave if specified.
+    /// NOTE: Segment layout is now handled at stage level via StageData.segmentLayoutPrefab
+    /// GridManager.HandleStageStart() instantiates and configures segments for each stage.
     /// </summary>
     private void ApplyGridPathOverride()
     {
-        if (CurrentWave == null || grid == null) return;
-        
-        // Get the effective path for this wave
-        GridPath wavePath = CurrentWave.GetWavePath(currentGridPath, grid.Width, grid.Height);
-        
-        if (CurrentWave.overrideGridPath)
-        {
-            currentGridPath = wavePath;
-            DebugLog($"📏 Wave {currentWaveIndex} overrides grid path to {CurrentWave.wavePathType}");
-        }
+        // Segment layout is now configured at stage level, not wave level
+        // See GridManager.ConfigureSegmentLayoutFromStage() for implementation
     }
 
     private IEnumerator ProcessWaveStep()
@@ -738,17 +739,22 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
     /// </summary>
     private IEnumerator PlayFallOverEffect(List<CubeManager> cubes)
     {
+        // Filter out any null or destroyed cubes first
+        var validCubes = cubes.Where(c => c != null && c.gameObject != null && !c.isDestroyed).ToList();
+        if (validCubes.Count == 0)
+        {
+            DebugLog($"🎬 No valid cubes for fall-over effect");
+            yield break;
+        }
+        
         float fallDuration = 0.4f;
         float elapsed = 0f;
         
         // Store initial rotations
         var initialRotations = new Dictionary<CubeManager, Quaternion>();
-        foreach (var cube in cubes)
+        foreach (var cube in validCubes)
         {
-            if (cube != null)
-            {
-                initialRotations[cube] = cube.transform.rotation;
-            }
+            initialRotations[cube] = cube.transform.rotation;
         }
         
         // Animate fall-over (rotate 90 degrees forward)
@@ -758,9 +764,9 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
             float t = elapsed / fallDuration;
             float angle = Mathf.Lerp(0f, 90f, t);
             
-            foreach (var cube in cubes)
+            foreach (var cube in validCubes)
             {
-                if (cube != null && initialRotations.ContainsKey(cube))
+                if (cube != null && cube.gameObject != null && initialRotations.ContainsKey(cube))
                 {
                     // Rotate around X axis (fall forward)
                     cube.transform.rotation = initialRotations[cube] * Quaternion.Euler(angle, 0f, 0f);
@@ -775,7 +781,7 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
             yield return null;
         }
         
-        DebugLog($"🎬 Fall-over effect completed for {cubes.Count} cubes");
+        DebugLog($"🎬 Fall-over effect completed for {validCubes.Count} cubes");
     }
     
     /// <summary>
@@ -854,6 +860,9 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
     
     #region Segment Controller Transitions
     
+    // Track the MoveStep when first cube reached edge (for row offset calculation)
+    private int transitionStartMoveStep = -1;
+    
     /// <summary>
     /// SEGMENT CONTROLLER: Called when a cube reaches the edge of the current segment.
     /// Returns true if the cube should be queued for transition (not terminal segment).
@@ -874,18 +883,759 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
         // Queue this cube for segment transition
         DebugLog($"🔄 SEGMENT EDGE: {cube.type} at edge of segment {currentSegmentIndex}, queuing for transition");
         
+        // Track when first cube reaches edge to calculate row offsets
+        if (transitionStartMoveStep < 0)
+        {
+            transitionStartMoveStep = MoveStep;
+        }
+        
+        // Calculate row offset: cubes from row N of the wave reach the edge N steps after front row
+        int rowOffset = MoveStep - transitionStartMoveStep;
+        
         // Store cube data for respawn (only if not already captured/destroyed)
         if (!cube.isDestroyed)
         {
             transitionCubeData.Add(new CubeData
             {
                 type = cube.type,
-                position = cube.position,
+                position = new Vector2Int(cube.position.x, rowOffset), // Store X column and row offset
                 level = cube.level
             });
         }
         
         return true; // Cube will be transitioned, not escaped
+    }
+    
+    /// <summary>
+    /// SEGMENT CONTROLLER: Called when a cube reaches the segment edge and STOPS (doesn't escape).
+    /// </summary>
+    public void HandleCubeStoppedAtEdge(CubeManager cube)
+    {
+        if (cube == null || cube.isDestroyed) return;
+        
+        stoppedAtEdge.Add(cube);
+        DebugLog($"🛑 EDGE STOP: {cube.type} stopped at edge ({cube.position.x}, {cube.position.y}), direction: {cube.CurrentDirection}");
+        
+        // Check if wave is ready for transition
+        var currentSegment = CurrentSegmentController;
+        if (currentSegment != null && cube.CurrentDirection != currentSegment.localDirection)
+        {
+            // Cube is moving laterally (toward next segment) - check for segment transition
+            CheckLateralSegmentTransition();
+        }
+        else
+        {
+            // Cube is moving in primary direction (down) - check for containment
+            CheckWaveContainmentAtEdge();
+        }
+    }
+    
+    /// <summary>
+    /// SEGMENT CONTROLLER: Checks if the wave's leading edge has reached the segment boundary
+    /// while moving laterally toward the next segment.
+    /// Now handled by CheckWaveAtSegmentEdge - this is kept for backwards compatibility.
+    /// </summary>
+    private void CheckLateralSegmentTransition()
+    {
+        // Now handled by CheckWaveAtSegmentEdge which is called from MoveCubesForward
+        CheckWaveAtSegmentEdge();
+    }
+    
+    /// <summary>
+    /// SEGMENT CONTROLLER: Transitions cubes from current segment to next segment
+    /// when they've reached the lateral boundary.
+    /// </summary>
+    private IEnumerator PerformLateralSegmentTransition()
+    {
+        if (isTransitioning) yield break;
+        isTransitioning = true;
+        
+        DebugLog($"🔄 LATERAL TRANSITION: Moving from segment {currentSegmentIndex} to {currentSegmentIndex + 1}");
+        
+        // Store original wave for respawn on new segment
+        // Convert actual positions to (column, rowOffset) format
+        transitionCubeData.Clear();
+        
+        // Find the front row (highest Y) to calculate offsets
+        int frontRow = 0;
+        foreach (var cubeData in originalWaveFormation)
+        {
+            frontRow = Mathf.Max(frontRow, cubeData.position.y);
+        }
+        
+        foreach (var cubeData in originalWaveFormation)
+        {
+            // Convert to (column, rowOffset) format
+            int rowOffset = frontRow - cubeData.position.y;
+            
+            transitionCubeData.Add(new CubeData
+            {
+                type = cubeData.type,
+                position = new Vector2Int(cubeData.position.x, rowOffset),
+                level = cubeData.level
+            });
+        }
+        
+        // Destroy current cubes
+        var currentCubes = activeCubes.Where(c => c != null && !c.isDestroyed).ToList();
+        foreach (var cube in currentCubes)
+        {
+            if (cube.gameObject != null) Destroy(cube.gameObject);
+        }
+        activeCubes.Clear();
+        stoppedAtEdge.Clear();
+        
+        // Advance to next segment
+        currentSegmentIndex++;
+        DebugLog($"🔄 Advanced to segment {currentSegmentIndex}");
+        
+        // Grant player invulnerability
+        if (player != null)
+        {
+            player.GrantBriefInvulnerability(1.0f);
+        }
+        
+        // Respawn full wave on new segment
+        RespawnCubesAtSegmentController();
+        
+        // Reset containment tracking for new segment
+        waveContainedAtEdge = false;
+        originalWaveFormation.Clear();
+        TrackOriginalWaveFormation();
+        
+        yield return new WaitForSeconds(0.3f);
+        
+        isTransitioning = false;
+        DebugLog($"🔄 LATERAL TRANSITION COMPLETE: Now on segment {currentSegmentIndex}");
+    }
+    
+    /// <summary>
+    /// Pre-checks if ANY cube in the wave is at the segment edge.
+    /// Called BEFORE processing cube movements to prevent race conditions.
+    /// </summary>
+    private void PreCheckWaveAtEdge()
+    {
+        var segment = CurrentSegmentController;
+        if (segment == null) return;
+        
+        // Check if there's a next segment - if not, this is terminal
+        var nextSegment = grid?.GetSegmentController(currentSegmentIndex + 1);
+        if (nextSegment == null) return;
+        
+        // Check each cube to see if any is at the edge
+        foreach (var cube in activeCubes)
+        {
+            if (cube == null || cube.isDestroyed) continue;
+            
+            bool atEdge = false;
+            switch (cube.CurrentDirection)
+            {
+                case MovementDirection.Down:
+                    atEdge = cube.position.y <= 0;
+                    break;
+                case MovementDirection.Up:
+                    atEdge = cube.position.y >= segment.height - 1;
+                    break;
+                case MovementDirection.Left:
+                    atEdge = cube.position.x <= 0;
+                    break;
+                case MovementDirection.Right:
+                    atEdge = cube.position.x >= segment.width - 1;
+                    break;
+            }
+            
+            if (atEdge)
+            {
+                waveStoppedAtEdge = true;
+                DebugLog($"🛑 PRE-CHECK: Cube at ({cube.position.x},{cube.position.y}) is at edge - stopping entire wave");
+                return;
+            }
+        }
+    }
+    
+    /// <summary>
+    /// SEGMENT CONTROLLER: Checks if the wave has reached the segment edge.
+    /// Triggered when waveStoppedAtEdge flag is set by ShouldCubeStopAtEdge.
+    /// </summary>
+    private void CheckWaveAtSegmentEdge()
+    {
+        if (isTransitioning) return;
+        
+        // Check if there's a next segment - if not, this is terminal segment
+        var nextSegment = grid?.GetSegmentController(currentSegmentIndex + 1);
+        if (nextSegment == null) return;
+        
+        // Debug: Log every 5 moves
+        int movesSinceStart = MoveStep - segmentStartMoveStep;
+        if (movesSinceStart % 5 == 0)
+        {
+            DebugLog($"📍 Edge check: MoveStep={MoveStep}, waveStoppedAtEdge={waveStoppedAtEdge}");
+        }
+        
+        // Check if wave has been flagged as stopped at edge
+        if (!waveStoppedAtEdge)
+        {
+            return; // Not at edge yet
+        }
+        
+        // ENTIRE WAVE has reached the edge - trigger transition
+        DebugLog($"✅ WAVE AT EDGE: MoveStep={MoveStep}, triggering transition");
+        StartCoroutine(PerformEdgeTransitionToNextSegment());
+    }
+    
+    /// <summary>
+    /// SEGMENT CONTROLLER: Legacy method - kept for compatibility but now uses CheckWaveAtSegmentEdge.
+    /// </summary>
+    private void CheckWaveContainmentAtEdge()
+    {
+        CheckWaveAtSegmentEdge();
+    }
+    
+    /// <summary>
+    /// SEGMENT CONTROLLER: Performs transition when wave reaches segment edge.
+    /// 1. Stops entire wave
+    /// 2. Respawns missing NON-infinity cubes at edge
+    /// 3. Transitions cubes to segment 1's coordinate system (positioned above segment 1's grid)
+    /// 4. Wave moves "down" in segment 1, bringing cubes onto the grid
+    /// </summary>
+    private IEnumerator PerformEdgeTransitionToNextSegment()
+    {
+        if (isTransitioning) yield break;
+        isTransitioning = true;
+        
+        var currentSegment = CurrentSegmentController;
+        var nextSegment = grid.GetSegmentController(currentSegmentIndex + 1);
+        
+        if (nextSegment == null)
+        {
+            DebugLog("❌ Cannot transition: no next segment");
+            isTransitioning = false;
+            yield break;
+        }
+        
+        DebugLog($"🔄 EDGE TRANSITION: Wave stopped at segment {currentSegmentIndex} edge");
+        
+        // Step 1: Identify and respawn missing NON-infinity cubes
+        RespawnMissingCubesAtEdge(currentSegment);
+        
+        // Step 2: Transition all cubes to segment 1's coordinate system
+        // Cubes will be positioned ABOVE segment 1's grid (y = height + rowOffset)
+        // Each move forward will bring them down onto the grid
+        TransitionCubesToNextSegment(currentSegment, nextSegment);
+        
+        // Step 3: Advance to next segment and reset flags
+        currentSegmentIndex++;
+        isInLateralPhase = false;
+        waveStoppedAtEdge = false; // Allow wave to move again
+        
+        // Step 4: Calculate moves until cubes reach segment 1's edge
+        // After TRANSPOSE: old columns become new rows above grid
+        // Wave depth on new segment = old wave WIDTH (column count)
+        int oldWaveWidth = currentSegment.width; // Approximate - could track more precisely
+        if (activeCubes.Count > 0)
+        {
+            // Get actual max column from cubes before transpose was applied
+            // After transpose, max newY = toHeight + maxOldColumn
+            int maxY = activeCubes.Where(c => c != null && !c.isDestroyed).Max(c => c.position.y);
+            oldWaveWidth = maxY - nextSegment.height + 1;
+        }
+        movesUntilEdge = nextSegment.height + oldWaveWidth;
+        segmentStartMoveStep = MoveStep;
+        
+        DebugLog($"🔄 Now on segment {currentSegmentIndex}, wave at y={nextSegment.height} (above grid)");
+        DebugLog($"🔄 {movesUntilEdge} moves to reach segment {currentSegmentIndex}'s edge");
+        
+        // Update original wave formation for this segment
+        originalWaveFormation.Clear();
+        TrackOriginalWaveFormation();
+        
+        // Grant player invulnerability
+        if (player != null)
+        {
+            player.GrantBriefInvulnerability(1.0f);
+        }
+        
+        yield return new WaitForSeconds(0.3f);
+        
+        isTransitioning = false;
+        DebugLog($"🔄 EDGE TRANSITION COMPLETE: Wave moving down on segment {currentSegmentIndex}");
+    }
+    
+    /// <summary>
+    /// Respawns missing NON-infinity cubes at the edge to restore full wave formation.
+    /// </summary>
+    private void RespawnMissingCubesAtEdge(GridSegmentController segment)
+    {
+        if (segment == null) return;
+        
+        // Build set of current cube positions (column, rowOffset from front)
+        var currentPositions = new HashSet<string>();
+        foreach (var cube in activeCubes)
+        {
+            if (cube != null && !cube.isDestroyed)
+            {
+                // At edge, cube.position.y is the row offset from front (0 = front row)
+                currentPositions.Add($"{cube.position.x},{cube.position.y}");
+            }
+        }
+        
+        int respawnCount = 0;
+        
+        // Check each cube in original formation
+        foreach (var originalCube in originalWaveFormation)
+        {
+            // Skip infinity cubes - they can't be captured so should always be present
+            if (originalCube.type == CubeType.Infinity) continue;
+            
+            // Calculate expected position at edge
+            int maxY = originalWaveFormation.Max(c => c.position.y);
+            int rowOffset = maxY - originalCube.position.y; // 0 = front row
+            string posKey = $"{originalCube.position.x},{rowOffset}";
+            
+            // Check if cube exists at this position
+            if (!currentPositions.Contains(posKey))
+            {
+                // Respawn this cube at the edge
+                Vector2Int localPos = new Vector2Int(originalCube.position.x, rowOffset);
+                Vector3 worldPos = segment.LocalToWorldPosition(localPos.x, localPos.y, 2f);
+                
+                int prefabIndex = (int)originalCube.type;
+                if (prefabIndex >= 0 && prefabIndex < cubePrefabs.Length && cubePrefabs[prefabIndex] != null)
+                {
+                    GameObject cubeObj = Instantiate(cubePrefabs[prefabIndex], worldPos, segment.WorldRotation);
+                    var cube = cubeObj.GetComponent<CubeManager>();
+                    if (cube == null) cube = cubeObj.AddComponent<CubeManager>();
+                    
+                    var spawnData = new CubeData
+                    {
+                        type = originalCube.type,
+                        position = localPos,
+                        level = originalCube.level
+                    };
+                    
+                    cube.Init(grid, spawnData, 2f);
+                    cube.transform.position = worldPos;
+                    cube.transform.rotation = segment.WorldRotation;
+                    cube.SetSegmentController(segment);
+                    
+                    activeCubes.Add(cube);
+                    currentPositions.Add(posKey);
+                    respawnCount++;
+                }
+            }
+        }
+        
+        if (respawnCount > 0)
+        {
+            DebugLog($"🔄 Respawned {respawnCount} missing non-infinity cubes at edge");
+        }
+    }
+    
+    /// <summary>
+    /// Transitions all cubes from current segment to next segment's coordinate system.
+    /// TRANSPOSE: Since direction changes 90°, we swap rows and columns.
+    /// - Segment 0 row 0 → Segment 1 column 0
+    /// - Segment 0 column 4 → Segment 1 row 0 (enters first)
+    /// - Segment 0 column 0 → Segment 1 row N (enters last)
+    /// </summary>
+    private void TransitionCubesToNextSegment(GridSegmentController fromSegment, GridSegmentController toSegment)
+    {
+        int toHeight = toSegment.height;
+        int maxColumn = fromSegment.width - 1; // e.g., 4 for 5-wide grid
+        
+        DebugLog($"🔄 Transitioning {activeCubes.Count} cubes to segment {currentSegmentIndex + 1} (TRANSPOSE)");
+        DebugLog($"🔄 maxColumn={maxColumn}, toHeight={toHeight}");
+        
+        foreach (var cube in activeCubes)
+        {
+            if (cube == null || cube.isDestroyed) continue;
+            
+            // Current position at edge of segment 0:
+            // x = column (0 = left, 4 = right)
+            // y = row (0 = front at edge, higher = back)
+            int oldColumn = cube.position.x;
+            int oldRow = cube.position.y;
+            
+            // TRANSPOSE for 90° direction change:
+            // Old row becomes new column: row 0 → column 0
+            // Old column becomes new row (INVERTED): column 4 → row 0 (enters first)
+            int newX = oldRow;  // Row 0 at edge → Column 0
+            int newY = toHeight + (maxColumn - oldColumn);  // Column 4 → closest to grid, Column 0 → furthest
+            
+            DebugLog($"  Cube {cube.type}: ({oldColumn},{oldRow}) -> ({newX},{newY}) [transpose]");
+            
+            // Update cube position
+            cube.position = new Vector2Int(newX, newY);
+            
+            // Assign to new segment (this sets direction to toSegment.localDirection)
+            cube.SetSegmentController(toSegment);
+            cube.stoppedAtEdge = false; // Reset stop flag
+            
+            // Calculate world position - cubes above grid still need valid positions
+            Vector3 worldPos = CalculateWorldPositionAboveGrid(toSegment, newX, newY);
+            cube.transform.position = worldPos;
+            cube.transform.rotation = toSegment.WorldRotation;
+        }
+    }
+    
+    /// <summary>
+    /// Calculates world position for a cube that may be above the grid (y >= height).
+    /// </summary>
+    private Vector3 CalculateWorldPositionAboveGrid(GridSegmentController segment, int x, int y)
+    {
+        // If within grid bounds, use normal calculation
+        if (y < segment.height)
+        {
+            return segment.LocalToWorldPosition(x, y, 2f);
+        }
+        
+        // For positions above the grid, extrapolate based on grid spacing
+        // Get positions at two rows to calculate the row direction vector
+        Vector3 topRowPos = segment.LocalToWorldPosition(x, segment.height - 1, 2f);
+        Vector3 prevRowPos = segment.LocalToWorldPosition(x, segment.height - 2, 2f);
+        
+        // Row direction: going from lower Y to higher Y (direction cubes come FROM)
+        Vector3 rowDirection = (topRowPos - prevRowPos).normalized;
+        
+        // Calculate how many rows above the top row
+        int rowsAbove = y - (segment.height - 1);
+        
+        // Extrapolate position above the grid
+        return topRowPos + (rowDirection * rowsAbove * segment.tileSize);
+    }
+    
+    /// <summary>
+    /// LEGACY: Performs transition after wave is contained at edge.
+    /// Respawns ONLY captured cubes to restore full wave, then changes direction toward next segment.
+    /// Does NOT destroy existing cubes - they continue moving in the new direction.
+    /// </summary>
+    private IEnumerator PerformEdgeContainmentTransition()
+    {
+        if (isTransitioning) yield break;
+        isTransitioning = true;
+        
+        var currentSegment = CurrentSegmentController;
+        var nextSegment = grid.GetSegmentController(currentSegmentIndex + 1);
+        
+        if (nextSegment == null)
+        {
+            DebugLog("❌ Cannot transition: no next segment");
+            isTransitioning = false;
+            yield break;
+        }
+        
+        DebugLog($"🔄 EDGE TRANSITION: Wave at segment {currentSegmentIndex} edge");
+        
+        // Determine direction toward next segment
+        MovementDirection newDirection = GetDirectionTowardSegment(currentSegment, nextSegment);
+        DebugLog($"🔄 New movement direction: {newDirection} (toward segment {currentSegmentIndex + 1})");
+        
+        // Find which cubes from original wave are MISSING (captured/destroyed)
+        var currentCubePositions = new HashSet<Vector2Int>();
+        foreach (var cube in activeCubes)
+        {
+            if (cube != null && !cube.isDestroyed)
+            {
+                currentCubePositions.Add(cube.position);
+            }
+        }
+        
+        // Identify missing cubes by comparing to original formation
+        var missingCubes = new List<CubeData>();
+        foreach (var originalCube in originalWaveFormation)
+        {
+            // Map original position to current edge position
+            // Original wave was at spawn row, now cubes are at edge (row 0 for Down direction)
+            int edgeRow = 0; // Front row at edge
+            int rowOffset = originalWaveFormation.Max(c => c.position.y) - originalCube.position.y;
+            Vector2Int expectedPosition = new Vector2Int(originalCube.position.x, rowOffset);
+            
+            // Check if any active cube is at this position
+            bool found = false;
+            foreach (var cube in activeCubes)
+            {
+                if (cube != null && !cube.isDestroyed && cube.position.x == expectedPosition.x)
+                {
+                    // Check if cube is within the wave depth from edge
+                    int cubeRowOffset = cube.position.y;
+                    if (cubeRowOffset == rowOffset)
+                    {
+                        found = true;
+                        break;
+                    }
+                }
+            }
+            
+            if (!found)
+            {
+                missingCubes.Add(new CubeData
+                {
+                    type = originalCube.type,
+                    position = expectedPosition,
+                    level = originalCube.level
+                });
+            }
+        }
+        
+        DebugLog($"🔄 Found {missingCubes.Count} missing cubes to respawn");
+        
+        // Respawn missing cubes at the edge
+        foreach (var cubeData in missingCubes)
+        {
+            // Calculate spawn position at edge
+            int spawnRow = cubeData.position.y; // Row offset from front
+            int column = cubeData.position.x;
+            
+            Vector2Int localPos = new Vector2Int(column, spawnRow);
+            Vector3 spawnWorldPos = currentSegment.LocalToWorldPosition(localPos.x, localPos.y, 2f);
+            Quaternion cubeRotation = currentSegment.WorldRotation;
+            
+            int prefabIndex = (int)cubeData.type;
+            if (prefabIndex >= 0 && prefabIndex < cubePrefabs.Length && cubePrefabs[prefabIndex] != null)
+            {
+                GameObject cubeObj = Instantiate(cubePrefabs[prefabIndex], Vector3.zero, Quaternion.identity);
+                var cube = cubeObj.GetComponent<CubeManager>();
+                if (cube == null) cube = cubeObj.AddComponent<CubeManager>();
+                
+                var spawnData = new CubeData
+                {
+                    type = cubeData.type,
+                    position = localPos,
+                    level = cubeData.level
+                };
+                
+                cube.Init(grid, spawnData, 2f);
+                cube.transform.position = spawnWorldPos;
+                cube.transform.rotation = cubeRotation;
+                
+                cube.SetSegmentController(currentSegment);
+                // Set the new direction immediately
+                cube.SetMovementDirection(newDirection);
+                activeCubes.Add(cube);
+                
+                DebugLog($"  ✅ Respawned {cubeData.type} at local ({localPos.x}, {localPos.y})");
+            }
+        }
+        
+        // Change direction for ALL existing cubes
+        foreach (var cube in activeCubes)
+        {
+            if (cube != null && !cube.isDestroyed)
+            {
+                cube.SetMovementDirection(newDirection);
+            }
+        }
+        
+        DebugLog($"🔄 All {activeCubes.Count} cubes now moving {newDirection} toward segment {currentSegmentIndex + 1}");
+        
+        // Calculate new movesUntilEdge based on lateral distance to next segment
+        // For now, use the segment width as the distance
+        int lateralDistance = currentSegment.width;
+        movesUntilEdge = lateralDistance;
+        segmentStartMoveStep = MoveStep;
+        
+        DebugLog($"🔄 Lateral movement phase: {movesUntilEdge} moves until segment boundary");
+        
+        // Mark that we're now in lateral phase
+        isInLateralPhase = true;
+        
+        // Grant player invulnerability
+        if (player != null)
+        {
+            player.GrantBriefInvulnerability(0.5f);
+        }
+        
+        yield return new WaitForSeconds(0.2f);
+        
+        isTransitioning = false;
+        DebugLog($"🔄 EDGE TRANSITION COMPLETE: Wave moving toward segment {currentSegmentIndex + 1}");
+    }
+    
+    /// <summary>
+    /// SEGMENT CONTROLLER: Performs the actual transition to the next segment.
+    /// Called after cubes have moved laterally across segment 0 and reached segment 1's boundary.
+    /// </summary>
+    private IEnumerator PerformActualSegmentTransition()
+    {
+        if (isTransitioning) yield break;
+        isTransitioning = true;
+        
+        var nextSegment = grid.GetSegmentController(currentSegmentIndex + 1);
+        if (nextSegment == null)
+        {
+            DebugLog("❌ Cannot transition: no next segment");
+            isTransitioning = false;
+            yield break;
+        }
+        
+        DebugLog($"🔄 SEGMENT TRANSITION: Moving from segment {currentSegmentIndex} to {currentSegmentIndex + 1}");
+        
+        // Advance to next segment
+        currentSegmentIndex++;
+        isInLateralPhase = false;
+        
+        // Update all cubes to new segment
+        foreach (var cube in activeCubes)
+        {
+            if (cube != null && !cube.isDestroyed)
+            {
+                // Assign to new segment (this updates direction to segment's localDirection)
+                cube.SetSegmentController(nextSegment);
+                
+                // Remap position to new segment's coordinate system
+                // The cube's X position becomes its row offset from segment edge
+                // The cube's Y position resets based on entry point
+                int newX = cube.position.y; // Old row becomes new column
+                int newY = nextSegment.height - 1 - cube.position.x; // Old column becomes new row (inverted)
+                
+                cube.position = new Vector2Int(newX, newY);
+                
+                // Update world position
+                Vector3 worldPos = nextSegment.LocalToWorldPosition(cube.position.x, cube.position.y, 2f);
+                cube.transform.position = worldPos;
+                cube.transform.rotation = nextSegment.WorldRotation;
+            }
+        }
+        
+        // Calculate new movesUntilEdge for segment 1
+        movesUntilEdge = nextSegment.height - originalWaveDepth;
+        segmentStartMoveStep = MoveStep;
+        
+        // Track new wave formation
+        originalWaveFormation.Clear();
+        TrackOriginalWaveFormation();
+        
+        DebugLog($"🔄 Now on segment {currentSegmentIndex}, {activeCubes.Count} cubes, {movesUntilEdge} moves to edge");
+        
+        // Grant player invulnerability
+        if (player != null)
+        {
+            player.GrantBriefInvulnerability(1.0f);
+        }
+        
+        yield return new WaitForSeconds(0.3f);
+        
+        isTransitioning = false;
+        DebugLog($"🔄 SEGMENT TRANSITION COMPLETE: Now on segment {currentSegmentIndex}");
+    }
+    
+    /// <summary>
+    /// Determines the movement direction to reach the next segment from current segment.
+    /// </summary>
+    private MovementDirection GetDirectionTowardSegment(GridSegmentController from, GridSegmentController to)
+    {
+        // Calculate the direction based on segment positions
+        Vector3 fromCenter = from.transform.position;
+        Vector3 toCenter = to.transform.position;
+        Vector3 direction = (toCenter - fromCenter).normalized;
+        
+        // Convert to segment-local direction
+        // Transform direction to local space of the current segment
+        Vector3 localDir = from.transform.InverseTransformDirection(direction);
+        
+        // Determine primary direction
+        if (Mathf.Abs(localDir.x) > Mathf.Abs(localDir.z))
+        {
+            return localDir.x > 0 ? MovementDirection.Right : MovementDirection.Left;
+        }
+        else
+        {
+            return localDir.z > 0 ? MovementDirection.Up : MovementDirection.Down;
+        }
+    }
+    
+    /// <summary>
+    /// Gets the row offset from the original wave's front row.
+    /// </summary>
+    private int GetOriginalRowOffset(int originalRow)
+    {
+        if (originalWaveFormation.Count == 0) return 0;
+        
+        int minOriginalRow = originalWaveFormation.Min(c => c.position.y);
+        return originalRow - minOriginalRow;
+    }
+    
+    /// <summary>
+    /// SEGMENT CONTROLLER: Checks if a grid position is occupied by another cube.
+    /// Used for wave containment - cubes stop behind other cubes.
+    /// </summary>
+    public bool IsPositionOccupiedByCube(Vector2Int position, CubeManager excludeCube = null)
+    {
+        foreach (var cube in activeCubes)
+        {
+            if (cube == null || cube.isDestroyed) continue;
+            if (cube == excludeCube) continue;
+            
+            if (cube.position == position)
+                return true;
+        }
+        return false;
+    }
+    
+    /// <summary>
+    /// SEGMENT CONTROLLER: Gets a cube at a position ONLY if it has stopped at the edge.
+    /// Returns null if the position is empty or contains a cube that's still moving.
+    /// This allows normal wave movement while enabling containment stacking.
+    /// </summary>
+    public CubeManager GetStoppedCubeAtPosition(Vector2Int position, CubeManager excludeCube = null)
+    {
+        foreach (var cube in activeCubes)
+        {
+            if (cube == null || cube.isDestroyed) continue;
+            if (cube == excludeCube) continue;
+            
+            // Only return cube if it's at this position AND stopped at edge
+            if (cube.position == position && cube.stoppedAtEdge)
+                return cube;
+        }
+        return null;
+    }
+    
+    /// <summary>
+    /// SEGMENT CONTROLLER: Checks if cube should stop at edge instead of escaping.
+    /// Returns true if cube is at the segment edge (next move would escape).
+    /// Only applies to non-terminal segments.
+    /// </summary>
+    public bool ShouldCubeStopAtEdge(CubeManager cube)
+    {
+        if (cube == null) return false;
+        
+        // If wave is flagged as stopped at edge, ALL cubes stop
+        if (waveStoppedAtEdge) return true;
+        
+        // Check if there's a next segment - if not, allow escape (terminal segment)
+        var nextSegment = grid?.GetSegmentController(currentSegmentIndex + 1);
+        if (nextSegment == null) return false;
+        
+        // Get segment for bounds check
+        var segment = cube.CurrentSegment ?? CurrentSegmentController;
+        if (segment == null) return false;
+        
+        // Check if cube is at the edge position (next move would escape)
+        bool atEdge = false;
+        switch (cube.CurrentDirection)
+        {
+            case MovementDirection.Down:
+                atEdge = cube.position.y <= 0;
+                break;
+            case MovementDirection.Up:
+                atEdge = cube.position.y >= segment.height - 1;
+                break;
+            case MovementDirection.Left:
+                atEdge = cube.position.x <= 0;
+                break;
+            case MovementDirection.Right:
+                atEdge = cube.position.x >= segment.width - 1;
+                break;
+        }
+        
+        if (atEdge)
+        {
+            waveStoppedAtEdge = true; // Flag entire wave to stop
+            return true;
+        }
+        
+        return false;
     }
     
     /// <summary>
@@ -896,11 +1646,14 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
         if (!HasSegmentControllers || IsOnTerminalSegment || isTransitioning)
             return;
         
-        // Count active non-infinity cubes still on the grid
-        int activeCubesOnGrid = activeCubes.Count(c => 
-            c != null && !c.isDestroyed && c.type != CubeType.Infinity);
+        // With new edge containment logic, this is handled by CheckWaveContainmentAtEdge
+        // Keep for backwards compatibility but the new flow uses HandleCubeStoppedAtEdge
         
-        // If all non-infinity cubes have been processed (either captured or at edge)
+        // Count ALL active cubes still on the grid (including Infinity)
+        // For segment transitions, ALL cubes must reach the edge before transitioning
+        int activeCubesOnGrid = activeCubes.Count(c => c != null && !c.isDestroyed);
+        
+        // If all cubes have reached the edge (either queued for transition or captured)
         if (activeCubesOnGrid == 0 && transitionCubeData.Count > 0)
         {
             DebugLog($"🔄 SEGMENT TRANSITION READY: {transitionCubeData.Count} cubes ready to transition to segment {currentSegmentIndex + 1}");
@@ -944,11 +1697,18 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
         currentSegmentIndex++;
         DebugLog($"🔄 Advanced to segment {currentSegmentIndex}");
         
-        // Trigger camera rotation FIRST, before spawning
-        TriggerCameraRotation();
+        // NOTE: Camera now auto-follows player's segment in CameraFollow.LateUpdate()
+        // No need to force camera rotation here - player may still be on previous segment
         
-        // Wait for camera rotation to begin (short delay)
+        // Brief delay before spawning cubes
         yield return new WaitForSeconds(0.3f);
+        
+        // Grant player brief invulnerability since cubes are about to spawn
+        // This prevents instant death if player happens to be at spawn location
+        if (player != null)
+        {
+            player.GrantBriefInvulnerability(1.0f);
+        }
         
         // Respawn cubes at new segment
         RespawnCubesAtSegmentController();
@@ -961,44 +1721,60 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
     }
     
     /// <summary>
-    /// SEGMENT CONTROLLER: Respawns queued cubes at the next segment's spawn row.
+    /// SEGMENT CONTROLLER: Respawns queued cubes at the new segment.
+    /// Cubes maintain the SAME configuration (no rotation) - only movement direction changes.
+    /// The visual "rotation" effect comes from the camera and movement direction change.
     /// </summary>
     private void RespawnCubesAtSegmentController()
     {
-        var segment = CurrentSegmentController;
-        if (segment == null)
+        var currentSegment = CurrentSegmentController;
+        if (currentSegment == null)
         {
             DebugLog($"❌ Cannot respawn: No segment controller for index {currentSegmentIndex}");
             return;
         }
         
-        int spawnRow = segment.SpawnRow;
-        DebugLog($"🔄 Respawning {transitionCubeData.Count} cubes at segment {currentSegmentIndex}, row {spawnRow}");
+        // Spawn at segment's spawn row (entry point)
+        int baseSpawnRow = currentSegment.SpawnRow;
+        
+        DebugLog($"🔄 Respawning {transitionCubeData.Count} cubes at segment {currentSegmentIndex}");
+        DebugLog($"   Base spawn row: {baseSpawnRow}, segment: {currentSegment.width}x{currentSegment.height}");
+        DebugLog($"   Movement direction: {currentSegment.localDirection}");
         
         foreach (var cubeData in transitionCubeData)
         {
-            // Position: same X column, spawn row Y
-            Vector2Int localPos = new Vector2Int(cubeData.position.x, spawnRow);
+            // cubeData.position.x = original column
+            // cubeData.position.y = row offset from front of wave (0 = front row, 1 = second row, etc.)
+            int column = cubeData.position.x;
+            int rowOffset = cubeData.position.y;
             
-            // Clamp X to segment width
-            localPos.x = Mathf.Clamp(localPos.x, 0, segment.width - 1);
+            // NO ROTATION - keep same column and row offset
+            // Front row spawns at baseSpawnRow, subsequent rows spawn behind (lower Y)
+            int spawnRow = baseSpawnRow - rowOffset;
             
-            // Get world position from segment controller
-            Vector3 spawnWorldPos = segment.LocalToWorldPosition(localPos.x, localPos.y, 2f);
+            // Clamp to valid grid bounds
+            spawnRow = Mathf.Clamp(spawnRow, 0, currentSegment.height - 1);
+            column = Mathf.Clamp(column, 0, currentSegment.width - 1);
             
-            // Get segment rotation for cube orientation
-            Quaternion cubeRotation = segment.WorldRotation;
+            Vector2Int localPos = new Vector2Int(column, spawnRow);
+            
+            // Calculate spawn world position using current segment's coordinate system
+            Vector3 spawnWorldPos = currentSegment.LocalToWorldPosition(localPos.x, localPos.y, 2f);
+            
+            // Apply current segment's rotation so cubes face the correct direction
+            Quaternion cubeRotation = currentSegment.WorldRotation;
             
             // Spawn the cube
             int prefabIndex = (int)cubeData.type;
             if (prefabIndex >= 0 && prefabIndex < cubePrefabs.Length && cubePrefabs[prefabIndex] != null)
             {
-                GameObject cubeObj = Instantiate(cubePrefabs[prefabIndex], spawnWorldPos, cubeRotation);
+                // Instantiate at origin first - Init will set wrong position, we override after
+                GameObject cubeObj = Instantiate(cubePrefabs[prefabIndex], Vector3.zero, Quaternion.identity);
                 
                 var cube = cubeObj.GetComponent<CubeManager>();
                 if (cube == null) cube = cubeObj.AddComponent<CubeManager>();
                 
-                // Initialize with new position on new segment
+                // Initialize cube properties
                 var spawnData = new CubeData
                 {
                     type = cubeData.type,
@@ -1007,14 +1783,23 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
                 };
                 
                 cube.Init(grid, spawnData, 2f);
-                cube.SetSegmentController(segment); // Tell cube which segment it's on
+                
+                // CRITICAL: Override position and rotation AFTER Init
+                // Init uses grid.GridToWorldPosition which only works for segment 0
+                // We need to use the segment controller's coordinate system
+                cube.transform.position = spawnWorldPos;
+                cube.transform.rotation = cubeRotation;
+                
+                // Assign to current segment (sets movement direction)
+                cube.SetSegmentController(currentSegment);
                 activeCubes.Add(cube);
                 
-                DebugLog($"  ✅ Respawned {cubeData.type} at segment {currentSegmentIndex} local ({localPos.x}, {localPos.y}) world {spawnWorldPos}");
+                DebugLog($"  ✅ Respawned {cubeData.type} at local ({localPos.x}, {localPos.y}) world {spawnWorldPos}");
             }
         }
         
         transitionCubeData.Clear();
+        transitionStartMoveStep = -1; // Reset for next transition
     }
     
     /// <summary>
@@ -1024,8 +1809,41 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
     {
         currentSegmentIndex = 0;
         isTransitioning = false;
+        isInLateralPhase = false;
+        waveStoppedAtEdge = false;
         transitionCubeData.Clear();
+        transitionStartMoveStep = -1;
+        
+        // Reset edge containment tracking
+        originalWaveFormation.Clear();
+        stoppedAtEdge.Clear();
+        waveContainedAtEdge = false;
+        originalWaveDepth = 0;
+        
         DebugLog("🔄 Segment state reset to segment 0");
+    }
+    
+    /// <summary>
+    /// SEGMENT CONTROLLER: Repositions player to the lowest row of the current segment.
+    /// </summary>
+    private void RepositionPlayerForSegment()
+    {
+        var currentSegment = CurrentSegmentController;
+        if (currentSegment == null || player == null)
+        {
+            DebugLog("❌ Cannot reposition player: missing segment controller or player");
+            return;
+        }
+        
+        // Position player at lowest row (Y=0), center column
+        int centerX = currentSegment.width / 2;
+        int bottomY = 0;
+        
+        // Use PlayerManager's segment-aware positioning method
+        // This updates transform position, currentTilePosition, and playerStartPosition
+        player.SetPositionOnSegment(currentSegment, centerX, bottomY);
+        
+        DebugLog($"🎮 Player repositioned to segment {currentSegmentIndex} at local ({centerX}, {bottomY})");
     }
     
     #endregion
@@ -1212,6 +2030,7 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
         currentSegmentIndex = 0;
         isTransitioning = false;
         transitionCubeData.Clear();
+        transitionStartMoveStep = -1; // Reset row offset tracking
         
         if (grid != null)
         {
@@ -1243,6 +2062,14 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
     {
         ClearAllCubes();
         ResetPlayer();
+        
+        // Debug: Log segment controller status
+        DebugLog($"🔧 SEGMENT STATUS: HasSegmentControllers={HasSegmentControllers}, Count={SegmentControllerCount}, IsTerminal={IsOnTerminalSegment}");
+        
+        // Clear segment edge tracking for new wave
+        originalWaveFormation.Clear();
+        stoppedAtEdge.Clear();
+        waveContainedAtEdge = false;
 
         // Validate and adjust grid size to match wave size if needed
         if (useWaveConfiguration && CurrentWave != null)
@@ -1254,9 +2081,54 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
         {
             SpawnRandomCubes();
         }
+        
+        // SEGMENT CONTROLLER: Track original wave formation for edge containment
+        TrackOriginalWaveFormation();
 
         CountNonBlackCubes();
         DebugLog($"📦 Spawned {activeCubes.Count} cubes ({totalNonBlackCubes} non-black)");
+    }
+    
+    /// <summary>
+    /// SEGMENT CONTROLLER: Records the original wave formation for respawn at segment edge.
+    /// Calculates the wave depth and how many moves until the front row reaches the edge.
+    /// </summary>
+    private void TrackOriginalWaveFormation()
+    {
+        originalWaveFormation.Clear();
+        
+        if (activeCubes.Count == 0) return;
+        
+        int minRow = int.MaxValue;
+        int maxRow = int.MinValue;
+        
+        foreach (var cube in activeCubes)
+        {
+            if (cube == null || cube.isDestroyed) continue;
+            
+            // Store original cube data
+            originalWaveFormation.Add(new CubeData
+            {
+                type = cube.type,
+                position = cube.position,
+                level = cube.level
+            });
+            
+            // Track row range
+            minRow = Mathf.Min(minRow, cube.position.y);
+            maxRow = Mathf.Max(maxRow, cube.position.y);
+        }
+        
+        originalWaveDepth = (maxRow - minRow) + 1;
+        
+        // Record starting move step and calculate moves until edge
+        // For Down movement: front row (minRow value among cubes with highest Y) needs to reach row 0
+        // The front row is at maxRow, and needs (maxRow - 0) = maxRow moves to reach edge
+        segmentStartMoveStep = MoveStep;
+        movesUntilEdge = maxRow; // Front row at maxRow needs maxRow moves to reach row 0
+        
+        DebugLog($"📊 Wave tracked: {originalWaveFormation.Count} cubes, depth={originalWaveDepth}, front at row {maxRow}");
+        DebugLog($"📊 Segment starts at MoveStep={segmentStartMoveStep}, edge in {movesUntilEdge} moves (MoveStep={segmentStartMoveStep + movesUntilEdge})");
     }
 
     /// <summary>
@@ -1322,22 +2194,8 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
         currentGridHeightOverride = 0;
         stageDefaultGridHeight = 0;
         
-        // ADVANCED GRID: Reset path tracking
-        currentGridPath = null;
-        stageDefaultPathType = GridPathType.Standard;
-        
-        DebugLog("🔄 Grid height and path override reset");
+        DebugLog("🔄 Grid height override reset");
     }
-    
-    /// <summary>
-    /// ADVANCED GRID: Gets the current grid path (for debug/UI purposes).
-    /// </summary>
-    public GridPath CurrentGridPath => currentGridPath;
-    
-    /// <summary>
-    /// ADVANCED GRID: Gets the current grid path type.
-    /// </summary>
-    public GridPathType CurrentPathType => currentGridPath?.pathType ?? GridPathType.Standard;
 
     private void SpawnConfigurationCubes()
     {
@@ -1414,12 +2272,7 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
             cube.SetSegmentController(CurrentSegmentController);
             this.Log($"Cube assigned to segment controller {currentSegmentIndex}", showDebugInfo);
         }
-        // ADVANCED GRID: Configure path for the cube (legacy)
-        else if (currentGridPath != null && !currentGridPath.IsStandardPath())
-        {
-            cube.ConfigurePath(currentGridPath);
-            this.Log($"Cube path configured: {currentGridPath.pathType}", showDebugInfo);
-        }
+        // NOTE: Legacy GridPath configuration removed - segment controllers handle direction
         
         activeCubes.Add(cube);
 
@@ -1444,14 +2297,30 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
             playerActionManager.MarkerSystem.SpawnPlayerCubes();
         }
         
-        for (int i = activeCubes.Count - 1; i >= 0; i--)
+        // CRITICAL: Pre-check if ANY cube is at the edge BEFORE processing movements
+        // This prevents race conditions where back rows move before front row sets the stop flag
+        if (HasSegmentControllers && !IsOnTerminalSegment && !waveStoppedAtEdge)
         {
-            if (i >= activeCubes.Count) continue;
-            
-            var cube = activeCubes[i];
-            if (cube == null)
+            PreCheckWaveAtEdge();
+        }
+        
+        // If wave is stopped at edge, skip all movement (will transition next)
+        if (waveStoppedAtEdge)
+        {
+            DebugLog($"🛑 Wave stopped at edge - skipping all cube movement this frame");
+            MoveStep++;
+            CheckWaveAtSegmentEdge();
+            return;
+        }
+        
+        // Create a snapshot of cubes to process (avoids modification during iteration)
+        var cubesToProcess = new List<CubeManager>(activeCubes);
+        
+        foreach (var cube in cubesToProcess)
+        {
+            if (cube == null || cube.isDestroyed)
             {
-                activeCubes.RemoveAt(i);
+                activeCubes.Remove(cube);
                 continue;
             }
 
@@ -1469,13 +2338,20 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
                     DebugLog($"🔊 Audio: Cube landing event triggered for {cube.type} at position {cube.position}");
                 }
 
-                if (!stillAlive)
+                // Only remove if not already removed by MoveForward (e.g., segment transition)
+                if (!stillAlive && activeCubes.Contains(cube))
                 {
-                    activeCubes.RemoveAt(i);
+                    activeCubes.Remove(cube);
                 }
             }
         }
         MoveStep++;
+        
+        // SEGMENT CONTROLLER: Check if wave has reached segment edge after this move
+        if (HasSegmentControllers && !IsOnTerminalSegment && !isTransitioning)
+        {
+            CheckWaveAtSegmentEdge();
+        }
         
         // Track free moves: moves where only Infinity cubes (or no cubes) are present
         bool onlyInfinityOrEmpty = activeCubes.Count == 0 || activeCubes.All(c => c != null && c.type == CubeType.Infinity);
@@ -2228,6 +3104,19 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
         SpawnCube(cubeData);
     }
 
+    /// <summary>
+    /// Removes a cube from the active cubes list without destroying it.
+    /// Used for segment transitions where cube will be respawned.
+    /// </summary>
+    public void RemoveCubeFromActive(CubeManager cube)
+    {
+        if (cube != null)
+        {
+            activeCubes.Remove(cube);
+            DebugLog($"🔄 Removed {cube.type} from active cubes (for transition)");
+        }
+    }
+    
     public void RemoveCube(CubeManager cube)
     {
         if (CurrentWave == null)
