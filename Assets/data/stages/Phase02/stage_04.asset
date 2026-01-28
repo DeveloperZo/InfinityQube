@@ -21,6 +21,7 @@ MonoBehaviour:
   gridHeight: 28
   playerStartPosition: {x: 2, y: 0}
   respawnDelayMoves: 1
+  segmentLayoutPrefab: {fileID: 0}
   enableLineDivider: 0
   lineDividerStartY: 10
   lineDividerEscapePenalty: 1
@@ -39,6 +40,9 @@ MonoBehaviour:
   lockAttunements: 1
   allowedAttunementIds: []
   waveConfigurations:
+  - {fileID: 11400000, guid: d83589e93d542724295c06681f523aa2, type: 2}
+  - {fileID: 11400000, guid: 9c4eab2470895734da131a09b9403b89, type: 2}
+  - {fileID: 11400000, guid: 4509dbf929c1adb4c9d75987d4709e65, type: 2}
   - {fileID: 11400000, guid: ce67d1eda77db1b4ea8ae6fd23aaf446, type: 2}
   requireAllCubesDestroyed: 0
   requiredCaptureCount: 0

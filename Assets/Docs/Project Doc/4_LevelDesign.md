@@ -42,7 +42,7 @@ Structured progression that introduces mechanics gradually while building master
 | **2** | Unit + Infinity (Matrix discovery in final wave) | Unit only | Master Unit + Infinity fundamentals; single Matrix cube teaser at end |
 | **3-4** | Unit + Matrix + Infinity | Unit only | Matrix cube learning: isolated introduction (early waves), then Infinity integration (later waves) |
 | **5-6** | Unit + Matrix + Infinity | Unit + Matrix | Add Matrix marker: area capture, strategic positioning |
-| **7-9** | Unit + Matrix + Recursion + Infinity | Unit + Matrix + Recursion | Add Recursion cube and Recursion marker: multi-hit mechanics, durability |
+| **7-9** | Unit + Matrix + Recursion + Infinity | Unit + Matrix + Recursion | Add Recursion cube (multi-hit) and Recursion marker: swap repositioning mechanics, breaking Infinity walls |
 | **10** | All types | Unit + Matrix + Recursion + Infinity | Add Infinity marker: player Infinity introduction, resonance mechanics |
 | **11-12** | All types | All types | Mastery tests: full strategic depth, complex interactions, optimal play |
 
@@ -68,9 +68,9 @@ Structured progression that introduces mechanics gradually while building master
 - **Grid Progression**: Consistent with Matrix learning phase
 
 #### Stages 7-9: Recursion Introduction (Add Recursion Cube + Recursion Marker)
-- **Stage 7**: Recursion cube introduction - multi-hit mechanics
-- **Stage 8**: Recursion marker introduction - durability management
-- **Stage 9**: Recursion strategy - combining with Matrix for complex solutions
+- **Stage 7**: Recursion cube introduction - multi-hit mechanics (2 hits required)
+- **Stage 8**: Swap marker introduction - repositioning tool, breaking Infinity walls
+- **Stage 9**: Recursion mastery - combining swaps with Matrix area capture, empowered swaps
 - **Grid Progression**: Second width expansion
 
 #### Stage 10: Infinity Marker Introduction
@@ -390,28 +390,28 @@ The tutorial stage teaches basic movement, marker placement, and capture mechani
 - **Learning Goal**: Combine Matrix markers with Unit markers for complex solutions
 
 ### Act 4: Recursion Introduction (Stages 7-9)
-**Focus**: Learning Recursion cube and Recursion marker mechanics
+**Focus**: Learning Recursion cube multi-hit mechanics and Recursion marker swap repositioning
 
 #### Stage 7: Recursion Discovery
 - **Grid**: Second width expansion, deep grid
 - **Wave Rows**: High spawn density
 - **Tools**: Unit + Matrix + **Recursion Markers** (introduced)
 - **Cubes**: Unit + Matrix + **Recursion** + Infinity
-- **Learning Goal**: Recursion cubes require multiple hits; Recursion markers are essential
+- **Learning Goal**: Recursion cubes require 2 hits to capture; first hit applies damage, second hit captures; Recursion markers create swap markers for repositioning
 
-#### Stage 8: Recursion Strategy
+#### Stage 8: Swap Marker Introduction
 - **Grid**: Consistent with Stage 7
 - **Wave Rows**: High spawn density
 - **Tools**: Unit + Matrix + Recursion Markers
 - **Cubes**: Unit + Matrix + Recursion + Infinity
-- **Learning Goal**: Multi-hit mechanics, durability management
+- **Learning Goal**: Swap mechanics - direction selection (horizontal/vertical), visual preview, manual trigger; breaking Infinity walls to create survival paths
 
 #### Stage 9: Recursion Mastery
 - **Grid**: Large grid (approaching end game scale)
 - **Wave Rows**: High spawn density
 - **Tools**: Unit + Matrix + Recursion Markers
 - **Cubes**: Unit + Matrix + Recursion + Infinity
-- **Learning Goal**: Combining Recursion with Matrix for complex solutions
+- **Learning Goal**: Combining Recursion swaps with Matrix area capture; empowered swaps (Recursion+Recursion) with independent axis selection; repositioning value cubes for optimal capture sequences
 
 ### Act 5: Infinity Marker Introduction (Stage 10)
 **Focus**: Player Infinity and resonance mechanics
@@ -619,7 +619,7 @@ Waves trigger events that affect stage progression:
 - **Performance Optimization**: Maintain 60 FPS with enhanced audio-visual systems
 
 ---
-**Last Updated**: January 18, 2026  
+**Last Updated**: January 27, 2026  
 **Document Type**: Project Design Document  
 **Related Documents:**
 - [Game Design Document](GameDesignDocument.md)

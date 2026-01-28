@@ -175,6 +175,7 @@ public class PlayerManager : MonoBehaviour, IManagerDebugInterface
         GameEvents.OnWaveStep += OnWaveStep;
         GameEvents.OnCubeCaptured += HandleCubeCaptured;
         GameEvents.OnCubeEscaped += HandleCubeEscaped;
+        GameEvents.OnStageStart += HandleStageStart;
     }
     
     private void UnsubscribeFromEvents()
@@ -182,6 +183,26 @@ public class PlayerManager : MonoBehaviour, IManagerDebugInterface
         GameEvents.OnWaveStep -= OnWaveStep;
         GameEvents.OnCubeCaptured -= HandleCubeCaptured;
         GameEvents.OnCubeEscaped -= HandleCubeEscaped;
+        GameEvents.OnStageStart -= HandleStageStart;
+    }
+    
+    /// <summary>
+    /// Called when a stage starts. Repositions player on the newly created segment layout.
+    /// </summary>
+    private void HandleStageStart(int stageIndex, StageData stageData)
+    {
+        // Wait a frame for GridManager to finish setting up segments
+        StartCoroutine(RepositionAfterStageSetup());
+    }
+    
+    private System.Collections.IEnumerator RepositionAfterStageSetup()
+    {
+        // Wait one frame for GridManager.HandleStageStart to complete
+        yield return null;
+        
+        // Now reposition the player on the segment
+        SetInitialPosition();
+        DebugLog("🎮 Player repositioned after stage setup");
     }
     
     private void HandleCubeCaptured(Vector2Int position, Enumerations.CubeType cubeType)
@@ -243,12 +264,9 @@ public class PlayerManager : MonoBehaviour, IManagerDebugInterface
             {
                 int startX = firstSegment.width / 2;
                 int startY = 0;
-                playerStartPosition = new Vector2Int(startX, startY);
-                currentSegment = firstSegment;
                 
-                Vector3 worldPos = firstSegment.LocalToWorldPosition(startX, startY, 0f);
-                transform.position = worldPos;
-                currentTilePosition = playerStartPosition;
+                // Use SetPositionOnSegment which properly handles CharacterController
+                SetPositionOnSegment(firstSegment, startX, startY);
                 
                 DebugLog($"🎮 Initial position set on segment 0 at local ({startX}, {startY})");
                 return;
@@ -1115,6 +1133,10 @@ public class PlayerManager : MonoBehaviour, IManagerDebugInterface
         if (!isDead) Die();
     }
 
+    /// <summary>
+    /// Teleports player to position (instant, no movement/animation).
+    /// Use MoveTo() for actual movement testing.
+    /// </summary>
     public void SetPosition(int x, int z)
     {
         // Clamp to valid grid bounds (respecting removed rows)
@@ -1157,6 +1179,102 @@ public class PlayerManager : MonoBehaviour, IManagerDebugInterface
                 currentHoveredTile.SetPlayerHover(true);
             }
         }
+    }
+    
+    /// <summary>
+    /// Moves player toward target position using the actual movement system.
+    /// This tests real movement, animations, and collision handling.
+    /// </summary>
+    public void MoveTo(int targetX, int targetY)
+    {
+        if (grid == null)
+        {
+            DebugLog("⚠️ Cannot move: GridManager not available");
+            return;
+        }
+        
+        // Clamp target to valid bounds
+        int minY = grid.bottom;
+        targetX = Mathf.Clamp(targetX, 0, grid.Width - 1);
+        targetY = Mathf.Clamp(targetY, minY, grid.Height - 1);
+        
+        Vector3 targetWorldPos = grid.GridToWorldPosition(targetX, targetY, 0f);
+        Vector3 direction = (targetWorldPos - transform.position);
+        direction.y = 0f; // Keep on ground plane
+        
+        if (direction.magnitude < 0.1f)
+        {
+            // Already at target
+            DebugLog($"Already at target position ({targetX}, {targetY})");
+            return;
+        }
+        
+        // Normalize direction
+        direction.Normalize();
+        
+        // Set velocity toward target (using acceleration for smooth movement)
+        // This will be processed by ApplyMovementWithCollisionSmoothing in Update()
+        currentVelocity = direction * acceleration;
+        isMoving = true;
+        
+        DebugLog($"🎮 Moving toward ({targetX}, {targetY}) - velocity: {currentVelocity}");
+        
+        // Start coroutine to monitor arrival
+        StartCoroutine(MonitorMovementToTarget(targetX, targetY));
+    }
+    
+    /// <summary>
+    /// Monitors movement to target and stops when close enough.
+    /// </summary>
+    private IEnumerator MonitorMovementToTarget(int targetX, int targetY)
+    {
+        Vector3 targetWorldPos = grid.GridToWorldPosition(targetX, targetY, 0f);
+        float arrivalThreshold = 0.2f; // Close enough to consider arrived
+        float timeout = 5f; // Max time to reach target
+        float elapsed = 0f;
+        
+        while (elapsed < timeout)
+        {
+            yield return null;
+            elapsed += Time.deltaTime;
+            
+            float distance = Vector3.Distance(transform.position, targetWorldPos);
+            if (distance < arrivalThreshold)
+            {
+                // Arrived - stop movement
+                currentVelocity = Vector3.zero;
+                isMoving = false;
+                
+                // Snap to exact position
+                Vector2Int actualPos = grid.WorldToGridPosition(transform.position);
+                if (actualPos.x == targetX && actualPos.y == targetY)
+                {
+                    DebugLog($"✅ Arrived at target ({targetX}, {targetY})");
+                }
+                else
+                {
+                    DebugLog($"⚠️ Close to target ({targetX}, {targetY}) but at ({actualPos.x}, {actualPos.y})");
+                }
+                yield break;
+            }
+            
+            // Check if we're stuck (not moving toward target)
+            Vector3 toTarget = (targetWorldPos - transform.position).normalized;
+            float dot = Vector3.Dot(currentVelocity.normalized, toTarget);
+            if (dot < -0.5f && currentVelocity.magnitude < 0.1f)
+            {
+                // Moving away or stuck - might be blocked
+                DebugLog($"⚠️ Movement blocked or stuck near ({targetX}, {targetY})");
+                currentVelocity = Vector3.zero;
+                isMoving = false;
+                yield break;
+            }
+        }
+        
+        // Timeout - stop movement
+        DebugLog($"⏱️ Movement timeout - stopped before reaching ({targetX}, {targetY})");
+        currentVelocity = Vector3.zero;
+        isMoving = false;
     }
     
     /// <summary>

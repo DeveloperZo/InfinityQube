@@ -42,9 +42,9 @@ Players have access to four marker types, each creating different player cubes:
 - **Mode**: Press 3 to select
 - **Placement**: Press F to place
 - **Spawning**: Becomes a Recursion cube when move forward occurs
-- **Purpose**: Designed specifically to capture Recursion cubes
+- **Purpose**: Repositioning tool that creates swap markers to rearrange cubes on the grid
 - **Charges**: Maximum 2 markers at once, limited charges with cooldown between uses
-- **Power**: Works best for multi-hit Recursion cube interactions
+- **Power**: Creates swap markers that reposition cubes, breaking Infinity walls and repositioning value cubes for better capture opportunities
 
 #### Infinity Markers
 - **Mode**: Press 4 to select
@@ -68,7 +68,7 @@ Markers are given to players at specific times:
 #### Marker Behavior by Type
 - **Unit Markers**: Regenerate over time, unlimited total
 - **Matrix Markers**: Given as grants, player triggers manually, maximum 5 at once
-- **Recursion Markers**: Given as grants, trigger automatically, maximum 8 at once
+- **Recursion Markers**: Given as grants, create swap markers (manual trigger), maximum 8 at once
 - **Infinity Markers**: Given as grants, very limited, maximum 3 at once
 
 #### Economy Mode
@@ -85,13 +85,34 @@ Special markers created from collisions, not player-placed:
 - **Trigger**: Press R to activate
 - **Generation**: Created automatically from collisions:
   - Matrix colliding with Matrix creates a Matrix cube marker (3x3 area)
-  - Recursion colliding with Recursion creates a Recursion cube marker (auto trigger)
+  - Recursion colliding with Recursion creates an empowered swap marker (2 charges: swap + capture)
   - Matrix captured by non-Matrix creates a Matrix cube marker (2x2 area)
-- **Behavior**: When triggered with R, creates an area effect that captures all non-Infinity cubes in the area
+  - Unit colliding with Recursion creates a swap marker (1 charge: repositioning)
+  - Recursion colliding with Unit creates a swap marker (1 charge: repositioning)
+- **Behavior**: When triggered with R, creates effects based on marker type:
   - Matrix+Matrix cube marker: 3x3 area effect
-  - Recursion+Recursion cube marker: (auto trigger)
+  - Swap markers: Reposition cubes using + pattern swap (N↔S, W↔E)
+  - Empowered swap markers: Execute swap, then capture along chosen axis
   - Matrix (non-matching) cube marker: 2x2 area effect
 - **Strategic Resource**: Limited and valuable, earned through skillful cube matching
+
+### Swap Markers
+Special repositioning markers created from Recursion collisions:
+- **Trigger**: Press R to activate (manual trigger, like cube markers)
+- **Direction Selection**: Player hovers over swap marker and selects direction with arrow keys:
+  - Left/Right arrow: Horizontal swap (row swap, W↔E)
+  - Up/Down arrow: Vertical swap (column swap, N↔S)
+- **Visual Preview**: Hover icons appear above N, S, E, W positions showing swap destinations
+- **Default Direction**: If no direction selected before wave move, defaults to horizontal (row swap)
+- **Swap Execution**: Cardinal neighbors swap positions around the collision point:
+  - Horizontal: West ↔ East positions swap
+  - Vertical: North ↔ South positions swap
+- **Edge Handling**: Swaps stop at grid boundaries (no wrapping)
+- **Infinity Handling**: Infinity cubes can be moved by swaps but cannot be captured
+- **Empowered Swaps**: Recursion+Recursion collisions create 2-charge swap markers:
+  - First charge: Swap along chosen axis (player selects swap direction)
+  - Second charge: Capture along opposite axis (player selects capture direction)
+  - Both axes chosen independently by player
 
 ## 3.3 Marker to Cube Conversion
 **Core Mechanic**: The game's defining system where placed markers transform into player cubes.
@@ -133,7 +154,7 @@ Special markers created from collisions, not player-placed:
 | **Unit** | Gray | Moves one tile per step | Can be captured | Basic scoring value |
 | **Matrix** | Blue | Moves one tile per step | Can be captured | Creates cube markers when captured |
 | **Infinity** | Black | Moves one tile per step | **Cannot be captured** | Destroys player cubes, immutable (only Infinity affects Infinity) |
-| **Recursion** | Darker/Metallic | Moves one tile per step | Requires multiple hits to capture | More durable than other cubes |
+| **Recursion** | Darker/Metallic | Moves one tile per step | Requires 2 hits to capture | Multi-hit durability, creates swap markers when collided with |
 
 ### Movement System
 - **Step-by-Step**: Cubes move one tile at a time when the wave advances
@@ -157,17 +178,18 @@ Early stages use only Unit markers (player) against Unit, Matrix, and Infinity c
 
 As players progress, Matrix, Recursion, and Infinity markers unlock. These create additional collision combinations:
 
-**Planned Behaviors** 
+**Advanced Collision Behaviors** 
 | Player Cube | Wave Cube | Behavior | Description |
 |-------------|-----------|----------|-------------|
 | Matrix | Unit | 2x2 area capture | Player Matrix collides with Wave Unit and triggers a 2x2 capture area expanding from Matrix's position |
 | Matrix | Matrix | Triggerable 3x3 marker | Player Matrix collides with Wave Matrix and creates a 3x3 manual marker centered on collision point; single trigger |
-| Matrix | Recursion | Degrading 2x2 marker | Player Matrix collides with Wave Recursion and creates a 2x2 area marker; each tile has 1 charge; collision point and diagonal opposite degrade last; player manually triggers; area shrinks over triggers |
+| Matrix | Recursion | 2x2 Matrix cube marker | Player Matrix collides with Wave Recursion and creates a 2x2 Matrix cube marker (player triggers with R) |
 | Matrix | Infinity | Matrix destroyed | Player Matrix collides with Wave Infinity, Matrix is destroyed - Infinity is immutable |
-| Recursion | Unit | A recursion marker with 3 charges | Player Recursion collides with Wave Unit and creates a marker; auto-captures 3 cubes or expires after 5 move forwards |
-| Recursion | Matrix | Auto 3x1 horizontal marker | Player Recursion collides with Wave Matrix and creates a 3x1 horizontal marker (3 tiles wide); 2 charges total, auto-captures as wave passes |
-| Recursion | Recursion | Cross marker | Player Recursion collides with Wave Recursion and creates a cross-shaped marker (5 tiles - 1x3 vertical + 1x3 horizontal, overlapping at center); each tile auto-captures as wave passes |
+| Recursion | Unit | 1-charge swap marker | Player Recursion collides with Wave Unit and creates a swap marker; player selects direction (horizontal/vertical) and triggers manually with R |
+| Recursion | Matrix | 2x2 Matrix cube marker | Player Recursion collides with Wave Matrix and creates a 2x2 Matrix cube marker (player triggers with R) |
+| Recursion | Recursion | Empowered swap marker | Player Recursion collides with Wave Recursion, instantly captures Recursion cube, then creates 2-charge swap marker; player selects swap axis and capture axis independently, triggers manually with R |
 | Recursion | Infinity | Recursion destroyed | Player Recursion collides with Wave Infinity, Recursion is destroyed - Infinity is immutable |
+| Unit | Recursion | 1-charge swap marker | Player Unit collides with Wave Recursion (applies damage), creates swap marker; player selects direction and triggers manually with R |
 | Infinity | Unit | Wave join | Player Infinity destroys Wave Unit, takes its position, joins wave and moves downward with it |
 | Infinity | Matrix | Capture and continue | Player Infinity captures Wave Matrix, continues moving upward - Infinity is immutable (no painting) |
 | Infinity | Recursion | Capture and continue | Player Infinity captures Wave Recursion, continues moving upward - Infinity is immutable (no painting) |
@@ -179,7 +201,7 @@ As players progress, Matrix, Recursion, and Infinity markers unlock. These creat
 |------|----------|--------------|----------------|
 | Unit | Simple, foundational | Instant | Single tile |
 | Matrix | Area, expansion | Manual | 2x2, 3x3 squares |
-| Recursion | Repetition, concentration | Auto | 1x3 lines, cross |
+| Recursion | Repositioning, indirect | Manual | + pattern swap (N↔S, W↔E) |
 | Infinity | Immutable, eternal | Resonance (only Infinity affects Infinity) | N/A - destroys other player cubes |
 
 ### Infinity Immutability Principle
@@ -360,15 +382,16 @@ Core principles governing marker trigger behavior:
 
 - **Matrix Interactions** = Manual trigger (player detonates)
   - Matrix vs Matrix: 3x3 manual marker
-  - Matrix vs Recursion: 2x2 degrading manual marker
+  - Matrix vs Recursion: 2x2 Matrix cube marker (manual trigger)
   - Matrix vs Infinity: Matrix destroyed (Infinity is immutable)
   - Matrix vs Unit: 2x2 area capture
 
-- **Recursion Interactions** = Auto trigger (wave movement triggers)
-  - Recursion vs Recursion: Cross marker (auto-captures)
-  - Recursion vs Matrix: 3x1 horizontal marker (auto-captures)
+- **Recursion Interactions** = Manual trigger (player triggers swap markers)
+  - Recursion vs Recursion: Empowered swap marker (instant capture + 2-charge swap with independent axis selection)
+  - Recursion vs Matrix: 2x2 Matrix cube marker (manual trigger)
   - Recursion vs Infinity: Recursion destroyed (Infinity is immutable)
-  - Recursion vs Unit: Column capture (auto)
+  - Recursion vs Unit: 1-charge swap marker (manual trigger, player selects direction)
+  - Unit vs Recursion: 1-charge swap marker (applies damage, manual trigger, player selects direction)
 
 - **Infinity Interactions** = Only Infinity affects Infinity
   - Infinity vs Unit: Wave join (destroys Unit, joins wave)
@@ -384,10 +407,10 @@ Visual and mechanical patterns created by cube interactions:
 | Unit vs Unit | Single tile | Instant |
 | Unit vs Matrix / Matrix vs Unit | 2x2 square | Manual / Area |
 | Matrix vs Matrix | 3x3 square | Manual |
-| Matrix vs Recursion | 2x2 degrading (1 charge per tile) | Manual |
-| Recursion vs Unit / Unit vs Recursion | Single tile, 3 charges | Auto |
-| Recursion vs Matrix | 3x1 horizontal line | Auto |
-| Recursion vs Recursion | Cross (5 tiles) | Auto |
+| Matrix vs Recursion | 2x2 Matrix cube marker | Manual |
+| Recursion vs Unit / Unit vs Recursion | + pattern swap (1 charge) | Manual |
+| Recursion vs Matrix | 2x2 Matrix cube marker | Manual |
+| Recursion vs Recursion | + pattern swap (2 charges: swap + capture) | Manual |
 
 ## 3.11 Resonance Visual Feedback
 
@@ -414,7 +437,8 @@ Mechanical innovations that extend the formula:
 - **Collision Matrix**: 16 cube type combinations with distinct behaviors
 - **Infinity Immutability**: Infinity cubes are truly immutable - only Infinity affects Infinity
 - **Resonance**: Immediate resonance trigger enables bypassing Infinity blockers
-- **Trigger Split**: Trigger type split: Matrix = manual, Recursion = auto
+- **Trigger Split**: Trigger type split: Matrix = manual, Recursion = manual (swap markers)
+- **Repositioning Tool**: Recursion creates swap markers for indirect board rearrangement
 - **Advance Grid** (Future): Grid paths with direction changes for spatial-temporal puzzles
 
 
@@ -425,13 +449,14 @@ Areas requiring player testing and iteration:
 - **Marker Economy**: Exact number of non-Unit markers granted per stage
 - **Allocation Method**: Whether marker grants are fixed ratio or player-allocated
 - **Wave Density**: Wave density progression across stages
-- **Recursion Capture Count**: Currently 3 cubes, may adjust based on balance
+- **Recursion Multi-Hit Count**: Currently 2 hits required, may adjust based on balance
+- **Swap Direction Default**: Currently horizontal (row swap), may adjust based on player preference
 - **Rotation Schedule**: Rotation schedule timing (every N advances)
 
 ---
-**Last Updated:** January 18, 2026  
-**Implementation Status:** Core mechanics production-ready, Stages 0-4 validated, resonance systems implemented, collision matrix updated (Infinity immutability)  
-**Major Systems:** Collision matrix, Infinity immutability with immediate resonance, penalty/reward system, marker economy  
+**Last Updated:** January 27, 2026  
+**Implementation Status:** Core mechanics production-ready, Stages 0-4 validated, resonance systems implemented, Recursion redesign complete (swap mechanics), collision matrix updated  
+**Major Systems:** Collision matrix, Infinity immutability with immediate resonance, penalty/reward system, marker economy, Recursion swap repositioning system  
 **Related Documents:**
 - [Game Design Document](GameDesignDocument.md)
 - [Game Overview](2_GameOverview.md)

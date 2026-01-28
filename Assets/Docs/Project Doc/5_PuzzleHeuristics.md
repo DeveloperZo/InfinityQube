@@ -99,6 +99,91 @@ When blocked cubes start above the 3x3 range:
 
 ---
 
+## Recursion Swap Puzzle Design
+
+### Design Philosophy
+Recursion markers create **swap markers** that reposition cubes on the grid. Unlike Matrix's area capture, Recursion is an indirect repositioning tool - like a chess knight, it rearranges the board to create new opportunities.
+
+**Key Mechanic**: + Pattern Swap
+- Cardinal neighbors swap positions around collision point
+- Horizontal swap: West ↔ East positions swap
+- Vertical swap: North ↔ South positions swap
+- Player selects direction before triggering (arrow keys)
+- Manual trigger (R key) like other cube markers
+
+### Strategic Role
+Recursion solves problems Matrix cannot:
+- **Breaking Infinity Walls**: Swaps can move Infinity cubes to create survival gaps
+- **Repositioning Value Cubes**: Moves valuable cubes (Matrix, Unit) into better capture positions
+- **Indirect Strategy**: Requires reading the board and planning ahead
+- **Complementary to Matrix**: Matrix captures areas, Recursion rearranges positions
+
+### Teaching Progression
+1. **Basic Swaps** - Simple repositioning scenarios (move one cube to better position)
+2. **Infinity Wall Breaking** - Use swaps to create gaps in Infinity walls
+3. **Multi-Swap Sequences** - Chain multiple swaps to solve complex puzzles
+4. **Empowered Swaps** - Recursion+Recursion collisions create 2-charge swaps (swap + capture)
+5. **Mastery Test** - Puzzles requiring both Matrix and Recursion working together
+
+### Key Principle
+> **The puzzle must require repositioning, not just capture** - Place cubes in positions where direct capture is blocked or inefficient. Swaps must create new opportunities that didn't exist before.
+
+### Design Pattern: "Swap or Die"
+```
+Row 3: ∞ ∞ ∞ ∞ ∞   <- Full Infinity wall, no gap
+Row 2: U ∞ U ∞ U
+Row 1: U U U U U
+       1 2 3 4 5
+         ↑
+      Player (will be crushed)
+```
+- Full Infinity wall at row 3 blocks all escape paths
+- Without Recursion: Player gets crushed when wall reaches them
+- With Recursion: Swap Infinity cubes to create gap, player survives
+
+### Swap Direction Selection
+Players must choose swap direction before triggering:
+- **Horizontal (Row Swap)**: Left/Right arrow keys - swaps W↔E positions
+- **Vertical (Column Swap)**: Up/Down arrow keys - swaps N↔S positions
+- **Visual Preview**: Hover icons appear above N, S, E, W positions showing swap destinations
+- **Default**: If no direction selected before wave move, defaults to horizontal (row swap)
+
+### Empowered Swaps (Recursion + Recursion)
+When Recursion collides with Recursion:
+- **Instant Capture**: Recursion cube is captured immediately
+- **2-Charge Swap Marker**: Creates empowered swap with two independent choices:
+  - **Swap Axis**: Player chooses horizontal or vertical for repositioning
+  - **Capture Axis**: Player chooses opposite axis for capturing cubes
+- **Strategic Depth**: Player must decide which axis to use for swap vs capture
+
+### Edge Handling
+- **Stop at Edge**: Swaps cannot wrap around grid boundaries
+- **Boundary Validation**: Only valid positions within grid are swapped
+- **Empty Cells**: Infinity cubes can swap with empty space (repositioning, not capture)
+
+### Multi-Hit System
+Wave Recursion cubes require **2 hits** to capture:
+- **First Hit**: Applies damage, visual feedback shows damage state
+- **Second Hit**: Captures the cube
+- **Swap Marker Creation**: Unit+Recursion and Recursion+Unit collisions create swap markers (applies damage on first hit)
+
+### Solvability Criteria for Swap Puzzles
+Before finalizing any swap-dependent wave:
+- [ ] Player has at least one valid swap marker available
+- [ ] Swap can create a solvable path (survival or capture opportunity)
+- [ ] Infinity walls can be broken with available swaps
+- [ ] Value cubes can be repositioned into capturable positions
+- [ ] Direction selection is clear (visual preview works)
+- [ ] Default direction provides valid solution if player doesn't select
+
+### Puzzle Types
+1. **Survival Puzzles**: Infinity walls that must be broken with swaps
+2. **Repositioning Puzzles**: Value cubes in wrong positions, need swaps to move them
+3. **Sequencing Puzzles**: Multiple swaps required in specific order
+4. **Hybrid Puzzles**: Combine Matrix area capture with Recursion repositioning
+
+---
+
 ## Cube Type Reference
 
 | Type | Enum Value | Letter | Color | Behavior |
@@ -106,7 +191,7 @@ When blocked cubes start above the 3x3 range:
 | Unit | 0 | U | Blue | Basic capture |
 | Matrix | 1 | M | Green | Area capture synergy |
 | Infinity | 2 | I | Yellow/Gold | Obstacle, crushes player |
-| Recursion | 3 | R | Red/Orange | Multi-hit, requires multiple captures |
+| Recursion | 3 | R | Red/Orange | Multi-hit (2 hits), creates swap markers for repositioning |
 
 ---
 
@@ -141,10 +226,12 @@ Before finalizing any wave:
 
 - [ ] Player has cardinal escape paths from spawn position
 - [ ] No checkerboard Infinity patterns
-- [ ] All capturable cubes are reachable (directly or via area effect)
+- [ ] All capturable cubes are reachable (directly or via area effect or swap repositioning)
 - [ ] Cube density appropriate for available markers
 - [ ] Movement speed allows reaction time
 - [ ] Difficulty progression makes sense within stage
+- [ ] If swap-dependent: At least one valid swap marker available, swap creates solvable path
+- [ ] If Infinity walls present: Either natural gaps exist or swaps can create gaps
 
 ---
 
@@ -173,7 +260,7 @@ Some patterns are unsolvable until specific tools are unlocked:
 
 ---
 
-**Last Updated**: January 18, 2026
+**Last Updated**: January 27, 2026
 
 ### Change Log
 - **Jan 18, 2026**: Initial document created

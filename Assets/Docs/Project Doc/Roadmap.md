@@ -334,7 +334,6 @@ One attunement per marker type. Modifies cube properties, not collision matrix.
 - **Lesson**: Area effects and solving Infinity blocking problems
 - **Mechanics to Validate**:
   - [ ] Matrix cube introduction and area capture
-  - [ ] Matrix vs Infinity face painting mechanics
   - [ ] Matrix marker placement and area coverage
   - [ ] Cube marker generation from Matrix captures
   - [ ] Spatial management and area control strategies
@@ -344,7 +343,6 @@ One attunement per marker type. Modifies cube properties, not collision matrix.
   - [ ] Implement stages 3-5 with wave configs
   - [ ] Validate Matrix cube and marker mechanics work correctly
   - [ ] Improve UI around markers
-  - [ ] Assess and improve face painting implementation if needed
   - [ ] Fix bugs/edge cases discovered
   - [ ] Test area effect systems
 

@@ -111,7 +111,7 @@ Players progress through stages composed of multiple waves. Each wave presents a
 | **Unit** | Standard target | Single collision with Unit cube (from Unit marker) | Basic scoring, conversion potential |
 | **Matrix** | Resource generator | Requires Matrix marker collision | Generates Cube markers, area clearing |
 | **Infinity** | Obstacle | Cannot be captured | Must be avoided or bypassed |
-| **Recursion** | Durable target | Multiple Recursion cube collisions (from Recursion markers) | High score value, challenge element |
+| **Recursion** | Durable target, repositioning tool | Requires 2 hits to capture; creates swap markers for repositioning | Multi-hit challenge, creates repositioning opportunities |
 
 ### Face Status System - Behavioral Modifiers (IMPLEMENTED)
 
@@ -148,10 +148,11 @@ Unified input system for rapid marker deployment:
 - Generate Cube markers from successful Matrix captures
 
 #### **Recursion Markers (Mode 3, F Key)**
-- Enhanced single-tile markers
+- Repositioning tool markers
 - Transform into Recursion cubes
-- Required for Recursion cube capture
-- Multi-hit capability for durable targets
+- Required for Recursion cube capture (2 hits)
+- Creates swap markers that reposition cubes on the grid
+- Breaks Infinity walls and repositions value cubes for better capture opportunities
 
 #### **Infinity Markers (Mode 4, F Key)**
 - Spawn pause-inducing Infinity cubes
@@ -255,6 +256,6 @@ Core mechanics are immediately understandable while mastery requires deep strate
 - Tutorial system uses highlight sequences for guided instruction with messages, visual highlights, and interactive validation
 
 ---
-**Last Updated:** December 14, 2025  
+**Last Updated:** January 27, 2026  
 **Core System:** Marker to Cube Transformation Mechanics  
 **Design Focus:** Strategic depth through bidirectional movement and collision-based gameplay

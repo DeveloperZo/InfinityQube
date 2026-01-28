@@ -95,8 +95,17 @@ public class CubeManager : MonoBehaviour, IManagerDebugInterface
         level = cubeData.level;
         isRainingCube = cubeData.isRainingCube;
         moveCountRemaining = cubeData.moveCountRemaining;
-        currentHitPoints = cubeData.Definition.maxHitPoints;
-        maxHitPoints = cubeData.Definition.maxHitPoints;
+        // Multi-hit system: Recursion cubes require 2 hits to capture
+        if (type == CubeType.Recursion && !isPlayerCube)
+        {
+            maxHitPoints = 2; // Wave Recursion cubes require 2 hits
+            currentHitPoints = 2;
+        }
+        else
+        {
+            currentHitPoints = cubeData.Definition.maxHitPoints;
+            maxHitPoints = cubeData.Definition.maxHitPoints;
+        }
 
         material = cubeData.Definition?.material;
         prefab = cubeData.Definition?.prefab;

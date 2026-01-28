@@ -158,6 +158,23 @@ public class MarkerVisualManager : MonoBehaviour, IManagerDebugInterface
     }
 
     /// <summary>
+    /// Creates visual marker for Swap marker placement
+    /// </summary>
+    public GameObject CreateSwapMarkerVisual(Vector2Int position, GridSegmentController segment = null)
+    {
+        Tile tile = GetTileOnSegment(position, segment);
+        if (tile != null)
+        {
+            // Swap = Amber/orange (similar to Recursion but distinct)
+            SetTileHighlight(tile, new Color(0.9f, 0.6f, 0.2f, 0.8f), "Swap");
+        }
+
+        GameObject dummy = new GameObject($"SwapMarker_{position.x}_{position.y}");
+        dummy.transform.position = GetWorldPositionOnSegment(position, segment, 0f);
+        return dummy;
+    }
+
+    /// <summary>
     /// Creates visual marker for Infinity marker placement
     /// </summary>
     public GameObject CreateInfinityMarkerVisual(Vector2Int position, GridSegmentController segment = null)

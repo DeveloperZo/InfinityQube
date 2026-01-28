@@ -22,6 +22,7 @@ MonoBehaviour:
   gridHeight: 20
   playerStartPosition: {x: 0, y: 1}
   respawnDelayMoves: 1
+  segmentLayoutPrefab: {fileID: 8479612789658835193, guid: 28c09140ea9754b47a00bd6d3c49877f, type: 3}
   enableLineDivider: 0
   lineDividerStartY: 10
   lineDividerEscapePenalty: 0

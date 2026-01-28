@@ -60,7 +60,7 @@ Minimalist abstract world with clean geometric shapes and cosmic backdrop. Visua
 | **Unit** | Basic, capturable | Standard capture |
 | **Matrix** | Generates cube markers | Creates area capture resources (2x2, 3x3) |
 | **Infinity** | Uncapturable, phaseable | Face painting, resonance effects |
-| **Recursion** | Multi-hit requirement | Requires matching marker, multi-charge capture |
+| **Recursion** | Multi-hit requirement, repositioning tool | Requires 2 hits to capture; creates swap markers for repositioning cubes |
 
 #### **Face Painting System**
 Collisions paint cube faces that place markers later:
@@ -69,7 +69,7 @@ Collisions paint cube faces that place markers later:
 - **Rotation**: Cubes rotate on a fixed schedule as waves advance
 - **Marker Placement**: When painted face rotates down and touches grid, a marker appears at that tile
 - **Telegraph System**: Visual indicators show where markers will appear (default: 3 moves ahead)
-- **Face Types**: Matrix (2x2 manual marker), Recursion (auto-capture marker), Unit (single auto-capture), Infinity (resonance effect)
+- **Face Types**: Matrix (2x2 manual marker), Recursion (swap marker for repositioning), Unit (single auto-capture), Infinity (resonance effect)
 
 #### **Marker to Cube Conversion**
 Core mechanic: When wave moves forward, placed markers transform into player cubes that move backward:
@@ -147,8 +147,8 @@ Teaching immediate tactics and cube interactions:
 - Variable marker limits per stage
 
 ---
-**Last Updated:** December 19, 2025  
-**Implementation Status:** Core systems complete, Stages 0-2 validated and playable end-to-end, face painting implemented, collision mechanics complete, stage progression working
+**Last Updated:** January 27, 2026  
+**Implementation Status:** Core systems complete, Stages 0-2 validated and playable end-to-end, face painting implemented, collision mechanics complete, stage progression working, Recursion redesign complete (swap mechanics)
 
 ## Consistency Notes
 - **Marker to Cube**: Core mechanic where markers transform into backward-moving cubes when wave advances

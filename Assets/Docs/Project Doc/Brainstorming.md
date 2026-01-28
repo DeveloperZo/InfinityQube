@@ -28,7 +28,9 @@ Ideally we can tease the infinity cubes resonance and when rebuilding a wave for
 - **Unique Value**: Lets player solve more problems
 - **Constraints**: 
 - **Rating**: 7/10
-- **Notes**: Change Recursion from auto-trigger to manual trigger (player controls activation timing). Make Recursion shape dynamic based on placement position: when placed on grid edges (top, bottom, left, right boundaries), creates a 3 row × 1 column vertical area (good for vertical wave threats). When placed on non-edges (interior tiles), creates a 1 row × 3 column horizontal area (good for horizontal wave threats). This dynamic shape adaptation gives Recursion more versatility than Matrix's fixed squares (2×2, 3×3), creating clear differentiation: Matrix = area squares, Recursion = adaptive lines. Manual trigger gives players strategic timing control, allowing them to wait for optimal cube positions before activating. Visual preview shows which shape will be created based on placement position.
+- **Status**: ✅ **RESOLVED - January 2026**
+- **Implementation**: Recursion redesigned as repositioning tool via swap mechanics. Creates swap markers that reposition cubes using + pattern swaps (N↔S, W↔E). Player selects direction (horizontal/vertical) via arrow keys with hover-based visual preview. Manual trigger (R key) like other cube markers. Empowered swaps (Recursion+Recursion) provide independent swap and capture axis selection. Multi-hit system requires 2 hits to capture Recursion cubes. Clear differentiation from Matrix: Matrix = area capture, Recursion = repositioning tool.
+- **Original Notes**: Change Recursion from auto-trigger to manual trigger (player controls activation timing). Make Recursion shape dynamic based on placement position: when placed on grid edges (top, bottom, left, right boundaries), creates a 3 row × 1 column vertical area (good for vertical wave threats). When placed on non-edges (interior tiles), creates a 1 row × 3 column horizontal area (good for horizontal wave threats). This dynamic shape adaptation gives Recursion more versatility than Matrix's fixed squares (2×2, 3×3), creating clear differentiation: Matrix = area squares, Recursion = adaptive lines. Manual trigger gives players strategic timing control, allowing them to wait for optimal cube positions before activating. Visual preview shows which shape will be created based on placement position.
 
 ### Hire youtube creator daafrikan (Yannick)
 - **Description**: Hire youtube creator daafrikan (Yannick)
@@ -140,6 +142,6 @@ Ideally we can tease the infinity cubes resonance and when rebuilding a wave for
 
 ---
 
-**Last Updated:** December 14, 2025  
+**Last Updated:** January 27, 2026  
 **Purpose:** Capture potential mechanics for future consideration
 **Next Steps:** Prototype highest rated mechanics

@@ -201,22 +201,27 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
     
     /// <summary>
     /// Instantiates and configures segment layout from stage's prefab.
+    /// If no prefab exists, creates a default single-segment layout.
     /// </summary>
     private void ConfigureSegmentLayoutFromStage(StageData stageData)
     {
+        // FIRST: Clean up any previously generated grid tiles
+        DestroyGrid();
+        
         // Clean up any previously instantiated segment layout
         CleanupInstantiatedSegmentLayout();
         
         if (!stageData.HasSegmentLayoutPrefab)
         {
-            DebugLog("No segment layout prefab for this stage - using default single-segment grid");
+            DebugLog("No segment layout prefab for this stage - creating default single-segment layout");
+            CreateDefaultSegmentLayout(stageData);
             return;
         }
         
         DebugLog($"Instantiating segment layout prefab for stage: {stageData.stageName}");
         
-        // Instantiate the segment layout prefab
-        instantiatedSegmentLayout = Instantiate(stageData.segmentLayoutPrefab);
+        // Instantiate the segment layout prefab AS A CHILD OF GRIDMANAGER
+        instantiatedSegmentLayout = Instantiate(stageData.segmentLayoutPrefab, transform);
         instantiatedSegmentLayout.name = $"StageSegmentLayout_{stageData.stageNumber}";
         
         // Find all GridSegmentController components in the instantiated prefab
@@ -239,6 +244,12 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
         
         // Enable segment controller mode
         useSegmentControllers = true;
+        
+        // Re-initialize the main tiles array from primary segment for backwards compatibility
+        var primarySegment = newSegments[0];
+        width = primarySegment.width;
+        height = primarySegment.height;
+        tiles = new Tile[width, height];
         
         // Generate tiles for each segment if not already initialized
         foreach (var segment in newSegments)
@@ -264,6 +275,49 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
             Destroy(instantiatedSegmentLayout);
             instantiatedSegmentLayout = null;
         }
+    }
+    
+    /// <summary>
+    /// Creates a default single-segment layout when no prefab is configured.
+    /// The segment uses the stage's grid dimensions.
+    /// </summary>
+    private void CreateDefaultSegmentLayout(StageData stageData)
+    {
+        // Create container under GridManager
+        instantiatedSegmentLayout = new GameObject($"StageSegmentLayout_{stageData.stageNumber}");
+        instantiatedSegmentLayout.transform.SetParent(transform);
+        instantiatedSegmentLayout.transform.localPosition = Vector3.zero;
+        instantiatedSegmentLayout.transform.localRotation = Quaternion.identity;
+        
+        // Create a default segment controller
+        var segmentObj = new GameObject("Segment_0");
+        segmentObj.transform.SetParent(instantiatedSegmentLayout.transform);
+        segmentObj.transform.localPosition = Vector3.zero;
+        segmentObj.transform.localRotation = Quaternion.identity;
+        
+        var segment = segmentObj.AddComponent<GridSegmentController>();
+        segment.segmentIndex = 0;
+        segment.width = stageData.gridWidth;
+        segment.height = stageData.gridHeight;
+        segment.tileSize = tileSize;
+        
+        // Clear and register the new segment
+        ClearSegmentControllers();
+        RegisterSegmentController(segment);
+        
+        // Enable segment controller mode
+        useSegmentControllers = true;
+        
+        // Re-initialize the main tiles array for backwards compatibility
+        width = stageData.gridWidth;
+        height = stageData.gridHeight;
+        tiles = new Tile[width, height];
+        
+        // Generate tiles for the segment
+        GenerateTilesForSegment(segment);
+        segment.MarkInitialized();
+        
+        DebugLog($"Created default segment layout: {segment.width}x{segment.height}");
     }
 
     private void OnDrawGizmosSelected()
@@ -788,10 +842,11 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
         }
         
         // Configure tile object
+        // NOTE: GridSegment is a data class without transform - parent under GridManager for this legacy path
         tileObj.name = $"Tile_Seg{segment.segmentIndex}_{localX}_{localY}";
         tileObj.transform.SetParent(transform);
         tileObj.transform.position = worldPosition;
-        tileObj.transform.rotation = segment.GetWorldRotation();
+        tileObj.transform.rotation = Quaternion.identity;
         tileObj.transform.localScale = new Vector3(tileSize, 1f, tileSize);
         
         // Ensure tile is at ground level
@@ -866,14 +921,29 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
     private void ConfigureTileObject(GameObject tileObj, int x, int y, Vector3 worldPosition)
     {
         tileObj.name = $"Tile_{x}_{y}";
-        tileObj.transform.SetParent(transform);
-        tileObj.transform.position = worldPosition;
+        
+        // Parent under segment controller if available, otherwise use GridManager
+        Transform parentTransform = (segmentControllers.Count > 0) 
+            ? segmentControllers[0].transform 
+            : transform;
+        
+        tileObj.transform.SetParent(parentTransform);
+        
+        // Use local position if parenting under segment
+        if (segmentControllers.Count > 0)
+        {
+            tileObj.transform.localPosition = new Vector3(x * tileSize, 0f, y * tileSize);
+            tileObj.transform.localRotation = Quaternion.identity;
+        }
+        else
+        {
+            tileObj.transform.position = worldPosition;
+            Vector3 finalPos = tileObj.transform.position;
+            finalPos.y = 0f;
+            tileObj.transform.position = finalPos;
+        }
+        
         tileObj.transform.localScale = new Vector3(tileSize, 1f, tileSize);
-
-        // Ensure tile is at ground level
-        Vector3 finalPos = tileObj.transform.position;
-        finalPos.y = 0f;
-        tileObj.transform.position = finalPos;
     }
 
     private Tile SetupTileComponent(GameObject tileObj, int x, int y)

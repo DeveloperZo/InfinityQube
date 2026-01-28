@@ -76,6 +76,41 @@ public class InfinityMarker
     }
 }
 
+[System.Serializable]
+public class SwapMarker
+{
+    public Vector2Int position;
+    public float placementTime;
+    public GameObject visualObject;
+    public GridSegmentController segment; // Segment-aware: which segment this marker is on
+    
+    // Swap configuration
+    public int swapCharges; // 1 for base, 2 for empowered (R+R)
+    public SwapDirection swapDirection; // Horizontal or Vertical for swap axis
+    public SwapDirection captureDirection; // Horizontal or Vertical for capture axis (empowered only)
+    public bool isEmpowered; // True if has both swap and capture axes
+    
+    // Default direction if player doesn't select before move forward
+    public SwapDirection defaultSwapDirection = SwapDirection.Horizontal; // Row swap default
+    
+    public SwapMarker(Vector2Int pos, float time, int charges, GridSegmentController seg = null)
+    {
+        position = pos;
+        placementTime = time;
+        swapCharges = charges;
+        segment = seg;
+        isEmpowered = (charges > 1);
+        swapDirection = SwapDirection.Horizontal; // Default to row swap
+        captureDirection = SwapDirection.Vertical; // Default capture axis for empowered
+    }
+}
+
+public enum SwapDirection
+{
+    Horizontal, // Row swap (W ↔ E)
+    Vertical    // Column swap (N ↔ S)
+}
+
 public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
 {
     [Header("References")]
@@ -463,8 +498,8 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
     /// </summary>
     private void HandleModeSwitchingInput()
     {
-MarkerMode targetMode = currentMarkerMode;
-GameAudioEvent audioEvent = GameAudioEvent.ModeSwitchedToUnit;
+        MarkerMode targetMode = currentMarkerMode;
+        GameAudioEvent audioEvent = GameAudioEvent.ModeSwitchedToUnit;
         bool modeSwitchRequested = false;
 
         // Check for number key presses (1-4 for marker types)
@@ -496,7 +531,7 @@ GameAudioEvent audioEvent = GameAudioEvent.ModeSwitchedToUnit;
         // Only process mode switch if a key was pressed and mode is different
         if (modeSwitchRequested && targetMode != currentMarkerMode)
         {
-MarkerMode previousMode = currentMarkerMode;
+            MarkerMode previousMode = currentMarkerMode;
             if (SetMode(targetMode))
             {
                 // Trigger audio feedback for successful mode switch
@@ -889,21 +924,89 @@ MarkerMode previousMode = currentMarkerMode;
         }
     }
 
+    /// <summary>
+    /// Helper method to get current player position
+    /// </summary>
+    /// <returns>Current player grid position</returns>
+    private Vector2Int GetCurrentPlayerPosition()
+    {
+        return playerManager?.currentTilePosition ?? Vector2Int.zero;
+    }
+
+    /// <summary>
+    /// Handles direction selection for swap markers using arrow keys.
+    /// </summary>
+    private void HandleSwapMarkerDirectionSelection()
+    {
+        Vector2Int playerPos = GetCurrentPlayerPosition();
+        
+        // Check if player is hovering over a swap marker
+        var swapMarker = markerSystem.GetSwapMarkerAtPosition(playerPos);
+        if (swapMarker == null) return;
+        
+        // Show preview icons
+        markerSystem.ShowSwapPreview(swapMarker);
+        
+        // Handle direction selection with arrow keys
+        if (Input.GetKeyDown(KeyCode.LeftArrow) || Input.GetKeyDown(KeyCode.RightArrow))
+        {
+            // Horizontal swap (row)
+            swapMarker.swapDirection = SwapDirection.Horizontal;
+            if (swapMarker.isEmpowered)
+            {
+                swapMarker.captureDirection = SwapDirection.Vertical; // Opposite axis for capture
+            }
+            markerSystem.UpdateSwapPreview(swapMarker);
+            ShowActionSuccessFeedback("Swap direction: Horizontal (Row)");
+        }
+        else if (Input.GetKeyDown(KeyCode.UpArrow) || Input.GetKeyDown(KeyCode.DownArrow))
+        {
+            // Vertical swap (column)
+            swapMarker.swapDirection = SwapDirection.Vertical;
+            if (swapMarker.isEmpowered)
+            {
+                swapMarker.captureDirection = SwapDirection.Horizontal; // Opposite axis for capture
+            }
+            markerSystem.UpdateSwapPreview(swapMarker);
+            ShowActionSuccessFeedback("Swap direction: Vertical (Column)");
+        }
+    }
+
     private void HandleCubeMarkerInputs()
     {
+        // Handle swap marker direction selection (arrow keys)
+        HandleSwapMarkerDirectionSelection();
+        
         if (Input.GetKeyDown(triggerCubeMarkerKey))
         {
             // Get current player position for feedback
             Vector2Int playerPos = GetCurrentPlayerPosition();
-            bool wasTriggered = markerSystem.TriggerNextCubeMarker();
+            // Try swap markers first (if any exist), then cube markers
+            bool swapTriggered = markerSystem.TriggerNextSwapMarker();
+            bool wasTriggered = false;
             
-            if (wasTriggered)
+            if (swapTriggered)
             {
-                // Trigger feedback for cube marker trigger
-                TriggerInputFeedbackCubeMarkerTrigger("Cube", playerPos, "Standard cube marker effect");
+                wasTriggered = true;
+                // Trigger feedback for swap marker trigger
+                TriggerInputFeedbackCubeMarkerTrigger("Swap", playerPos, "Swap marker triggered");
+                ShowActionSuccessFeedback("Swap marker triggered successfully!");
+                // Hide swap preview when triggered
+                markerSystem.HideSwapPreview();
+            }
+            else
+            {
+                // Fall back to cube markers if no swap markers
+                wasTriggered = markerSystem.TriggerNextCubeMarker();
                 
-                // Trigger animation for cube marker action
-                TriggerAnimationCubeMarkerAction(playerPos, "Standard cube marker effect");
+                if (wasTriggered)
+                {
+                    // Trigger feedback for cube marker trigger
+                    TriggerInputFeedbackCubeMarkerTrigger("Cube", playerPos, "Standard cube marker effect");
+                
+                    // Trigger animation for cube marker action
+                    TriggerAnimationCubeMarkerAction(playerPos, "Standard cube marker effect");
+                }
             }
         }
     }
@@ -940,15 +1043,6 @@ MarkerMode previousMode = currentMarkerMode;
         
         // Trigger animation for feedback
         TriggerAnimationActionSuccess(playerWorldPos, "Hello World debug message");
-    }
-
-    /// <summary>
-    /// Helper method to get current player position
-    /// </summary>
-    /// <returns>Current player grid position</returns>
-    private Vector2Int GetCurrentPlayerPosition()
-    {
-        return playerManager?.currentTilePosition ?? Vector2Int.zero;
     }
 
     #endregion

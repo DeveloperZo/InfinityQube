@@ -11,5 +11,8 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/Stage.unity
     guid: 4d601ed4cd9939d48a6aa63880ed0b22
+  - enabled: 1
+    path: Assets/Scenes/Scenarios/SDD_001.unity
+    guid: 8cfa760d771bbf34e8a12f5a06372ffe
   m_configObjects: {}
   m_UseUCBPForAssetBundles: 0

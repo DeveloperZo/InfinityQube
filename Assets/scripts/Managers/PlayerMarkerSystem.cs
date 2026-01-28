@@ -35,12 +35,17 @@ public class PlayerMarkerSystem : MonoBehaviour
     [SerializeField] public Queue<MatrixMarker> MatrixMarkers = new Queue<MatrixMarker>();
     [SerializeField] public Queue<InfinityMarker> InfinityMarkers = new Queue<InfinityMarker>();
     public List<CubeMarker> cubeMarkers = new List<CubeMarker>(); // Generated resources, separate from player-placed markers
+    public List<SwapMarker> swapMarkers = new List<SwapMarker>(); // Swap markers created from collisions
 
     // Player cube tracking
     public List<CubeManager> playerCubes = new List<CubeManager>();
 
     // Preview system
     private List<GameObject> previewObjects = new List<GameObject>();
+    
+    // Swap preview system
+    private List<GameObject> swapPreviewIcons = new List<GameObject>();
+    private SwapMarker currentPreviewedSwapMarker = null;
 
     // Statistics
     private int cubeMarkersTriggered = 0;
@@ -597,6 +602,449 @@ public class PlayerMarkerSystem : MonoBehaviour
 
     #endregion
 
+    #region Swap Markers
+
+    /// <summary>
+    /// Creates a swap marker at the specified position with given charges.
+    /// Swap markers are manually triggered (like cube markers).
+    /// </summary>
+    public void CreateSwapMarker(Vector2Int position, int charges, GridSegmentController segment = null)
+    {
+        // Check if a swap marker already exists at this position to prevent duplicates
+        var existingMarker = swapMarkers.FirstOrDefault(m => m.position == position);
+        if (existingMarker != null)
+        {
+            Debug.LogWarning($"[PlayerMarkerSystem] Swap marker already exists at ({position.x}, {position.y}), skipping duplicate creation");
+            return;
+        }
+
+        var swapMarker = new SwapMarker(position, Time.time, charges, segment);
+        swapMarker.visualObject = visualManager?.CreateSwapMarkerVisual(position, segment);
+
+        swapMarkers.Add(swapMarker);
+
+        Debug.Log($"[PlayerMarkerSystem] Swap marker created at ({position.x}, {position.y}) with {charges} charge(s){(segment != null ? $" on segment {segment.segmentIndex}" : "")}");
+    }
+
+    /// <summary>
+    /// Applies default direction to swap markers that don't have a selection yet.
+    /// Called when move forward occurs.
+    /// </summary>
+    public void ApplyDefaultDirectionsToSwapMarkers()
+    {
+        foreach (var swapMarker in swapMarkers)
+        {
+            // If direction is still at default (Horizontal) and hasn't been explicitly set, apply default
+            if (swapMarker.swapDirection == SwapDirection.Horizontal && swapMarker.defaultSwapDirection == SwapDirection.Horizontal)
+            {
+                // Direction is already default, no change needed
+                // But if player never selected, we want to ensure it's set
+                swapMarker.swapDirection = swapMarker.defaultSwapDirection;
+                
+                // For empowered swaps, set opposite capture direction
+                if (swapMarker.isEmpowered)
+                {
+                    swapMarker.captureDirection = SwapDirection.Vertical; // Opposite of horizontal swap
+                }
+                
+                Debug.Log($"[PlayerMarkerSystem] Applied default direction (Horizontal) to swap marker at ({swapMarker.position.x}, {swapMarker.position.y})");
+            }
+        }
+    }
+
+    /// <summary>
+    /// Triggers the next swap marker in the list (FIFO order).
+    /// </summary>
+    public bool TriggerNextSwapMarker()
+    {
+        if (swapMarkers.Count == 0) return false;
+
+        var swapMarker = swapMarkers[0];
+        swapMarkers.RemoveAt(0);
+
+        // Destroy visual immediately
+        if (swapMarker.visualObject != null)
+        {
+            visualManager?.DestroyMarkerVisual(swapMarker.visualObject);
+        }
+
+        return ExecuteSwap(swapMarker);
+    }
+
+    /// <summary>
+    /// Executes a swap based on the swap marker configuration.
+    /// + pattern: N↔S and W↔E swaps around center position.
+    /// </summary>
+    private bool ExecuteSwap(SwapMarker swapMarker)
+    {
+        if (swapMarker == null)
+        {
+            Debug.LogWarning("[PlayerMarkerSystem] Attempted to execute null swap marker");
+            return false;
+        }
+
+        Vector2Int centerPos = swapMarker.position;
+        GridSegmentController segment = swapMarker.segment ?? waveManager?.CurrentSegmentController;
+
+        // Use default direction if player didn't select one
+        SwapDirection swapDir = swapMarker.swapDirection;
+        if (swapDir == SwapDirection.Horizontal && swapMarker.defaultSwapDirection != SwapDirection.Horizontal)
+        {
+            // Check if default was set (this happens on move forward if no selection)
+            swapDir = swapMarker.defaultSwapDirection;
+        }
+
+        Debug.Log($"[PlayerMarkerSystem] Executing swap at ({centerPos.x}, {centerPos.y}) - Direction: {swapDir}, Empowered: {swapMarker.isEmpowered}");
+
+        // Get positions for + pattern
+        Vector2Int northPos = new Vector2Int(centerPos.x, centerPos.y + 1);
+        Vector2Int southPos = new Vector2Int(centerPos.x, centerPos.y - 1);
+        Vector2Int eastPos = new Vector2Int(centerPos.x + 1, centerPos.y);
+        Vector2Int westPos = new Vector2Int(centerPos.x - 1, centerPos.y);
+
+        // Validate positions are within grid bounds (stop at edge)
+        GridManager grid = actionManager?.GridManager;
+        if (grid == null)
+        {
+            Debug.LogError("[PlayerMarkerSystem] GridManager not found for swap execution");
+            return false;
+        }
+
+        bool swapExecuted = false;
+
+        if (swapDir == SwapDirection.Horizontal)
+        {
+            // Horizontal swap: W ↔ E
+            if (IsValidSwapPosition(westPos, grid) && IsValidSwapPosition(eastPos, grid))
+            {
+                swapExecuted |= SwapCubesAtPositions(westPos, eastPos, segment);
+            }
+        }
+        else // Vertical
+        {
+            // Vertical swap: N ↔ S
+            if (IsValidSwapPosition(northPos, grid) && IsValidSwapPosition(southPos, grid))
+            {
+                swapExecuted |= SwapCubesAtPositions(northPos, southPos, segment);
+            }
+        }
+
+        // If empowered, also capture along the capture axis
+        if (swapMarker.isEmpowered && swapExecuted)
+        {
+            ExecuteCaptureAxis(swapMarker, centerPos, segment);
+        }
+
+        // Trigger audio feedback
+        Vector3 worldPosition = GetWorldPositionOnSegment(centerPos, segment, 0f);
+        TriggerMarkerAudioEvent(GameAudioEvent.MarkerTriggered, worldPosition);
+
+        return swapExecuted;
+    }
+
+    /// <summary>
+    /// Checks if a position is valid for swapping (within grid bounds).
+    /// </summary>
+    private bool IsValidSwapPosition(Vector2Int position, GridManager grid)
+    {
+        return position.x >= 0 && position.x < grid.Width &&
+               position.y >= 0 && position.y < grid.Height;
+    }
+
+    /// <summary>
+    /// Swaps cubes at two positions. Handles empty cells (∞ can swap with empty).
+    /// </summary>
+    private bool SwapCubesAtPositions(Vector2Int pos1, Vector2Int pos2, GridSegmentController segment)
+    {
+        // Find cubes at both positions (single cube per position per design)
+        var cube1 = FindCubeAtPosition(pos1, segment);
+        var cube2 = FindCubeAtPosition(pos2, segment);
+
+        // If both positions are empty, nothing to swap
+        if (cube1 == null && cube2 == null)
+        {
+            return false;
+        }
+
+        // Swap positions
+        if (cube1 != null)
+        {
+            cube1.position = pos2;
+            // Update visual position
+            UpdateCubeVisualPosition(cube1, pos2, segment);
+        }
+
+        if (cube2 != null)
+        {
+            cube2.position = pos1;
+            // Update visual position
+            UpdateCubeVisualPosition(cube2, pos1, segment);
+        }
+
+        Debug.Log($"[PlayerMarkerSystem] Swapped cubes: ({pos1.x}, {pos1.y}) ↔ ({pos2.x}, {pos2.y})");
+        return true;
+    }
+
+    /// <summary>
+    /// Finds a single cube at a position (per design, only one cube per position).
+    /// </summary>
+    private CubeManager FindCubeAtPosition(Vector2Int position, GridSegmentController segment)
+    {
+        // Check wave cubes first
+        var waveCubes = FindAllCubesAt(position, segment);
+        if (waveCubes.Count > 0)
+        {
+            return waveCubes[0]; // Single cube per position
+        }
+
+        // Check player cubes
+        var playerCubesAtPos = FindPlayerCubesAt(position, segment);
+        if (playerCubesAtPos.Count > 0)
+        {
+            return playerCubesAtPos[0]; // Single cube per position
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Updates the visual position of a cube after swap.
+    /// </summary>
+    private void UpdateCubeVisualPosition(CubeManager cube, Vector2Int newPosition, GridSegmentController segment)
+    {
+        if (cube == null || cube.isDestroyed) return;
+
+        Vector3 worldPos;
+        if (segment != null && cube.CurrentSegment != null)
+        {
+            worldPos = segment.LocalToWorldPosition(newPosition.x, newPosition.y, 2f);
+        }
+        else
+        {
+            GridManager grid = actionManager?.GridManager;
+            if (grid == null) return;
+            worldPos = grid.GridToWorldPosition(newPosition.x, newPosition.y, 2f);
+        }
+
+        // Animate to new position
+        StartCoroutine(AnimateCubeSwap(cube, worldPos));
+    }
+
+    /// <summary>
+    /// Animates cube movement to new position after swap.
+    /// </summary>
+    private IEnumerator AnimateCubeSwap(CubeManager cube, Vector3 targetPosition)
+    {
+        if (cube == null || cube.isDestroyed) yield break;
+
+        Vector3 startPos = cube.transform.position;
+        float duration = 0.3f; // Quick swap animation
+        float elapsed = 0f;
+
+        while (elapsed < duration && cube != null && !cube.isDestroyed)
+        {
+            elapsed += Time.deltaTime;
+            float t = Mathf.Clamp01(elapsed / duration);
+            cube.transform.position = Vector3.Lerp(startPos, targetPosition, t);
+            yield return null;
+        }
+
+        if (cube != null && !cube.isDestroyed)
+        {
+            cube.transform.position = targetPosition;
+        }
+    }
+
+    /// <summary>
+    /// Executes capture along the capture axis for empowered swaps.
+    /// Infinity cubes are NOT captured (only moved).
+    /// </summary>
+    private void ExecuteCaptureAxis(SwapMarker swapMarker, Vector2Int centerPos, GridSegmentController segment)
+    {
+        SwapDirection captureDir = swapMarker.captureDirection;
+        Vector2Int pos1, pos2;
+
+        if (captureDir == SwapDirection.Horizontal)
+        {
+            // Capture W and E positions
+            pos1 = new Vector2Int(centerPos.x - 1, centerPos.y);
+            pos2 = new Vector2Int(centerPos.x + 1, centerPos.y);
+        }
+        else // Vertical
+        {
+            // Capture N and S positions
+            pos1 = new Vector2Int(centerPos.x, centerPos.y + 1);
+            pos2 = new Vector2Int(centerPos.x, centerPos.y - 1);
+        }
+
+        GridManager grid = actionManager?.GridManager;
+        if (grid == null) return;
+
+        // Capture cubes at both positions (except Infinity)
+        if (IsValidSwapPosition(pos1, grid))
+        {
+            CaptureCubesAtPosition(pos1, segment);
+        }
+        if (IsValidSwapPosition(pos2, grid))
+        {
+            CaptureCubesAtPosition(pos2, segment);
+        }
+    }
+
+    /// <summary>
+    /// Captures cubes at a position (except Infinity cubes).
+    /// </summary>
+    private void CaptureCubesAtPosition(Vector2Int position, GridSegmentController segment)
+    {
+        var cubes = FindAllCubesAt(position, segment);
+        foreach (var cube in cubes)
+        {
+            if (cube == null || cube.isDestroyed || cube.isPlayerCube) continue;
+            
+            // Infinity cubes cannot be captured
+            if (cube.type == CubeType.Infinity)
+            {
+                continue;
+            }
+
+            // Process capture
+            ProcessCubeCapture(cube, position, MarkerType.Recursion, null, false);
+        }
+    }
+
+    /// <summary>
+    /// Gets the swap marker at the specified position (if player is hovering over it).
+    /// </summary>
+    public SwapMarker GetSwapMarkerAtPosition(Vector2Int position)
+    {
+        return swapMarkers.FirstOrDefault(m => m.position == position);
+    }
+
+    /// <summary>
+    /// Shows preview icons above N/S/E/W positions for swap marker.
+    /// </summary>
+    public void ShowSwapPreview(SwapMarker swapMarker)
+    {
+        if (swapMarker == null) return;
+        
+        // Hide previous preview if different marker
+        if (currentPreviewedSwapMarker != swapMarker)
+        {
+            HideSwapPreview();
+            currentPreviewedSwapMarker = swapMarker;
+        }
+        
+        // Don't recreate if already showing
+        if (swapPreviewIcons.Count > 0) return;
+        
+        Vector2Int centerPos = swapMarker.position;
+        GridSegmentController segment = swapMarker.segment ?? waveManager?.CurrentSegmentController;
+        
+        // Create preview icons for N, S, E, W positions
+        Vector2Int[] positions = new Vector2Int[]
+        {
+            new Vector2Int(centerPos.x, centerPos.y + 1), // North
+            new Vector2Int(centerPos.x, centerPos.y - 1), // South
+            new Vector2Int(centerPos.x + 1, centerPos.y), // East
+            new Vector2Int(centerPos.x - 1, centerPos.y)  // West
+        };
+        
+        string[] labels = new string[] { "N", "S", "E", "W" };
+        
+        GridManager grid = actionManager?.GridManager;
+        if (grid == null) return;
+        
+        for (int i = 0; i < positions.Length; i++)
+        {
+            Vector2Int pos = positions[i];
+            
+            // Only show if position is valid
+            if (pos.x >= 0 && pos.x < grid.Width && pos.y >= 0 && pos.y < grid.Height)
+            {
+                Vector3 worldPos = GetWorldPositionOnSegment(pos, segment, 1.5f); // Above tile
+                
+                // Create simple icon (text or sprite)
+                GameObject icon = new GameObject($"SwapPreview_{labels[i]}_{pos.x}_{pos.y}");
+                icon.transform.position = worldPos;
+                
+                // Add text mesh for label (simple preview)
+                var textMesh = icon.AddComponent<TextMesh>();
+                textMesh.text = labels[i];
+                textMesh.fontSize = 20;
+                textMesh.color = new Color(0.9f, 0.6f, 0.2f, 0.8f); // Amber/orange
+                textMesh.anchor = TextAnchor.MiddleCenter;
+                textMesh.alignment = TextAlignment.Center;
+                
+                // Face camera
+                icon.transform.LookAt(Camera.main.transform);
+                icon.transform.Rotate(0, 180, 0);
+                
+                swapPreviewIcons.Add(icon);
+            }
+        }
+        
+        UpdateSwapPreview(swapMarker);
+    }
+
+    /// <summary>
+    /// Updates preview icons based on selected swap direction.
+    /// </summary>
+    public void UpdateSwapPreview(SwapMarker swapMarker)
+    {
+        if (swapMarker == null || swapPreviewIcons.Count == 0) return;
+        
+        // Highlight the positions that will be swapped
+        // For horizontal: W and E
+        // For vertical: N and S
+        
+        for (int i = 0; i < swapPreviewIcons.Count; i++)
+        {
+            var icon = swapPreviewIcons[i];
+            if (icon == null) continue;
+            
+            var textMesh = icon.GetComponent<TextMesh>();
+            if (textMesh == null) continue;
+            
+            // Determine which positions are active based on direction
+            bool isActive = false;
+            string label = textMesh.text;
+            
+            if (swapMarker.swapDirection == SwapDirection.Horizontal)
+            {
+                // Horizontal swap: W ↔ E
+                isActive = (label == "W" || label == "E");
+            }
+            else // Vertical
+            {
+                // Vertical swap: N ↔ S
+                isActive = (label == "N" || label == "S");
+            }
+            
+            // Update color based on active state
+            textMesh.color = isActive 
+                ? new Color(1f, 0.8f, 0.3f, 1f) // Bright amber for active
+                : new Color(0.9f, 0.6f, 0.2f, 0.5f); // Dim amber for inactive
+        }
+    }
+
+    /// <summary>
+    /// Hides swap preview icons.
+    /// </summary>
+    public void HideSwapPreview()
+    {
+        foreach (var icon in swapPreviewIcons)
+        {
+            if (icon != null)
+            {
+                Destroy(icon);
+            }
+        }
+        swapPreviewIcons.Clear();
+        currentPreviewedSwapMarker = null;
+    }
+
+    #endregion
+
     #region Cube Markers
 
     public void CreateCubeMarker(Vector2Int position, CubeMarkerType type = CubeMarkerType.Matrix, int size = 3, int uses = -1)
@@ -767,6 +1215,28 @@ public class PlayerMarkerSystem : MonoBehaviour
             return false;
         }
 
+        // Multi-hit system: Recursion cubes require 2 hits to capture
+        if (cube.type == CubeType.Recursion && !cube.isPlayerCube)
+        {
+            // Apply damage instead of instant capture
+            bool destroyed = cube.TakeDamage(1);
+            
+            if (!destroyed)
+            {
+                // Cube survived, show hit feedback but don't capture yet
+                Debug.Log($"[PlayerMarkerSystem] Recursion cube at ({position.x}, {position.y}) hit! HP: {cube.currentHitPoints}/{cube.maxHitPoints}");
+                
+                // Show hit visual feedback
+                if (visualManager != null)
+                {
+                    visualManager.ShowCaptureSuccessEffect(position, cube.type, cube.CurrentSegment);
+                }
+                
+                return true; // Hit registered, but cube not captured yet
+            }
+            // If destroyed (HP <= 0), fall through to capture logic below
+        }
+
         Debug.Log($"Capturing {cube.type} cube at ({position.x}, {position.y}) with {markerType} marker{(isSameTypeMatch ? " (same-type match!)" : "")}");
 
         if (isSameTypeMatch)
@@ -777,7 +1247,9 @@ public class PlayerMarkerSystem : MonoBehaviour
                     CreateCubeMarker(position, CubeMarkerType.Matrix, 3);
                     break;
                 case CubeType.Recursion:
-                    CreateCubeMarker(position, CubeMarkerType.Recursion, 2);
+                    // Recursion + Recursion: Creates swap marker (handled in collision, not here)
+                    // But if we get here, it means the cube was captured, so grant swap marker
+                    // This is handled in HandleRecursionRecursionEmpoweredSwap
                     break;
             }
         }
@@ -1341,6 +1813,16 @@ public class PlayerMarkerSystem : MonoBehaviour
             visualManager?.DestroyMarkerVisual(cubeMarker.visualObject);
         }
         cubeMarkers.Clear();
+
+        // Clear swap markers
+        foreach (var swapMarker in swapMarkers)
+        {
+            visualManager?.DestroyMarkerVisual(swapMarker.visualObject);
+        }
+        swapMarkers.Clear();
+        
+        // Clear swap preview
+        HideSwapPreview();
 
         foreach (var preview in previewObjects)
         {

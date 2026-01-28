@@ -46,7 +46,7 @@ Cubes advance in synchronized steps toward the player:
 Resource-limited tools for cube capture:
 - **Unit Markers**: Single-tile captures for Unit cubes
 - **Matrix Markers**: 2x2 area coverage for group captures
-- **Recursion Markers**: Multi-hit capability for Recursion cubes
+- **Recursion Markers**: Repositioning tool via swap mechanics - breaks Infinity walls and repositions value cubes
 - **Infinity Markers**: Spawn pause-inducing cubes that affect Infinity cubes
 
 **Note:** Cube Markers are generated resources from collisions, not a player-placed marker type.
@@ -104,6 +104,6 @@ Infinity Cube transforms the classic Intelligence Qube formula through its marke
 The game combines this core innovation with face painting mechanics, resonance systems, and a four-tier marker system, creating layers of strategic depth. The cosmic lo-fi aesthetic provides atmospheric context without overwhelming the precise, mathematical nature of the gameplay.
 
 ---
-**Last Updated:** December 14, 2025  
+**Last Updated:** January 27, 2026  
 **Core Innovation:** Marker to Cube System - markers that transform into backward-moving cubes to intercept threats  
 **Tutorial System:** Highlight sequences provide guided instruction with messages, visual highlights, and interactive validation

@@ -628,6 +628,12 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
 
     private IEnumerator ProcessWaveStep()
     {
+        // Apply default directions to swap markers before move forward
+        if (playerActionManager != null && playerActionManager.MarkerSystem != null)
+        {
+            playerActionManager.MarkerSystem.ApplyDefaultDirectionsToSwapMarkers();
+        }
+        
         MoveCubesForward(); // This now includes player cube spawning
         
         // Move player cubes backward after wave cubes have moved
@@ -933,6 +939,18 @@ public class WaveManager : MonoBehaviour, IManagerDebugInterface
         
         // Use local position for spawning (preserve original wave data)
         Vector2Int spawnPosition = new Vector2Int(cubeData.position.x, gridLocalHeight);
+        
+        // DUPLICATE CHECK: Skip spawning if a cube already exists at this position
+        foreach (var existingCube in activeCubes)
+        {
+            if (existingCube != null && !existingCube.isDestroyed && 
+                existingCube.position.x == spawnPosition.x && existingCube.position.y == spawnPosition.y)
+            {
+                this.LogWarning($"Skipping duplicate cube spawn at ({spawnPosition.x}, {spawnPosition.y}) - cube already exists at this position");
+                return;
+            }
+        }
+        
         Vector3 spawnPos = grid.GridToWorldPosition(spawnPosition.x, spawnPosition.y, 2f);
         this.Log($"Spawning {cubeData.type} cube at grid ({spawnPosition.x}, {spawnPosition.y}) -> world {spawnPos}", showDebugInfo);
 

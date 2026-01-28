@@ -3,238 +3,246 @@ using System.Collections.Generic;
 using static Enumerations;
 
 /// <summary>
-/// ScriptableObject defining a test scenario for development iteration.
-/// Scenarios capture setup conditions for reproducible testing.
+/// ScriptableObject defining a test scenario.
+/// Points to a scene that contains base setup. Commands drive player actions during the test.
 /// </summary>
 [CreateAssetMenu(fileName = "New Scenario", menuName = "Infinity Qube/Scenario Data")]
 public class ScenarioData : ScriptableObject
 {
-    #region Scenario Identity
+    #region Identity
     
-    [Header("Scenario Identity")]
+    [Header("Identity")]
     [Tooltip("Display name for this scenario")]
     public string scenarioName;
     
-    [Tooltip("Category for organization and filtering")]
+    [Tooltip("Category for organization")]
     public ScenarioCategory category = ScenarioCategory.Feature;
     
     [TextArea(2, 4)]
-    [Tooltip("What this scenario tests or demonstrates")]
+    [Tooltip("What this scenario tests")]
     public string description;
     
-    [Tooltip("Priority within category (lower = shown first)")]
+    [Tooltip("Priority (lower = shown first)")]
     [Range(0, 100)] public int priority = 50;
     
-    [Tooltip("Tags for filtering (e.g., 'collision', 'markers', 'wave')")]
+    [Tooltip("Tags for filtering")]
     public List<string> tags = new List<string>();
     
     #endregion
     
-    #region Stage Configuration
+    #region Scene
     
-    [Header("Stage Configuration")]
-    [Tooltip("Stage to load (null = keep current stage)")]
-    public StageData stage;
+    [Header("Scene")]
+    [Tooltip("Scene to load for this scenario")]
+    public UnityEngine.Object sceneAsset;
     
-    [Tooltip("Wave index to start at (0-based, -1 = don't change)")]
-    [Range(-1, 20)] public int waveIndex = -1;
-    
-    #endregion
-    
-    #region Grid Setup
-    
-    [Header("Grid Setup")]
-    [Tooltip("Clear existing cubes before applying scenario")]
-    public bool clearExistingCubes = true;
-    
-    [Tooltip("Clear existing markers before applying scenario")]
-    public bool clearExistingMarkers = true;
-    
-    [Tooltip("Grid override dimensions (0 = use stage defaults)")]
-    [Range(0, 12)] public int gridWidthOverride = 0;
-    [Range(0, 40)] public int gridHeightOverride = 0;
-    
-    #endregion
-    
-    #region Player Setup
-    
-    [Header("Player Setup")]
-    [Tooltip("Reset player position")]
-    public bool resetPlayerPosition = true;
-    
-    [Tooltip("Player starting position (if resetPlayerPosition is true)")]
-    public Vector2Int playerPosition = new Vector2Int(2, 0);
-    
-    [Tooltip("Marker charges to set (-1 = don't change)")]
-    [Range(-1, 99)] public int unitMarkerCharges = -1;
-    [Range(-1, 99)] public int matrixMarkerCharges = -1;
-    [Range(-1, 99)] public int recursionMarkerCharges = -1;
-    [Range(-1, 99)] public int infinityMarkerCharges = -1;
+    /// <summary>
+    /// Get scene name from the scene asset
+    /// </summary>
+    public string SceneName
+    {
+        get
+        {
+#if UNITY_EDITOR
+            if (sceneAsset != null)
+            {
+                string path = UnityEditor.AssetDatabase.GetAssetPath(sceneAsset);
+                if (path.EndsWith(".unity"))
+                {
+                    return System.IO.Path.GetFileNameWithoutExtension(path);
+                }
+            }
+#endif
+            return sceneAsset != null ? sceneAsset.name : "";
+        }
+    }
     
     #endregion
     
-    #region Cube Placements
+    #region Commands
     
-    [Header("Cube Placements")]
-    [Tooltip("Wave cubes to spawn (enemy cubes)")]
-    public List<ScenarioCubePlacement> waveCubes = new List<ScenarioCubePlacement>();
-    
-    [Tooltip("Player cubes to spawn")]
-    public List<ScenarioCubePlacement> playerCubes = new List<ScenarioCubePlacement>();
-    
-    #endregion
-    
-    #region Marker Placements
-    
-    [Header("Marker Placements")]
-    [Tooltip("Markers to place on the grid")]
-    public List<ScenarioMarkerPlacement> markers = new List<ScenarioMarkerPlacement>();
+    [Header("Commands")]
+    [Tooltip("Commands to execute during the scenario (ordered by step)")]
+    public List<ScenarioCommand> commands = new List<ScenarioCommand>();
     
     #endregion
     
     #region Timing
     
     [Header("Timing")]
-    [Tooltip("Time scale to set (0 = pause, 1 = normal)")]
-    [Range(0f, 4f)] public float timeScale = 1f;
+    [Tooltip("Max time before scenario times out (seconds)")]
+    [Range(5f, 120f)] public float timeoutSeconds = 30f;
     
-    [Tooltip("Start wave after loading scenario")]
-    public bool startWaveOnLoad = true;
-    
-    [Tooltip("Pause game after loading (for inspection)")]
-    public bool pauseOnLoad = false;
+    [Tooltip("Max wave steps before scenario ends")]
+    [Range(1, 50)] public int maxWaveSteps = 10;
     
     #endregion
     
-    #region Validation (Optional)
+    #region Success Conditions
     
-    [Header("Validation (Optional)")]
-    [Tooltip("If true, scenario has expected outcomes for automated testing")]
-    public bool hasValidation = false;
+    [Header("Success Conditions")]
+    [Tooltip("What triggers scenario completion")]
+    public ScenarioEndCondition endCondition = ScenarioEndCondition.AllCubesResolved;
     
-    [Tooltip("Expected captures (for validation scenarios)")]
-    [Range(0, 50)] public int expectedCaptures = 0;
+    [Tooltip("Assertions to validate at completion")]
+    public List<ScenarioAssertion> assertions = new List<ScenarioAssertion>();
     
-    [Tooltip("Expected escapes (for validation scenarios)")]
-    [Range(0, 50)] public int expectedEscapes = 0;
+    #endregion
     
-    [Tooltip("Max moves before scenario should resolve")]
-    [Range(0, 100)] public int maxMoves = 20;
+    #region Documentation
     
-    [TextArea(2, 4)]
-    [Tooltip("Notes about expected behavior for manual verification")]
+    [Header("Documentation")]
+    [Tooltip("Reference to feature documentation")]
+    public string featureDocRef;
+    
+    [TextArea(2, 6)]
+    [Tooltip("Expected behavior notes")]
     public string expectedBehaviorNotes;
     
     #endregion
-    
-    #region Validation Methods
-    
-    /// <summary>
-    /// Validates scenario data and returns list of issues found.
-    /// </summary>
-    public List<string> Validate()
-    {
-        var issues = new List<string>();
-        
-        if (string.IsNullOrEmpty(scenarioName))
-            issues.Add("Scenario name is empty");
-        
-        // Validate cube positions if we have a stage
-        if (stage != null)
-        {
-            int width = gridWidthOverride > 0 ? gridWidthOverride : stage.gridWidth;
-            int height = gridHeightOverride > 0 ? gridHeightOverride : stage.gridHeight;
-            
-            foreach (var cube in waveCubes)
-            {
-                if (cube.position.x < 0 || cube.position.x >= width)
-                    issues.Add($"Wave cube X position ({cube.position.x}) out of bounds");
-                if (cube.position.y < 0 || cube.position.y >= height)
-                    issues.Add($"Wave cube Y position ({cube.position.y}) out of bounds");
-            }
-            
-            foreach (var cube in playerCubes)
-            {
-                if (cube.position.x < 0 || cube.position.x >= width)
-                    issues.Add($"Player cube X position ({cube.position.x}) out of bounds");
-                if (cube.position.y < 0 || cube.position.y >= height)
-                    issues.Add($"Player cube Y position ({cube.position.y}) out of bounds");
-            }
-        }
-        
-        return issues;
-    }
-    
-    #endregion
-    
-    #region Editor Helpers
-    
-    /// <summary>
-    /// Gets a short summary string for display.
-    /// </summary>
-    public string GetSummary()
-    {
-        var parts = new List<string>();
-        
-        if (waveCubes.Count > 0)
-            parts.Add($"{waveCubes.Count} wave");
-        if (playerCubes.Count > 0)
-            parts.Add($"{playerCubes.Count} player");
-        if (markers.Count > 0)
-            parts.Add($"{markers.Count} markers");
-        
-        return parts.Count > 0 ? string.Join(", ", parts) : "Empty setup";
-    }
-    
-    #endregion
 }
 
-#region Data Classes
+#region Commands
 
-/// <summary>
-/// Scenario categories for organization.
-/// </summary>
+[System.Serializable]
+public class ScenarioCommand
+{
+    [Tooltip("Wave step to execute this command")]
+    public int executeOnStep;
+    
+    [Tooltip("Type of command")]
+    public CommandType type;
+    
+    [Tooltip("Target position for Move commands")]
+    public Vector2Int targetPosition;
+    
+    [Tooltip("Marker type for PlaceMarker commands")]
+    public MarkerType markerType;
+    
+    [Tooltip("Description of what this command does")]
+    public string description;
+    
+    // Factory methods
+    public static ScenarioCommand Move(int step, Vector2Int pos, string desc = "")
+    {
+        return new ScenarioCommand
+        {
+            executeOnStep = step,
+            type = CommandType.Move,
+            targetPosition = pos,
+            description = string.IsNullOrEmpty(desc) ? $"Move to ({pos.x}, {pos.y})" : desc
+        };
+    }
+    
+    public static ScenarioCommand PlaceMarker(int step, Vector2Int pos, MarkerType marker, string desc = "")
+    {
+        return new ScenarioCommand
+        {
+            executeOnStep = step,
+            type = CommandType.PlaceMarker,
+            targetPosition = pos,
+            markerType = marker,
+            description = string.IsNullOrEmpty(desc) ? $"Place {marker} at ({pos.x}, {pos.y})" : desc
+        };
+    }
+}
+
+public enum CommandType
+{
+    Move,           // Move player to position
+    PlaceMarker,    // Place a marker
+    Wait            // Do nothing (for timing)
+}
+
+#endregion
+
+#region Enums
+
 public enum ScenarioCategory
 {
-    /// <summary>Critical scenarios that must always pass</summary>
-    Keystone,
-    /// <summary>Tests for previously fixed bugs</summary>
-    Regression,
-    /// <summary>Tests for specific features</summary>
-    Feature,
-    /// <summary>Performance and edge case tests</summary>
-    Stress,
-    /// <summary>Quick test setups for iteration</summary>
-    QuickTest
+    Keystone,   // Critical path tests
+    Feature,    // Feature-specific tests
+    Edge,       // Edge case tests
+    Regression, // Bug regression tests
+    Demo        // Demo/showcase scenarios
 }
 
-/// <summary>
-/// Cube placement data for scenarios.
-/// </summary>
-[System.Serializable]
-public class ScenarioCubePlacement
+public enum ScenarioEndCondition
 {
-    [Tooltip("Type of cube to spawn")]
-    public CubeType type = CubeType.Unit;
-    
-    [Tooltip("Grid position (X, Y)")]
-    public Vector2Int position;
-    
-    [Tooltip("Cube level (1 = normal)")]
-    [Range(1, 5)] public int level = 1;
+    AllCubesResolved,  // All cubes captured or escaped
+    WaveComplete,      // Current wave ends
+    Timeout,           // Time limit reached
+    MaxSteps,          // Max wave steps reached
+    Manual,            // User manually ends
+    PlayerDeath        // Player dies
 }
 
-/// <summary>
-/// Marker placement data for scenarios.
-/// </summary>
+#endregion
+
+#region Assertion Types
+
 [System.Serializable]
-public class ScenarioMarkerPlacement
+public class ScenarioAssertion
 {
-    [Tooltip("Type of marker to place")]
-    public MarkerMode markerMode = MarkerMode.Unit;
+    [Tooltip("What metric to check")]
+    public AssertionType type;
     
-    [Tooltip("Grid position (X, Y)")]
-    public Vector2Int position;
+    [Tooltip("Expected value")]
+    public int expectedValue;
+    
+    [Tooltip("How to compare")]
+    public ComparisonOp comparison = ComparisonOp.Equals;
+    
+    [Tooltip("Description of this assertion")]
+    public string description;
+    
+    /// <summary>
+    /// Evaluate assertion against actual value
+    /// </summary>
+    public bool Evaluate(int actual)
+    {
+        return comparison switch
+        {
+            ComparisonOp.Equals => actual == expectedValue,
+            ComparisonOp.NotEquals => actual != expectedValue,
+            ComparisonOp.GreaterThan => actual > expectedValue,
+            ComparisonOp.LessThan => actual < expectedValue,
+            ComparisonOp.GreaterOrEqual => actual >= expectedValue,
+            ComparisonOp.LessOrEqual => actual <= expectedValue,
+            _ => false
+        };
+    }
+    
+    // Factory methods
+    public static ScenarioAssertion Equals(AssertionType type, int value, string desc = "")
+    {
+        return new ScenarioAssertion
+        {
+            type = type,
+            expectedValue = value,
+            comparison = ComparisonOp.Equals,
+            description = string.IsNullOrEmpty(desc) ? $"{type} should equal {value}" : desc
+        };
+    }
+}
+
+public enum AssertionType
+{
+    CapturedCubes,
+    EscapedCubes,
+    WaveSteps,
+    PlayerDeaths,
+    MarkersPlaced
+}
+
+public enum ComparisonOp
+{
+    Equals,
+    NotEquals,
+    GreaterThan,
+    LessThan,
+    GreaterOrEqual,
+    LessOrEqual
 }
 
 #endregion

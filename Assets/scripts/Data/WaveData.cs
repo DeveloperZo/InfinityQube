@@ -156,6 +156,47 @@ public class WaveData : ScriptableObject
     #region Validation
     
     /// <summary>
+    /// Called by Unity when asset is modified in editor. Enforces data integrity.
+    /// </summary>
+    private void OnValidate()
+    {
+        RemoveDuplicateCubes();
+    }
+    
+    /// <summary>
+    /// Removes duplicate cubes at the same position, keeping only the first one found.
+    /// Called automatically on save via OnValidate().
+    /// </summary>
+    private void RemoveDuplicateCubes()
+    {
+        if (CubesData == null) return;
+        
+        HashSet<Vector2Int> seenPositions = new HashSet<Vector2Int>();
+        List<CubeData> duplicates = new List<CubeData>();
+        
+        foreach (var cube in CubesData)
+        {
+            if (seenPositions.Contains(cube.position))
+            {
+                duplicates.Add(cube);
+            }
+            else
+            {
+                seenPositions.Add(cube.position);
+            }
+        }
+        
+        if (duplicates.Count > 0)
+        {
+            Debug.LogWarning($"[WaveData] {name}: Removing {duplicates.Count} duplicate cube(s) at same positions");
+            foreach (var dupe in duplicates)
+            {
+                CubesData.Remove(dupe);
+            }
+        }
+    }
+    
+    /// <summary>
     /// Validates wave data and returns list of issues found.
     /// </summary>
     public List<string> Validate(int stageGridWidth = 6)
@@ -177,9 +218,11 @@ public class WaveData : ScriptableObject
         if (fastMoveInterval >= moveInterval)
             issues.Add("Fast move interval should be less than normal move interval");
         
-        // Validate cube positions
+        // Validate cube positions and check for duplicates
         if (cubes != null)
         {
+            HashSet<Vector2Int> seenPositions = new HashSet<Vector2Int>();
+            
             for (int i = 0; i < cubes.Count; i++)
             {
                 var cube = cubes[i];
@@ -187,6 +230,12 @@ public class WaveData : ScriptableObject
                     issues.Add($"Cube {i} X position ({cube.position.x}) out of spawn bounds (0-{spawnWidth - 1})");
                 if (cube.position.y < 0 || cube.position.y >= spawnHeight)
                     issues.Add($"Cube {i} Y position ({cube.position.y}) out of spawn bounds (0-{spawnHeight - 1})");
+                
+                // Check for duplicate positions
+                if (seenPositions.Contains(cube.position))
+                    issues.Add($"Cube {i} at ({cube.position.x}, {cube.position.y}) is a duplicate position - multiple cubes at same position not allowed");
+                else
+                    seenPositions.Add(cube.position);
             }
         }
         

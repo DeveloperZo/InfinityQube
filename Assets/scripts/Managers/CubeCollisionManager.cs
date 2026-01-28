@@ -547,8 +547,8 @@ public class CubeCollisionManager : MonoBehaviour, IManagerDebugInterface
                 return new CollisionResult(HandleUnitMatrixCollision(position));
 
             case CubeType.Recursion:
-                // Unit + Recursion: Column capture (auto-captures 3 cubes)
-                return new CollisionResult(HandleColumnCapture(position, 3));
+                // Unit + Recursion: Creates swap marker (1 charge, player selects direction)
+                return new CollisionResult(HandleUnitRecursionSwap(position));
 
             case CubeType.Infinity:
                 // Unit + Infinity: Unit destroyed, no face painting
@@ -601,17 +601,16 @@ public class CubeCollisionManager : MonoBehaviour, IManagerDebugInterface
         switch (waveCube.type)
         {
             case CubeType.Unit:
-                // Recursion + Unit: Column capture (auto-captures 3 cubes)
-                return new CollisionResult(HandleColumnCapture(position, 3));
+                // Recursion + Unit: Creates swap marker (1 charge, player selects direction)
+                return new CollisionResult(HandleRecursionUnitSwap(position));
 
             case CubeType.Matrix:
-                // Recursion + Matrix: Auto 1x3 vertical marker
-                return new CollisionResult(HandleRecursionMatrixCollision(position));
+                // Recursion + Matrix: Creates 2x2 marker (Wave Matrix determines area effect)
+                return new CollisionResult(HandleRecursionMatrixSwap(position));
 
             case CubeType.Recursion:
-                // Recursion + Recursion: Cross marker (5 tiles)
-                // Phaseable Concentration attunement may paint wave cube face
-                return new CollisionResult(HandleRecursionRecursionCollision(position, waveCube));
+                // Recursion + Recursion: Instant capture + empowered swap marker (2 charges, swap + capture axes)
+                return new CollisionResult(HandleRecursionRecursionEmpoweredSwap(position, waveCube));
 
             case CubeType.Infinity:
                 // Recursion + Infinity: Recursion destroyed - Infinity is immutable, nothing paints it
@@ -789,9 +788,74 @@ public class CubeCollisionManager : MonoBehaviour, IManagerDebugInterface
     }
 
     /// <summary>
+    /// Unit + Recursion: Creates swap marker (1 charge, player selects direction)
+    /// </summary>
+    private bool HandleUnitRecursionSwap(Vector2Int position)
+    {
+        GridSegmentController segment = actionManager?.WaveManager?.CurrentSegmentController;
+        markerSystem.CreateSwapMarker(position, 1, segment);
+        DebugLog("HandleUnitRecursionSwap", $"Unit+Recursion collision - created swap marker at ({position.x}, {position.y})");
+        return true;
+    }
+
+    /// <summary>
+    /// Recursion + Unit: Creates swap marker (1 charge, player selects direction)
+    /// </summary>
+    private bool HandleRecursionUnitSwap(Vector2Int position)
+    {
+        GridSegmentController segment = actionManager?.WaveManager?.CurrentSegmentController;
+        markerSystem.CreateSwapMarker(position, 1, segment);
+        DebugLog("HandleRecursionUnitSwap", $"Recursion+Unit collision - created swap marker at ({position.x}, {position.y})");
+        return true;
+    }
+
+    /// <summary>
+    /// Recursion + Matrix: Creates 2x2 marker (Wave Matrix determines area effect)
+    /// </summary>
+    private bool HandleRecursionMatrixSwap(Vector2Int position)
+    {
+        // For now, create a 2x2 cube marker (similar to Matrix+Recursion)
+        // This may need adjustment based on design requirements
+        int matrixAreaSize = AttunementManager.IsInitialized ? AttunementManager.Instance.GetMatrixAreaSize() : 2;
+        markerSystem.CreateCubeMarker(position, PlayerMarkerSystem.CubeMarkerType.Matrix, matrixAreaSize);
+        DebugLog("HandleRecursionMatrixSwap", $"Recursion+Matrix collision - created {matrixAreaSize}x{matrixAreaSize} marker at ({position.x}, {position.y})");
+        return true;
+    }
+
+    /// <summary>
+    /// Recursion + Recursion: Instant capture + empowered swap marker (2 charges, swap + capture axes)
+    /// </summary>
+    private bool HandleRecursionRecursionEmpoweredSwap(Vector2Int position, CubeManager waveRecursionCube)
+    {
+        // First, capture the Recursion cube immediately (instant capture)
+        bool captured = markerSystem.ProcessCubeCapture(waveRecursionCube, position, PlayerMarkerSystem.MarkerType.Recursion, null, true);
+        
+        if (captured)
+        {
+            DebugLog("HandleRecursionRecursionEmpoweredSwap", $"Recursion+Recursion - instant capture at ({position.x}, {position.y})");
+        }
+
+        // Then create empowered swap marker (2 charges = swap axis + capture axis)
+        GridSegmentController segment = actionManager?.WaveManager?.CurrentSegmentController;
+        markerSystem.CreateSwapMarker(position, 2, segment);
+        
+        // Mark as empowered (has both swap and capture axes)
+        var swapMarkers = markerSystem.swapMarkers;
+        if (swapMarkers.Count > 0)
+        {
+            var lastMarker = swapMarkers[swapMarkers.Count - 1];
+            lastMarker.isEmpowered = true;
+        }
+
+        DebugLog("HandleRecursionRecursionEmpoweredSwap", $"Recursion+Recursion - created empowered swap marker (2 charges) at ({position.x}, {position.y})");
+        return true;
+    }
+
+    /// <summary>
     /// Recursion capture: Creates a single recursion marker at collision point
     /// Base: 3 charges. With Concentrated Concentration attunement: 5 charges.
     /// Recursion+Unit and Unit+Recursion behavior
+    /// DEPRECATED: Replaced by swap markers
     /// </summary>
     private bool HandleColumnCapture(Vector2Int position, int charges = 3)
     {

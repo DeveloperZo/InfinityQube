@@ -1,18 +1,17 @@
 using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
-using static Enumerations;
 
 /// <summary>
-/// Scenario Panel - Load and manage test scenarios for rapid iteration.
-/// Integrates with ScenarioLoader for reproducible testing.
+/// Scenario Panel - Load and manage test scenarios.
+/// Scenarios are scene-based: each scenario points to a scene that contains all setup.
 /// </summary>
 public class ScenarioPanel : PrototypingPanelBase
 {
     public override string PanelName => "Scenarios";
     public override string PanelIcon => "S";
     public override PrototypingCategory Category => PrototypingCategory.Testing;
-    public override int Priority => 10; // High priority - near Quick panel
+    public override int Priority => 10;
     
     #region State
     
@@ -22,21 +21,19 @@ public class ScenarioPanel : PrototypingPanelBase
     
     // UI State
     private Vector2 scrollPosition;
-    private ScenarioCategory selectedCategory = ScenarioCategory.Keystone;
-    private string filterTag = "";
     private bool showKeystone = true;
-    private bool showRegression = true;
     private bool showFeature = true;
-    private bool showStress = false;
-    private bool showQuickTest = true;
-    private bool showScenarioDetails = false;
+    private bool showDemo = true;
     private ScenarioData selectedScenario;
     
+    // Results
+    private ScenarioData lastCompletedScenario;
+    private bool lastPassed;
+    private List<ScenarioRunner.AssertionResult> lastResults = new List<ScenarioRunner.AssertionResult>();
+    
     // Styles
-    private GUIStyle categoryButtonStyle;
     private GUIStyle scenarioButtonStyle;
     private GUIStyle activeScenarioStyle;
-    private GUIStyle tagStyle;
     private bool stylesInitialized;
     
     #endregion
@@ -46,30 +43,28 @@ public class ScenarioPanel : PrototypingPanelBase
     public override void Initialize()
     {
         base.Initialize();
-        RefreshScenarioLoader();
-    }
-    
-    private void RefreshScenarioLoader()
-    {
-        scenarioLoader = ScenarioLoader.Instance;
-        if (scenarioLoader == null)
-        {
-            scenarioLoader = Object.FindFirstObjectByType<ScenarioLoader>();
-        }
+        RefreshScenarios();
         
-        RefreshScenarioList();
+        // Subscribe to completion events
+        ScenarioRunner.OnScenarioCompleted += OnScenarioCompleted;
     }
     
-    private void RefreshScenarioList()
+    private void OnDestroy()
     {
-        if (scenarioLoader == null)
+        ScenarioRunner.OnScenarioCompleted -= OnScenarioCompleted;
+    }
+    
+    private void RefreshScenarios()
+    {
+        scenarioLoader = ScenarioLoader.Instance ?? Object.FindFirstObjectByType<ScenarioLoader>();
+        
+        if (scenarioLoader != null)
         {
-            // Try to load from Resources directly if no loader
-            allScenarios = new List<ScenarioData>(Resources.LoadAll<ScenarioData>(""));
+            allScenarios = scenarioLoader.GetAllScenarios();
         }
         else
         {
-            allScenarios = scenarioLoader.GetAllScenarios();
+            allScenarios = new List<ScenarioData>(Resources.LoadAll<ScenarioData>("Scenarios"));
         }
         
         // Group by category
@@ -84,15 +79,18 @@ public class ScenarioPanel : PrototypingPanelBase
         }
     }
     
+    private void OnScenarioCompleted(ScenarioData scenario, bool passed, List<ScenarioRunner.AssertionResult> results)
+    {
+        lastCompletedScenario = scenario;
+        lastPassed = passed;
+        lastResults = results ?? new List<ScenarioRunner.AssertionResult>();
+        
+        LogAction($"Scenario {scenario?.scenarioName}: {(passed ? "PASSED" : "FAILED")}");
+    }
+    
     private void InitStyles()
     {
         if (stylesInitialized) return;
-        
-        categoryButtonStyle = new GUIStyle(GUI.skin.button)
-        {
-            fontSize = 11,
-            fontStyle = FontStyle.Bold
-        };
         
         scenarioButtonStyle = new GUIStyle(GUI.skin.button)
         {
@@ -103,13 +101,6 @@ public class ScenarioPanel : PrototypingPanelBase
         activeScenarioStyle = new GUIStyle(scenarioButtonStyle);
         activeScenarioStyle.normal.background = MakeTex(2, 2, new Color(0.2f, 0.5f, 0.3f, 0.8f));
         
-        tagStyle = new GUIStyle(GUI.skin.label)
-        {
-            fontSize = 9,
-            fontStyle = FontStyle.Italic
-        };
-        tagStyle.normal.textColor = new Color(0.6f, 0.6f, 0.6f);
-        
         stylesInitialized = true;
     }
     
@@ -117,39 +108,20 @@ public class ScenarioPanel : PrototypingPanelBase
     
     #region GUI Drawing
     
-    public override List<QuickAction> GetQuickActions()
-    {
-        return new List<QuickAction>
-        {
-            new QuickAction("Reload", () => ReloadLastScenario(), "↻")
-            {
-                Tooltip = "Reload last scenario (Shift+F5)",
-                IsEnabled = () => scenarioLoader?.GetLastLoadedScenario() != null
-            }
-        };
-    }
-    
     public override void DrawGUI()
     {
         InitStyles();
         
-        if (scenarioLoader == null)
-        {
-            RefreshScenarioLoader();
-        }
-        
-        // Status bar
+        // Status
         DrawStatusBar();
-        
         GUILayout.Space(5);
         
-        // Quick Actions
-        DrawQuickActions();
-        
-        GUILayout.Space(5);
-        
-        // Category Filters
-        DrawCategoryFilters();
+        // Filters
+        GUILayout.BeginHorizontal();
+        DrawToggle("Keystone", ref showKeystone, new Color(1f, 0.4f, 0.4f));
+        DrawToggle("Feature", ref showFeature, new Color(0.4f, 0.7f, 1f));
+        DrawToggle("Demo", ref showDemo, new Color(0.5f, 0.8f, 0.5f));
+        GUILayout.EndHorizontal();
         
         GUILayout.Space(5);
         
@@ -158,152 +130,91 @@ public class ScenarioPanel : PrototypingPanelBase
         DrawScenarioList();
         GUILayout.EndScrollView();
         
-        // Selected Scenario Details
-        if (showScenarioDetails && selectedScenario != null)
+        // Results
+        if (lastCompletedScenario != null)
         {
-            DrawScenarioDetails();
+            DrawResults();
         }
     }
     
     private void DrawStatusBar()
     {
-        var current = scenarioLoader?.GetCurrentScenario();
-        var last = scenarioLoader?.GetLastLoadedScenario();
-        
         GUILayout.BeginHorizontal(GUI.skin.box);
         
+        var current = scenarioLoader?.GetCurrentScenario();
         if (current != null)
         {
-            GUILayout.Label($"Active: {current.scenarioName}", GUILayout.ExpandWidth(true));
-        }
-        else if (last != null)
-        {
-            GUILayout.Label($"Last: {last.scenarioName} (Shift+F5 to reload)", GUILayout.ExpandWidth(true));
+            GUILayout.Label($"Current: {current.scenarioName}");
         }
         else
         {
-            GUILayout.Label($"{allScenarios.Count} scenarios available", GUILayout.ExpandWidth(true));
+            GUILayout.Label($"{allScenarios.Count} scenarios");
         }
         
         if (GUILayout.Button("↻", GUILayout.Width(25)))
         {
-            RefreshScenarioList();
+            RefreshScenarios();
         }
         
         GUILayout.EndHorizontal();
     }
     
-    private void DrawQuickActions()
+    private void DrawToggle(string label, ref bool value, Color color)
     {
-        GUILayout.BeginHorizontal();
-        
-        GUI.enabled = scenarioLoader?.GetLastLoadedScenario() != null;
-        GUI.backgroundColor = new Color(0.3f, 0.7f, 0.3f);
-        if (GUILayout.Button("↻ Reload Last (Shift+F5)", GUILayout.Height(28)))
+        GUI.backgroundColor = value ? color : Color.gray;
+        if (GUILayout.Button(label, GUILayout.Height(24)))
         {
-            ReloadLastScenario();
-        }
-        GUI.backgroundColor = Color.white;
-        GUI.enabled = true;
-        
-        if (GUILayout.Button("Clear Scene", GUILayout.Height(28), GUILayout.Width(90)))
-        {
-            ClearScene();
-        }
-        
-        GUILayout.EndHorizontal();
-    }
-    
-    private void DrawCategoryFilters()
-    {
-        GUILayout.Label("Categories:", GUI.skin.box);
-        
-        GUILayout.BeginHorizontal();
-        
-        DrawCategoryToggle(ScenarioCategory.Keystone, ref showKeystone, new Color(1f, 0.4f, 0.4f));
-        DrawCategoryToggle(ScenarioCategory.Regression, ref showRegression, new Color(1f, 0.7f, 0.3f));
-        DrawCategoryToggle(ScenarioCategory.Feature, ref showFeature, new Color(0.4f, 0.7f, 1f));
-        
-        GUILayout.EndHorizontal();
-        
-        GUILayout.BeginHorizontal();
-        
-        DrawCategoryToggle(ScenarioCategory.Stress, ref showStress, new Color(0.8f, 0.4f, 0.8f));
-        DrawCategoryToggle(ScenarioCategory.QuickTest, ref showQuickTest, new Color(0.5f, 0.8f, 0.5f));
-        
-        GUILayout.FlexibleSpace();
-        GUILayout.EndHorizontal();
-    }
-    
-    private void DrawCategoryToggle(ScenarioCategory category, ref bool isVisible, Color color)
-    {
-        int count = scenariosByCategory.ContainsKey(category) ? scenariosByCategory[category].Count : 0;
-        
-        GUI.backgroundColor = isVisible ? color : new Color(0.5f, 0.5f, 0.5f);
-        if (GUILayout.Button($"{category} ({count})", categoryButtonStyle, GUILayout.Height(24)))
-        {
-            isVisible = !isVisible;
+            value = !value;
         }
         GUI.backgroundColor = Color.white;
     }
     
     private void DrawScenarioList()
     {
-        bool anyDrawn = false;
-        
-        if (showKeystone) anyDrawn |= DrawCategorySection(ScenarioCategory.Keystone, new Color(1f, 0.4f, 0.4f));
-        if (showRegression) anyDrawn |= DrawCategorySection(ScenarioCategory.Regression, new Color(1f, 0.7f, 0.3f));
-        if (showFeature) anyDrawn |= DrawCategorySection(ScenarioCategory.Feature, new Color(0.4f, 0.7f, 1f));
-        if (showStress) anyDrawn |= DrawCategorySection(ScenarioCategory.Stress, new Color(0.8f, 0.4f, 0.8f));
-        if (showQuickTest) anyDrawn |= DrawCategorySection(ScenarioCategory.QuickTest, new Color(0.5f, 0.8f, 0.5f));
-        
-        if (!anyDrawn)
-        {
-            GUILayout.Label("No scenarios in selected categories.\nCreate scenarios via Assets > Create > Infinity Qube > Scenario Data");
-        }
+        if (showKeystone) DrawCategory(ScenarioCategory.Keystone, new Color(1f, 0.4f, 0.4f));
+        if (showFeature) DrawCategory(ScenarioCategory.Feature, new Color(0.4f, 0.7f, 1f));
+        if (showDemo) DrawCategory(ScenarioCategory.Demo, new Color(0.5f, 0.8f, 0.5f));
     }
     
-    private bool DrawCategorySection(ScenarioCategory category, Color headerColor)
+    private void DrawCategory(ScenarioCategory category, Color color)
     {
         if (!scenariosByCategory.ContainsKey(category) || scenariosByCategory[category].Count == 0)
-        {
-            return false;
-        }
+            return;
         
-        var scenarios = scenariosByCategory[category];
-        
-        // Category header
         var headerStyle = new GUIStyle(GUI.skin.box);
-        headerStyle.normal.textColor = headerColor;
+        headerStyle.normal.textColor = color;
         headerStyle.fontStyle = FontStyle.Bold;
         GUILayout.Label($"── {category} ──", headerStyle);
         
-        // Scenario buttons
-        foreach (var scenario in scenarios)
+        foreach (var scenario in scenariosByCategory[category])
         {
             DrawScenarioButton(scenario);
         }
         
         GUILayout.Space(5);
-        return true;
     }
     
     private void DrawScenarioButton(ScenarioData scenario)
     {
-        bool isActive = scenarioLoader?.GetCurrentScenario() == scenario;
-        bool isLast = scenarioLoader?.GetLastLoadedScenario() == scenario;
+        bool isCurrent = scenarioLoader?.GetCurrentScenario() == scenario;
+        bool isLastCompleted = lastCompletedScenario == scenario;
         
-        GUILayout.BeginHorizontal();
+        string statusIcon = "";
+        if (isLastCompleted)
+        {
+            statusIcon = lastPassed ? " ✅" : " ❌";
+        }
         
-        // Main load button
-        var style = isActive ? activeScenarioStyle : scenarioButtonStyle;
-        string prefix = isActive ? "▶ " : isLast ? "◉ " : "  ";
-        string label = $"{prefix}{scenario.scenarioName}";
+        var style = isCurrent ? activeScenarioStyle : scenarioButtonStyle;
+        string prefix = isCurrent ? "▶ " : "  ";
+        string label = $"{prefix}{scenario.scenarioName}{statusIcon}";
         
         if (!string.IsNullOrEmpty(scenario.description))
         {
-            label += $"\n  {TruncateText(scenario.description, 40)}";
+            label += $"\n  {Truncate(scenario.description, 45)}";
         }
+        
+        GUILayout.BeginHorizontal();
         
         if (GUILayout.Button(label, style, GUILayout.Height(scenario.description?.Length > 0 ? 38 : 24)))
         {
@@ -311,73 +222,89 @@ public class ScenarioPanel : PrototypingPanelBase
         }
         
         // Info button
-        GUI.backgroundColor = selectedScenario == scenario && showScenarioDetails ? Color.cyan : Color.white;
+        GUI.backgroundColor = selectedScenario == scenario ? Color.cyan : Color.white;
         if (GUILayout.Button("i", GUILayout.Width(22), GUILayout.Height(scenario.description?.Length > 0 ? 38 : 24)))
         {
-            if (selectedScenario == scenario && showScenarioDetails)
-            {
-                showScenarioDetails = false;
-            }
-            else
-            {
-                selectedScenario = scenario;
-                showScenarioDetails = true;
-            }
+            selectedScenario = selectedScenario == scenario ? null : scenario;
         }
         GUI.backgroundColor = Color.white;
         
         GUILayout.EndHorizontal();
+        
+        // Details
+        if (selectedScenario == scenario)
+        {
+            DrawScenarioDetails(scenario);
+        }
     }
     
-    private void DrawScenarioDetails()
+    private void DrawScenarioDetails(ScenarioData scenario)
     {
-        GUILayout.Space(5);
         GUILayout.BeginVertical(GUI.skin.box);
         
-        GUILayout.Label($"Details: {selectedScenario.scenarioName}", GUI.skin.box);
+        GUILayout.Label($"Scene: {scenario.SceneName}");
+        GUILayout.Label($"End: {scenario.endCondition} | Timeout: {scenario.timeoutSeconds}s | Steps: {scenario.maxWaveSteps}");
         
-        if (!string.IsNullOrEmpty(selectedScenario.description))
+        if (scenario.tags?.Count > 0)
         {
-            GUILayout.Label(selectedScenario.description, GUI.skin.box);
+            GUILayout.Label($"Tags: {string.Join(", ", scenario.tags)}");
         }
         
-        GUILayout.Label(selectedScenario.GetSummary());
-        
-        // Tags
-        if (selectedScenario.tags != null && selectedScenario.tags.Count > 0)
+        // Commands
+        if (scenario.commands?.Count > 0)
         {
-            GUILayout.Label($"Tags: {string.Join(", ", selectedScenario.tags)}", tagStyle);
-        }
-        
-        // Setup info
-        GUILayout.BeginHorizontal();
-        GUILayout.Label($"Wave Cubes: {selectedScenario.waveCubes?.Count ?? 0}", GUILayout.Width(100));
-        GUILayout.Label($"Player Cubes: {selectedScenario.playerCubes?.Count ?? 0}", GUILayout.Width(110));
-        GUILayout.Label($"Markers: {selectedScenario.markers?.Count ?? 0}", GUILayout.Width(80));
-        GUILayout.EndHorizontal();
-        
-        // Timing
-        GUILayout.Label($"Time Scale: {selectedScenario.timeScale:F1}x | Start Wave: {selectedScenario.startWaveOnLoad} | Pause: {selectedScenario.pauseOnLoad}");
-        
-        // Validation info
-        if (selectedScenario.hasValidation)
-        {
-            GUILayout.Label($"Expected: {selectedScenario.expectedCaptures} captures, {selectedScenario.expectedEscapes} escapes (max {selectedScenario.maxMoves} moves)");
-            
-            if (!string.IsNullOrEmpty(selectedScenario.expectedBehaviorNotes))
+            GUILayout.Label($"Commands ({scenario.commands.Count}):");
+            foreach (var cmd in scenario.commands)
             {
-                GUILayout.Label($"Notes: {selectedScenario.expectedBehaviorNotes}", tagStyle);
+                GUILayout.Label($"  Step {cmd.executeOnStep}: {cmd.type} - {cmd.description}",
+                    new GUIStyle(GUI.skin.label) { fontSize = 10 });
+            }
+        }
+        
+        if (scenario.assertions?.Count > 0)
+        {
+            GUILayout.Label($"Assertions: {scenario.assertions.Count}");
+        }
+        
+        if (!string.IsNullOrEmpty(scenario.expectedBehaviorNotes))
+        {
+            GUILayout.Label(scenario.expectedBehaviorNotes, new GUIStyle(GUI.skin.label) { fontSize = 10, fontStyle = FontStyle.Italic });
+        }
+        
+        GUILayout.EndVertical();
+    }
+    
+    private void DrawResults()
+    {
+        GUILayout.Space(5);
+        
+        var color = lastPassed ? new Color(0.2f, 0.8f, 0.2f) : new Color(0.8f, 0.2f, 0.2f);
+        GUI.backgroundColor = color;
+        GUILayout.BeginVertical(GUI.skin.box);
+        GUI.backgroundColor = Color.white;
+        
+        GUILayout.Label($"{(lastPassed ? "✅ PASSED" : "❌ FAILED")}: {lastCompletedScenario.scenarioName}");
+        
+        if (lastResults.Count > 0)
+        {
+            int passed = lastResults.Count(r => r.passed);
+            GUILayout.Label($"Assertions: {passed}/{lastResults.Count}");
+            
+            foreach (var result in lastResults)
+            {
+                string icon = result.passed ? "✅" : "❌";
+                GUILayout.Label($"  {icon} {result.assertion.description}");
+                if (!result.passed)
+                {
+                    GUILayout.Label($"      Expected: {result.assertion.expectedValue}, Got: {result.actualValue}");
+                }
             }
         }
         
         GUILayout.BeginHorizontal();
-        if (GUILayout.Button("Load This Scenario"))
+        if (GUILayout.Button("Clear", GUILayout.Width(60)))
         {
-            LoadScenario(selectedScenario);
-        }
-        if (GUILayout.Button("Close", GUILayout.Width(60)))
-        {
-            showScenarioDetails = false;
+            lastCompletedScenario = null;
         }
         GUILayout.EndHorizontal();
         
@@ -390,98 +317,35 @@ public class ScenarioPanel : PrototypingPanelBase
     
     private void LoadScenario(ScenarioData scenario)
     {
-        if (scenarioLoader != null)
+        if (scenarioLoader == null)
         {
-            scenarioLoader.LoadScenario(scenario);
+            var go = new GameObject("ScenarioLoader");
+            scenarioLoader = go.AddComponent<ScenarioLoader>();
         }
-        else
-        {
-            LogAction($"ScenarioLoader not available - cannot load {scenario.scenarioName}");
-        }
-    }
-    
-    private void ReloadLastScenario()
-    {
-        if (scenarioLoader != null)
-        {
-            scenarioLoader.ReloadLastScenario();
-        }
-    }
-    
-    private void ClearScene()
-    {
-        waveManager?.StopWave();
-        waveManager?.ClearAllCubes();
-        gridManager?.ClearAllMarkers();
         
-        var actionManager = Object.FindFirstObjectByType<PlayerActionManager>();
-        actionManager?.MarkerSystem?.ClearAllActions();
-        actionManager?.MarkerSystem?.ClearPlayerCubes();
-        
-        Time.timeScale = 1f;
-        LogAction("Cleared scene");
-    }
-    
-    #endregion
-    
-    #region Keyboard Shortcuts
-    
-    public override void Update()
-    {
-        if (!IsVisible) return;
-        
-        // Quick number keys to load scenarios by index in current category
-        for (int i = 1; i <= 9; i++)
-        {
-            if (Input.GetKeyDown(KeyCode.Alpha0 + i) && !Input.GetKey(KeyCode.LeftControl))
-            {
-                LoadScenarioByIndex(i - 1);
-            }
-        }
-    }
-    
-    private void LoadScenarioByIndex(int index)
-    {
-        // Get visible scenarios in order
-        var visibleScenarios = new List<ScenarioData>();
-        
-        if (showKeystone && scenariosByCategory.ContainsKey(ScenarioCategory.Keystone))
-            visibleScenarios.AddRange(scenariosByCategory[ScenarioCategory.Keystone]);
-        if (showRegression && scenariosByCategory.ContainsKey(ScenarioCategory.Regression))
-            visibleScenarios.AddRange(scenariosByCategory[ScenarioCategory.Regression]);
-        if (showFeature && scenariosByCategory.ContainsKey(ScenarioCategory.Feature))
-            visibleScenarios.AddRange(scenariosByCategory[ScenarioCategory.Feature]);
-        if (showStress && scenariosByCategory.ContainsKey(ScenarioCategory.Stress))
-            visibleScenarios.AddRange(scenariosByCategory[ScenarioCategory.Stress]);
-        if (showQuickTest && scenariosByCategory.ContainsKey(ScenarioCategory.QuickTest))
-            visibleScenarios.AddRange(scenariosByCategory[ScenarioCategory.QuickTest]);
-        
-        if (index < visibleScenarios.Count)
-        {
-            LoadScenario(visibleScenarios[index]);
-        }
+        scenarioLoader.LoadScenario(scenario);
+        LogAction($"Loading: {scenario.scenarioName}");
     }
     
     #endregion
     
     #region Utility
     
-    private string TruncateText(string text, int maxLength)
+    private string Truncate(string text, int max)
     {
         if (string.IsNullOrEmpty(text)) return "";
-        text = text.Replace("\n", " ").Replace("\r", "");
-        return text.Length <= maxLength ? text : text.Substring(0, maxLength - 3) + "...";
+        text = text.Replace("\n", " ");
+        return text.Length <= max ? text : text.Substring(0, max - 3) + "...";
     }
     
     private Texture2D MakeTex(int width, int height, Color col)
     {
-        Color[] pix = new Color[width * height];
-        for (int i = 0; i < pix.Length; i++)
-            pix[i] = col;
-        Texture2D result = new Texture2D(width, height);
-        result.SetPixels(pix);
-        result.Apply();
-        return result;
+        var pix = new Color[width * height];
+        for (int i = 0; i < pix.Length; i++) pix[i] = col;
+        var tex = new Texture2D(width, height);
+        tex.SetPixels(pix);
+        tex.Apply();
+        return tex;
     }
     
     #endregion

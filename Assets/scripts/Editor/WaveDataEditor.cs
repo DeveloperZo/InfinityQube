@@ -28,6 +28,42 @@ public class WaveDataEditor : Editor
         waveData = (WaveData)target;
         previousGridWidth = waveData.GridWidth;
         previousGridHeight = waveData.GridHeight;
+        
+        // Clean up any duplicate cubes when loading
+        RemoveDuplicateCubes();
+    }
+    
+    /// <summary>
+    /// Removes duplicate cubes at the same position, keeping only the first one found.
+    /// </summary>
+    private void RemoveDuplicateCubes()
+    {
+        if (waveData == null || waveData.CubesData == null) return;
+        
+        HashSet<Vector2Int> seenPositions = new HashSet<Vector2Int>();
+        List<CubeData> duplicates = new List<CubeData>();
+        
+        foreach (var cube in waveData.CubesData)
+        {
+            if (seenPositions.Contains(cube.position))
+            {
+                duplicates.Add(cube);
+            }
+            else
+            {
+                seenPositions.Add(cube.position);
+            }
+        }
+        
+        if (duplicates.Count > 0)
+        {
+            Debug.LogWarning($"[WaveDataEditor] Found {duplicates.Count} duplicate cube(s) in {waveData.name} - removing automatically");
+            foreach (var dupe in duplicates)
+            {
+                waveData.CubesData.Remove(dupe);
+            }
+            EditorUtility.SetDirty(waveData);
+        }
     }
     
     public override void OnInspectorGUI()
@@ -391,6 +427,7 @@ public class WaveDataEditor : Editor
                 cube.position = new Vector2Int(cube.position.x, cube.position.y + heightDiff);
             }
             
+            // Duplicate cleanup handled by WaveData.OnValidate() when saved
             EditorUtility.SetDirty(waveData);
         }
         else if (newHeight < oldHeight)
@@ -405,6 +442,7 @@ public class WaveDataEditor : Editor
                 cube.position = new Vector2Int(cube.position.x, Mathf.Max(0, cube.position.y - heightDiff));
             }
             
+            // Duplicate cleanup handled by WaveData.OnValidate() when saved
             EditorUtility.SetDirty(waveData);
         }
     }
