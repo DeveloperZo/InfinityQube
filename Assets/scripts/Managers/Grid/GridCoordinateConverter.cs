@@ -37,7 +37,11 @@ public class GridCoordinateConverter
         if (grid.HasSegmentControllers && grid.SegmentControllerCount > 0)
         {
             var primarySegment = grid.GetSegmentController(0);
-            return primarySegment.LocalToWorldPosition(x, y, heightOffset);
+            // Null check for destroyed segment controllers
+            if (primarySegment != null)
+            {
+                return primarySegment.LocalToWorldPosition(x, y, heightOffset);
+            }
         }
         
         // Legacy: Use calculated grid offset
@@ -57,7 +61,11 @@ public class GridCoordinateConverter
         if (grid.HasSegmentControllers && grid.SegmentControllerCount > 0)
         {
             var primarySegment = grid.GetSegmentController(0);
-            return primarySegment.WorldToLocalPosition(worldPosition);
+            // Null check for destroyed segment controllers
+            if (primarySegment != null)
+            {
+                return primarySegment.WorldToLocalPosition(worldPosition);
+            }
         }
         
         // Legacy: Use calculated grid offset

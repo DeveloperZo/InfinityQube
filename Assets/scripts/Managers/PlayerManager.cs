@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System;
 using System.Collections;
+using static Enumerations;
 
 public class PlayerManager : MonoBehaviour, IManagerDebugInterface
 {
@@ -176,6 +177,7 @@ public class PlayerManager : MonoBehaviour, IManagerDebugInterface
         GameEvents.OnCubeCaptured += HandleCubeCaptured;
         GameEvents.OnCubeEscaped += HandleCubeEscaped;
         GameEvents.OnStageStart += HandleStageStart;
+        GameEvents.OnCubeMove += HandleCubeMove;
     }
     
     private void UnsubscribeFromEvents()
@@ -184,6 +186,27 @@ public class PlayerManager : MonoBehaviour, IManagerDebugInterface
         GameEvents.OnCubeCaptured -= HandleCubeCaptured;
         GameEvents.OnCubeEscaped -= HandleCubeEscaped;
         GameEvents.OnStageStart -= HandleStageStart;
+        GameEvents.OnCubeMove -= HandleCubeMove;
+    }
+    
+    /// <summary>
+    /// Check for collision when a cube moves to a new position.
+    /// This is more reliable than frame-by-frame checks.
+    /// </summary>
+    private void HandleCubeMove(Vector2Int oldPos, Vector2Int newPos, CubeType cubeType)
+    {
+        if (isDead || respawnInvulnerabilityTimer > 0f) return;
+        
+        // Check if cube moved onto player's position
+        if (newPos.x == currentTilePosition.x && newPos.y == currentTilePosition.y)
+        {
+            Debug.Log($"[PlayerManager] Cube moved onto player at ({newPos.x}, {newPos.y}) - triggering death");
+            
+            if (!debugDeathOverride)
+            {
+                Die();
+            }
+        }
     }
     
     /// <summary>
@@ -653,6 +676,14 @@ public class PlayerManager : MonoBehaviour, IManagerDebugInterface
         // Get the tile at current world position from any segment
         Tile newTile = grid.GetTileAtWorldPositionFromControllers(transform.position);
         
+        // Debug: Log first tile change after SetPosition
+        if (newTile != currentHoveredTile && Time.frameCount < 100)
+        {
+            var segment = grid.GetSegmentControllerAtWorldPosition(transform.position);
+            Vector2Int localPos = segment != null ? segment.WorldToLocalPosition(transform.position) : new Vector2Int(-1, -1);
+            Debug.Log($"[PlayerManager] UpdateTilePosition: world {transform.position} -> segment local {localPos}");
+        }
+        
         // Only update if we're on a different tile
         if (newTile != currentHoveredTile)
         {
@@ -807,6 +838,9 @@ public class PlayerManager : MonoBehaviour, IManagerDebugInterface
 
         enabled = false;
         OnPlayerDied?.Invoke();
+        
+        // Fire global event for TestCommandExecutor and other listeners
+        GameEvents.FirePlayerDeath(currentTilePosition);
 
         StartCoroutine(HandleDeathSequence());
     }
@@ -1048,6 +1082,12 @@ public class PlayerManager : MonoBehaviour, IManagerDebugInterface
                 if (cube.CurrentSegment != currentSegment) continue;
             }
 
+            // Debug: Log position comparison every few frames
+            if (Time.frameCount % 30 == 0)
+            {
+                Debug.Log($"[Collision Check] Player@({currentTilePosition.x},{currentTilePosition.y}) vs Cube@({cube.position.x},{cube.position.y}) Segment: Player={currentSegment?.segmentIndex ?? -1}, Cube={cube.CurrentSegment?.segmentIndex ?? -1}");
+            }
+
             if (cube.position.x == currentTilePosition.x && cube.position.y == currentTilePosition.y)
             {
                 DebugLog($"Collision with {cube.type} cube at ({currentTilePosition.x}, {currentTilePosition.y})");
@@ -1139,7 +1179,20 @@ public class PlayerManager : MonoBehaviour, IManagerDebugInterface
     /// </summary>
     public void SetPosition(int x, int z)
     {
-        // Clamp to valid grid bounds (respecting removed rows)
+        Debug.Log($"[PlayerManager] SetPosition called: ({x}, {z})");
+        
+        // SEGMENT CONTROLLERS: Use segment-aware positioning for consistency
+        if (grid != null && grid.HasSegmentControllers)
+        {
+            var segment = grid.GetSegmentController(0);
+            if (segment != null)
+            {
+                SetPositionOnSegment(segment, x, z);
+                return;
+            }
+        }
+        
+        // Legacy: Non-segment positioning
         int minY = grid != null ? grid.bottom : 0;
         x = Mathf.Clamp(x, 0, grid.Width - 1);
         z = Mathf.Clamp(z, minY, grid.Height - 1);
@@ -1150,6 +1203,7 @@ public class PlayerManager : MonoBehaviour, IManagerDebugInterface
         }
 
         Vector3 worldPos = grid.GridToWorldPosition(x, z, 0f);
+        Debug.Log($"[PlayerManager] SetPosition (legacy): grid ({x}, {z}) -> world {worldPos}");
 
         // Handle CharacterController properly
         CharacterController controller = GetComponent<CharacterController>();

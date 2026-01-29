@@ -193,9 +193,6 @@ public class PrototypingSystem : MonoBehaviour
         // Quick Debug Panel - First for fast access
         panels.Add(new QuickDebugPanel());
         
-        // Scenario Panel - Test scenario management
-        panels.Add(new ScenarioPanel());
-        
         // Core panels
         panels.Add(new WavePrototyper());
         panels.Add(new CollisionPanel());

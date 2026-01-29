@@ -92,6 +92,29 @@ public class StageData : ScriptableObject
     
     #endregion
 
+    #region Test Configuration
+    
+    [Header("Test Configuration")]
+    [Tooltip("Enable to run this stage as an automated test with command execution and assertion validation")]
+    public bool isTestStage = false;
+    
+    [Tooltip("Commands to execute at specific wave steps (player movement, marker placement)")]
+    public List<TestCommand> testCommands = new List<TestCommand>();
+    
+    [Tooltip("Assertions to evaluate when test completes")]
+    public List<TestAssertion> testAssertions = new List<TestAssertion>();
+    
+    [Tooltip("Max wave steps before auto-complete (0 = run until all waves complete)")]
+    [Range(0, 100)] public int maxTestSteps = 0;
+    
+    [Tooltip("Timeout in seconds (0 = no timeout)")]
+    [Range(0, 120)] public float testTimeout = 30f;
+    
+    [Tooltip("Exit play mode when test completes (useful for CI automation)")]
+    public bool exitPlayModeOnComplete = false;
+    
+    #endregion
+
     #region Runtime Statistics
     
     [Header("Runtime Statistics (Read-Only)")]
@@ -179,3 +202,179 @@ public class MarkerGrants
     [Range(0, 5)] public int infinityCharges = 1;
     [Range(0, 3)] public int infinityMaxOnGrid = 1;
 }
+
+#region Test Classes
+
+/// <summary>
+/// Command to execute during an automated test stage.
+/// Commands can move the player, place markers, or wait.
+/// </summary>
+[System.Serializable]
+public class TestCommand
+{
+    [Tooltip("Wave step at which to execute this command")]
+    public int executeOnStep;
+    
+    [Tooltip("If true, executeOnStep is global across all waves. If false, it's relative to current wave.")]
+    public bool useGlobalStep = false;
+    
+    [Tooltip("Type of command to execute")]
+    public TestCommandType commandType;
+    
+    [Tooltip("Target position for Move/PlaceMarker commands")]
+    public Vector2Int targetPosition;
+    
+    [Tooltip("Marker type for PlaceMarker commands")]
+    public MarkerType markerType;
+    
+    [Tooltip("Description for logging")]
+    public string description;
+    
+    /// <summary>
+    /// Create a Move command.
+    /// </summary>
+    public static TestCommand Move(int step, Vector2Int position, string desc = "", bool globalStep = false)
+    {
+        return new TestCommand
+        {
+            executeOnStep = step,
+            useGlobalStep = globalStep,
+            commandType = TestCommandType.Move,
+            targetPosition = position,
+            description = string.IsNullOrEmpty(desc) ? $"Move to ({position.x}, {position.y})" : desc
+        };
+    }
+    
+    /// <summary>
+    /// Create a PlaceMarker command.
+    /// </summary>
+    public static TestCommand PlaceMarker(int step, Vector2Int position, MarkerType marker, string desc = "", bool globalStep = false)
+    {
+        return new TestCommand
+        {
+            executeOnStep = step,
+            useGlobalStep = globalStep,
+            commandType = TestCommandType.PlaceMarker,
+            targetPosition = position,
+            markerType = marker,
+            description = string.IsNullOrEmpty(desc) ? $"Place {marker} at ({position.x}, {position.y})" : desc
+        };
+    }
+    
+    /// <summary>
+    /// Create a Wait command (no-op for timing).
+    /// </summary>
+    public static TestCommand Wait(int step, string desc = "", bool globalStep = false)
+    {
+        return new TestCommand
+        {
+            executeOnStep = step,
+            useGlobalStep = globalStep,
+            commandType = TestCommandType.Wait,
+            description = string.IsNullOrEmpty(desc) ? "Wait" : desc
+        };
+    }
+}
+
+/// <summary>
+/// Types of commands that can be executed during test stages.
+/// </summary>
+public enum TestCommandType
+{
+    Move,           // Move player to target position
+    PlaceMarker,    // Place a marker at target position
+    Wait            // Do nothing (for timing/spacing)
+}
+
+/// <summary>
+/// Assertion to validate at the end of a test stage.
+/// </summary>
+[System.Serializable]
+public class TestAssertion
+{
+    [Tooltip("Metric to check")]
+    public TestMetric metric;
+    
+    [Tooltip("Expected value")]
+    public int expectedValue;
+    
+    [Tooltip("How to compare actual vs expected")]
+    public ComparisonOp comparison = ComparisonOp.Equals;
+    
+    [Tooltip("Description for logging")]
+    public string description;
+    
+    /// <summary>
+    /// Evaluate assertion against actual value.
+    /// </summary>
+    public bool Evaluate(int actual)
+    {
+        return comparison switch
+        {
+            ComparisonOp.Equals => actual == expectedValue,
+            ComparisonOp.NotEquals => actual != expectedValue,
+            ComparisonOp.GreaterThan => actual > expectedValue,
+            ComparisonOp.LessThan => actual < expectedValue,
+            ComparisonOp.GreaterOrEqual => actual >= expectedValue,
+            ComparisonOp.LessOrEqual => actual <= expectedValue,
+            _ => false
+        };
+    }
+    
+    /// <summary>
+    /// Create an Equals assertion.
+    /// </summary>
+    public static TestAssertion Equals(TestMetric metric, int value, string desc = "")
+    {
+        return new TestAssertion
+        {
+            metric = metric,
+            expectedValue = value,
+            comparison = ComparisonOp.Equals,
+            description = string.IsNullOrEmpty(desc) ? $"{metric} should equal {value}" : desc
+        };
+    }
+    
+    /// <summary>
+    /// Create a GreaterOrEqual assertion.
+    /// </summary>
+    public static TestAssertion AtLeast(TestMetric metric, int value, string desc = "")
+    {
+        return new TestAssertion
+        {
+            metric = metric,
+            expectedValue = value,
+            comparison = ComparisonOp.GreaterOrEqual,
+            description = string.IsNullOrEmpty(desc) ? $"{metric} should be at least {value}" : desc
+        };
+    }
+}
+
+/// <summary>
+/// Metrics that can be asserted in test stages.
+/// </summary>
+public enum TestMetric
+{
+    CapturedCubes,
+    EscapedCubes,
+    PlayerDeaths,
+    WaveSteps,
+    MarkersPlaced,
+    GlobalSteps,
+    TilesVisited
+}
+
+/// <summary>
+/// Comparison operators for test assertions.
+/// </summary>
+public enum ComparisonOp
+{
+    Equals,
+    NotEquals,
+    GreaterThan,
+    LessThan,
+    GreaterOrEqual,
+    LessOrEqual
+}
+
+#endregion

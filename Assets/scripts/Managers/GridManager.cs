@@ -261,7 +261,33 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
             }
         }
         
-        DebugLog($"Registered {newSegments.Length} segments from stage layout prefab");
+        // Copy primary segment tiles to main array for backwards compatibility
+        CopyPrimarySegmentTilesToMainArray();
+        
+        // Finalize grid generation (sets isGridGenerated and isGridReady)
+        FinalizeGridGeneration();
+        
+        DebugLog($"Registered {newSegments.Length} segments from stage layout prefab, grid ready");
+    }
+    
+    /// <summary>
+    /// Copies tiles from the primary segment controller to the main tiles array.
+    /// Required for backwards compatibility with code that accesses tiles[x,y] directly.
+    /// </summary>
+    private void CopyPrimarySegmentTilesToMainArray()
+    {
+        if (segmentControllers.Count == 0) return;
+        
+        var primarySegment = segmentControllers[0];
+        if (primarySegment.tiles == null) return;
+        
+        for (int x = 0; x < Mathf.Min(width, primarySegment.width); x++)
+        {
+            for (int y = 0; y < Mathf.Min(height, primarySegment.height); y++)
+            {
+                tiles[x, y] = primarySegment.tiles[x, y];
+            }
+        }
     }
     
     /// <summary>
@@ -317,7 +343,13 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
         GenerateTilesForSegment(segment);
         segment.MarkInitialized();
         
-        DebugLog($"Created default segment layout: {segment.width}x{segment.height}");
+        // Copy segment tiles to main array for backwards compatibility
+        CopyPrimarySegmentTilesToMainArray();
+        
+        // Finalize grid generation (sets isGridGenerated and isGridReady)
+        FinalizeGridGeneration();
+        
+        DebugLog($"Created default segment layout: {segment.width}x{segment.height}, grid ready");
     }
 
     private void OnDrawGizmosSelected()
@@ -1200,6 +1232,9 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
             tiles = null;
         }
 
+        // Clear segment controller references (they may be destroyed with the prefab)
+        ClearSegmentControllers();
+        
         CleanupRemainingChildren();
         ResetPoolingSystem();
 
@@ -1210,9 +1245,14 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
 
     private void DestroyAllTiles()
     {
-        for (int x = 0; x < Width; x++)
+        // Use actual array dimensions, not Width/Height properties
+        // (which may have been updated before array was resized)
+        int arrayWidth = tiles.GetLength(0);
+        int arrayHeight = tiles.GetLength(1);
+        
+        for (int x = 0; x < arrayWidth; x++)
         {
-            for (int y = 0; y < Height; y++)
+            for (int y = 0; y < arrayHeight; y++)
             {
                 if (tiles[x, y] != null)
                 {

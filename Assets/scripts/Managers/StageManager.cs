@@ -187,6 +187,38 @@ public class StageManager : MonoBehaviour, IManagerDebugInterface
         StartCoroutine(LoadStageCoroutine(stageNumber));
     }
 
+    /// <summary>
+    /// Load a stage by name. Searches all stages in the database.
+    /// Useful for loading test stages by name rather than number.
+    /// </summary>
+    public void LoadStageByName(string stageName)
+    {
+        if (string.IsNullOrEmpty(stageName))
+        {
+            this.LogError("LoadStageByName: Stage name is empty");
+            return;
+        }
+        
+        var stage = stageDatabase.Stages.FirstOrDefault(s => s.stageName == stageName);
+        if (stage != null)
+        {
+            DebugLog($"Found stage '{stageName}' with number {stage.stageNumber}");
+            LoadStage(stage.stageNumber);
+        }
+        else
+        {
+            this.LogError($"LoadStageByName: Stage not found: {stageName}");
+        }
+    }
+
+    /// <summary>
+    /// Get all test stages from the database.
+    /// </summary>
+    public List<StageData> GetTestStages()
+    {
+        return stageDatabase.Stages.Where(s => s != null && s.isTestStage).ToList();
+    }
+
     public void RestartCurrentStage()
     {
         if (CurrentStage != null)
@@ -301,6 +333,8 @@ public class StageManager : MonoBehaviour, IManagerDebugInterface
 
     private IEnumerator ConfigureForStage(StageData stage)
     {
+        Debug.Log($"[StageManager] ConfigureForStage: Starting configuration for stage {stage.stageName}");
+        
         // Configure grid
         yield return StartCoroutine(ConfigureGrid(stage));
 
@@ -355,9 +389,13 @@ public class StageManager : MonoBehaviour, IManagerDebugInterface
 
     private void ConfigurePlayer(StageData stage)
     {
-        if (playerController == null) return;
+        if (playerController == null)
+        {
+            Debug.LogWarning("[StageManager] ConfigurePlayer: playerController is null!");
+            return;
+        }
 
-        DebugLog($"Setting player start position: ({stage.playerStartPosition.x}, {stage.playerStartPosition.y})");
+        Debug.Log($"[StageManager] Setting player start position: ({stage.playerStartPosition.x}, {stage.playerStartPosition.y})");
         playerController.SetStartPosition(stage.playerStartPosition.x, stage.playerStartPosition.y);
         playerController.SetPosition(stage.playerStartPosition.x, stage.playerStartPosition.y);
         playerController.ResetStatistics();
