@@ -136,6 +136,23 @@ public class WaveData : ScriptableObject
     public List<HighlightSequence> highlightSequences = new List<HighlightSequence>();
     
     #endregion
+    
+    #region Test Configuration
+    
+    [Header("Test Configuration (Scenario Testing)")]
+    [Tooltip("If true, this wave is a test scenario with automated commands")]
+    public bool isTestWave = false;
+    
+    [Tooltip("Commands to execute during test (player movements, marker placements)")]
+    public List<TestCommand> testCommands = new List<TestCommand>();
+    
+    [Tooltip("Assertions to validate at test completion")]
+    public List<TestAssertion> testAssertions = new List<TestAssertion>();
+    
+    [Tooltip("Maximum wave steps before test auto-completes (0 = no limit)")]
+    public int maxTestSteps = 0;
+    
+    #endregion
 
     #region Runtime Statistics (Not Serialized)
     

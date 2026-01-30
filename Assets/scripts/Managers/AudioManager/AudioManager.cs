@@ -55,7 +55,7 @@ public class AudioManager : MonoBehaviour, IManagerDebugInterface
     public float soundCleanupInterval = 5f;
 
     [Header("Debug Options")]
-    public bool enableDebugLogs = true;
+    public bool enableDebugLogs = false; // Default OFF - audio event noise
     public bool showAudioGizmos = false;
     public bool logAudioEvents = false;
     

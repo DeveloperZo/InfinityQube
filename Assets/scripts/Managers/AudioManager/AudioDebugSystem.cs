@@ -19,7 +19,7 @@ public class AudioDebugSystem : MonoBehaviour
 
     #region Debug Configuration
     [Header("Debug Options")]
-    [SerializeField] private bool enableDebugLogs = true;
+    [SerializeField] private bool enableDebugLogs = false; // Default OFF - audio debug noise
     [SerializeField] private bool showAudioGizmos = false;
     [SerializeField] private bool logAudioEvents = false;
     

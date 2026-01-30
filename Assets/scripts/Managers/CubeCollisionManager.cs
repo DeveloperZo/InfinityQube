@@ -13,7 +13,7 @@ public class CubeCollisionManager : MonoBehaviour, IManagerDebugInterface
     #region Inspector Configuration
 
     [Header("Debug")]
-    [SerializeField] private bool enableDebugLogs = true;
+    [SerializeField] private bool enableDebugLogs = false; // Default OFF - high noise from collision checks
 
     #endregion
 

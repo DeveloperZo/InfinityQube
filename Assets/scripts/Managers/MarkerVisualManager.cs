@@ -19,7 +19,7 @@ public class MarkerVisualManager : MonoBehaviour, IManagerDebugInterface
     [SerializeField] private Color areaPreviewColor = new Color(1f, 0.5f, 0f, 0.7f);
 
     [Header("Debug")]
-    [SerializeField] private bool enableDebugLogs = true;
+    [SerializeField] private bool enableDebugLogs = false; // Default OFF - visual update noise
 
     #endregion
 

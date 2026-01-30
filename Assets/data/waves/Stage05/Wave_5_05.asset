@@ -40,21 +40,7 @@ MonoBehaviour:
     frontFaceCharges: 0
     spawnDelay: 0
   - type: 3
-    position: {x: 3, y: 0}
-    level: 1
-    hasPaintedFaces: 0
-    frontFaceStatus: 0
-    frontFaceCharges: 0
-    spawnDelay: 0
-  - type: 3
     position: {x: 4, y: 0}
-    level: 1
-    hasPaintedFaces: 0
-    frontFaceStatus: 0
-    frontFaceCharges: 0
-    spawnDelay: 0
-  - type: 2
-    position: {x: 5, y: 0}
     level: 1
     hasPaintedFaces: 0
     frontFaceStatus: 0
@@ -97,13 +83,6 @@ MonoBehaviour:
     spawnDelay: 0
   - type: 1
     position: {x: 3, y: 1}
-    level: 1
-    hasPaintedFaces: 0
-    frontFaceStatus: 0
-    frontFaceCharges: 0
-    spawnDelay: 0
-  - type: 1
-    position: {x: 4, y: 1}
     level: 1
     hasPaintedFaces: 0
     frontFaceStatus: 0
@@ -354,8 +333,29 @@ MonoBehaviour:
     frontFaceStatus: 0
     frontFaceCharges: 0
     spawnDelay: 0
+  - type: 0
+    position: {x: 4, y: 1}
+    level: 1
+    hasPaintedFaces: 0
+    frontFaceStatus: 0
+    frontFaceCharges: 0
+    spawnDelay: 0
+  - type: 2
+    position: {x: 3, y: 0}
+    level: 1
+    hasPaintedFaces: 0
+    frontFaceStatus: 0
+    frontFaceCharges: 0
+    spawnDelay: 0
+  - type: 0
+    position: {x: 5, y: 0}
+    level: 1
+    hasPaintedFaces: 0
+    frontFaceStatus: 0
+    frontFaceCharges: 0
+    spawnDelay: 0
   grantsAddToInventory: 1
-  grantMatrixCharges: 0
+  grantMatrixCharges: 2
   grantRecursionCharges: 0
   grantInfinityCharges: 0
   overrideUnitMaxOnGrid: 0
@@ -372,6 +372,10 @@ MonoBehaviour:
   requiredCaptureCount: 0
   maxAllowedEscapes: -1
   highlightSequences: []
+  isTestWave: 0
+  testCommands: []
+  testAssertions: []
+  maxTestSteps: 0
   _runtimeStats:
     unitCubesCaptured: 0
     matrixCubesCaptured: 0

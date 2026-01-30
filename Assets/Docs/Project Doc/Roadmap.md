@@ -12,22 +12,22 @@ This roadmap outlines the development path from current production-ready state t
 ## Current Status
 
 ### 📍 **Current Phase**: Phase 1 - Core Innovation & Content
-### 📍 **Current Milestone**: 1.7 - Matrix Cube/Markers (Stages 3-5) ⬜ Pending
+### 📍 **Current Milestone**: 1.8 - Recursion Cube/Marker (Stages 6-8) ⬜ Pending
 
 ### 🔴 **TOP PRIORITIES**
 | Priority | Item | Status | Points |
 |----------|------|--------|--------|
-| 🔴 Critical | Matrix Cube/Markers (Milestone 1.7) | Ready to start | 6 pts |
-| 🔴 High | Matrix Cube/Markers (Milestone 1.7) | After 1.6 | 6 pts |
-| 🔴 High | Recursion Cube/Marker (Milestone 1.8) | After 1.7 | 6 pts |
+| ✅ Done | Matrix Cube/Markers (Milestone 1.7) | Complete | 6 pts |
+| 🔴 Critical | Recursion Cube/Marker (Milestone 1.8) | Ready to start | 6 pts |
 | 🟡 Medium | Infinity Marker (Milestone 1.9) | After 1.8 | 5 pts |
 | 🟡 Medium | Mastery (Milestone 1.10) | After 1.9 | 4 pts |
 | 🟡 Medium | RPG Implementation (Milestone 1.11) | After 1.10 | 5 pts |
 | 🟡 Medium | Hub Implementation (Milestone 1.12) | After 1.11 | 4 pts |
 | 🟡 Medium | File Size Refactoring | 12 files over limit | 15 pts |
 | ✅ Done | Advanced Grid System (Milestone 1.13) | Complete | 5 pts |
-| 🟢 Low | Visual Effects & Juice Pass (Milestone 1.14) | After 1.13 | 5 pts |
-| 🟢 Low | Hub polish pass | Deferred | 2 pts |
+| ✅ Done | Scenario Testing Framework (Milestone 1.16) | Complete | 3 pts |
+| 🟢 Low | Stage Content Refinement (Milestone 1.14) | After 1.13 | 5 pts |
+| 🟢 Low | Visual Effects & Juice Pass (Milestone 1.15) | After 1.14 | 5 pts |
 
 ---
 
@@ -52,14 +52,16 @@ Points reflect actual development time, not complexity. A "week gap" between com
 | | **1.4 Stage Content Creation** | ✅ **Complete** | 20 pts |
 | | **1.5 Demo Stage Content** | ✅ **Complete** | 5 pts |
 | | 1.6 Unit Markers & Infinite Cube (Stages 1-2) | ✅ Complete | 4 pts |
-| | 1.7 Matrix Cube/Markers (Stages 3-5) | ⬜ Pending | 6 pts |
+| | **1.7 Matrix Cube/Markers (Stages 3-5)** | ✅ **Complete** | 6 pts |
 | | 1.8 Recursion Cube/Marker (Stages 6-8) | ⬜ Pending | 6 pts |
 | | 1.9 Infinity Marker (Stages 9-10) | ⬜ Pending | 5 pts |
 | | 1.10 Mastery (Stages 11-12) | ⬜ Pending | 4 pts |
 | | 1.11 RPG Implementation (Attunements & Progression) | ⬜ Pending | 5 pts |
 | | 1.12 Hub Implementation | ⬜ Pending | 4 pts |
 | | 1.13 Advanced Grid System (Multi-Segment Stages) | ✅ Complete | 5 pts |
-| | 1.14 Visual Effects & Juice Pass | ⬜ Pending | 5 pts |
+| | 1.14 Stage Content Refinement & Difficulty Curve | ⬜ Pending | 5 pts |
+| | 1.15 Visual Effects & Juice Pass | ⬜ Pending | 5 pts |
+| | **1.16 Scenario Testing Framework** | ✅ **Complete** | 3 pts |
 | **Phase 2** | 2.1-2.10 Content & Polish | ⬜ Pending | 68 pts |
 | **Phase 3** | 3.1-3.8 Polish & Commercial Prep | ⬜ Pending | 55 pts |
 | **Phase 4** | 4.1-4.9 Steam & Release | ⬜ Pending | 50 pts |
@@ -325,26 +327,27 @@ One attunement per marker type. Modifies cube properties, not collision matrix.
 
 ---
 
-### Milestone 1.7: Matrix Cube/Markers (Stages 3-5)
+### Milestone 1.7: Matrix Cube/Markers (Stages 3-5) ✅ COMPLETE
 - **Target**: Implement stages 3-5 and validate Matrix cube and marker mechanics
 - **Points**: 6 (~1.5 weeks active development)
-- **Status**: ⬜ Pending
-- **Dependencies**: Milestone 1.6
+- **Status**: ✅ **COMPLETE** (January 2026)
+- **Dependencies**: Milestone 1.6 ✅
 - **Stages**: 3-5 (Matrix cube/markers introduced)
 - **Lesson**: Area effects and solving Infinity blocking problems
-- **Mechanics to Validate**:
-  - [ ] Matrix cube introduction and area capture
-  - [ ] Matrix marker placement and area coverage
-  - [ ] Cube marker generation from Matrix captures
-  - [ ] Spatial management and area control strategies
-  - [ ] Resource management (marker economy)
-- **Tasks**:
-  - [ ] Design wave configurations for stages 3-5
-  - [ ] Implement stages 3-5 with wave configs
-  - [ ] Validate Matrix cube and marker mechanics work correctly
-  - [ ] Improve UI around markers
-  - [ ] Fix bugs/edge cases discovered
-  - [ ] Test area effect systems
+- **Mechanics Validated**:
+  - [x] Matrix cube introduction and area capture
+  - [x] Matrix marker placement and area coverage
+  - [x] Cube marker generation from Matrix captures
+  - [x] Spatial management and area control strategies
+  - [x] Resource management (marker economy)
+- **Completed Tasks**:
+  - [x] Design wave configurations for stages 3-5
+  - [x] Implement stages 3-5 with wave configs (Stage 3: 4 waves, Stage 4: 4 waves, Stage 5: 5 waves)
+  - [x] Validate Matrix cube and marker mechanics work correctly
+  - [x] Playtesting complete - all stages playable end-to-end
+- **Deferred to Polish Pass**:
+  - UI improvements around markers (Milestone 1.15)
+  - Visual feedback enhancements (Phase 2.6)
 
 ---
 
@@ -592,7 +595,7 @@ The hub serves as the central navigation point between gameplay sessions.
 - **Target**: Balance, tune, and establish proper difficulty progression across all stages
 - **Points**: 5 (~1 week active development)
 - **Status**: ⬜ Pending
-- **Dependencies**: Milestone 1.12 (Hub Implementation)
+- **Dependencies**: Milestone 1.13 ✅
 - **Tasks**:
   - [ ] Playtest all stages (0-12) for balance and feel
   - [ ] Implement proper difficulty curve across all stages
@@ -607,7 +610,7 @@ The hub serves as the central navigation point between gameplay sessions.
 - **Target**: Core visual feedback and effects for gameplay actions
 - **Points**: 5 (~1 week active development)
 - **Status**: ⬜ Pending
-- **Dependencies**: Milestone 1.13 ✅ (Advanced Grid System complete)
+- **Dependencies**: Milestone 1.14 (Stage Content Refinement)
 - **Note**: Focuses on visual effects and feedback. Gameplay feel polish comes in 2.6.
 - **Tasks**:
   - [ ] Improved particle effects for all major actions
@@ -617,6 +620,39 @@ The hub serves as the central navigation point between gameplay sessions.
   - [ ] Marker placement/detonation polish
   - [ ] Animation/scripted sequence placeholders for key events
   - [ ] Event hooks for major gameplay moments
+
+---
+
+### Milestone 1.16: Scenario Testing Framework ✅ COMPLETE
+- **Target**: Automated testing system for validating gameplay scenarios
+- **Points**: 3 (~3 days active development)
+- **Status**: ✅ **COMPLETE** (January 2026)
+- **Dependencies**: Milestone 1.13 ✅
+- **Deliverables**:
+  - [x] TestCommandExecutor MonoBehaviour - orchestrates automated test stages
+  - [x] Test configuration in WaveData (isTestWave, testCommands, testAssertions, maxTestSteps)
+  - [x] ScenarioLogger - dedicated file logging for test results
+  - [x] D001_BasicPlayerDeath test scenario - validates player death collision
+  - [x] Grid generation fix for stage segment prefabs
+  - [x] Position tracking with TilesVisited metric
+- **Technical Details**:
+  - Test commands execute on wave steps (Move, PlaceMarker, Wait)
+  - Assertions validate metrics (PlayerDeaths, TilesVisited, CapturedCubes, etc.)
+  - Logs saved to `Application.persistentDataPath/Logs/Scenarios/[TestName]/`
+  - Auto-exits Play Mode on test completion
+- **Architecture**:
+  ```
+  WaveData (isTestWave=true)
+    └── testCommands: List<TestCommand>
+    └── testAssertions: List<TestAssertion>
+    └── maxTestSteps: int
+  
+  TestCommandExecutor
+    └── Listens to GameEvents.OnWaveStep
+    └── Executes commands at specified steps
+    └── Evaluates assertions at completion
+  ```
+- **Note**: Building scenarios is now as easy as building waves - create a WaveData asset with test configuration and add it to a stage.
 
 ---
 
@@ -863,8 +899,8 @@ Milestone 1.0 ✅ → 1.1 ✅ → 1.2 🔄 → 1.3 → 1.4 → 2.x → 3.x → 4
 | Phase 4 | Steam Integration & Release | 50 pts | ⬜ Pending |
 | **TOTAL** | | **313 pts** | |
 
-**Completed**: 122 pts (Milestone 1.0 + 1.1 + 1.2 + 1.3 + 1.4 + 1.5)  
-**Remaining**: ~191 pts
+**Completed**: 136 pts (Milestones 1.0-1.7, 1.13, 1.16)  
+**Remaining**: ~180 pts
 
 **Note**: Phases can overlap; calendar time will vary based on availability.
 
@@ -966,7 +1002,7 @@ Milestone 1.0 ✅ → 1.1 ✅ → 1.2 🔄 → 1.3 → 1.4 → 2.x → 3.x → 4
 
 ---
 
-*Last Updated: December 14, 2025*  
+*Last Updated: January 29, 2026*  
 *Current Phase: Phase 1 - Core Innovation & Content*  
-*Current Milestone: 1.4 - Stage Content Creation*  
-*Total Points: 297 | Completed: ~100 | Remaining: ~197*
+*Current Milestone: 1.8 - Recursion Cube/Marker (Stages 6-8)*  
+*Total Points: 316 | Completed: ~136 | Remaining: ~180*

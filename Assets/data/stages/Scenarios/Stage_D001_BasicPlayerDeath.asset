@@ -45,34 +45,8 @@ MonoBehaviour:
   requiredCaptureCount: 0
   maxAllowedEscapes: 0
   isTestStage: 1
-  testCommands:
-  - executeOnStep: 1
-    useGlobalStep: 0
-    commandType: 0
-    targetPosition: {x: 1, y: 0}
-    markerType: 0
-    description: Move left
-  - executeOnStep: 4
-    useGlobalStep: 0
-    commandType: 0
-    targetPosition: {x: 3, y: 0}
-    markerType: 0
-    description: Move right
-  - executeOnStep: 7
-    useGlobalStep: 0
-    commandType: 0
-    targetPosition: {x: 2, y: 0}
-    markerType: 0
-    description: Return to center (cube collision)
-  testAssertions:
-  - metric: 2
-    expectedValue: 1
-    comparison: 4
-    description: Player should die at least once
-  - metric: 6
-    expectedValue: 3
-    comparison: 4
-    description: Player should visit at least 3 unique tiles (left, center, right)
-  maxTestSteps: 10
-  testTimeout: 30
+  testCommands: []
+  testAssertions: []
+  maxTestSteps: 0
+  testTimeout: 60
   exitPlayModeOnComplete: 1

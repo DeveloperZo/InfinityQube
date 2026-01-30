@@ -36,7 +36,7 @@ MonoBehaviour:
     recursionMaxOnGrid: 0
     infinityCharges: 0
     infinityMaxOnGrid: 0
-  waveGrantsFromWaveData: 0
+  waveGrantsFromWaveData: 1
   lockAttunements: 1
   allowedAttunementIds: []
   waveConfigurations:

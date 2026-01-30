@@ -12,6 +12,7 @@ public class GridRowManager : MonoBehaviour
     #region References
     private GridManager grid;
     private bool enableDebugLogs;
+    private Coroutine activeRowRemovalCoroutine;
     #endregion
 
     #region Events
@@ -49,6 +50,29 @@ public class GridRowManager : MonoBehaviour
     {
         enableDebugLogs = enabled;
     }
+    
+    private void OnDisable()
+    {
+        // Stop any running row removal coroutine to prevent MissingReferenceException
+        if (activeRowRemovalCoroutine != null)
+        {
+            StopCoroutine(activeRowRemovalCoroutine);
+            activeRowRemovalCoroutine = null;
+            isRemovingBottomRow = false;
+            DebugLog("OnDisable: Stopped active row removal coroutine");
+        }
+    }
+    
+    private void OnDestroy()
+    {
+        // Ensure coroutine is stopped on destroy
+        if (activeRowRemovalCoroutine != null)
+        {
+            StopCoroutine(activeRowRemovalCoroutine);
+            activeRowRemovalCoroutine = null;
+            isRemovingBottomRow = false;
+        }
+    }
     #endregion
 
     #region Row Removal
@@ -65,7 +89,7 @@ public class GridRowManager : MonoBehaviour
             return;
         }
         
-        StartCoroutine(RemoveBottomRowCoroutine());
+        activeRowRemovalCoroutine = StartCoroutine(RemoveBottomRowCoroutine());
     }
     
     private IEnumerator RemoveBottomRowCoroutine()
@@ -80,6 +104,7 @@ public class GridRowManager : MonoBehaviour
         {
             DebugLog($"⚠️ ROW PENALTY: Cannot remove row {rowToRemove} - exceeds grid height {height}. Aborting.");
             isRemovingBottomRow = false;
+            activeRowRemovalCoroutine = null;
             yield break;
         }
         
@@ -89,6 +114,7 @@ public class GridRowManager : MonoBehaviour
         {
             DebugLog($"⚠️ ROW PENALTY: Cannot remove row {rowToRemove} - would leave only {remainingRows} rows. Minimum 3 rows required. Aborting.");
             isRemovingBottomRow = false;
+            activeRowRemovalCoroutine = null;
             yield break;
         }
         
@@ -198,11 +224,12 @@ public class GridRowManager : MonoBehaviour
             yield return null;
         }
         
-        // Safety check: Verify grid is still valid
-        if (!grid.IsGridReady || rowToRemove >= grid.Height)
+        // Safety check: Verify grid is still valid (prevents MissingReferenceException)
+        if (grid == null || !grid.IsGridReady || rowToRemove >= grid.Height)
         {
             DebugLog($"⚠️ Grid state changed during removal. Row {rowToRemove} no longer valid. Aborting cleanup.");
             isRemovingBottomRow = false;
+            activeRowRemovalCoroutine = null;
             yield break;
         }
         
@@ -235,6 +262,7 @@ public class GridRowManager : MonoBehaviour
         OnBottomRowRemovalCompleted?.Invoke(rowToRemove);
         
         isRemovingBottomRow = false;
+        activeRowRemovalCoroutine = null;
         DebugLog($"✅ ROW PENALTY: Bottom row {rowToRemove} removal complete. New bottom: {grid.bottom}, Grid height: {grid.Height}, Remaining playable rows: {grid.Height - grid.bottom}");
     }
     

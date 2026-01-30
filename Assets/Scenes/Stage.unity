@@ -15543,6 +15543,7 @@ MonoBehaviour:
   visualManager: {fileID: 8656265648072650658}
   collisionManager: {fileID: 1233890408}
   cubeMarkers: []
+  swapMarkers: []
   playerCubes: []
 --- !u!114 &8656265648072650658
 MonoBehaviour:

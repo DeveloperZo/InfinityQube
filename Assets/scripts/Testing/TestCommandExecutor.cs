@@ -23,7 +23,8 @@ public class TestCommandExecutor : MonoBehaviour
     
     #region State
     
-    private StageData activeTest;
+    private StageData activeStage;
+    private WaveData activeWave;
     private float startTime;
     private bool isRunning;
     
@@ -88,13 +89,13 @@ public class TestCommandExecutor : MonoBehaviour
     
     private void Update()
     {
-        if (!isRunning || activeTest == null) return;
+        if (!isRunning || activeStage == null) return;
         
         // Check timeout
-        if (activeTest.testTimeout > 0)
+        if (activeStage.testTimeout > 0)
         {
             float elapsed = Time.time - startTime;
-            if (elapsed >= activeTest.testTimeout)
+            if (elapsed >= activeStage.testTimeout)
             {
                 Log($"Test timed out after {elapsed:F1}s");
                 CompleteTest();
@@ -158,13 +159,63 @@ public class TestCommandExecutor : MonoBehaviour
     
     private void HandleWaveStart(int waveIndex, WaveData waveData)
     {
-        if (!isRunning) return;
-        
         currentWaveIndex = waveIndex;
         currentWaveStepCount = 0;
+        executedCommandIndices.Clear(); // Reset for new wave
         
-        Log($"Wave {waveIndex} started");
-        ScenarioLogger.Log($"Wave {waveIndex} started");
+        // Check if this wave has test configuration
+        if (waveData != null && waveData.isTestWave)
+        {
+            activeWave = waveData;
+            
+            if (!isRunning)
+            {
+                // Start test from wave-level config
+                StartTestFromWave(waveData);
+            }
+            
+            Log($"Test wave {waveIndex} started: {waveData.waveName}");
+            ScenarioLogger.Log($"Test wave {waveIndex} started");
+            ScenarioLogger.Log($"  Commands: {waveData.testCommands?.Count ?? 0}");
+            ScenarioLogger.Log($"  Max steps: {waveData.maxTestSteps}");
+        }
+        else if (isRunning)
+        {
+            Log($"Wave {waveIndex} started");
+            ScenarioLogger.Log($"Wave {waveIndex} started");
+        }
+    }
+    
+    private void StartTestFromWave(WaveData waveData)
+    {
+        activeWave = waveData;
+        startTime = Time.time;
+        isRunning = true;
+        
+        // Reset state
+        globalStepCount = 0;
+        currentWaveStepCount = 0;
+        capturedCubes = 0;
+        escapedCubes = 0;
+        playerDeaths = 0;
+        markersPlaced = 0;
+        executedCommandIndices.Clear();
+        results.Clear();
+        tilesVisited.Clear();
+        lastLoggedPosition = new Vector2Int(-999, -999);
+        
+        // Cache managers
+        playerManager = FindFirstObjectByType<PlayerManager>();
+        actionManager = FindFirstObjectByType<PlayerActionManager>();
+        
+        // Start logging
+        ScenarioLogger.StartScenario(waveData.waveName);
+        ScenarioLogger.Log($"Test Configuration (Wave-Level):");
+        ScenarioLogger.Log($"  Commands: {waveData.testCommands?.Count ?? 0}");
+        ScenarioLogger.Log($"  Assertions: {waveData.testAssertions?.Count ?? 0}");
+        ScenarioLogger.Log($"  Max Steps: {waveData.maxTestSteps}");
+        
+        Log($"Test started from wave: {waveData.waveName}");
     }
     
     private void HandleWaveStep(int waveIndex, int step)
@@ -182,12 +233,26 @@ public class TestCommandExecutor : MonoBehaviour
         // Execute commands for this step
         ExecuteCommandsForStep();
         
-        // Check max steps
-        if (activeTest.maxTestSteps > 0 && globalStepCount >= activeTest.maxTestSteps)
+        // Check max steps - wave-level takes priority over stage-level
+        int maxSteps = GetMaxTestSteps();
+        if (maxSteps > 0 && currentWaveStepCount >= maxSteps)
         {
-            Log($"Max test steps ({activeTest.maxTestSteps}) reached");
+            Log($"Max test steps ({maxSteps}) reached at wave step {currentWaveStepCount}");
             CompleteTest();
         }
+    }
+    
+    private int GetMaxTestSteps()
+    {
+        // Wave-level max steps takes priority
+        if (activeWave != null && activeWave.maxTestSteps > 0)
+            return activeWave.maxTestSteps;
+        
+        // Fall back to stage-level
+        if (activeStage != null && activeStage.maxTestSteps > 0)
+            return activeStage.maxTestSteps;
+        
+        return 0;
     }
     
     private void TrackPlayerPosition()
@@ -263,7 +328,7 @@ public class TestCommandExecutor : MonoBehaviour
     
     private void StartTest(StageData stageData)
     {
-        activeTest = stageData;
+        activeStage = stageData;
         startTime = Time.time;
         isRunning = true;
         
@@ -302,21 +367,25 @@ public class TestCommandExecutor : MonoBehaviour
         isRunning = false;
         float elapsed = Time.time - startTime;
         
-        Log($"Test completing: {activeTest.stageName}");
+        // Get test name from wave (priority) or stage
+        string testName = activeWave?.waveName ?? activeStage?.stageName ?? "Unknown";
+        int maxSteps = GetMaxTestSteps();
+        
+        Log($"Test completing: {testName}");
         
         // Evaluate assertions
         EvaluateAssertions();
         
         // Calculate result
-        bool allPassed = results.TrueForAll(r => r.passed);
+        bool allPassed = results.Count == 0 || results.TrueForAll(r => r.passed);
         int passedCount = results.FindAll(r => r.passed).Count;
         
         // Log results
         ScenarioLogger.LogSeparator("TEST RESULTS");
-        ScenarioLogger.Log($"Test: {activeTest.stageName}");
+        ScenarioLogger.Log($"Test: {testName}");
         ScenarioLogger.Log($"Result: {(allPassed ? "PASSED" : "FAILED")}");
         ScenarioLogger.Log($"Time: {elapsed:F2}s");
-        ScenarioLogger.Log($"Steps: {globalStepCount} (max: {activeTest.maxTestSteps})");
+        ScenarioLogger.Log($"Steps: {currentWaveStepCount} (max: {maxSteps})");
         ScenarioLogger.Log($"Captures: {capturedCubes} | Escapes: {escapedCubes} | Deaths: {playerDeaths}");
         ScenarioLogger.Log($"Tiles visited: {tilesVisited.Count} unique positions");
         ScenarioLogger.Log($"Assertions: {passedCount}/{results.Count} passed");
@@ -330,13 +399,14 @@ public class TestCommandExecutor : MonoBehaviour
         ScenarioLogger.EndScenario();
         
         // Fire event
-        OnTestCompleted?.Invoke(activeTest, allPassed, results);
+        OnTestCompleted?.Invoke(activeStage, allPassed, results);
         
-        Log($"Test {(allPassed ? "PASSED" : "FAILED")}: {activeTest.stageName}");
-        Debug.Log($"[TestCommandExecutor] {(allPassed ? "✅ PASSED" : "❌ FAILED")}: {activeTest.stageName}");
+        Log($"Test {(allPassed ? "PASSED" : "FAILED")}: {testName}");
+        Debug.Log($"[TestCommandExecutor] {(allPassed ? "✅ PASSED" : "❌ FAILED")}: {testName}");
         
-        // Exit play mode if configured
-        if (activeTest.exitPlayModeOnComplete)
+        // Exit play mode if configured (check stage-level setting)
+        bool shouldExitPlayMode = activeStage?.exitPlayModeOnComplete ?? false;
+        if (shouldExitPlayMode)
         {
 #if UNITY_EDITOR
             Log("Exiting play mode...");
@@ -344,7 +414,8 @@ public class TestCommandExecutor : MonoBehaviour
 #endif
         }
         
-        activeTest = null;
+        activeStage = null;
+        activeWave = null;
     }
     
     #endregion
@@ -353,13 +424,16 @@ public class TestCommandExecutor : MonoBehaviour
     
     private void ExecuteCommandsForStep()
     {
-        if (activeTest?.testCommands == null) return;
+        // Get commands from wave (priority) or stage
+        var commands = GetActiveCommands();
+        if (commands == null || commands.Count == 0) return;
         
-        for (int i = 0; i < activeTest.testCommands.Count; i++)
+        for (int i = 0; i < commands.Count; i++)
         {
             if (executedCommandIndices.Contains(i)) continue;
             
-            var cmd = activeTest.testCommands[i];
+            var cmd = commands[i];
+            // Wave-level commands use wave step count (not global)
             int targetStep = cmd.useGlobalStep ? globalStepCount : currentWaveStepCount;
             
             if (cmd.executeOnStep == targetStep)
@@ -368,6 +442,32 @@ public class TestCommandExecutor : MonoBehaviour
                 executedCommandIndices.Add(i);
             }
         }
+    }
+    
+    private List<TestCommand> GetActiveCommands()
+    {
+        // Wave-level commands take priority
+        if (activeWave != null && activeWave.testCommands != null && activeWave.testCommands.Count > 0)
+            return activeWave.testCommands;
+        
+        // Fall back to stage-level
+        if (activeStage != null && activeStage.testCommands != null)
+            return activeStage.testCommands;
+        
+        return null;
+    }
+    
+    private List<TestAssertion> GetActiveAssertions()
+    {
+        // Wave-level assertions take priority
+        if (activeWave != null && activeWave.testAssertions != null && activeWave.testAssertions.Count > 0)
+            return activeWave.testAssertions;
+        
+        // Fall back to stage-level
+        if (activeStage != null && activeStage.testAssertions != null)
+            return activeStage.testAssertions;
+        
+        return null;
     }
     
     private void ExecuteCommand(TestCommand cmd)
@@ -408,8 +508,15 @@ public class TestCommandExecutor : MonoBehaviour
                 return;
             }
             
-            playerManager.MoveTo(cmd.targetPosition.x, cmd.targetPosition.y);
-            Log($"  → Player moving to ({cmd.targetPosition.x}, {cmd.targetPosition.y})");
+            Vector2Int fromPos = playerManager.currentTilePosition;
+            
+            // Use SetPosition for instant/reliable positioning in tests
+            // Note: MoveTo() uses physics movement which is too slow for test command timing
+            // Future: Could add a "wait for arrival" coroutine if visual movement is needed
+            playerManager.SetPosition(cmd.targetPosition.x, cmd.targetPosition.y);
+            
+            Log($"  → Player moved: ({fromPos.x}, {fromPos.y}) → ({cmd.targetPosition.x}, {cmd.targetPosition.y})");
+            ScenarioLogger.Log($"  🎯 Player moved: ({fromPos.x}, {fromPos.y}) → ({cmd.targetPosition.x}, {cmd.targetPosition.y})");
         }
         else
         {
@@ -469,9 +576,10 @@ public class TestCommandExecutor : MonoBehaviour
     
     private void EvaluateAssertions()
     {
-        if (activeTest?.testAssertions == null) return;
+        var assertions = GetActiveAssertions();
+        if (assertions == null || assertions.Count == 0) return;
         
-        foreach (var assertion in activeTest.testAssertions)
+        foreach (var assertion in assertions)
         {
             int actual = GetMetricValue(assertion.metric);
             bool passed = assertion.Evaluate(actual);
@@ -527,7 +635,7 @@ public class TestCommandExecutor : MonoBehaviour
     /// <summary>
     /// Get the currently active test stage.
     /// </summary>
-    public StageData ActiveTest => activeTest;
+    public StageData ActiveTest => activeStage;
     
     /// <summary>
     /// Force complete the current test.

@@ -9,7 +9,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 78c3fb7cc917307469018838241693f1, type: 2}
+  m_Script: {fileID: 11500000, guid: 78c3fb7cc917307469018838241693f1, type: 3}
   m_Name: Wave_5_02
   m_EditorClassIdentifier: Assembly-CSharp::WaveData
   Index: 0
@@ -299,7 +299,7 @@ MonoBehaviour:
     frontFaceCharges: 0
     spawnDelay: 0
   grantsAddToInventory: 1
-  grantMatrixCharges: 0
+  grantMatrixCharges: 2
   grantRecursionCharges: 0
   grantInfinityCharges: 0
   overrideUnitMaxOnGrid: 0
@@ -316,6 +316,10 @@ MonoBehaviour:
   requiredCaptureCount: 0
   maxAllowedEscapes: -1
   highlightSequences: []
+  isTestWave: 0
+  testCommands: []
+  testAssertions: []
+  maxTestSteps: 0
   _runtimeStats:
     unitCubesCaptured: 0
     matrixCubesCaptured: 0

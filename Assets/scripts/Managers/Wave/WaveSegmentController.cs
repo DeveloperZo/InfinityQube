@@ -295,6 +295,7 @@ public class WaveSegmentController : MonoBehaviour
     {
         currentSegmentIndex = 0;
         isTransitioning = false;
+        waveStoppedAtEdge = false; // FIX: Reset edge flag so single-segment maps allow escape
         transitionCubeData.Clear();
         transitionStartMoveStep = -1; // Reset row offset tracking
         

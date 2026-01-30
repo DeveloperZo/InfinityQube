@@ -1452,6 +1452,7 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
     private void HandleStageStart(int stageIndex, StageData stageData)
     {
         _currentStageData = stageData;
+        Debug.Log($"[MarkerEconomy] HandleStageStart: Stage {stageIndex}, StageData={(stageData != null ? stageData.stageName : "NULL")}, waveGrantsFromWaveData={stageData?.waveGrantsFromWaveData ?? false}");
         
         if (!useMarkerEconomy) return;
         
@@ -1465,15 +1466,26 @@ public class PlayerActionManager : MonoBehaviour, IManagerDebugInterface
     {
         if (!useMarkerEconomy) return;
         
+        // Debug: Log the state of wave grant configuration
+        bool hasStageData = _currentStageData != null;
+        bool waveGrantsEnabled = hasStageData && _currentStageData.waveGrantsFromWaveData;
+        bool hasWaveData = waveData != null;
+        Debug.Log($"[MarkerEconomy] HandleWaveStart: Wave {waveIndex}, StageData={hasStageData}, waveGrantsFromWaveData={waveGrantsEnabled}, WaveData={hasWaveData}" +
+                  (hasWaveData ? $", grantMatrix={waveData.grantMatrixCharges}" : ""));
+        
         // Wave grants are ALWAYS applied (combinatorial with stage grants)
         // waveGrantsFromWaveData controls the SOURCE (WaveData vs inspector defaults)
-        if (_currentStageData != null && _currentStageData.waveGrantsFromWaveData && waveData != null)
+        if (hasStageData && waveGrantsEnabled && hasWaveData)
         {
             ApplyWaveGrants(waveData);
         }
         else
         {
-            // Use inspector defaults for wave grants
+            // Log why we're falling back to defaults
+            if (!hasStageData) Debug.LogWarning("[MarkerEconomy] _currentStageData is null - HandleStageStart may not have been called");
+            else if (!waveGrantsEnabled) Debug.LogWarning($"[MarkerEconomy] waveGrantsFromWaveData is false on stage '{_currentStageData.stageName}'");
+            else if (!hasWaveData) Debug.LogWarning("[MarkerEconomy] waveData is null - WaveManager.CurrentWave may be returning null");
+            
             ApplyWaveGrantsDefault();
         }
     }

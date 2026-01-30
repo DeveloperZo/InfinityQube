@@ -3,6 +3,33 @@ using UnityEngine;
 /// <summary>
 /// Provides consistent logging functionality across all managers with standardized formatting.
 /// Extension methods allow any class to use these methods with automatic class name prefixing.
+/// 
+/// === LOGGING CATEGORY REFERENCE ===
+/// 
+/// CRITICAL (keep ON for debugging - default enabled):
+///   - StageManager       : Stage loading, transitions, configuration
+///   - WaveManager        : Wave progression, cube spawning, completion
+///   - GridManager        : Grid state, segment setup, tile operations
+///   - PlayerManager      : Player death, movement issues, collision
+///   - PlayerActionManager: Marker economy (always on - uses direct Debug.Log)
+/// 
+/// NOISY (safe to disable - default OFF):
+///   - CubeCollisionManager   : High-frequency collision checks
+///   - MarkerVisualManager    : Visual marker updates
+///   - AudioManager           : Audio event playback
+///   - AudioDebugSystem       : Audio system internals
+///   - MessageHighlightManager: UI highlight updates
+///   - SaveManager            : Save/load operations
+/// 
+/// MODERATE (case-by-case):
+///   - WaveSegmentController  : Segment transitions
+///   - GridRowManager         : Row removal animations
+///   - PlayerMarkerSystem     : Marker placement details
+///   - AttunementManager      : Attunement changes
+///   - ScoreManager           : Score calculations
+/// 
+/// To toggle logging: Set EnableDebugLogs in Inspector for each manager.
+/// Errors (LogError) always log regardless of flag settings.
 /// </summary>
 public static class LogExtensions
 {

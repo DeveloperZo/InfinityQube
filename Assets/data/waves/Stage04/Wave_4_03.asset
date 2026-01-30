@@ -264,7 +264,7 @@ MonoBehaviour:
     frontFaceCharges: 0
     spawnDelay: 0
   grantsAddToInventory: 1
-  grantMatrixCharges: 0
+  grantMatrixCharges: 2
   grantRecursionCharges: 0
   grantInfinityCharges: 0
   overrideUnitMaxOnGrid: 0

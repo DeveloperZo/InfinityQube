@@ -53,7 +53,7 @@ public class SaveManager : MonoBehaviour, IManagerDebugInterface
     #region Inspector Configuration
     
     [Header("Debug")]
-    [SerializeField] private bool enableDebugLogs = true;
+    [SerializeField] private bool enableDebugLogs = false; // Default OFF - save operation noise
     
     [Header("Save Settings")]
     [Tooltip("Auto-save on significant events (stage complete, unlock, etc.)")]
