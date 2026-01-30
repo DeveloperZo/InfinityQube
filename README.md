@@ -96,7 +96,8 @@
 
 **Integration Reports**:  
 - [Final Integration Test Report](Assets/Docs/FinalIntegrationTestReport.md) - System validation  
-- [Technical Debt](Assets/Docs/TechnicalDebt.md) - Cleanup and optimization tracking
+- [Technical Debt](Assets/Docs/Technical%20Doc/TechnicalDebt.md) - Cleanup and optimization tracking
+- [Project Health Assessment](Assets/Docs/Technical%20Doc/ProjectHealthAssessment.md) - Comprehensive health analysis
 
 ---
 
