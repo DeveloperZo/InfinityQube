@@ -1,45 +1,231 @@
 ---
-description: To ensure development is specialized towards unity platform
+description: Unity-specific runtime patterns (see file-standards.mdc for naming/structure)
 alwaysApply: false
 ---
-# Unity-Specific Patterns
+
+# Unity Runtime Patterns
+
+> For naming conventions and project structure, see `file-standards.mdc`
 
 ## MonoBehaviour Setup
-- Use `[Header("Section Name")]` for Inspector organization
-- Cache component references in Awake() or Start()
-- Use `[SerializeField]` for private fields exposed in Inspector
-- Implement IManagerDebugInterface for managers when possible
 
-## Coroutines
-- Always store coroutine reference to allow stopping
-- Stop coroutines in OnDestroy()
-- Use `yield return null` for frame delays, `WaitForSeconds` for timed delays
+```csharp
+using Sirenix.OdinInspector;
+using DG.Tweening;
+
+[Title("Component Name")]
+[SerializeField] private GameObject targetPrefab;
+
+private void Awake()
+{
+    // Cache GetComponent calls here
+}
+
+private void Start()
+{
+    // Cache manager references here (see code-patterns.mdc)
+}
+
+private void OnDestroy()
+{
+    // CRITICAL: Kill tweens to prevent null reference errors
+    DOTween.Kill(transform);
+    DOTween.Kill(this);
+}
+```
+
+## Event Subscription Lifecycle (Critical)
+
+**Always pair OnEnable/OnDisable** - This pattern prevented stage progression bugs:
+
+```csharp
+private void OnEnable()
+{
+    GameEvents.OnWaveComplete += HandleWaveComplete;
+    StageManager.OnStageLoaded += HandleStageLoaded;
+}
+
+private void OnDisable()
+{
+    GameEvents.OnWaveComplete -= HandleWaveComplete;
+    StageManager.OnStageLoaded -= HandleStageLoaded;
+}
+```
+
+**Why**: Objects can be enabled/disabled during gameplay. Start/OnDestroy miss re-enable scenarios.
+
+## DOTween Patterns (Preferred for Animations)
+
+### Basic Tweens
+```csharp
+using DG.Tweening;
+
+// Transform tweens
+transform.DOMove(targetPos, duration).SetEase(Ease.OutQuad);
+transform.DOScale(1.2f, 0.3f).SetLoops(2, LoopType.Yoyo);
+transform.DORotate(new Vector3(0, 360, 0), 1f, RotateMode.FastBeyond360);
+
+// UI tweens
+canvasGroup.DOFade(1f, fadeInDuration);
+rectTransform.DOAnchorPos(targetPos, duration);
+
+// Material/Color tweens
+renderer.material.DOColor(Color.red, 0.5f);
+image.DOColor(targetColor, duration);
+```
+
+### Sequences (Replace Nested Coroutines)
+```csharp
+// PREFERRED: DOTween sequence
+private void ShowIntroSequence()
+{
+    DOTween.Sequence()
+        .Append(canvasGroup.DOFade(1f, fadeInDuration))
+        .AppendInterval(displayDuration)
+        .Append(canvasGroup.DOFade(0f, fadeOutDuration))
+        .OnComplete(() => panel.SetActive(false));
+}
+
+// AVOID: Nested coroutines for animations
+// private IEnumerator ShowIntroSequence() { ... }
+```
+
+### Tween Lifecycle Management (CRITICAL)
+```csharp
+private Tween activeTween;
+private Sequence activeSequence;
+
+public void StartAnimation()
+{
+    // Kill previous tween before starting new one
+    activeTween?.Kill();
+    activeTween = transform.DOMove(target, duration);
+}
+
+private void OnDestroy()
+{
+    // Always kill tweens on destroy
+    activeTween?.Kill();
+    activeSequence?.Kill();
+    DOTween.Kill(transform);  // Kill all tweens on this transform
+    DOTween.Kill(this);       // Kill all tweens using this as ID
+}
+```
+
+### DOTween Best Practices
+| Pattern | Use | Avoid |
+|---------|-----|-------|
+| Easing | `.SetEase(Ease.OutQuad)` | Linear for all animations |
+| Loops | `.SetLoops(2, LoopType.Yoyo)` | Manual loop coroutines |
+| Callbacks | `.OnComplete(() => ...)` | Coroutine WaitForSeconds |
+| Chaining | Sequences for multi-step | Nested coroutines |
+| Cleanup | `DOTween.Kill(target)` | Letting tweens orphan |
+
+## Coroutines (Non-Animation Use Cases)
+
+Use coroutines for: async operations, waiting for conditions, frame-delayed logic.
+Use DOTween for: all visual animations, fades, movements, scaling.
+
+```csharp
+private Coroutine activeCoroutine;
+
+public void StartProcess()
+{
+    if (activeCoroutine != null)
+        StopCoroutine(activeCoroutine);
+    activeCoroutine = StartCoroutine(ProcessRoutine());
+}
+
+private void OnDestroy()
+{
+    if (activeCoroutine != null)
+        StopCoroutine(activeCoroutine);
+}
+```
 
 ## Events
-- Use UnityEvent for Inspector-configurable events
-- Use C# events for code-only subscriptions
-- Always null-check before invoking: `OnEvent?.Invoke()`
 
-## ScriptableObjects
-- Place in `Assets/data/` directory
-- Use `[CreateAssetMenu]` attribute
-- Validate data in `OnValidate()` method
+| Type | When to Use |
+|------|-------------|
+| `UnityEvent` | Inspector-configurable, designer-friendly |
+| C# `event Action` | Code-only subscriptions |
+| `GameEvents` static class | Cross-manager communication |
 
-## Naming Conventions
-- Managers: `[Function]Manager.cs` (e.g., WaveManager.cs, GridManager.cs)
-- Components: Descriptive noun (e.g., Tile.cs, CubeManager.cs)
-- Data: `[Type]Data.cs` (e.g., WaveData.cs, StageData.cs)
-- Utilities: `[Function]Utils.cs` or `[Function]Helper.cs`
-- Interfaces: `I[Capability].cs` (e.g., IManagerDebugInterface.cs)
-- Inspector variables: `[SerializeField] private GameObject targetPrefab;`
-- Public properties: `public bool IsActive { get; private set; }`
-- Private fields: `private float currentSpeed;` (camelCase)
-- Constants: `private const float MAX_SPEED = 10f;` (UPPER_CASE)
+Always null-check: `OnEvent?.Invoke()`
 
-## Project Structure
-- Managers: `Assets/scripts/Managers/`
-- Components: `Assets/scripts/Components/`
-- Data: `Assets/scripts/Data/` and `Assets/data/`
-- Utils: `Assets/scripts/Utils/`
-- Enumerations: `Assets/scripts/Utils/Enumerations.cs`
-- Debuggers: `Assets/scripts/Debuggers/`
+## ScriptableObjects (with Odin)
+
+```csharp
+using Sirenix.OdinInspector;
+
+[CreateAssetMenu(fileName = "NewData", menuName = "Infinity Qube/DataType")]
+public class MyData : ScriptableObject
+{
+    [Title("Configuration")]
+    [Required("Value must be set!")]
+    [SerializeField] private int value;
+    
+    [Title("Wave Data")]
+    [TableList(ShowIndexLabels = true, DrawScrollView = true)]
+    [SerializeField] private List<SpawnEntry> spawns;
+    
+    [FoldoutGroup("Advanced")]
+    [SerializeField] private bool useAdvanced;
+    
+    [FoldoutGroup("Advanced"), ShowIf("useAdvanced")]
+    [SerializeField] private float multiplier = 1f;
+    
+    [Title("Actions")]
+    [Button("Validate Data", ButtonSizes.Large), GUIColor(0.4f, 0.8f, 1f)]
+    public void Validate()
+    {
+        // Validation logic - also callable from inspector
+        if (value < 0) value = 0;
+    }
+    
+    private void OnValidate()
+    {
+        // Auto-validate in editor
+        Validate();
+    }
+}
+```
+
+### Odin ScriptableObject Patterns
+
+| Pattern | Use Case |
+|---------|----------|
+| `[TableList]` | Wave spawns, test commands, any list of structured data |
+| `[InlineEditor]` | Nested ScriptableObject references |
+| `[Searchable]` | Large lists (attunements, stages) |
+| `[Button]` | Expose Validate(), test methods in inspector |
+| `[Required]` | Critical fields that must be assigned |
+
+Place instances in `Assets/data/` directory.
+
+## Scene Management
+
+```csharp
+// Load scene
+SceneManager.LoadScene("SceneName");
+
+// Async load with callback
+var operation = SceneManager.LoadSceneAsync("SceneName");
+operation.completed += OnSceneLoaded;
+
+// Preserve object across scenes (use sparingly)
+DontDestroyOnLoad(gameObject);
+```
+
+## Prefab Instantiation
+
+```csharp
+// Basic
+var instance = Instantiate(prefab, position, rotation);
+
+// With parent
+var instance = Instantiate(prefab, parent);
+
+// Cleanup
+Destroy(instance);
+```

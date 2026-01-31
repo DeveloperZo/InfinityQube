@@ -17,12 +17,6 @@ MonoBehaviour:
   GridWidth: 5
   GridHeight: 2
   overrideGridHeight: 0
-  overrideGridPath: 0
-  wavePathType: 1
-  customWavePath:
-    pathType: 0
-    segments: []
-    turnPoints: []
   CubesData:
   - type: 0
     position: {x: 0, y: 0}
@@ -67,13 +61,6 @@ MonoBehaviour:
     frontFaceCharges: 0
     spawnDelay: 0
   - type: 0
-    position: {x: 3, y: 1}
-    level: 1
-    hasPaintedFaces: 0
-    frontFaceStatus: 0
-    frontFaceCharges: 0
-    spawnDelay: 0
-  - type: 0
     position: {x: 1, y: 1}
     level: 1
     hasPaintedFaces: 0
@@ -81,14 +68,21 @@ MonoBehaviour:
     frontFaceCharges: 0
     spawnDelay: 0
   - type: 0
-    position: {x: 4, y: 1}
+    position: {x: 2, y: 1}
     level: 1
     hasPaintedFaces: 0
     frontFaceStatus: 0
     frontFaceCharges: 0
     spawnDelay: 0
-  - type: 2
-    position: {x: 2, y: 1}
+  - type: 0
+    position: {x: 3, y: 1}
+    level: 1
+    hasPaintedFaces: 0
+    frontFaceStatus: 0
+    frontFaceCharges: 0
+    spawnDelay: 0
+  - type: 0
+    position: {x: 4, y: 1}
     level: 1
     hasPaintedFaces: 0
     frontFaceStatus: 0
@@ -182,6 +176,10 @@ MonoBehaviour:
     triggerOnCaptureAtPosition: {x: 0, y: 0}
     requireMarkerPlacementValidation: 0
     validationFailureMessage: 
+  isTestWave: 0
+  testCommands: []
+  testAssertions: []
+  maxTestSteps: 0
   _runtimeStats:
     unitCubesCaptured: 0
     matrixCubesCaptured: 0

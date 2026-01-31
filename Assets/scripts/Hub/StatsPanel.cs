@@ -1,132 +1,70 @@
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
 
 /// <summary>
-/// POC: Placeholder panel for player statistics in the Hub.
-/// Will be expanded in Milestone 1.11 (RPG Implementation).
+/// Wires up the Layer Lab Character prefab for player stats.
+/// Place the prefab in scene, attach this script, assign references in inspector.
 /// </summary>
 public class StatsPanel : MonoBehaviour
 {
-    #region Inspector Configuration
-    
-    [Header("UI References")]
-    [SerializeField] private Text titleText;
-    [SerializeField] private Text statsContentText;
+    [Header("UI References (assign in inspector)")]
     [SerializeField] private Button closeButton;
+    [SerializeField] private TextMeshProUGUI titleText;
+    [SerializeField] private TextMeshProUGUI statsText;
     
-    [Header("Placeholder Content")]
-    [SerializeField] private string placeholderTitle = "Observation Chronicle";
-    
-    #endregion
-    
-    #region Unity Lifecycle
-    
-    private void Awake()
-    {
-        if (closeButton != null)
-        {
-            closeButton.onClick.AddListener(OnCloseClicked);
-        }
-    }
+    [Header("Content")]
+    [SerializeField] private string title = "Observation Chronicle";
     
     private void OnEnable()
     {
-        RefreshStats();
+        closeButton?.onClick.AddListener(Close);
+        Refresh();
     }
     
-    private void OnDestroy()
+    private void OnDisable()
     {
-        if (closeButton != null)
-        {
-            closeButton.onClick.RemoveListener(OnCloseClicked);
-        }
+        closeButton?.onClick.RemoveListener(Close);
     }
     
-    #endregion
-    
-    #region Stats Display
-    
-    /// <summary>
-    /// Refreshes the stats display.
-    /// </summary>
-    public void RefreshStats()
+    private void Refresh()
     {
-        if (titleText != null)
-        {
-            titleText.text = placeholderTitle;
-        }
-        
-        if (statsContentText != null)
-        {
-            statsContentText.text = BuildStatsText();
-        }
+        if (titleText != null) titleText.text = title;
+        if (statsText != null) statsText.text = BuildStats();
     }
     
-    private string BuildStatsText()
+    private string BuildStats()
     {
         if (!SaveManager.IsInitialized)
-        {
             return "Statistics unavailable.\n\nProgress will be tracked once you begin playing.";
-        }
         
-        var progression = SaveManager.Instance.Progression;
-        
-        string stats = "";
-        stats += $"<b>Progress</b>\n";
-        stats += $"Highest Stage Unlocked: {progression.highestStageUnlocked + 1}\n";
-        stats += $"Axiom Shards: {progression.axiomShards}\n";
-        stats += "\n";
-        
-        stats += $"<b>Lifetime Statistics</b>\n";
-        stats += $"Total Cubes Captured: {progression.lifetimeCubesCaptured}\n";
-        stats += $"Total Cubes Escaped: {progression.lifetimeCubesEscaped}\n";
-        stats += $"Stages Completed: {progression.lifetimeStagesCompleted}\n";
-        stats += $"Total Play Time: {FormatPlayTime(progression.lifetimePlayTimeSeconds)}\n";
-        stats += "\n";
-        
-        stats += $"<b>Buildings Unlocked</b>\n";
-        stats += $"Celestial Atlas: Always\n";
-        stats += $"Resonance Alignment: {(progression.resonanceAlignmentUnlocked ? "Yes" : "No")}\n";
-        stats += $"Observation Chronicle: {(progression.observationChronicleUnlocked ? "Yes" : "No")}\n";
-        
-        return stats;
+        var p = SaveManager.Instance.Progression;
+        return $"<b>Progress</b>\n" +
+               $"Highest Stage: {p.highestStageUnlocked + 1}\n" +
+               $"Axiom Shards: {p.axiomShards}\n\n" +
+               $"<b>Lifetime Statistics</b>\n" +
+               $"Cubes Captured: {p.lifetimeCubesCaptured}\n" +
+               $"Cubes Escaped: {p.lifetimeCubesEscaped}\n" +
+               $"Stages Completed: {p.lifetimeStagesCompleted}\n" +
+               $"Play Time: {FormatTime(p.lifetimePlayTimeSeconds)}\n\n" +
+               $"<b>Buildings</b>\n" +
+               $"Celestial Atlas: Always\n" +
+               $"Resonance Chamber: {(p.resonanceAlignmentUnlocked ? "Yes" : "No")}\n" +
+               $"Chronicle: {(p.observationChronicleUnlocked ? "Yes" : "No")}";
     }
     
-    private string FormatPlayTime(float totalSeconds)
+    private string FormatTime(float s)
     {
-        if (totalSeconds < 60)
-        {
-            return $"{(int)totalSeconds}s";
-        }
-        else if (totalSeconds < 3600)
-        {
-            int minutes = (int)(totalSeconds / 60);
-            int seconds = (int)(totalSeconds % 60);
-            return $"{minutes}m {seconds}s";
-        }
-        else
-        {
-            int hours = (int)(totalSeconds / 3600);
-            int minutes = (int)((totalSeconds % 3600) / 60);
-            return $"{hours}h {minutes}m";
-        }
+        if (s < 60) return $"{(int)s}s";
+        if (s < 3600) return $"{(int)(s/60)}m {(int)(s%60)}s";
+        return $"{(int)(s/3600)}h {(int)((s%3600)/60)}m";
     }
     
-    #endregion
-    
-    #region Button Handlers
-    
-    private void OnCloseClicked()
+    private void Close()
     {
         if (HubUIManager.Instance != null)
-        {
             HubUIManager.Instance.CloseAllPanels();
-        }
         else
-        {
             gameObject.SetActive(false);
-        }
     }
-    
-    #endregion
 }

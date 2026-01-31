@@ -1,101 +1,50 @@
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
 
 /// <summary>
-/// POC: Placeholder panel for attunement selection in the Hub.
-/// Will be expanded in Milestone 1.11 (RPG Implementation).
+/// Wires up the Layer Lab Equipment prefab for attunements.
+/// Place the prefab in scene, attach this script, assign references in inspector.
+/// POC: Will be expanded in Milestone 1.11 (RPG Implementation).
 /// </summary>
 public class AttunementPanel : MonoBehaviour
 {
-    #region Inspector Configuration
-    
-    [Header("UI References")]
-    [SerializeField] private Text titleText;
-    [SerializeField] private Text descriptionText;
+    [Header("UI References (assign in inspector)")]
     [SerializeField] private Button closeButton;
-    [SerializeField] private Text axiomShardsText;
+    [SerializeField] private TextMeshProUGUI titleText;
+    [SerializeField] private TextMeshProUGUI descriptionText;
+    [SerializeField] private TextMeshProUGUI shardsText;
     
-    [Header("Placeholder Content")]
-    [SerializeField] private string placeholderTitle = "Resonance Alignment Chamber";
-    [SerializeField, TextArea] private string placeholderDescription = 
-        "Attunements will allow you to customize your marker abilities.\n\n" +
-        "Coming soon in a future update!";
-    
-    #endregion
-    
-    #region Unity Lifecycle
-    
-    private void Awake()
-    {
-        if (closeButton != null)
-        {
-            closeButton.onClick.AddListener(OnCloseClicked);
-        }
-    }
+    [Header("Content")]
+    [SerializeField] private string title = "Resonance Alignment Chamber";
+    [SerializeField, TextArea] private string description = 
+        "Attunements allow you to customize your marker abilities.\n\nComing soon in a future update!";
     
     private void OnEnable()
     {
-        RefreshPanel();
+        closeButton?.onClick.AddListener(Close);
+        Refresh();
     }
     
-    private void OnDestroy()
+    private void OnDisable()
     {
-        if (closeButton != null)
-        {
-            closeButton.onClick.RemoveListener(OnCloseClicked);
-        }
+        closeButton?.onClick.RemoveListener(Close);
     }
     
-    #endregion
-    
-    #region Panel Management
-    
-    /// <summary>
-    /// Refreshes panel content.
-    /// </summary>
-    public void RefreshPanel()
+    private void Refresh()
     {
-        if (titleText != null)
-        {
-            titleText.text = placeholderTitle;
-        }
+        if (titleText != null) titleText.text = title;
+        if (descriptionText != null) descriptionText.text = description;
         
-        if (descriptionText != null)
-        {
-            descriptionText.text = placeholderDescription;
-        }
-        
-        UpdateAxiomShards();
+        int shards = SaveManager.IsInitialized ? SaveManager.Instance.AxiomShards : 0;
+        if (shardsText != null) shardsText.text = $"Axiom Shards: {shards}";
     }
     
-    private void UpdateAxiomShards()
-    {
-        if (axiomShardsText != null)
-        {
-            int shards = 0;
-            if (SaveManager.IsInitialized)
-            {
-                shards = SaveManager.Instance.AxiomShards;
-            }
-            axiomShardsText.text = $"Axiom Shards: {shards}";
-        }
-    }
-    
-    #endregion
-    
-    #region Button Handlers
-    
-    private void OnCloseClicked()
+    private void Close()
     {
         if (HubUIManager.Instance != null)
-        {
             HubUIManager.Instance.CloseAllPanels();
-        }
         else
-        {
             gameObject.SetActive(false);
-        }
     }
-    
-    #endregion
 }

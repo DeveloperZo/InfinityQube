@@ -25,8 +25,8 @@ public class HubInteractable : MonoBehaviour
     [SerializeField] private int requiredStageCleared = 0;
     
     [Header("Interaction Settings")]
-    [SerializeField] private KeyCode interactKey = KeyCode.F;
-    [SerializeField] private float interactionRange = 1.5f;
+    [SerializeField] private KeyCode interactKey = KeyCode.E;
+    [SerializeField] private float interactionRange = 2.5f;
     
     #endregion
     
@@ -131,7 +131,7 @@ public class HubInteractable : MonoBehaviour
     {
         if (!isPlayerInRange || isLocked) return;
         
-        if (Input.GetKeyDown(interactKey) || Input.GetKeyDown(KeyCode.Space))
+        if (Input.GetKeyDown(interactKey) || Input.GetKeyDown(KeyCode.E) || Input.GetKeyDown(KeyCode.Return))
         {
             Interact();
         }

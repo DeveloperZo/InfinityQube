@@ -1,4 +1,5 @@
 using UnityEngine;
+using Sirenix.OdinInspector;
 using static Enumerations;
 
 /// <summary>
@@ -10,12 +11,15 @@ public class CubeData
 {
     #region Core Properties
     
+    [TableColumnWidth(90, Resizable = false)]
     [Tooltip("Type of cube (Unit, Matrix, Recursion, Infinity)")]
     public CubeType type;
     
+    [TableColumnWidth(80, Resizable = false)]
     [Tooltip("Grid position within the wave spawn area")]
     public Vector2Int position;
     
+    [TableColumnWidth(50, Resizable = false)]
     [Tooltip("Cube level/tier (affects behavior for some cube types)")]
     [Range(1, 5)] public int level = 1;
     
@@ -23,13 +27,20 @@ public class CubeData
     
     #region Face Painting (Pre-configured)
     
-    [Header("Pre-Painted Faces")]
+    [TableColumnWidth(60, Resizable = false)]
+    [LabelText("Painted")]
     [Tooltip("If true, this cube spawns with pre-painted faces")]
     public bool hasPaintedFaces = false;
     
+    [TableColumnWidth(100, Resizable = false)]
+    [LabelText("Face")]
+    [ShowIf("hasPaintedFaces")]
     [Tooltip("Status of the front face (None, InfinityFace, MatrixFace, RecursionFace)")]
     public FaceStatus frontFaceStatus = FaceStatus.None;
     
+    [TableColumnWidth(60, Resizable = false)]
+    [LabelText("Charges")]
+    [ShowIf("hasPaintedFaces")]
     [Tooltip("Charges on front face (if painted)")]
     [Range(0, 10)] public int frontFaceCharges = 0;
     
@@ -37,7 +48,8 @@ public class CubeData
     
     #region Spawn Timing
     
-    [Header("Spawn Timing")]
+    [TableColumnWidth(60, Resizable = false)]
+    [LabelText("Delay")]
     [Tooltip("Delay before this cube spawns (0 = spawn immediately with wave)")]
     [Range(0f, 10f)] public float spawnDelay = 0f;
     

@@ -22,10 +22,10 @@ public class HubStageSetup : MonoBehaviour
     [SerializeField] private Color exitColor = new Color(0.9f, 0.3f, 0.3f);
     
     [Header("Positions (Grid Coordinates)")]
-    [SerializeField] private Vector2Int stageSelectPos = new Vector2Int(2, 6);
-    [SerializeField] private Vector2Int attunementPos = new Vector2Int(1, 10);
-    [SerializeField] private Vector2Int statsPos = new Vector2Int(3, 10);
-    [SerializeField] private Vector2Int exitPos = new Vector2Int(2, 15);
+    [SerializeField] private Vector2Int stageSelectPos = new Vector2Int(2, 4);
+    [SerializeField] private Vector2Int attunementPos = new Vector2Int(1, 6);
+    [SerializeField] private Vector2Int statsPos = new Vector2Int(3, 6);
+    [SerializeField] private Vector2Int exitPos = new Vector2Int(2, 8);
     
     [Header("Debug")]
     [SerializeField] private bool enableDebugLogs = true;
@@ -48,14 +48,46 @@ public class HubStageSetup : MonoBehaviour
     
     private IEnumerator WaitAndSetup()
     {
-        // Wait for StageManager to initialize and load stage
-        yield return new WaitForSeconds(0.5f);
+        DebugLog("WaitAndSetup started - waiting for StageManager...");
+        
+        // Wait for StageManager to exist and have a loaded stage
+        StageManager stageManager = null;
+        float waitTime = 0f;
+        float maxWait = 5f;
+        
+        while (waitTime < maxWait)
+        {
+            stageManager = FindFirstObjectByType<StageManager>();
+            if (stageManager != null && stageManager.CurrentStage != null)
+            {
+                break;
+            }
+            yield return new WaitForSeconds(0.1f);
+            waitTime += 0.1f;
+        }
+        
+        if (stageManager == null)
+        {
+            DebugLog("ERROR: StageManager not found after waiting!");
+            yield break;
+        }
+        
+        if (stageManager.CurrentStage == null)
+        {
+            DebugLog("ERROR: StageManager has no CurrentStage loaded!");
+            yield break;
+        }
+        
+        DebugLog($"StageManager found. CurrentStage: {stageManager.CurrentStage.stageName}, StageType: {stageManager.CurrentStage.stageType}, IsHubStage: {stageManager.IsHubStage}");
         
         // Check if this is a Hub stage
-        var stageManager = FindFirstObjectByType<StageManager>();
-        if (stageManager != null && stageManager.IsHubStage)
+        if (stageManager.IsHubStage)
         {
             SetupHubCubes();
+        }
+        else
+        {
+            DebugLog("Not a Hub stage - skipping setup");
         }
     }
     

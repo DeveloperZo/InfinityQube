@@ -109,3 +109,7 @@ temp_*
 
 /Assets/Screenshots/
 /Assets/Screenshots.meta
+
+# Third-party plugins/libraries (install separately via Asset Store or package manager)
+/Assets/Plugins/
+/Assets/Plugins.meta
