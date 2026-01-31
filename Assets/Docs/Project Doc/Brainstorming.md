@@ -123,6 +123,27 @@ Ideally we can tease the infinity cubes resonance and when rebuilding a wave for
     - Could show "range ring" around marker showing travel distance
     - Balance: Too short = frustrating, too long = no strategic difference
 
+### Same-Type Collision Upgrades (RPG System)
+- **Description**: Upgrade system that enhances or unlocks same-type collision bonuses (e.g., Matrix+Matrix → 3x3 marker)
+- **Unique Value**: Natural progression system tied to core mechanics, rewards mastery of collision types
+- **Constraints**: Must not make base game feel incomplete without upgrades
+- **Rating**: 8/10
+- **Notes**: 
+  - **Base Mechanic**: Same-type cube collisions create enhanced effects (already implemented)
+    - Matrix + Matrix → 3x3 triggerable marker (vs 2x2 for mismatched)
+    - Recursion + Recursion → Empowered swap (2 charges vs 1)
+  - **RPG Upgrade Ideas**:
+    - **Unlock Chain Reactions**: Placed markers can trigger same-type bonuses (currently disabled)
+    - **Size Upgrades**: Matrix+Matrix → 4x4 or 5x5 markers
+    - **Charge Upgrades**: Recursion+Recursion → 3 charges instead of 2
+    - **New Same-Type Bonuses**: Unit+Unit → multi-capture, Infinity+Infinity → special effect
+    - **Reduced Requirements**: Same-type bonus triggers with painted faces (not just full cube match)
+  - **Progression Tiers**:
+    - Tier 1: Unlock same-type bonuses (base game)
+    - Tier 2: Enhanced same-type bonuses (larger areas, more charges)
+    - Tier 3: Chain reaction bonuses (markers can trigger same-type effects)
+  - **Strategic Impact**: Players seek same-type collisions for maximum value, creating deliberate cube targeting
+
 ### Efficient Single-Dev Testing Strategy
 - **Description**: Develop testing workflow that prevents combinatorial explosion as stages/waves multiply
 - **Unique Value**: Saves development time, enables faster iteration, prevents burnout
@@ -142,6 +163,6 @@ Ideally we can tease the infinity cubes resonance and when rebuilding a wave for
 
 ---
 
-**Last Updated:** January 27, 2026  
+**Last Updated:** January 30, 2026  
 **Purpose:** Capture potential mechanics for future consideration
 **Next Steps:** Prototype highest rated mechanics

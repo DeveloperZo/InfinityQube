@@ -17,7 +17,7 @@ MonoBehaviour:
   stageType: 1
   description: Learn to use Matrix Markers for efficient area capture
   objective: Use Matrix Markers to capture groups of cubes efficiently
-  gridWidth: 8
+  gridWidth: 7
   gridHeight: 25
   playerStartPosition: {x: 3, y: 0}
   respawnDelayMoves: 1

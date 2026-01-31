@@ -46,7 +46,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::GridSegmentController
   segmentIndex: 0
   width: 7
-  height: 28
+  height: 25
   tileSize: 3
   localDirection: 0
   cameraRotation: {x: 45, y: -5, z: 0}

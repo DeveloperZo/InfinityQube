@@ -47,6 +47,11 @@ public class StageManager : MonoBehaviour, IManagerDebugInterface
     /// Use this instead of checking CurrentStageIndex == 0 directly.
     /// </summary>
     public bool IsTutorialStage => CurrentStageIndex == 0 || CurrentStage?.stageType == StageType.Tutorial;
+    
+    /// <summary>
+    /// Returns true if the current stage is the Hub (no waves, player interacts with fixed cubes).
+    /// </summary>
+    public bool IsHubStage => CurrentStage?.stageType == StageType.Hub;
 
     // Stage Statistics
     private int capturedCubeCount = 0;
@@ -73,6 +78,17 @@ public class StageManager : MonoBehaviour, IManagerDebugInterface
         {
             // Subscribe to private UnityEvents via reflection or add public accessors
             SubscribeToWaveEvents();
+        }
+
+        // Check if a stage was selected from Hub (highest priority)
+        if (PlayerPrefs.HasKey("SelectedStage"))
+        {
+            int selectedStage = PlayerPrefs.GetInt("SelectedStage", 0);
+            PlayerPrefs.DeleteKey("SelectedStage");
+            PlayerPrefs.Save();
+            DebugLog($"SelectedStage flag detected from Hub, starting stage {selectedStage}");
+            LoadStage(selectedStage);
+            return;
         }
 
         // Check if tutorial should be started from Splash screen (bypasses disableAutoStart)
@@ -321,6 +337,13 @@ public class StageManager : MonoBehaviour, IManagerDebugInterface
         }
 
         DebugLog($"Stage {stageNumber}: '{stage.stageName}' loaded successfully (Attempt #{stageAttempts[stageNumber]})");
+
+        // Skip wave processing for Hub stages - player moves freely and interacts with cubes
+        if (stage.stageType == StageType.Hub)
+        {
+            DebugLog("Hub stage loaded - waves disabled, player can explore freely");
+            yield break;
+        }
 
         // Start the first wave via event system (no direct call)
         if (waveManager != null)

@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 using System.Collections;
 
 /// <summary>
@@ -16,11 +17,18 @@ public class StageTransitionUI : MonoBehaviour
     [SerializeField] private GameObject completionPanel;
     [SerializeField] private Text completionTitleText;
     [SerializeField] private Text completionMessageText;
+    [SerializeField] private Button returnToHubButton;
+    [SerializeField] private Button continueButton;
     
     [Header("Animation Settings")]
     [SerializeField] private float fadeInDuration = 0.5f;
     [SerializeField] private float displayDuration = 2f;
     [SerializeField] private float fadeOutDuration = 0.5f;
+    
+    [Header("Hub Integration")]
+    [SerializeField] private string hubSceneName = "Hub";
+    [SerializeField] private bool autoReturnToHubOnSuccess = false;
+    [SerializeField] private float autoReturnDelay = 3f;
 
     [Header("Debug")]
     [SerializeField] private bool EnableDebugLogs;
@@ -30,6 +38,7 @@ public class StageTransitionUI : MonoBehaviour
     private CanvasGroup introCanvasGroup;
     private CanvasGroup completionCanvasGroup;
     private Coroutine currentTransition;
+    private bool lastCompletionSuccess;
     #endregion
 
     #region Unity Lifecycle
@@ -63,6 +72,20 @@ public class StageTransitionUI : MonoBehaviour
         
         DebugLog("OnDisable", "Unsubscribed from stage events");
     }
+    
+    private void OnDestroy()
+    {
+        // Clean up button listeners
+        if (returnToHubButton != null)
+        {
+            returnToHubButton.onClick.RemoveListener(OnReturnToHubClicked);
+        }
+        
+        if (continueButton != null)
+        {
+            continueButton.onClick.RemoveListener(OnContinueClicked);
+        }
+    }
     #endregion
 
     #region Initialization
@@ -87,6 +110,17 @@ public class StageTransitionUI : MonoBehaviour
                 completionCanvasGroup = completionPanel.AddComponent<CanvasGroup>();
             }
             completionPanel.SetActive(false);
+        }
+        
+        // Setup button listeners
+        if (returnToHubButton != null)
+        {
+            returnToHubButton.onClick.AddListener(OnReturnToHubClicked);
+        }
+        
+        if (continueButton != null)
+        {
+            continueButton.onClick.AddListener(OnContinueClicked);
         }
     }
     
@@ -139,6 +173,9 @@ public class StageTransitionUI : MonoBehaviour
         
         if (completionPanel == null) return;
         
+        // Store success state for completion sequence
+        lastCompletionSuccess = success;
+        
         // Stop any running transition
         if (currentTransition != null)
         {
@@ -154,10 +191,27 @@ public class StageTransitionUI : MonoBehaviour
         
         if (completionMessageText != null)
         {
-            // POC: Simple messages - can be enhanced with more details later
             completionMessageText.text = success ? 
-                "Well done! Proceeding to next stage..." : 
-                "Try again! The stage will restart...";
+                "Well done!" : 
+                "Try again!";
+        }
+        
+        // Configure buttons based on success/failure
+        if (returnToHubButton != null)
+        {
+            // Show return to hub on success, hide on failure (retry instead)
+            returnToHubButton.gameObject.SetActive(success);
+        }
+        
+        if (continueButton != null)
+        {
+            // Continue button: "Next Stage" on success, "Retry" on failure
+            var buttonText = continueButton.GetComponentInChildren<Text>();
+            if (buttonText != null)
+            {
+                buttonText.text = success ? "Continue" : "Retry";
+            }
+            continueButton.gameObject.SetActive(true);
         }
         
         // Start completion animation
@@ -200,12 +254,16 @@ public class StageTransitionUI : MonoBehaviour
         completionPanel.SetActive(true);
         yield return StartCoroutine(FadeCanvasGroup(completionCanvasGroup, 0f, 1f, fadeInDuration));
         
-        // Display for specified duration
-        yield return new WaitForSeconds(displayDuration);
+        // If auto-return is enabled and stage was successful, wait then return to hub
+        if (autoReturnToHubOnSuccess && lastCompletionSuccess)
+        {
+            yield return new WaitForSeconds(autoReturnDelay);
+            ReturnToHub();
+            yield break;
+        }
         
-        // Fade out and hide
-        yield return StartCoroutine(FadeCanvasGroup(completionCanvasGroup, 1f, 0f, fadeOutDuration));
-        completionPanel.SetActive(false);
+        // Otherwise, keep panel visible until user clicks a button
+        // (Buttons will call HideAllPanels or ReturnToHub)
         
         currentTransition = null;
     }
@@ -259,6 +317,36 @@ public class StageTransitionUI : MonoBehaviour
         {
             Debug.Log($"[StageTransitionUI] {methodName}: {message}");
         }
+    }
+    #endregion
+
+    #region Hub Navigation
+    /// <summary>
+    /// Called when Return to Hub button is clicked.
+    /// </summary>
+    private void OnReturnToHubClicked()
+    {
+        DebugLog("OnReturnToHubClicked", "Returning to hub...");
+        SceneManager.LoadScene(hubSceneName);
+    }
+    
+    /// <summary>
+    /// Called when Continue button is clicked (for next stage or retry).
+    /// </summary>
+    private void OnContinueClicked()
+    {
+        DebugLog("OnContinueClicked", "Continue clicked - hiding completion panel");
+        HideAllPanels();
+        // Stage progression is handled by StageManager
+    }
+    
+    /// <summary>
+    /// Returns to the hub scene. Can be called externally.
+    /// </summary>
+    public void ReturnToHub()
+    {
+        DebugLog("ReturnToHub", $"Loading hub scene: {hubSceneName}");
+        SceneManager.LoadScene(hubSceneName);
     }
     #endregion
 

@@ -12,26 +12,26 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: faaa491ad539cb444afed02f7554648d, type: 3}
   m_Name: stage_06
   m_EditorClassIdentifier: Assembly-CSharp::StageData
-  stageNumber: 5
-  stageName: Matrix Marker Introduction
+  stageNumber: 6
+  stageName: Recursion Marker Introduction
   stageType: 1
   description: Learn to use Matrix Markers for efficient area capture
-  objective: Use Matrix Markers to capture groups of cubes efficiently
-  gridWidth: 8
-  gridHeight: 25
+  objective: Use Recursion Markers to capture groups of cubes efficiently
+  gridWidth: 7
+  gridHeight: 35
   playerStartPosition: {x: 3, y: 0}
   respawnDelayMoves: 1
-  segmentLayoutPrefab: {fileID: 8479612789658835193, guid: d712bd514ed41ba47a998119faef2a95, type: 3}
+  segmentLayoutPrefab: {fileID: 8479612789658835193, guid: d681fc88e3fa9bf49b9c55d63accef40, type: 3}
   enableLineDivider: 0
   lineDividerStartY: 10
   lineDividerEscapePenalty: 1
   lineDividerCaptureReward: 1
   stageGrants:
     unitMaxOnGrid: 5
-    unitMarkerRechargeRate: 2
+    unitMarkerRechargeRate: 1
     maxUnitMarkerCharges: 3
-    matrixCharges: 3
-    matrixMaxOnGrid: 2
+    matrixCharges: 0
+    matrixMaxOnGrid: 0
     recursionCharges: 0
     recursionMaxOnGrid: 0
     infinityCharges: 0
@@ -40,11 +40,7 @@ MonoBehaviour:
   lockAttunements: 1
   allowedAttunementIds: []
   waveConfigurations:
-  - {fileID: 11400000, guid: 33665227ecc99e840afa04aed08ea2ed, type: 2}
-  - {fileID: 11400000, guid: 22e71e887234f534896254954418d1d6, type: 2}
-  - {fileID: 11400000, guid: 63e3320f8bf26ea47ae396912d8efdfc, type: 2}
-  - {fileID: 11400000, guid: de1aa2793273620409fa187d3a3755bc, type: 2}
-  - {fileID: 11400000, guid: 0a3a5ea819183b84fbf19637fff4b5a5, type: 2}
+  - {fileID: 11400000, guid: 75511cd62b3f7c449b9ba2fdb76b507b, type: 2}
   requireAllCubesDestroyed: 0
   requiredCaptureCount: 0
   maxAllowedEscapes: 0

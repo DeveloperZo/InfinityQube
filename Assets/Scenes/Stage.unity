@@ -2873,6 +2873,9 @@ RectTransform:
   m_Children:
   - {fileID: 150564768}
   - {fileID: 938166790}
+  - {fileID: 1848684118}
+  - {fileID: 1830881563}
+  - {fileID: 1442345182}
   m_Father: {fileID: 1959075058}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -4559,6 +4562,62 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1184427400}
   m_CullTransparentMesh: 0
+--- !u!1 &1210464376
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1210464377}
+  - component: {fileID: 1210464378}
+  m_Layer: 0
+  m_Name: HubStageSetup
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1210464377
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1210464376}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1349580503744953451}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1210464378
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1210464376}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cd67f363dfd1c7241885d14246479569, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HubStageSetup
+  interactableCubePrefab: {fileID: 0}
+  cubeScale: 0.8
+  cubeYOffset: 0.5
+  stageSelectColor: {r: 0.2, g: 0.5, b: 0.9, a: 1}
+  attunementColor: {r: 0.7, g: 0.3, b: 0.8, a: 1}
+  statsColor: {r: 0.3, g: 0.8, b: 0.4, a: 1}
+  exitColor: {r: 0.9, g: 0.3, b: 0.3, a: 1}
+  stageSelectPos: {x: 2, y: 6}
+  attunementPos: {x: 1, y: 10}
+  statsPos: {x: 3, y: 10}
+  exitPos: {x: 2, y: 15}
+  enableDebugLogs: 1
 --- !u!1 &1232276757
 GameObject:
   m_ObjectHideFlags: 0
@@ -5545,6 +5604,58 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1442097045}
   m_CullTransparentMesh: 0
+--- !u!1 &1442345181
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1442345182}
+  - component: {fileID: 1442345183}
+  m_Layer: 0
+  m_Name: StatsPanel
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 0
+--- !u!224 &1442345182
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1442345181}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 628151109}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 960, y: -1050.9678}
+  m_SizeDelta: {x: 1920, y: 58.064514}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &1442345183
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1442345181}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dfd30aa9a693f944c85018e0a18b37b5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::StatsPanel
+  titleText: {fileID: 0}
+  statsContentText: {fileID: 0}
+  closeButton: {fileID: 0}
+  placeholderTitle: Observation Chronicle
 --- !u!1 &1509985247
 GameObject:
   m_ObjectHideFlags: 0
@@ -11761,6 +11872,64 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1799705719}
   m_CullTransparentMesh: 0
+--- !u!1 &1830881562
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1830881563}
+  - component: {fileID: 1830881564}
+  m_Layer: 0
+  m_Name: AttunementPanel
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 0
+--- !u!224 &1830881563
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1830881562}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 628151109}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 960, y: -992.9032}
+  m_SizeDelta: {x: 1920, y: 58.064514}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &1830881564
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1830881562}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6d128a2263e75b44cba6451abc38da5d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AttunementPanel
+  titleText: {fileID: 0}
+  descriptionText: {fileID: 0}
+  closeButton: {fileID: 0}
+  axiomShardsText: {fileID: 0}
+  placeholderTitle: Resonance Alignment Chamber
+  placeholderDescription: 'Attunements will allow you to customize your marker abilities.
+
+
+    Coming
+    soon in a future update!'
 --- !u!1 &1834959640
 GameObject:
   m_ObjectHideFlags: 0
@@ -11965,6 +12134,64 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1839016791}
   m_CullTransparentMesh: 0
+--- !u!1 &1848684117
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1848684118}
+  - component: {fileID: 1848684119}
+  m_Layer: 0
+  m_Name: StageSelectionPanel
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 0
+--- !u!224 &1848684118
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1848684117}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 628151109}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 960, y: -934.83875}
+  m_SizeDelta: {x: 1920, y: 58.064514}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &1848684119
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1848684117}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d2cee5ad41af70c4791793785c6ea5dd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::StageSelectionPanel
+  stageButtonContainer: {fileID: 0}
+  stageButtonPrefab: {fileID: 0}
+  panelTitleText: {fileID: 0}
+  closeButton: {fileID: 0}
+  stageDatabase: {fileID: 0}
+  maxStagesDisplayed: 12
+  unlockedColor: {r: 1, g: 1, b: 1, a: 1}
+  lockedColor: {r: 0.4, g: 0.4, b: 0.4, a: 0.5}
+  selectedColor: {r: 0.3, g: 0.8, b: 0.3, a: 1}
+  enableDebugLogs: 1
 --- !u!1 &1883002198
 GameObject:
   m_ObjectHideFlags: 0
@@ -12559,6 +12786,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1959075058}
+  - component: {fileID: 1959075059}
   m_Layer: 0
   m_Name: UI
   m_TagString: Untagged
@@ -12582,6 +12810,22 @@ Transform:
   - {fileID: 628151109}
   m_Father: {fileID: 239699829}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1959075059
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1959075057}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a3c5ff037ddd5ed438763ec950be8e09, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HubUIManager
+  stageSelectionPanel: {fileID: 0}
+  attunementPanel: {fileID: 0}
+  statsPanel: {fileID: 0}
+  closeKey: 27
 --- !u!1 &1969826936
 GameObject:
   m_ObjectHideFlags: 0
@@ -13939,6 +14183,7 @@ Transform:
   - {fileID: 1233890407}
   - {fileID: 1168389966}
   - {fileID: 748298964}
+  - {fileID: 1210464377}
   m_Father: {fileID: 239699829}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1383029016935945871
@@ -14038,7 +14283,7 @@ MonoBehaviour:
   playerActionManager: {fileID: 8656265648072650656}
   gameUI: {fileID: 150564767}
   stageDatabase: {fileID: 11400000, guid: 9e6fa5035be75db46be4cb9e31f45c17, type: 2}
-  startingStageIndex: 4
+  startingStageIndex: 0
   autoAdvanceStages: 1
   autoAdvanceWaves: 1
   stageTransitionDelay: 2
@@ -14510,7 +14755,7 @@ MonoBehaviour:
   messageController: {fileID: 0}
   useWaveConfiguration: 0
   waveConfiguration: []
-  currentWaveIndex: 0
+  currentWaveIndex: 4
   normalMoveInterval: 2
   fastMoveInterval: 0.15
   waveStartDelay: 0.75

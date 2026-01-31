@@ -71,7 +71,8 @@ public static class Enumerations
         Tutorial,    // Tutorial stages: focused on teaching mechanics
         Standard,    // Normal gameplay
         Challenge,   // Difficult stages with special conditions
-        Bonus        // Special stages with unique rules
+        Bonus,       // Special stages with unique rules
+        Hub          // Hub scene: no waves, player can interact with fixed cubes
     }
     public enum DebugPanelGroup
     {

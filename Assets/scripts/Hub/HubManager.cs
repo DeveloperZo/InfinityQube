@@ -19,7 +19,7 @@ public class HubManager : MonoBehaviour
     #region Inspector Configuration
     
     [Header("Scene Configuration")]
-    [SerializeField] private string gameplaySceneName = "Main";
+    [SerializeField] private string gameplaySceneName = "Stage";
     [SerializeField] private string hubSceneName = "Hub";
     
     [Header("Hub Buildings")]
@@ -77,8 +77,8 @@ public class HubManager : MonoBehaviour
     
     private void Start()
     {
-        RefreshHubState();
-        DebugLog("HubManager initialized");
+        // Hub scene just transitions to the grid-based Hub World
+        EnterHubWorld();
     }
     
     private void OnDestroy()
@@ -177,7 +177,16 @@ public class HubManager : MonoBehaviour
     #region Scene Transitions
     
     /// <summary>
-    /// Return to hub from gameplay (call after stage complete).
+    /// Enter the Hub world (grid-based hub in Stage scene).
+    /// </summary>
+    public void EnterHubWorld()
+    {
+        DebugLog("Entering Hub World...");
+        StartStage(100); // HubStage is stage 100
+    }
+    
+    /// <summary>
+    /// Return to hub menu from gameplay (call after stage complete).
     /// </summary>
     public static void ReturnToHub()
     {

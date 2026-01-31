@@ -31,12 +31,12 @@ MonoBehaviour:
     unitMaxOnGrid: 5
     unitMarkerRechargeRate: 0
     maxUnitMarkerCharges: 0
-    matrixCharges: 2
-    matrixMaxOnGrid: 2
-    recursionCharges: 2
-    recursionMaxOnGrid: 2
-    infinityCharges: 1
-    infinityMaxOnGrid: 1
+    matrixCharges: 0
+    matrixMaxOnGrid: 0
+    recursionCharges: 0
+    recursionMaxOnGrid: 0
+    infinityCharges: 0
+    infinityMaxOnGrid: 0
   waveGrantsFromWaveData: 1
   lockAttunements: 1
   allowedAttunementIds: []
@@ -48,3 +48,9 @@ MonoBehaviour:
   requireAllCubesDestroyed: 0
   requiredCaptureCount: 0
   maxAllowedEscapes: 0
+  isTestStage: 0
+  testCommands: []
+  testAssertions: []
+  maxTestSteps: 0
+  testTimeout: 30
+  exitPlayModeOnComplete: 0

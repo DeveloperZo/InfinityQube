@@ -48,8 +48,34 @@ public class HubUIManager : MonoBehaviour
         }
         _instance = this;
         
+        // Auto-find panels if not assigned
+        FindPanelsIfNeeded();
+        
         // Ensure all panels start closed
         CloseAllPanels();
+    }
+    
+    private void FindPanelsIfNeeded()
+    {
+        if (stageSelectionPanel == null)
+        {
+            var panel = FindFirstObjectByType<StageSelectionPanel>(FindObjectsInactive.Include);
+            if (panel != null) stageSelectionPanel = panel.gameObject;
+        }
+        
+        if (attunementPanel == null)
+        {
+            var panel = FindFirstObjectByType<AttunementPanel>(FindObjectsInactive.Include);
+            if (panel != null) attunementPanel = panel.gameObject;
+        }
+        
+        if (statsPanel == null)
+        {
+            var panel = FindFirstObjectByType<StatsPanel>(FindObjectsInactive.Include);
+            if (panel != null) statsPanel = panel.gameObject;
+        }
+        
+        Debug.Log($"[HubUIManager] Panels found - Stage: {stageSelectionPanel != null}, Attunement: {attunementPanel != null}, Stats: {statsPanel != null}");
     }
     
     private void Update()

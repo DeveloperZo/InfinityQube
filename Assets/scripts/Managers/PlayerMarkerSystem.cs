@@ -335,9 +335,9 @@ public class PlayerMarkerSystem : MonoBehaviour
 
         foreach (var cube in cubes)
         {
-            // Check if this is a same-type match (Recursion marker capturing Recursion cube)
-            bool isSameTypeMatch = (cube.type == CubeType.Recursion);
-            success |= ProcessCubeCapture(cube, position, MarkerType.Recursion, marker, isSameTypeMatch);
+            // Placed marker captures do NOT trigger same-type match bonus
+            // Same-type bonuses only come from direct cube-to-cube collision
+            success |= ProcessCubeCapture(cube, position, MarkerType.Recursion, marker, false);
         }
 
         if (success && IsWithinPerfectTimingWindow(marker.placementTime))
@@ -458,9 +458,9 @@ public class PlayerMarkerSystem : MonoBehaviour
             totalCubesAffected += cubes.Count;
             foreach (var cube in cubes)
             {
-                // Check if this is a same-type match (Matrix marker capturing Matrix cube)
-                bool isSameTypeMatch = (cube.type == CubeType.Matrix);
-                anySuccess |= ProcessCubeCapture(cube, position, MarkerType.Matrix, null, isSameTypeMatch);
+                // Area marker captures do NOT trigger same-type match bonus
+                // 3x3 markers only come from direct Matrix cube + Matrix cube collision
+                anySuccess |= ProcessCubeCapture(cube, position, MarkerType.Matrix, null, false);
             }
 
             // Process player cubes in the area (destroy them without creating cube markers) - SEGMENT-AWARE
@@ -674,6 +674,7 @@ public class PlayerMarkerSystem : MonoBehaviour
     /// <summary>
     /// Executes a swap based on the swap marker configuration.
     /// + pattern: N↔S and W↔E swaps around center position.
+    /// Edge handling: At edges, swap the two adjacent cells instead of failing.
     /// </summary>
     private bool ExecuteSwap(SwapMarker swapMarker)
     {
@@ -696,13 +697,6 @@ public class PlayerMarkerSystem : MonoBehaviour
 
         Debug.Log($"[PlayerMarkerSystem] Executing swap at ({centerPos.x}, {centerPos.y}) - Direction: {swapDir}, Empowered: {swapMarker.isEmpowered}");
 
-        // Get positions for + pattern
-        Vector2Int northPos = new Vector2Int(centerPos.x, centerPos.y + 1);
-        Vector2Int southPos = new Vector2Int(centerPos.x, centerPos.y - 1);
-        Vector2Int eastPos = new Vector2Int(centerPos.x + 1, centerPos.y);
-        Vector2Int westPos = new Vector2Int(centerPos.x - 1, centerPos.y);
-
-        // Validate positions are within grid bounds (stop at edge)
         GridManager grid = actionManager?.GridManager;
         if (grid == null)
         {
@@ -714,18 +708,64 @@ public class PlayerMarkerSystem : MonoBehaviour
 
         if (swapDir == SwapDirection.Horizontal)
         {
-            // Horizontal swap: W ↔ E
-            if (IsValidSwapPosition(westPos, grid) && IsValidSwapPosition(eastPos, grid))
+            // Horizontal swap: determine positions based on edge detection
+            Vector2Int pos1, pos2;
+            
+            if (centerPos.x == 0)
             {
-                swapExecuted |= SwapCubesAtPositions(westPos, eastPos, segment);
+                // Left edge: swap columns 0 and 1
+                pos1 = new Vector2Int(0, centerPos.y);
+                pos2 = new Vector2Int(1, centerPos.y);
+                Debug.Log($"[PlayerMarkerSystem] Edge swap (left): ({pos1.x},{pos1.y}) ↔ ({pos2.x},{pos2.y})");
+            }
+            else if (centerPos.x == grid.Width - 1)
+            {
+                // Right edge: swap columns (width-2) and (width-1)
+                pos1 = new Vector2Int(grid.Width - 2, centerPos.y);
+                pos2 = new Vector2Int(grid.Width - 1, centerPos.y);
+                Debug.Log($"[PlayerMarkerSystem] Edge swap (right): ({pos1.x},{pos1.y}) ↔ ({pos2.x},{pos2.y})");
+            }
+            else
+            {
+                // Normal: swap W ↔ E around center
+                pos1 = new Vector2Int(centerPos.x - 1, centerPos.y);
+                pos2 = new Vector2Int(centerPos.x + 1, centerPos.y);
+            }
+            
+            if (IsValidSwapPosition(pos1, grid) && IsValidSwapPosition(pos2, grid))
+            {
+                swapExecuted |= SwapCubesAtPositions(pos1, pos2, segment);
             }
         }
         else // Vertical
         {
-            // Vertical swap: N ↔ S
-            if (IsValidSwapPosition(northPos, grid) && IsValidSwapPosition(southPos, grid))
+            // Vertical swap: determine positions based on edge detection
+            Vector2Int pos1, pos2;
+            
+            if (centerPos.y == 0)
             {
-                swapExecuted |= SwapCubesAtPositions(northPos, southPos, segment);
+                // Bottom edge: swap rows 0 and 1
+                pos1 = new Vector2Int(centerPos.x, 0);
+                pos2 = new Vector2Int(centerPos.x, 1);
+                Debug.Log($"[PlayerMarkerSystem] Edge swap (bottom): ({pos1.x},{pos1.y}) ↔ ({pos2.x},{pos2.y})");
+            }
+            else if (centerPos.y == grid.Height - 1)
+            {
+                // Top edge: swap rows (height-2) and (height-1)
+                pos1 = new Vector2Int(centerPos.x, grid.Height - 2);
+                pos2 = new Vector2Int(centerPos.x, grid.Height - 1);
+                Debug.Log($"[PlayerMarkerSystem] Edge swap (top): ({pos1.x},{pos1.y}) ↔ ({pos2.x},{pos2.y})");
+            }
+            else
+            {
+                // Normal: swap N ↔ S around center
+                pos1 = new Vector2Int(centerPos.x, centerPos.y + 1);
+                pos2 = new Vector2Int(centerPos.x, centerPos.y - 1);
+            }
+            
+            if (IsValidSwapPosition(pos1, grid) && IsValidSwapPosition(pos2, grid))
+            {
+                swapExecuted |= SwapCubesAtPositions(pos1, pos2, segment);
             }
         }
 
@@ -1216,7 +1256,8 @@ public class PlayerMarkerSystem : MonoBehaviour
         }
 
         // Multi-hit system: Recursion cubes require 2 hits to capture
-        if (cube.type == CubeType.Recursion && !cube.isPlayerCube)
+        // EXCEPTION: Same-type match (Recursion+Recursion) is instant capture
+        if (cube.type == CubeType.Recursion && !cube.isPlayerCube && !isSameTypeMatch)
         {
             // Apply damage instead of instant capture
             bool destroyed = cube.TakeDamage(1);
@@ -1236,6 +1277,7 @@ public class PlayerMarkerSystem : MonoBehaviour
             }
             // If destroyed (HP <= 0), fall through to capture logic below
         }
+        // Same-type match (Recursion+Recursion) bypasses multi-hit for instant capture
 
         Debug.Log($"Capturing {cube.type} cube at ({position.x}, {position.y}) with {markerType} marker{(isSameTypeMatch ? " (same-type match!)" : "")}");
 

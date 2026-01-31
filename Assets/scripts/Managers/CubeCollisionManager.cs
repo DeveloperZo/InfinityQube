@@ -539,22 +539,25 @@ public class CubeCollisionManager : MonoBehaviour, IManagerDebugInterface
         switch (waveCube.type)
         {
             case CubeType.Unit:
-                // Unit + Unit: Standard capture
-                return new CollisionResult(markerSystem.ProcessCubeCapture(waveCube, position, PlayerMarkerSystem.MarkerType.Unit, null, false));
+                // Unit + Unit: Standard capture, destroy player cube
+                markerSystem.ProcessCubeCapture(waveCube, position, PlayerMarkerSystem.MarkerType.Unit, null, false);
+                return new CollisionResult(true, true);
 
             case CubeType.Matrix:
-                // Unit + Matrix: 2x2 area capture centered on collision point
-                return new CollisionResult(HandleUnitMatrixCollision(position));
+                // Unit + Matrix: 2x2 area capture, destroy player cube
+                HandleUnitMatrixCollision(position);
+                return new CollisionResult(true, true);
 
             case CubeType.Recursion:
-                // Unit + Recursion: Creates swap marker (1 charge, player selects direction)
-                return new CollisionResult(HandleUnitRecursionSwap(position));
+                // Unit + Recursion: Damage Recursion (multi-hit), destroy player cube
+                // Swap marker created only when Recursion is destroyed
+                HandleUnitRecursionSwap(position);
+                return new CollisionResult(true, true); // Player Unit always consumed
 
             case CubeType.Infinity:
                 // Unit + Infinity: Unit destroyed, no face painting
-                // Unit cubes do NOT paint Infinity cubes - they are simply destroyed on collision
                 DebugLog("HandleUnitCollision", $"Unit cube destroyed by Infinity cube at ({position.x}, {position.y}) - no face painting");
-                return new CollisionResult(true, true); // Collision handled, destroy player cube
+                return new CollisionResult(true, true);
 
             default:
                 return new CollisionResult(false);
@@ -569,24 +572,26 @@ public class CubeCollisionManager : MonoBehaviour, IManagerDebugInterface
         switch (waveCube.type)
         {
             case CubeType.Unit:
-                // Matrix + Unit: Area capture from Matrix position (2x2 base, 3x3 with Expanded Expansion)
+                // Matrix + Unit: Area capture, destroy player cube
                 int matrixAreaSize = AttunementManager.IsInitialized ? AttunementManager.Instance.GetMatrixAreaSize() : 2;
-                return new CollisionResult(HandleMatrixAreaCapture(position, matrixAreaSize));
+                HandleMatrixAreaCapture(position, matrixAreaSize);
+                return new CollisionResult(true, true);
 
             case CubeType.Matrix:
-                // Matrix + Matrix: 3x3 triggerable marker (enhanced reward)
-                // Phaseable Expansion attunement may paint wave cube face
+                // Matrix + Matrix: 3x3 triggerable marker, destroy player cube
                 DebugLog("HandleMatrixCollision", $"Matrix+Matrix collision detected at ({position.x}, {position.y})");
-                return new CollisionResult(HandleMatrixMatrixCollision(position, waveCube));
+                HandleMatrixMatrixCollision(position, waveCube);
+                return new CollisionResult(true, true);
 
             case CubeType.Recursion:
-                // Matrix + Recursion: Degrading 2x2 marker
-                return new CollisionResult(HandleMatrixRecursionCollision(position));
+                // Matrix + Recursion: Degrading 2x2 marker, destroy player cube
+                HandleMatrixRecursionCollision(position);
+                return new CollisionResult(true, true);
 
             case CubeType.Infinity:
-                // Matrix + Infinity: Matrix destroyed - Infinity is immutable, nothing paints it
+                // Matrix + Infinity: Matrix destroyed - Infinity is immutable
                 DebugLog("HandleMatrixCollision", $"Matrix+Infinity collision at ({position.x}, {position.y}) - Matrix destroyed (Infinity immutable)");
-                return new CollisionResult(true, true); // Collision handled, destroy player cube
+                return new CollisionResult(true, true);
 
             default:
                 return new CollisionResult(false);
@@ -601,21 +606,26 @@ public class CubeCollisionManager : MonoBehaviour, IManagerDebugInterface
         switch (waveCube.type)
         {
             case CubeType.Unit:
-                // Recursion + Unit: Creates swap marker (1 charge, player selects direction)
-                return new CollisionResult(HandleRecursionUnitSwap(position));
+                // Recursion + Unit: Capture Unit (single-hit), create swap marker, destroy player cube
+                HandleRecursionUnitSwap(position);
+                return new CollisionResult(true, true); // Unit is single-hit, always destroy player cube
 
             case CubeType.Matrix:
-                // Recursion + Matrix: Creates 2x2 marker (Wave Matrix determines area effect)
-                return new CollisionResult(HandleRecursionMatrixSwap(position));
+                // Recursion + Matrix: Creates 2x2 marker, destroy player cube
+                HandleRecursionMatrixSwap(position);
+                return new CollisionResult(true, true); // Matrix is single-hit, always destroy player cube
 
             case CubeType.Recursion:
-                // Recursion + Recursion: Instant capture + empowered swap marker (2 charges, swap + capture axes)
-                return new CollisionResult(HandleRecursionRecursionEmpoweredSwap(position, waveCube));
+                // Recursion + Recursion: Multi-hit! Only destroy player cube when wave Recursion is destroyed
+                HandleRecursionRecursionEmpoweredSwap(position, waveCube);
+                // Check if wave cube was destroyed (instant capture for Recursion+Recursion)
+                bool waveCubeDestroyed = waveCube == null || waveCube.isDestroyed;
+                return new CollisionResult(true, waveCubeDestroyed);
 
             case CubeType.Infinity:
-                // Recursion + Infinity: Recursion destroyed - Infinity is immutable, nothing paints it
+                // Recursion + Infinity: Recursion destroyed - Infinity is immutable
                 DebugLog("HandleRecursionCollision", $"Recursion+Infinity collision at ({position.x}, {position.y}) - Recursion destroyed (Infinity immutable)");
-                return new CollisionResult(true, true); // Collision handled, destroy player cube
+                return new CollisionResult(true, true);
 
             default:
                 return new CollisionResult(false);
@@ -788,25 +798,77 @@ public class CubeCollisionManager : MonoBehaviour, IManagerDebugInterface
     }
 
     /// <summary>
-    /// Unit + Recursion: Creates swap marker (1 charge, player selects direction)
+    /// Unit + Recursion: Damage/capture the Recursion cube, create swap marker only when destroyed
+    /// Recursion cubes require 2 hits (multi-hit system)
     /// </summary>
     private bool HandleUnitRecursionSwap(Vector2Int position)
     {
-        GridSegmentController segment = actionManager?.WaveManager?.CurrentSegmentController;
-        markerSystem.CreateSwapMarker(position, 1, segment);
-        DebugLog("HandleUnitRecursionSwap", $"Unit+Recursion collision - created swap marker at ({position.x}, {position.y})");
-        return true;
+        var cubesAtPosition = markerSystem.FindAllCubesAt(position);
+        
+        foreach (var cube in cubesAtPosition)
+        {
+            if (cube == null || cube.isDestroyed || cube.isPlayerCube) continue;
+            if (cube.type == CubeType.Recursion)
+            {
+                // Store HP before damage to detect if this hit destroys the cube
+                int hpBefore = cube.currentHitPoints;
+                
+                // ProcessCubeCapture applies damage
+                markerSystem.ProcessCubeCapture(cube, position, PlayerMarkerSystem.MarkerType.Unit, null, false);
+                
+                // Check if cube was destroyed (HP went to 0 or below)
+                // Note: cube.isDestroyed won't be true yet (Unity Destroy is deferred)
+                if (cube.currentHitPoints <= 0 || cube.isDestroyed)
+                {
+                    DebugLog("HandleUnitRecursionSwap", $"Recursion cube destroyed at ({position.x}, {position.y}) - creating swap marker");
+                    
+                    // Create swap marker when cube is destroyed
+                    GridSegmentController segment = actionManager?.WaveManager?.CurrentSegmentController;
+                    markerSystem.CreateSwapMarker(position, 1, segment);
+                }
+                else
+                {
+                    DebugLog("HandleUnitRecursionSwap", $"Recursion cube damaged at ({position.x}, {position.y}) - HP: {cube.currentHitPoints}/{cube.maxHitPoints} (was {hpBefore})");
+                }
+                break;
+            }
+        }
+        
+        return true; // Collision always handled
     }
 
     /// <summary>
-    /// Recursion + Unit: Creates swap marker (1 charge, player selects direction)
+    /// Recursion + Unit: Capture Unit cube and create swap marker
+    /// Unit cubes are single-hit, so swap marker is always created
     /// </summary>
     private bool HandleRecursionUnitSwap(Vector2Int position)
     {
-        GridSegmentController segment = actionManager?.WaveManager?.CurrentSegmentController;
-        markerSystem.CreateSwapMarker(position, 1, segment);
-        DebugLog("HandleRecursionUnitSwap", $"Recursion+Unit collision - created swap marker at ({position.x}, {position.y})");
-        return true;
+        var cubesAtPosition = markerSystem.FindAllCubesAt(position);
+        bool capturedCube = false;
+        
+        foreach (var cube in cubesAtPosition)
+        {
+            if (cube == null || cube.isDestroyed || cube.isPlayerCube) continue;
+            if (cube.type == CubeType.Unit)
+            {
+                if (markerSystem.ProcessCubeCapture(cube, position, PlayerMarkerSystem.MarkerType.Recursion, null, false))
+                {
+                    capturedCube = true;
+                    DebugLog("HandleRecursionUnitSwap", $"Captured Unit cube at ({position.x}, {position.y})");
+                    break;
+                }
+            }
+        }
+        
+        // Unit cubes are single-hit, so always create swap marker on capture
+        if (capturedCube)
+        {
+            GridSegmentController segment = actionManager?.WaveManager?.CurrentSegmentController;
+            markerSystem.CreateSwapMarker(position, 1, segment);
+            DebugLog("HandleRecursionUnitSwap", $"Recursion+Unit collision - created swap marker at ({position.x}, {position.y})");
+        }
+        
+        return true; // Collision always handled
     }
 
     /// <summary>
