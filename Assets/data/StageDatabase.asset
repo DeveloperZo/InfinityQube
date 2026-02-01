@@ -13,6 +13,7 @@ MonoBehaviour:
   m_Name: StageDatabase
   m_EditorClassIdentifier: 
   stages:
+  - {fileID: 11400000, guid: 864acb90229d2084ea92c008f7009857, type: 2}
   - {fileID: 11400000, guid: b1b2c3d4e5f6789012345678901234b0, type: 2}
   - {fileID: 11400000, guid: 135664d324eaba64191ca882f21f67a9, type: 2}
   - {fileID: 11400000, guid: 3c9b401723917c24bb17fa44ca55d756, type: 2}
@@ -20,7 +21,6 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 87dbe587abcf44145a4d772ef4f82285, type: 2}
   - {fileID: 11400000, guid: e316a98aa39f3894e865ca3433a2d3a8, type: 2}
   - {fileID: 11400000, guid: de84eaa00b5571440ac6daf6c48f61c0, type: 2}
-  - {fileID: 11400000, guid: 864acb90229d2084ea92c008f7009857, type: 2}
   _stageCount: 8
   _totalWaveCount: 25
   _validationErrors: []

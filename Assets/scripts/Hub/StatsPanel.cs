@@ -4,11 +4,11 @@ using TMPro;
 
 /// <summary>
 /// Wires up the Layer Lab Character prefab for player stats.
-/// Place the prefab in scene, attach this script, assign references in inspector.
+/// Place the prefab in scene, attach this script. Auto-finds close button.
 /// </summary>
 public class StatsPanel : MonoBehaviour
 {
-    [Header("UI References (assign in inspector)")]
+    [Header("UI References (auto-found if not assigned)")]
     [SerializeField] private Button closeButton;
     [SerializeField] private TextMeshProUGUI titleText;
     [SerializeField] private TextMeshProUGUI statsText;
@@ -16,8 +16,29 @@ public class StatsPanel : MonoBehaviour
     [Header("Content")]
     [SerializeField] private string title = "Observation Chronicle";
     
+    private void Awake()
+    {
+        FindCloseButton();
+    }
+    
+    private void FindCloseButton()
+    {
+        if (closeButton != null) return;
+        
+        foreach (var btn in GetComponentsInChildren<Button>(true))
+        {
+            if (btn.name.Contains("Back") || btn.name.Contains("Close") || btn.name.Contains("Exit"))
+            {
+                closeButton = btn;
+                Debug.Log($"[StatsPanel] Found close button: {btn.name}");
+                break;
+            }
+        }
+    }
+    
     private void OnEnable()
     {
+        FindCloseButton();
         closeButton?.onClick.AddListener(Close);
         Refresh();
     }
