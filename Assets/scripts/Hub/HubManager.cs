@@ -20,7 +20,8 @@ public class HubManager : MonoBehaviour
     
     [Header("Scene Configuration")]
     [SerializeField] private string gameplaySceneName = "Stage";
-    [SerializeField] private string hubSceneName = "Hub";
+    [SerializeField] private string hubSceneName = "Stage"; // Same scene, different stage
+    [SerializeField] private int hubStageIndex = 100; // Hub stage index in StageDB
     
     [Header("Hub Buildings")]
     [SerializeField] private List<HubBuilding> hubBuildings = new List<HubBuilding>();
@@ -164,11 +165,10 @@ public class HubManager : MonoBehaviour
     {
         DebugLog($"Starting stage {stageIndex}...");
         
-        // Store selected stage for StageManager to pick up
+        // Set the stage index and reload scene
         PlayerPrefs.SetInt("SelectedStage", stageIndex);
         PlayerPrefs.Save();
         
-        // Load gameplay scene
         SceneManager.LoadScene(gameplaySceneName);
     }
     
@@ -186,13 +186,17 @@ public class HubManager : MonoBehaviour
     }
     
     /// <summary>
-    /// Return to hub menu from gameplay (call after stage complete).
+    /// Return to hub stage from gameplay (call after stage complete).
     /// </summary>
     public static void ReturnToHub()
     {
-        // Get hub scene name from instance or use default
-        string hubScene = IsInitialized ? Instance.hubSceneName : "Hub";
-        SceneManager.LoadScene(hubScene);
+        Debug.Log("[HubManager] ReturnToHub called");
+        
+        // Set SelectedStage to hub stage index and reload scene
+        PlayerPrefs.SetInt("SelectedStage", 100);
+        PlayerPrefs.Save();
+        
+        SceneManager.LoadScene("Stage");
     }
     
     #endregion

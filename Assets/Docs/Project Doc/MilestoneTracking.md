@@ -103,7 +103,21 @@
 | Mechanics validation | 1 | Dec 19, 2025 | `3bc2bd0` | Playtesting complete (Stages 0-2) |
 | Bug fixes | 1 | Dec 19, 2025 | `3bc2bd0` | Stage progression, bounds validation, grid override |
 
-**Total Completed**: 126 points (normalized)
+### Milestone 1.12: Hub Implementation (4 pts) ✅
+*January 2026 (~1 week active work)*
+
+| System | Points | Completion Date | Commit | Notes |
+|--------|--------|-----------------|--------|-------|
+| Hub architecture (Stage 100) | 1 | Jan 31, 2026 | - | Consolidated into Stage scene |
+| Interactive cubes system | 1 | Jan 31, 2026 | - | HubStageSetup, HubInteractable |
+| Stage selection panel | 1 | Jan 31, 2026 | - | Layer Lab prefab, StageDB wiring |
+| Full gameplay loop | 1 | Jan 31, 2026 | - | Splash → Hub → Stage → Hub |
+
+**Architecture Decision**: Hub consolidated into Stage scene as Stage 100 instead of separate scene
+**Key Components**: HubStageSetup, HubInteractable, HubUIManager, StageSelectionPanel
+**Deferred**: Attunement/Stats panel functionality, visual polish (to Phase 2)
+
+**Total Completed**: 130 points (normalized)
 
 ---
 
@@ -267,9 +281,9 @@ As work is completed, compare estimated vs actual points:
 |--------|-------|
 | **Measured Velocity** | **22 points/month** |
 | Total Commits | 260+ |
-| Total Points Completed | 126 pts |
-| Remaining Points | ~171 pts |
-| Est. Time to Release | ~7.8 months @ current velocity |
+| Total Points Completed | 130 pts |
+| Remaining Points | ~176 pts |
+| Est. Time to Release | ~8 months @ current velocity |
 
 ---
 
@@ -323,7 +337,7 @@ As work is completed, compare estimated vs actual points:
 
 ---
 
-**Last Updated**: January 18, 2026
+**Last Updated**: January 31, 2026
 
 ### Documentation Notes
 - **Point Scale**: 1 pt ≈ 1 day, 5 pts ≈ 1 week, 22 pts/month measured velocity
@@ -331,5 +345,8 @@ As work is completed, compare estimated vs actual points:
 - **Methodology Version**: 4.0 - Day-Based Point Estimation
 
 ### Recent Changes
+- **Jan 31, 2026**: Milestone 1.12 (Hub Implementation) completed - full gameplay loop working
+- **Jan 31, 2026**: Hub consolidated into Stage scene as Stage 100 with interactive cubes
+- **Jan 31, 2026**: Stage selection panel wired to StageDB, transitions working
 - **Jan 18, 2026**: Stage 5 (Matrix Marker Introduction) implemented with 5 waves
 - **Jan 18, 2026**: Debug panel QoL improvements (QuickDebugPanel, ConsolePanel, enhanced SystemPanel)

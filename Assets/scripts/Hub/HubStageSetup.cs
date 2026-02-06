@@ -3,8 +3,8 @@ using System.Collections;
 
 /// <summary>
 /// Sets up the Hub stage at runtime - creates interactive cubes for menus.
-/// Attach to a persistent object in the Stage scene.
-/// Only activates when HubStage (stageType = Hub) is loaded.
+/// Subscribes to GameEvents.OnStageStart to setup/cleanup based on stage type.
+/// Waits for grid to be ready before placing cubes.
 /// </summary>
 public class HubStageSetup : MonoBehaviour
 {
@@ -34,84 +34,115 @@ public class HubStageSetup : MonoBehaviour
     
     #region Runtime State
     
-    private bool hasSetup = false;
     private GameObject hubCubesParent;
+    private Coroutine setupCoroutine;
     
     #endregion
     
     #region Unity Lifecycle
     
-    private void Start()
+    private void OnEnable()
     {
-        StartCoroutine(WaitAndSetup());
+        // Subscribe to stage events
+        GameEvents.OnStageStart += HandleStageStart;
+        DebugLog("Subscribed to GameEvents.OnStageStart");
     }
     
-    private IEnumerator WaitAndSetup()
+    private void OnDisable()
     {
-        DebugLog("WaitAndSetup started - waiting for StageManager...");
+        // Unsubscribe from stage events
+        GameEvents.OnStageStart -= HandleStageStart;
         
-        // Wait for StageManager to exist and have a loaded stage
-        StageManager stageManager = null;
-        float waitTime = 0f;
-        float maxWait = 5f;
-        
-        while (waitTime < maxWait)
+        // Stop any pending setup
+        if (setupCoroutine != null)
         {
-            stageManager = FindFirstObjectByType<StageManager>();
-            if (stageManager != null && stageManager.CurrentStage != null)
-            {
-                break;
-            }
-            yield return new WaitForSeconds(0.1f);
-            waitTime += 0.1f;
+            StopCoroutine(setupCoroutine);
+            setupCoroutine = null;
         }
         
-        if (stageManager == null)
+        DebugLog("Unsubscribed from GameEvents.OnStageStart");
+    }
+    
+    #endregion
+    
+    #region Event Handlers
+    
+    private void HandleStageStart(int stageIndex, StageData stageData)
+    {
+        DebugLog($"HandleStageStart: Stage {stageIndex} - {stageData?.stageName}, Type: {stageData?.stageType}");
+        
+        // Stop any pending setup
+        if (setupCoroutine != null)
         {
-            DebugLog("ERROR: StageManager not found after waiting!");
-            yield break;
+            StopCoroutine(setupCoroutine);
+            setupCoroutine = null;
         }
         
-        if (stageManager.CurrentStage == null)
+        if (stageData != null && stageData.stageType == Enumerations.StageType.Hub)
         {
-            DebugLog("ERROR: StageManager has no CurrentStage loaded!");
-            yield break;
-        }
-        
-        DebugLog($"StageManager found. CurrentStage: {stageManager.CurrentStage.stageName}, StageType: {stageManager.CurrentStage.stageType}, IsHubStage: {stageManager.IsHubStage}");
-        
-        // Check if this is a Hub stage
-        if (stageManager.IsHubStage)
-        {
-            SetupHubCubes();
+            // Hub stage - wait for grid then setup cubes
+            setupCoroutine = StartCoroutine(WaitForGridAndSetup());
         }
         else
         {
-            DebugLog("Not a Hub stage - skipping setup");
+            // Non-Hub stage - cleanup cubes immediately
+            CleanupHubCubes();
         }
+    }
+    
+    private IEnumerator WaitForGridAndSetup()
+    {
+        DebugLog("Waiting for grid to be fully generated...");
+        
+        // Wait for end of frame to let all OnStageStart handlers run
+        yield return new WaitForEndOfFrame();
+        
+        // Wait additional time for grid generation to complete
+        // Grid generation is triggered by WaveManager.HandleStageStart which runs after our handler
+        yield return new WaitForSeconds(0.5f);
+        
+        GridManager gridManager = GridManager.Instance;
+        if (gridManager == null)
+        {
+            Debug.LogError("[HubStageSetup] GridManager not found!");
+            yield break;
+        }
+        
+        // Verify tiles exist
+        if (gridManager.tiles == null || gridManager.GetTileAt(stageSelectPos.x, stageSelectPos.y) == null)
+        {
+            Debug.LogError("[HubStageSetup] Grid tiles not ready!");
+            yield break;
+        }
+        
+        DebugLog("Grid ready - creating cubes");
+        SetupHubCubes(gridManager);
+        setupCoroutine = null;
     }
     
     #endregion
     
     #region Setup
     
-    private void SetupHubCubes()
+    private void CleanupHubCubes()
     {
-        if (hasSetup) return;
-        hasSetup = true;
+        if (hubCubesParent != null)
+        {
+            DebugLog("Cleaning up Hub cubes");
+            Destroy(hubCubesParent);
+            hubCubesParent = null;
+        }
+    }
+    
+    private void SetupHubCubes(GridManager gridManager)
+    {
+        // Cleanup first to avoid duplicates
+        CleanupHubCubes();
         
         DebugLog("Setting up Hub stage interactive cubes...");
         
         // Create parent for organization
         hubCubesParent = new GameObject("HubInteractables");
-        
-        // Get GridManager for world position conversion
-        GridManager gridManager = FindFirstObjectByType<GridManager>();
-        if (gridManager == null)
-        {
-            Debug.LogError("[HubStageSetup] GridManager not found!");
-            return;
-        }
         
         // Create interactive cubes
         CreateInteractableCube("StageSelect", HubInteractionType.StageSelect, stageSelectPos, stageSelectColor, "Celestial Atlas", gridManager);
@@ -124,8 +155,19 @@ public class HubStageSetup : MonoBehaviour
     
     private void CreateInteractableCube(string name, HubInteractionType type, Vector2Int gridPos, Color color, string displayName, GridManager gridManager)
     {
-        // Calculate world position from grid position
-        Vector3 worldPos = gridManager.GridToWorldPosition(gridPos.x, gridPos.y, cubeYOffset);
+        // Get world position from the actual tile object (more reliable than GridToWorldPosition)
+        Vector3 worldPos;
+        Tile tile = gridManager.GetTileAt(gridPos.x, gridPos.y);
+        if (tile != null)
+        {
+            worldPos = tile.transform.position + new Vector3(0, cubeYOffset, 0);
+        }
+        else
+        {
+            // Fallback to calculation if tile not found
+            worldPos = gridManager.GridToWorldPosition(gridPos.x, gridPos.y, cubeYOffset);
+            Debug.LogWarning($"[HubStageSetup] Tile at ({gridPos.x}, {gridPos.y}) not found, using calculated position");
+        }
         
         // Create cube GameObject
         GameObject cube;

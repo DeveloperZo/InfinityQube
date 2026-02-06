@@ -18,7 +18,7 @@ public class StageManager : MonoBehaviour, IManagerDebugInterface
 
     [Header("Stage Database")]
     [SerializeField] private StageDB stageDatabase;
-    [SerializeField] private int startingStageIndex = 0; // Tutorial stage
+    [SerializeField] public int startingStageIndex = 0; // Tutorial stage
 
     [Header("Stage Flow")]
     [SerializeField] private bool autoAdvanceStages = true;

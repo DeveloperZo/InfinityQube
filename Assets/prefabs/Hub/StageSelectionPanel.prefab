@@ -4500,7 +4500,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::StageSelectionPanel
   buttonContainer: {fileID: 0}
   closeButton: {fileID: 0}
-  stageDatabase: {fileID: 0}
+  stageDatabase: {fileID: 11400000, guid: 9e6fa5035be75db46be4cb9e31f45c17, type: 2}
 --- !u!1 &7383461966458599858
 GameObject:
   m_ObjectHideFlags: 0

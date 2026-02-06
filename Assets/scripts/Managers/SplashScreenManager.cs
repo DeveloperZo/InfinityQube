@@ -5,7 +5,8 @@ using UnityEngine.SceneManagement;
 public class SplashScreenManager : MonoBehaviour
 {
     [Header("Scene Configuration")]
-    [SerializeField] private string nextSceneName = "Sandbox";
+    [SerializeField] private string nextSceneName = "Stage";
+    [SerializeField] private int hubStageIndex = 100; // Hub stage index in StageDB
 
     [Header("Playback Options")]
     #pragma warning disable CS0414 // Reserved for future skip delay implementation
@@ -129,11 +130,10 @@ public class SplashScreenManager : MonoBehaviour
     private void LoadNextScene()
     {
         if (showDebugLogs)
-            Debug.Log($"SplashScreenManager: Loading scene '{nextSceneName}'");
+            Debug.Log($"SplashScreenManager: Loading scene '{nextSceneName}' with Hub stage {hubStageIndex}");
 
-        // Set flag to start tutorial when Sandbox scene loads
-        // This allows tutorial to start even if disableAutoStart is true
-        PlayerPrefs.SetInt("StartTutorial", 1);
+        // Set SelectedStage to Hub stage index so StageManager loads Hub
+        PlayerPrefs.SetInt("SelectedStage", hubStageIndex);
         PlayerPrefs.Save();
 
         // Use Single mode to ensure current scene is fully unloaded before loading new scene

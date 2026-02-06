@@ -26,7 +26,8 @@ public class StageTransitionUI : MonoBehaviour
     [SerializeField] private float fadeOutDuration = 0.5f;
     
     [Header("Hub Integration")]
-    [SerializeField] private string hubSceneName = "Hub";
+    [SerializeField] private string hubSceneName = "Stage";
+    [SerializeField] private int hubStageIndex = 100; // Hub stage index in StageDB
     [SerializeField] private bool autoReturnToHubOnSuccess = false;
     [SerializeField] private float autoReturnDelay = 3f;
 
@@ -327,7 +328,7 @@ public class StageTransitionUI : MonoBehaviour
     private void OnReturnToHubClicked()
     {
         DebugLog("OnReturnToHubClicked", "Returning to hub...");
-        SceneManager.LoadScene(hubSceneName);
+        ReturnToHub();
     }
     
     /// <summary>
@@ -341,11 +342,16 @@ public class StageTransitionUI : MonoBehaviour
     }
     
     /// <summary>
-    /// Returns to the hub scene. Can be called externally.
+    /// Returns to the hub stage. Sets SelectedStage to hub index and reloads scene.
     /// </summary>
     public void ReturnToHub()
     {
-        DebugLog("ReturnToHub", $"Loading hub scene: {hubSceneName}");
+        DebugLog("ReturnToHub", $"Loading hub stage {hubStageIndex}");
+        
+        // Set SelectedStage and reload scene
+        PlayerPrefs.SetInt("SelectedStage", hubStageIndex);
+        PlayerPrefs.Save();
+        
         SceneManager.LoadScene(hubSceneName);
     }
     #endregion

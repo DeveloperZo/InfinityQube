@@ -1,6 +1,8 @@
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using System.Collections.Generic;
+using System.Linq;
 
 /// <summary>
 /// Wires up the Layer Lab StageSelect prefab with game data.
@@ -16,6 +18,7 @@ public class StageSelectionPanel : MonoBehaviour
     [SerializeField] private StageDB stageDatabase;
     
     private Button[] stageButtons;
+    private List<int> stageIds; // Actual stage IDs from database
     private bool initialized;
     
     private void Awake()
@@ -88,19 +91,27 @@ public class StageSelectionPanel : MonoBehaviour
             return;
         }
         
+        // Get actual stage IDs from database (excluding Hub stage 100)
+        stageIds = stageDatabase?.GetAllStageIds()
+            .Where(id => id < 100) // Exclude Hub and special stages
+            .OrderBy(id => id)
+            .ToList() ?? new List<int>();
+        
         int unlocked = SaveManager.IsInitialized ? SaveManager.Instance.Progression.highestStageUnlocked : 0;
-        int stageCount = stageDatabase?.StageCount ?? stageButtons.Length;
         
         for (int i = 0; i < stageButtons.Length; i++)
         {
             var btn = stageButtons[i];
             if (btn == null) continue;
             
-            bool hasStage = i < stageCount;
-            bool isUnlocked = hasStage && i <= unlocked;
+            bool hasStage = i < stageIds.Count;
+            int stageId = hasStage ? stageIds[i] : -1;
+            bool isUnlocked = hasStage && stageId <= unlocked;
             
-            // Get stage name
-            string stageName = $"{i + 1}";
+            // Get stage name from database
+            string stageName = hasStage 
+                ? $"{stageId}"
+                : "---";
             
             // Update button text
             var tmp = btn.GetComponentInChildren<TextMeshProUGUI>();
@@ -116,28 +127,35 @@ public class StageSelectionPanel : MonoBehaviour
             btn.interactable = isUnlocked;
             btn.gameObject.SetActive(hasStage);
             
-            // Wire up click
+            // Wire up click with actual stage ID
             btn.onClick.RemoveAllListeners();
             if (isUnlocked)
             {
-                int idx = i;
-                btn.onClick.AddListener(() => SelectStage(idx));
+                int id = stageId; // Capture actual stage ID
+                btn.onClick.AddListener(() => SelectStage(id));
             }
         }
         
-        Debug.Log($"[StageSelectionPanel] Wired {stageButtons.Length} buttons, {unlocked + 1} unlocked");
+        Debug.Log($"[StageSelectionPanel] Wired {stageButtons.Length} buttons for {stageIds.Count} stages, unlocked up to stage {unlocked}");
     }
     
-    private void SelectStage(int index)
+    private void SelectStage(int stageId)
     {
-        Debug.Log($"[StageSelectionPanel] Selected stage {index}");
+        string stageName = stageDatabase?.GetStageReference(stageId)?.stageName ?? $"Stage {stageId}";
+        Debug.Log($"[StageSelectionPanel] Selected stage {stageId}: {stageName}");
         
-        if (HubManager.IsInitialized)
-            HubManager.Instance.StartStage(index);
+        // Close panel first
+        Close();
+        
+        // Use StageManager to load the stage - same as any other stage transition
+        var stageManager = FindFirstObjectByType<StageManager>();
+        if (stageManager != null)
+        {
+            stageManager.LoadStage(stageId);
+        }
         else
         {
-            PlayerPrefs.SetInt("SelectedStage", index);
-            UnityEngine.SceneManagement.SceneManager.LoadScene("Stage");
+            Debug.LogError("[StageSelectionPanel] StageManager not found!");
         }
     }
     

@@ -65,8 +65,7 @@ public class WaveData : ScriptableObject
     [PropertyOrder(-1)]
     [OnInspectorGUI("DrawGridVisualization", append: false)]
     [HideLabel]
-    [ShowIf("@false")] // Hide field, only use OnInspectorGUI
-    private int _gridVisualizationDummy; // Dummy field for OnInspectorGUI
+    private int _gridVisualizationDummy; // Dummy: OnInspectorGUI draws grid (do not use ShowIf false or HideInInspector or callback is skipped)
     
     // Editor-only state for grid visualization
     #if UNITY_EDITOR
@@ -463,8 +462,7 @@ public class WaveData : ScriptableObject
     [PropertyOrder(-10)]
     [OnInspectorGUI("DrawSequenceVisualizer", append: false)]
     [HideLabel]
-    [ShowIf("@false")] // Hide the field itself, only draw via OnInspectorGUI
-    private int _sequenceVisualizerDummy;
+    private int _sequenceVisualizerDummy; // Dummy: OnInspectorGUI draws sequence editor (do not use ShowIf false or callback is skipped)
     
     #if UNITY_EDITOR
     [System.NonSerialized] private int _selectedSequenceIndex = -1;

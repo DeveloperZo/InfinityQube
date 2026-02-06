@@ -1,661 +1,526 @@
 # Development Roadmap
 
-> **Document Purpose:** This is the definitive, actionable guide for what to work on next, in priority order. For a historical record of completed milestones, see [MilestoneTracking.md](MilestoneTracking.md).
+Document Purpose:
+This is the definitive, actionable guide for what to work on next, in priority order.
+For a historical record of completed milestones, see `MilestoneTracking.md`.
 
-## Overview
+Overview:
 This roadmap outlines the development path from current production-ready state to a polished, commercial release with validated core mechanics across all complexity levels.
 
-**Note**: Timeline dates are applied only upon completion. Forward-looking dates are not projected.
+Note:
+Timeline dates are applied only upon completion. Forward-looking dates are not projected.
+
+---
+
+## Points Policy (Option C: Est + Act, strictly separated)
+
+### EstPts (Estimate Points)
+- Planning estimate of active development time for the milestone.
+- Used for sequencing, prioritization, and estimating remaining work.
+
+### ActPts (Actual Points)
+- Actual active development time recorded after completion.
+- Used for velocity measurement and historical analysis.
+
+Rules:
+- **Phase/project totals must be reported separately** for EstPts and ActPts.
+- **Do not mix EstPts and ActPts in a single total** (e.g., “Completed + Remaining” totals must specify whether they are Est-only or Act-only).
+- If EstPts was not tracked historically for a completed milestone, set EstPts = ActPts by default.
+
+Point scale:
+- 1 pt ≈ 1 day of active development
+- 5 pts ≈ 1 week of active development
+- Historical velocity (ActPts): ~22 pts/month (active periods)
+
+Measurement rule (ActPts):
+- A “week gap” between commits counts as same-day continuation for the next commit (active-time accounting).
 
 ---
 
 ## Current Status
-
-### 📍 **Current Phase**: Phase 1 - Core Innovation & Content
-### 📍 **Current Milestone**: 1.8 - Recursion Cube/Marker (Stages 6-8) ⬜ Pending
-
-### 🔴 **TOP PRIORITIES**
-| Priority | Item | Status | Points |
-|----------|------|--------|--------|
-| ✅ Done | Matrix Cube/Markers (Milestone 1.7) | Complete | 6 pts |
-| 🔴 Critical | Recursion Cube/Marker (Milestone 1.8) | Ready to start | 6 pts |
-| 🟡 Medium | Infinity Marker (Milestone 1.9) | After 1.8 | 5 pts |
-| 🟡 Medium | Mastery (Milestone 1.10) | After 1.9 | 4 pts |
-| 🟡 Medium | RPG Implementation (Milestone 1.11) | After 1.10 | 5 pts |
-| 🟡 Medium | Hub Implementation (Milestone 1.12) | After 1.11 | 4 pts |
-| 🟡 Medium | File Size Refactoring | 12 files over limit | 15 pts |
-| ✅ Done | Advanced Grid System (Milestone 1.13) | Complete | 5 pts |
-| ✅ Done | Scenario Testing Framework (Milestone 1.16) | Complete | 3 pts |
-| 🟢 Low | Stage Content Refinement (Milestone 1.14) | After 1.13 | 5 pts |
-| 🟢 Low | Visual Effects & Juice Pass (Milestone 1.15) | After 1.14 | 5 pts |
+Current Phase: Phase 1 — Core Innovation & Content  
+Current Milestone: 1.8 — Recursion Cube/Marker (Stages 6–8) ⬜ Pending
 
 ---
 
-## Point Estimation Scale
+## Top Priorities (Execution Order)
 
-> **1 point ≈ 1 day of active development**  
-> **5 points ≈ 1 week of active development**  
-> **22 points ≈ 1 month of active development** (measured velocity)
-
-Points reflect actual development time, not complexity. A "week gap" between commits counts as same-day start for the next commit.
-
----
-
-## Phase & Milestone Summary
-
-| Phase | Milestone | Status | Points |
-|-------|-----------|--------|--------|
-| **Phase 1** | 1.0 Core Game Development | ✅ Complete | 65 pts |
-| | 1.1 Refine Markers | ✅ Complete | 14 pts |
-| | 1.2 RPG/Progression | ✅ Complete | 12 pts |
-| | 1.3 Database Enhancement | ✅ Complete | 6 pts |
-| | **1.4 Stage Content Creation** | ✅ **Complete** | 20 pts |
-| | **1.5 Demo Stage Content** | ✅ **Complete** | 5 pts |
-| | 1.6 Unit Markers & Infinite Cube (Stages 1-2) | ✅ Complete | 4 pts |
-| | **1.7 Matrix Cube/Markers (Stages 3-5)** | ✅ **Complete** | 6 pts |
-| | 1.8 Recursion Cube/Marker (Stages 6-8) | ⬜ Pending | 6 pts |
-| | 1.9 Infinity Marker (Stages 9-10) | ⬜ Pending | 5 pts |
-| | 1.10 Mastery (Stages 11-12) | ⬜ Pending | 4 pts |
-| | 1.11 RPG Implementation (Attunements & Progression) | ⬜ Pending | 5 pts |
-| | 1.12 Hub Implementation | ⬜ Pending | 4 pts |
-| | 1.13 Advanced Grid System (Multi-Segment Stages) | ✅ Complete | 5 pts |
-| | 1.14 Stage Content Refinement & Difficulty Curve | ⬜ Pending | 5 pts |
-| | 1.15 Visual Effects & Juice Pass | ⬜ Pending | 5 pts |
-| | **1.16 Scenario Testing Framework** | ✅ **Complete** | 3 pts |
-| **Phase 2** | 2.1-2.10 Content & Polish | ⬜ Pending | 68 pts |
-| **Phase 3** | 3.1-3.8 Polish & Commercial Prep | ⬜ Pending | 55 pts |
-| **Phase 4** | 4.1-4.9 Steam & Release | ⬜ Pending | 50 pts |
+| Priority | Item | Status | EstPts | ActPts | Notes |
+|---|---|---|---:|---:|---|
+| DONE | Matrix Cube/Markers (Milestone 1.7) | ✅ Complete | 6 | 6 | |
+| DONE | Hub Implementation (Milestone 1.12) | ✅ Complete | 4 | 4 | |
+| CRITICAL | Recursion Cube/Marker (Milestone 1.8) | ⬜ Ready to start | 6 | — | |
+| MEDIUM | Market Analysis Implementation (Milestone 1.17) | ⬜ After 1.8 | 4 | — | Based on `MarketAnalysis.md` |
+| MEDIUM | Infinity Marker (Milestone 1.9) | ⬜ After 1.17 | 5 | — | |
+| MEDIUM | Mastery (Milestone 1.10) | ⬜ After 1.9 | 4 | — | |
+| MEDIUM | RPG Implementation (Milestone 1.11) | ⬜ After 1.10 | 5 | — | Added context moved to `Milestone_1.11_RPG_Context.md` |
+| MEDIUM | File Size Refactoring (Milestone 1.TD) | ⬜ Parallel / Phase 1 | 15 | — | 12 files over limit; full resolution details in `TechnicalDebt.md` |
+| DONE | Advanced Grid System (Milestone 1.13) | ✅ Complete | 5 | 5 | |
+| DONE | Scenario Testing Framework (Milestone 1.16) | ✅ Complete | 3 | 3 | |
+| LOW | Stage Content Refinement (Milestone 1.14) | ⬜ After 1.13 | 5 | — | |
+| LOW | Visual Effects & Juice Pass (Milestone 1.15) | ⬜ After 1.14 | 5 | — | |
 
 ---
 
-## Phase 1: Core Innovation & Content (Current Phase)
-**Goal**: Implement core gameplay systems and complete foundational content  
-**Estimated Total**: ~160 pts (~7-8 months at 22 pts/month)
+## Phase & Milestone Summary (Est vs Act)
 
-### Milestone 1.0: Core Game Development ✅ COMPLETE
-- **Target**: Establish all foundational game systems
-- **Points**: 65 (measured: ~3 months active work)
-- **Status**: ✅ **COMPLETE** (April-July 2025)
-- **Systems Delivered**:
-  - Four-tier marker system (Unit/Recursion/Matrix/Infinity)
-  - Unified input system (mode keys 1-4, F for placement)
-  - Basic face painting mechanics
-  - Corruption/enhancement tile system
-  - Recursion cube multi-hit mechanics
-  - Comprehensive debug infrastructure
-  - Statistics and analytics system
-  - Integration testing framework
-  - Wave management system with editor tools
-  - Player action system with full input handling
-  - Wave completion messages with progress tracking
-  - Stage transition system with demo flow
-  - Audio system (7+ subsystem files):
-    - AudioManager.cs, AudioSourcePool.cs, AudioPlaybackSystem.cs
-    - AudioVolumeController.cs, CubeAudioSystem.cs, CubeAudioConfiguration.cs
-  - Production UI system:
-    - PlayerActionUI.cs, StageTransitionUI.cs, WaveProgressUI.cs
-    - PlayerUI.cs, StageInfoUI.cs
+| Phase | Milestone | Status | EstPts | ActPts |
+|---|---|---|---:|---:|
+| Phase 1 | 1.0 Core Game Development | ✅ Complete | 65 | 65 |
+|  | 1.1 Refine Markers | ✅ Complete | 14 | 14 |
+|  | 1.2 RPG/Progression | ✅ Complete | 12 | 12 |
+|  | 1.3 Database Enhancement | ✅ Complete | 6 | 6 |
+|  | 1.4 Stage Content Creation | ✅ Complete | 20 | 20 |
+|  | 1.5 Demo Stage Content | ✅ Complete | 5 | 5 |
+|  | 1.6 Unit Markers & Infinite Cube (Stages 1–2) | ✅ Complete | 4 | 4 |
+|  | 1.7 Matrix Cube/Markers (Stages 3–5) | ✅ Complete | 6 | 6 |
+|  | 1.8 Recursion Cube/Marker (Stages 6–8) | ⬜ Pending | 6 | — |
+|  | 1.17 Market Analysis Implementation | ⬜ Pending | 4 | — |
+|  | 1.9 Infinity Marker (Stages 9–10) | ⬜ Pending | 5 | — |
+|  | 1.10 Mastery (Stages 11–12) | ⬜ Pending | 4 | — |
+|  | 1.11 RPG Implementation (UI + Integration) | ⬜ Pending | 5 | — |
+|  | 1.12 Hub Implementation | ✅ Complete | 4 | 4 |
+|  | 1.13 Advanced Grid System (Multi-Segment Stages) | ✅ Complete | 5 | 5 |
+|  | 1.14 Stage Content Refinement & Difficulty Curve | ⬜ Pending | 5 | — |
+|  | 1.15 Visual Effects & Juice Pass | ⬜ Pending | 5 | — |
+|  | 1.16 Scenario Testing Framework | ✅ Complete | 3 | 3 |
+|  | 1.TD File Size Refactoring | ⬜ Pending | 15 | — |
+| Phase 2 | 2.1–2.8 Content & Polish | ⬜ Pending | 48 | — |
+| Phase 3 | 3.1–3.8 Polish & Commercial Prep | ⬜ Pending | 55 | — |
+| Phase 4 | 4.1–4.9 Steam & Release | ⬜ Pending | 50 | — |
 
 ---
 
-### Milestone 1.1: Refine Markers Implementation ✅ COMPLETE
-- **Target**: Review and refine marker system (placement, cube spawn, cube collision/interactions) + Core gameplay systems
-- **Points**: 14 (~2-3 weeks active development)
-- **Status**: ✅ **COMPLETE** - All systems implemented and verified
-- **Dependencies**: Milestone 1.0 ✅
-- **Completed**: December 2024
+## Effort Summary (Est totals vs Act totals)
 
-#### Completed Tasks:
-- [x] Define marker placement and spawning for all markers
-- [x] Design/Define cube collisions for all 16 combinations (including resonance)
-- [x] Unified input system (mode keys 1-4, placement key F)
-- [x] CubeCollisionManager created with full collision matrix implementation
-- [x] **Collision matrix code** - All 16 cube type combinations implemented
-- [x] **Resonance System** - Infinity+Infinity makes all Infinity cubes phaseable (2 moves)
-- [x] **Enhanced Face Painting** - Front face painting with 3-move telegraph system
-- [x] **Penalty/Reward System** - Rewards and penalties based on cube escapes and achievements
-- [x] **Marker Economy** - Per-stage/wave grants with inventory caps (toggleable)
-- [x] Visual feedback for phaseable cubes (material swapping)
-- [x] Grid telegraph shows painted face trigger location 1-3 moves ahead
-- [x] Charge system coherent with economy toggle for testing
+| Scope | EstPts Total | ActPts Completed |
+|---|---:|---:|
+| Phase 1 | 193 | 144 |
+| Phase 2 | 48 | — |
+| Phase 3 | 55 | — |
+| Phase 4 | 50 | — |
+| **TOTAL** | **346** | **144** |
 
-#### Implementation Details:
-- **Face Painting**: Paints Front face → triggers after 3 moves (learnable rhythm)
-- **Telegraph**: Progressive visual (dim→bright, small→large, slow→fast pulse)
-- **Materials**: CosmicBlack (opaque), CosmicBlack_Transparent (player), CosmicBlack_Phaseable
-- **Economy**: Stage grants (set inventory) + Wave grants (add to inventory) + Caps
+Derived (Est-only):
+- Remaining EstPts: 346 - 144 = 202
 
-#### Playtesting Notes:
+Derived (time heuristic, not a projection):
+- If historical velocity holds (~22 ActPts/month), Remaining EstPts (202) implies ~9 active months of work.
+
+---
+
+# Phase 1: Core Innovation & Content (Current Phase)
+
+Goal: Implement core gameplay systems and complete foundational content.  
+Phase 1 EstPts Total: 193  
+Phase 1 ActPts Completed (so far): 144
+
+---
+
+## Milestone 1.0: Core Game Development ✅ COMPLETE
+Target: Establish all foundational game systems  
+Points: Est 65 | Act 65  
+Status: ✅ COMPLETE  
+Completed: April–July 2025
+
+Systems Delivered:
+- Four-tier marker system (Unit/Recursion/Matrix/Infinity)
+- Unified input system (mode keys 1–4, F for placement)
+- Basic face painting mechanics
+- Corruption/enhancement tile system
+- Recursion cube multi-hit mechanics
+- Comprehensive debug infrastructure
+- Statistics and analytics system
+- Integration testing framework
+- Wave management system with editor tools
+- Player action system with full input handling
+- Wave completion messages with progress tracking
+- Stage transition system with demo flow
+- Audio system (7+ subsystem files):
+  - AudioManager.cs, AudioSourcePool.cs, AudioPlaybackSystem.cs
+  - AudioVolumeController.cs, CubeAudioSystem.cs, CubeAudioConfiguration.cs
+- Production UI system:
+  - PlayerActionUI.cs, StageTransitionUI.cs, WaveProgressUI.cs
+  - PlayerUI.cs, StageInfoUI.cs
+
+---
+
+## Milestone 1.1: Refine Markers Implementation ✅ COMPLETE
+Target: Review and refine marker system (placement, cube spawn, collisions/interactions) + core gameplay systems  
+Points: Est 14 | Act 14  
+Status: ✅ COMPLETE  
+Dependencies: Milestone 1.0 ✅  
+Completed: December 2024
+
+Completed Tasks:
+[x] Define marker placement and spawning for all markers  
+[x] Design/Define cube collisions for all 16 combinations (including resonance)  
+[x] Unified input system (mode keys 1–4, placement key F)  
+[x] CubeCollisionManager created with full collision matrix implementation  
+[x] Collision matrix code - All 16 cube type combinations implemented  
+[x] Resonance System - Infinity+Infinity makes all Infinity cubes phaseable (2 moves)  
+[x] Enhanced Face Painting - Front face painting with 3-move telegraph system  
+[x] Penalty/Reward System - Rewards and penalties based on cube escapes and achievements  
+[x] Marker Economy - Per-stage/wave grants with inventory caps (toggleable)  
+[x] Visual feedback for phaseable cubes (material swapping)  
+[x] Grid telegraph shows painted face trigger location 1–3 moves ahead  
+[x] Charge system coherent with economy toggle for testing
+
+Implementation Details:
+- Face Painting: Paints front face → triggers after 3 moves (learnable rhythm)
+- Telegraph: progressive visual (dim→bright, small→large, slow→fast pulse)
+- Materials: CosmicBlack (opaque), CosmicBlack_Transparent (player), CosmicBlack_Phaseable
+- Economy: stage grants (set inventory) + wave grants (add to inventory) + caps
+
+Playtesting Notes:
 - Resonance requires sacrificing player Infinity cube (meaningful cost)
 - Face painting telegraph gives clear 3-turn warning
 - Marker economy forces strategic conservation across waves
 
 ---
 
-### Milestone 1.2: RPG/Progression ✅ COMPLETE
+## Milestone 1.2: RPG/Progression ✅ COMPLETE
+Target: Establish framework to deliver progression and RPG vibes for player  
+Points: Est 12 | Act 12  
+Status: ✅ COMPLETE  
+Completed: December 2024  
+Planning Document: Milestone1.2_RPGProgressionPlan.md
 
-**Target:** Establish framework to deliver progression and RPG vibes for player
-
-**Points:** 12 (exceeded original 10-point ideation scope with full implementation)
-
-**Status:** ✅ **COMPLETE** - December 2024
-
-**Planning Document:** [Milestone1.2_RPGProgressionPlan.md](CurrentFocus/Milestone1.2_RPGProgressionPlan.md)
-
-#### Completed Deliverables:
-- [x] **SaveManager** - Full persistence system (JSON, Steam Cloud ready)
-- [x] **PlayerProgression** - Data structure for currency, attunements, stage progress
-- [x] **AttunementManager** - 9 attunement definitions with query API
-- [x] **All 9 attunements integrated** into CubeCollisionManager
-- [x] **Economy wired** to GameEvents (100 shards/wave, first playthrough only)
-- [x] **Hub scene foundation** - 3 clickable buildings, UI panel system
-- [x] **Debug panel** for attunement testing (F12 → Player → Attunements)
-
-#### Implementation Beyond Original Scope:
-Original milestone was ideation/design docs. Delivered full working implementation:
-- Concentrated Expansion: Matrix markers trigger twice
-- Expanded Concentration: Recursion creates 2-tile vertical pattern
-- Phaseable attunements: Same-type collisions paint wave cube faces
-- Untethered: Infinity vs Unit destroys and continues (no wave join)
+Completed Deliverables:
+[x] SaveManager - Full persistence system (JSON, Steam Cloud ready)  
+[x] PlayerProgression - Data structure for currency, attunements, stage progress  
+[x] AttunementManager - 9 attunement definitions with query API  
+[x] All 9 attunements integrated into CubeCollisionManager  
+[x] Economy wired to GameEvents (100 shards/wave, first playthrough only)  
+[x] Hub scene foundation - 3 clickable buildings, UI panel system  
+[x] Debug panel for attunement testing (F12 → Player → Attunements)
 
 ---
 
-### Hub: Infinity's Axiom
+## Milestone 1.3: Database & Configuration Enhancement ✅ COMPLETE
+Target: Enhance core databases for easier content creation and balance tuning  
+Points: Est 6 | Act 6  
+Status: ✅ COMPLETE  
+Dependencies: Milestone 1.2 ✅  
+Completed: December 2024  
+Planning Document: Milestone1.3_DatabaseEnhancement.md
 
-| Area | Function | Unlock |
-|------|----------|--------|
-| Celestial Atlas | Stage selection | Always |
-| Resonance Alignment Chamber | Marker attunements | Stage 3 |
-| Observation Chronicle | Stats/history | Stage 3 |
+Completed Deliverables:
+StageDB + WaveData  
+[x] Enhanced StageData with marker grants, attunement locking, validation  
+[x] Enhanced WaveData with Infinity markers, grants system, validation  
+[x] Enhanced CubeData with pre-painted faces, spawn delay  
+[x] Enhanced StageDB with validation, query methods
 
----
+AttunementDatabase  
+[x] Created AttunementData ScriptableObject  
+[x] Created AttunementDatabase ScriptableObject  
+[x] Migrated 9 attunement definitions  
+[x] Updated AttunementManager to load from DB (with fallback)
 
-### Marker Attunements
-
-One attunement per marker type. Modifies cube properties, not collision matrix.
-
-#### Matrix Attunements (Expansion Theme)
-
-| Attunement | Effect |
-|------------|--------|
-| Expanded Expansion | +1 area dimensions (2x2 → 3x3) |
-| Concentrated Expansion | +1 charge per tile |
-| Phaseable Expansion | Matrix vs Matrix also paints wave cube face |
-
-#### Recursion Attunements (Concentration Theme)
-
-| Attunement | Effect |
-|------------|--------|
-| Concentrated Concentration | +2 charges (3 → 5) |
-| Expanded Concentration | +1 tile to pattern |
-| Phaseable Concentration | Recursion vs Recursion also paints wave cube face |
-
-#### Infinity Attunements (Phaseability Theme)
-
-| Attunement | Effect |
-|------------|--------|
-| Potent Matrix Paint | +1 charge on Matrix painted faces |
-| Potent Recursion Paint | +1 charge on Recursion painted faces |
-| Untethered | vs Unit = destroy + continue (no wave join) |
+PlayerProgression  
+[x] Added lifetime statistics (cubes captured, play time, best times)
 
 ---
 
-### Economy
+## Milestone 1.4: Stage Content Creation ✅ COMPLETE
+Target: 12–13 stages defined with waves, 4–5 complete stages with progression  
+Points: Est 20 | Act 20  
+Status: ✅ COMPLETE  
+Dependencies: Milestone 1.3 ✅  
+Completed: December 2024
 
-| Aspect | Value |
-|--------|-------|
-| Currency | Axiom Shards |
-| Earn | 100 shards flat per wave |
-| Spend | Attunement unlocks (100-250 each) |
-| Replay | No currency (anti-farming) |
-
----
-
-### Key Design Decisions
-
-| Decision | Rationale |
-|----------|-----------|
-| Attunements modify cube, not collision matrix | Players learn collision matrix once, attunements layer on top |
-| Phaseable attunements enable same-type face painting | High-skill reward, extends existing mechanic |
-| Locked per stage | Forces commitment, meaningful choice |
-| Passives removed | Attunements provide sufficient expression |
+Tasks:
+[x] Design 13 stages (Stage 0 tutorial + Stages 1–12 core)  
+[x] Establish stage numbering convention  
+[x] Update StageManager with IsTutorialStage property  
+[x] Create tutorial/demo stage with highlight sequence system  
+[x] Ensure debuggers allow easy tuning of stages/waves  
+[x] Remaining content tasks moved to Milestone 1.6
 
 ---
 
-### Tasks
+## Milestone 1.5: Demo Stage Content ✅ COMPLETE
+Target: Foundational systems + one complete demo stage  
+Points: Est 5 | Act 5  
+Status: ✅ COMPLETE  
+Completed: December 16, 2025
 
-- [x] Hub architecture design (3 areas, functions, unlock flow)
-- [x] Attunement system design (9 attunements with exact values)
-- [x] Economy design (earn rates, costs, pacing)
-- [x] Technical prep (data structures, integration points)
-
----
-
-### Milestone 1.3: Database & Configuration Enhancement ✅ COMPLETE
-- **Target**: Enhance core databases for easier content creation and balance tuning
-- **Points**: 6 (~1 week active development)
-- **Status**: ✅ **COMPLETE** - December 2024
-- **Dependencies**: Milestone 1.2 ✅
-- **Planning Document**: [Milestone1.3_DatabaseEnhancement.md](CurrentFocus/Milestone1.3_DatabaseEnhancement.md)
-
-#### Completed Deliverables
-
-**StageDB + WaveData**
-- [x] Enhanced StageData with marker grants, attunement locking, validation
-- [x] Enhanced WaveData with Infinity markers, grants system, validation  
-- [x] Enhanced CubeData with pre-painted faces, spawn delay
-- [x] Enhanced StageDB with validation, query methods
-
-**AttunementDatabase**
-- [x] Created AttunementData ScriptableObject
-- [x] Created AttunementDatabase ScriptableObject
-- [x] Migrated 9 attunement definitions
-- [x] Updated AttunementManager to load from DB (with fallback)
-
-**PlayerProgression**
-- [x] Added lifetime statistics (cubes captured, play time, best times)
+Tasks:
+[x] Refine tutorial/demo stage and waves  
+[x] Messaging to convey mechanics (highlight sequence system)  
+[x] Wave completion messages  
+[x] Stage success transition  
+[x] Stage/Wave sequence framework  
+[x] Complete configuration of waves and stage (3 waves)  
+[x] Data collection on play session  
+[x] Complete Splash → Stage loop
 
 ---
 
-### Milestone 1.4: Stage Content Creation ✅ COMPLETE
-- **Target**: 12-13 stages defined with waves, 4-5 complete stages with progression
-- **Points**: 20 (~4 weeks active development)
-- **Status**: ✅ **COMPLETE** - December 2024
-- **Dependencies**: Milestone 1.3 ✅
-- **Progress**: multiple stages exist (0-3), design doc complete for all 13 stages
-- **Tasks**:
-  - [x] Design 13 stages (1 tutorial/demo stage and 12 game stages) - **COMPLETE** (Level Design doc updated)
-  - [x] Establish stage numbering convention (Stage 0 = Tutorial, Stages 1-12 = Core game) - **COMPLETE**
-  - [x] Update StageManager with IsTutorialStage property - **COMPLETE**
-  - [x] Create tutorial/demo stage teaching core mechanics - **COMPLETE** (Stage 0 with highlight sequence system)
-  - [x] Ensure debuggers allow easy tuning of stages/waves - **COMPLETE** (Prototyping panel exists)
-  - [x] Remaining content tasks moved to Milestone 1.6 - **COMPLETE** 
+## Milestone 1.6: Unit Markers & Infinite Cube (Stages 1–2) ✅ COMPLETE
+Target: Implement stages 1–2 and validate Unit marker and Infinity cube mechanics  
+Points: Est 4 | Act 4  
+Status: ✅ COMPLETE  
+Dependencies: Milestone 1.5 ✅  
+Stages: 0–2  
+Lesson: Unit marker basics
+
+Mechanics to Validate:
+[x] Unit marker placement and cube capture  
+[x] Infinity cube avoidance and danger recognition  
+[x] Basic movement and positioning  
+[x] Core collision mechanics (Unit vs Unit, Unit vs Infinity)
+
+Tasks:
+[x] Design wave configurations for stages 1–2  
+[x] Implement stages 1–2 with wave configs  
+[x] Validate Stage 0 and Stages 1–2 end-to-end  
+[x] Penalty system  
+[x] Scoring system  
+[x] Fix discovered bugs/edge cases
+
+Note:
+- Wave similarity issues deferred to Milestone 1.14.
 
 ---
 
-### Milestone 1.5: Demo Stage Content ✅ COMPLETE
-- **Target**: Foundational Systems + One Complete Demo Stage
-- **Points**: 5 (measured: ~1 week work)
-- **Status**: ✅ **COMPLETE** (December 16, 2025)
-- **Tasks**:
-  - [x] Further refine tutorial/demo stage and waves - **COMPLETE** (Stage 0 with highlight sequences)
-  - [x] Ensure proper messaging is implemented to convey game mechanics - **COMPLETE** (Highlight sequence system)
-  - [x] Wave Completion Messages - **COMPLETE** (Integrated into sequence system)
-  - [x] Stage Success Transition - **COMPLETE** (Completion message with stats, K key handling, return to Splash)
-  - [x] Stage/Wave Sequence Framework - **COMPLETE** (Highlight sequences with timing, triggers, validation)
-  - [x] Complete configuration of waves and stage (3 waves) - **COMPLETE** (All sequences working for all 3 waves)
-  - [x] Data collection on play session - **COMPLETE** (PlayerStatisticsManager tracks tutorial progress, messages, actions)
-  - [x] Complete Splash to Stage loop - **COMPLETE** (Tutorial loop working, PlayerPrefs flag system)
+## Milestone 1.7: Matrix Cube/Markers (Stages 3–5) ✅ COMPLETE
+Target: Implement stages 3–5 and validate Matrix cube and marker mechanics  
+Points: Est 6 | Act 6  
+Status: ✅ COMPLETE  
+Dependencies: Milestone 1.6 ✅  
+Stages: 3–5  
+Completed: January 2026
+
+Lesson: Area effects and solving Infinity blocking problems
+
+Mechanics Validated:
+[x] Matrix cube introduction and area capture  
+[x] Matrix marker placement and area coverage  
+[x] Cube marker generation from Matrix captures  
+[x] Spatial management and area control strategies  
+[x] Resource management (marker economy)
+
+Deferred:
+- UI improvements (Milestone 1.15)
+- Visual feedback enhancements (Phase 2.6)
 
 ---
 
-### Milestone 1.6: Unit Markers & Infinite Cube (Stages 1-2)
-- **Target**: Implement stages 1-2 and validate Unit marker and Infinity cube mechanics
-- **Points**: 4 (~1 week active development)
-- **Status**: ✅ **COMPLETE** - December 19, 2025
-- **Dependencies**: Milestone 1.5 ✅
-- **Stages**: 0-2 (Unit markers, Infinite Cube)
-- **Lesson**: Unit marker basics
-- **Mechanics to Validate**:
-  - [x] Unit marker placement and cube capture (Stage 0 validated)
-  - [x] Infinity cube avoidance and danger recognition (validated in Stages 1-2)
-  - [x] Basic movement and positioning (validated end-to-end)
-  - [x] Core collision mechanics (Unit vs Unit, Unit vs Infinity) (validated)
-- **Tasks**:
-  - [x] Design wave configurations for stages 1-2
-  - [x] Implement stages 1-2 with wave configs
-  - [x] Validate Stage 0 (all systems working, playable end-to-end)
-  - [x] Validate Stages 1-2 (playtesting complete - all waves playable end-to-end)
-  - [x] Define and Implement Penalty system
-  - [x] Define and Implement Scoring System
-  - [x] Fix bugs/edge cases discovered (max unit charges wave override)
-  - [x] Fix out of bounds error in Stage 1 Wave 4 spawn calculation
-  - [x] Ensure stages 1-2 are playable end-to-end
-  - [x] Fix stage progression bug (Stage 1 → Stage 2 transition)
-- **Playtesting Results** (December 19, 2025):
-  - [x] **Stage 0**: All 3 waves completed successfully (replay)
-  - [x] **Stage 1**: All 4 waves completed, Grade A (80%), 15 captured, 0 escaped
-  - [x] **Stage 2**: All 4 waves completed, Grade A (80%), 13 captured, 0 escaped
-  - [x] **Stage progression**: Stage 1 → Stage 2 transition working correctly
-  - [x] **Infinity avoidance**: Tutorial messages displayed, players successfully avoided Infinity cubes
-  - [x] **Collision mechanics**: Unit vs Unit and Unit vs Infinity collisions working correctly
-- **Playtesting Issues Found**:
-  - [x] **Out of bounds error**: Stage 1 Wave 4 - Fixed with bounds validation in spawn calculation
-  - [x] **Stage progression bug**: Stage 1 not progressing to Stage 2 - Fixed in OnAllWavesCompleted()
-  - [ ] **Wave similarity**: Stage 0 Wave 3 and Stage 1 Wave 1 are too similar (deferred to Milestone 1.14 for tuning)
-- **Note**: Tuning and balance deferred to Milestone 1.14 (Stage Content Refinement & Difficulty Curve)
+## Milestone 1.8: Recursion Cube/Marker (Stages 6–8)
+Target: Implement stages 6–8 and validate Recursion cube/marker mechanics (swap repositioning)  
+Points: Est 6 | Act —  
+Status: ⬜ Pending  
+Dependencies: Milestone 1.7  
+Stages: 6–8  
+Lesson: Repositioning via + pattern swap (Recursion does not capture; it rearranges). See `RecursionRedesign_SwapMechanic.md`.
+
+Mechanics to Validate:
+[ ] Recursion cube collision creates + swap marker at collision point  
+[ ] Cardinal neighbors swap (North↔South, West↔East)  
+[ ] Player agency: 1 charge = row OR column (player chooses); 2 charges = each independently  
+[ ] Swap markers only where a capturable (Unit) cube exists; Recursion creates survival paths by breaking Infinity walls  
+[ ] Multi-step strategic planning (read wave → identify ∞ walls → sacrifice Units for swaps → create gaps → Matrix capture)
+
+Tasks:
+[ ] Design wave configurations for stages 6–8 (swap-focused puzzles)  
+[ ] Implement stages 6–8 with wave configs  
+[ ] Implement + swap collision results (Unit vs R, Recursion vs U, Recursion vs R per design doc)  
+[ ] Validate Recursion swap mechanics work correctly  
+[ ] Fix bugs/edge cases discovered  
+[ ] Test swap repositioning and Infinity-wall-breaking scenarios
 
 ---
 
-### Milestone 1.7: Matrix Cube/Markers (Stages 3-5) ✅ COMPLETE
-- **Target**: Implement stages 3-5 and validate Matrix cube and marker mechanics
-- **Points**: 6 (~1.5 weeks active development)
-- **Status**: ✅ **COMPLETE** (January 2026)
-- **Dependencies**: Milestone 1.6 ✅
-- **Stages**: 3-5 (Matrix cube/markers introduced)
-- **Lesson**: Area effects and solving Infinity blocking problems
-- **Mechanics Validated**:
-  - [x] Matrix cube introduction and area capture
-  - [x] Matrix marker placement and area coverage
-  - [x] Cube marker generation from Matrix captures
-  - [x] Spatial management and area control strategies
-  - [x] Resource management (marker economy)
-- **Completed Tasks**:
-  - [x] Design wave configurations for stages 3-5
-  - [x] Implement stages 3-5 with wave configs (Stage 3: 4 waves, Stage 4: 4 waves, Stage 5: 5 waves)
-  - [x] Validate Matrix cube and marker mechanics work correctly
-  - [x] Playtesting complete - all stages playable end-to-end
-- **Deferred to Polish Pass**:
-  - UI improvements around markers (Milestone 1.15)
-  - Visual feedback enhancements (Phase 2.6)
+## Milestone 1.17: Market Analysis Implementation
+Target: Implement priority recommendations from Market Analysis (product-market fit, replayability, positioning)  
+Points: Est 4 | Act —  
+Status: ⬜ Pending  
+Dependencies: Milestone 1.8  
+Planning Reference: `MarketAnalysis.md`
+
+Scope (from Market Analysis priority recommendations):
+- **Genre identity**: Decide and document primary comparable (action-puzzle vs tactical puzzle); align messaging and pacing.
+- **Level grades**: Add per-stage grade system (e.g. S/A/B/C or 3-star) based on efficiency, mistakes, time.
+- **One meta-progression hook**: Add at least one replayability hook (e.g. unlocks, cosmetics, per-stage/aggregate leaderboards, or daily/weekly challenges).
+- **"Aha!" moment**: Document or prototype one mechanic that creates emergent discovery (e.g. face painting subversion, resonance chains, turning the wave system against itself).
+
+Tasks:
+[ ] Genre identity decision documented; roadmap/messaging updated  
+[ ] Level grade system designed and implemented (data + UI)  
+[ ] One meta-progression or replayability feature implemented  
+[ ] "Aha!" moment identified or prototyped and documented  
+[ ] MarketAnalysis.md cross-references and summary updated
 
 ---
 
-### Milestone 1.8: Recursion Cube/Marker (Stages 6-8)
-- **Target**: Implement stages 6-8 and validate Recursion cube and marker mechanics
-- **Points**: 6 (~1.5 weeks active development)
-- **Status**: ⬜ Pending
-- **Dependencies**: Milestone 1.7
-- **Stages**: 6-8 (Recursion cube/marker)
-- **Lesson**: Multi-hit mechanics
-- **Mechanics to Validate**:
-  - [ ] Recursion cube multi-hit mechanics
-  - [ ] Recursion marker placement and patterns
-  - [ ] Chain reaction detonations
-  - [ ] Multi-step strategic planning
-  - [ ] Complex interaction chains
-- **Tasks**:
-  - [ ] Design wave configurations for stages 6-8
-  - [ ] Implement stages 6-8 with wave configs
-  - [ ] Validate Recursion mechanics work correctly
-  - [ ] Assess and improve face painting implementation if needed
-  - [ ] Fix bugs/edge cases discovered
-  - [ ] Test multi-hit and chain reaction systems
+## Milestone 1.9: Infinity Marker (Stages 9–10)
+Target: Implement stages 9–10 and validate Infinity marker mechanics  
+Points: Est 5 | Act —  
+Status: ⬜ Pending  
+Dependencies: Milestone 1.17  
+Stages: 9–10  
+Lesson: Full system integration
+
+Mechanics to Validate:
+[ ] Infinity marker placement and spawning  
+[ ] Resonance mechanics (Infinity + Infinity = phaseable) validated and tuned for clarity  
+[ ] Infinity marker strategic value  
+[ ] All marker types working together  
+[ ] Complete marker system integration
+
+Tasks:
+[ ] Design wave configurations for stages 9–10  
+[ ] Implement stages 9–10 with wave configs  
+[ ] Validate Infinity marker mechanics work correctly  
+[ ] Assess and improve face painting implementation if needed  
+[ ] Fix bugs/edge cases discovered  
+[ ] Test all systems in combination
 
 ---
 
-### Milestone 1.9: Infinity Marker (Stages 9-10)
-- **Target**: Implement stages 9-10 and validate Infinity marker mechanics
-- **Points**: 5 (~1 week active development)
-- **Status**: ⬜ Pending
-- **Dependencies**: Milestone 1.8
-- **Stages**: 9-10 (Infinity Marker)
-- **Lesson**: All systems
-- **Mechanics to Validate**:
-  - [ ] Infinity marker placement and spawning
-  - [ ] Resonance mechanics (Infinity + Infinity = phaseable)
-  - [ ] Infinity marker strategic value
-  - [ ] All marker types working together
-  - [ ] Complete marker system integration
-- **Tasks**:
-  - [ ] Design wave configurations for stages 9-10
-  - [ ] Implement stages 9-10 with wave configs
-  - [ ] Validate Infinity marker mechanics work correctly
-  - [ ] Assess and improve face painting implementation if needed
-  - [ ] Fix bugs/edge cases discovered
-  - [ ] Test all systems in combination
+## Milestone 1.10: Mastery (Stages 11–12)
+Target: Implement final stages and validate complete mastery scenario  
+Points: Est 4 | Act —  
+Status: ⬜ Pending  
+Dependencies: Milestone 1.9  
+Stages: 11–12  
+Lesson: Complex strategies
 
----
-### Milestone 1.10: RPG Implementation (Attunements & Progression)
-- **Target**: Complete RPG systems - attunement UI, progression integration, economy polish
-- **Points**: 5 (~1 week active development)
-- **Status**: ⬜ Pending
-- **Dependencies**: Milestone 1.10
-- **Note**: Framework exists from Milestone 1.2. This milestone completes the UI and integration.
+Mechanics to Validate:
+[ ] All cube types working together  
+[ ] All marker types in combination  
+[ ] Full strategic depth and complexity  
+[ ] Complete system integration  
+[ ] Mastery-level challenge validation
 
-#### RPG Systems Overview
-**Foundation (from Milestone 1.2):**
-- SaveManager - Full persistence system (JSON, Steam Cloud ready)
-- PlayerProgression - Data structure for currency, attunements, stage progress
-- AttunementManager - 9 attunement definitions with query API
-- All 9 attunements integrated into CubeCollisionManager
-- Economy wired to GameEvents (100 shards/wave, first playthrough only)
-- Hub scene foundation - 3 clickable buildings, UI panel system
-
-**This Milestone Completes:**
-- Full UI implementation for all RPG systems
-- Attunement unlock/purchase flow
-- Stage selection interface
-- Stats/history display
-- Economy feedback and polish
-
-#### Marker Attunements System
-One attunement per marker type. Modifies cube properties, not collision matrix.
-
-**Matrix Attunements (Expansion Theme):**
-- Expanded Expansion: +1 area dimensions (2x2 → 3x3)
-- Concentrated Expansion: +1 charge per tile
-- Phaseable Expansion: Matrix vs Matrix also paints wave cube face
-
-**Recursion Attunements (Concentration Theme):**
-- Concentrated Concentration: +2 charges (3 → 5)
-- Expanded Concentration: +1 tile to pattern
-- Phaseable Concentration: Recursion vs Recursion also paints wave cube face
-
-**Infinity Attunements (Phaseability Theme):**
-- Potent Matrix Paint: +1 charge on Matrix painted faces
-- Potent Recursion Paint: +1 charge on Recursion painted faces
-- Untethered: vs Unit = destroy + continue (no wave join)
-
-#### Economy System
-| Aspect | Value |
-|--------|-------|
-| Currency | Axiom Shards |
-| Earn | 100 shards flat per wave |
-| Spend | Attunement unlocks (100-250 each) |
-| Replay | No currency (anti-farming) |
-
-#### Tasks:
-- [ ] Complete attunement selection UI (Resonance Alignment Chamber panel)
-  - [ ] Display all 9 attunements with descriptions
-  - [ ] Show unlock status and costs
-  - [ ] Implement purchase/unlock flow
-  - [ ] Attunement preview/description system
-  - [ ] Visual feedback for equipped attunements
-- [ ] Complete stage selection UI (Celestial Atlas panel)
-  - [ ] Display all available stages
-  - [ ] Show stage completion status
-  - [ ] Stage selection and launch functionality
-  - [ ] Stage preview/description
-- [ ] Complete stats/history UI (Observation Chronicle panel)
-  - [ ] Display player statistics
-  - [ ] Show stage completion history
-  - [ ] Display attunement usage stats
-  - [ ] Session history and analytics
-- [ ] Polish economy integration
-  - [ ] Shard earning feedback (visual/audio)
-  - [ ] Purchase confirmation flows
-  - [ ] Currency display updates
-  - [ ] Economy balance validation
-- [ ] Validate attunement effects work correctly in gameplay
-  - [ ] Test all 9 attunements in actual stages
-  - [ ] Verify attunement effects apply correctly
-  - [ ] Validate attunement persistence across sessions
+Tasks:
+[ ] Design wave configurations for stages 11–12  
+[ ] Implement stages 11–12 with wave configs  
+[ ] Validate all mechanics work in synthesis  
+[ ] Fix bugs/edge cases discovered  
+[ ] Test complete mastery scenario
 
 ---
 
-### Milestone 1.11: Mastery (Stages 11-12)
-- **Target**: Implement final stages and validate complete mastery scenario
-- **Points**: 4 (~1 week active development)
-- **Status**: ⬜ Pending
-- **Dependencies**: Milestone 1.9
-- **Stages**: 11-12 (Mastery)
-- **Lesson**: Complex strategies
-- **Mechanics to Validate**:
-  - [ ] All cube types working together
-  - [ ] All marker types in combination
-  - [ ] Full strategic depth and complexity
-  - [ ] Complete system integration
-  - [ ] Mastery-level challenge validation
-- **Tasks**:
-  - [ ] Design wave configurations for stages 11-12
-  - [ ] Implement stages 11-12 with wave configs
-  - [ ] Validate all mechanics work in synthesis
-  - [ ] Fix bugs/edge cases discovered
-  - [ ] Test complete mastery scenario
+## Milestone 1.11: RPG Implementation (Attunements & Progression)
+Target: Complete RPG systems — attunement UI, progression integration, economy polish  
+Points: Est 5 | Act —  
+Status: ⬜ Pending  
+Dependencies: Milestone 1.10  
+Stages:  
+Lesson: Progression adds expression without requiring a collision-matrix relearn.
+
+Mechanics to Validate:
+[ ] Unlock/purchase/equip flow works end-to-end and persists across sessions  
+[ ] Attunement effects apply correctly in gameplay stages (not only debug)  
+[ ] Hub panels (attunements, stage select, stats) are fully functional  
+[ ] Economy feedback is clear (earn/spend, confirmations, currency display)
+
+Tasks:
+[ ] Complete attunement selection UI (Resonance Alignment Chamber panel)  
+[ ] Implement purchase/unlock flow  
+[ ] Visual feedback for equipped attunements  
+[ ] Complete stage selection UI (Celestial Atlas panel)  
+[ ] Complete stats/history UI (Observation Chronicle panel)  
+[ ] Polish economy integration (earn/spend feedback + persistence)  
+[ ] Validate all 9 attunements in actual stages  
+[ ] Verify persistence across sessions (fresh save and existing save)
+
+Added Context:
+- [Milestone 1.11 RPG Context](Milestone_1.11_RPG_Context.md) (foundation + attunement definitions + UI expectations)
 
 ---
 
----
+## Milestone 1.12: Hub Implementation ✅ COMPLETE
+Target: Complete hub scene with full functionality and scene transitions  
+Points: Est 4 | Act 4  
+Status: ✅ COMPLETE  
+Completed: January 2026
 
-### Milestone 1.12: Hub Implementation
-- **Target**: Complete hub scene with full functionality and scene transitions
-- **Points**: 4 (~1 week active development)
-- **Status**: ⬜ Pending
-- **Dependencies**: Milestone 1.11 (RPG Implementation)
-- **Note**: Hub scene foundation exists. This milestone completes functionality and polish.
+Note:
+Hub consolidated into Stage scene as Stage 100 (Infinity’s Axiom). RPG UI polish deferred to 1.11.
 
-#### Hub: Infinity's Axiom
-The hub serves as the central navigation point between gameplay sessions.
-
-**Hub Areas:**
-| Area | Function | Unlock |
-|------|----------|--------|
-| Celestial Atlas | Stage selection | Always |
-| Resonance Alignment Chamber | Marker attunements | Stage 3 |
-| Observation Chronicle | Stats/history | Stage 3 |
-
-**Foundation (from Milestone 1.2):**
-- Hub scene exists with 3 clickable buildings
-- HubBuilding component with click handling
-- HubUIManager for panel management
-- Basic building unlock system (checks SaveManager.Progression)
-
-**This Milestone Completes:**
-- Full scene transitions (hub ↔ stage)
-- Complete visual polish
-- Navigation and camera systems
-- Building unlock feedback
-- Complete hub loop validation
-
-#### Tasks:
-- [ ] Complete hub scene layout and visuals
-  - [ ] Finalize building placement and layout
-  - [ ] Visual polish for buildings and environment
-  - [ ] Lighting and atmosphere
-  - [ ] Building hover/click visual feedback
-- [ ] Implement hub-to-stage scene transitions
-  - [ ] Stage selection triggers scene load
-  - [ ] Transition animations/effects
-  - [ ] Stage loading with selected stage index
-  - [ ] Error handling for invalid selections
-- [ ] Implement stage-to-hub return flow
-  - [ ] Return to hub after stage completion
-  - [ ] Return to hub after stage failure/quit
-  - [ ] Preserve hub state across transitions
-  - [ ] Update hub UI based on progression changes
-- [ ] Complete building unlock system
-  - [ ] Unlock Resonance Alignment Chamber after Stage 3
-  - [ ] Unlock Observation Chronicle after Stage 3
-  - [ ] Visual feedback for locked buildings
-  - [ ] Unlock animation/celebration
-- [ ] Hub navigation and camera system
-  - [ ] Camera positioning and movement
-  - [ ] Navigation between buildings (if needed)
-  - [ ] Smooth camera transitions
-- [ ] Hub UI polish and feedback
-  - [ ] Panel animations (open/close)
-  - [ ] Building tooltips/descriptions
-  - [ ] Currency display in hub
-  - [ ] Visual feedback for all interactions
-- [ ] Validate complete hub → stage → hub loop
-  - [ ] Test full flow: Hub → Select Stage → Play → Return to Hub
-  - [ ] Verify progression updates reflect in hub
-  - [ ] Test attunement changes persist
-  - [ ] Validate save/load integration
+(Details unchanged; see prior section for full deliverables.)
 
 ---
 
-### Milestone 1.13: Advanced Grid System (Multi-Segment Stages) ✅ COMPLETE
-- **Target**: Implement multi-segment grid system for advanced stage layouts (L-shape, etc.)
-- **Points**: 5 (~1 week active development)
-- **Status**: ✅ **COMPLETE** (January 2026)
-- **Dependencies**: Milestone 1.11
-- **Deliverables**:
-  - [x] GridSegmentController component for defining individual grid segments
-  - [x] Stage-level segment layout prefabs (StageData.segmentLayoutPrefab)
-  - [x] Multi-segment wave transitions (cubes stop at edge, respawn missing, move onto next segment)
-  - [x] Transpose mapping for cube positions during segment transitions
-  - [x] Camera rotation per segment (cameraRotation, cameraOffset fields)
-  - [x] Camera-relative player controls across segment transitions
-  - [x] Segment-aware player marker system (placement, visuals, effects)
-  - [x] Segment-aware cube tracking and collision detection
-  - [x] Legacy GridPathType system removed (replaced by segment controllers)
-- **Technical Changes**:
-  - StageData: Added `segmentLayoutPrefab` field for stage segment configuration
-  - GridManager: Instantiates segment prefab at stage start, registers controllers
-  - WaveManager: Handles multi-segment wave transitions with edge stopping
-  - PlayerMarkerSystem: Full segment awareness for marker placement and effects
-  - CameraFollow: Reads segment-specific camera settings for smooth transitions
-- **Note**: Enables complex stage layouts like L-shapes, U-shapes, etc. First stage prefab created at `Assets/prefabs/stages/stage_segments_0.prefab`.
+## Milestone 1.13: Advanced Grid System (Multi-Segment Stages) ✅ COMPLETE
+Target: Implement multi-segment grid system for advanced stage layouts (L-shape, etc.)  
+Points: Est 5 | Act 5  
+Status: ✅ COMPLETE  
+Dependencies: Milestone 1.12  
+Completed: January 2026
+
+(Details unchanged; see prior section for full deliverables.)
 
 ---
 
-### Milestone 1.14: Stage Content Refinement & Difficulty Curve
-- **Target**: Balance, tune, and establish proper difficulty progression across all stages
-- **Points**: 5 (~1 week active development)
-- **Status**: ⬜ Pending
-- **Dependencies**: Milestone 1.13 ✅
-- **Tasks**:
-  - [ ] Playtest all stages (0-12) for balance and feel
-  - [ ] Implement proper difficulty curve across all stages
-  - [ ] Refine wave configurations based on playtesting feedback
-  - [ ] Balance marker economy and cube spawn rates
-  - [ ] Validate stage progression feels rewarding
-- **Note**: Focus on tuning and balance. Mechanics should be validated in 1.6-1.10.
+## Milestone 1.14: Stage Content Refinement & Difficulty Curve
+Target: Balance, tune, and establish proper difficulty progression across all stages  
+Points: Est 5 | Act —  
+Status: ⬜ Pending  
+Dependencies: Milestone 1.13 ✅
+
+Tasks:
+[ ] Playtest all stages (0–12) for balance and feel  
+[ ] Implement proper difficulty curve across all stages  
+[ ] Refine wave configurations based on playtesting feedback  
+[ ] Balance marker economy and cube spawn rates  
+[ ] Validate stage progression feels rewarding
+
+Note:
+Mechanics should be validated in 1.6–1.10; this is tuning and redundancy removal.
 
 ---
 
-### Milestone 1.15: Visual Effects & Juice Pass
-- **Target**: Core visual feedback and effects for gameplay actions
-- **Points**: 5 (~1 week active development)
-- **Status**: ⬜ Pending
-- **Dependencies**: Milestone 1.14 (Stage Content Refinement)
-- **Note**: Focuses on visual effects and feedback. Gameplay feel polish comes in 2.6.
-- **Tasks**:
-  - [ ] Improved particle effects for all major actions
-  - [ ] Screen shake and juice for impacts
-  - [ ] Enhanced face painting visualization
-  - [ ] Tile state change visual effects
-  - [ ] Marker placement/detonation polish
-  - [ ] Animation/scripted sequence placeholders for key events
-  - [ ] Event hooks for major gameplay moments
+## Milestone 1.15: Visual Effects & Juice Pass
+Target: Core visual feedback and effects for gameplay actions  
+Points: Est 5 | Act —  
+Status: ⬜ Pending  
+Dependencies: Milestone 1.14
+
+Tasks:
+[ ] Improved particle effects for all major actions  
+[ ] Screen shake and juice for impacts  
+[ ] Enhanced face painting visualization  
+[ ] Tile state change visual effects  
+[ ] Marker placement/detonation polish  
+[ ] Animation/scripted sequence placeholders for key events  
+[ ] Event hooks for major gameplay moments
 
 ---
 
-### Milestone 1.16: Scenario Testing Framework ✅ COMPLETE
-- **Target**: Automated testing system for validating gameplay scenarios
-- **Points**: 3 (~3 days active development)
-- **Status**: ✅ **COMPLETE** (January 2026)
-- **Dependencies**: Milestone 1.13 ✅
-- **Deliverables**:
-  - [x] TestCommandExecutor MonoBehaviour - orchestrates automated test stages
-  - [x] Test configuration in WaveData (isTestWave, testCommands, testAssertions, maxTestSteps)
-  - [x] ScenarioLogger - dedicated file logging for test results
-  - [x] D001_BasicPlayerDeath test scenario - validates player death collision
-  - [x] Grid generation fix for stage segment prefabs
-  - [x] Position tracking with TilesVisited metric
-- **Technical Details**:
-  - Test commands execute on wave steps (Move, PlaceMarker, Wait)
-  - Assertions validate metrics (PlayerDeaths, TilesVisited, CapturedCubes, etc.)
-  - Logs saved to `Application.persistentDataPath/Logs/Scenarios/[TestName]/`
-  - Auto-exits Play Mode on test completion
-- **Architecture**:
-  ```
-  WaveData (isTestWave=true)
-    └── testCommands: List<TestCommand>
-    └── testAssertions: List<TestAssertion>
-    └── maxTestSteps: int
-  
-  TestCommandExecutor
-    └── Listens to GameEvents.OnWaveStep
-    └── Executes commands at specified steps
-    └── Evaluates assertions at completion
-  ```
-- **Note**: Building scenarios is now as easy as building waves - create a WaveData asset with test configuration and add it to a stage.
+## Milestone 1.16: Scenario Testing Framework ✅ COMPLETE
+Target: Automated testing system for validating gameplay scenarios  
+Points: Est 3 | Act 3  
+Status: ✅ COMPLETE  
+Dependencies: Milestone 1.13 ✅  
+Completed: January 2026
+
+(Details unchanged; see prior section for full deliverables.)
 
 ---
 
+## Milestone 1.TD: File Size Refactoring
+Target: Reduce file size violations and improve iteration safety  
+Points: Est 15 | Act —  
+Status: ⬜ Pending  
+Dependencies:  
+Stages:  
+Lesson: Keep iteration velocity high by preventing monolith drift.
+
+Mechanics to Validate:
+[ ] Refactors do not change gameplay behavior (validated via smoke play + scenario tests)
+
+Tasks:
+[ ] Address 12 files over limit (Phase 1 target)  
+[ ] Extract stable subsystems (managers, configuration, orchestration)  
+[ ] Add/extend scenario tests for refactor-touched flows  
+[ ] Update `TechnicalDebt.md` with before/after notes and new ownership boundaries
+
+---
 ## Phase 2: Content Completion & First Polish Pass
 **Goal**: Complete all content and achieve first polish level  
 **Estimated Total**: ~48 pts
@@ -666,6 +531,7 @@ The hub serves as the central navigation point between gameplay sessions.
 - **Points**: 5 (~1 week)
 - Complete save/load system for game progress
 - **Note**: SaveManager exists, this milestone completes/enhances it
+- Remove obsolete marker/cube terminology aliases (see [TechnicalDebt.md](../Technical%20Doc/TechnicalDebt.md) §1)
 
 **Note**: Interactive Tutorial System completed in Milestone 1.5
 
@@ -838,14 +704,12 @@ The hub serves as the central navigation point between gameplay sessions.
 ## Critical Path
 
 ```
-Milestone 1.0 ✅ → 1.1 ✅ → 1.2 🔄 → 1.3 → 1.4 → 2.x → 3.x → 4.x → Release
-                            ↑
-                      YOU ARE HERE
-                            │
-                      Hub Architecture
-                      Attunement System
-                      Progression Economy
-                      Technical Prep
+Milestone 1.0 ✅ → 1.1 ✅ → … → 1.7 ✅ → 1.12 ✅ → 1.13 ✅ → 1.16 ✅ → 1.8 🔄 → 1.9 → 1.10 → 1.11 → 2.x → 3.x → 4.x → Release
+                                                                              ↑
+                                                                        YOU ARE HERE
+                                                                              │
+                                                                        Recursion Cube/Marker
+                                                                        (Stages 6-8, swap mechanic)
 ```
 
 ---
@@ -871,11 +735,12 @@ Milestone 1.0 ✅ → 1.1 ✅ → 1.2 🔄 → 1.3 → 1.4 → 2.x → 3.x → 4
 
 | Feature | Reason to Cut |
 |---------|---------------|
-| Resonance System | Advanced mechanic, not core loop |
 | RPG/Progression Systems | Nice-to-have, not core puzzle |
 | Localization | English-only is acceptable for launch |
 | Leaderboards | Can add post-launch |
 | Advanced accessibility | Basic options sufficient for launch |
+
+**Note**: Resonance (Infinity + Infinity → phaseable) is in MVP scope but not defined as of now.
 
 ### MVP Quality Bar
 
@@ -897,10 +762,10 @@ Milestone 1.0 ✅ → 1.1 ✅ → 1.2 🔄 → 1.3 → 1.4 → 2.x → 3.x → 4
 | Phase 2 | Content Completion & Polish | 48 pts | ⬜ Pending |
 | Phase 3 | Polish & Commercial Prep | 55 pts | ⬜ Pending |
 | Phase 4 | Steam Integration & Release | 50 pts | ⬜ Pending |
-| **TOTAL** | | **313 pts** | |
+| **TOTAL** | | **316 pts** | |
 
-**Completed**: 136 pts (Milestones 1.0-1.7, 1.13, 1.16)  
-**Remaining**: ~180 pts
+**Completed**: 140 pts (Milestones 1.0-1.7, 1.12, 1.13, 1.16)  
+**Remaining**: ~176 pts
 
 **Note**: Phases can overlap; calendar time will vary based on availability.
 
@@ -911,8 +776,8 @@ Milestone 1.0 ✅ → 1.1 ✅ → 1.2 🔄 → 1.3 → 1.4 → 2.x → 3.x → 4
 | Metric | Value |
 |--------|-------|
 | **Measured Velocity** | **22 points/month** (active periods) |
-| **Completed Points** | 122 pts |
-| **Remaining Points** | ~191 pts |
+| **Completed Points** | 140 pts |
+| **Remaining Points** | ~176 pts |
 | **Point Definition** | 1 pt ≈ 1 day active work |
 | **Week Definition** | 5 pts ≈ 1 week active work |
 | **Measurement Rule** | Gap < 1 week = same-day continuation |
@@ -925,7 +790,7 @@ Milestone 1.0 ✅ → 1.1 ✅ → 1.2 🔄 → 1.3 → 1.4 → 2.x → 3.x → 4
 1. **Playtesting Pipeline** ✅ Framework exists
 2. **Technical Debt Management** ✅ System operational (12 file size violations)
 3. **Community Building** - Development blog, Discord setup
-4. **Analytics Dashboard** - Can start early to support playtesting (Milestone 2.10)
+4. **Analytics Dashboard** - Can start early to support playtesting (Milestone 2.8)
 
 ---
 
@@ -936,7 +801,7 @@ Milestone 1.0 ✅ → 1.1 ✅ → 1.2 🔄 → 1.3 → 1.4 → 2.x → 3.x → 4
 | Velocity Sustainability | Weekly tracking | Conservative 15 pts/month |
 | Content Creation Scope | Quality over quantity | Launch with 8-10 stages (MVP) |
 | Scope Creep | Feature freeze after Phase 1 | Focus on polish |
-| File Size Violations | Phased refactoring | Prioritize critical managers |
+| File Size Violations | Phased refactoring (15 pts Phase 1; full 12-file resolution see TechnicalDebt.md) | Prioritize critical managers |
 | Store Page Too Late | Start assets in Phase 3 | Simple capsules, iterate |
 | Launch Without Wishlists | Demo in Next Fest | Direct community outreach |
 
@@ -1002,7 +867,7 @@ Milestone 1.0 ✅ → 1.1 ✅ → 1.2 🔄 → 1.3 → 1.4 → 2.x → 3.x → 4
 
 ---
 
-*Last Updated: January 29, 2026*  
+*Last Updated: February 2, 2026*  
 *Current Phase: Phase 1 - Core Innovation & Content*  
 *Current Milestone: 1.8 - Recursion Cube/Marker (Stages 6-8)*  
-*Total Points: 316 | Completed: ~136 | Remaining: ~180*
+*Total Points: 316 | Completed: ~140 | Remaining: ~176*
