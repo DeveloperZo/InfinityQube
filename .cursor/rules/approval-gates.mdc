@@ -1,30 +1,96 @@
 ---
+description: Approval requirements and modification zones
 alwaysApply: false
 ---
-# Approval Gates
 
-## Automatic Approval Triggers
-After every task planning:
-1. Run complexity scoring (1-10 scale)
-2. If score ≥ 7 → needs_review = true
-3. If priority = Critical → needs_review = true
-4. If cross-system impact → needs_review = true
+# Approval Gates & Safe Zones
 
-## Complexity Scoring Guide
-- 1-3: Single file, localized, well-understood patterns
-- 4-6: Multiple files, moderate complexity, established patterns
-- 7-8: Cross-system changes, new patterns, coordination required
-- 9-10: Architectural impact, multiple systems, high risk
+## Complexity Scoring
 
-## Mandatory Approval Required For
-- Architectural changes (system redesigns, new managers, core pattern modifications)
-- File structure changes (splitting files, creating new managers, directory restructuring)
-- Core system modifications (Enumerations.cs, Unity lifecycle, manager communication patterns)
-- Documentation changes (creating new documentation files)
+Score every task 1-10 after planning:
 
-## Pre-Approved Patterns (No Approval Needed)
-- Adding debug logging to existing methods
-- Creating POC implementations (marked appropriately)
-- Optimizing existing code without changing interfaces
-- Adding validation checks
+| Score | Description | Requirements |
+|-------|-------------|--------------|
+| 1-3 | Single file, localized, established patterns | Self-approved |
+| 4-6 | Multiple files, moderate complexity | Integration test |
+| 7-8 | Cross-system, new patterns, coordination | **Approval + regression test** |
+| 9-10 | Architectural impact, high risk | **Approval + regression test** |
+
+### Automatic Approval Triggers
+- Score ≥ 7 → needs approval
+- Priority = Critical → needs approval
+- Cross-system impact → needs approval
+- Touches Red Zone files → needs approval
+
+## Modification Zones
+
+### Green Zone (Full Autonomy)
+
+Safe to modify without approval:
+
+| Area | Files |
+|------|-------|
+| Debug systems | `Assets/scripts/Debuggers/*` |
+| UI (non-core) | `Assets/scripts/UI/*` (except GameUI.cs) |
+| Test files | `Assets/scripts/Testing/*` |
+| Data assets | `Assets/data/**/*.asset` |
+| Wave/Stage content | ScriptableObject assets |
+
+### Yellow Zone (Conditional Autonomy)
+
+**Safe without approval:**
+- Adding private methods to existing files
+- Optimizing without changing interfaces
+- Adding debug logging
 - Improving error handling
+- Adding validation checks
+
+**Requires approval:**
+- Changing public API signatures
+- Modifying interfaces
+- Altering manager communication patterns
+- Changing initialization order
+
+### Red Zone (Always Requires Approval)
+
+| File/Area | Reason |
+|-----------|--------|
+| `Enumerations.cs` | Affects entire codebase |
+| Unity lifecycle (Awake/Start/Update) | Timing-critical |
+| Singleton implementations | Architectural pattern |
+| Manager communication patterns | System coupling |
+| `GridManager.cs` core methods | Spatial foundation |
+| `WaveManager.cs` wave progression | Game loop |
+| `StageManager.cs` progression logic | Game flow |
+| `PlayerManager.cs` core logic | Player behavior |
+| `CubeCollisionManager.cs` collision matrix | 16-type resolution |
+
+## Pre-Approved Patterns
+
+These are always safe (no approval needed):
+
+1. **Debug additions**: Adding `this.Log()` calls
+2. **POC implementations**: Marked with `// POC:` comment
+3. **Validation additions**: Null checks, bounds checks
+4. **Error handling**: Try-catch, graceful degradation
+5. **Optimization**: Same behavior, better performance
+6. **Comments/Documentation**: Inline code comments
+
+## Game-Specific Approval Requirements
+
+### Collision System Changes
+Any change to collision behavior requires approval because:
+- 16-type matrix has complex interdependencies
+- Infinity immutability must be preserved
+- Resonance mechanics are timing-sensitive
+
+### Marker Economy Changes
+Changes to marker grants, regeneration, or caps require approval because:
+- Affects game balance
+- Stage/wave content depends on economy
+- Player progression relies on predictable resources
+
+### Wave Progression Changes
+Changes to move-forward sequence require approval because:
+- Order is critical: wave move → marker convert → player move → collide
+- Timing affects all gameplay systems

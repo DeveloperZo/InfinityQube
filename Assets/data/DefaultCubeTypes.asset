@@ -44,7 +44,7 @@ MonoBehaviour:
     causesCorruption: 0
     enablesDetonation: 0
     detonationRadius: 0
-    maxHitPoints: 3
+    maxHitPoints: 2
   - name: Default
     prefab: {fileID: 0}
     material: {fileID: 0}

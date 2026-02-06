@@ -71,7 +71,8 @@ public static class Enumerations
         Tutorial,    // Tutorial stages: focused on teaching mechanics
         Standard,    // Normal gameplay
         Challenge,   // Difficult stages with special conditions
-        Bonus        // Special stages with unique rules
+        Bonus,       // Special stages with unique rules
+        Hub          // Hub scene: no waves, player can interact with fixed cubes
     }
     public enum DebugPanelGroup
     {
@@ -111,6 +112,24 @@ public static class Enumerations
         Recursion = 3,
         /// <summary>Infinity marker: Spawns Infinity cube in mirror wave (Key: 4)</summary>
         Infinity = 4
+    }
+
+    // NOTE: GridPathType enum removed - segment controllers now handle grid layouts
+    // See GridSegmentController for multi-segment grid configuration
+    
+    /// <summary>
+    /// Movement direction for cubes on the grid path
+    /// </summary>
+    public enum MovementDirection
+    {
+        /// <summary>Moving toward row 0 (standard wave movement)</summary>
+        Down,
+        /// <summary>Moving toward higher columns</summary>
+        Right,
+        /// <summary>Moving toward higher rows</summary>
+        Up,
+        /// <summary>Moving toward lower columns</summary>
+        Left
     }
 
     /// <summary>

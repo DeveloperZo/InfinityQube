@@ -9046,6 +9046,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   nextSceneName: Stage
+  hubStageIndex: 100
   canSkip: 1
   skipDelay: 0.5
   showDebugLogs: 1

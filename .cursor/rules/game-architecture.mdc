@@ -1,0 +1,247 @@
+---
+description: InfinityQube-specific game architecture patterns and constraints
+alwaysApply: true
+---
+
+# InfinityQube Game Architecture
+
+## Game Identity
+
+InfinityQube is an Intelligence Qube-style puzzle game with:
+- **Bidirectional cube movement**: Waves move down, player cubes move up
+- **Marker-to-cube transformation**: Placed markers become intercepting cubes
+- **16-type collision matrix**: Complex interactions between 4 cube types × 4 cube types
+- **Resource management**: Marker economy with regeneration and grant systems
+
+## Core Systems (Do Not Split)
+
+These systems are tightly coupled and must remain unified:
+
+| System | File | Responsibility |
+|--------|------|----------------|
+| Grid | `GridManager.cs` | Spatial management, tile system, segment handling |
+| Wave | `WaveManager.cs` | Wave progression, cube spawning, movement timing |
+| Stage | `StageManager.cs` | Stage loading, wave sequencing, transitions |
+| Player | `PlayerManager.cs` | Player movement, death/respawn, position tracking |
+| Collision | `CubeCollisionManager.cs` | Collision resolution, 16-type matrix |
+
+**Rule**: Never split these files without explicit approval. Decompose into components instead (see Tile pattern in skill).
+
+## System Communication Pattern
+
+```
+┌─────────────┐     ┌─────────────┐     ┌─────────────┐
+│ StageManager│────▶│ WaveManager │────▶│ CubeManager │
+│  (stages)   │     │  (waves)    │     │ (wave cubes)│
+└─────────────┘     └─────────────┘     └─────────────┘
+       │                                       │
+       │                                       ▼
+       │            ┌───────────────────────────────────┐
+       │            │     CubeCollisionManager          │
+       │            │  (resolves all cube collisions)   │
+       │            └───────────────────────────────────┘
+       │                                       ▲
+       ▼                                       │
+┌─────────────┐     ┌─────────────┐     ┌─────────────┐
+│PlayerAction │────▶│PlayerMarker │────▶│ CubeManager │
+│  Manager    │     │   System    │     │(player cubes)│
+└─────────────┘     └─────────────┘     └─────────────┘
+```
+
+**Communication Rules**:
+- Use singleton `Instance` property when available
+- Cache references in `Start()`, NEVER in Update/runtime methods
+- Use `GameEvents` for cross-system notifications
+- Never bypass the collision manager for collision logic
+
+## Cube Type Constraints
+
+### The Four Cube Types
+
+| Type | Color | Behavior | Capture | Special |
+|------|-------|----------|---------|---------|
+| Unit | Gray | Standard | Yes | Base scoring |
+| Matrix | Blue | Area effect | Yes | Creates 2x2/3x3 markers |
+| Recursion | Metallic | Multi-hit | 2 hits | Creates swap markers |
+| Infinity | Black | Immutable | **No** | Only Infinity affects Infinity |
+
+### Infinity Immutability Rule (CRITICAL)
+
+**Infinity cubes are immutable** - this is a core game mechanic:
+- Cannot be captured by non-Infinity cubes
+- Cannot be face-painted by non-Infinity sources
+- Cannot be transformed or converted
+- Only Player Infinity can trigger resonance with Wave Infinity
+
+```csharp
+// CORRECT: Check Infinity immutability
+if (targetCube.CubeType == CubeType.Infinity && 
+    sourceCube.CubeType != CubeType.Infinity)
+{
+    // Infinity destroys the attacking cube instead
+    return CollisionResult.SourceDestroyed;
+}
+
+// WRONG: Treating Infinity like other cubes
+targetCube.Capture(); // Never works on Infinity
+```
+
+## Marker System Constraints
+
+### Marker Types and Economy
+
+| Marker | Mode Key | Economy | Max | Behavior |
+|--------|----------|---------|-----|----------|
+| Unit | 1 | Regeneration | Unlimited | Standard capture |
+| Matrix | 2 | Grants only | 5 | Area capture |
+| Recursion | 3 | Grants only | 8 | Swap creation |
+| Infinity | 4 | Grants only | 3 | Resonance trigger |
+
+### Marker-to-Cube Lifecycle
+
+```
+Player places marker → Marker sits on tile → Wave moves forward
+→ Marker transforms to player cube → Player cube moves backward (up)
+→ Collision with wave cube → Resolution via CubeCollisionManager
+```
+
+**Rule**: Marker-to-cube conversion ONLY happens in `PlayerMarkerSystem.SpawnPlayerCubes()` during wave move forward. Do not scatter this logic.
+
+## Collision Matrix Principles
+
+### 16-Type Resolution
+
+Collisions are resolved by `CubeCollisionManager` using a 4×4 matrix:
+
+|  Wave | Unit | Matrix | Recursion | Infinity |
+|---------------|------|--------|-----------|----------|
+| **Unit** | Capture | +2x2 marker | Capture (1 hit) | Captured |
+| **Matrix** | 2x2 marker | +3x3 marker | 2x2 marker | Captured no marker |
+| **Recursion** | 1 hit, if captured swap | 1 hit, if captured swap | empowered swap | Captured no marker |
+| **Infinity** | Captured no marker | Captured no marker | Captured no marker | **Resonance** |
+
+**Rule**: All collision logic must flow through `CubeCollisionManager`. Never implement collision handling in individual cube scripts.
+
+### Resonance Mechanic
+
+When Player Infinity collides with Wave Infinity:
+1. Immediate trigger (no delay)
+2. ALL Wave Infinity cubes become phaseable for 2-4 moves
+3. Phaseable Infinity can be passed through by other player cubes
+4. Player Infinity is consumed as cost
+
+## Grid System Constraints
+
+### Segment-Aware Operations
+
+The grid can have multiple segments (L, C, S shapes):
+- Cubes change direction at segment transitions
+- Position calculations must account for segment transforms
+- Markers track their segment context
+
+**Rule**: Always use `GridManager` methods for position calculations. Never calculate world positions manually.
+
+```csharp
+// CORRECT
+Vector3 worldPos = GridManager.Instance.GetWorldPosition(gridPosition);
+
+// WRONG
+Vector3 worldPos = new Vector3(gridPosition.x * tileSize, 0, gridPosition.z * tileSize);
+```
+
+### Grid Events
+
+Subscribe to grid changes via events:
+- `OnGridResized` - Grid dimensions changed
+- `OnSegmentChanged` - Active segment changed
+- `OnTileStateChanged` - Tile occupation changed
+
+## Wave Progression Rules
+
+### Wave Lifecycle
+
+```
+Wave Initialized → Wave Started → Move Forward (repeat) → Wave Completed
+```
+
+### Move Forward Sequence (CRITICAL)
+
+Each "move forward" step executes in this order:
+1. Wave cubes move down one tile
+2. Placed markers convert to player cubes
+3. Player cubes move up one tile
+4. Collisions resolved
+5. Events fired (captures, escapes, etc.)
+
+**Rule**: Do not modify this sequence without approval. The timing is critical for gameplay.
+
+## Penalty/Reward System
+
+### Penalties
+- Non-Infinity cube escapes grid → Row removal penalty
+- Player dies twice → Row removal penalty
+- Infinity cube escapes → **No penalty** (expected behavior)
+
+### Rewards
+- Perfect wave clear → Bottom row restored
+
+**Rule**: Infinity escape is intentional game design, not a bug. Do not "fix" it.
+
+## Data Architecture
+
+### ScriptableObject Hierarchy
+
+```
+StageDB (central database)
+└── StageData[] (all stages)
+    └── StageData
+        ├── Grid configuration
+        ├── Marker grants
+        ├── Success conditions
+        └── WaveData[] (waves for this stage)
+            └── WaveData
+                ├── Cube spawns
+                ├── Timing
+                └── Per-wave marker grants
+```
+
+**Rule**: Game content is configured via ScriptableObjects, not code. Do not hardcode stage/wave data.
+
+### Stage Override Priority
+
+When settings conflict:
+1. Stage settings override wave defaults
+2. Wave settings override global defaults
+3. Runtime modifiers override static config
+
+## Performance Constraints
+
+### Critical Paths
+
+These execute every frame or frequently - optimize carefully:
+- `CubeManager.MoveForward()` - Called every move step
+- Collision detection loops
+- Grid position lookups
+
+### Forbidden in Hot Paths
+
+- `FindFirstObjectByType<>()` or `FindObjectOfType<>()`
+- LINQ queries with allocation
+- String concatenation
+- Reflection
+
+## Testing Constraints
+
+### What Must Be Tested
+
+1. Collision matrix - All 16 combinations
+2. Infinity immutability - Cannot be bypassed
+3. Marker-to-cube conversion - Correct timing
+4. Stage progression - Wave completion → next wave
+5. Resonance mechanics - Phasing behavior
+
+### Test Scenarios Location
+
+Test scenarios in `Assets/data/stages/Scenarios/`:
+- `Stage_D001_BasicPlayerDeath.asset` - Death handling
+- Create additional scenarios for edge cases

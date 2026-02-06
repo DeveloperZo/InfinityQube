@@ -1,35 +1,39 @@
 ---
+description: Documentation organization and content standards
 alwaysApply: true
 ---
 
 # Documentation Standards
 
+## Key Documents
+
+| Document | Location | Purpose |
+|----------|----------|---------|
+| **Roadmap.md** | Project Doc | Current milestone, priorities, future work |
+| **MilestoneTracking.md** | Project Doc | Completed work, velocity metrics, commits |
+| **TechnicalDebt.md** | Technical Doc | File size violations, cleanup plans |
+| **TechnicalCritiques.md** | Technical Doc | Architecture analysis, patterns |
+
+### Roadmap Maintenance
+- Update "Current Milestone" when starting new milestone
+- Move completed items to MilestoneTracking.md
+- Keep TOP PRIORITIES table current
+
 ## Project Documents vs Technical Documents
 
 ### Project Documents (`Assets/Docs/Project Doc/`)
-**Purpose**: Design-focused documentation for gameplay, mechanics, and player experience
+**Purpose**: Design-focused documentation for gameplay and player experience
 
 **Content Guidelines**:
 - Focus on gameplay design and player-facing behavior
 - Describe what players experience and how systems behave
 - Include strategic guidance and decision matrices
-- Explain rules, mechanics, and interactions from a design perspective
-- **DO NOT include**:
-  - Code snippets or programming examples
-  - Class names, method names, or implementation details
-  - Technical architecture or system internals
-  - C# code, enum definitions, or API references
-  - Implementation-specific terminology
+- **DO NOT include**: Code snippets, class names, method names, implementation details
 
-**Examples of Appropriate Content**:
-- "Players press F to place Unit Markers"
-- "Cubes move down the grid toward escape"
-- "Recursion Markers are optimized for Recursion cubes"
-
-**Examples of Inappropriate Content**:
-- "PlayerActionManager.HandleUnifiedPlaceInput() places markers"
-- "GridManager.IsValidGridPosition() validates movement"
-- "CubeType enum defines cube types"
+**Examples**:
+- ✅ "Players press F to place Unit Markers"
+- ✅ "Cubes move down the grid toward escape"
+- ❌ "PlayerActionManager.HandleUnifiedPlaceInput() places markers"
 
 ### Technical Documents (`Assets/Docs/Technical Doc/`)
 **Purpose**: Implementation-focused documentation for developers
@@ -37,35 +41,25 @@ alwaysApply: true
 **Content Guidelines**:
 - Include code examples and implementation details
 - Reference specific classes, methods, and APIs
-- Explain technical architecture and system design
 - Document how systems are implemented
-- Include technical specifications and constraints
+- Technical specifications and constraints
 
-## Documentation Rules
+## Editing Rules
 
-### When Editing Project Documents
-1. **Remove technical references**: Replace class/method names with gameplay descriptions
-2. **Remove code snippets**: Replace with gameplay behavior descriptions
-3. **Focus on player experience**: Describe what players see and do
-4. **Use design language**: Talk about mechanics, not implementation
-5. **Keep strategic content**: Maintain gameplay guidance and decision matrices
+### Project Documents
+1. Remove technical references → Replace with gameplay descriptions
+2. Remove code snippets → Describe behavior instead
+3. Focus on player experience
+4. Use design language, not implementation terminology
 
-### When Editing Technical Documents
-1. **Include implementation details**: Class names, methods, code examples are appropriate
-2. **Document architecture**: Explain how systems are built
-3. **Reference codebase**: Link to specific files and implementations
-4. **Technical accuracy**: Ensure code examples are correct and current
+### Technical Documents
+1. Include implementation details (class names, methods, code)
+2. Document architecture and system design
+3. Ensure code examples are current
 
 ## Quick Reference
 
-**Project Doc = Design Focus**:
-- What players experience
-- How gameplay works
-- Strategic guidance
-- Rules and mechanics
-
-**Technical Doc = Implementation Focus**:
-- How code works
-- System architecture
-- Code examples
-- Technical specifications
+| Doc Type | Contains | Avoids |
+|----------|----------|--------|
+| Project Doc | Player experience, mechanics, strategy | Code, class names, implementation |
+| Technical Doc | Architecture, code examples, specs | Gameplay descriptions |

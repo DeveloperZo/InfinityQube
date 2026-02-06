@@ -63,11 +63,117 @@ public class PrototypingSystem : MonoBehaviour
     
     private void Update()
     {
+        // Toggle panel visibility
         if (Input.GetKeyDown(toggleKey))
         {
             isVisible = !isVisible;
             Debug.Log($"[PrototypingSystem] {(isVisible ? "Opened" : "Closed")}");
         }
+        
+        // Global debug shortcuts (work even when panel is closed)
+        HandleGlobalShortcuts();
+        
+        // Update active panel
+        if (isVisible && activePanelIndex >= 0 && activePanelIndex < panels.Count)
+        {
+            panels[activePanelIndex].Update();
+        }
+    }
+    
+    /// <summary>
+    /// Global keyboard shortcuts for common debug actions.
+    /// These work regardless of panel visibility for quick access.
+    /// </summary>
+    private void HandleGlobalShortcuts()
+    {
+        // Ctrl+Shift shortcuts for global debug actions
+        bool ctrlShift = Input.GetKey(KeyCode.LeftControl) && Input.GetKey(KeyCode.LeftShift);
+        
+        if (ctrlShift)
+        {
+            // Ctrl+Shift+P - Toggle pause
+            if (Input.GetKeyDown(KeyCode.P))
+            {
+                Time.timeScale = Time.timeScale == 0 ? 1f : 0f;
+                Debug.Log($"[PrototypingSystem] {(Time.timeScale == 0 ? "PAUSED" : "RESUMED")}");
+            }
+            
+            // Ctrl+Shift+R - Respawn wave
+            if (Input.GetKeyDown(KeyCode.R))
+            {
+                RespawnCurrentWave();
+            }
+            
+            // Ctrl+Shift+C - Clear all
+            if (Input.GetKeyDown(KeyCode.C))
+            {
+                ClearEverything();
+            }
+            
+            // Ctrl+Shift+1/2/3/4 - Quick time scale
+            if (Input.GetKeyDown(KeyCode.Alpha1)) { Time.timeScale = 0.25f; Debug.Log("[PrototypingSystem] Speed: 0.25x"); }
+            if (Input.GetKeyDown(KeyCode.Alpha2)) { Time.timeScale = 0.5f; Debug.Log("[PrototypingSystem] Speed: 0.5x"); }
+            if (Input.GetKeyDown(KeyCode.Alpha3)) { Time.timeScale = 1f; Debug.Log("[PrototypingSystem] Speed: 1x"); }
+            if (Input.GetKeyDown(KeyCode.Alpha4)) { Time.timeScale = 2f; Debug.Log("[PrototypingSystem] Speed: 2x"); }
+            
+            // Ctrl+Shift+M - Refill all markers
+            if (Input.GetKeyDown(KeyCode.M))
+            {
+                RefillAllMarkers();
+            }
+        }
+    }
+    
+    private void RespawnCurrentWave()
+    {
+        var waveManager = Object.FindFirstObjectByType<WaveManager>();
+        var gridManager = GridManager.Instance;
+        
+        if (waveManager == null) return;
+        
+        int currentIndex = waveManager.currentWaveIndex;
+        waveManager.StopWave();
+        waveManager.ClearAllCubes();
+        waveManager.MoveStep = 0;
+        Time.timeScale = 1f;
+        
+        if (waveManager.useWaveConfiguration)
+        {
+            waveManager.currentWaveIndex = currentIndex;
+            gridManager?.ClearAllMarkers();
+            waveManager.StartWave();
+        }
+        
+        Debug.Log($"[PrototypingSystem] Respawned wave {waveManager.GetWaveLabel()}");
+    }
+    
+    private void ClearEverything()
+    {
+        var waveManager = Object.FindFirstObjectByType<WaveManager>();
+        var gridManager = GridManager.Instance;
+        var actionManager = Object.FindFirstObjectByType<PlayerActionManager>();
+        
+        waveManager?.StopWave();
+        waveManager?.ClearAllCubes();
+        gridManager?.ClearAllMarkers();
+        actionManager?.MarkerSystem?.ClearAllActions();
+        actionManager?.MarkerSystem?.ClearPlayerCubes();
+        Time.timeScale = 1f;
+        
+        Debug.Log("[PrototypingSystem] Cleared everything");
+    }
+    
+    private void RefillAllMarkers()
+    {
+        var actionManager = Object.FindFirstObjectByType<PlayerActionManager>();
+        if (actionManager == null) return;
+        
+        actionManager.RefillUnitMarkerCharges();
+        actionManager.RefillMatrixMarkerCharges();
+        actionManager.RefillRecursionMarkerCharges();
+        actionManager.RefillInfinityMarkerCharges();
+        
+        Debug.Log("[PrototypingSystem] Refilled all markers");
     }
     
     private void OnDestroy()
@@ -84,12 +190,19 @@ public class PrototypingSystem : MonoBehaviour
     {
         panels.Clear();
         
+        // Quick Debug Panel - First for fast access
+        panels.Add(new QuickDebugPanel());
+        
+        // Core panels
         panels.Add(new WavePrototyper());
         panels.Add(new CollisionPanel());
         panels.Add(new GridDesigner());
         panels.Add(new PlayerPanel());
         panels.Add(new StagePanel());
         panels.Add(new SystemPanel());
+        
+        // Console Panel - View logs in-game
+        panels.Add(new ConsolePanel());
         
         foreach (var panel in panels)
         {

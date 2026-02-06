@@ -175,107 +175,88 @@ public class AttunementManager : MonoBehaviour, IManagerDebugInterface
     
     /// <summary>
     /// Initialize with hardcoded definitions (fallback).
+    /// Design: One active per marker type. Power/Resource/Utility pattern.
     /// </summary>
     private void InitializeHardcodedDefinitions()
     {
         _loadedFromDatabase = false;
         _attunementDefinitions = new Dictionary<string, AttunementDefinition>
         {
-            // Matrix Attunements (Expansion Theme)
-            ["matrix_expanded"] = new AttunementDefinition
+            // ===================
+            // MATRIX ATTUNEMENTS
+            // ===================
+            
+            ["matrix_mastery"] = new AttunementDefinition
             {
-                id = "matrix_expanded",
-                displayName = "Expanded Expansion",
-                description = "+1 area dimensions (2x2 → 3x3)",
+                id = "matrix_mastery",
+                displayName = "Matrix Mastery",
+                description = "All Matrix areas are 3x3 instead of 2x2",
                 markerMode = MarkerMode.Matrix,
-                effect = AttunementEffect.ExpandedArea,
-                effectValue = 1f, // +1 to area size
+                effect = AttunementEffect.MatrixMastery,
+                effectValue = 3f, // Area size
                 unlockCost = 150
             },
-            ["matrix_concentrated"] = new AttunementDefinition
+            ["matrix_abundance"] = new AttunementDefinition
             {
-                id = "matrix_concentrated",
-                displayName = "Concentrated Expansion",
-                description = "+1 trigger use (Matrix markers can be triggered twice)",
+                id = "matrix_abundance",
+                displayName = "Matrix Abundance",
+                description = "+2 Matrix markers per stage",
                 markerMode = MarkerMode.Matrix,
-                effect = AttunementEffect.ConcentratedCharge,
-                effectValue = 1f, // +1 use
+                effect = AttunementEffect.MatrixAbundance,
+                effectValue = 2f, // +2 markers
                 unlockCost = 150
             },
-            ["matrix_phaseable"] = new AttunementDefinition
+            ["infinity_forge"] = new AttunementDefinition
             {
-                id = "matrix_phaseable",
-                displayName = "Phaseable Expansion",
-                description = "Matrix vs Matrix also paints wave cube face",
+                id = "infinity_forge",
+                displayName = "Infinity Forge",
+                description = "Matrix + ∞ collision creates area marker (∞ cubes are opportunities)",
                 markerMode = MarkerMode.Matrix,
-                effect = AttunementEffect.PhaseablePaint,
+                effect = AttunementEffect.InfinityForge,
                 effectValue = 1f, // Boolean flag
                 unlockCost = 200
             },
             
-            // Recursion Attunements (Concentration Theme)
-            ["recursion_concentrated"] = new AttunementDefinition
-            {
-                id = "recursion_concentrated",
-                displayName = "Concentrated Concentration",
-                description = "+2 charges (3 → 5)",
-                markerMode = MarkerMode.Recursion,
-                effect = AttunementEffect.ConcentratedCharges,
-                effectValue = 2f, // +2 charges
-                unlockCost = 150
-            },
-            ["recursion_expanded"] = new AttunementDefinition
-            {
-                id = "recursion_expanded",
-                displayName = "Expanded Concentration",
-                description = "+1 tile to pattern",
-                markerMode = MarkerMode.Recursion,
-                effect = AttunementEffect.ExpandedPattern,
-                effectValue = 1f, // +1 tile
-                unlockCost = 150
-            },
-            ["recursion_phaseable"] = new AttunementDefinition
-            {
-                id = "recursion_phaseable",
-                displayName = "Phaseable Concentration",
-                description = "Recursion vs Recursion also paints wave cube face",
-                markerMode = MarkerMode.Recursion,
-                effect = AttunementEffect.PhaseablePaint,
-                effectValue = 1f, // Boolean flag
-                unlockCost = 200
-            },
+            // ======================
+            // RECURSION ATTUNEMENTS
+            // ======================
             
-            // Infinity Attunements (Phaseability Theme)
-            ["infinity_potent_matrix"] = new AttunementDefinition
+            ["recursion_clone"] = new AttunementDefinition
             {
-                id = "infinity_potent_matrix",
-                displayName = "Potent Matrix Paint",
-                description = "+1 charge on Matrix painted faces",
-                markerMode = MarkerMode.Infinity,
-                effect = AttunementEffect.PotentMatrixPaint,
-                effectValue = 1f, // +1 charge
-                unlockCost = 200
-            },
-            ["infinity_potent_recursion"] = new AttunementDefinition
-            {
-                id = "infinity_potent_recursion",
-                displayName = "Potent Recursion Paint",
-                description = "+1 charge on Recursion painted faces",
-                markerMode = MarkerMode.Infinity,
-                effect = AttunementEffect.PotentRecursionPaint,
-                effectValue = 1f, // +1 charge
-                unlockCost = 200
-            },
-            ["infinity_untethered"] = new AttunementDefinition
-            {
-                id = "infinity_untethered",
-                displayName = "Untethered",
-                description = "vs Unit = destroy + continue (no wave join)",
-                markerMode = MarkerMode.Infinity,
-                effect = AttunementEffect.Untethered,
+                id = "recursion_clone",
+                displayName = "Recursion Clone",
+                description = "R+R becomes clone+swap instead of capture+swap (multiply cubes)",
+                markerMode = MarkerMode.Recursion,
+                effect = AttunementEffect.RecursionClone,
                 effectValue = 1f, // Boolean flag
-                unlockCost = 250
+                unlockCost = 150
+            },
+            ["recursion_abundance"] = new AttunementDefinition
+            {
+                id = "recursion_abundance",
+                displayName = "Recursion Abundance",
+                description = "+2 Recursion markers per stage",
+                markerMode = MarkerMode.Recursion,
+                effect = AttunementEffect.RecursionAbundance,
+                effectValue = 2f, // +2 markers
+                unlockCost = 150
+            },
+            ["infinity_gateway"] = new AttunementDefinition
+            {
+                id = "infinity_gateway",
+                displayName = "Infinity Gateway",
+                description = "Recursion + ∞ collision creates swap marker (∞ walls become opportunities)",
+                markerMode = MarkerMode.Recursion,
+                effect = AttunementEffect.InfinityGateway,
+                effectValue = 1f, // Boolean flag
+                unlockCost = 200
             }
+            
+            // ======================
+            // INFINITY ATTUNEMENTS
+            // ======================
+            // TBD - Pending playtesting of Infinity marker mechanics
+            // Will follow same Power/Resource/Utility pattern
         };
     }
     
@@ -387,40 +368,98 @@ public class AttunementManager : MonoBehaviour, IManagerDebugInterface
     
     #region Convenience Methods for Collision Handlers
     
+    // ===================
+    // MATRIX QUERIES
+    // ===================
+    
     /// <summary>
-    /// Get Matrix area size (base 2, +1 if Expanded Expansion equipped).
+    /// Get Matrix area size (base 2, or 3 if Matrix Mastery equipped).
     /// </summary>
     public int GetMatrixAreaSize()
     {
-        int baseSize = 2;
-        if (HasAttunement(MarkerMode.Matrix, AttunementEffect.ExpandedArea))
+        if (HasAttunement(MarkerMode.Matrix, AttunementEffect.MatrixMastery))
         {
-            return baseSize + (int)GetEffectValue(MarkerMode.Matrix, AttunementEffect.ExpandedArea);
+            return 3; // 3x3 instead of 2x2
         }
-        return baseSize;
+        return 2; // Default 2x2
     }
     
     /// <summary>
-    /// Get Matrix marker trigger uses (base 1, +1 if Concentrated Expansion equipped).
-    /// With attunement: Matrix CubeMarkers can be triggered twice before disappearing.
+    /// Get bonus Matrix markers per stage (0 or +2 if Matrix Abundance equipped).
+    /// </summary>
+    public int GetBonusMatrixMarkers()
+    {
+        if (HasAttunement(MarkerMode.Matrix, AttunementEffect.MatrixAbundance))
+        {
+            return (int)GetEffectValue(MarkerMode.Matrix, AttunementEffect.MatrixAbundance);
+        }
+        return 0;
+    }
+    
+    /// <summary>
+    /// Check if Matrix can collide with ∞ cubes to create area marker (Infinity Forge).
+    /// </summary>
+    public bool CanMatrixCollideWithInfinity()
+    {
+        return HasAttunement(MarkerMode.Matrix, AttunementEffect.InfinityForge);
+    }
+    
+    // ======================
+    // RECURSION QUERIES
+    // ======================
+    
+    /// <summary>
+    /// Check if Recursion is in Clone mode (R+R becomes clone+swap instead of capture+swap).
+    /// </summary>
+    public bool IsRecursionCloneMode()
+    {
+        return HasAttunement(MarkerMode.Recursion, AttunementEffect.RecursionClone);
+    }
+    
+    /// <summary>
+    /// Get bonus Recursion markers per stage (0 or +2 if Recursion Abundance equipped).
+    /// </summary>
+    public int GetBonusRecursionMarkers()
+    {
+        if (HasAttunement(MarkerMode.Recursion, AttunementEffect.RecursionAbundance))
+        {
+            return (int)GetEffectValue(MarkerMode.Recursion, AttunementEffect.RecursionAbundance);
+        }
+        return 0;
+    }
+    
+    /// <summary>
+    /// Check if Recursion can collide with ∞ cubes to create swap marker (Infinity Gateway).
+    /// </summary>
+    public bool CanRecursionCollideWithInfinity()
+    {
+        return HasAttunement(MarkerMode.Recursion, AttunementEffect.InfinityGateway);
+    }
+    
+    // ======================
+    // INFINITY QUERIES (TBD)
+    // ======================
+    // Infinity attunement queries will be added after playtesting
+    
+    // ======================
+    // LEGACY METHODS (kept for backward compatibility)
+    // ======================
+    
+    /// <summary>
+    /// Legacy: Get Matrix marker trigger uses.
     /// </summary>
     public int GetMatrixMarkerUses()
     {
-        int baseUses = 1;
-        if (HasAttunement(MarkerMode.Matrix, AttunementEffect.ConcentratedCharge))
-        {
-            return baseUses + (int)GetEffectValue(MarkerMode.Matrix, AttunementEffect.ConcentratedCharge);
-        }
-        return baseUses;
+        return 1; // Legacy default
     }
     
     /// <summary>
-    /// Legacy alias for GetMatrixMarkerUses (for backward compatibility).
+    /// Legacy alias for GetMatrixMarkerUses.
     /// </summary>
     public int GetMatrixChargesPerTile() => GetMatrixMarkerUses();
     
     /// <summary>
-    /// Check if Matrix+Matrix collision should paint wave cube face.
+    /// Legacy: Check if Matrix+Matrix should paint face.
     /// </summary>
     public bool ShouldMatrixMatrixPaintFace()
     {
@@ -428,33 +467,23 @@ public class AttunementManager : MonoBehaviour, IManagerDebugInterface
     }
     
     /// <summary>
-    /// Get Recursion charges (base 3, +2 if Concentrated Concentration equipped).
+    /// Legacy: Get Recursion charges.
     /// </summary>
     public int GetRecursionCharges()
     {
-        int baseCharges = 3;
-        if (HasAttunement(MarkerMode.Recursion, AttunementEffect.ConcentratedCharges))
-        {
-            return baseCharges + (int)GetEffectValue(MarkerMode.Recursion, AttunementEffect.ConcentratedCharges);
-        }
-        return baseCharges;
+        return 3; // Legacy default
     }
     
     /// <summary>
-    /// Get Recursion pattern tile count (base 1, +1 if Expanded Concentration equipped).
+    /// Legacy: Get Recursion pattern tiles.
     /// </summary>
     public int GetRecursionPatternTiles()
     {
-        int baseTiles = 1;
-        if (HasAttunement(MarkerMode.Recursion, AttunementEffect.ExpandedPattern))
-        {
-            return baseTiles + (int)GetEffectValue(MarkerMode.Recursion, AttunementEffect.ExpandedPattern);
-        }
-        return baseTiles;
+        return 1; // Legacy default
     }
     
     /// <summary>
-    /// Check if Recursion+Recursion collision should paint wave cube face.
+    /// Legacy: Check if Recursion+Recursion should paint face.
     /// </summary>
     public bool ShouldRecursionRecursionPaintFace()
     {
@@ -462,31 +491,23 @@ public class AttunementManager : MonoBehaviour, IManagerDebugInterface
     }
     
     /// <summary>
-    /// Get bonus charges for Matrix face paints (0 or +1 if Potent Matrix Paint equipped).
+    /// Legacy: Get Matrix paint bonus charges.
     /// </summary>
     public int GetMatrixPaintBonusCharges()
     {
-        if (HasAttunement(MarkerMode.Infinity, AttunementEffect.PotentMatrixPaint))
-        {
-            return (int)GetEffectValue(MarkerMode.Infinity, AttunementEffect.PotentMatrixPaint);
-        }
-        return 0;
+        return 0; // Legacy default
     }
     
     /// <summary>
-    /// Get bonus charges for Recursion face paints (0 or +1 if Potent Recursion Paint equipped).
+    /// Legacy: Get Recursion paint bonus charges.
     /// </summary>
     public int GetRecursionPaintBonusCharges()
     {
-        if (HasAttunement(MarkerMode.Infinity, AttunementEffect.PotentRecursionPaint))
-        {
-            return (int)GetEffectValue(MarkerMode.Infinity, AttunementEffect.PotentRecursionPaint);
-        }
-        return 0;
+        return 0; // Legacy default
     }
     
     /// <summary>
-    /// Check if Infinity should skip wave join vs Unit (Untethered attunement).
+    /// Legacy: Check if Infinity should skip wave join.
     /// </summary>
     public bool ShouldInfinitySkipWaveJoin()
     {
@@ -510,26 +531,34 @@ public class AttunementManager : MonoBehaviour, IManagerDebugInterface
 
 /// <summary>
 /// Attunement effect types matching the design document.
+/// Design: One active per marker type, fundamental identity shifts (not stat tweaks).
 /// </summary>
 public enum AttunementEffect
 {
     None,
     
-    // Matrix attunements
-    ExpandedArea,          // +1 area dimensions
-    ConcentratedCharge,    // +1 charge per tile
+    // Matrix attunements (designed)
+    MatrixMastery,         // All Matrix areas are 3x3 instead of 2x2
+    MatrixAbundance,       // +2 Matrix markers per stage
+    InfinityForge,         // Matrix + ∞ collision creates area marker
     
-    // Recursion attunements
-    ConcentratedCharges,   // +2 charges
-    ExpandedPattern,       // +1 tile to pattern
+    // Recursion attunements (designed)
+    RecursionClone,        // R+R becomes clone+swap instead of capture+swap
+    RecursionAbundance,    // +2 Recursion markers per stage
+    InfinityGateway,       // Recursion + ∞ collision creates swap marker
     
-    // Shared
-    PhaseablePaint,        // Same-type collision paints wave cube face
+    // Infinity attunements (TBD - pending playtesting)
+    // Will follow same Power/Resource/Utility pattern
     
-    // Infinity attunements
-    PotentMatrixPaint,     // +1 charge on Matrix paints
-    PotentRecursionPaint,  // +1 charge on Recursion paints
-    Untethered             // vs Unit = destroy + continue
+    // Legacy (kept for backward compatibility, may be removed)
+    ExpandedArea,          // Old: +1 area dimensions
+    ConcentratedCharge,    // Old: +1 charge per tile
+    ConcentratedCharges,   // Old: +2 charges
+    ExpandedPattern,       // Old: +1 tile to pattern
+    PhaseablePaint,        // Old: Same-type collision paints wave cube face
+    PotentMatrixPaint,     // Old: +1 charge on Matrix paints
+    PotentRecursionPaint,  // Old: +1 charge on Recursion paints
+    Untethered             // Old: vs Unit = destroy + continue
 }
 
 /// <summary>

@@ -1,49 +1,158 @@
 ---
-description: To ensure standardize approach to code file structure
+description: File structure, naming, and organization standards
 alwaysApply: false
 ---
+
 # File Standards
 
-## Required File Structure
-All classes must follow this region organization:
+## File Naming Conventions
+
+| Type | Pattern | Examples |
+|------|---------|----------|
+| Managers | `[Function]Manager.cs` | `WaveManager.cs`, `GridManager.cs` |
+| Components | `[Entity][Function].cs` | `TileVisuals.cs`, `CubeAudio.cs` |
+| Data | `[Type]Data.cs` | `WaveData.cs`, `StageData.cs` |
+| Systems | `[Function]System.cs` | `PlayerMarkerSystem.cs` |
+| Utilities | `[Function]Utils.cs` | `GridUtils.cs`, `MathUtils.cs` |
+| Interfaces | `I[Capability].cs` | `IManagerDebugInterface.cs` |
+
+## Required Region Structure
+
+All MonoBehaviour classes must follow this organization:
+
 ```csharp
-#region Inspector Configuration
-#endregion
+using Sirenix.OdinInspector;
+using DG.Tweening;
+using static Enumerations;
 
-#region Manager References
-#endregion
+public class ExampleManager : MonoBehaviour
+{
+    #region Inspector Configuration
+    // Use Odin attributes for organization
+    [Title("Configuration")]
+    [SerializeField] private float speed = 5f;
+    
+    [FoldoutGroup("Advanced")]
+    [SerializeField] private bool useAdvanced = false;
+    #endregion
 
-#region Runtime State
-#endregion
+    #region Manager References
+    // Cached manager references (assigned in Start)
+    private WaveManager waveManager;
+    #endregion
 
-#region Properties
-#endregion
+    #region Runtime State
+    // Private fields for runtime state
+    private bool isInitialized;
+    private Tween activeTween;  // DOTween reference
+    #endregion
 
-#region Unity Lifecycle
-#endregion
+    #region Properties
+    // Public properties, singleton Instance
+    public static ExampleManager Instance { get; private set; }
+    #endregion
 
-#region Public API
-#endregion
+    #region Unity Lifecycle
+    // Awake, Start, Update, OnDestroy
+    // CRITICAL: Kill DOTweens in OnDestroy
+    private void OnDestroy()
+    {
+        activeTween?.Kill();
+        DOTween.Kill(transform);
+    }
+    #endregion
 
-#region Private Methods
-#endregion
+    #region Public API
+    // Public methods with [Button] for testing
+    [Button("Do Action")]
+    public void DoAction() { /* ... */ }
+    #endregion
 
-#region Debug
-#endregion
+    #region Private Methods
+    // Internal implementation methods
+    #endregion
+
+    #region Debug
+    [FoldoutGroup("Debug")]
+    [SerializeField] private bool enableDebugLogs = true;
+    
+    [FoldoutGroup("Debug"), Button("Log Status")]
+    private void LogStatus() => this.Log("Status", enableDebugLogs);
+    #endregion
+}
+```
+
+### Odin Organization Guidelines
+
+| Section | Odin Attribute | Notes |
+|---------|---------------|-------|
+| Main config | `[Title("Name")]` | Top-level section headers |
+| Related fields | `[BoxGroup("Name")]` | Visual grouping |
+| Optional/Advanced | `[FoldoutGroup("Name")]` | Collapsed by default |
+| Complex inspectors | `[TabGroup]` | Multiple tabs |
+| Debug section | `[FoldoutGroup("Debug")]` | Always collapsible |
+
+### When to Use Odin vs Regions
+
+- **Use regions**: Code organization (always required)
+- **Use Odin attributes**: Inspector organization (in addition to regions)
+- **Both work together**: Regions organize code, Odin organizes inspector
+
+## File Size Limits
+
+| Type | Max Lines | Action When Approaching |
+|------|-----------|------------------------|
+| Core Components | 750 | Plan decomposition at 500 |
+| Manager Classes | 600 | Plan decomposition at 400 |
+| Utility Classes | 300 | Extract helpers at 200 |
+| Data Classes | 300 | Split into related groups |
+| Interfaces | 200 | Split by responsibility |
+
+### Decomposition Pattern
+
+When files exceed limits, use the Tile component pattern:
+```
+Before: LargeManager.cs (1000+ lines)
+
+After:
+LargeManager.cs (facade, ~200 lines)
+├── LargeManagerSubsystemA.cs (specific responsibility)
+├── LargeManagerSubsystemB.cs (specific responsibility)
+└── LargeManagerHelpers.cs (utility methods)
 ```
 
 ## Complete Unit Rule
-Modifications must be complete functional units:
-- Complete methods from signature to closing brace
-- Method clusters that work together cohesively
-- Complete properties including getters/setters
-- NOT partial method bodies
-- NOT incomplete control structures
-- NOT individual lines within complex methods
 
-## File Size Limits
-- Core Components: 600 lines max
-- Manager Classes: 400 lines max
-- Utility Classes: 300 lines max
-- Data Classes: 200 lines max
-- Interfaces: 100 lines max
+Modifications must be complete functional units:
+
+**DO:**
+- Complete methods from signature to closing brace
+- Method clusters that work together
+- Complete properties with getters/setters
+- Entire region blocks when refactoring
+
+**DON'T:**
+- Partial method bodies
+- Incomplete control structures (if/for/while)
+- Individual lines within complex methods
+- Half-implemented features
+
+## Directory Structure
+
+```
+Assets/scripts/
+├── Components/      # Gameplay components (Tile, Cube, etc.)
+├── Data/            # ScriptableObject definitions
+├── Debuggers/       # Debug tools and visualizations
+├── Hub/             # Hub-specific UI and systems
+├── Managers/        # Singleton managers
+├── Testing/         # Test infrastructure
+├── UI/              # UI components and systems
+│   └── Utils/       # UI utilities (LogExtensions, etc.)
+└── Utils/           # General utilities, Enumerations
+
+Assets/data/
+├── stages/          # StageData assets
+├── waves/           # WaveData assets (organized by stage)
+└── [other data]/    # Other ScriptableObject instances
+```

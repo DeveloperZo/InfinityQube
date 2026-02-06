@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System;
 using System.Collections;
+using static Enumerations;
 
 public class PlayerManager : MonoBehaviour, IManagerDebugInterface
 {
@@ -175,6 +176,8 @@ public class PlayerManager : MonoBehaviour, IManagerDebugInterface
         GameEvents.OnWaveStep += OnWaveStep;
         GameEvents.OnCubeCaptured += HandleCubeCaptured;
         GameEvents.OnCubeEscaped += HandleCubeEscaped;
+        GameEvents.OnStageStart += HandleStageStart;
+        GameEvents.OnCubeMove += HandleCubeMove;
     }
     
     private void UnsubscribeFromEvents()
@@ -182,6 +185,47 @@ public class PlayerManager : MonoBehaviour, IManagerDebugInterface
         GameEvents.OnWaveStep -= OnWaveStep;
         GameEvents.OnCubeCaptured -= HandleCubeCaptured;
         GameEvents.OnCubeEscaped -= HandleCubeEscaped;
+        GameEvents.OnStageStart -= HandleStageStart;
+        GameEvents.OnCubeMove -= HandleCubeMove;
+    }
+    
+    /// <summary>
+    /// Check for collision when a cube moves to a new position.
+    /// This is more reliable than frame-by-frame checks.
+    /// </summary>
+    private void HandleCubeMove(Vector2Int oldPos, Vector2Int newPos, CubeType cubeType)
+    {
+        if (isDead || respawnInvulnerabilityTimer > 0f) return;
+        
+        // Check if cube moved onto player's position
+        if (newPos.x == currentTilePosition.x && newPos.y == currentTilePosition.y)
+        {
+            this.Log($"Cube moved onto player at ({newPos.x}, {newPos.y}) - triggering death", EnableDebugLogs);
+            
+            if (!debugDeathOverride)
+            {
+                Die();
+            }
+        }
+    }
+    
+    /// <summary>
+    /// Called when a stage starts. Repositions player on the newly created segment layout.
+    /// </summary>
+    private void HandleStageStart(int stageIndex, StageData stageData)
+    {
+        // Wait a frame for GridManager to finish setting up segments
+        StartCoroutine(RepositionAfterStageSetup());
+    }
+    
+    private System.Collections.IEnumerator RepositionAfterStageSetup()
+    {
+        // Wait one frame for GridManager.HandleStageStart to complete
+        yield return null;
+        
+        // Now reposition the player on the segment
+        SetInitialPosition();
+        DebugLog("🎮 Player repositioned after stage setup");
     }
     
     private void HandleCubeCaptured(Vector2Int position, Enumerations.CubeType cubeType)
@@ -235,7 +279,24 @@ public class PlayerManager : MonoBehaviour, IManagerDebugInterface
 
     private void SetInitialPosition()
     {
-        // Store start position for respawn
+        // SEGMENT CONTROLLERS: Use first segment for initial position
+        if (grid != null && grid.HasSegmentControllers)
+        {
+            var firstSegment = grid.GetSegmentController(0);
+            if (firstSegment != null)
+            {
+                int startX = firstSegment.width / 2;
+                int startY = 0;
+                
+                // Use SetPositionOnSegment which properly handles CharacterController
+                SetPositionOnSegment(firstSegment, startX, startY);
+                
+                DebugLog($"🎮 Initial position set on segment 0 at local ({startX}, {startY})");
+                return;
+            }
+        }
+        
+        // Legacy: Store start position for respawn
         playerStartPosition = new Vector2Int(grid.Width / 2, 0);
         SetPosition(playerStartPosition.x, playerStartPosition.y);
     }
@@ -253,15 +314,44 @@ public class PlayerManager : MonoBehaviour, IManagerDebugInterface
 
     private void ProcessMovementInput()
     {
-        Vector3 inputDirection = Vector3.zero;
-        if (Input.GetKey(KeyCode.LeftArrow) || Input.GetKey(KeyCode.A)) inputDirection.x = -1;
-        if (Input.GetKey(KeyCode.RightArrow) || Input.GetKey(KeyCode.D)) inputDirection.x = 1;
-        if (Input.GetKey(KeyCode.UpArrow) || Input.GetKey(KeyCode.W)) inputDirection.z = 1;
-        if (Input.GetKey(KeyCode.DownArrow) || Input.GetKey(KeyCode.S)) inputDirection.z = -1;
+        // Get raw input
+        float horizontal = 0f;
+        float vertical = 0f;
+        if (Input.GetKey(KeyCode.LeftArrow) || Input.GetKey(KeyCode.A)) horizontal = -1;
+        if (Input.GetKey(KeyCode.RightArrow) || Input.GetKey(KeyCode.D)) horizontal = 1;
+        if (Input.GetKey(KeyCode.UpArrow) || Input.GetKey(KeyCode.W)) vertical = 1;
+        if (Input.GetKey(KeyCode.DownArrow) || Input.GetKey(KeyCode.S)) vertical = -1;
 
-        if (inputDirection.magnitude > 1f)
+        Vector3 inputDirection = Vector3.zero;
+        
+        if (horizontal != 0f || vertical != 0f)
         {
-            inputDirection.Normalize();
+            // Get camera-relative directions (flattened to XZ plane)
+            Camera mainCam = Camera.main;
+            if (mainCam != null)
+            {
+                // Get camera forward and right vectors, flattened to XZ plane
+                Vector3 camForward = mainCam.transform.forward;
+                camForward.y = 0f;
+                camForward.Normalize();
+                
+                Vector3 camRight = mainCam.transform.right;
+                camRight.y = 0f;
+                camRight.Normalize();
+                
+                // Transform input to be camera-relative
+                inputDirection = (camRight * horizontal + camForward * vertical);
+                
+                if (inputDirection.magnitude > 1f)
+                {
+                    inputDirection.Normalize();
+                }
+            }
+            else
+            {
+                // Fallback to world-space if no camera
+                inputDirection = new Vector3(horizontal, 0f, vertical).normalized;
+            }
         }
 
         Vector3 targetVelocity = inputDirection * acceleration;
@@ -312,7 +402,58 @@ public class PlayerManager : MonoBehaviour, IManagerDebugInterface
 
     private Vector3 CalculateCollisionSafePosition(Vector3 desiredPosition)
     {
-        // Get grid bounds
+        desiredPosition.y = 0f; // Keep at ground level
+        
+        // SEGMENT CONTROLLERS: For segment controller grids, check all segments
+        if (grid != null && grid.HasSegmentControllers)
+        {
+            bool posValid = IsWorldPositionValidOnAnySegment(desiredPosition);
+            bool posBlocked = posValid && IsWorldPositionBlockedByCube(desiredPosition);
+            
+            // Check if position is valid on any segment
+            if (posValid && !posBlocked)
+            {
+                return desiredPosition;
+            }
+            else if (posValid && posBlocked)
+            {
+                // Find closest safe position
+                Vector2Int blockedPos = grid.WorldToGridPosition(desiredPosition);
+                return FindClosestSafePosition(desiredPosition, blockedPos);
+            }
+            else
+            {
+                // Position not valid on any segment - try sliding or stay at current position
+                return FindClosestSafePosition(desiredPosition, Vector2Int.zero);
+            }
+        }
+        
+        // ADVANCED GRID: For legacy multi-segment grids, don't clamp to segment 0 bounds
+        if (grid != null && grid.HasMultipleSegments)
+        {
+            // Check if position is valid on any segment
+            if (IsWorldPositionValidOnAnySegment(desiredPosition))
+            {
+                // Check for cube collisions at future position
+                if (!IsWorldPositionBlockedByCube(desiredPosition))
+                {
+                    return desiredPosition;
+                }
+                else
+                {
+                    // Find closest safe position
+                    Vector2Int blockedPos = grid.WorldToGridPosition(desiredPosition);
+                    return FindClosestSafePosition(desiredPosition, blockedPos);
+                }
+            }
+            else
+            {
+                // Position not valid on any segment - stay at current position
+                return transform.position;
+            }
+        }
+        
+        // Standard single-segment logic
         Vector3 minBounds = grid.GridToWorldPosition(0, 0);
         Vector3 maxBounds = grid.GridToWorldPosition(grid.Width - 1, grid.Height - 1);
 
@@ -320,7 +461,6 @@ public class PlayerManager : MonoBehaviour, IManagerDebugInterface
         Vector3 clampedPosition = desiredPosition;
         clampedPosition.x = Mathf.Clamp(clampedPosition.x, minBounds.x, maxBounds.x);
         clampedPosition.z = Mathf.Clamp(clampedPosition.z, minBounds.z, maxBounds.z);
-        clampedPosition.y = 0f; // Keep at ground level
 
         // Check for cube collisions at future position
         Vector2Int futureGridPos = grid.WorldToGridPosition(clampedPosition);
@@ -377,9 +517,8 @@ public class PlayerManager : MonoBehaviour, IManagerDebugInterface
         // Try moving along X-axis only
         Vector3 xOnlyMovement = new Vector3(slideDirection.x, 0, 0) * currentVelocity.magnitude * Time.deltaTime;
         Vector3 xOnlyPosition = currentPos + xOnlyMovement;
-        Vector2Int xOnlyGridPos = grid.WorldToGridPosition(xOnlyPosition);
 
-        if (!IsPositionBlockedByCube(xOnlyGridPos) && IsValidTilePosition(xOnlyGridPos))
+        if (IsWorldPositionValidOnAnySegment(xOnlyPosition) && !IsWorldPositionBlockedByCube(xOnlyPosition))
         {
             return ClampToGridBounds(xOnlyPosition);
         }
@@ -387,9 +526,8 @@ public class PlayerManager : MonoBehaviour, IManagerDebugInterface
         // Try moving along Z-axis only
         Vector3 zOnlyMovement = new Vector3(0, 0, slideDirection.z) * currentVelocity.magnitude * Time.deltaTime;
         Vector3 zOnlyPosition = currentPos + zOnlyMovement;
-        Vector2Int zOnlyGridPos = grid.WorldToGridPosition(zOnlyPosition);
 
-        if (!IsPositionBlockedByCube(zOnlyGridPos) && IsValidTilePosition(zOnlyGridPos))
+        if (IsWorldPositionValidOnAnySegment(zOnlyPosition) && !IsWorldPositionBlockedByCube(zOnlyPosition))
         {
             return ClampToGridBounds(zOnlyPosition);
         }
@@ -397,9 +535,84 @@ public class PlayerManager : MonoBehaviour, IManagerDebugInterface
         // If we can't slide, stay at current position
         return currentPos;
     }
+    
+    /// <summary>
+    /// ADVANCED GRID: Checks if a world position is blocked by a cube on the same segment.
+    /// </summary>
+    private bool IsWorldPositionBlockedByCube(Vector3 worldPos)
+    {
+        if (!IsWorldPositionValidOnAnySegment(worldPos)) 
+            return true;
+        
+        // Check for cubes at this position using cached WaveManager reference
+        if (waveManager?.activeCubes == null) return false;
+        
+        // Get the tile at this world position
+        Tile tile = grid.GetTileAtWorldPositionAnySegment(worldPos);
+        if (tile == null || !tile.IsPlayable) return true;
+        
+        // Get which segment this position is on (for segment-aware cube checking)
+        var targetSegment = grid.GetSegmentControllerAtWorldPosition(worldPos);
+        
+        // For cube collision, need to check cube world positions
+        foreach (var cube in waveManager.activeCubes)
+        {
+            if (cube == null || cube.isDestroyed) continue;
+            if (cube.isPlayerCube) continue;
+            
+            // Skip phaseable Infinity cubes
+            if (cube.type == Enumerations.CubeType.Infinity && cube.IsPhaseable())
+                continue;
+            
+            // SEGMENT CONTROLLER: Only check cubes on the same segment
+            if (targetSegment != null && cube.CurrentSegment != null && cube.CurrentSegment != targetSegment)
+                continue;
+            
+            // Check cube world position against our position
+            float distance = Vector3.Distance(
+                new Vector3(cube.transform.position.x, 0, cube.transform.position.z),
+                new Vector3(worldPos.x, 0, worldPos.z)
+            );
+            
+            if (distance < grid.TileSize * 0.5f)
+            {
+                return true;
+            }
+        }
+        
+        return false;
+    }
 
     private Vector3 ClampToGridBounds(Vector3 position)
     {
+        // SEGMENT CONTROLLERS: For segment controller grids, check if position is valid on ANY segment
+        if (grid != null && grid.HasSegmentControllers)
+        {
+            // If the position is valid on any segment, don't clamp
+            if (grid.IsValidWorldPosition(position))
+            {
+                position.y = 0f;
+                return position;
+            }
+            // Otherwise, use overall grid bounds
+            position.x = Mathf.Clamp(position.x, grid.MinWorldBounds.x, grid.MaxWorldBounds.x);
+            position.z = Mathf.Clamp(position.z, grid.MinWorldBounds.z, grid.MaxWorldBounds.z);
+            position.y = 0f;
+            return position;
+        }
+        
+        // ADVANCED GRID: For legacy multi-segment grids, check if position is valid on ANY segment
+        if (grid != null && grid.HasMultipleSegments)
+        {
+            // If the position is valid on any segment, don't clamp
+            if (grid.IsWorldPositionValid(position))
+            {
+                position.y = 0f;
+                return position;
+            }
+            // Otherwise, clamp to segment 0 bounds as fallback
+        }
+        
         Vector3 minBounds = grid.GridToWorldPosition(0, 0);
         Vector3 maxBounds = grid.GridToWorldPosition(grid.Width - 1, grid.Height - 1);
 
@@ -438,12 +651,96 @@ public class PlayerManager : MonoBehaviour, IManagerDebugInterface
 
     private void UpdateCurrentTilePosition()
     {
+        // SEGMENT CONTROLLERS: Use world position-based tile tracking for smoother transitions
+        if (grid.HasSegmentControllers)
+        {
+            UpdateCurrentTilePositionForSegments();
+            return;
+        }
+        
         Vector2Int newTilePosition = grid.WorldToGridPosition(transform.position);
         bool tileChanged = (currentTilePosition.x != newTilePosition.x || currentTilePosition.y != newTilePosition.y);
 
         if (tileChanged)
         {
             HandleTileChange(newTilePosition);
+        }
+    }
+    
+    /// <summary>
+    /// SEGMENT CONTROLLERS: Updates tile position tracking using world position for multi-segment grids.
+    /// This provides smoother transitions between segments.
+    /// </summary>
+    private void UpdateCurrentTilePositionForSegments()
+    {
+        // Get the tile at current world position from any segment
+        Tile newTile = grid.GetTileAtWorldPositionFromControllers(transform.position);
+        
+        // Debug: Log first tile change after SetPosition
+        if (newTile != currentHoveredTile && Time.frameCount < 100)
+        {
+            var segment = grid.GetSegmentControllerAtWorldPosition(transform.position);
+            Vector2Int localPos = segment != null ? segment.WorldToLocalPosition(transform.position) : new Vector2Int(-1, -1);
+            this.Log($"UpdateTilePosition: world {transform.position} -> segment local {localPos}", EnableDebugLogs);
+        }
+        
+        // Only update if we're on a different tile
+        if (newTile != currentHoveredTile)
+        {
+            HandleTileChangeForSegments(newTile);
+        }
+    }
+    
+    /// <summary>
+    /// SEGMENT CONTROLLERS: Handles tile change for multi-segment grids using direct tile reference.
+    /// </summary>
+    private void HandleTileChangeForSegments(Tile newTile)
+    {
+        // Clear hover from old tile
+        if (currentHoveredTile != null)
+        {
+            currentHoveredTile.SetPlayerHover(false);
+        }
+        
+        // Update current tile reference
+        currentHoveredTile = newTile;
+        
+        // Update grid position for compatibility (use world-to-local conversion)
+        if (newTile != null)
+        {
+            // Find which segment this tile belongs to and get local position
+            var segment = grid.GetSegmentControllerAtWorldPosition(transform.position);
+            if (segment != null)
+            {
+                Vector2Int localPos = segment.WorldToLocalPosition(transform.position);
+                currentTilePosition = localPos;
+                
+                // Update currentSegment for segment-aware collision detection
+                if (currentSegment != segment)
+                {
+                    currentSegment = segment;
+                    playerStartPosition = localPos; // Update respawn point to this segment
+                    DebugLog($"🚶 Player ENTERED Segment {segment.segmentIndex} at local ({localPos.x}, {localPos.y})");
+                }
+                else
+                {
+                    DebugLog($"🚶 Player on Segment {segment.segmentIndex} at local ({localPos.x}, {localPos.y})");
+                }
+            }
+            
+            // Set hover color based on current marker mode
+            var actionManager = FindFirstObjectByType<PlayerActionManager>();
+            if (actionManager != null)
+            {
+                Color hoverColor = PlayerActionManager.GetMarkerModeColor(actionManager.GetCurrentMode());
+                newTile.SetHoverColor(hoverColor);
+            }
+            
+            newTile.SetPlayerHover(true);
+        }
+        else
+        {
+            DebugLog($"🚶 Player at world pos {transform.position} - no tile found");
         }
     }
 
@@ -541,6 +838,9 @@ public class PlayerManager : MonoBehaviour, IManagerDebugInterface
 
         enabled = false;
         OnPlayerDied?.Invoke();
+        
+        // Fire global event for TestCommandExecutor and other listeners
+        GameEvents.FirePlayerDeath(currentTilePosition);
 
         StartCoroutine(HandleDeathSequence());
     }
@@ -598,13 +898,89 @@ public class PlayerManager : MonoBehaviour, IManagerDebugInterface
         respawnInvulnerabilityTimer = respawnInvulnerabilityTime;
         currentVelocity = Vector3.zero;
 
-        // Find a safe respawn position (no cubes, preferably at start position or bottom row)
-        Vector2Int respawnPos = FindSafeRespawnPosition();
-        SetPosition(respawnPos.x, respawnPos.y);
+        // SEGMENT CONTROLLER: Check if we should respawn on current segment
+        if (waveManager != null && waveManager.HasSegmentControllers && waveManager.CurrentSegmentController != null)
+        {
+            RespawnOnSegment(waveManager.CurrentSegmentController);
+        }
+        else
+        {
+            // Legacy respawn: Find a safe position on the global grid
+            Vector2Int respawnPos = FindSafeRespawnPosition();
+            SetPosition(respawnPos.x, respawnPos.y);
+            DebugLog($"🔄 Player respawned at ({respawnPos.x}, {respawnPos.y}) with {respawnInvulnerabilityTime}s invulnerability");
+        }
         
         enabled = true;
-        DebugLog($"🔄 Player respawned at ({respawnPos.x}, {respawnPos.y}) with {respawnInvulnerabilityTime}s invulnerability");
         OnPlayerRespawned?.Invoke();
+    }
+    
+    /// <summary>
+    /// SEGMENT CONTROLLER: Respawns player on the specified segment at a safe position.
+    /// </summary>
+    private void RespawnOnSegment(GridSegmentController segment)
+    {
+        if (segment == null)
+        {
+            DebugLog("⚠️ RespawnOnSegment: No segment provided, using legacy respawn");
+            Vector2Int respawnPos = FindSafeRespawnPosition();
+            SetPosition(respawnPos.x, respawnPos.y);
+            return;
+        }
+        
+        // Find a safe position on this segment (bottom row, center preferred)
+        int centerX = segment.width / 2;
+        int bottomY = 0;
+        
+        // Try center first, then sweep outward
+        Vector2Int safePos = new Vector2Int(centerX, bottomY);
+        
+        // Check if center is safe
+        if (!IsPositionSafeOnSegment(segment, safePos))
+        {
+            // Try other positions on bottom row
+            for (int offset = 1; offset <= segment.width / 2; offset++)
+            {
+                // Try left of center
+                if (centerX - offset >= 0 && IsPositionSafeOnSegment(segment, new Vector2Int(centerX - offset, bottomY)))
+                {
+                    safePos = new Vector2Int(centerX - offset, bottomY);
+                    break;
+                }
+                // Try right of center
+                if (centerX + offset < segment.width && IsPositionSafeOnSegment(segment, new Vector2Int(centerX + offset, bottomY)))
+                {
+                    safePos = new Vector2Int(centerX + offset, bottomY);
+                    break;
+                }
+            }
+        }
+        
+        // Use the consolidated segment positioning method
+        SetPositionOnSegment(segment, safePos.x, safePos.y);
+        
+        DebugLog($"🔄 Player respawned on segment {segment.segmentIndex} at local ({safePos.x}, {safePos.y})");
+    }
+    
+    /// <summary>
+    /// SEGMENT CONTROLLER: Checks if a position on a segment is safe (no cubes).
+    /// </summary>
+    private bool IsPositionSafeOnSegment(GridSegmentController segment, Vector2Int localPos)
+    {
+        if (segment == null || waveManager?.activeCubes == null) return true;
+        
+        // Check if any cube is at this local position on this segment
+        foreach (var cube in waveManager.activeCubes)
+        {
+            if (cube == null || cube.isDestroyed) continue;
+            if (cube.CurrentSegment == segment && 
+                cube.position.x == localPos.x && cube.position.y == localPos.y)
+            {
+                return false;
+            }
+        }
+        
+        return true;
     }
 
     /// <summary>
@@ -658,26 +1034,31 @@ public class PlayerManager : MonoBehaviour, IManagerDebugInterface
     }
 
     /// <summary>
-    /// Checks if a position is safe for respawn (no cubes present).
+    /// Checks if a position is safe for respawn (no cubes present on same segment).
     /// </summary>
     private bool IsPositionSafe(Vector2Int pos)
     {
         if (grid == null || !IsValidTilePosition(pos)) return false;
 
-        // Check if any cube is at this position
+        // Check if any cube is at this position on the same segment
         if (waveManager?.activeCubes != null)
         {
             foreach (var cube in waveManager.activeCubes)
             {
                 if (cube == null || cube.isDestroyed) continue;
+                
+                // SEGMENT CONTROLLER: Only check cubes on the same segment as player
+                if (currentSegment != null && cube.CurrentSegment != null && cube.CurrentSegment != currentSegment)
+                    continue;
+                
                 if (cube.position.x == pos.x && cube.position.y == pos.y)
                 {
-                    return false; // Cube present, not safe
+                    return false; // Cube present on same segment, not safe
                 }
             }
         }
 
-        return true; // No cubes found, position is safe
+        return true; // No cubes found on same segment, position is safe
     }
 
     private void CheckForCollisions() 
@@ -693,6 +1074,19 @@ public class PlayerManager : MonoBehaviour, IManagerDebugInterface
 
             // Skip player cubes - player can pass through them unharmed
             if (cube.isPlayerCube) continue;
+            
+            // SEGMENT CONTROLLER: Only check collision if on same segment
+            if (currentSegment != null && cube.CurrentSegment != null)
+            {
+                // Skip cubes on different segments
+                if (cube.CurrentSegment != currentSegment) continue;
+            }
+
+            // Debug: Log position comparison every few frames
+            if (Time.frameCount % 30 == 0)
+            {
+                this.Log($"Collision Check: Player@({currentTilePosition.x},{currentTilePosition.y}) vs Cube@({cube.position.x},{cube.position.y}) Segment: Player={currentSegment?.segmentIndex ?? -1}, Cube={cube.CurrentSegment?.segmentIndex ?? -1}", EnableDebugLogs);
+            }
 
             if (cube.position.x == currentTilePosition.x && cube.position.y == currentTilePosition.y)
             {
@@ -779,9 +1173,26 @@ public class PlayerManager : MonoBehaviour, IManagerDebugInterface
         if (!isDead) Die();
     }
 
+    /// <summary>
+    /// Teleports player to position (instant, no movement/animation).
+    /// Use MoveTo() for actual movement testing.
+    /// </summary>
     public void SetPosition(int x, int z)
     {
-        // Clamp to valid grid bounds (respecting removed rows)
+        this.Log($"SetPosition called: ({x}, {z})", EnableDebugLogs);
+        
+        // SEGMENT CONTROLLERS: Use segment-aware positioning for consistency
+        if (grid != null && grid.HasSegmentControllers)
+        {
+            var segment = grid.GetSegmentController(0);
+            if (segment != null)
+            {
+                SetPositionOnSegment(segment, x, z);
+                return;
+            }
+        }
+        
+        // Legacy: Non-segment positioning
         int minY = grid != null ? grid.bottom : 0;
         x = Mathf.Clamp(x, 0, grid.Width - 1);
         z = Mathf.Clamp(z, minY, grid.Height - 1);
@@ -792,6 +1203,7 @@ public class PlayerManager : MonoBehaviour, IManagerDebugInterface
         }
 
         Vector3 worldPos = grid.GridToWorldPosition(x, z, 0f);
+        this.Log($"SetPosition (legacy): grid ({x}, {z}) -> world {worldPos}", EnableDebugLogs);
 
         // Handle CharacterController properly
         CharacterController controller = GetComponent<CharacterController>();
@@ -822,6 +1234,182 @@ public class PlayerManager : MonoBehaviour, IManagerDebugInterface
             }
         }
     }
+    
+    /// <summary>
+    /// Moves player toward target position using the actual movement system.
+    /// This tests real movement, animations, and collision handling.
+    /// </summary>
+    public void MoveTo(int targetX, int targetY)
+    {
+        if (grid == null)
+        {
+            DebugLog("⚠️ Cannot move: GridManager not available");
+            return;
+        }
+        
+        // Clamp target to valid bounds
+        int minY = grid.bottom;
+        targetX = Mathf.Clamp(targetX, 0, grid.Width - 1);
+        targetY = Mathf.Clamp(targetY, minY, grid.Height - 1);
+        
+        Vector3 targetWorldPos = grid.GridToWorldPosition(targetX, targetY, 0f);
+        Vector3 direction = (targetWorldPos - transform.position);
+        direction.y = 0f; // Keep on ground plane
+        
+        if (direction.magnitude < 0.1f)
+        {
+            // Already at target
+            DebugLog($"Already at target position ({targetX}, {targetY})");
+            return;
+        }
+        
+        // Normalize direction
+        direction.Normalize();
+        
+        // Set velocity toward target (using acceleration for smooth movement)
+        // This will be processed by ApplyMovementWithCollisionSmoothing in Update()
+        currentVelocity = direction * acceleration;
+        isMoving = true;
+        
+        DebugLog($"🎮 Moving toward ({targetX}, {targetY}) - velocity: {currentVelocity}");
+        
+        // Start coroutine to monitor arrival
+        StartCoroutine(MonitorMovementToTarget(targetX, targetY));
+    }
+    
+    /// <summary>
+    /// Monitors movement to target and stops when close enough.
+    /// </summary>
+    private IEnumerator MonitorMovementToTarget(int targetX, int targetY)
+    {
+        Vector3 targetWorldPos = grid.GridToWorldPosition(targetX, targetY, 0f);
+        float arrivalThreshold = 0.2f; // Close enough to consider arrived
+        float timeout = 5f; // Max time to reach target
+        float elapsed = 0f;
+        
+        while (elapsed < timeout)
+        {
+            yield return null;
+            elapsed += Time.deltaTime;
+            
+            float distance = Vector3.Distance(transform.position, targetWorldPos);
+            if (distance < arrivalThreshold)
+            {
+                // Arrived - stop movement
+                currentVelocity = Vector3.zero;
+                isMoving = false;
+                
+                // Snap to exact position
+                Vector2Int actualPos = grid.WorldToGridPosition(transform.position);
+                if (actualPos.x == targetX && actualPos.y == targetY)
+                {
+                    DebugLog($"✅ Arrived at target ({targetX}, {targetY})");
+                }
+                else
+                {
+                    DebugLog($"⚠️ Close to target ({targetX}, {targetY}) but at ({actualPos.x}, {actualPos.y})");
+                }
+                yield break;
+            }
+            
+            // Check if we're stuck (not moving toward target)
+            Vector3 toTarget = (targetWorldPos - transform.position).normalized;
+            float dot = Vector3.Dot(currentVelocity.normalized, toTarget);
+            if (dot < -0.5f && currentVelocity.magnitude < 0.1f)
+            {
+                // Moving away or stuck - might be blocked
+                DebugLog($"⚠️ Movement blocked or stuck near ({targetX}, {targetY})");
+                currentVelocity = Vector3.zero;
+                isMoving = false;
+                yield break;
+            }
+        }
+        
+        // Timeout - stop movement
+        DebugLog($"⏱️ Movement timeout - stopped before reaching ({targetX}, {targetY})");
+        currentVelocity = Vector3.zero;
+        isMoving = false;
+    }
+    
+    /// <summary>
+    /// SEGMENT CONTROLLER: Sets player position using segment's local coordinate system.
+    /// Used for respawning on a specific segment.
+    /// </summary>
+    public void SetPositionOnSegment(GridSegmentController segment, int localX, int localY)
+    {
+        if (segment == null)
+        {
+            DebugLog("⚠️ SetPositionOnSegment: No segment provided, using legacy SetPosition");
+            SetPosition(localX, localY);
+            return;
+        }
+        
+        // Clamp to segment bounds
+        localX = Mathf.Clamp(localX, 0, segment.width - 1);
+        localY = Mathf.Clamp(localY, 0, segment.height - 1);
+        
+        if (currentHoveredTile != null)
+        {
+            currentHoveredTile.SetPlayerHover(false);
+        }
+        
+        // Calculate world position using segment's coordinate system
+        Vector3 worldPos = segment.LocalToWorldPosition(localX, localY, 0f);
+        
+        // Handle CharacterController properly
+        CharacterController controller = GetComponent<CharacterController>();
+        if (controller != null)
+        {
+            controller.enabled = false;
+            transform.position = worldPos;
+            controller.enabled = true;
+        }
+        else
+        {
+            transform.position = worldPos;
+        }
+        
+        // Reset velocity to prevent sliding
+        currentVelocity = Vector3.zero;
+        
+        // Store the local position as current tile position
+        currentTilePosition = new Vector2Int(localX, localY);
+        lastLoggedTileX = localX;
+        lastLoggedTileZ = localY;
+        
+        // Update hovered tile using segment's tile
+        currentHoveredTile = segment.GetTile(localX, localY);
+        if (currentHoveredTile != null)
+        {
+            currentHoveredTile.SetPlayerHover(true);
+        }
+        
+        // Update start position for respawns on this segment
+        playerStartPosition = new Vector2Int(localX, localY);
+        
+        // Store reference to current segment for segment-aware collision detection
+        currentSegment = segment;
+        
+        DebugLog($"🎮 SetPositionOnSegment: segment {segment.segmentIndex} local ({localX}, {localY}) world {worldPos}");
+    }
+    
+    /// <summary>
+    /// Grants brief invulnerability to the player.
+    /// Called by WaveManager when wave respawns to prevent instant death from spawning cubes.
+    /// </summary>
+    public void GrantBriefInvulnerability(float duration = 0.5f)
+    {
+        respawnInvulnerabilityTimer = duration;
+        DebugLog($"🛡️ Player granted {duration}s invulnerability");
+    }
+    
+    /// <summary>
+    /// Gets the current segment the player is on (for segment-aware systems).
+    /// </summary>
+    public GridSegmentController CurrentSegment => currentSegment;
+    
+    // SEGMENT CONTROLLER: Reference to current segment for segment-aware operations
+    private GridSegmentController currentSegment;
 
     public void SetMaxMarkers(int max)
     {
@@ -862,8 +1450,33 @@ public class PlayerManager : MonoBehaviour, IManagerDebugInterface
 
     private bool IsValidTilePosition(Vector2Int pos)
     {
-        // Use GridManager's validation for consistency
-        return grid != null && grid.IsValidGridPosition(pos);
+        // Use GridManager's validation
+        if (grid == null) return false;
+        return grid.IsValidGridPosition(pos);
+    }
+    
+    /// <summary>
+    /// ADVANCED GRID: Checks if a world position is valid on any segment.
+    /// </summary>
+    private bool IsWorldPositionValidOnAnySegment(Vector3 worldPos)
+    {
+        if (grid == null) return false;
+        
+        // SEGMENT CONTROLLERS: Check all segment controllers
+        if (grid.HasSegmentControllers)
+        {
+            return grid.IsValidWorldPosition(worldPos);
+        }
+        
+        // For legacy multi-segment grids, check world position against all segments
+        if (grid.HasMultipleSegments)
+        {
+            return grid.IsWorldPositionValid(worldPos);
+        }
+        
+        // Standard single-segment check
+        Vector2Int gridPos = grid.WorldToGridPosition(worldPos);
+        return grid.IsValidGridPosition(gridPos);
     }
 
     private void CleanupPlayer()

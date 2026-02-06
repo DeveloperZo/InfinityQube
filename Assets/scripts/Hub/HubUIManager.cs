@@ -1,21 +1,14 @@
 using UnityEngine;
 
 /// <summary>
-/// Manages hub UI panels. Opens/closes panels based on building clicks.
-/// Attach to a persistent object in the Hub scene.
+/// Manages hub UI panels. Opens/closes panels based on building interactions.
+/// Panels should be placed in the scene. Auto-finds if not assigned.
 /// </summary>
 public class HubUIManager : MonoBehaviour
 {
-    #region Singleton
+    public static HubUIManager Instance { get; private set; }
     
-    private static HubUIManager _instance;
-    public static HubUIManager Instance => _instance;
-    
-    #endregion
-    
-    #region Inspector Configuration
-    
-    [Header("UI Panels")]
+    [Header("Panels (auto-found if not assigned)")]
     [SerializeField] private GameObject stageSelectionPanel;
     [SerializeField] private GameObject attunementPanel;
     [SerializeField] private GameObject statsPanel;
@@ -23,127 +16,110 @@ public class HubUIManager : MonoBehaviour
     [Header("Settings")]
     [SerializeField] private KeyCode closeKey = KeyCode.Escape;
     
-    #endregion
+    [Header("Debug")]
+    [SerializeField] private bool autoOpenStagePanel = false; // Set true to test panel visibility
     
-    #region Runtime State
-    
-    private GameObject currentPanel;
-    
-    #endregion
-    
-    #region Properties
-    
-    public bool IsPanelOpen => currentPanel != null && currentPanel.activeSelf;
-    
-    #endregion
-    
-    #region Unity Lifecycle
+    public bool IsPanelOpen => 
+        (stageSelectionPanel != null && stageSelectionPanel.activeSelf) ||
+        (attunementPanel != null && attunementPanel.activeSelf) ||
+        (statsPanel != null && statsPanel.activeSelf);
     
     private void Awake()
     {
-        if (_instance != null && _instance != this)
+        if (Instance != null && Instance != this)
         {
             Destroy(gameObject);
             return;
         }
-        _instance = this;
+        Instance = this;
         
-        // Ensure all panels start closed
+        FindPanels();
         CloseAllPanels();
+    }
+    
+    private void Start()
+    {
+        // Auto-open for testing
+        if (autoOpenStagePanel && stageSelectionPanel != null)
+        {
+            Debug.Log("[HubUIManager] Auto-opening StageSelectionPanel for testing");
+            OpenStageSelection();
+        }
+    }
+    
+    private void FindPanels()
+    {
+        // Auto-find panels if not assigned
+        if (stageSelectionPanel == null)
+        {
+            var panel = FindObjectOfType<StageSelectionPanel>(true);
+            if (panel != null) stageSelectionPanel = panel.gameObject;
+        }
+        
+        if (attunementPanel == null)
+        {
+            var panel = FindObjectOfType<AttunementPanel>(true);
+            if (panel != null) attunementPanel = panel.gameObject;
+        }
+        
+        if (statsPanel == null)
+        {
+            var panel = FindObjectOfType<StatsPanel>(true);
+            if (panel != null) statsPanel = panel.gameObject;
+        }
+        
+        Debug.Log($"[HubUIManager] Panels found - Stage:{stageSelectionPanel != null}, Attunement:{attunementPanel != null}, Stats:{statsPanel != null}");
     }
     
     private void Update()
     {
-        // Close panel on Escape
         if (Input.GetKeyDown(closeKey) && IsPanelOpen)
-        {
             CloseAllPanels();
-        }
+        
+        // Debug keys for testing panels
+        #if UNITY_EDITOR
+        if (Input.GetKeyDown(KeyCode.F1)) OpenStageSelection();
+        if (Input.GetKeyDown(KeyCode.F2)) OpenAttunements();
+        if (Input.GetKeyDown(KeyCode.F3)) OpenStats();
+        #endif
     }
     
     private void OnDestroy()
     {
-        if (_instance == this) _instance = null;
+        if (Instance == this) Instance = null;
     }
     
-    #endregion
-    
-    #region Panel Management
-    
-    /// <summary>
-    /// Opens the panel corresponding to the building type.
-    /// </summary>
-    public void OpenPanel(HubBuildingType buildingType)
+    public void OpenPanel(HubBuildingType type)
     {
         CloseAllPanels();
         
-        GameObject panelToOpen = GetPanelForBuilding(buildingType);
-        if (panelToOpen != null)
-        {
-            panelToOpen.SetActive(true);
-            currentPanel = panelToOpen;
-            Debug.Log($"[HubUIManager] Opened {buildingType} panel");
-        }
-        else
-        {
-            Debug.LogWarning($"[HubUIManager] No panel assigned for {buildingType}");
-        }
-    }
-    
-    /// <summary>
-    /// Closes all panels.
-    /// </summary>
-    public void CloseAllPanels()
-    {
-        if (stageSelectionPanel != null) stageSelectionPanel.SetActive(false);
-        if (attunementPanel != null) attunementPanel.SetActive(false);
-        if (statsPanel != null) statsPanel.SetActive(false);
-        
-        currentPanel = null;
-    }
-    
-    /// <summary>
-    /// Closes the currently open panel.
-    /// </summary>
-    public void CloseCurrentPanel()
-    {
-        if (currentPanel != null)
-        {
-            currentPanel.SetActive(false);
-            currentPanel = null;
-        }
-    }
-    
-    private GameObject GetPanelForBuilding(HubBuildingType buildingType)
-    {
-        return buildingType switch
+        var panel = type switch
         {
             HubBuildingType.CelestialAtlas => stageSelectionPanel,
             HubBuildingType.ResonanceAlignmentChamber => attunementPanel,
             HubBuildingType.ObservationChronicle => statsPanel,
             _ => null
         };
+        
+        if (panel != null)
+        {
+            panel.SetActive(true);
+            Debug.Log($"[HubUIManager] Opened {type} panel");
+        }
     }
     
-    #endregion
+    public void CloseAllPanels()
+    {
+        bool wasOpen = IsPanelOpen;
+        if (stageSelectionPanel != null) stageSelectionPanel.SetActive(false);
+        if (attunementPanel != null) attunementPanel.SetActive(false);
+        if (statsPanel != null) statsPanel.SetActive(false);
+        
+        if (wasOpen)
+            Debug.Log("[HubUIManager] All panels closed");
+    }
     
-    #region Public API
-    
-    /// <summary>
-    /// Directly open stage selection panel.
-    /// </summary>
     public void OpenStageSelection() => OpenPanel(HubBuildingType.CelestialAtlas);
-    
-    /// <summary>
-    /// Directly open attunement panel.
-    /// </summary>
     public void OpenAttunements() => OpenPanel(HubBuildingType.ResonanceAlignmentChamber);
-    
-    /// <summary>
-    /// Directly open stats panel.
-    /// </summary>
     public void OpenStats() => OpenPanel(HubBuildingType.ObservationChronicle);
-    
-    #endregion
 }
-

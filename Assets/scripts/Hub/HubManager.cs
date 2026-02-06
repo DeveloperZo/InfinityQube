@@ -19,8 +19,9 @@ public class HubManager : MonoBehaviour
     #region Inspector Configuration
     
     [Header("Scene Configuration")]
-    [SerializeField] private string gameplaySceneName = "Main";
-    [SerializeField] private string hubSceneName = "Hub";
+    [SerializeField] private string gameplaySceneName = "Stage";
+    [SerializeField] private string hubSceneName = "Stage"; // Same scene, different stage
+    [SerializeField] private int hubStageIndex = 100; // Hub stage index in StageDB
     
     [Header("Hub Buildings")]
     [SerializeField] private List<HubBuilding> hubBuildings = new List<HubBuilding>();
@@ -77,8 +78,8 @@ public class HubManager : MonoBehaviour
     
     private void Start()
     {
-        RefreshHubState();
-        DebugLog("HubManager initialized");
+        // Hub scene just transitions to the grid-based Hub World
+        EnterHubWorld();
     }
     
     private void OnDestroy()
@@ -164,11 +165,10 @@ public class HubManager : MonoBehaviour
     {
         DebugLog($"Starting stage {stageIndex}...");
         
-        // Store selected stage for StageManager to pick up
+        // Set the stage index and reload scene
         PlayerPrefs.SetInt("SelectedStage", stageIndex);
         PlayerPrefs.Save();
         
-        // Load gameplay scene
         SceneManager.LoadScene(gameplaySceneName);
     }
     
@@ -177,13 +177,26 @@ public class HubManager : MonoBehaviour
     #region Scene Transitions
     
     /// <summary>
-    /// Return to hub from gameplay (call after stage complete).
+    /// Enter the Hub world (grid-based hub in Stage scene).
+    /// </summary>
+    public void EnterHubWorld()
+    {
+        DebugLog("Entering Hub World...");
+        StartStage(100); // HubStage is stage 100
+    }
+    
+    /// <summary>
+    /// Return to hub stage from gameplay (call after stage complete).
     /// </summary>
     public static void ReturnToHub()
     {
-        // Get hub scene name from instance or use default
-        string hubScene = IsInitialized ? Instance.hubSceneName : "Hub";
-        SceneManager.LoadScene(hubScene);
+        Debug.Log("[HubManager] ReturnToHub called");
+        
+        // Set SelectedStage to hub stage index and reload scene
+        PlayerPrefs.SetInt("SelectedStage", 100);
+        PlayerPrefs.Save();
+        
+        SceneManager.LoadScene("Stage");
     }
     
     #endregion

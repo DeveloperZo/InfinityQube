@@ -5,6 +5,33 @@
 ## Brainstorm Items
 
 
+### Wave animation introduction
+Develop animation for wave intro for both single segment and multi-segment grids
+Ideally we can tease the infinity cubes resonance and when rebuilding a wave for the next segment we can have the cubes move into place and phase through infinity cubes. So infinity cubes reach bottom of grid in same orientation and instead of falling off. Cubes climb up the sides to move into configuration before starting (and phasing through infinity which should always be there) 
+
+### Iterate on face painting 
+- **Description**: Mine this mechanic for more fun and interesting concepts
+- **Unique Value**: gameplay differentiation
+- **Constraints**: 
+- **Rating**: 6/10
+- **Notes**: Expand face painting so painted tiles affect cubes that touch them, creating a unified painting theme. When a painted face touches a grid tile, the tile becomes painted and creates a static marker (preserving fixed positioning for strategic capture zones). Additionally, any cube touching the painted tile gets converted to the painted type (e.g., Unit cube → Matrix cube). Converted cubes are highlighted during a manual window where the player can trigger them to create area effects; after the window expires, the converted cube becomes permanent and must be collided with normally. This dual-purpose approach preserves strategic positioning control through static markers while adding mobile transformation that affects cubes behind Infinity. The painting theme flows naturally: collision paints face → face touches grid → tile becomes painted → cubes touching tile get affected. This could simplify the system by removing the need for separate cube marker manual triggering (R key), as painted tiles serve both as fixed capture zones and cube converters. Works for both wave cubes and player cubes touching painted tiles.
+
+### Advance Grid type
+- **Description**: Introduce grid movement paths with 90-degree turns (L, C, S shapes) where cubes maintain formation but movement direction rotates
+- **Unique Value**: gameplay differentiation
+- **Constraints**: 
+- **Rating**: 8/10
+- **Notes**: Grids define movement paths with 90-degree turns. Cubes maintain their formation (e.g., 5x5 array) but movement direction changes at corners. When a 5x5 formation reaches the bottom edge, it turns 90° and moves right, maintaining the same 5x5 arrangement. This creates direction-dependent puzzle difficulty: the same cube formation becomes easier or harder to intercept based on movement direction. Vertical movement (narrow intercept point) may be impossible to solve, but when cubes turn horizontal (wide intercept point), the same formation becomes trivial. Strategic timing: players wait for cubes to turn into favorable directions where marker placement is more effective. Path examples: L-shape (down → right), C-shape (down → right → up), S-shape (down → right → down → right).
+
+### Refactor Recursion
+- **Description**: Tweak recursion for more player agency and differentiation from matrix
+- **Unique Value**: Lets player solve more problems
+- **Constraints**: 
+- **Rating**: 7/10
+- **Status**: ✅ **RESOLVED - January 2026**
+- **Implementation**: Recursion redesigned as repositioning tool via swap mechanics. Creates swap markers that reposition cubes using + pattern swaps (N↔S, W↔E). Player selects direction (horizontal/vertical) via arrow keys with hover-based visual preview. Manual trigger (R key) like other cube markers. Empowered swaps (Recursion+Recursion) provide independent swap and capture axis selection. Multi-hit system requires 2 hits to capture Recursion cubes. Clear differentiation from Matrix: Matrix = area capture, Recursion = repositioning tool.
+- **Original Notes**: Change Recursion from auto-trigger to manual trigger (player controls activation timing). Make Recursion shape dynamic based on placement position: when placed on grid edges (top, bottom, left, right boundaries), creates a 3 row × 1 column vertical area (good for vertical wave threats). When placed on non-edges (interior tiles), creates a 1 row × 3 column horizontal area (good for horizontal wave threats). This dynamic shape adaptation gives Recursion more versatility than Matrix's fixed squares (2×2, 3×3), creating clear differentiation: Matrix = area squares, Recursion = adaptive lines. Manual trigger gives players strategic timing control, allowing them to wait for optimal cube positions before activating. Visual preview shows which shape will be created based on placement position.
+
 ### Hire youtube creator daafrikan (Yannick)
 - **Description**: Hire youtube creator daafrikan (Yannick)
 - **Unique Value**: daafrikan (Yannick)
@@ -61,86 +88,81 @@
 - **Rating**: 7/10
 - **Notes**: Alternative to toggle system that feels more natural, could highlight existing markers when targeting
 
-### Moving Cube Markers (Symmetrical Wave System)
+### Moving Cube Markers (Marker to Cube System)
 - **Description**: Markers transform into cubes that move backward toward incoming waves, creating a symmetrical gameplay system where players mirror the wave pattern with inverse timing. Collisions between player cubes and wave cubes function as captures.
 - **Unique Value**: Embodies the infinity symbol (∞) theme through actual gameplay symmetry. Transforms static defensive play into dynamic pattern mirroring. Creates visible, predictable collision points that clarify strategic planning.
 - **Constraints**: Maintains step-based movement rhythm. Resource costs follow existing marker system. Requires clear boundary line definition.
 - **Rating**: 9/10 (Strong thematic coherence + strategic depth)
+-- **Outcome**: Accepted and implemented
 
-#### Core System Design
-- **Movement Pattern**: 
-  - Place marker → Next step converts to cube → Moves backward each step on wave rhythm
-  - All movement synchronized to wave step cadence
-  - Player cubes and wave cubes are two halves of the same pattern
-  
-- **Marker-Cube Equivalence**:
-  - Moving cube = mobile version of its marker type
-  - Light cube = Unit Marker capture behavior
-  - Heavy cube = Recursion Marker (multi-hit for Recursion)
-  - Matrix cube = Matrix marker (area effect potential)
-  - Inherits all resource costs, cooldowns, and regeneration rules from marker system
+### Type-Based Player Cube Movement Ranges
+- **Description**: Player cubes have fixed travel distance that varies by cube type, creating different strategic profiles per marker type. Range could increase with game progression, requiring more captures to maintain effectiveness.
+- **Unique Value**: Creates strategic differentiation between marker types, forces closer placement decisions, adds resource tension
+- **Constraints**: Must be intuitive and clearly communicated to players. Need to balance ranges to maintain fun.
+- **Rating**: 7/10 (Future consideration - keeping move-until-collision for now)
+- **Notes**: 
+  - **Current Decision**: Keeping "move until collision" for now (Option A) - clearer when marker converts to cube
+  - **Future Option C**: Type-based ranges
+    - Unit cubes: 10 tiles max travel
+    - Matrix cubes: 8 tiles max travel
+    - Recursion cubes: 6 tiles max travel
+    - Infinity cubes: 12 tiles max travel
+  - **Progression Mechanic**: As game progresses, could increase captures needed per cube type to maintain range
+    - Early game: 1 capture = full range
+    - Mid game: 2 captures = full range
+    - Late game: 3 captures = full range
+    - Creates progression incentive: capture more cubes to extend range
+  - **Strategic Impact**: 
+    - Forces closer marker placement (more tactical)
+    - Creates resource tension (limited range = limited options)
+    - Different marker types have different "reach" profiles
+    - Progression system rewards skillful play (more captures = better range)
+  - **Design Considerations**:
+    - Need clear visual feedback for remaining travel distance
+    - Range could be displayed on marker placement preview
+    - Could show "range ring" around marker showing travel distance
+    - Balance: Too short = frustrating, too long = no strategic difference
 
-#### Strategic Depth
-- **Spatial-Temporal Trade-off**:
-  - Far marker placed early = late collision
-  - Close marker placed late = early collision
-  - Players must calculate collision points, not just positions
-  
-- **Pattern Mirroring**:
-  - Success requires duplicating wave patterns with markers
-  - Focus shifts from reactive placement to predictive mirroring
-  - Visible collision points provide strategic clarity
-  
-- **Boundary Line Significance**:
-  - Acts as axis of symmetry for the infinity theme
-  - Reinforces original IQ's boundary pressure
-  - Clear demarcation between player and wave space
+### Same-Type Collision Upgrades (RPG System)
+- **Description**: Upgrade system that enhances or unlocks same-type collision bonuses (e.g., Matrix+Matrix → 3x3 marker)
+- **Unique Value**: Natural progression system tied to core mechanics, rewards mastery of collision types
+- **Constraints**: Must not make base game feel incomplete without upgrades
+- **Rating**: 8/10
+- **Notes**: 
+  - **Base Mechanic**: Same-type cube collisions create enhanced effects (already implemented)
+    - Matrix + Matrix → 3x3 triggerable marker (vs 2x2 for mismatched)
+    - Recursion + Recursion → Empowered swap (2 charges vs 1)
+  - **RPG Upgrade Ideas**:
+    - **Unlock Chain Reactions**: Placed markers can trigger same-type bonuses (currently disabled)
+    - **Size Upgrades**: Matrix+Matrix → 4x4 or 5x5 markers
+    - **Charge Upgrades**: Recursion+Recursion → 3 charges instead of 2
+    - **New Same-Type Bonuses**: Unit+Unit → multi-capture, Infinity+Infinity → special effect
+    - **Reduced Requirements**: Same-type bonus triggers with painted faces (not just full cube match)
+  - **Progression Tiers**:
+    - Tier 1: Unlock same-type bonuses (base game)
+    - Tier 2: Enhanced same-type bonuses (larger areas, more charges)
+    - Tier 3: Chain reaction bonuses (markers can trigger same-type effects)
+  - **Strategic Impact**: Players seek same-type collisions for maximum value, creating deliberate cube targeting
 
-#### Thematic Integration
-- **Infinity Symbol (∞) as Gameplay**:
-  - Two loops meeting in the middle = wave and player cubes
-  - Symmetrical mechanics reflect mathematical infinity
-  - Boundary line where infinity folds on itself
-  - Converting cubes to markers = finding gaps in infinite loops
-  
-- **Visual Coherence**:
-  - Player literally creates mirror image of threats
-  - Collision points are where infinite loops complete
-  - Strategic mastery means perfect symmetrical play
-
-#### Key Interactions
-1. **Infinity Cube Bypass**: 
-   - Unit cube → travels backward → converts to marker before Infinity row
-   - Wave passes over marker → captures occur behind Infinity cubes
-   - Only Unit cubes can convert mid-flight (design decision)
-   
-2. **Same-Type Collisions**:
-   - Matrix player cube + Matrix wave cube = Matrix marker dropped at collision
-   - Recursion player cube + Recursion wave cube = Recursion Marker dropped
-   - Creates resource generation through successful interceptions
-   
-3. **Strategic Positioning**:
-   - Multiple markers at different distances = staggered interceptions
-   - Can create defensive walls or surgical strikes
-   - Timing of placement matters as much as position
-
-#### Simplified Design Decisions
-- **Resource Management**: Uses existing marker charge/cooldown system
-- **Collision Behavior**: Moving marker hitting cube = standard capture for that marker type
-- **Player Cube Interactions**: Pass through each other (no collision between player cubes)
-- **Conversion Rules**: Only Unit cubes can convert back to markers mid-flight
-- **Triggering**: Marker automatically becomes cube on next wave step (no manual trigger needed)
-
-#### Why This Works
-- **Not a new system**: Extension of existing markers with movement
-- **Thematically perfect**: Infinity symbol becomes core gameplay loop
-- **Strategic clarity**: Can see your plan executing in real-time
-- **Depth without complexity**: Simple rule (markers can move) creates emergent strategy
-- **Solves IQ's limitation**: Adds offensive play to defensive game
-- **Answers are in existing systems**: Most design questions resolve by following marker system logic
+### Efficient Single-Dev Testing Strategy
+- **Description**: Develop testing workflow that prevents combinatorial explosion as stages/waves multiply
+- **Unique Value**: Saves development time, enables faster iteration, prevents burnout
+- **Constraints**: Must provide confidence without full regression testing every change
+- **Rating**: 10/10 (Critical workflow improvement)
+- **Notes**: Current problem: Testing Stage 0 all waves → Stage 0+1 all waves → Stage 0-2 all waves becomes combinatorially intensive. Solutions to explore:
+  - **Incremental Validation**: Only test new/changed content. Once Stage 0 validated, only test Stage 1. Once Stage 1 validated, only test Stage 2. Don't retest everything.
+  - **Smoke Testing**: Quick critical path validation (can player place marker? Do cubes move? Do collisions work?) - 2-3 minutes per stage instead of full playthrough
+  - **Test Prioritization**: High-risk areas (new mechanics, changed systems) get full testing. Low-risk areas (unchanged waves) get spot checks
+  - **Automated Playtesting**: Record/playback system or AI-driven testing that can run overnight. Validate core mechanics automatically
+  - **Test Isolation**: Test individual waves/systems independently. Don't require full stage completion to validate a single wave
+  - **Regression Testing**: Only retest what changed. If penalty system unchanged, don't retest all penalty scenarios
+  - **Test Suites**: Organized test scenarios (e.g., "Unit marker basics", "Infinity avoidance", "Penalty triggers") that can be run selectively
+  - **Quick Validation Tools**: Fast feedback loops (prototyping panel, debug tools) that validate mechanics without full playthrough
+  - **Test Documentation**: Track what's been validated and when. Only retest if underlying systems changed
+  - **Milestone-Based Testing**: Test to milestone completion, then lock. Only retest locked content if critical bug found
 
 ---
 
-**Last Updated:** July 04, 2025  
+**Last Updated:** January 30, 2026  
 **Purpose:** Capture potential mechanics for future consideration
 **Next Steps:** Prototype highest rated mechanics

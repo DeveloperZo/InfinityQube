@@ -1,0 +1,56 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: faaa491ad539cb444afed02f7554648d, type: 3}
+  m_Name: stage_03
+  m_EditorClassIdentifier: 
+  stageNumber: 3
+  stageName: Dancing with Danger
+  stageType: 1
+  description: 
+  objective: Capture Matrix cubes to create cube markers while avoiding Infinity
+    cubes
+  gridWidth: 7
+  gridHeight: 21
+  playerStartPosition: {x: 0, y: 1}
+  respawnDelayMoves: 1
+  segmentLayoutPrefab: {fileID: 8479612789658835193, guid: 39ccf6ce512e8e74a8987b18466dfda1, type: 3}
+  enableLineDivider: 0
+  lineDividerStartY: 10
+  lineDividerEscapePenalty: 0
+  lineDividerCaptureReward: 0
+  stageGrants:
+    unitMaxOnGrid: 5
+    unitMarkerRechargeRate: 0
+    maxUnitMarkerCharges: 0
+    matrixCharges: 0
+    matrixMaxOnGrid: 0
+    recursionCharges: 0
+    recursionMaxOnGrid: 0
+    infinityCharges: 0
+    infinityMaxOnGrid: 0
+  waveGrantsFromWaveData: 1
+  lockAttunements: 1
+  allowedAttunementIds: []
+  waveConfigurations:
+  - {fileID: 11400000, guid: 0fb9c9a4fe201c343b103a736a5eff52, type: 2}
+  - {fileID: 11400000, guid: a426cbc035c2f334d937ad7297db7200, type: 2}
+  - {fileID: 11400000, guid: b1f0c30a384ff31408c9c4dc1c4c704e, type: 2}
+  - {fileID: 11400000, guid: 03e82b6b2d466bf45b9579a8cc9798c8, type: 2}
+  requireAllCubesDestroyed: 0
+  requiredCaptureCount: 0
+  maxAllowedEscapes: 0
+  isTestStage: 0
+  testCommands: []
+  testAssertions: []
+  maxTestSteps: 0
+  testTimeout: 30
+  exitPlayModeOnComplete: 0

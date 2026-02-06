@@ -24,7 +24,6 @@ public class PlayerSessionData
     
     [Header("Advanced Analytics")]
     public StrategicDecisionData strategicData;
-    public FacePaintingAnalytics facePaintingData;
     public ResourceEfficiencyMetrics resourceMetrics;
     public LearningProgressionData learningData;
     
@@ -40,7 +39,6 @@ public class PlayerSessionData
         
         // Initialize advanced analytics
         strategicData = new StrategicDecisionData();
-        facePaintingData = new FacePaintingAnalytics();
         resourceMetrics = new ResourceEfficiencyMetrics();
         learningData = new LearningProgressionData();
         
@@ -309,93 +307,6 @@ public class AdaptationEvent
         newStrategy = newStrat;
         trigger = trig;
         timeToAdapt = 0f;
-    }
-}
-
-[System.Serializable]
-public class FacePaintingAnalytics
-{
-    [Header("Cube Painting Frequency")]
-    public List<CubePaintingEvent> paintingEvents = new List<CubePaintingEvent>();
-    public Dictionary<string, int> facesPaintedByType = new Dictionary<string, int>();
-    public float averagePaintingInterval;
-    public int totalFacesPainted;
-    
-    [Header("Success Rates")]
-    public float paintingSuccessRate;
-    public Dictionary<string, float> successRateByFace = new Dictionary<string, float>();
-    public List<PaintingAttemptEvent> attemptEvents = new List<PaintingAttemptEvent>();
-    
-    [Header("Face Rotation Tracking")]
-    public List<FaceRotationEvent> rotationEvents = new List<FaceRotationEvent>();
-    public Dictionary<string, float> timeSpentOnFace = new Dictionary<string, float>();
-    public string mostPaintedFace;
-    public int mostPaintedFaceCount;
-    
-    public FacePaintingAnalytics()
-    {
-        facesPaintedByType = new Dictionary<string, int>();
-        successRateByFace = new Dictionary<string, float>();
-        timeSpentOnFace = new Dictionary<string, float>();
-    }
-}
-
-[System.Serializable]
-public class CubePaintingEvent
-{
-    public float timestamp;
-    public Vector2Int cubePosition;
-    public string faceDirection; // "front", "back", "left", "right", "top", "bottom"
-    public string paintType; // "light", "heavy", "matrix"
-    public bool wasSuccessful;
-    public float paintDuration;
-    
-    public CubePaintingEvent(float time, Vector2Int pos, string face, string type)
-    {
-        timestamp = time;
-        cubePosition = pos;
-        faceDirection = face;
-        paintType = type;
-        wasSuccessful = false;
-        paintDuration = 0f;
-    }
-}
-
-[System.Serializable]
-public class PaintingAttemptEvent
-{
-    public float timestamp;
-    public Vector2Int position;
-    public string intendedFace;
-    public bool succeeded;
-    public string failureReason; // "missed_cube", "wrong_face", "interrupted"
-    
-    public PaintingAttemptEvent(float time, Vector2Int pos, string face, bool success)
-    {
-        timestamp = time;
-        position = pos;
-        intendedFace = face;
-        succeeded = success;
-        failureReason = success ? "" : "unknown";
-    }
-}
-
-[System.Serializable]
-public class FaceRotationEvent
-{
-    public float timestamp;
-    public Vector2Int cubePosition;
-    public string fromFace;
-    public string toFace;
-    public float rotationDuration;
-    
-    public FaceRotationEvent(float time, Vector2Int pos, string from, string to)
-    {
-        timestamp = time;
-        cubePosition = pos;
-        fromFace = from;
-        toFace = to;
-        rotationDuration = 0f;
     }
 }
 

@@ -19,7 +19,7 @@ public class MarkerVisualManager : MonoBehaviour, IManagerDebugInterface
     [SerializeField] private Color areaPreviewColor = new Color(1f, 0.5f, 0f, 0.7f);
 
     [Header("Debug")]
-    [SerializeField] private bool enableDebugLogs = true;
+    [SerializeField] private bool enableDebugLogs = false; // Default OFF - visual update noise
 
     #endregion
 
@@ -83,11 +83,35 @@ public class MarkerVisualManager : MonoBehaviour, IManagerDebugInterface
     #region Visual Creation Methods
 
     /// <summary>
+    /// Gets the tile at position, using segment if provided, otherwise falling back to grid manager.
+    /// </summary>
+    private Tile GetTileOnSegment(Vector2Int position, GridSegmentController segment)
+    {
+        if (segment != null)
+        {
+            return segment.GetTile(position.x, position.y);
+        }
+        return gridManager.GetTileAt(position.x, position.y);
+    }
+    
+    /// <summary>
+    /// Gets the world position for a local position, using segment if provided.
+    /// </summary>
+    private Vector3 GetWorldPositionOnSegment(Vector2Int position, GridSegmentController segment, float yOffset = 0f)
+    {
+        if (segment != null)
+        {
+            return segment.LocalToWorldPosition(position.x, position.y, yOffset);
+        }
+        return gridManager.GridToWorldPosition(position.x, position.y, yOffset);
+    }
+
+    /// <summary>
     /// Creates visual marker for Unit marker placement
     /// </summary>
-    public GameObject CreateUnitMarkerVisual(Vector2Int position)
+    public GameObject CreateUnitMarkerVisual(Vector2Int position, GridSegmentController segment = null)
     {
-        Tile tile = gridManager.GetTileAt(position.x, position.y);
+        Tile tile = GetTileOnSegment(position, segment);
         if (tile != null)
         {
             // Unit = Blue-gray (lighter variant for marker visibility)
@@ -95,16 +119,16 @@ public class MarkerVisualManager : MonoBehaviour, IManagerDebugInterface
         }
 
         GameObject dummy = new GameObject($"UnitMarker_{position.x}_{position.y}");
-        dummy.transform.position = gridManager.GridToWorldPosition(position.x, position.y, 0f);
+        dummy.transform.position = GetWorldPositionOnSegment(position, segment, 0f);
         return dummy;
     }
 
     /// <summary>
     /// Creates visual marker for Recursion marker placement
     /// </summary>
-    public GameObject CreateRecursionMarkerVisual(Vector2Int position)
+    public GameObject CreateRecursionMarkerVisual(Vector2Int position, GridSegmentController segment = null)
     {
-        Tile tile = gridManager.GetTileAt(position.x, position.y);
+        Tile tile = GetTileOnSegment(position, segment);
         if (tile != null)
         {
             // Recursion = Deep amber brown (warm brown-orange)
@@ -112,16 +136,16 @@ public class MarkerVisualManager : MonoBehaviour, IManagerDebugInterface
         }
 
         GameObject dummy = new GameObject($"RecursionMarker_{position.x}_{position.y}");
-        dummy.transform.position = gridManager.GridToWorldPosition(position.x, position.y, 0f);
+        dummy.transform.position = GetWorldPositionOnSegment(position, segment, 0f);
         return dummy;
     }
 
     /// <summary>
     /// Creates visual marker for Matrix marker placement
     /// </summary>
-    public GameObject CreateMatrixMarkerVisual(Vector2Int position)
+    public GameObject CreateMatrixMarkerVisual(Vector2Int position, GridSegmentController segment = null)
     {
-        Tile tile = gridManager.GetTileAt(position.x, position.y);
+        Tile tile = GetTileOnSegment(position, segment);
         if (tile != null)
         {
             // Matrix = Vibrant light blue
@@ -129,16 +153,33 @@ public class MarkerVisualManager : MonoBehaviour, IManagerDebugInterface
         }
 
         GameObject dummy = new GameObject($"MatrixMarker_{position.x}_{position.y}");
-        dummy.transform.position = gridManager.GridToWorldPosition(position.x, position.y, 0f);
+        dummy.transform.position = GetWorldPositionOnSegment(position, segment, 0f);
+        return dummy;
+    }
+
+    /// <summary>
+    /// Creates visual marker for Swap marker placement
+    /// </summary>
+    public GameObject CreateSwapMarkerVisual(Vector2Int position, GridSegmentController segment = null)
+    {
+        Tile tile = GetTileOnSegment(position, segment);
+        if (tile != null)
+        {
+            // Swap = Amber/orange (similar to Recursion but distinct)
+            SetTileHighlight(tile, new Color(0.9f, 0.6f, 0.2f, 0.8f), "Swap");
+        }
+
+        GameObject dummy = new GameObject($"SwapMarker_{position.x}_{position.y}");
+        dummy.transform.position = GetWorldPositionOnSegment(position, segment, 0f);
         return dummy;
     }
 
     /// <summary>
     /// Creates visual marker for Infinity marker placement
     /// </summary>
-    public GameObject CreateInfinityMarkerVisual(Vector2Int position)
+    public GameObject CreateInfinityMarkerVisual(Vector2Int position, GridSegmentController segment = null)
     {
-        Tile tile = gridManager.GetTileAt(position.x, position.y);
+        Tile tile = GetTileOnSegment(position, segment);
         if (tile != null)
         {
             // Infinity = Deep black (dark charcoal for visibility)
@@ -146,75 +187,191 @@ public class MarkerVisualManager : MonoBehaviour, IManagerDebugInterface
         }
 
         GameObject dummy = new GameObject($"InfinityMarker_{position.x}_{position.y}");
-        dummy.transform.position = gridManager.GridToWorldPosition(position.x, position.y, 0f);
+        dummy.transform.position = GetWorldPositionOnSegment(position, segment, 0f);
         return dummy;
     }
 
     /// <summary>
-    /// Creates visual marker for Cube marker placement
+    /// Creates visual marker for Cube marker placement with strobe/beam effect
+    /// Attaches beam effects directly to each affected tile
     /// </summary>
-    public GameObject CreateCubeMarkerVisual(Vector2Int position, PlayerMarkerSystem.CubeMarkerType type)
+    public GameObject CreateCubeMarkerVisual(Vector2Int position, PlayerMarkerSystem.CubeMarkerType type, int size = 2, GridSegmentController segment = null)
     {
-        Tile tile = gridManager.GetTileAt(position.x, position.y);
-        if (tile != null)
+        Color highlightColor = type switch
         {
-            Color highlightColor = type switch
+            PlayerMarkerSystem.CubeMarkerType.Unit => Color.magenta,
+            PlayerMarkerSystem.CubeMarkerType.Recursion => new Color(0.7f, 0.2f, 0.7f, 1f), // Dark magenta
+            PlayerMarkerSystem.CubeMarkerType.Matrix => Color.cyan,
+            PlayerMarkerSystem.CubeMarkerType.Cube => Color.yellow,
+            _ => Color.white
+        };
+
+        // Get all affected positions for this marker area
+        List<Vector2Int> affectedPositions = GetAreaPositions(position, size, segment);
+        
+        // Create a simple container object to return (for tracking/destruction)
+        GameObject container = new GameObject($"CubeMarkerStrobe_{type}_{position.x}_{position.y}");
+        
+        // Only the bottom-left tile (position) gets the strobe beam
+        // All other tiles in the area get icons only
+        foreach (Vector2Int pos in affectedPositions)
+        {
+            Tile tile = GetTileOnSegment(pos, segment);
+            if (tile == null) continue;
+            
+            // Add effect component to tile
+            CubeMarkerStrobeEffect strobeEffect = tile.gameObject.GetComponent<CubeMarkerStrobeEffect>();
+            if (strobeEffect == null)
             {
-                PlayerMarkerSystem.CubeMarkerType.Unit => Color.magenta,
-                PlayerMarkerSystem.CubeMarkerType.Recursion => new Color(0.7f, 0.2f, 0.7f, 1f), // Dark magenta
-                PlayerMarkerSystem.CubeMarkerType.Matrix => Color.cyan,
-                PlayerMarkerSystem.CubeMarkerType.Cube => Color.yellow,
-                _ => Color.white
-            };
+                strobeEffect = tile.gameObject.AddComponent<CubeMarkerStrobeEffect>();
+            }
+            strobeEffect.Initialize(highlightColor, 1);
+            
+            // Only enable beam on the bottom-left tile (the position parameter)
+            // Other tiles will show icons when triggered
+            if (pos == position)
+            {
+                strobeEffect.SetEnabled(true); // Beam active on bottom-left tile
+            }
+            else
+            {
+                strobeEffect.SetEnabled(false); // No beam on other tiles
+                // Show icon immediately on other tiles
+                strobeEffect.ShowIcon(highlightColor);
+            }
+            
+            // Also set a subtle tile highlight for reference
             string markerName = $"Cube{type}";
-            SetTileHighlight(tile, highlightColor, markerName);
+            SetTileHighlight(tile, new Color(highlightColor.r, highlightColor.g, highlightColor.b, 0.3f), markerName);
         }
 
-        GameObject dummy = new GameObject($"CubeMarker_{type}_{position.x}_{position.y}");
-        dummy.transform.position = gridManager.GridToWorldPosition(position.x, position.y, 0f);
-        return dummy;
+        DebugLog("CreateCubeMarkerVisual", $"Created strobe effects on {affectedPositions.Count} tiles for {type} cube marker at ({position.x}, {position.y})");
+        return container;
+    }
+    
+    /// <summary>
+    /// Gets area positions for a given center and size
+    /// </summary>
+    private List<Vector2Int> GetAreaPositions(Vector2Int center, int size, GridSegmentController segment = null)
+    {
+        List<Vector2Int> positions = new List<Vector2Int>();
+        
+        if (size == 2)
+        {
+            // 2x2 area
+            for (int x = 0; x < 2; x++)
+            {
+                for (int y = 0; y < 2; y++)
+                {
+                    Vector2Int pos = new Vector2Int(center.x + x, center.y + y);
+                    if (IsValidPositionOnSegment(pos, segment))
+                    {
+                        positions.Add(pos);
+                    }
+                }
+            }
+        }
+        else if (size == 3)
+        {
+            // 3x3 area
+            for (int x = -1; x <= 1; x++)
+            {
+                for (int y = -1; y <= 1; y++)
+                {
+                    Vector2Int pos = new Vector2Int(center.x + x, center.y + y);
+                    if (IsValidPositionOnSegment(pos, segment))
+                    {
+                        positions.Add(pos);
+                    }
+                }
+            }
+        }
+        else
+        {
+            // Single tile
+            positions.Add(center);
+        }
+        
+        return positions;
+    }
+    
+    /// <summary>
+    /// Checks if a position is valid on the given segment (or grid if no segment).
+    /// </summary>
+    private bool IsValidPositionOnSegment(Vector2Int position, GridSegmentController segment)
+    {
+        if (segment != null)
+        {
+            return segment.IsValidLocalPosition(position.x, position.y);
+        }
+        return gridManager.IsValidGridPosition(position);
     }
 
     /// <summary>
-    /// Creates visual marker for powered-up Cube marker
+    /// Creates visual marker for powered-up Cube marker with enhanced strobe effect
     /// </summary>
     public GameObject CreatePoweredCubeMarkerVisual(Vector2Int position, PlayerMarkerSystem.CubeMarkerType type)
     {
         Tile tile = gridManager.GetTileAt(position.x, position.y);
-        if (tile != null)
+        if (tile == null)
         {
-            Color baseColor = type switch
-            {
-                PlayerMarkerSystem.CubeMarkerType.Unit => Color.magenta,
-                PlayerMarkerSystem.CubeMarkerType.Recursion => new Color(0.7f, 0.2f, 0.7f, 1f),
-                PlayerMarkerSystem.CubeMarkerType.Matrix => Color.cyan,
-                PlayerMarkerSystem.CubeMarkerType.Cube => Color.yellow,
-                _ => Color.white
-            };
-            Color poweredColor = new Color(baseColor.r * 1.5f, baseColor.g * 1.5f, baseColor.b * 1.5f, baseColor.a);
-            string markerName = $"PoweredCube{type}";
-            SetTileHighlight(tile, poweredColor, markerName);
+            DebugLog("CreatePoweredCubeMarkerVisual", $"No tile found at ({position.x}, {position.y})");
+            return null;
         }
 
-        GameObject dummy = new GameObject($"PoweredCubeMarker_{type}_{position.x}_{position.y}");
-        dummy.transform.position = gridManager.GridToWorldPosition(position.x, position.y, 0f);
-        return dummy;
+        Color baseColor = type switch
+        {
+            PlayerMarkerSystem.CubeMarkerType.Unit => Color.magenta,
+            PlayerMarkerSystem.CubeMarkerType.Recursion => new Color(0.7f, 0.2f, 0.7f, 1f),
+            PlayerMarkerSystem.CubeMarkerType.Matrix => Color.cyan,
+            PlayerMarkerSystem.CubeMarkerType.Cube => Color.yellow,
+            _ => Color.white
+        };
+        Color poweredColor = new Color(baseColor.r * 1.5f, baseColor.g * 1.5f, baseColor.b * 1.5f, baseColor.a);
+        
+        // Create enhanced strobe effect container
+        GameObject strobeContainer = new GameObject($"PoweredCubeMarkerStrobe_{type}_{position.x}_{position.y}");
+        strobeContainer.transform.SetParent(tile.transform);
+        strobeContainer.transform.localPosition = Vector3.zero;
+        
+        // Add strobe effect component with faster strobe for powered-up
+        CubeMarkerStrobeEffect strobeEffect = strobeContainer.AddComponent<CubeMarkerStrobeEffect>();
+        strobeEffect.Initialize(poweredColor);
+        
+        // Also set a subtle tile highlight for reference
+        string markerName = $"PoweredCube{type}";
+        SetTileHighlight(tile, new Color(poweredColor.r, poweredColor.g, poweredColor.b, 0.3f), markerName);
+
+        DebugLog("CreatePoweredCubeMarkerVisual", $"Created enhanced strobe effect for powered {type} cube marker at ({position.x}, {position.y})");
+        return strobeContainer;
     }
 
     /// <summary>
     /// Destroys a marker visual and clears associated highlights
+    /// Also disables beam effects on affected tiles
     /// </summary>
     public void DestroyMarkerVisual(GameObject visual)
     {
         if (visual != null)
         {
-            // Extract position from the visual object name
+            // Extract position and type from the visual object name to find affected tiles
             string[] nameParts = visual.name.Split('_');
             if (nameParts.Length >= 3)
             {
                 if (int.TryParse(nameParts[nameParts.Length - 2], out int x) &&
                     int.TryParse(nameParts[nameParts.Length - 1], out int y))
                 {
+                    // Disable beam effect on the center tile
+                    Tile centerTile = gridManager.GetTileAt(x, y);
+                    if (centerTile != null)
+                    {
+                        CubeMarkerStrobeEffect effect = centerTile.GetComponent<CubeMarkerStrobeEffect>();
+                        if (effect != null)
+                        {
+                            effect.SetEnabled(false);
+                        }
+                    }
+                    
                     ClearTileHighlight(new Vector2Int(x, y));
                     DebugLog("DestroyMarkerVisual", $"Cleared tile highlight at ({x}, {y}) after marker removal");
                 }
@@ -428,18 +585,22 @@ public class MarkerVisualManager : MonoBehaviour, IManagerDebugInterface
     #endregion
 
     #region Effects
+    
+    // Store segment for coroutine use (coroutines can't have ref parameters)
+    private GridSegmentController _effectSegment;
 
     /// <summary>
     /// Shows a trigger effect at the specified position
     /// </summary>
-    public void ShowMarkerTriggerEffect(Vector2Int position)
+    public void ShowMarkerTriggerEffect(Vector2Int position, GridSegmentController segment = null)
     {
-        StartCoroutine(MarkerTriggerEffectCoroutine(position));
+        _effectSegment = segment;
+        StartCoroutine(MarkerTriggerEffectCoroutine(position, segment));
     }
 
-    private IEnumerator MarkerTriggerEffectCoroutine(Vector2Int position)
+    private IEnumerator MarkerTriggerEffectCoroutine(Vector2Int position, GridSegmentController segment)
     {
-        Vector3 worldPos = gridManager.GridToWorldPosition(position.x, position.y, 0.1f);
+        Vector3 worldPos = GetWorldPositionOnSegment(position, segment, 0.1f);
 
         GameObject effect = GameObject.CreatePrimitive(PrimitiveType.Sphere);
         effect.name = $"TriggerEffect_{position.x}_{position.y}";
@@ -472,14 +633,14 @@ public class MarkerVisualManager : MonoBehaviour, IManagerDebugInterface
     /// <summary>
     /// Shows a success flash effect when a cube is captured
     /// </summary>
-    public void ShowCaptureSuccessEffect(Vector2Int position, CubeType cubeType)
+    public void ShowCaptureSuccessEffect(Vector2Int position, CubeType cubeType, GridSegmentController segment = null)
     {
-        StartCoroutine(CaptureSuccessEffectCoroutine(position, cubeType));
+        StartCoroutine(CaptureSuccessEffectCoroutine(position, cubeType, segment));
     }
     
-    private IEnumerator CaptureSuccessEffectCoroutine(Vector2Int position, CubeType cubeType)
+    private IEnumerator CaptureSuccessEffectCoroutine(Vector2Int position, CubeType cubeType, GridSegmentController segment)
     {
-        Vector3 worldPos = gridManager.GridToWorldPosition(position.x, position.y, 1.5f);
+        Vector3 worldPos = GetWorldPositionOnSegment(position, segment, 1.5f);
         
         // Create flash effect
         GameObject flash = GameObject.CreatePrimitive(PrimitiveType.Sphere);

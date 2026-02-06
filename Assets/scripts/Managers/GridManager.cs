@@ -28,18 +28,18 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
     public bool useObjectPooling = false;
     public int pooledTileCount = 100;
 
+    [Header("Segment-Based Grid (New)")]
+    [Tooltip("Use segment controllers from scene instead of generating programmatically")]
+    public bool useSegmentControllers = false;
+    
+    [Tooltip("Segment controllers in scene. If empty and useSegmentControllers is true, will auto-find in children.")]
+    [SerializeField] private List<GridSegmentController> segmentControllers = new List<GridSegmentController>();
+    
     [Header("Debug")]
     [Tooltip("Enable debug logging for this manager")]
     [SerializeField] private bool enableDebugLogs;
     public bool showGridGizmos = false;
     public Color gizmoColor = Color.cyan;
-    
-    [Header("Task 6: Line Divider System")]
-    [SerializeField] private bool enableLineDivider = false; // Toggle line divider system on/off (default: OFF for testing)
-    [SerializeField] private int lineDividerRow = 10; // Default divider position (middle of 20-row grid)
-    [SerializeField] private GameObject lineDividerVisual; // Visual indicator for line divider
-    [SerializeField] private Color lineDividerColorSafe = new Color(0.2f, 0.5f, 1f, 0.7f); // Blue - player below line
-    [SerializeField] private Color lineDividerColorDanger = new Color(1f, 0.2f, 0.2f, 0.7f); // Red - player above line
     #endregion
 
     #region Runtime State
@@ -51,16 +51,28 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
     private Vector3 minWorldBounds;
     private Vector3 maxWorldBounds;
     private Vector3 calculatedGridOffset;
+    
+    // NOTE: Path visuals removed - segment controllers handle visualization now
+    
+    // ADVANCED GRID: Segment-based grid
+    private List<GridSegment> gridSegments = new List<GridSegment>();
+    private int activeSegmentIndex = 0;
 
     // Object pooling (if enabled)
     private Queue<GameObject> tilePool = new Queue<GameObject>();
     private List<GameObject> activeTiles = new List<GameObject>();
     
-    // Task 6: Line divider runtime state
-    private bool lineDividerStyled = false;
-    private Material lineDividerMaterial;
-    private PlayerManager playerManager;
-    private bool playerWasBelowLine = true; // Track previous state to avoid constant updates
+    // Segment layout prefab instance tracking
+    private GameObject instantiatedSegmentLayout = null;
+    
+    // Coordinate conversion helper (SRP extraction)
+    private GridCoordinateConverter coordinateConverter;
+    
+    // Row management helper (SRP extraction)
+    [SerializeField] private GridRowManager rowManager;
+    
+    // Batch operations helper (SRP extraction)
+    private GridBatchOperations batchOperations;
     #endregion
 
     #region Properties
@@ -70,16 +82,54 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
     public float TileSize => tileSize;
     public bool IsGridReady => isGridReady && tiles != null;
     public Vector3 GridCenter => transform.position + calculatedGridOffset;
+    public Vector3 CalculatedGridOffset => calculatedGridOffset;
     public Vector3 MinWorldBounds => minWorldBounds;
     public Vector3 MaxWorldBounds => maxWorldBounds;
     
-    // Task 6: Line divider properties
-    public bool LineDividerEnabled => enableLineDivider;
-    public int LineDividerRow => lineDividerRow;
+    // Multi-segment grid detection
+    public bool HasAdvancedPath => HasSegmentControllers; // Uses segment controllers
+    
+    // ADVANCED GRID: Segment properties
+    public List<GridSegment> Segments => gridSegments;
+    public int ActiveSegmentIndex => activeSegmentIndex;
+    public GridSegment ActiveSegment => gridSegments.Count > activeSegmentIndex ? gridSegments[activeSegmentIndex] : null;
+    public int SegmentCount => gridSegments.Count;
+    public bool HasMultipleSegments => gridSegments.Count > 1;
+    
+    // SEGMENT CONTROLLERS: Scene-based segments
+    public List<GridSegmentController> SegmentControllers => segmentControllers;
+    public int SegmentControllerCount => segmentControllers.Count;
+    public bool HasSegmentControllers => useSegmentControllers && segmentControllers.Count > 0;
+    public GridSegmentController GetSegmentController(int index) => 
+        index >= 0 && index < segmentControllers.Count ? segmentControllers[index] : null;
+    
     /// <summary>
-    /// Task 6: Checks if a position is below the line divider (or always true if disabled)
+    /// Clears all registered segment controllers.
+    /// Used when switching to a wave with custom segment layout.
     /// </summary>
-    public bool IsPositionBelowLine(int y) => !enableLineDivider || y < lineDividerRow;
+    public void ClearSegmentControllers()
+    {
+        segmentControllers.Clear();
+        DebugLog("Cleared all segment controllers");
+    }
+    
+    /// <summary>
+    /// Registers a segment controller for use.
+    /// Used when applying wave segment layout prefabs.
+    /// </summary>
+    public void RegisterSegmentController(GridSegmentController segment)
+    {
+        if (segment == null) return;
+        
+        if (!segmentControllers.Contains(segment))
+        {
+            segmentControllers.Add(segment);
+            // Keep sorted by segment index
+            segmentControllers.Sort((a, b) => a.segmentIndex.CompareTo(b.segmentIndex));
+            DebugLog($"Registered segment controller {segment.segmentIndex}");
+        }
+    }
+    
     #endregion
 
     #region Unity Lifecycle
@@ -92,25 +142,42 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
 
     private void Start()
     {
-        
         GenerateGrid();
-        // NOTE: Do NOT call InitializeLineDivider() here - line divider is configured
-        // by stage data via HandleStageStart() → ConfigureLineDivider()
-        // The serialized Inspector values are only used as fallback defaults.
         
-        // Get PlayerManager reference for line divider color updates
-        playerManager = FindFirstObjectByType<PlayerManager>();
+        // Initialize coordinate converter after grid is ready
+        coordinateConverter = new GridCoordinateConverter(this);
         
-        // Ensure line divider visual is hidden until stage configures it
-        if (lineDividerVisual != null)
+        // Initialize row manager (SRP extraction)
+        InitializeRowManager();
+        
+        // Initialize batch operations helper
+        batchOperations = new GridBatchOperations(this, enableDebugLogs);
+    }
+    
+    /// <summary>
+    /// Initializes the GridRowManager sub-component.
+    /// </summary>
+    private void InitializeRowManager()
+    {
+        if (rowManager == null)
         {
-            lineDividerVisual.SetActive(false);
+            rowManager = GetComponentInChildren<GridRowManager>();
+            
+            if (rowManager == null)
+            {
+                var managerObj = new GameObject("GridRowManager");
+                managerObj.transform.SetParent(transform);
+                rowManager = managerObj.AddComponent<GridRowManager>();
+                DebugLog("Created GridRowManager as child object");
+            }
         }
+        
+        rowManager.Initialize(this, enableDebugLogs);
     }
     
     private void OnEnable()
     {
-        // Subscribe to stage events for line divider configuration
+        // Subscribe to stage events for segment configuration
         GameEvents.OnStageStart += HandleStageStart;
     }
     
@@ -119,267 +186,170 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
         GameEvents.OnStageStart -= HandleStageStart;
     }
     
-    private void Update()
-    {
-        // Task 6: Update line divider color based on player position
-        UpdateLineDividerColor();
-    }
-    
     /// <summary>
-    /// Configure grid and line divider from StageData
+    /// Configure grid from StageData
     /// </summary>
     private void HandleStageStart(int stageIndex, StageData stageData)
     {
         if (stageData == null) return;
         
-        // Configure line divider from stage data
-        ConfigureLineDivider(stageData);
+        // Configure segment layout from stage's prefab
+        ConfigureSegmentLayoutFromStage(stageData);
         
-        DebugLog($"Grid configured for stage {stageIndex}: LineDivider at row {lineDividerRow}");
+        DebugLog($"Grid configured for stage {stageIndex}: Segments: {SegmentControllerCount}");
     }
     
     /// <summary>
-    /// Configure line divider settings from StageData
+    /// Instantiates and configures segment layout from stage's prefab.
+    /// If no prefab exists, creates a default single-segment layout.
     /// </summary>
-    public void ConfigureLineDivider(StageData stageData)
+    private void ConfigureSegmentLayoutFromStage(StageData stageData)
     {
-        if (stageData == null) return;
+        // FIRST: Clean up any previously generated grid tiles
+        DestroyGrid();
         
-        // Check explicit enable flag first, then validate position is meaningful
-        bool positionValid = stageData.lineDividerStartY > 0 && stageData.lineDividerStartY < stageData.gridHeight;
-        bool shouldEnable = stageData.enableLineDivider && positionValid;
-        enableLineDivider = shouldEnable;
+        // Clean up any previously instantiated segment layout
+        CleanupInstantiatedSegmentLayout();
         
-        if (shouldEnable)
+        if (!stageData.HasSegmentLayoutPrefab)
         {
-            lineDividerRow = stageData.lineDividerStartY;
-            
-            // Store penalty/reward values for use in MoveLineDivider
-            _lineDividerEscapePenalty = stageData.lineDividerEscapePenalty;
-            _lineDividerCaptureReward = stageData.lineDividerCaptureReward;
-            
-            DebugLog($"Line divider configured: Row={lineDividerRow}, Penalty={_lineDividerEscapePenalty}, Reward={_lineDividerCaptureReward}");
-        }
-        else
-        {
-            DebugLog($"Line divider DISABLED for stage (enableLineDivider={stageData.enableLineDivider}, positionValid={positionValid})");
-        }
-        
-        UpdateLineDividerVisual();
-    }
-    
-    // Cached line divider movement values
-    private int _lineDividerEscapePenalty = 1;
-    private int _lineDividerCaptureReward = 1;
-    
-    /// <summary>
-    /// Move line divider based on escape (penalty) or capture (reward)
-    /// </summary>
-    public void OnCubeEscaped()
-    {
-        if (_lineDividerEscapePenalty > 0)
-        {
-            MoveLineDivider(_lineDividerEscapePenalty, false); // Move up (penalty)
-        }
-    }
-    
-    /// <summary>
-    /// Move line divider based on capture (reward)
-    /// </summary>
-    public void OnCubeCaptured()
-    {
-        if (_lineDividerCaptureReward > 0)
-        {
-            MoveLineDivider(-_lineDividerCaptureReward, true); // Move down (reward)
-        }
-    }
-    
-    /// <summary>
-    /// Task 6: Initializes the line divider system
-    /// </summary>
-    private void InitializeLineDivider()
-    {
-        if (!enableLineDivider)
-        {
-            DebugLog($"Line divider system DISABLED - marker placement unrestricted");
+            DebugLog("No segment layout prefab for this stage - creating default single-segment layout");
+            CreateDefaultSegmentLayout(stageData);
             return;
         }
         
-        // Set default line divider position to middle of grid if not set
-        if (lineDividerRow <= 0 || lineDividerRow >= height)
-        {
-            lineDividerRow = height / 2;
-            DebugLog($"Line divider initialized to row {lineDividerRow} (middle of {height}-row grid)");
-        }
+        DebugLog($"Instantiating segment layout prefab for stage: {stageData.stageName}");
         
-        UpdateLineDividerVisual();
-        DebugLog($"Line divider system ENABLED at row {lineDividerRow}");
-    }
-    
-    /// <summary>
-    /// Task 6: Moves the line divider up or down
-    /// </summary>
-    public void MoveLineDivider(int rows, bool isReward = true)
-    {
-        if (!enableLineDivider)
+        // Instantiate the segment layout prefab AS A CHILD OF GRIDMANAGER
+        instantiatedSegmentLayout = Instantiate(stageData.segmentLayoutPrefab, transform);
+        instantiatedSegmentLayout.name = $"StageSegmentLayout_{stageData.stageNumber}";
+        
+        // Find all GridSegmentController components in the instantiated prefab
+        var newSegments = instantiatedSegmentLayout.GetComponentsInChildren<GridSegmentController>();
+        
+        if (newSegments.Length == 0)
         {
-            // Silently skip when disabled - no log spam
+            DebugLog("WARNING: Segment layout prefab has no GridSegmentController components!");
+            Destroy(instantiatedSegmentLayout);
+            instantiatedSegmentLayout = null;
             return;
         }
         
-        int oldRow = lineDividerRow;
-        lineDividerRow = Mathf.Clamp(lineDividerRow + rows, 1, height - 1);
-        
-        string direction = rows > 0 ? "up" : "down";
-        string reason = isReward ? "reward" : "penalty";
-        DebugLog($"[Task 6] Line divider moved {direction} from row {oldRow} to row {lineDividerRow} ({reason})");
-        
-        UpdateLineDividerVisual();
-    }
-    
-    /// <summary>
-    /// Task 6: Enables or disables the line divider system at runtime
-    /// </summary>
-    public void SetLineDividerEnabled(bool enabled)
-    {
-        enableLineDivider = enabled;
-        DebugLog($"[Task 6] Line divider system {(enabled ? "ENABLED" : "DISABLED")}");
-        
-        if (enabled)
+        // Clear existing segment controllers and register the new ones
+        ClearSegmentControllers();
+        foreach (var segment in newSegments)
         {
-            InitializeLineDivider();
+            RegisterSegmentController(segment);
         }
-        else
+        
+        // Enable segment controller mode
+        useSegmentControllers = true;
+        
+        // Re-initialize the main tiles array from primary segment for backwards compatibility
+        var primarySegment = newSegments[0];
+        width = primarySegment.width;
+        height = primarySegment.height;
+        tiles = new Tile[width, height];
+        
+        // Generate tiles for each segment if not already initialized
+        foreach (var segment in newSegments)
         {
-            UpdateLineDividerVisual();
-        }
-    }
-    
-    /// <summary>
-    /// Task 6: Updates the visual indicator for the line divider
-    /// </summary>
-    private void UpdateLineDividerVisual()
-    {
-        if (!enableLineDivider)
-        {
-            // Hide visual when disabled
-            if (lineDividerVisual != null)
+            if (!segment.isInitialized)
             {
-                lineDividerVisual.SetActive(false);
+                GenerateTilesForSegment(segment);
+                segment.MarkInitialized();
             }
-            return;
         }
         
-        if (lineDividerVisual != null)
+        // Copy primary segment tiles to main array for backwards compatibility
+        CopyPrimarySegmentTilesToMainArray();
+        
+        // Finalize grid generation (sets isGridGenerated and isGridReady)
+        FinalizeGridGeneration();
+        
+        DebugLog($"Registered {newSegments.Length} segments from stage layout prefab, grid ready");
+    }
+    
+    /// <summary>
+    /// Copies tiles from the primary segment controller to the main tiles array.
+    /// Required for backwards compatibility with code that accesses tiles[x,y] directly.
+    /// </summary>
+    private void CopyPrimarySegmentTilesToMainArray()
+    {
+        if (segmentControllers.Count == 0) return;
+        
+        var primarySegment = segmentControllers[0];
+        if (primarySegment.tiles == null) return;
+        
+        for (int x = 0; x < Mathf.Min(width, primarySegment.width); x++)
         {
-            // Style the assigned visual (only once)
-            if (!lineDividerStyled)
+            for (int y = 0; y < Mathf.Min(height, primarySegment.height); y++)
             {
-                StyleLineDividerVisual();
-                lineDividerStyled = true;
+                tiles[x, y] = primarySegment.tiles[x, y];
             }
-            
-            lineDividerVisual.SetActive(true);
-            PositionLineDividerVisual();
-            DebugLog($"[Task 6] Line divider visual positioned at row {lineDividerRow}");
         }
-        else
+    }
+    
+    /// <summary>
+    /// Cleans up any instantiated segment layout from a previous stage.
+    /// </summary>
+    private void CleanupInstantiatedSegmentLayout()
+    {
+        if (instantiatedSegmentLayout != null)
         {
-            DebugLog($"[Task 6] Line divider at row {lineDividerRow} (no visual assigned)");
+            DebugLog("Cleaning up instantiated segment layout");
+            Destroy(instantiatedSegmentLayout);
+            instantiatedSegmentLayout = null;
         }
     }
     
     /// <summary>
-    /// Task 6: Styles an assigned line divider visual (removes collider, applies material)
-    /// Assign any Cube or GameObject in the Inspector - this will style it at runtime
+    /// Creates a default single-segment layout when no prefab is configured.
+    /// The segment uses the stage's grid dimensions.
     /// </summary>
-    private void StyleLineDividerVisual()
+    private void CreateDefaultSegmentLayout(StageData stageData)
     {
-        if (lineDividerVisual == null) return;
+        // Create container under GridManager
+        instantiatedSegmentLayout = new GameObject($"StageSegmentLayout_{stageData.stageNumber}");
+        instantiatedSegmentLayout.transform.SetParent(transform);
+        instantiatedSegmentLayout.transform.localPosition = Vector3.zero;
+        instantiatedSegmentLayout.transform.localRotation = Quaternion.identity;
         
-        // Remove collider if present - visual only, no physics
-        Collider col = lineDividerVisual.GetComponent<Collider>();
-        if (col != null) Destroy(col);
+        // Create a default segment controller
+        var segmentObj = new GameObject("Segment_0");
+        segmentObj.transform.SetParent(instantiatedSegmentLayout.transform);
+        segmentObj.transform.localPosition = Vector3.zero;
+        segmentObj.transform.localRotation = Quaternion.identity;
         
-        // Create and apply transparent material (start with safe/blue color)
-        Renderer renderer = lineDividerVisual.GetComponent<Renderer>();
-        if (renderer != null)
-        {
-            lineDividerMaterial = new Material(Shader.Find("Standard"));
-            lineDividerMaterial.color = lineDividerColorSafe; // Start with blue (safe)
-            lineDividerMaterial.SetFloat("_Mode", 3); // Transparent mode
-            lineDividerMaterial.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
-            lineDividerMaterial.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
-            lineDividerMaterial.SetInt("_ZWrite", 0);
-            lineDividerMaterial.DisableKeyword("_ALPHATEST_ON");
-            lineDividerMaterial.EnableKeyword("_ALPHABLEND_ON");
-            lineDividerMaterial.DisableKeyword("_ALPHAPREMULTIPLY_ON");
-            lineDividerMaterial.renderQueue = 3000;
-            renderer.material = lineDividerMaterial;
-        }
+        var segment = segmentObj.AddComponent<GridSegmentController>();
+        segment.segmentIndex = 0;
+        segment.width = stageData.gridWidth;
+        segment.height = stageData.gridHeight;
+        segment.tileSize = tileSize;
         
-        DebugLog("[Task 6] Styled line divider visual");
-    }
-    
-    /// <summary>
-    /// Task 6: Updates line divider color based on player position
-    /// Blue = player below line (safe, can place markers)
-    /// Red = player above line (danger, cannot place markers)
-    /// </summary>
-    private void UpdateLineDividerColor()
-    {
-        // Skip if line divider disabled or no visual/material
-        if (!enableLineDivider || lineDividerMaterial == null || playerManager == null) return;
+        // Clear and register the new segment
+        ClearSegmentControllers();
+        RegisterSegmentController(segment);
         
-        // Check if player is below the line
-        bool playerIsBelowLine = playerManager.currentTilePosition.y < lineDividerRow;
+        // Enable segment controller mode
+        useSegmentControllers = true;
         
-        // Only update color if state changed (performance optimization)
-        if (playerIsBelowLine != playerWasBelowLine)
-        {
-            playerWasBelowLine = playerIsBelowLine;
-            Color targetColor = playerIsBelowLine ? lineDividerColorSafe : lineDividerColorDanger;
-            lineDividerMaterial.color = targetColor;
-            
-            DebugLog($"[Task 6] Line divider color changed: {(playerIsBelowLine ? "BLUE (safe)" : "RED (danger)")}");
-        }
-    }
-    
-    /// <summary>
-    /// Task 6: Checks if player is currently in safe zone (below line divider)
-    /// Returns true if line divider is disabled OR player is below the line
-    /// </summary>
-    public bool IsPlayerInSafeZone()
-    {
-        if (!enableLineDivider) return true; // Always safe if disabled
-        if (playerManager == null) return true; // Default to safe if no player
-        return playerManager.currentTilePosition.y < lineDividerRow;
-    }
-    
-    /// <summary>
-    /// Task 6: Positions the line divider visual at the current divider row
-    /// </summary>
-    private void PositionLineDividerVisual()
-    {
-        if (lineDividerVisual == null) return;
+        // Re-initialize the main tiles array for backwards compatibility
+        width = stageData.gridWidth;
+        height = stageData.gridHeight;
+        tiles = new Tile[width, height];
         
-        // Position: center of grid width, at the divider row boundary
-        // The line sits at the BOTTOM edge of the divider row (markers allowed below, not on or above)
-        float gridWidth = (width - 1) * tileSize;
-        float centerX = gridWidth / 2f;
+        // Generate tiles for the segment
+        GenerateTilesForSegment(segment);
+        segment.MarkInitialized();
         
-        // Position at the boundary between lineDividerRow-1 and lineDividerRow
-        Vector3 lineWorldPos = GridToWorldPosition(0, lineDividerRow, 0.1f); // Slightly above ground
-        lineWorldPos.x = centerX + (transform.position + calculatedGridOffset).x;
-        lineWorldPos.z -= tileSize * 0.5f; // Position at the boundary between rows
+        // Copy segment tiles to main array for backwards compatibility
+        CopyPrimarySegmentTilesToMainArray();
         
-        lineDividerVisual.transform.position = lineWorldPos;
+        // Finalize grid generation (sets isGridGenerated and isGridReady)
+        FinalizeGridGeneration();
         
-        // Scale: span full grid width, thin line
-        float lineWidth = gridWidth + tileSize; // Extend slightly past edges
-        float lineHeight = 5f; // Vertical height
-        float lineDepth = 0.08f; // Thin depth
-        lineDividerVisual.transform.localScale = new Vector3(lineWidth, lineHeight, lineDepth);
+        DebugLog($"Created default segment layout: {segment.width}x{segment.height}, grid ready");
     }
 
     private void OnDrawGizmosSelected()
@@ -387,6 +357,38 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
         if (showGridGizmos)
         {
             DrawGridGizmos();
+            DrawPathGizmos();
+        }
+    }
+    
+    /// <summary>
+    /// DEPRECATED: Path gizmos removed - segment controllers handle their own visualization.
+    /// </summary>
+    private void DrawPathGizmos()
+    {
+        // No-op - segment controllers handle visualization
+    }
+    
+    /// <summary>
+    /// DEPRECATED: Path flow lines removed - use segment controllers.
+    /// </summary>
+    private void DrawPathFlowLines()
+    {
+        // No-op - segment controllers handle visualization
+    }
+    
+    /// <summary>
+    /// ADVANCED GRID: Converts MovementDirection to a world-space direction vector.
+    /// </summary>
+    private Vector3 GetDirectionVector(MovementDirection direction)
+    {
+        switch (direction)
+        {
+            case MovementDirection.Down: return -Vector3.forward;
+            case MovementDirection.Up: return Vector3.forward;
+            case MovementDirection.Right: return Vector3.right;
+            case MovementDirection.Left: return -Vector3.right;
+            default: return -Vector3.forward;
         }
     }
 
@@ -478,8 +480,25 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
             return;
         }
 
-        DebugLog($"Generating grid: {width}x{height} with tile size {tileSize}");
+        DebugLog($"Generating grid: {width}x{height} with tile size {tileSize}, Segments: {SegmentControllerCount}");
 
+        // NEW: Check for segment controllers first (scene-based segments)
+        if (useSegmentControllers)
+        {
+            CollectSegmentControllers();
+            if (segmentControllers.Count > 0)
+            {
+                GenerateGridFromSegmentControllers();
+                return;
+            }
+            else
+            {
+                Debug.LogWarning("[GridManager] useSegmentControllers is true but no controllers found. Falling back to standard generation.");
+            }
+        }
+
+        // NOTE: L_Shape grid generation removed - use segment controllers for multi-segment layouts
+        // Segment controllers are configured in scene and provide their own tile generation
         StartGridGeneration();
     }
 
@@ -495,6 +514,402 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
         GenerateAllTiles();
         FinalizeGridGeneration();
     }
+    
+    #region Segment Controller Grid Generation
+    
+    /// <summary>
+    /// Collects segment controllers from the scene.
+    /// If none are assigned in inspector, searches in children.
+    /// </summary>
+    private void CollectSegmentControllers()
+    {
+        // If already assigned in inspector, just validate and sort
+        if (segmentControllers.Count > 0)
+        {
+            // Remove any null entries
+            segmentControllers.RemoveAll(s => s == null);
+            
+            // Sort by segment index
+            segmentControllers.Sort((a, b) => a.segmentIndex.CompareTo(b.segmentIndex));
+            
+            Debug.Log($"[GridManager] Using {segmentControllers.Count} segment controllers from inspector");
+            return;
+        }
+        
+        // Auto-find in children
+        var foundControllers = GetComponentsInChildren<GridSegmentController>();
+        if (foundControllers.Length > 0)
+        {
+            segmentControllers.AddRange(foundControllers);
+            segmentControllers.Sort((a, b) => a.segmentIndex.CompareTo(b.segmentIndex));
+            Debug.Log($"[GridManager] Found {segmentControllers.Count} segment controllers in children");
+        }
+        else
+        {
+            // Try finding in scene (not recommended but fallback)
+            var allControllers = FindObjectsByType<GridSegmentController>(FindObjectsSortMode.None);
+            if (allControllers.Length > 0)
+            {
+                segmentControllers.AddRange(allControllers);
+                segmentControllers.Sort((a, b) => a.segmentIndex.CompareTo(b.segmentIndex));
+                Debug.Log($"[GridManager] Found {segmentControllers.Count} segment controllers in scene");
+            }
+        }
+    }
+    
+    /// <summary>
+    /// Generates the grid using segment controllers.
+    /// Each segment controller defines its own position, rotation, and dimensions.
+    /// Tiles are parented under each segment's transform.
+    /// </summary>
+    private void GenerateGridFromSegmentControllers()
+    {
+        Debug.Log($"[GridManager] Generating grid from {segmentControllers.Count} segment controllers");
+        
+        // Clear old grid segments (legacy)
+        gridSegments.Clear();
+        activeSegmentIndex = 0;
+        
+        // Use first segment's dimensions for main tiles array (backwards compatibility)
+        var primarySegment = segmentControllers[0];
+        width = primarySegment.width;
+        height = primarySegment.height;
+        tileSize = primarySegment.tileSize;
+        
+        // Initialize main tiles array (for segment 0 / backwards compatibility)
+        tiles = new Tile[width, height];
+        
+        if (useObjectPooling)
+        {
+            InitializeTilePool();
+        }
+        
+        // Generate tiles for each segment
+        int totalTiles = 0;
+        foreach (var segController in segmentControllers)
+        {
+            GenerateTilesForSegmentController(segController);
+            totalTiles += segController.width * segController.height;
+        }
+        
+        // Recalculate grid metrics based on all segments
+        CalculateGridMetricsFromSegments();
+        
+        FinalizeGridGeneration();
+        
+        Debug.Log($"[GridManager] Segment controller grid complete: {segmentControllers.Count} segments, {totalTiles} total tiles");
+    }
+    
+    /// <summary>
+    /// Public method to generate tiles for a segment.
+    /// Used when applying wave segment layout prefabs at runtime.
+    /// </summary>
+    public void GenerateTilesForSegment(GridSegmentController segment)
+    {
+        GenerateTilesForSegmentController(segment);
+    }
+    
+    /// <summary>
+    /// Generates tiles for a single segment controller.
+    /// Tiles are parented under the segment's transform.
+    /// </summary>
+    private void GenerateTilesForSegmentController(GridSegmentController segment)
+    {
+        if (segment == null) return;
+        
+        segment.InitializeTileArray();
+        int tilesCreated = 0;
+        
+        Debug.Log($"[GridManager] Generating tiles for Segment {segment.segmentIndex}: {segment.width}x{segment.height} at {segment.transform.position}");
+        
+        for (int x = 0; x < segment.width; x++)
+        {
+            for (int y = 0; y < segment.height; y++)
+            {
+                CreateTileForSegmentController(segment, x, y);
+                tilesCreated++;
+            }
+        }
+        
+        segment.MarkInitialized();
+        Debug.Log($"[GridManager] Segment {segment.segmentIndex} complete: {tilesCreated} tiles created");
+    }
+    
+    /// <summary>
+    /// Creates a single tile for a segment controller, parented under the segment.
+    /// </summary>
+    private void CreateTileForSegmentController(GridSegmentController segment, int localX, int localY)
+    {
+        // Calculate LOCAL position (segment's transform handles world position/rotation)
+        Vector3 localPosition = new Vector3(localX * segment.tileSize, 0f, localY * segment.tileSize);
+        
+        GameObject tileObj = GetTileObject();
+        if (tileObj == null)
+        {
+            Debug.LogError($"[GridManager] GetTileObject() returned null for Seg{segment.segmentIndex}_{localX}_{localY}!");
+            return;
+        }
+        
+        // Configure tile object - PARENT UNDER SEGMENT
+        tileObj.name = $"Tile_{localX}_{localY}";
+        tileObj.transform.SetParent(segment.transform);
+        tileObj.transform.localPosition = localPosition;
+        tileObj.transform.localRotation = Quaternion.identity; // No rotation - segment handles it
+        tileObj.transform.localScale = new Vector3(segment.tileSize, 1f, segment.tileSize);
+        
+        // Setup tile component
+        Tile tile = tileObj.GetComponent<Tile>();
+        if (tile == null)
+        {
+            tile = tileObj.AddComponent<Tile>();
+        }
+        tile.Init(localX, localY);
+        
+        // Register with segment controller
+        segment.RegisterTile(localX, localY, tile, tileObj);
+        
+        // Also store in main tiles array if this is segment 0 (backwards compatibility)
+        if (segment.segmentIndex == 0 && localX < width && localY < height)
+        {
+            tiles[localX, localY] = tile;
+        }
+        
+        if (useObjectPooling)
+        {
+            activeTiles.Add(tileObj);
+        }
+    }
+    
+    /// <summary>
+    /// Recalculates grid metrics (bounds) based on all segment controllers.
+    /// </summary>
+    private void CalculateGridMetricsFromSegments()
+    {
+        if (segmentControllers.Count == 0) return;
+        
+        var primarySegment = segmentControllers[0];
+        
+        // Set calculatedGridOffset to match primary segment's position
+        // This ensures legacy code that uses calculatedGridOffset works correctly
+        calculatedGridOffset = primarySegment.transform.position - transform.position;
+        
+        // Find bounding box across all segments
+        Vector3 minBounds = Vector3.one * float.MaxValue;
+        Vector3 maxBounds = Vector3.one * float.MinValue;
+        
+        foreach (var segment in segmentControllers)
+        {
+            // Check all corners of this segment
+            for (int x = 0; x <= 1; x++)
+            {
+                for (int y = 0; y <= 1; y++)
+                {
+                    int cornerX = x == 0 ? 0 : segment.width - 1;
+                    int cornerY = y == 0 ? 0 : segment.height - 1;
+                    Vector3 worldPos = segment.LocalToWorldPosition(cornerX, cornerY);
+                    
+                    minBounds = Vector3.Min(minBounds, worldPos);
+                    maxBounds = Vector3.Max(maxBounds, worldPos);
+                }
+            }
+        }
+        
+        // Add tile size padding
+        maxBounds += new Vector3(primarySegment.tileSize, 0, primarySegment.tileSize);
+        
+        minWorldBounds = minBounds;
+        maxWorldBounds = maxBounds;
+        
+        Debug.Log($"[GridManager] Grid bounds: min={minBounds}, max={maxBounds}");
+    }
+    
+    #endregion
+    
+    #region L-Shape Grid Generation
+    
+    /// <summary>
+    /// ADVANCED GRID: Generates an L-shaped grid using two segments.
+    /// Segment 1: Vertical (width x height) - standard orientation
+    /// Segment 2: Horizontal (width x (height + width)) - rotated 90°, with overlap
+    /// </summary>
+    private void GenerateLShapeGrid()
+    {
+        Debug.Log($"[GridManager] GenerateLShapeGrid() - Creating Segment 1 = {width}x{height}, Segment 2 = {width}x{height + width}");
+        DebugLog($"Generating L-Shape grid: Segment 1 = {width}x{height}, Segment 2 = {width}x{height + width}");
+        
+        // Clear existing segments
+        gridSegments.Clear();
+        activeSegmentIndex = 0;
+        
+        // Create the two segments
+        gridSegments = GridSegment.CreateLShape(width, height);
+        Debug.Log($"[GridManager] Created {gridSegments.Count} segments");
+        
+        // Calculate world offsets for segment 2
+        CalculateSegmentOffsets();
+        
+        // Generate tiles for segment 1 (uses standard tile array)
+        tiles = new Tile[width, height];
+        if (useObjectPooling)
+        {
+            InitializeTilePool();
+        }
+        Debug.Log($"[GridManager] Generating tiles for segment 0...");
+        GenerateSegmentTiles(gridSegments[0]);
+        
+        // Generate tiles for segment 2 (stored in segment's own array)
+        Debug.Log($"[GridManager] Generating tiles for segment 1...");
+        GenerateSegmentTiles(gridSegments[1]);
+        
+        FinalizeGridGeneration();
+        
+        int seg2TileCount = gridSegments[1].width * gridSegments[1].height;
+        int seg2NonOverlapTiles = seg2TileCount - (gridSegments[1].overlapRows * gridSegments[1].width);
+        Debug.Log($"[GridManager] L-Shape COMPLETE: Seg1={width * height} tiles, Seg2={seg2NonOverlapTiles} new tiles (+ {gridSegments[1].overlapRows * gridSegments[1].width} shared)");
+        DebugLog($"L-Shape grid generated: {gridSegments.Count} segments, Segment 1 tiles: {width * height}, Segment 2 tiles: {seg2TileCount}");
+    }
+    
+    /// <summary>
+    /// ADVANCED GRID: Calculates world offsets for each segment so they connect properly.
+    /// </summary>
+    private void CalculateSegmentOffsets()
+    {
+        if (gridSegments.Count < 2) return;
+        
+        var seg0 = gridSegments[0];
+        var seg1 = gridSegments[1];
+        
+        // Segment 0 starts at the calculated grid offset
+        seg0.worldOffset = transform.position + calculatedGridOffset;
+        
+        // L-SHAPE POSITIONING:
+        // We want seg1's entry point (col 0, row height-1) to be adjacent to seg0's exit (col 0, row 0)
+        //
+        // Step 1: Calculate where seg0 (0, 0) is in world space
+        Vector3 seg0ExitPoint = seg0.worldOffset; // col 0, row 0 is at the offset
+        
+        // Step 2: Calculate where we WANT seg1's entry point to be (one tile to the LEFT)
+        Vector3 desiredSeg1Entry = seg0ExitPoint + new Vector3(-tileSize, 0, 0);
+        
+        // Step 3: Calculate what offset seg1 needs so its (0, height-1) lands at desiredSeg1Entry
+        // With +90° rotation: local (0, 0, y*tileSize) → world-relative (y*tileSize, 0, 0)
+        int seg1EntryRow = seg1.height - 1;
+        Vector3 localToWorld_EntryOffset = new Vector3(seg1EntryRow * tileSize, 0, 0); // After +90° rotation
+        
+        // offset + localToWorld_EntryOffset = desiredSeg1Entry
+        // offset = desiredSeg1Entry - localToWorld_EntryOffset
+        seg1.worldOffset = desiredSeg1Entry - localToWorld_EntryOffset;
+        
+        Debug.Log($"[GridManager] L-Shape positioning:");
+        Debug.Log($"  tileSize={tileSize}");
+        Debug.Log($"  Seg0: offset={seg0.worldOffset}, size={width}x{height}");
+        Debug.Log($"  Seg1: offset={seg1.worldOffset}, size={seg1.width}x{seg1.height}, rotation={seg1.rotationAngle}°, entryRow={seg1EntryRow}");
+        Debug.Log($"  Seg0 exit (col 0, row 0): {seg0ExitPoint}");
+        Debug.Log($"  Desired Seg1 entry: {desiredSeg1Entry}");
+        Debug.Log($"  localToWorld offset for entry: {localToWorld_EntryOffset}");
+        
+        // Verify by computing seg1's entry point
+        Vector3 actualSeg1Entry = seg1.LocalToWorldPosition(0, seg1EntryRow, tileSize);
+        Debug.Log($"  Actual Seg1 entry (col 0, row {seg1EntryRow}): {actualSeg1Entry}");
+        Debug.Log($"  Gap: {Vector3.Distance(seg0ExitPoint, actualSeg1Entry)} units (should be ~{tileSize})");
+        
+        DebugLog($"Segment offsets calculated: Seg0={seg0.worldOffset}, Seg1={seg1.worldOffset}");
+    }
+    
+    /// <summary>
+    /// ADVANCED GRID: Generates tiles for a specific segment.
+    /// </summary>
+    private void GenerateSegmentTiles(GridSegment segment)
+    {
+        if (segment == null) return;
+        
+        // Initialize segment's tile array
+        segment.tiles = new Tile[segment.width, segment.height];
+        
+        int tilesCreated = 0;
+        int tilesLinked = 0;
+        
+        Debug.Log($"[GridManager] GenerateSegmentTiles: Seg{segment.segmentIndex} dimensions {segment.width}x{segment.height}, overlap={segment.overlapRows} at row {segment.overlapStartRow}");
+        
+        for (int x = 0; x < segment.width; x++)
+        {
+            for (int y = 0; y < segment.height; y++)
+            {
+                // Skip overlap zone tiles for segment 2 (they're already created by segment 1)
+                if (segment.segmentIndex > 0 && segment.IsInOverlapZone(x, y))
+                {
+                    // Link to segment 1's tile instead of creating new one
+                    // Overlap zone: seg2 local (x, y) corresponds to seg1 local (x, y - overlapStartRow)
+                    int seg1Y = y - segment.overlapStartRow;
+                    if (seg1Y >= 0 && seg1Y < height && x < width)
+                    {
+                        segment.tiles[x, y] = tiles[x, seg1Y];
+                        tilesLinked++;
+                    }
+                    continue;
+                }
+                
+                CreateSegmentTileAtPosition(segment, x, y);
+                tilesCreated++;
+            }
+        }
+        
+        segment.isInitialized = true;
+        Debug.Log($"[GridManager] Seg{segment.segmentIndex} complete: {tilesCreated} tiles created, {tilesLinked} tiles linked");
+        DebugLog($"Generated tiles for {segment.segmentName}: {segment.width}x{segment.height}");
+    }
+    
+    /// <summary>
+    /// ADVANCED GRID: Creates a tile at a specific position within a segment.
+    /// </summary>
+    private void CreateSegmentTileAtPosition(GridSegment segment, int localX, int localY)
+    {
+        Vector3 worldPosition = segment.LocalToWorldPosition(localX, localY, tileSize, 0f);
+        GameObject tileObj = GetTileObject();
+        
+        if (tileObj == null)
+        {
+            Debug.LogError($"[GridManager] GetTileObject() returned null for Seg{segment.segmentIndex}_{localX}_{localY}!");
+            return;
+        }
+        
+        // Configure tile object
+        // NOTE: GridSegment is a data class without transform - parent under GridManager for this legacy path
+        tileObj.name = $"Tile_Seg{segment.segmentIndex}_{localX}_{localY}";
+        tileObj.transform.SetParent(transform);
+        tileObj.transform.position = worldPosition;
+        tileObj.transform.rotation = Quaternion.identity;
+        tileObj.transform.localScale = new Vector3(tileSize, 1f, tileSize);
+        
+        // Ensure tile is at ground level
+        Vector3 finalPos = tileObj.transform.position;
+        finalPos.y = 0f;
+        tileObj.transform.position = finalPos;
+        
+        // Setup tile component
+        Tile tile = tileObj.GetComponent<Tile>();
+        if (tile == null)
+        {
+            tile = tileObj.AddComponent<Tile>();
+        }
+        tile.Init(localX, localY);
+        
+        // Store in segment's array
+        segment.tiles[localX, localY] = tile;
+        
+        // Also store in main tiles array if this is segment 0
+        if (segment.segmentIndex == 0 && localX < width && localY < height)
+        {
+            tiles[localX, localY] = tile;
+        }
+        
+        if (useObjectPooling)
+        {
+            activeTiles.Add(tileObj);
+        }
+    }
+    
+    #endregion
 
     private void GenerateAllTiles()
     {
@@ -538,14 +953,29 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
     private void ConfigureTileObject(GameObject tileObj, int x, int y, Vector3 worldPosition)
     {
         tileObj.name = $"Tile_{x}_{y}";
-        tileObj.transform.SetParent(transform);
-        tileObj.transform.position = worldPosition;
+        
+        // Parent under segment controller if available, otherwise use GridManager
+        Transform parentTransform = (segmentControllers.Count > 0) 
+            ? segmentControllers[0].transform 
+            : transform;
+        
+        tileObj.transform.SetParent(parentTransform);
+        
+        // Use local position if parenting under segment
+        if (segmentControllers.Count > 0)
+        {
+            tileObj.transform.localPosition = new Vector3(x * tileSize, 0f, y * tileSize);
+            tileObj.transform.localRotation = Quaternion.identity;
+        }
+        else
+        {
+            tileObj.transform.position = worldPosition;
+            Vector3 finalPos = tileObj.transform.position;
+            finalPos.y = 0f;
+            tileObj.transform.position = finalPos;
+        }
+        
         tileObj.transform.localScale = new Vector3(tileSize, 1f, tileSize);
-
-        // Ensure tile is at ground level
-        Vector3 finalPos = tileObj.transform.position;
-        finalPos.y = 0f;
-        tileObj.transform.position = finalPos;
     }
 
     private Tile SetupTileComponent(GameObject tileObj, int x, int y)
@@ -576,6 +1006,29 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
         isGridReady = false;
         CalculateGridMetrics();
         GenerateGrid();
+    }
+    
+    /// <summary>
+    /// ADVANCED GRID: Regenerates the grid as an L-shape with multiple segments.
+    /// Called when switching from Standard to L_Shape path type.
+    /// </summary>
+    public void RegenerateAsLShape()
+    {
+        Debug.Log($"[GridManager] RegenerateAsLShape() called - destroying existing {width}x{height} grid");
+        DebugLog("Regenerating grid as L-Shape...");
+        
+        // Destroy existing tiles
+        DestroyGrid();
+        isGridGenerated = false;
+        isGridReady = false;
+        
+        // Recalculate metrics
+        CalculateGridMetrics();
+        
+        Debug.Log($"[GridManager] Metrics recalculated, regenerating grid");
+        
+        // Regenerate grid (segment controllers handle multi-segment layouts)
+        RegenerateGrid();
     }
     #endregion
 
@@ -779,6 +1232,9 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
             tiles = null;
         }
 
+        // Clear segment controller references (they may be destroyed with the prefab)
+        ClearSegmentControllers();
+        
         CleanupRemainingChildren();
         ResetPoolingSystem();
 
@@ -789,9 +1245,14 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
 
     private void DestroyAllTiles()
     {
-        for (int x = 0; x < Width; x++)
+        // Use actual array dimensions, not Width/Height properties
+        // (which may have been updated before array was resized)
+        int arrayWidth = tiles.GetLength(0);
+        int arrayHeight = tiles.GetLength(1);
+        
+        for (int x = 0; x < arrayWidth; x++)
         {
-            for (int y = 0; y < Height; y++)
+            for (int y = 0; y < arrayHeight; y++)
             {
                 if (tiles[x, y] != null)
                 {
@@ -814,59 +1275,312 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
     }
     #endregion
 
-    #region Coordinate Conversion
+    #region Segment Management
+    
+    /// <summary>
+    /// ADVANCED GRID: Sets the active segment index.
+    /// </summary>
+    public void SetActiveSegment(int index)
+    {
+        if (index >= 0 && index < gridSegments.Count)
+        {
+            activeSegmentIndex = index;
+            DebugLog($"Active segment set to {index}: {gridSegments[index].segmentName}");
+        }
+    }
+    
+    /// <summary>
+    /// ADVANCED GRID: Gets a tile from the specified segment.
+    /// </summary>
+    public Tile GetSegmentTile(int segmentIndex, int localX, int localY)
+    {
+        if (segmentIndex < 0 || segmentIndex >= gridSegments.Count)
+            return null;
+        
+        var segment = gridSegments[segmentIndex];
+        if (!segment.IsValidLocalPosition(localX, localY))
+            return null;
+        
+        return segment.tiles?[localX, localY];
+    }
+    
+    /// <summary>
+    /// ADVANCED GRID: Gets a tile from the active segment.
+    /// </summary>
+    public Tile GetActiveSegmentTile(int localX, int localY)
+    {
+        return GetSegmentTile(activeSegmentIndex, localX, localY);
+    }
+    
+    /// <summary>
+    /// ADVANCED GRID: Checks if a position in the given segment is in the overlap zone.
+    /// </summary>
+    public bool IsInOverlapZone(int segmentIndex, int localX, int localY)
+    {
+        if (segmentIndex < 0 || segmentIndex >= gridSegments.Count)
+            return false;
+        
+        return gridSegments[segmentIndex].IsInOverlapZone(localX, localY);
+    }
+    
+    /// <summary>
+    /// ADVANCED GRID: Gets the overlap zone bounds for segment 1 (the first segment).
+    /// Returns (minY, maxY) where cubes entering this range should trigger transition.
+    /// </summary>
+    public (int minY, int maxY) GetSegment1OverlapBounds()
+    {
+        if (gridSegments.Count < 2)
+            return (-1, -1);
+        
+        // Segment 1's overlap zone is at its bottom rows
+        int overlapSize = gridSegments[1].overlapRows;
+        return (0, overlapSize - 1);
+    }
+    
+    /// <summary>
+    /// ADVANCED GRID: Checks if a cube at the given position should trigger segment transition.
+    /// For segment 1, this is when cubes enter the overlap zone at the bottom.
+    /// </summary>
+    public bool ShouldTriggerSegmentTransition(int segmentIndex, int localY)
+    {
+        if (!HasMultipleSegments || segmentIndex != 0)
+            return false;
+        
+        var bounds = GetSegment1OverlapBounds();
+        return localY >= bounds.minY && localY <= bounds.maxY;
+    }
+    
+    /// <summary>
+    /// ADVANCED GRID: Converts world position to segment and local coordinates.
+    /// Returns (segmentIndex, localX, localY). SegmentIndex is -1 if not on any segment.
+    /// </summary>
+    public (int segmentIndex, int localX, int localY) WorldToSegmentPosition(Vector3 worldPos)
+    {
+        for (int i = 0; i < gridSegments.Count; i++)
+        {
+            var localPos = gridSegments[i].WorldToLocalPosition(worldPos, tileSize);
+            if (localPos.x >= 0 && localPos.y >= 0)
+            {
+                return (i, localPos.x, localPos.y);
+            }
+        }
+        return (-1, -1, -1);
+    }
+    
+    /// <summary>
+    /// ADVANCED GRID: Gets the world position for a segment's tile.
+    /// </summary>
+    public Vector3 SegmentToWorldPosition(int segmentIndex, int localX, int localY, float heightOffset = 0f)
+    {
+        if (segmentIndex < 0 || segmentIndex >= gridSegments.Count)
+            return Vector3.zero;
+        
+        return gridSegments[segmentIndex].LocalToWorldPosition(localX, localY, tileSize, heightOffset);
+    }
+    
+    #endregion
+
+    #region Coordinate Conversion (Facade - delegates to GridCoordinateConverter)
+    
+    /// <summary>
+    /// Converts grid coordinates to world position. Delegates to coordinateConverter.
+    /// </summary>
     public Vector3 GridToWorldPosition(int x, int y, float heightOffset = 0)
-    {
-        Vector3 basePosition = transform.position + calculatedGridOffset;
-        return new Vector3(x * tileSize, heightOffset, y * tileSize) + basePosition;
-    }
+        => coordinateConverter?.GridToWorldPosition(x, y, heightOffset) 
+           ?? (transform.position + calculatedGridOffset + new Vector3(x * tileSize, heightOffset, y * tileSize));
 
+    /// <summary>
+    /// Converts world position to grid coordinates. Delegates to coordinateConverter.
+    /// </summary>
     public Vector2Int WorldToGridPosition(Vector3 worldPosition)
-    {
-        Vector3 basePosition = transform.position + calculatedGridOffset;
-        Vector3 localPos = worldPosition - basePosition;
+        => coordinateConverter?.WorldToGridPosition(worldPosition) ?? Vector2Int.zero;
+    
+    /// <summary>
+    /// ADVANCED GRID: Converts world position to segment local coordinates. Delegates to coordinateConverter.
+    /// </summary>
+    public (int segmentIndex, Vector2Int localPos) WorldToSegmentLocalPosition(Vector3 worldPosition)
+        => coordinateConverter?.WorldToSegmentLocalPosition(worldPosition) ?? (-1, Vector2Int.zero);
+    
+    /// <summary>
+    /// Checks if a world position is on a valid, playable tile. Delegates to coordinateConverter.
+    /// </summary>
+    public bool IsWorldPositionValid(Vector3 worldPosition)
+        => coordinateConverter?.IsWorldPositionValid(worldPosition) ?? false;
+    
+    /// <summary>
+    /// Gets the tile at a world position from any segment. Delegates to coordinateConverter.
+    /// </summary>
+    public Tile GetTileAtWorldPositionAnySegment(Vector3 worldPosition)
+        => coordinateConverter?.GetTileAtWorldPositionAnySegment(worldPosition);
 
-        int x = Mathf.RoundToInt(localPos.x / tileSize);
-        int y = Mathf.RoundToInt(localPos.z / tileSize);
-
-        x = Mathf.Clamp(x, 0, width - 1);
-        y = Mathf.Clamp(y, 0, height - 1);
-
-        return new Vector2Int(x, y);
-    }
-
+    /// <summary>
+    /// Checks if grid position is valid. Delegates to coordinateConverter.
+    /// </summary>
     public bool IsValidGridPosition(int x, int y)
-    {
-        if (x < 0 || x >= width || y < 0 || y >= height) return false;
+        => coordinateConverter?.IsValidGridPosition(x, y) ?? false;
 
-        // Check if the tile has fallen
-        Tile tile = GetTileAt(x, y);
-        return tile != null && tile.IsPlayable;
-    }
-
+    /// <summary>
+    /// Checks if grid position is valid. Overload for Vector2Int.
+    /// </summary>
     public bool IsValidGridPosition(Vector2Int pos)
-    {
-        return IsValidGridPosition(pos.x, pos.y);
-    }
+        => IsValidGridPosition(pos.x, pos.y);
+    
+    /// <summary>
+    /// Checks if position is valid on ANY segment. Delegates to coordinateConverter.
+    /// </summary>
+    public bool IsValidPositionOnAnySegment(int x, int y)
+        => coordinateConverter?.IsValidPositionOnAnySegment(x, y) ?? false;
+    
+    /// <summary>
+    /// Gets segment index for position. Delegates to coordinateConverter.
+    /// </summary>
+    public int GetSegmentForPosition(int x, int y)
+        => coordinateConverter?.GetSegmentForPosition(x, y) ?? -1;
 
+    /// <summary>
+    /// Gets tile at grid coordinates. Direct array access (core method).
+    /// </summary>
     public Tile GetTileAt(int x, int y)
     {
         if (x < 0 || x >= width || y < 0 || y >= height || tiles == null)
             return null;
-
-        return tiles[x, y]; // Return the tile even if fallen - let caller check IsPlayable
+        return tiles[x, y];
     }
 
+    /// <summary>
+    /// Gets tile at grid coordinates. Overload for Vector2Int.
+    /// </summary>
     public Tile GetTileAt(Vector2Int pos)
-    {
-        return GetTileAt(pos.x, pos.y);
-    }
+        => GetTileAt(pos.x, pos.y);
 
+    /// <summary>
+    /// Gets tile at world position. Delegates to coordinateConverter.
+    /// </summary>
     public Tile GetTileAtWorldPosition(Vector3 worldPos)
+        => coordinateConverter?.GetTileAtWorldPosition(worldPos);
+    
+    #region Segment Controller Tile Access
+    
+    /// <summary>
+    /// Gets the segment controller that contains the given world position.
+    /// Returns null if no segment contains the position.
+    /// </summary>
+    public GridSegmentController GetSegmentControllerAtWorldPosition(Vector3 worldPos)
     {
-        Vector2Int gridPos = WorldToGridPosition(worldPos);
-        return GetTileAt(gridPos);
+        if (!HasSegmentControllers) return null;
+        
+        foreach (var segment in segmentControllers)
+        {
+            if (segment != null && segment.ContainsWorldPosition(worldPos))
+            {
+                return segment;
+            }
+        }
+        
+        return null;
     }
+    
+    /// <summary>
+    /// Gets the tile at a world position, checking all segment controllers.
+    /// </summary>
+    public Tile GetTileAtWorldPositionFromControllers(Vector3 worldPos)
+    {
+        if (!HasSegmentControllers)
+        {
+            return GetTileAtWorldPosition(worldPos);
+        }
+        
+        foreach (var segment in segmentControllers)
+        {
+            if (segment != null)
+            {
+                Tile tile = segment.GetTileAtWorldPosition(worldPos);
+                if (tile != null)
+                {
+                    return tile;
+                }
+            }
+        }
+        
+        return null;
+    }
+    
+    /// <summary>
+    /// Checks if a world position is valid (on any segment).
+    /// Works with both segment controllers and legacy segments.
+    /// </summary>
+    public bool IsValidWorldPosition(Vector3 worldPos)
+    {
+        if (HasSegmentControllers)
+        {
+            foreach (var segment in segmentControllers)
+            {
+                if (segment != null && segment.ContainsWorldPosition(worldPos))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+        else if (HasMultipleSegments)
+        {
+            // Use legacy segment checking
+            var (segmentIndex, localPos) = WorldToSegmentLocalPosition(worldPos);
+            return segmentIndex >= 0;
+        }
+        else
+        {
+            Vector2Int gridPos = WorldToGridPosition(worldPos);
+            return IsValidGridPosition(gridPos);
+        }
+    }
+    
+    /// <summary>
+    /// Gets segment index and local position for a world position (segment controllers).
+    /// Returns (-1, invalid) if position is not on any segment.
+    /// </summary>
+    public (int segmentIndex, Vector2Int localPos) WorldToSegmentControllerPosition(Vector3 worldPos)
+    {
+        if (!HasSegmentControllers)
+        {
+            // Fallback to legacy
+            return WorldToSegmentLocalPosition(worldPos);
+        }
+        
+        for (int i = 0; i < segmentControllers.Count; i++)
+        {
+            var segment = segmentControllers[i];
+            if (segment != null)
+            {
+                Vector2Int local = segment.WorldToLocalPosition(worldPos);
+                if (local.x >= 0 && local.y >= 0)
+                {
+                    return (segment.segmentIndex, local);
+                }
+            }
+        }
+        
+        return (-1, new Vector2Int(-1, -1));
+    }
+    
+    /// <summary>
+    /// Gets tile from a segment controller by index and local position.
+    /// </summary>
+    public Tile GetTileFromController(int segmentIndex, int localX, int localY)
+    {
+        var segment = GetSegmentController(segmentIndex);
+        return segment?.GetTile(localX, localY);
+    }
+    
+    /// <summary>
+    /// Gets tile from a segment controller by index and local position.
+    /// </summary>
+    public Tile GetTileFromController(int segmentIndex, Vector2Int localPos)
+    {
+        return GetTileFromController(segmentIndex, localPos.x, localPos.y);
+    }
+    
+    #endregion
     #endregion
 
     #region Marker Management
@@ -1075,578 +1789,106 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
     }
     #endregion
 
-    #region Batch Tile Operations
+    #region Batch Tile Operations (Facade - delegates to GridBatchOperations)
+    
     /// <summary>
-    /// Applies tile states to multiple tiles in batch
+    /// Applies tile states to multiple tiles in batch. Delegates to batchOperations.
     /// </summary>
     public void BatchSetTileStates(Dictionary<Vector2Int, TileState> stateMap)
-    {
-        if (tiles == null || stateMap == null) return;
-
-        int appliedCount = 0;
-        foreach (var kvp in stateMap)
-        {
-            Vector2Int pos = kvp.Key;
-            TileState state = kvp.Value;
-            
-            Tile tile = GetTileAt(pos);
-            if (tile != null && tile.IsPlayable)
-            {
-                ApplyTileState(tile, state);
-                appliedCount++;
-            }
-        }
-
-        DebugLog($"Batch applied tile states to {appliedCount}/{stateMap.Count} tiles");
-    }
+        => batchOperations?.BatchSetTileStates(stateMap);
 
     /// <summary>
-    /// Applies a tile state pattern to the grid
+    /// Applies a tile state pattern to the grid. Delegates to batchOperations.
     /// </summary>
     public void ApplyTileStatePattern(TileStatePattern pattern)
-    {
-        if (pattern == null || tiles == null) return;
-
-        Dictionary<Vector2Int, TileState> stateMap = new Dictionary<Vector2Int, TileState>();
-        
-        foreach (var entry in pattern.entries)
-        {
-            Vector2Int pos = pattern.basePosition + entry.offset;
-            if (IsValidGridPosition(pos))
-            {
-                stateMap[pos] = entry.state;
-            }
-        }
-
-        BatchSetTileStates(stateMap);
-        DebugLog($"Applied tile state pattern '{pattern.name}' with {pattern.entries.Count} entries");
-    }
+        => batchOperations?.ApplyTileStatePattern(pattern);
 
     /// <summary>
-    /// Creates a tile state preset from current grid state
+    /// Creates a tile state preset from current grid state. Delegates to batchOperations.
     /// </summary>
     public TileStatePreset CreateTileStatePreset(string presetName, List<Vector2Int> positions)
-    {
-        TileStatePreset preset = new TileStatePreset
-        {
-            name = presetName,
-            entries = new List<TileStateEntry>()
-        };
-
-        foreach (var pos in positions)
-        {
-            Tile tile = GetTileAt(pos);
-            if (tile != null)
-            {
-                preset.entries.Add(new TileStateEntry
-                {
-                    position = pos,
-                    state = tile.currentState,
-                    hasMarker = tile.HasMarker,
-                    isBlackened = tile.IsBlackened,
-                    isMatrixd = tile.IsMatrixd
-                });
-            }
-        }
-
-        DebugLog($"Created tile state preset '{presetName}' with {preset.entries.Count} entries");
-        return preset;
-    }
+        => batchOperations?.CreateTileStatePreset(presetName, positions);
 
     /// <summary>
-    /// Restores grid state from a preset
+    /// Restores grid state from a preset. Delegates to batchOperations.
     /// </summary>
     public void RestoreFromPreset(TileStatePreset preset)
-    {
-        if (preset == null || tiles == null) return;
-
-        int restoredCount = 0;
-        foreach (var entry in preset.entries)
-        {
-            Tile tile = GetTileAt(entry.position);
-            if (tile != null && tile.IsPlayable)
-            {
-                RestoreTileFromEntry(tile, entry);
-                restoredCount++;
-            }
-        }
-
-        DebugLog($"Restored {restoredCount}/{preset.entries.Count} tiles from preset '{preset.name}'");
-    }
+        => batchOperations?.RestoreFromPreset(preset);
 
     /// <summary>
-    /// Batch operations for markers
+    /// Batch operations for markers. Delegates to batchOperations.
     /// </summary>
     public void BatchSetMarkers(List<Vector2Int> positions, bool placeMarkers)
-    {
-        if (tiles == null || positions == null) return;
-
-        int processedCount = 0;
-        foreach (var pos in positions)
-        {
-            bool success = placeMarkers ? PlaceMarker(pos.x, pos.y) : RemoveMarker(pos.x, pos.y);
-            if (success) processedCount++;
-        }
-
-        string action = placeMarkers ? "placed" : "removed";
-        DebugLog($"Batch {action} markers: {processedCount}/{positions.Count} successful");
-    }
+        => batchOperations?.BatchSetMarkers(positions, placeMarkers);
 
     /// <summary>
-    /// Batch tile transformation operations
+    /// Batch tile transformation operations. Delegates to batchOperations.
     /// </summary>
     public void BatchTransformTiles(List<Vector2Int> positions, CubeType transformType)
-    {
-        if (tiles == null || positions == null) return;
-
-        int transformedCount = 0;
-        foreach (var pos in positions)
-        {
-            Tile tile = GetTileAt(pos);
-            if (tile != null && tile.IsPlayable)
-            {
-                tile.TransformTile(transformType);
-                transformedCount++;
-            }
-        }
-
-        DebugLog($"Batch transformed {transformedCount}/{positions.Count} tiles to {transformType} type");
-    }
+        => batchOperations?.BatchTransformTiles(positions, transformType);
 
     /// <summary>
-    /// Get tiles in a rectangular area
+    /// Get tiles in a rectangular area. Delegates to batchOperations.
     /// </summary>
     public List<Tile> GetTilesInArea(Vector2Int topLeft, Vector2Int bottomRight)
-    {
-        List<Tile> tilesInArea = new List<Tile>();
-        
-        for (int x = topLeft.x; x <= bottomRight.x; x++)
-        {
-            for (int y = topLeft.y; y <= bottomRight.y; y++)
-            {
-                Tile tile = GetTileAt(x, y);
-                if (tile != null)
-                {
-                    tilesInArea.Add(tile);
-                }
-            }
-        }
-
-        return tilesInArea;
-    }
+        => batchOperations?.GetTilesInArea(topLeft, bottomRight) ?? new List<Tile>();
 
     /// <summary>
-    /// Get tiles matching specific criteria
+    /// Get tiles matching specific criteria. Delegates to batchOperations.
     /// </summary>
     public List<Tile> GetTilesWithState(TileState state)
-    {
-        List<Tile> matchingTiles = new List<Tile>();
-        
-        if (tiles == null) return matchingTiles;
-
-        for (int x = 0; x < width; x++)
-        {
-            for (int y = 0; y < height; y++)
-            {
-                Tile tile = GetTileAt(x, y);
-                if (tile != null && tile.currentState == state)
-                {
-                    matchingTiles.Add(tile);
-                }
-            }
-        }
-
-        return matchingTiles;
-    }
+        => batchOperations?.GetTilesWithState(state) ?? new List<Tile>();
 
     /// <summary>
-    /// Get all tiles with markers
+    /// Get all tiles with markers. Delegates to batchOperations.
     /// </summary>
     public List<Tile> GetMarkedTiles()
-    {
-        List<Tile> markedTiles = new List<Tile>();
-        
-        if (tiles == null) return markedTiles;
-
-        for (int x = 0; x < width; x++)
-        {
-            for (int y = 0; y < height; y++)
-            {
-                Tile tile = GetTileAt(x, y);
-                if (tile != null && tile.HasMarker)
-                {
-                    markedTiles.Add(tile);
-                }
-            }
-        }
-
-        return markedTiles;
-    }
+        => batchOperations?.GetMarkedTiles() ?? new List<Tile>();
 
     /// <summary>
-    /// Reset multiple tiles to normal state
+    /// Reset multiple tiles to normal state. Delegates to batchOperations.
     /// </summary>
     public void BatchResetTiles(List<Vector2Int> positions)
-    {
-        if (tiles == null || positions == null) return;
-
-        int resetCount = 0;
-        foreach (var pos in positions)
-        {
-            Tile tile = GetTileAt(pos);
-            if (tile != null)
-            {
-                tile.ResetTile();
-                resetCount++;
-            }
-        }
-
-        DebugLog($"Batch reset {resetCount}/{positions.Count} tiles to normal state");
-    }
-
-    private void ApplyTileState(Tile tile, TileState state)
-    {
-        switch (state)
-        {
-            case TileState.Normal:
-                tile.ResetTile();
-                break;
-            case TileState.Transformed:
-                // Keep existing transformation
-                break;
-        }
-    }
-
-    private void RestoreTileFromEntry(Tile tile, TileStateEntry entry)
-    {
-        // Reset tile first
-        tile.ResetTile();
-        
-        // Apply saved state
-        if (entry.isBlackened)
-        {
-            tile.BlackenTile();
-        }
-        else if (entry.isMatrixd)
-        {
-            tile.MatrixTile();
-        }
-        
-        // Apply marker if needed
-        if (entry.hasMarker && tile.CanBeMarked)
-        {
-            tile.PlaceMarker();
-        }
-    }
+        => batchOperations?.BatchResetTiles(positions);
     #endregion
 
-    #region Row Management
+    #region Row Management (Facade - delegates to GridRowManager)
     
     /// <summary>
-    /// Event fired when bottom row removal starts (for animation hooks)
+    /// Event fired when bottom row removal starts. Delegates to rowManager.
     /// </summary>
-    public System.Action<int> OnBottomRowRemovalStarted;
+    public System.Action<int> OnBottomRowRemovalStarted
+    {
+        get => rowManager?.OnBottomRowRemovalStarted;
+        set { if (rowManager != null) rowManager.OnBottomRowRemovalStarted = value; }
+    }
     
     /// <summary>
-    /// Event fired when bottom row removal completes (for animation hooks)
+    /// Event fired when bottom row removal completes. Delegates to rowManager.
     /// </summary>
-    public System.Action<int> OnBottomRowRemovalCompleted;
-    
-    private bool isRemovingBottomRow = false; // Prevent concurrent removals
+    public System.Action<int> OnBottomRowRemovalCompleted
+    {
+        get => rowManager?.OnBottomRowRemovalCompleted;
+        set { if (rowManager != null) rowManager.OnBottomRowRemovalCompleted = value; }
+    }
     
     /// <summary>
-    /// Removes the bottom row with a controlled visual transition.
-    /// Uses coroutine for smooth animation and provides hooks for future animation systems.
-    /// Works even if called at wave end - coroutine completes independently.
+    /// Removes the bottom row with visual transition. Delegates to rowManager.
     /// </summary>
     public void RemoveBottomRow()
-    {
-        if (!IsGridReady) return;
-        if (isRemovingBottomRow) 
-        {
-            DebugLog("RemoveBottomRow: Already removing a row, skipping duplicate call");
-            return;
-        }
-        
-        StartCoroutine(RemoveBottomRowCoroutine());
-    }
-    
-    private IEnumerator RemoveBottomRowCoroutine()
-    {
-        isRemovingBottomRow = true;
-        int rowToRemove = bottom;
-        
-        // Safety check: ensure we have a valid row to remove
-        if (rowToRemove >= height)
-        {
-            DebugLog($"⚠️ ROW PENALTY: Cannot remove row {rowToRemove} - exceeds grid height {height}. Aborting.");
-            isRemovingBottomRow = false;
-            yield break;
-        }
-        
-        // Safety check: prevent removing if we'd have too few rows left
-        int remainingRows = height - (rowToRemove + 1);
-        if (remainingRows < 3)
-        {
-            DebugLog($"⚠️ ROW PENALTY: Cannot remove row {rowToRemove} - would leave only {remainingRows} rows. Minimum 3 rows required. Aborting.");
-            isRemovingBottomRow = false;
-            yield break;
-        }
-        
-        DebugLog($"⚠️ ROW PENALTY: Removing bottom row {rowToRemove} due to Unit cube escape penalty (will leave {remainingRows} rows)");
-        
-        // Fire start event (for future animation systems)
-        OnBottomRowRemovalStarted?.Invoke(rowToRemove);
-        
-        // Collect all tiles and cubes in the row
-        List<Tile> tilesToRemove = new List<Tile>();
-        List<CubeManager> cubesToRemove = new List<CubeManager>();
-        
-        for (int x = 0; x < width; x++)
-        {
-            Tile tile = GetTileAt(x, rowToRemove);
-            if (tile != null)
-            {
-                tilesToRemove.Add(tile);
-            }
-        }
-        
-        // Find cubes on this row
-        var allCubes = FindObjectsByType<CubeManager>(FindObjectsSortMode.None);
-        foreach (var cube in allCubes)
-        {
-            if (cube != null && !cube.isDestroyed && cube.position.y == rowToRemove)
-            {
-                cubesToRemove.Add(cube);
-            }
-        }
-        
-        // Simple transition: fade out tiles and cubes
-        // TODO: Replace with proper animation system in future
-        float transitionDuration = 0.5f; // Simple fade duration
-        float elapsed = 0f;
-        
-        // Store initial renderers for fade (using MaterialPropertyBlock to avoid modifying shared materials)
-        Dictionary<Tile, Renderer> tileRenderers = new Dictionary<Tile, Renderer>();
-        Dictionary<CubeManager, Renderer> cubeRenderers = new Dictionary<CubeManager, Renderer>();
-        Dictionary<Tile, MaterialPropertyBlock> tilePropertyBlocks = new Dictionary<Tile, MaterialPropertyBlock>();
-        Dictionary<CubeManager, MaterialPropertyBlock> cubePropertyBlocks = new Dictionary<CubeManager, MaterialPropertyBlock>();
-        
-        foreach (var tile in tilesToRemove)
-        {
-            Renderer renderer = tile.GetComponent<Renderer>();
-            if (renderer != null)
-            {
-                tileRenderers[tile] = renderer;
-                MaterialPropertyBlock block = new MaterialPropertyBlock();
-                renderer.GetPropertyBlock(block);
-                tilePropertyBlocks[tile] = block;
-            }
-        }
-        
-        foreach (var cube in cubesToRemove)
-        {
-            Renderer renderer = cube.GetComponent<Renderer>();
-            if (renderer != null)
-            {
-                cubeRenderers[cube] = renderer;
-                MaterialPropertyBlock block = new MaterialPropertyBlock();
-                renderer.GetPropertyBlock(block);
-                cubePropertyBlocks[cube] = block;
-            }
-        }
-        
-        // Fade out animation using MaterialPropertyBlock (safe for shared materials)
-        while (elapsed < transitionDuration)
-        {
-            elapsed += Time.deltaTime;
-            float alpha = 1f - (elapsed / transitionDuration);
-            
-            // Fade tiles
-            foreach (var tile in tilesToRemove)
-            {
-                if (tile != null && tileRenderers.ContainsKey(tile) && tilePropertyBlocks.ContainsKey(tile))
-                {
-                    Renderer renderer = tileRenderers[tile];
-                    MaterialPropertyBlock block = tilePropertyBlocks[tile];
-                    
-                    Color color = block.GetColor("_Color");
-                    if (color == Color.clear) color = Color.white; // Default if no color property
-                    color.a = alpha;
-                    block.SetColor("_Color", color);
-                    renderer.SetPropertyBlock(block);
-                }
-            }
-            
-            // Fade cubes (handle gracefully if destroyed during wave end)
-            foreach (var cube in cubesToRemove)
-            {
-                if (cube != null && !cube.isDestroyed && cubeRenderers.ContainsKey(cube) && cubePropertyBlocks.ContainsKey(cube))
-                {
-                    Renderer renderer = cubeRenderers[cube];
-                    if (renderer != null) // Additional null check in case cube was destroyed
-                    {
-                        MaterialPropertyBlock block = cubePropertyBlocks[cube];
-                        
-                        Color color = block.GetColor("_Color");
-                        if (color == Color.clear) color = Color.white; // Default if no color property
-                        color.a = alpha;
-                        block.SetColor("_Color", color);
-                        renderer.SetPropertyBlock(block);
-                    }
-                }
-            }
-            
-            yield return null;
-        }
-        
-        // Safety check: Verify grid is still valid and row is still within bounds
-        // (Grid might have been resized during transition, though unlikely between waves)
-        if (!IsGridReady || rowToRemove >= height)
-        {
-            DebugLog($"⚠️ Grid state changed during removal. Row {rowToRemove} no longer valid (height: {height}). Aborting cleanup.");
-            isRemovingBottomRow = false;
-            yield break;
-        }
-        
-        // Cleanup: Actually remove tiles and cubes
-        // Note: This happens even if wave ended - grid state persists between waves
-        foreach (var tile in tilesToRemove)
-        {
-            if (tile != null)
-            {
-                tile.MakeTileFall();
-            }
-        }
-        
-        // Remove cubes that still exist (some may have been destroyed at wave end)
-        foreach (var cube in cubesToRemove)
-        {
-            if (cube != null && !cube.isDestroyed)
-            {
-                DebugLog($"Removing cube at ({cube.position.x}, {cube.position.y}) - row fell");
-                Destroy(cube.gameObject);
-            }
-        }
-        
-        // Update grid bounds BEFORE adjusting player (so AdjustPlayerPosition knows the old bottom)
-        int oldBottom = bottom;
-        bottom = Mathf.Min(bottom + 1, height - 1);
-        
-        // Adjust player position if they were on the removed row
-        // Pass rowToRemove to the adjustment method
-        AdjustPlayerPositionAfterRowRemoval(rowToRemove);
-        
-        // Fire completion event (for future animation systems)
-        OnBottomRowRemovalCompleted?.Invoke(rowToRemove);
-        
-        isRemovingBottomRow = false;
-        DebugLog($"✅ ROW PENALTY: Bottom row {rowToRemove} removal complete. New bottom: {bottom}, Grid height: {height}, Remaining playable rows: {height - bottom}");
-    }
-    
-    /// <summary>
-    /// Adjusts player position after a row has been removed.
-    /// Called from RemoveBottomRowCoroutine with the specific row that was removed.
-    /// </summary>
-    private void AdjustPlayerPositionAfterRowRemoval(int removedRow)
-    {
-        var playerManager = FindFirstObjectByType<PlayerManager>();
-        if (playerManager == null) return;
-        
-        int playerY = playerManager.currentTilePosition.y;
-        
-        // If player was on or below the removed row, move them up
-        if (playerY <= removedRow)
-        {
-            // Find the lowest available row above the removed row
-            int safeRow = FindLowestPlayableRow();
-            if (safeRow > removedRow)
-            {
-                DebugLog($"⚠️ ROW PENALTY: Moving player from row {playerY} (removed row {removedRow}) to safe row {safeRow}");
-                playerManager.SetPosition(playerManager.currentTilePosition.x, safeRow);
-            }
-            else
-            {
-                DebugLog($"⚠️ ROW PENALTY: Player at row {playerY} but no safe row found above {removedRow}. Grid may be too small.");
-                // Emergency fallback: move to top row
-                playerManager.SetPosition(playerManager.currentTilePosition.x, height - 1);
-            }
-        }
-    }
-
-    private void RemoveCubesOnRow(int row)
-    {
-        var allCubes = FindObjectsByType<CubeManager>(FindObjectsSortMode.None);
-        foreach (var cube in allCubes)
-        {
-            if (cube != null && !cube.isDestroyed && cube.position.y == row)
-            {
-                DebugLog($"Removing cube at ({cube.position.x}, {cube.position.y}) - row fell");
-                Destroy(cube.gameObject);
-            }
-        }
-    }
+        => rowManager?.RemoveBottomRow();
 
     /// <summary>
-    /// Finds the lowest playable row in the grid.
-    /// Starts from bottom+1 (above the current bottom row) to avoid removed rows.
+    /// Gets the count of playable rows. Delegates to rowManager.
     /// </summary>
-    private int FindLowestPlayableRow()
-    {
-        // Start from one row above the current bottom (which may have been removed)
-        int startRow = Mathf.Max(bottom + 1, 1);
-        
-        for (int y = startRow; y < height; y++)
-        {
-            bool rowIsPlayable = false;
-            for (int x = 0; x < width; x++)
-            {
-                Tile tile = GetTileAt(x, y);
-                if (tile != null && tile.IsPlayable)
-                {
-                    rowIsPlayable = true;
-                    break;
-                }
-            }
-            if (rowIsPlayable) return y;
-        }
-        return height - 1; // Fallback to top row
-    }
-
     public int GetPlayableRowCount()
-    {
-        int playableRows = 0;
-        for (int y = 0; y < height; y++)
-        {
-            bool hasPlayableTile = false;
-            for (int x = 0; x < width; x++)
-            {
-                Tile tile = GetTileAt(x, y);
-                if (tile != null && tile.IsPlayable)
-                {
-                    hasPlayableTile = true;
-                    break;
-                }
-            }
-            if (hasPlayableTile) playableRows++;
-        }
-        return playableRows;
-    }
+        => rowManager?.GetPlayableRowCount() ?? 0;
 
+    /// <summary>
+    /// Checks if a row is playable. Delegates to rowManager.
+    /// </summary>
     public bool IsRowPlayable(int row)
-    {
-        if (!IsValidGridPosition(0, row)) return false;
-
-        for (int x = 0; x < width; x++)
-        {
-            Tile tile = GetTileAt(x, row);
-            if (tile != null && tile.IsPlayable)
-            {
-                return true;
-            }
-        }
-        return false;
-    }
+        => rowManager?.IsRowPlayable(row) ?? false;
     #endregion
 
     #region IManagerDebugInterface Implementation
@@ -1660,7 +1902,8 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
     public string GetDebugStatus()
     {
         string status = isGridReady ? "READY" : "NOT_READY";
-        return $"Grid: {width}x{height} ({status}) Tiles:{width * height} Markers:{GetMarkerCount()} Playable:{GetPlayableRowCount()}rows";
+        string segmentInfo = HasSegmentControllers ? $" Segments:{SegmentControllerCount}" : "";
+        return $"Grid: {width}x{height} ({status}) Tiles:{width * height} Markers:{GetMarkerCount()} Playable:{GetPlayableRowCount()}rows{segmentInfo}";
     }
 
     public Dictionary<string, object> GetDebugData()
@@ -1685,7 +1928,12 @@ public class GridManager : MonoBehaviour, IManagerDebugInterface
             ["Available Pool Tiles"] = useObjectPooling ? tilePool.Count : 0,
             ["Show Grid Gizmos"] = showGridGizmos,
             ["Tile Prefab Assigned"] = tilePrefab != null,
-            ["Cube Definitions Assigned"] = cubeTypeDefinitions != null
+            ["Cube Definitions Assigned"] = cubeTypeDefinitions != null,
+            
+            // Segment information
+            ["Has Segment Controllers"] = HasSegmentControllers,
+            ["Segment Controller Count"] = SegmentControllerCount,
+            ["Has Advanced Path"] = HasAdvancedPath
         };
     }
 

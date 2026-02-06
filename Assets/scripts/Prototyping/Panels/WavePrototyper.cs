@@ -2,6 +2,10 @@ using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
 using static Enumerations;
+#if UNITY_EDITOR
+using UnityEditor;
+using UnityEditor.SceneManagement;
+#endif
 
 /// <summary>
 /// Wave Prototyper - Wave and cube control panel.
@@ -457,6 +461,79 @@ public class WavePrototyper : PrototypingPanelBase
                 FillGrid(CubeType.Recursion);
             }
             GUILayout.EndHorizontal();
+            
+            GUILayout.Space(5);
+            #if UNITY_EDITOR
+            GUILayout.Label("Save Wave Asset:", EditorStyles.boldLabel);
+            #else
+            GUILayout.Label("Save Wave Asset:", GUI.skin.label);
+            #endif
+            
+            // Show current wave info - get asset path even if it's a clone
+            WaveData currentWave = null;
+            string assetPath = "";
+            string displayName = "No wave loaded";
+            
+            if (waveManager != null && waveManager.useWaveConfiguration && 
+                waveManager.currentWaveIndex >= 0 && 
+                waveManager.currentWaveIndex < waveManager.waveConfiguration.Count)
+            {
+                currentWave = waveManager.waveConfiguration[waveManager.currentWaveIndex];
+                if (currentWave != null)
+                {
+                    #if UNITY_EDITOR
+                    // Get asset path - works even if currentWave is a clone
+                    assetPath = AssetDatabase.GetAssetPath(currentWave);
+                    if (!string.IsNullOrEmpty(assetPath))
+                    {
+                        // Load original asset to get its real name
+                        WaveData originalAsset = AssetDatabase.LoadAssetAtPath<WaveData>(assetPath);
+                        displayName = originalAsset != null ? originalAsset.name : currentWave.name;
+                    }
+                    else
+                    {
+                        displayName = $"{currentWave.name} (not saved)";
+                    }
+                    #else
+                    displayName = currentWave.name;
+                    #endif
+                }
+            }
+            
+            #if UNITY_EDITOR
+            GUILayout.Label($"Current Wave: {displayName}", EditorStyles.miniLabel);
+            #else
+            GUILayout.Label($"Current Wave: {displayName}", GUI.skin.label);
+            #endif
+            
+            GUILayout.BeginHorizontal();
+            GUI.enabled = currentWave != null && !string.IsNullOrEmpty(assetPath);
+            if (GUILayout.Button("Load from Current Wave"))
+            {
+                if (currentWave != null && !string.IsNullOrEmpty(assetPath))
+                {
+                    #if UNITY_EDITOR
+                    // Load original asset from path
+                    WaveData originalAsset = AssetDatabase.LoadAssetAtPath<WaveData>(assetPath);
+                    if (originalAsset != null)
+                    {
+                        LoadFromWaveAsset(originalAsset);
+                    }
+                    #else
+                    LoadFromWaveAsset(currentWave);
+                    #endif
+                }
+            }
+            if (GUILayout.Button("Save to Current Wave"))
+            {
+                SaveToCurrentWave();
+            }
+            GUI.enabled = true;
+            if (GUILayout.Button("Create New Wave"))
+            {
+                CreateNewWaveAsset();
+            }
+            GUILayout.EndHorizontal();
         });
     }
     
@@ -851,6 +928,191 @@ public class WavePrototyper : PrototypingPanelBase
             waveManager.ManualMoveWaveForward();
         
         waveManager.debugMode = wasDebug;
+    }
+    #endregion
+    
+    #region Wave Asset Save/Load
+    private void SaveToCurrentWave()
+    {
+        #if UNITY_EDITOR
+        if (waveManager == null || !waveManager.useWaveConfiguration)
+        {
+            LogAction("No wave configuration loaded - cannot save");
+            return;
+        }
+        
+        int currentIndex = waveManager.currentWaveIndex;
+        if (currentIndex < 0 || currentIndex >= waveManager.waveConfiguration.Count)
+        {
+            LogAction("Invalid wave index - cannot save");
+            return;
+        }
+        
+        // Get the wave (might be a clone) and extract its asset path
+        WaveData currentWave = waveManager.waveConfiguration[currentIndex];
+        if (currentWave == null)
+        {
+            LogAction("Wave at current index is null - cannot save");
+            return;
+        }
+        
+        // Get the asset path - this works even if currentWave is a clone
+        // The path will point to the original asset
+        string assetPath = AssetDatabase.GetAssetPath(currentWave);
+        if (string.IsNullOrEmpty(assetPath))
+        {
+            LogAction($"Warning: Wave '{currentWave.name}' is not a saved asset. Cannot save changes.");
+            return;
+        }
+        
+        // Load the ORIGINAL asset from disk using the path
+        // This bypasses any clones and gets the actual asset file
+        WaveData originalAsset = AssetDatabase.LoadAssetAtPath<WaveData>(assetPath);
+        if (originalAsset == null)
+        {
+            LogAction($"Error: Could not load original asset from path: {assetPath}");
+            return;
+        }
+        
+        // Use SerializedObject to properly modify the ORIGINAL asset
+        SerializedObject serializedWave = new SerializedObject(originalAsset);
+        
+        // Convert waveGrid to list of CubeData
+        List<CubeData> newCubesData = new List<CubeData>();
+        for (int y = 0; y < waveHeight; y++)
+        {
+            for (int x = 0; x < waveWidth; x++)
+            {
+                if (waveGrid[x, y].HasValue)
+                {
+                    newCubesData.Add(new CubeData
+                    {
+                        type = waveGrid[x, y].Value,
+                        position = new Vector2Int(x, y),
+                        level = 1
+                    });
+                }
+            }
+        }
+        
+        // Update properties using SerializedObject
+        serializedWave.Update();
+        serializedWave.FindProperty("GridWidth").intValue = waveWidth;
+        serializedWave.FindProperty("GridHeight").intValue = waveHeight;
+        
+        // Clear and rebuild CubesData array
+        SerializedProperty cubesDataProp = serializedWave.FindProperty("CubesData");
+        cubesDataProp.ClearArray();
+        cubesDataProp.arraySize = newCubesData.Count;
+        
+        for (int i = 0; i < newCubesData.Count; i++)
+        {
+            SerializedProperty cubeProp = cubesDataProp.GetArrayElementAtIndex(i);
+            cubeProp.FindPropertyRelative("type").intValue = (int)newCubesData[i].type;
+            cubeProp.FindPropertyRelative("position").vector2IntValue = newCubesData[i].position;
+            cubeProp.FindPropertyRelative("level").intValue = newCubesData[i].level;
+        }
+        
+        serializedWave.ApplyModifiedProperties();
+        
+        // Mark asset as dirty and save
+        EditorUtility.SetDirty(originalAsset);
+        AssetDatabase.SaveAssets();
+        LogAction($"Saved wave to {originalAsset.name} at {assetPath} ({newCubesData.Count} cubes)");
+        #else
+        LogAction("Save to current wave is only available in Editor");
+        #endif
+    }
+    
+    private void CreateNewWaveAsset()
+    {
+        #if UNITY_EDITOR
+        // Convert waveGrid to WaveData format
+        WaveData newWave = ScriptableObject.CreateInstance<WaveData>();
+        newWave.GridWidth = waveWidth;
+        newWave.GridHeight = waveHeight;
+        newWave.CubesData = new List<CubeData>();
+        
+        for (int y = 0; y < waveHeight; y++)
+        {
+            for (int x = 0; x < waveWidth; x++)
+            {
+                if (waveGrid[x, y].HasValue)
+                {
+                    newWave.CubesData.Add(new CubeData
+                    {
+                        type = waveGrid[x, y].Value,
+                        position = new Vector2Int(x, y),
+                        level = 1
+                    });
+                }
+            }
+        }
+        
+        // Default values
+        newWave.Index = 0;
+        newWave.waveName = "";
+        newWave.waveStartDelay = 1f;
+        newWave.moveInterval = 1.75f;
+        newWave.fastMoveInterval = 0.1f;
+        
+        // Show save dialog
+        string path = EditorUtility.SaveFilePanelInProject(
+            "Save Wave Asset",
+            "NewWave",
+            "asset",
+            "Choose where to save the wave asset");
+        
+        if (!string.IsNullOrEmpty(path))
+        {
+            AssetDatabase.CreateAsset(newWave, path);
+            AssetDatabase.SaveAssets();
+            LogAction($"Created new wave asset: {path} ({newWave.CubesData.Count} cubes)");
+        }
+        else
+        {
+            Object.DestroyImmediate(newWave);
+            LogAction("Wave creation cancelled");
+        }
+        #else
+        LogAction("Create new wave is only available in Editor");
+        #endif
+    }
+    
+    private void LoadFromWaveAsset(WaveData waveAsset)
+    {
+        if (waveAsset == null) return;
+        
+        #if UNITY_EDITOR
+        // Get the asset path and force reload from disk to get latest changes
+        string assetPath = AssetDatabase.GetAssetPath(waveAsset);
+        if (!string.IsNullOrEmpty(assetPath))
+        {
+            // Force reload the asset from disk to get latest changes
+            AssetDatabase.ImportAsset(assetPath, ImportAssetOptions.ForceUpdate);
+            WaveData assetWave = AssetDatabase.LoadAssetAtPath<WaveData>(assetPath);
+            if (assetWave != null)
+            {
+                waveAsset = assetWave; // Use the freshly loaded asset
+            }
+        }
+        #endif
+        
+        // Resize grid to match wave
+        ResizeWaveGrid(waveAsset.GridWidth, waveAsset.GridHeight);
+        ClearWaveGrid();
+        
+        // Load cubes
+        foreach (var cubeData in waveAsset.CubesData)
+        {
+            if (cubeData.position.x >= 0 && cubeData.position.x < waveWidth &&
+                cubeData.position.y >= 0 && cubeData.position.y < waveHeight)
+            {
+                waveGrid[cubeData.position.x, cubeData.position.y] = cubeData.type;
+            }
+        }
+        
+        LogAction($"Loaded wave from {waveAsset.name} ({waveAsset.CubesData.Count} cubes)");
     }
     #endregion
 }

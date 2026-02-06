@@ -3,18 +3,18 @@
 > This document details the Game Overview section of Infinity Cube's Game Design Document. For full project documentation, see [Game Design Document](GameDesignDocument.md).
 
 ## Purpose
-Defines the core gameplay loop, setting, and primary gameplay elements of InfinityQube - a strategic cube-capture game built on symmetrical wave collision mechanics.
+Defines the core gameplay loop, setting, and primary gameplay elements of InfinityQube - a strategic cube-capture game built on marker to cube transformation mechanics.
 
 ## 2.1 Concept
 
 ### Core Mechanics
-Players strategically place markers on a grid to intercept advancing cube waves. The game's signature mechanic is the **Symmetrical Wave System**, where placed markers transform into cubes that move backward toward incoming waves, creating dynamic collision-based captures.
+Players strategically place markers on a grid to intercept advancing cube waves. The game's signature mechanic is the **Marker to Cube System**, where placed markers transform into cubes that move backward toward incoming waves, creating dynamic collision-based captures.
 
 ### Primary Systems
 - **Cubes**: Four distinct cube types (Unit, Matrix, Infinity, and Recursion), each with unique capture requirements and strategic value
 - **Face Status System**: Cube faces can be modified with Corrupted (prevents capture) or Enhanced (creates bonus effects) status effects
-- **Marker System**: Four marker types (Light, Heavy, Matrix, Cube) provide different capture capabilities
-- **Symmetrical Wave System**: The game's defining mechanic - markers become backward-moving cubes that collide with forward-moving waves
+- **Marker System**: Four marker types (Unit, Matrix, Recursion, Infinity) provide different capture capabilities
+- **Marker to Cube System**: The game's defining mechanic - markers transform into backward-moving cubes that collide with forward-moving waves
 
 ### Progression Structure
 Players advance through increasingly complex stages featuring diverse cube formations, status effect patterns, and resource constraints. Success requires mastering the timing and positioning of marker-to-cube transformations.
@@ -34,13 +34,13 @@ Players progress through stages composed of multiple waves. Each wave presents a
 - Identify high-priority targets (Matrix cubes for resources, dangerous Recursion cubes)
 - Plan marker placement considering backward movement trajectories
 - Account for face status effects that modify cube behavior
-- Consider line divider position: threats above the line are visible but cannot be acted upon until they cross below
 
 ### 3. **Marker Placement & Transformation**
-- **Unit Markers** (Key: F): Single-tile markers that transform into backward-moving Light cubes
-- **Recursion Markers** (Key: V): Enhanced markers that become Heavy cubes for Recursion capture
-- **Matrix Markers** (Key: G): Area-effect markers creating 3x3 capture zones when transformed
-- **Cube Markers** (Key: Q): Special markers generated from Matrix cube captures
+- **Unit Markers** (Mode 1, F Key): Single-tile markers that transform into backward-moving Unit cubes
+- **Matrix Markers** (Mode 2, F Key): Area-effect markers creating 2x2 capture zones when transformed
+- **Recursion Markers** (Mode 3, F Key): Enhanced markers that become Recursion cubes for Recursion capture
+- **Infinity Markers** (Mode 4, F Key): Spawn pause-inducing Infinity cubes
+- **Cube Markers** (R Key): Generated resources from Matrix cube captures, triggered with R key
 - **Transformation Process**: Upon placement, markers immediately convert to cubes and begin backward movement
 
 ### 4. **Bidirectional Movement Phase**
@@ -51,7 +51,7 @@ Players progress through stages composed of multiple waves. Each wave presents a
 
 ### 5. **Collision Resolution**
 - **Capture Collisions**: When player cube meets compatible wave cube, capture occurs
-- **Type Matching**: Light/Heavy cubes capture Unit/Recursion respectively
+- **Type Matching**: Player cubes match their marker type (Unit cubes from Unit markers, Recursion cubes from Recursion markers)
 - **Area Effects**: Matrix cube collisions affect 3x3 zones
 - **Same-Type Interactions**: Matching cube types (Matrix-Matrix, Recursion-Recursion) generate marker resources
 - **Conversion Tactics**: Unit cubes can revert to markers mid-movement for tactical advantages
@@ -88,7 +88,6 @@ Players progress through stages composed of multiple waves. Each wave presents a
 - Configurable X by Y tile grid serving as the primary play space
 - Tiles support marker placement and cube movement
 - Edge boundaries define escape zones and spawn points
-- **Line Divider**: Dynamic line that restricts marker placement to lower rows, creating strategic tension as threats approach from above
 
 #### **Visual Design System** (AS IMPLEMENTED)
 
@@ -109,10 +108,10 @@ Players progress through stages composed of multiple waves. Each wave presents a
 
 | Cube Type | Mechanical Role | Capture Method | Strategic Value |
 |-----------|-----------------|----------------|-----------------|
-| **Unit** | Standard target | Single collision with Light cube | Basic scoring, conversion potential |
+| **Unit** | Standard target | Single collision with Unit cube (from Unit marker) | Basic scoring, conversion potential |
 | **Matrix** | Resource generator | Requires Matrix marker collision | Generates Cube markers, area clearing |
 | **Infinity** | Obstacle | Cannot be captured | Must be avoided or bypassed |
-| **Recursion** | Durable target | Multiple Heavy cube collisions | High score value, challenge element |
+| **Recursion** | Durable target, repositioning tool | Requires 2 hits to capture; creates swap markers for repositioning | Multi-hit challenge, creates repositioning opportunities |
 
 ### Face Status System - Behavioral Modifiers (IMPLEMENTED)
 
@@ -131,48 +130,54 @@ Players progress through stages composed of multiple waves. Each wave presents a
 ### Marker System - Player Tools (IMPLEMENTED)
 
 #### **Four-Tier Marker Framework**
-Dedicated input system for rapid marker deployment:
-- F Key: Deploy Unit Marker
-- V Key: Deploy Recursion Marker
-- G Key: Deploy Matrix marker
-- Q Key: Activate Cube marker
+Unified input system for rapid marker deployment:
+- Mode Keys 1-4: Switch between marker modes (1=Unit, 2=Matrix, 3=Recursion, 4=Infinity)
+- F Key: Place marker of current mode
+- R Key: Trigger Cube markers (generated from collisions)
 
-#### **Unit Markers (F Key)**
+#### **Unit Markers (Mode 1, F Key)**
 - Single-tile precision placement
-- Transform into backward-moving Light cubes
+- Transform into backward-moving Unit cubes
 - Optimal for Unit cube interception
-- Resource-efficient standard tool
+- Resource-efficient standard tool with move-based regeneration
 
-#### **Recursion Markers (V Key)**
-- Enhanced single-tile markers
-- Become Heavy cubes upon transformation
-- Required for Recursion cube capture
-- Higher resource cost than Unit Markers
-
-#### **Matrix Markers (G Key)**
-- 3x3 area coverage capability
-- Transform into large Matrix cubes
+#### **Matrix Markers (Mode 2, F Key)**
+- 2x2 area coverage capability
+- Transform into Matrix cubes
 - Capture multiple targets simultaneously
 - Generate Cube markers from successful Matrix captures
 
-#### **Cube Markers (Q Key)**
-- Special markers from Matrix cube captures
-- Instant detonation capability
-- Strategic resource for emergency situations
-- Limited availability based on Matrix success rate
+#### **Recursion Markers (Mode 3, F Key)**
+- Repositioning tool markers
+- Transform into Recursion cubes
+- Required for Recursion cube capture (2 hits)
+- Creates swap markers that reposition cubes on the grid
+- Breaks Infinity walls and repositions value cubes for better capture opportunities
 
-### Symmetrical Wave System - Core Innovation
+#### **Infinity Markers (Mode 4, F Key)**
+- Spawn pause-inducing Infinity cubes
+- Affects Infinity cubes within proximity
+- Strategic resource for flow control
+- Limited availability (grant-based economy)
+
+#### **Cube Markers (R Key - Generated Resource)**
+- Generated from Matrix cube collisions (not player-placed)
+- Instant detonation capability when triggered
+- Strategic resource for emergency situations
+- Limited availability based on collision success
+
+### Marker to Cube System - Core Innovation
 
 #### **Fundamental Concept**
-The game creates an infinity symbol (∞) through gameplay:
-- Forward loop: Wave cubes advancing toward grid edge
-- Backward loop: Player cubes moving from placement points
+Markers transform into player cubes that move backward:
+- Forward movement: Wave cubes advancing toward grid edge
+- Backward movement: Player cubes moving from marker placement points
 - Intersection: Collision points where captures occur
 
 #### **Strategic Mechanics**
 - **Trajectory Planning**: Backward movement distance equals forward interception range
 - **Timing Windows**: Early placement + far position = late-stage collision
-- **Pattern Matching**: Success requires mirroring wave formations in reverse
+- **Pattern Matching**: Success requires positioning markers to intercept wave formations
 - **Dynamic Conversion**: Transform Unit cubes to markers for tactical repositioning
 - **Resource Loops**: Same-type collisions generate new marker resources
 
@@ -210,7 +215,7 @@ Core mechanics are immediately understandable while mastery requires deep strate
 - **Tutorial Framework**: Highlight sequence system with guided messages, visual highlights, and interactive validation
 
 ### 🚧 To Be Implemented
-- **Symmetrical Wave System**: Marker-to-cube transformation mechanics
+- **Marker to Cube System**: Marker-to-cube transformation mechanics ✅ Implemented
 - **Backward Movement**: Reverse cube trajectories from marker positions
 - **Collision Detection**: Bidirectional collision resolution system
 - **Conversion System**: Unit cube to marker transformation mid-flight
@@ -251,6 +256,6 @@ Core mechanics are immediately understandable while mastery requires deep strate
 - Tutorial system uses highlight sequences for guided instruction with messages, visual highlights, and interactive validation
 
 ---
-**Last Updated:** December 14, 2025  
-**Core System:** Symmetrical Wave Collision Mechanics  
+**Last Updated:** January 27, 2026  
+**Core System:** Marker to Cube Transformation Mechanics  
 **Design Focus:** Strategic depth through bidirectional movement and collision-based gameplay

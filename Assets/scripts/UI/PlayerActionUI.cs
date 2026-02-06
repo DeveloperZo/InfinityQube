@@ -65,9 +65,9 @@ public class PlayerActionUI : MonoBehaviour
         if (playerActionManager != null)
         {
             unitMaxCharges = playerActionManager.maxUnitMarkerCharges;
-            recursionMaxCharges = playerActionManager.maxRecursionMarkerCharges;
-            matrixMaxCharges = playerActionManager.maxMatrixMarkerCharges;
-            infinityMaxCharges = playerActionManager.maxInfinityMarkerCharges;
+            recursionMaxCharges = playerActionManager.maxRecursionInventory;
+            matrixMaxCharges = playerActionManager.maxMatrixInventory;
+            infinityMaxCharges = playerActionManager.maxInfinityInventory;
             // Unit markers use move-based recharge, non-Unit use inventory grants only
             unitMarkerRechargeProgress = 0f;
         }
@@ -102,15 +102,15 @@ public class PlayerActionUI : MonoBehaviour
             }
             if (recursionMaxCharges == 0)
             {
-                recursionMaxCharges = playerActionManager.maxRecursionMarkerCharges;
+                recursionMaxCharges = playerActionManager.maxRecursionInventory;
             }
             if (matrixMaxCharges == 0)
             {
-                matrixMaxCharges = playerActionManager.maxMatrixMarkerCharges;
+                matrixMaxCharges = playerActionManager.maxMatrixInventory;
             }
             if (infinityMaxCharges == 0)
             {
-                infinityMaxCharges = playerActionManager.maxInfinityMarkerCharges;
+                infinityMaxCharges = playerActionManager.maxInfinityInventory;
             }
         }
 
@@ -172,10 +172,12 @@ public class PlayerActionUI : MonoBehaviour
         int currentInfinityCharges = playerActionManager.GetCurrentInfinityCharges();
 
         // Get max charges from PlayerActionManager (may be updated from wave configuration)
+        // Unit markers use maxUnitMarkerCharges (regenerating pool)
+        // Non-Unit markers use inventory system (maxRecursionInventory, maxMatrixInventory, maxInfinityInventory)
         unitMaxCharges = playerActionManager.maxUnitMarkerCharges;
-        recursionMaxCharges = playerActionManager.maxRecursionMarkerCharges;
-        matrixMaxCharges = playerActionManager.maxMatrixMarkerCharges;
-        infinityMaxCharges = playerActionManager.maxInfinityMarkerCharges;
+        recursionMaxCharges = playerActionManager.maxRecursionInventory;
+        matrixMaxCharges = playerActionManager.maxMatrixInventory;
+        infinityMaxCharges = playerActionManager.maxInfinityInventory;
 
         // Update cached values for other methods that might need them
         unitCharges = currentUnitCharges;
@@ -213,6 +215,9 @@ public class PlayerActionUI : MonoBehaviour
             infinityMarkerCooldownTime
         );
 
+        // Get current mode for visual emphasis
+        MarkerMode currentMode = playerActionManager != null ? playerActionManager.GetCurrentMode() : MarkerMode.Unit;
+
         // Update Unit Marker UI - Unit markers are ALWAYS available (infinite with move-based regeneration)
         // unitMaxCharges represents the regenerating charge pool, not total available
         if (UnitMarkerUI != null)
@@ -221,6 +226,10 @@ public class PlayerActionUI : MonoBehaviour
             
             // Ensure we have valid max charges for display (Unit uses regenerating pool of 3)
             int displayMaxCharges = unitMaxCharges > 0 ? unitMaxCharges : 3;
+            
+            // Visual emphasis for selected marker type
+            bool isSelected = currentMode == MarkerMode.Unit;
+            ApplyMarkerUIEmphasis(UnitMarkerUI, isSelected);
             
             UpdateMarkerUI(
                 currentUnitCharges,
@@ -233,16 +242,25 @@ public class PlayerActionUI : MonoBehaviour
             );
         }
 
-        // Update Recursion Marker UI - disable if not available
+        // Update Recursion Marker UI - show if granted in stage (maxCharges > 0), even if depleted (currentCharges = 0)
+        // A marker is "available" if it was granted in the stage (maxCharges > 0), regardless of current charges
         bool recursionMarkersAvailable = recursionMaxCharges > 0;
         if (RecursionMarkerUI != null)
         {
             if (recursionMarkersAvailable)
             {
                 RecursionMarkerUI.SetActive(true);
+                
+                // Visual emphasis for selected marker type
+                bool isSelected = currentMode == MarkerMode.Recursion;
+                ApplyMarkerUIEmphasis(RecursionMarkerUI, isSelected);
+                
+                // Ensure we have a valid maxCharges - use maxRecursionInventory if available, otherwise use current charges
+                int displayMaxCharges = recursionMaxCharges > 0 ? recursionMaxCharges : Mathf.Max(currentRecursionCharges, playerActionManager.maxRecursionInventory);
+                
                 UpdateMarkerUI(
                     currentRecursionCharges,
-                    recursionMaxCharges,
+                    displayMaxCharges,
                     recursionCooldownProgress,
                     recursionMarkerSegments,
                     recursionChargeText,
@@ -256,16 +274,27 @@ public class PlayerActionUI : MonoBehaviour
             }
         }
 
-        // Update Matrix Marker UI - disable if not available
-        bool matrixMarkersAvailable = matrixMaxCharges > 0;
+        // Update Matrix Marker UI - show if granted in stage (maxCharges > 0), even if depleted (currentCharges = 0)
+        // Check both cached value and direct from manager to ensure we have the latest
+        int effectiveMatrixMaxCharges = matrixMaxCharges > 0 ? matrixMaxCharges : (playerActionManager != null ? playerActionManager.maxMatrixInventory : 0);
+        bool matrixMarkersAvailable = effectiveMatrixMaxCharges > 0;
+        
         if (MatrixMarkerUI != null)
         {
             if (matrixMarkersAvailable)
             {
                 MatrixMarkerUI.SetActive(true);
+                
+                // Visual emphasis for selected marker type
+                bool isSelected = currentMode == MarkerMode.Matrix;
+                ApplyMarkerUIEmphasis(MatrixMarkerUI, isSelected);
+                
+                // Use the effective max charges for display
+                int displayMaxCharges = effectiveMatrixMaxCharges;
+                
                 UpdateMarkerUI(
                     currentMatrixCharges,
-                    matrixMaxCharges,
+                    displayMaxCharges,
                     matrixCooldownProgress,
                     matrixMarkerSegments,
                     matrixChargeText,
@@ -279,16 +308,24 @@ public class PlayerActionUI : MonoBehaviour
             }
         }
 
-        // Update Infinity Marker UI - disable if not available
+        // Update Infinity Marker UI - show if granted in stage (maxCharges > 0), even if depleted (currentCharges = 0)
         bool infinityMarkersAvailable = infinityMaxCharges > 0;
         if (InfinityMarkerUI != null)
         {
             if (infinityMarkersAvailable)
             {
                 InfinityMarkerUI.SetActive(true);
+                
+                // Visual emphasis for selected marker type
+                bool isSelected = currentMode == MarkerMode.Infinity;
+                ApplyMarkerUIEmphasis(InfinityMarkerUI, isSelected);
+                
+                // Ensure we have a valid maxCharges - use maxInfinityInventory if available, otherwise use current charges
+                int displayMaxCharges = infinityMaxCharges > 0 ? infinityMaxCharges : Mathf.Max(currentInfinityCharges, playerActionManager.maxInfinityInventory);
+                
                 UpdateMarkerUI(
                     currentInfinityCharges,
-                    infinityMaxCharges,
+                    displayMaxCharges,
                     infinityCooldownProgress,
                     infinityMarkerSegments,
                     infinityChargeText,
@@ -305,8 +342,29 @@ public class PlayerActionUI : MonoBehaviour
         // Update Mode Indicator UI
         if (playerActionManager != null)
         {
-            UpdateModeIndicator(playerActionManager.GetCurrentMode());
+            UpdateModeIndicator(currentMode);
         }
+    }
+
+    /// <summary>
+    /// Applies visual emphasis to the selected marker UI (scale, glow, etc.)
+    /// </summary>
+    private void ApplyMarkerUIEmphasis(GameObject markerUI, bool isSelected)
+    {
+        if (markerUI == null) return;
+
+        // Scale emphasis: selected marker is larger with subtle pulse
+        float baseScale = isSelected ? 1.2f : 1.0f;
+        float pulse = isSelected ? (1.0f + Mathf.Sin(Time.time * 3f) * 0.08f) : 1.0f;
+        float targetScale = baseScale * pulse;
+        
+        // Smooth transition to target scale
+        Vector3 currentScale = markerUI.transform.localScale;
+        Vector3 targetScaleVector = Vector3.one * targetScale;
+        markerUI.transform.localScale = Vector3.Lerp(currentScale, targetScaleVector, Time.deltaTime * 8f);
+        
+        // Optional: Could add outline component or color intensity changes here
+        // For now, scale and pulse provide clear visual emphasis
     }
 
     private float CalculateCooldownProgress(int charges, int maxCharges, float cooldownRemaining, float cooldownTime)
@@ -359,18 +417,35 @@ public class PlayerActionUI : MonoBehaviour
         }
 
         // Update charge text with current/max format - consistent for all marker types
+        // CRITICAL: Always set the text, even if chargeText component exists
         if (chargeText != null)
         {
+            // Ensure maxCharges is at least 1 for display (avoid division by zero or invalid display)
+            // If maxCharges is 0 or invalid, use charges as fallback (but at least 1)
+            int displayMaxCharges = maxCharges > 0 ? maxCharges : Mathf.Max(1, charges);
+            
             // Show cooldown remaining when charging (not at max and cooldown active)
-            if (charges < maxCharges && cooldownRemaining > 0f)
+            if (charges < displayMaxCharges && cooldownRemaining > 0f)
             {
-                chargeText.text = $"{charges}/{maxCharges} \n{cooldownRemaining:F1} step(s)";
+                chargeText.text = $"{charges}/{displayMaxCharges} \n{cooldownRemaining:F1} step(s)";
             }
             else
             {
                 // At max charges or no cooldown - just show current/max
-                chargeText.text = $"{charges}/{maxCharges}";
+                chargeText.text = $"{charges}/{displayMaxCharges}";
             }
+            
+            // Ensure text is visible and enabled
+            chargeText.gameObject.SetActive(true);
+            chargeText.enabled = true;
+            
+            // Force text update
+            chargeText.SetAllDirty();
+        }
+        else
+        {
+            // Log warning if charge text component is not assigned
+            Debug.LogWarning($"[PlayerActionUI] Charge text component is null! Cannot display charge information. Make sure chargeText is assigned in the inspector.");
         }
 
         if (charges >= maxCharges)
@@ -453,6 +528,7 @@ public class PlayerActionUI : MonoBehaviour
         
         // Check which markers are available
         // Unit markers are ALWAYS available (infinite with move-based regeneration)
+        // Other markers are available if they were granted in the stage (maxCharges > 0), even if depleted
         bool unitMarkersAvailable = true;
         bool matrixMarkersAvailable = matrixMaxCharges > 0;
         bool recursionMarkersAvailable = recursionMaxCharges > 0;

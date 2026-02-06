@@ -1,7 +1,8 @@
-﻿using UnityEngine;
+using UnityEngine;
 using TMPro;
 using static Enumerations;
 using UnityEngine.UI;
+using System;
 
 public class GameUI : MonoBehaviour
 {
@@ -109,9 +110,10 @@ public class GameUI : MonoBehaviour
 
     public void ToggleWaveIcon(int waveIndex, bool enable)
     {
-        if (waveIndex > waveIcons.Length) return;
+        // Bounds check BEFORE array access
+        if (waveIcons == null || waveIndex < 0 || waveIndex >= waveIcons.Length) return;
 
-        
+        waveIcons[waveIndex].enabled = true;
         waveIcons[waveIndex].color = enable ? Color.white : Color.black;
     }
 
@@ -555,5 +557,16 @@ public class GameUI : MonoBehaviour
     {
         controlsVisible = false;
         tipsVisible = true;
+    }
+
+    internal void ResetWaveIcons()
+    {
+        if (waveIcons == null) return;
+        
+        for (int i = 0; i < waveIcons.Length; i++)
+        {
+            if (waveIcons[i] != null)
+                waveIcons[i].enabled = false;
+        }
     }
 }

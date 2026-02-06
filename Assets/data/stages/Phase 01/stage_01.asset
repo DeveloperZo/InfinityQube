@@ -1,0 +1,51 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: faaa491ad539cb444afed02f7554648d, type: 3}
+  m_Name: stage_01
+  m_EditorClassIdentifier: 
+  stageNumber: 1
+  stageName: First Contact
+  stageType: 1
+  description: Your first encounter with Infinity cubes. Learn that some cubes cannot
+    be captured and must be avoided.
+  objective: Capture Unit cubes while avoiding Infinity cubes - they are lethal and
+    cannot be captured
+  gridWidth: 5
+  gridHeight: 20
+  playerStartPosition: {x: 2, y: 0}
+  respawnDelayMoves: 1
+  segmentLayoutPrefab: {fileID: 8479612789658835193, guid: 32916daa167677a4f9a0a6349152c60f, type: 3}
+  enableLineDivider: 0
+  lineDividerStartY: 10
+  lineDividerEscapePenalty: 0
+  lineDividerCaptureReward: 0
+  stageGrants:
+    unitMaxOnGrid: 5
+    unitMarkerRechargeRate: 1
+    maxUnitMarkerCharges: 4
+    matrixCharges: 2
+    matrixMaxOnGrid: 2
+    recursionCharges: 2
+    recursionMaxOnGrid: 2
+    infinityCharges: 1
+    infinityMaxOnGrid: 1
+  waveGrantsFromWaveData: 0
+  lockAttunements: 1
+  allowedAttunementIds: []
+  waveConfigurations:
+  - {fileID: 11400000, guid: 52039f55bbc24df458bee29ef04e1a6e, type: 2}
+  - {fileID: 11400000, guid: 26a86d8b588967f45b04cdf43bc15c49, type: 2}
+  - {fileID: 11400000, guid: 5650d342772b2074e8001895b067c673, type: 2}
+  - {fileID: 11400000, guid: f4cdbe06ad71e7948b9b79a0bac8b24b, type: 2}
+  requireAllCubesDestroyed: 0
+  requiredCaptureCount: 0
+  maxAllowedEscapes: 6

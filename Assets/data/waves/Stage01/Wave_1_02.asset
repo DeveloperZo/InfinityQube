@@ -12,56 +12,142 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 78c3fb7cc917307469018838241693f1, type: 3}
   m_Name: Wave_1_02
   m_EditorClassIdentifier: 
-  Index: 0
-  GridHeight: 2
+  Index: 1
+  waveName: 
   GridWidth: 5
+  GridHeight: 3
+  overrideGridHeight: 0
   CubesData:
   - type: 0
-    position: {x: 4, y: 0}
+    position: {x: 1, y: 0}
     level: 1
-  - type: 2
-    position: {x: 3, y: 0}
-    level: 1
+    hasPaintedFaces: 0
+    frontFaceStatus: 0
+    frontFaceCharges: 0
+    spawnDelay: 0
   - type: 0
     position: {x: 2, y: 0}
     level: 1
-  - type: 2
-    position: {x: 1, y: 0}
-    level: 1
+    hasPaintedFaces: 0
+    frontFaceStatus: 0
+    frontFaceCharges: 0
+    spawnDelay: 0
   - type: 0
-    position: {x: 0, y: 0}
+    position: {x: 4, y: 0}
     level: 1
+    hasPaintedFaces: 0
+    frontFaceStatus: 0
+    frontFaceCharges: 0
+    spawnDelay: 0
   - type: 0
-    position: {x: 4, y: 1}
+    position: {x: 1, y: 1}
     level: 1
-  - type: 0
-    position: {x: 3, y: 1}
-    level: 1
+    hasPaintedFaces: 0
+    frontFaceStatus: 0
+    frontFaceCharges: 0
+    spawnDelay: 0
   - type: 2
     position: {x: 2, y: 1}
     level: 1
-  - type: 2
-    position: {x: 1, y: 1}
-    level: 1
+    hasPaintedFaces: 0
+    frontFaceStatus: 0
+    frontFaceCharges: 0
+    spawnDelay: 0
   - type: 0
+    position: {x: 3, y: 1}
+    level: 1
+    hasPaintedFaces: 0
+    frontFaceStatus: 0
+    frontFaceCharges: 0
+    spawnDelay: 0
+  - type: 0
+    position: {x: 1, y: 2}
+    level: 1
+    hasPaintedFaces: 0
+    frontFaceStatus: 0
+    frontFaceCharges: 0
+    spawnDelay: 0
+  - type: 0
+    position: {x: 3, y: 2}
+    level: 1
+    hasPaintedFaces: 0
+    frontFaceStatus: 0
+    frontFaceCharges: 0
+    spawnDelay: 0
+  - type: 2
     position: {x: 0, y: 1}
     level: 1
-  maxLightMarkerCharge: 2
-  maxLightMarkerCount: 0
-  maxMatrixMarkerCharge: 0
-  maxMatrixMarkerCount: 0
-  maxRecursionMarkerCharge: 0
-  maxRecursionMarkerCount: 0
-  waveStartDelay: 0.8
-  moveInterval: 4
+    hasPaintedFaces: 0
+    frontFaceStatus: 0
+    frontFaceCharges: 0
+    spawnDelay: 0
+  - type: 2
+    position: {x: 4, y: 1}
+    level: 1
+    hasPaintedFaces: 0
+    frontFaceStatus: 0
+    frontFaceCharges: 0
+    spawnDelay: 0
+  - type: 0
+    position: {x: 0, y: 0}
+    level: 1
+    hasPaintedFaces: 0
+    frontFaceStatus: 0
+    frontFaceCharges: 0
+    spawnDelay: 0
+  - type: 0
+    position: {x: 3, y: 0}
+    level: 1
+    hasPaintedFaces: 0
+    frontFaceStatus: 0
+    frontFaceCharges: 0
+    spawnDelay: 0
+  - type: 2
+    position: {x: 0, y: 2}
+    level: 1
+    hasPaintedFaces: 0
+    frontFaceStatus: 0
+    frontFaceCharges: 0
+    spawnDelay: 0
+  - type: 2
+    position: {x: 2, y: 2}
+    level: 1
+    hasPaintedFaces: 0
+    frontFaceStatus: 0
+    frontFaceCharges: 0
+    spawnDelay: 0
+  - type: 2
+    position: {x: 4, y: 2}
+    level: 1
+    hasPaintedFaces: 0
+    frontFaceStatus: 0
+    frontFaceCharges: 0
+    spawnDelay: 0
+  grantsAddToInventory: 1
+  grantMatrixCharges: 0
+  grantRecursionCharges: 0
+  grantInfinityCharges: 0
+  overrideUnitMaxOnGrid: 0
+  overrideMatrixMaxOnGrid: 0
+  overrideRecursionMaxOnGrid: 0
+  overrideInfinityMaxOnGrid: 0
+  overrideUnitMarkerRechargeRate: 0
+  overrideMaxUnitMarkerCharges: 0
+  waveStartDelay: 1
+  moveInterval: 2.5
   fastMoveInterval: 0.1
+  respawnDelayMoves: 0
+  facePaintingTelegraphMoves: 0
   hasOwnSuccessCriteria: 0
   requiredCaptureCount: 0
-  maxAllowedEscapes: 0
-  messages: []
-  unitCubesCaptured: 0
-  MatrixCubesCaptured: 0
-  infinityCubesEscaped: 0
-  recursionCubesCaptured: 0
-  markersPlaced: 0
-  detonationsUsed: 0
+  maxAllowedEscapes: -1
+  highlightSequences: []
+  _runtimeStats:
+    unitCubesCaptured: 0
+    matrixCubesCaptured: 0
+    recursionCubesCaptured: 0
+    infinityCubesCaptured: 0
+    cubesEscaped: 0
+    markersPlaced: 0
+    markersTriggererd: 0
+    completionTime: 0

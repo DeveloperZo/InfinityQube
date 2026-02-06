@@ -4,32 +4,132 @@ alwaysApply: false
 ---
 # Code Patterns
 
+## Required Imports
+```csharp
+using UnityEngine;
+using Sirenix.OdinInspector;  // Odin Inspector
+using DG.Tweening;           // DOTween (when using animations)
+using static Enumerations;   // Project enums
+```
+
 ## Standard Debug Pattern (REQUIRED)
-Managers implement IManagerDebugInterface. For components without interface:
+Use LogExtensions for consistent logging across all components:
 ```csharp
 #region Debug
-[Header("Debug")]
-[SerializeField] private bool enableDebugLogs = true;
+[FoldoutGroup("Debug"), SerializeField] 
+private bool enableDebugLogs = true;
 
-private void DebugLog(string methodName, string message)
-{
-    if (enableDebugLogs)
-        Debug.Log($"[{GetType().Name}] {methodName}: {message}");
-}
+[FoldoutGroup("Debug"), Button("Log Status"), ShowIf("enableDebugLogs")]
+private void LogCurrentStatus() => this.Log($"Status: {GetDebugStatus()}", enableDebugLogs);
 
-private void DebugWarning(string methodName, string message)
-{
-    if (enableDebugLogs)
-        Debug.LogWarning($"[{GetType().Name}] {methodName}: {message}");
-}
-
-private void DebugError(string methodName, string message)
-{
-    // Errors always log regardless of flag
-    Debug.LogError($"[{GetType().Name}] {methodName}: {message}");
-}
+// Use extension methods from LogExtensions.cs:
+// this.Log("message", enableDebugLogs);           → [ClassName] message
+// this.LogWarning("message", enableDebugLogs);    → [ClassName] message
+// this.LogError("message");                       → [ClassName] message (always logs)
+// this.LogStateChange("state", old, new, flag);   → [ClassName] state changed: old → new
+// this.LogAction("action", "details", ms, flag);  → [ClassName] action: details (ms)
+// this.LogPerformance("op", count, ms, flag);     → [ClassName] PERF - op: count in ms
 #endregion
 ```
+
+### Logging Categories (from LogExtensions.cs)
+- **CRITICAL (keep ON)**: StageManager, WaveManager, GridManager, PlayerManager
+- **NOISY (safe to disable)**: CubeCollisionManager, MarkerVisualManager, AudioManager
+- **MODERATE (case-by-case)**: WaveSegmentController, GridRowManager, ScoreManager
+
+## Odin Inspector Patterns
+
+### Inspector Organization
+```csharp
+// Use Title for major sections (replaces [Header] for top-level)
+[Title("Configuration")]
+[SerializeField] private float speed = 5f;
+
+// Use FoldoutGroup for collapsible sections
+[FoldoutGroup("Advanced Settings")]
+[SerializeField] private bool useAdvanced = false;
+
+// Use BoxGroup for visual grouping without collapse
+[BoxGroup("Timing")]
+[SerializeField] private float duration = 1f;
+
+// Use TabGroup for complex inspectors
+[TabGroup("Tabs", "General")]
+[SerializeField] private string displayName;
+
+[TabGroup("Tabs", "Combat")]
+[SerializeField] private int damage;
+```
+
+### Conditional Display
+```csharp
+// Show/hide based on bool
+[ShowIf("useAdvanced")]
+[SerializeField] private float advancedMultiplier;
+
+// Show/hide based on enum
+[ShowIf("cubeType", CubeType.Matrix)]
+[SerializeField] private Vector2Int areaSize;
+
+// Enable/disable (grayed out but visible)
+[EnableIf("isInitialized")]
+[SerializeField] private bool canActivate;
+```
+
+### Validation & Buttons
+```csharp
+// Required field validation
+[Required("Prefab must be assigned!")]
+[SerializeField] private GameObject prefab;
+
+// Range with info box
+[MinValue(0), MaxValue(100)]
+[SerializeField] private int percentage;
+
+// Inspector buttons
+[Button("Initialize", ButtonSizes.Large)]
+public void Initialize() { /* ... */ }
+
+[Button("Test Feature"), GUIColor(0.4f, 0.8f, 1f)]
+private void TestFeature() { /* ... */ }
+
+// Button row
+[ButtonGroup("Actions")]
+[Button("Start")] private void Start() { }
+[ButtonGroup("Actions")]
+[Button("Stop")] private void Stop() { }
+```
+
+### Lists & Collections
+```csharp
+// Searchable list (for large collections)
+[Searchable]
+[SerializeField] private List<WaveData> waves;
+
+// Table display for data lists
+[TableList(ShowIndexLabels = true)]
+[SerializeField] private List<SpawnEntry> spawnEntries;
+
+// Inline editor for ScriptableObjects
+[InlineEditor]
+[SerializeField] private StageData stageData;
+```
+
+### Common Odin Attributes Reference
+| Attribute | Purpose |
+|-----------|---------|
+| `[Title("Name")]` | Section header with line |
+| `[FoldoutGroup("Name")]` | Collapsible section |
+| `[BoxGroup("Name")]` | Visual box grouping |
+| `[TabGroup("Tab", "Name")]` | Tabbed sections |
+| `[ShowIf("condition")]` | Conditional visibility |
+| `[Required]` | Validation - must be set |
+| `[Button("Label")]` | Inspector button |
+| `[TableList]` | Display list as table |
+| `[Searchable]` | Add search to lists |
+| `[InlineEditor]` | Expand SO in inspector |
+| `[ReadOnly]` | Display but don't edit |
+| `[InfoBox("msg")]` | Help text in inspector |
 
 ## Manager Reference Pattern
 ```csharp
@@ -40,22 +140,40 @@ private GridManager gridManager;
 
 private void Start()
 {
+    CacheManagerReferences();
+    ValidateReferences();
+}
+
+private void CacheManagerReferences()
+{
     // Prefer singleton when available
     gridManager = GridManager.Instance;
     
-    // Or FindObjectOfType in Start() only
-    waveManager = FindObjectOfType<WaveManager>();
-    
-    // Always validate
-    ValidateReferences();
+    // Or FindFirstObjectByType in Start() ONLY
+    waveManager = WaveManager.Instance ?? FindFirstObjectByType<WaveManager>();
 }
 
 private void ValidateReferences()
 {
     if (waveManager == null)
-        DebugLog("ValidateReferences", "WaveManager not found - features limited");
+        this.Log("WaveManager not found - features limited", enableDebugLogs);
 }
 ```
+
+### CRITICAL: Anti-Patterns to Avoid
+These patterns caused bugs in production - found in CubeManager, PlayerManager:
+```csharp
+// BAD: Runtime lookup - caused NullReferenceExceptions
+private void MoveForward() {
+    var waveManager = FindFirstObjectByType<WaveManager>(); // NEVER DO THIS
+}
+
+// BAD: Lookup in frequently called method
+private void HandleTileChange() {
+    var actionManager = FindFirstObjectByType<PlayerActionManager>(); // NEVER DO THIS
+}
+```
+Always cache in Start(), use cached reference everywhere else.
 
 ## Singleton Pattern (When Approved)
 ```csharp

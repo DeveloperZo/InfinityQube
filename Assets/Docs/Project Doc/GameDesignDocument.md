@@ -1,5 +1,8 @@
 # Game Design Document
 
+## Purpose
+This document provides a high-level overview of Infinity Cube's game design, covering core mechanics, systems, and design philosophy. It serves as the primary reference for understanding the game's structure and serves as a summary of the detailed technical documentation found in related documents.
+
 ## Executive Summary
 * **Title:** Infinity Cube
 * **Genre:** Grid-based Tactical Puzzle
@@ -9,39 +12,32 @@
 * **Engine:** Unity 3D with component-based architecture
 
 ### High Concept
-A grid-based tactical puzzle game where players strategically place markers to intercept advancing cube formations. Players spawn player cubes that move backward through the grid to capture wave cubes advancing toward them. Combined with Infinity cube pause mechanics, collision systems, and face painting mechanics, players must balance immediate tactical decisions with strategic planning.
+A grid-based tactical puzzle game where players strategically place markers to intercept advancing cube formations. Markers transform into player cubes that move backward to collide with forward-moving wave cubes, preventing them from escaping the grid. 
 
 ### Key Features
-- **Five-Tier Marker System**: Unit, Recursion, Matrix, Cube, and Infinity markers with distinct applications
-- **Advanced Cube Mechanics**: Four cube types with Infinity pause states and collision behaviors
-- **Dynamic Flow Control**: Infinity cube pause mechanics creating strategic bottlenecks
+- **Four-Tier Marker System**: Unit, Matrix, Recursion, and Infinity markers with distinct applications
+- **Advanced Cube Mechanics**: Four cube types with Infinity phaseable states and collision behaviors
+- **Dynamic Flow Control**: Infinity cube phaseable mechanics creating strategic opportunities
 - **Face Painting System**: Cube collisions paint faces that trigger effects when touching grid
 - **Progressive Stage Design**: Structured learning curve teaching all systems
-- **Line Divider System**: Dynamic difficulty mechanism restricting marker placement
 
 ## Game Overview
 
 ### Core Gameplay Loop
-**Wave Start** → **Marker Placement** → **Cube Spawning** → **Collision Resolution** → **Wave Completion**
+**Place Markers** → **Cubes Collide** → **Capture or Escape** → **Next Wave**
 
-#### Detailed Flow:
-1. **Wave Initiation**: Player starts wave from configuration
-2. **Tactical Phase**:
-   - Wave cubes advance toward player
-   - Strategic marker placement
-   - Player cubes spawn from markers
-   - Immediate survival focus
-3. **Collision Phase**:
-   - Player cubes move backward into wave cubes
-   - Collision behaviors resolve
-   - Face painting effects trigger
-4. **Resolution Phase**:
-   - Track captured/escaped cubes
-   - Apply penalties/rewards
-   - Advance to next wave
+#### Simple Flow:
+1. **Place Markers**: Player places markers on grid (markers transform into backward-moving cubes)
+2. **Cubes Move**: Wave cubes advance forward; player cubes move backward from markers
+3. **Collisions**: Cubes collide—captures occur, face painting triggers, area effects activate
+4. **Resolution**: Track results, apply rewards/penalties, advance to next wave
+
+#### Key Mechanics:
+- **Bidirectional Movement**: Forward-moving waves meet backward-moving player cubes
+- **Face Painting**: Collisions with Infinity cubes paint faces that later place markers
 
 ### Setting
-**Tactical Arena** - A minimalist abstract world with clean geometric shapes. The cosmic backdrop emphasizes themes of infinity and tactical precision. Visual design prioritizes functional clarity while conveying the weight of tactical decisions.
+Minimalist abstract world with clean geometric shapes and cosmic backdrop. Visual design prioritizes functional clarity.
 
 ## Gameplay Mechanics
 
@@ -49,48 +45,39 @@ A grid-based tactical puzzle game where players strategically place markers to i
 
 #### **Grid System (GridManager)**
 - Singleton-based spatial management with configurable dimensions
-- Tile state tracking
-- Line divider system for dynamic difficulty
-- Corruption and enhancement mechanics
+- Tile state tracking (Normal, Transformed, Corrupted, Marked)
+- Corruption and enhancement mechanics affecting cube behavior
 
 #### **Player System (PlayerActionManager)**
-- Five-tier marker system
-- Resource management
-- Visual feedback for marker states
-- Statistics tracking
+- Four-tier marker system (Unit, Matrix, Recursion, Infinity)
+- Resource management with grant-based economy for non-Unit markers
+- Visual feedback for marker states and placement
+- Statistics tracking for performance metrics
 
 #### **Cube System**
 | Type | Properties | Behavior |
 |------|------------|----------|
 | **Unit** | Basic, capturable | Standard capture |
-| **Matrix** | Generates cube markers | Creates area capture resources |
-| **Infinity** | Uncapturable, pauseable | Face painting, resonance |
-| **Recursion** | Multi-hit requirement | Requires matching marker |
+| **Matrix** | Generates cube markers | Creates area capture resources (2x2, 3x3) |
+| **Infinity** | Uncapturable, phaseable | Face painting, resonance effects |
+| **Recursion** | Multi-hit requirement, repositioning tool | Requires 2 hits to capture; creates swap markers for repositioning cubes |
 
-#### **Wave Management (WaveManager)**
-Wave configuration system:
-```
-WaveData Structure:
-- Index: Wave number
-- GridHeight/Width: Grid dimensions
-- CubesData: Cube spawn positions and types
-- Marker Settings: Available markers per wave
-- Timing: Movement intervals
-- Success Criteria: Win/lose conditions
-```
+#### **Face Painting System**
+Collisions paint cube faces that place markers later:
+- **Collision Trigger**: Matrix, Recursion, or Infinity player cubes collide with Wave Infinity cubes → collision face gets painted
+- **Unit Exception**: Unit cubes don't paint Infinity cubes—they're destroyed on collision
+- **Rotation**: Cubes rotate on a fixed schedule as waves advance
+- **Marker Placement**: When painted face rotates down and touches grid, a marker appears at that tile
+- **Telegraph System**: Visual indicators show where markers will appear (default: 3 moves ahead)
+- **Face Types**: Matrix (2x2 manual marker), Recursion (swap marker for repositioning), Unit (single auto-capture), Infinity (resonance effect)
 
-### Input System
-```
-Core Controls:
-Movement: WASD/Arrows → Grid navigation
-Mode Selection: 1-4 → Switch marker mode
-  1 = Unit Marker mode
-  2 = Matrix Marker mode
-  3 = Recursion Marker mode
-  4 = Infinity Marker mode
-Marker Placement: F → Place marker of current mode
-Cube Marker Trigger: R → Trigger cube marker area effect
-```
+#### **Marker to Cube Conversion**
+Core mechanic: When wave moves forward, placed markers transform into player cubes that move backward:
+- **Transformation**: Markers become cubes matching their type (Unit marker → Unit cube, Matrix marker → Matrix cube, etc.)
+- **Backward Movement**: Player cubes move backward from marker position toward incoming waves
+- **Collision Opportunities**: Different cube types create different collision behaviors (capture, area effects, face painting)
+
+
 
 ## Level Design
 
@@ -100,8 +87,8 @@ Teaching immediate tactics and cube interactions:
 | Stage | Focus | Lesson |
 |-------|-------|--------|
 | 0-2 | Unit markers, Infinite Cube | Unit marker basics |
-| 3-5 | Matrix cube/markers | Area effects |
-| 6-8 | Recursion cube/marker | Multi-hit mechanics |
+| 3-5 | Matrix markers | Area effects |
+| 6-8 | Recursion markers | Multi-hit mechanics |
 | 9-10 | Infinity Marker | All systems |
 | 11-12 | Mastery | Complex strategies |
 
@@ -112,81 +99,23 @@ Teaching immediate tactics and cube interactions:
 4. **Mastery Phase**: Complex collision chains
 5. **Innovation Phase**: Creative use of mechanics
 
-## Strategic Implications
-
-### Emergent Strategies
-
-#### "Area Control"
-Use Matrix markers to create large capture areas for incoming wave formations.
-
-#### "The Setup"
-Place markers in specific patterns to create advantageous cube collision chains.
-
-#### "Infinity Timing"
-Use Infinity cubes strategically to pause and redirect cube flows.
-
-#### "Resource Management"
-Balance marker usage across waves to maintain strategic options.
-
-### Risk/Reward Dynamics
-- **High Risk**: Aggressive marker use depletes resources
-- **High Reward**: Strategic Matrix placement creates resource generation
-- **Balanced Play**: Measured marker use with careful position selection
-- **Defensive Play**: Minimal marker use, relying on Cube markers
-
-## Technical Architecture
-
-### System Dependencies
-```
-WaveManager
-├── Cube Spawning
-│   ├── Configuration Handler
-│   ├── Position Calculator
-│   └── Cube Instantiation
-├── Wave Flow
-│   ├── Movement System
-│   ├── Completion Tracking
-│   └── Statistics
-└── Player Integration
-    ├── Marker System
-    └── Collision Resolution
-```
 
 ## Design Philosophy
 
 ### Core Pillars
-1. **Tactical Depth**: Simple rules create complex strategies
-2. **Player Agency**: Multiple valid approaches to each wave
-3. **Clear Feedback**: Visual clarity on all game states
-4. **Accessible Depth**: Easy to understand, lifetime to master
-5. **Strategic Variety**: Multiple marker types create diverse gameplay
+1. **Simple Rules, Complex Strategies**: Basic mechanics create depth
+2. **Multiple Solutions**: Different approaches work for each wave
+3. **Clear Feedback**: Visual clarity on game states
+4. **Easy to Learn**: Simple to understand, takes time to master
+5. **Variety**: Four marker types create different gameplay options
 
-### Unique Selling Points
-- **Grid-based tactical puzzle with cube collision mechanics**
-- **Five distinct marker types with unique behaviors**
-- **Face painting system creating strategic timing opportunities**
-- **Dynamic difficulty through line divider system**
-- **Infinity cubes creating flow control mechanics**
+### Key Systems
+- **Bidirectional Movement**: Markers become backward-moving cubes that intercept forward-moving waves
+- **Cube Collisions**: Cube collisions create different outcomes
+- **Face Painting**: Collisions paint faces that place markers later
+- **Marker to Cube Conversion**: Marker types convert to cubes
+- **Marker Economy**: Grant-based resource system with four marker types
 
-## Implementation Priorities
-
-### Phase 1: Core Systems ✅
-1. Grid and wave management
-2. Basic marker placement
-3. Cube spawning and movement
-4. Collision detection
-
-### Phase 2: Advanced Features
-1. Face painting system
-2. Line divider mechanics
-3. Resonance system
-4. Marker economy
-
-### Phase 3: Polish and Balance
-1. Visual feedback refinement
-2. Tutorial system
-3. Difficulty curve adjustment
-4. Stage content creation
 
 ## Design Considerations
 
@@ -208,7 +137,6 @@ WaveManager
 #### Frustration Potential
 **Concern**: Players may feel overwhelmed by cube waves
 **Mitigation**:
-- Line divider creates manageable challenge area
 - Cube markers provide emergency capture options
 - Balance wave difficulty appropriately
 
@@ -217,12 +145,16 @@ WaveManager
 **Mitigation**:
 - Configurable wave difficulty
 - Variable marker limits per stage
-- Adjustable line divider position
 
 ---
-**Last Updated:** December 8, 2025  
-**Implementation Status:** Core systems complete, collision mechanics in refinement
+**Last Updated:** January 27, 2026  
+**Implementation Status:** Core systems complete, Stages 0-2 validated and playable end-to-end, face painting implemented, collision mechanics complete, stage progression working, Recursion redesign complete (swap mechanics)
+
+## Consistency Notes
+- **Marker to Cube**: Core mechanic where markers transform into backward-moving cubes when wave advances
+- **Phaseable States**: Infinity cubes can become phaseable (passable) through resonance, not "pauseable"
+- **Face Painting**: Only Matrix, Recursion, and Infinity player cubes can paint Wave Infinity cubes (Unit cubes are destroyed instead)  
 **Related Documents:**
 - [Gameplay Mechanics](3_GameplayMechanics.md)
 - [Level Design](4_LevelDesign.md)
-- [Technical Architecture](TechnicalArchitecture.md)
+- [Game Overview](2_GameOverview.md)

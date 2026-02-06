@@ -4,34 +4,81 @@ alwaysApply: true
 
 # Core Constraints
 
+These rules apply to ALL work on InfinityQube. For game-specific architecture rules, see `game-architecture.mdc`.
+
 ## NEVER DO
-- NEVER split existing manager files (GridManager.cs, PlayerManager.cs, WaveManager.cs, StageManager.cs, etc.) without explicit approval
+
+### Architecture (see game-architecture.mdc)
+- NEVER split core managers (Grid, Wave, Stage, Player, CubeCollision) without approval
+- NEVER bypass `CubeCollisionManager` for collision logic
+- NEVER violate Infinity immutability (only Infinity affects Infinity)
+- NEVER scatter marker-to-cube conversion logic (keep in PlayerMarkerSystem)
+- NEVER calculate grid positions manually (use GridManager methods)
+
+### Code Safety
+- NEVER use `FindFirstObjectByType<>()` in Update() or frequently called methods
 - NEVER introduce new singleton patterns without approval
 - NEVER modify `Assets/scripts/Utils/Enumerations.cs` without approval
 - NEVER change Unity lifecycle patterns (Awake, Start, Update sequences)
-- NEVER create new documentation files without approval
-- NEVER include technical implementation details in Project Doc files (see documentation-standards.mdc)
-- NEVER use FindObjectOfType<>() in Update() or repeating methods
+- NEVER commit partial method implementations or incomplete control structures
+- NEVER remove debug logging from critical operations
+
+### Performance
 - NEVER create unbounded loops without exit conditions
 - NEVER allocate large arrays in frequently called methods
 - NEVER use reflection in gameplay code
-- NEVER commit partial method implementations
-- NEVER leave incomplete control structures (if/for/while)
-- NEVER remove debug logging from critical operations
-- NEVER bypass validation checks
+- NEVER use LINQ with allocation in hot paths
+
+### Documentation
+- NEVER create new documentation files without approval
+- NEVER include technical implementation details in Project Doc files
 
 ## ALWAYS DO
-- ALWAYS execute tasks one at a time via Shrimp (never parallel execution)
-- ALWAYS run build validation before marking task complete
-- ALWAYS check file size limits before modifications:
-  - Core Components: 750 lines max
-  - Manager Classes: 600 lines max
-  - Utility Classes: 300 lines max
-  - Data Classes: 300 lines max
-  - Interfaces: 200 lines max
+
+### Before Changes
+- ALWAYS check file size limits: Core (750), Managers (600), Utilities (300), Data (300), Interfaces (200)
 - ALWAYS score complexity after planning (≥7 requires approval)
-- ALWAYS validate manager references in Start()
-- ALWAYS use the standard debug pattern
-- ALWAYS follow the manager reference pattern (cache in Start(), not Update())
+- ALWAYS read related code before modifying
+
+### During Development
+- ALWAYS cache manager references in Start(), validate before use
+- ALWAYS use `LogExtensions` for debug logging (`this.Log()`)
 - ALWAYS handle null references gracefully
-- ALWAYS follow documentation standards: Project Doc = design focus, Technical Doc = implementation focus (see documentation-standards.mdc)
+- ALWAYS follow the region structure (see file-standards.mdc)
+
+### DOTween & Odin (Required Tools)
+- ALWAYS use DOTween for animations instead of coroutines (fades, movements, scaling)
+- ALWAYS kill DOTweens in OnDestroy: `DOTween.Kill(transform); DOTween.Kill(this);`
+- ALWAYS use Odin `[FoldoutGroup("Debug")]` for debug section organization
+- ALWAYS use Odin `[Button]` for testable methods in inspector
+- ALWAYS use Odin `[Required]` for critical ScriptableObject references
+
+### Game-Specific
+- ALWAYS use `CubeCollisionManager` for collision resolution
+- ALWAYS configure content via ScriptableObjects, not hardcoded values
+- ALWAYS respect marker economy rules (regeneration vs grants)
+
+### Completion
+- ALWAYS run build validation before marking task complete
+- ALWAYS execute tasks one at a time via Shrimp
+
+## Approved Third-Party Tools
+
+| Tool | Purpose | Required Import |
+|------|---------|-----------------|
+| DOTween Pro | Animations, tweens, sequences | `using DG.Tweening;` |
+| Odin Inspector | Inspector enhancement, validation | `using Sirenix.OdinInspector;` |
+
+**DOTween vs Coroutines:**
+- DOTween: Visual animations (fade, move, scale, rotate, color)
+- Coroutines: Async logic, waiting for conditions, frame delays
+
+## Quick Reference
+
+| Constraint Type | Reference |
+|-----------------|-----------|
+| Game mechanics | game-architecture.mdc |
+| File structure | file-standards.mdc |
+| Code patterns | code-patterns.mdc |
+| Documentation | documentation-standards.mdc |
+| Approval workflow | approval-gates.mdc |

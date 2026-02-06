@@ -44,7 +44,7 @@ public class MessageHighlightManager : MonoBehaviour, IManagerDebugInterface
     
     [Header("Debug")]
     [Tooltip("Enable debug logging for this manager")]
-    [SerializeField] private bool enableDebugLogs = true;
+    [SerializeField] private bool enableDebugLogs = false; // Default OFF - UI highlight noise
     
     #endregion
     
